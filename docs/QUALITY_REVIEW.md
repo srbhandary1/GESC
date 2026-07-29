@@ -484,3 +484,122 @@ PR-004 implementation and its local verification gate are complete and ready
 for Accountable Product Owner review. PR-004 is not accepted by this review.
 PR-005 must not begin until explicit checkpoint acceptance is recorded and
 DR-0003 is resolved through an accepted ADR with the required human evidence.
+
+PR-004 was subsequently accepted on 30 July 2026 under
+[APP-0003](APPROVALS.md#app-0003). The acceptance preserves every recorded
+limitation and authorizes only PR-005 decision-resolution work.
+
+---
+
+## PR-005 — Decision phase for versioned content and publication
+
+### Scope reviewed
+
+- contextual PR-004 acceptance and the exact boundary of PR-005 authorization;
+- current curriculum, content, publication, sharing and enrollment schema;
+- ADR-0003 organization ownership and context enforcement;
+- proposed content ownership and cross-organization availability;
+- academic, language and publisher authority and separation;
+- immutable revisions, publication, rollback and idempotency;
+- enrollment-to-curriculum-publication pinning and migration compatibility;
+- approval-evidence and checkpoint gates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| PR-004 acceptance is bounded and durable | Pass | APP-0003 and D-0034 |
+| APP-0003 is not misrepresented as DR-0003 approval | Pass | APP-0003 conditions and proposed ADR-0004 status |
+| Current repository has no curriculum/publication implementation | Pass | route, OpenAPI, model, migration, policy, seeder and test inspection |
+| Proposed ownership preserves the ordinary Direct-tenant boundary | Pass, proposed | All authored content is organization-owned; cross-organization use requires an explicit immutable-publication grant |
+| Academic, translation and publisher authority are distinct | Pass, proposed | Permission plus scoped authority appointments, creator/reviewer separation and revocation semantics |
+| Publication closure and media-rights gates are deterministic | Pass, proposed | Derived closed manifest, visible/hidden authoritative review, explicit rights predicate and successor-publication rule |
+| Published content and rollback history are immutable | Pass, proposed | Append-only revision, review, publication and activation-event rules |
+| Sharing, withdrawal and cloning have explicit semantics | Pass, proposed | ADR-0004 owner/recipient grants, continuity, suspension and lineage rules |
+| Existing enrollment shape has a safe proposed migration | Pass, proposed | `pending_curriculum`, pre-activation withdrawal, all-status preflight and atomic immutable pin/activation |
+| UI catalogue review is not reused as curriculum approval | Pass | ADR-0004 localization boundary |
+| Adversarial governance review has unresolved high/medium findings | No | Final read-only re-review after ownership, authority, rights, manifest and enrollment corrections |
+| Required human decision authority is complete | Blocked | ADR-0004 has no deciders, APP evidence, committed approval revision or appointed reviewers' own acceptance statements |
+| PR-005 schema or product behavior was introduced | No | Governance and proposed decision only |
+
+### Repository integration findings
+
+- Existing `enrollments` contain membership, optional cohort and status only.
+  Institution invite acceptance creates them as `active`, so a direct non-null
+  publication foreign key would break existing rows and accepted onboarding.
+- The proposed additive path introduces `pending_curriculum`, migrates
+  pre-content unpinned active rows, preserves unpinned pre-activation
+  withdrawal, fails closed on inconsistent unpinned completion and makes
+  curriculum pin plus activation one transaction. Only a learner invite with a
+  cohort creates that pending enrollment.
+- `BelongsToOrganization` and `OrganizationAuthorization` correctly fail
+  closed for another organization's record. Shared-content access therefore
+  needs a dedicated, allowlisted grant/access repository; tenant scopes must
+  not be disabled in a controller.
+- Existing audit and outbox records are suitable foundations. Publication
+  needs separate command-idempotency state, aggregate locking and an expanded
+  safe-identifier outbox allowlist.
+- The permission catalogue currently contains eight keys and has exact-count
+  tests. ADR-0004 proposes explicit owner, recipient, rights, suspension and
+  pinning permissions that require deliberate seeder and test changes after
+  authorization.
+- Role permissions alone cannot appoint reviewers or rights confirmers. The
+  proposal adds scoped, time-bounded, revocable authority appointments linked
+  to durable human evidence and snapshotted by each approval.
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| Repository route/schema/model/OpenAPI inspection with `rg` and file reads | Pass: no PR-005 product implementation exists |
+| Local Markdown/YAML/link validator | Pass: 23 repository Markdown files; YAML front matter, heading progression, fences, UTF-8, final newlines, local targets and anchors |
+| `git diff --check` | Pass |
+| `make verify` with Node.js 24.18.1, pnpm 11.18.0 and Composer 2.10.2 | Pass on local PHP 8.4.17 with the expected 8.4.23 warning: dependency validation/audits, Pint, PHPStan, 36 SQLite tests/254 assertions, 93 PostgreSQL tests/1,217 assertions, locale validation, OpenAPI/generated-client drift, ESLint, recursive TypeScript and 56 frontend/package tests |
+
+The first full-gate attempt stopped at the toolchain check because the host
+`pnpm` was 11.9.0. The declared Corepack pnpm was then placed first on `PATH`.
+The next attempts reached PostgreSQL but found the local service stopped and
+then its test role/database absent. PostgreSQL 14 was started temporarily, the
+committed idempotent local test initializer was applied twice, and the complete
+gate passed. The service was stopped after verification. These environment
+failures are not represented as test failures or passing checks.
+
+`make e2e` and `make build` were not rerun because this decision phase changes
+no user journey, application code, API contract, packaging or deployment
+behavior.
+
+### Security, privacy and tenancy review
+
+- Proposed content stays owned by a non-null organization, including material
+  authored for Global English Direct.
+- Recipient access requires both an explicit owner grant and
+  membership-derived recipient authority. It does not introduce a null tenant,
+  public-content bypass or caller-supplied organization context.
+- Publisher authority cannot substitute for academic or Kannada approval.
+  Codex, seed processes and synthetic test identities are not human reviewers.
+- The closed-manifest and rights predicates reject omitted learner-visible
+  or hidden pedagogically authoritative revisions, localization
+  misclassification and unknown, stale, expired or insufficient media
+  evidence. Successor rights evidence requires a new publication identity.
+- Audit/outbox rules exclude content bodies, translation text, learner data,
+  raw media, credentials and provider payloads.
+- No real learner data, content body, media asset, secret, migration or product
+  behavior was added in this decision phase.
+
+### Known limitations
+
+- ADR-0004 remains proposed and has no human deciders or approval evidence.
+- English Academic Reviewer and Kannada Reviewer appointments, qualifications
+  and each reviewer's own acceptance evidence have not been supplied.
+- The recommended policy has not undergone independent tenancy, academic or
+  Kannada-language specialist review.
+- No PR-005 implementation or acceptance test has started.
+- Existing PR-004 environment, accessibility and Kannada-review limitations
+  remain unchanged.
+
+### Exit decision
+
+The PR-005 decision phase has a concrete proposal ready for human review.
+DR-0003 remains open. Schema, seed, API and product implementation must stop
+until ADR-0004 is explicitly accepted with the roles and appointments required
+by its approval-evidence section.

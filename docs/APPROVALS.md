@@ -166,3 +166,72 @@ system.
   alerts and recovery workflows remain outside PR-004.
 - The source conversation provides no timestamp-of-day or personal approver
   name; neither is inferred.
+
+<a id="app-0003"></a>
+
+## APP-0003 — PR-004 acceptance and PR-005 decision-phase authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Exact human statement | `Continue` |
+| Accepted implementation revision | `f9ffbe9bc3069d74ff53ddcb51d8c6972c55e216` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Context and interpretation
+
+Immediately before the statement, Codex had:
+
+1. reported PR-004 implementation complete at the accepted implementation
+   revision;
+2. presented the files changed, exact local verification evidence,
+   security/privacy/tenancy considerations and known limitations;
+3. stated that PR-004 remained pending Accountable Product Owner acceptance;
+   and
+4. supplied the exact bounded PR-005 prompt, which requires DR-0003 to be
+   resolved through an accepted ADR and durable human evidence before schema
+   or publication behavior is implemented.
+
+The human then instructed `Continue`. Under ADR-0001's contextual-approval
+rule, this accepts PR-004 with the presented evidence and limitations and
+authorizes only the decision-resolution phase of PR-005.
+
+The immediately preceding context did not present a concrete ownership,
+authority, sharing, withdrawal, cloning or enrollment-pinning policy for
+acceptance. The statement therefore does not resolve DR-0003, accept
+[proposed ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md)
+or authorize PR-005 schema and product implementation.
+
+### Accepted scope and authorization
+
+- PR-004 checkpoint acceptance at
+  `f9ffbe9bc3069d74ff53ddcb51d8c6972c55e216`.
+- The recorded Kannada-language, accessibility, environment and remote-CI
+  limitations remain limitations rather than passing results.
+- Authorization to inspect the repository, draft the DR-0003 policy and
+  prepare its human approval request.
+
+### Conditions and limitations
+
+- No curriculum/content migration, seed, API, generated client or product
+  behavior is authorized by APP-0003.
+- PR-005 implementation remains blocked until ADR-0004 (or a superseding
+  concrete ADR) is accepted by the Accountable Product Owner, Technical
+  Decision Owner and Tenancy Reviewer, and each appointed academic/language
+  reviewer supplies their own acceptance statement or explicitly exercises
+  that role as the same identified human. Durable evidence must cite the exact
+  committed ADR revision and record qualifications and consolidated roles.
+- PR-004's pending Kannada UI catalogue remains a draft. Checkpoint acceptance
+  does not turn it into independently reviewed language content.
+- This approval does not authorize production deployment, PR-006 or a later
+  checkpoint.
+- The source conversation provides no timestamp-of-day or personal approver
+  name; neither is inferred.

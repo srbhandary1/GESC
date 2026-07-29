@@ -39,6 +39,7 @@ to the master plan.
 | D-0031 | Accepted | UI catalogue releases require exact key parity, non-blank NFC messages, source-linked SHA-256 revisions and honest review metadata. The `en-IN` fallback retains source status; Kannada cannot become approved without distinct translator and reviewer evidence. Noto Sans Kannada Variable 5.3.0 is self-hosted through the design-system package, with system fallbacks. | Master plan §§5.4, 19 and 26; PR-004 implementation |
 | D-0032 | Accepted | The accessible shell uses semantic landmarks, explicit mixed-language metadata, route-preserving skip focus, visible focus, reduced motion and 44 CSS-pixel targets. Automated coverage spans 320/360/412/768/1280 CSS pixels, axe in both locales and 200%/400% enlarged-root-text stress proxies; actual browser zoom, screen-reader and Android TalkBack remain human gates. | Master plan §19; [PR-004 verification scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md) |
 | D-0033 | Accepted | PR-004 audio and recording controls are project-owned inert presentation contracts only. They do not access media devices, play or capture audio, call networks/providers or persist learner data; real media behavior remains gated by later checkpoints and DR-0005. | Master plan §§13.3, 19 and 26; PR-004 implementation |
+| D-0034 | Accepted | The product owner's 30 July 2026 contextual instruction `Continue` accepts PR-004 at revision `f9ffbe9bc3069d74ff53ddcb51d8c6972c55e216`, including its recorded limitations, and authorizes only PR-005 decision-resolution work. It does not resolve DR-0003, accept proposed ADR-0004, authorize schema/product implementation or authorize production. | [ADR-0001](adr/0001-approval-authority-and-evidence.md); [APP-0003](APPROVALS.md#app-0003) |
 
 ## Resolved decision requests
 
@@ -56,7 +57,7 @@ indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0003 | PR-005 | Content ownership, approval roles and curriculum-sharing rules |
+| DR-0003 | PR-005 | Content ownership, approval roles and curriculum-sharing rules; [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md) is proposed and awaiting required human approval |
 | DR-0004 | PR-007 | Offline local-data retention, shared-device isolation, logout purge and cross-device conflict policy |
 | DR-0005 | PR-009 | Recording retention, consent states, provider processing boundaries and deletion workflow |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
