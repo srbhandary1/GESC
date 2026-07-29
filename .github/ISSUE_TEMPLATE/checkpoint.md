@@ -16,6 +16,7 @@ Identify the numbered checkpoint or explicitly bounded issue.
 - [ ] `ENTERPRISE_PRODUCT_MASTER_PLAN.md`
 - [ ] `docs/STATUS.md`
 - [ ] Relevant accepted ADRs
+- [ ] Applicable records in `docs/APPROVALS.md`
 - [ ] Applicable approved specification
 
 ## Scope
@@ -31,6 +32,12 @@ Identify the numbered checkpoint or explicitly bounded issue.
 ## Acceptance criteria
 
 - [ ]
+
+## Approval and authorization
+
+Identify the Accountable Product Owner and list the `APP-NNNN` evidence records
+that authorize this checkpoint. State any accepted limitations and whether
+independent specialist review remains outstanding. Codex is never an approver.
 
 ## Contracts and data
 
@@ -51,6 +58,6 @@ List the root commands and manual checks required.
 - [ ] `docs/STATUS.md`
 - [ ] `docs/DECISIONS.md`
 - [ ] `docs/QUALITY_REVIEW.md`
+- [ ] `docs/APPROVALS.md` when approval or acceptance occurred
 - [ ] OpenAPI/generated types when applicable
 - [ ] ADR when applicable
-

@@ -33,7 +33,10 @@ Do not report a command or provider call as passed unless it ran successfully.
 
 Map each checkpoint acceptance criterion to test output, review evidence or an
 explicitly recorded limitation. State whether the exit gate passed and whether
-the next checkpoint is authorized to begin.
+the next checkpoint is authorized to begin. Link every applicable `APP-NNNN`
+record from `docs/APPROVALS.md`, identify the human approval roles exercised
+and preserve any required independent-review limitation. Codex is never an
+approver.
 
 ## Security, privacy and tenancy
 
@@ -54,6 +57,8 @@ effects.
 - [ ] `docs/STATUS.md` updated
 - [ ] `docs/DECISIONS.md` updated
 - [ ] `docs/QUALITY_REVIEW.md` updated
+- [ ] Approval/acceptance evidence added to `docs/APPROVALS.md` when applicable
+- [ ] Accepted ADRs link their `APP-NNNN` evidence records
 - [ ] Known limitations recorded
 - [ ] Next checkpoint recommended
 

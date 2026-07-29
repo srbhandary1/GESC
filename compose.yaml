@@ -12,6 +12,7 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+      - ./infra/local/postgres/001-create-test-database.sql:/docker-entrypoint-initdb.d/001-create-test-database.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -77,7 +78,7 @@ services:
   otp-stub:
     image: wiremock/wiremock:3.13.2@sha256:0d4ecb3e4dc8213fd7a4d37d6a78f6e6b553a6d2e15bd51b0999781282ac61b3
     restart: unless-stopped
-    command: ["--global-response-templating", "--disable-gzip"]
+    command: ["--global-response-templating", "--disable-gzip", "--disable-request-journal"]
     ports:
       - "127.0.0.1:${OTP_STUB_PORT:-8089}:8080"
     volumes:

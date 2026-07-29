@@ -26,20 +26,34 @@ to the master plan.
 | D-0018 | Accepted | A syntactically valid caller UUID may continue as the request correlation ID; invalid values are replaced with a generated UUID. Structured request logs contain a fixed event plus an allowlist of method, named route, status and duration, with the correlation ID supplied by Laravel context. | Master plan §§18.2, 20.3 and 26; PR-002 implementation |
 | D-0019 | Accepted | Liveness is process-only. PR-002 readiness requires PostgreSQL and Redis, returns no dependency names or diagnostics publicly, and does not gate on object storage, mail/OTP or external providers until an implemented serving path depends on them. | Master plan §§11, 20.3 and 26; PR-002 implementation |
 | D-0020 | Accepted | The web application uses a generic accessible React error boundary outside `StrictMode`; root and boundary reporting expose only allowlisted failure categories, and the typed health wrapper replaces server problem details with a generic client error. | Master plan §§18.1, 19 and 26; PR-002 implementation |
+| D-0021 | Accepted | The Accountable Product Owner, Technical Decision Owner and applicable specialist-review roles approve governed artifacts; `docs/APPROVALS.md` records durable evidence, Codex is never an approver, and independent security, privacy and tenancy review remains mandatory before production. | [ADR-0001](adr/0001-approval-authority-and-evidence.md); APP-0001 |
+| D-0022 | Accepted | Web sessions, mobile OAuth token families, OTPs, installation binding and future recovery behavior use the exact lifetimes, rotation, revocation and privacy rules in ADR-0002. Recovery, phone-change and reassignment workflows remain future gated work rather than PR-003 implementation. | [ADR-0002](adr/0002-authentication-session-token-and-recovery-policy.md); APP-0001 |
+| D-0023 | Accepted | Users, authentication records, organizations and permission keys are platform-global; memberships, roles, invites, cohorts and enrollments are organization-owned. Context is membership-derived and fail-closed, and Global English Direct is an ordinary tenant rather than a bypass scope. | [ADR-0003](adr/0003-resource-ownership-and-organization-context.md); APP-0001 |
+| D-0024 | Accepted | PR-003 pins Sanctum 4.3.3 and Passport 13.7.5. Web uses same-origin cookie sessions; Android uses a system-browser S256 PKCE adapter, in-memory access tokens and a reviewed-native-secure-store interface for installation and refresh credentials. | Master plan §§11.1, 11.2 and 26; ADR-0002; PR-003 implementation |
+| D-0025 | Accepted | Phone-only OTP transactionally assigns an eligible identity to Global English Direct. Invite-plus-OTP transactionally provisions or reuses only the verified identity and accepts the institution membership, so a new institutional invitee does not receive an unintended Direct membership. An existing Direct learner may deliberately accept an institution invite and retain both independently scoped memberships. HTTP invite acceptance binds a keyed request fingerprint and caller idempotency key to the organization-owned invite aggregate; raw phone numbers, codes, OTPs and tokens are not authoritative stored values. | Master plan §§7.3 and 26; ADR-0002; ADR-0003; PR-003 implementation |
+| D-0026 | Accepted | Foundation-schema, tenant-isolation and authentication-authority tests run against PostgreSQL in `make verify` and CI. Database connections force UTC for authoritative timestamps; organization learning-day calculations still use the organization timezone. | Master plan §§11, 15 and 26; PR-003 implementation |
+| D-0027 | Accepted | Identity lookup digests use a dedicated, access-controlled `AUTH_IDENTITY_DIGEST_KEY` rather than Laravel's encryption `APP_KEY`. Production fails closed for a missing, malformed or documented local-example key. The identity key is backed up and cannot be rotated in place; rotation requires a reviewed, versioned dual-read migration. | ADR-0002; PR-003 implementation and verification scope |
+| D-0028 | Accepted | Versioned domain API failures use RFC 9457-style `application/problem+json`. Standards-based root Passport `/oauth/*` failures retain OAuth `application/json` bodies; repository policy validates both contracts explicitly instead of weakening either response shape. | Master plan §15; ADR-0002; D-0017; PR-003 implementation |
 
-## Decision requests before affected checkpoints
+## Resolved decision requests
+
+| ID | Resolution |
+|---|---|
+| DR-0001 | Resolved by [ADR-0002](adr/0002-authentication-session-token-and-recovery-policy.md) under APP-0001. |
+| DR-0002 | Resolved by [ADR-0003](adr/0003-resource-ownership-and-organization-context.md) under APP-0001. |
+| DR-0008 | Resolved by [ADR-0001](adr/0001-approval-authority-and-evidence.md) under APP-0001. |
+| DR-0010 | Resolved by D-0025. The canonical onboarding modes and ADR-0003's multi-organization identity model require institution-only membership for a new invite-first learner while preserving independently accepted memberships for an existing user. |
+
+## Open decision requests before affected checkpoints
 
 These items were first recorded in PR-000. They must be resolved before the
 indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0001 | PR-003 | Authentication token lifetimes, rotation, device binding, identity recovery and phone-number reassignment policy |
-| DR-0002 | PR-003 | Platform-global versus organization-owned resource classification and organization-context enforcement |
 | DR-0003 | PR-005 | Content ownership, approval roles and curriculum-sharing rules |
 | DR-0004 | PR-007 | Offline local-data retention, shared-device isolation, logout purge and cross-device conflict policy |
 | DR-0005 | PR-009 | Recording retention, consent states, provider processing boundaries and deletion workflow |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
-| DR-0008 | First accepted ADR or approved specification | Accountable approval roles and the evidence that records acceptance or approval |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

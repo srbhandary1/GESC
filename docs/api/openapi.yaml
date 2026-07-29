@@ -2,11 +2,11 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    Canonical API contract for the Global English platform. PR-002 exposes
-    only operational health contracts; business endpoints begin in later
-    checkpoints.
+    Canonical API contract for the Global English platform. PR-003 adds the
+    tenancy and identity foundation while keeping organization context
+    server-derived and authentication credentials out of browser JavaScript.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -16,6 +16,12 @@ servers:
 tags:
   - name: Health
     description: Public liveness and dependency-readiness checks.
+  - name: Authentication
+    description: Same-origin web session and mobile-family lifecycle.
+  - name: Identity
+    description: Authenticated user and active-membership context.
+  - name: Tenancy
+    description: Institution membership operations with server-derived scope.
 paths:
   /health/live:
     get:
@@ -79,6 +85,468 @@ paths:
                 $ref: "#/components/schemas/ProblemDetails"
         default:
           $ref: "#/components/responses/Problem"
+  /oauth/authorize:
+    get:
+      operationId: beginMobileAuthorization
+      summary: Begin first-party Android authorization
+      description: |
+        Opens only in the system browser for a registered public Android
+        client. State and an S256 PKCE challenge are mandatory. The server
+        validates the registered redirect URI and never accepts a client
+        secret for this flow.
+      tags:
+        - Authentication
+      servers:
+        - url: /
+          description: Standards-based Passport authorization endpoint.
+      security: []
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            const: code
+        - name: code_challenge
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 43
+            maxLength: 128
+            pattern: "^[A-Za-z0-9_-]+$"
+        - name: code_challenge_method
+          in: query
+          required: true
+          schema:
+            type: string
+            const: S256
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 512
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            const: "mobile:api"
+      responses:
+        "200":
+          description: Server-controlled sign-in or authorization HTML.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            text/html:
+              schema:
+                type: string
+        "302":
+          description: |
+            Redirect to server-controlled sign-in or to the exact registered
+            Android callback URI after approval or denial.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri-reference
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "400":
+          $ref: "#/components/responses/OAuthProblem"
+  /oauth/token:
+    post:
+      operationId: exchangeMobileToken
+      summary: Exchange or rotate first-party Android credentials
+      description: |
+        Android-only public-client endpoint. Authorization codes require the
+        original PKCE verifier. Refresh credentials are single-use and rotate
+        on success. Access tokens expire after 15 minutes; a refresh family
+        expires after 30 days of inactivity or 90 days absolute. The
+        installation ULID is required for issuance and every refresh. Client
+        authentication is prohibited: neither a client_secret parameter nor an
+        Authorization header is accepted.
+      tags:
+        - Authentication
+      servers:
+        - url: /
+          description: Standards-based Passport token endpoint.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/MobileAuthorizationCodeExchange"
+                - $ref: "#/components/schemas/MobileRefreshTokenExchange"
+      responses:
+        "200":
+          description: A new access token and single-use refresh credential.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            Pragma:
+              required: true
+              schema:
+                type: string
+                const: no-cache
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileTokenResponse"
+        "400":
+          $ref: "#/components/responses/OAuthProblem"
+        "401":
+          $ref: "#/components/responses/OAuthProblem"
+        "429":
+          $ref: "#/components/responses/OAuthProblem"
+        default:
+          $ref: "#/components/responses/OAuthProblem"
+  /auth/otp/requests:
+    post:
+      operationId: requestOtp
+      summary: Request a short-lived local OTP challenge
+      description: |
+        Always returns the same accepted shape so callers cannot determine
+        whether the normalized mobile number already belongs to an identity.
+        PR-003 uses only the fake/local OTP adapter.
+      tags:
+        - Authentication
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpRequest"
+      responses:
+        "202":
+          description: The challenge request was accepted.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpChallenge"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/otp/verifications:
+    post:
+      operationId: verifyOtp
+      summary: Verify an OTP and create a web session
+      description: |
+        Consumes the challenge once and establishes a same-origin Sanctum
+        cookie session. When institution_invite_code is omitted, the verified
+        identity is assigned to Global English Direct. When it is present, the
+        verified identity accepts that institution invite transactionally and
+        receives no automatic Direct membership. Invite availability is not
+        disclosed by the public error response. The response never contains
+        the cookie credential.
+      tags:
+        - Authentication
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpVerification"
+      responses:
+        "200":
+          description: The challenge was verified and a web session was created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedSessionResponse"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/logout:
+    post:
+      operationId: logoutWebSession
+      summary: Revoke the current web session
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "204":
+          description: The current session was revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/sessions:
+    get:
+      operationId: listWebSessions
+      summary: List the authenticated user's web sessions
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Project session records belonging to the current user.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebSessionCollection"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: revokeAllWebSessions
+      summary: Revoke every web session belonging to the current user
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "204":
+          description: All web sessions were revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/sessions/{session_id}:
+    delete:
+      operationId: revokeWebSession
+      summary: Revoke one web session belonging to the current user
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "204":
+          description: The selected session was revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/revoke:
+    post:
+      operationId: revokeMobileTokenFamily
+      summary: Revoke the active Android token family
+      tags:
+        - Authentication
+      security:
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileTokenRevocation"
+      responses:
+        "204":
+          description: The active mobile token family was revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the authenticated identity and available memberships
+      tags:
+        - Identity
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: The authenticated identity and server-selected context.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/organization-context:
+    put:
+      operationId: selectOrganizationContext
+      summary: Select one of the authenticated user's active memberships
+      description: |
+        The membership identifier selects a candidate membership. The server
+        derives organization context only after verifying ownership and active
+        status; callers never submit an organization identifier.
+      tags:
+        - Identity
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationContextSelection"
+      responses:
+        "200":
+          description: The active membership context was selected.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /institution-invites/accept:
+    post:
+      operationId: acceptInstitutionInvite
+      summary: Accept an institution invite for the authenticated identity
+      description: |
+        The single-use invite is resolved server-side. Its organization is
+        never accepted separately from the caller.
+      tags:
+        - Tenancy
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionInviteAcceptance"
+      responses:
+        "200":
+          description: The invite had already been accepted by this identity.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteAcceptanceResponse"
+        "201":
+          description: Institution membership was created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteAcceptanceResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   parameters:
     CorrelationId:
@@ -91,6 +559,23 @@ components:
       schema:
         type: string
         format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Opaque UUID or ULID identifying one replayable command.
+      schema:
+        type: string
+        minLength: 26
+        maxLength: 36
+        pattern: "^[0-9A-HJKMNP-TV-Z]{26}$|^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      description: Project-owned public session ULID, never the Laravel session key.
+      schema:
+        $ref: "#/components/schemas/Ulid"
   headers:
     CorrelationId:
       required: true
@@ -102,8 +587,8 @@ components:
       required: true
       description: |
         Includes the `no-store` cache-control directive so intermediaries do
-        not cache operational health state. Other defensive directives may
-        also be present.
+        not cache operational or identity state. Other defensive directives
+        may also be present.
       schema:
         type: string
         pattern: '(^|,\s*)no-store(\s*,|$)'
@@ -119,7 +604,359 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/ProblemDetails"
+    OAuthProblem:
+      description: The OAuth request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        Pragma:
+          required: true
+          schema:
+            type: string
+            const: no-cache
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+  securitySchemes:
+    sanctumSession:
+      type: apiKey
+      in: cookie
+      name: __Host-global_english_session
+      description: |
+        Secure, HttpOnly same-origin session cookie. Browser JavaScript never
+        reads or persists this credential.
+    passportOAuth:
+      type: oauth2
+      description: Android Authorization Code flow with S256 PKCE.
+      flows:
+        authorizationCode:
+          authorizationUrl: /oauth/authorize
+          tokenUrl: /oauth/token
+          scopes:
+            "mobile:api": Access the first-party Android application.
   schemas:
+    Ulid:
+      type: string
+      minLength: 26
+      maxLength: 26
+      pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+    OtpRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - mobile_number
+      properties:
+        mobile_number:
+          type: string
+          pattern: '^\+[1-9][0-9]{7,14}$'
+    OtpChallenge:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_id
+        - expires_at
+      properties:
+        challenge_id:
+          $ref: "#/components/schemas/Ulid"
+        expires_at:
+          type: string
+          format: date-time
+    OtpVerification:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_id
+        - mobile_number
+        - code
+      properties:
+        challenge_id:
+          $ref: "#/components/schemas/Ulid"
+        mobile_number:
+          type: string
+          pattern: '^\+[1-9][0-9]{7,14}$'
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+        institution_invite_code:
+          type: string
+          minLength: 12
+          maxLength: 128
+          description: |
+            Optional single-use institution invite secret. The server never
+            stores or logs the raw value.
+    UserIdentitySummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+    AuthenticatedSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - user
+        - session
+      properties:
+        user:
+          $ref: "#/components/schemas/UserIdentitySummary"
+        session:
+          $ref: "#/components/schemas/WebSessionSummary"
+    WebSessionCollection:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebSessionSummary"
+    WebSessionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - current
+        - created_at
+        - last_activity_at
+        - expires_at
+        - privileged
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        current:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        last_activity_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        privileged:
+          type: boolean
+        mfa_verified_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OrganizationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - kind
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        kind:
+          type: string
+          enum:
+            - platform_direct
+            - institution
+    MembershipSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - organization
+        - status
+        - role_keys
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        organization:
+          $ref: "#/components/schemas/OrganizationSummary"
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+            - ended
+        role_keys:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z][a-z0-9._-]*$"
+    CurrentUserResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - user
+        - current_membership
+        - memberships
+      properties:
+        user:
+          $ref: "#/components/schemas/UserIdentitySummary"
+        current_membership:
+          oneOf:
+            - $ref: "#/components/schemas/MembershipSummary"
+            - type: "null"
+        memberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/MembershipSummary"
+    OrganizationContextSelection:
+      type: object
+      additionalProperties: false
+      required:
+        - membership_id
+      properties:
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+    MobileTokenRevocation:
+      type: object
+      additionalProperties: false
+      required:
+        - installation_id
+      properties:
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+    MobileAuthorizationCodeExchange:
+      type: object
+      additionalProperties: false
+      required:
+        - grant_type
+        - client_id
+        - redirect_uri
+        - code
+        - code_verifier
+        - installation_id
+      properties:
+        grant_type:
+          type: string
+          const: authorization_code
+        client_id:
+          type: string
+          format: uuid
+        redirect_uri:
+          type: string
+          format: uri
+        code:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        code_verifier:
+          type: string
+          minLength: 43
+          maxLength: 128
+          pattern: "^[A-Za-z0-9._~-]+$"
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+    MobileRefreshTokenExchange:
+      type: object
+      additionalProperties: false
+      required:
+        - grant_type
+        - client_id
+        - refresh_token
+        - installation_id
+      properties:
+        grant_type:
+          type: string
+          const: refresh_token
+        client_id:
+          type: string
+          format: uuid
+        refresh_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+    MobileTokenResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token_type
+        - expires_in
+        - access_token
+        - refresh_token
+      properties:
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          const: 900
+        access_token:
+          type: string
+          minLength: 1
+        refresh_token:
+          type: string
+          minLength: 1
+    OAuthError:
+      type: object
+      additionalProperties: true
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - invalid_client
+            - invalid_grant
+            - unauthorized_client
+            - unsupported_grant_type
+            - invalid_scope
+            - server_error
+        error_description:
+          type: string
+    InstitutionInviteAcceptance:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 12
+          maxLength: 128
+    EnrollmentSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum:
+            - active
+            - completed
+            - withdrawn
+    InviteAcceptanceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - membership
+        - enrollment
+        - replayed
+      properties:
+        membership:
+          $ref: "#/components/schemas/MembershipSummary"
+        enrollment:
+          oneOf:
+            - $ref: "#/components/schemas/EnrollmentSummary"
+            - type: "null"
+        replayed:
+          type: boolean
     LivenessResponse:
       type: object
       additionalProperties: false

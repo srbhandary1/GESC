@@ -3,12 +3,18 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\AssignCorrelationId;
+use App\Http\Middleware\AuthenticateFirstParty;
+use App\Http\Middleware\EnforceAuthenticationSession;
+use App\Http\Middleware\RequireFreshPrivilegedMfa;
+use App\Http\Middleware\ResolveOrganizationContext;
 use App\Http\Problems\ProblemDetailsFactory;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Laravel\Passport\Http\Middleware\CheckToken;
+use Laravel\Passport\Http\Middleware\CheckTokenForAnyScope;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,6 +24,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignCorrelationId::class);
+        $middleware->statefulApi();
+        $middleware->alias([
+            'auth.first-party' => AuthenticateFirstParty::class,
+            'auth.session' => EnforceAuthenticationSession::class,
+            'auth.mfa' => RequireFreshPrivilegedMfa::class,
+            'organization.context' => ResolveOrganizationContext::class,
+            'scope' => CheckToken::class,
+            'scopes' => CheckTokenForAnyScope::class,
+        ]);
         $middleware->preventRequestsDuringMaintenance([
             'api/v1/health/live',
         ]);

@@ -19,11 +19,12 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## Current state
 
-The repository is at **PR-002 — Contracts, health and observability**. The
-versioned operational API contract, generated TypeScript client, health
-endpoints, correlation/logging foundation and API/web error boundaries are
-implemented. PR-002 is awaiting checkpoint acceptance; no business feature,
-identity, tenancy or authentication has been introduced.
+The repository is at **PR-003 — Tenancy and identity foundation**. The
+PostgreSQL-backed organization and identity schema, same-origin web session
+flow, Android PKCE foundation, tenant-scoped authorization, direct-learner
+assignment and institution-invite acceptance are implemented. PR-003 remains
+pending checkpoint review and acceptance; curriculum, learning journeys, AI,
+speech, payments, offline sync and reporting have not been introduced.
 
 ## Prerequisites
 
@@ -60,6 +61,32 @@ Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
 5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
 port 8333 and the OTP stub uses port 8089 by default.
 
+A fresh PostgreSQL Compose volume also creates the isolated
+`global_english_test` database and role used by the PostgreSQL integration
+suite. For a volume created before PR-003, start the services and apply the
+idempotent initializer once:
+
+```text
+docker compose exec postgres sh -lc 'psql --set ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --file /docker-entrypoint-initdb.d/001-create-test-database.sql'
+```
+
+After migrating and seeding a local database, create ignored Passport signing
+keys and a public Android client with the reviewed application redirect URI:
+
+```text
+cd apps/api
+php artisan passport:keys
+php artisan passport:client --public
+```
+
+Never commit Passport private keys or configure a client secret for the
+Android public client. Production OTP delivery, privileged MFA and native
+secure credential storage require separately reviewed implementations.
+Production must also supply an independently generated, backed-up
+`AUTH_IDENTITY_DIGEST_KEY`; it is intentionally separate from `APP_KEY` and
+must not be rotated in place without the versioned migration described in
+`docs/PR-003_TENANCY_VERIFICATION_SCOPE.md`.
+
 ## Root commands
 
 | Command | Purpose |
@@ -81,9 +108,13 @@ message until PR-011; it does not report placeholder success.
 
 ## Repository layout
 
-- `apps/api/` — Laravel 13 modular-monolith shell and versioned health API;
-- `apps/web/` — React 19.2 TypeScript/Vite shell and application error boundary;
+- `apps/api/` — Laravel 13 modular monolith with operational, tenancy and
+  identity foundation APIs;
+- `apps/web/` — React 19.2 TypeScript/Vite shell, error boundary and shared
+  authentication adapters;
 - `docs/api/` — canonical OpenAPI 3.1.1 contract;
+- `docs/adr/` and `docs/APPROVALS.md` — accepted architecture decisions and
+  durable human approval evidence;
 - `packages/contracts/` — generated TypeScript client, types and JSON schemas;
 - `infra/local/` — local-only provider stubs;
 - `compose.yaml` — PostgreSQL, Redis, SeaweedFS, Mailpit and WireMock services;

@@ -243,6 +243,132 @@ pinned Chromium build was installed and the rerun passed.
 
 ### Exit decision
 
-PR-002 implementation is complete and ready for product-owner review. PR-003
-must not begin until PR-002 is accepted and DR-0001, DR-0002 and DR-0008 are
-resolved with approval evidence.
+PR-002 was accepted on 30 July 2026 under
+[APP-0001](APPROVALS.md#app-0001). The same bounded evidence accepted
+ADR-0001, ADR-0002 and ADR-0003 and authorized PR-003 without representing the
+recorded unavailable environment checks as passed.
+
+---
+
+## PR-003 — Tenancy and identity foundation
+
+### Scope reviewed
+
+- platform-global identity and organization records;
+- organization-owned memberships, roles, invitations, cohorts and
+  enrollments;
+- Direct and institution invite-plus-OTP onboarding;
+- organization-context derivation, tenant scopes, policies and database
+  constraints;
+- same-origin web sessions, CSRF, OTP policy and session revocation;
+- Android public-client PKCE, installation-bound refresh rotation and family
+  revocation;
+- platform-operation authorization, audit/outbox evidence and idempotency;
+- OpenAPI/generated clients, frontend adapters and checkpoint boundaries.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Accepted PR-003 decisions and authorization have durable human evidence | Pass | APP-0001 and ADR-0001 through ADR-0003 |
+| Direct phone-only onboarding assigns the ordinary Direct tenant transactionally | Pass | Direct provisioning PostgreSQL tests |
+| Invite-plus-OTP creates institution membership without unintended Direct membership | Pass | Web and mobile PostgreSQL onboarding journeys plus rollback/non-enumeration tests |
+| Every introduced organization-owned model fails closed without context | Pass | Organization isolation matrix and web/mobile request-context middleware tests |
+| Cross-tenant read, list, create, update, delete, scoped binding, attachment and mass assignment are denied | Pass | Policy/model matrix and PostgreSQL composite constraints |
+| Non-applicable route-handler, job and object-storage categories are explicit | Pass | `docs/PR-003_TENANCY_VERIFICATION_SCOPE.md` |
+| Platform operations require signed capability, safe reason, target and append-only audit evidence | Pass | Platform-operation PostgreSQL tests |
+| Web sessions enforce CSRF, inactivity, absolute lifetime, logout and arbitrary/all-session revocation | Pass | Session feature/PostgreSQL tests and live same-origin login/logout smoke |
+| OTPs are hashed, short-lived, single-use, superseding, attempt-limited, abuse-controlled and safely logged | Pass | OTP policy and integration tests |
+| Android OAuth uses system-browser S256 PKCE without a public-client secret | Pass | Passport and Android-adapter tests |
+| Refresh is single-use, installation-bound and concurrently safe with family revocation on reuse | Pass | Real-PostgreSQL forked race plus mismatch and expiry-boundary tests |
+| No browser or ordinary-preferences credential persistence exists | Pass | Adapter boundary and storage-spy tests |
+| Public APIs and generated clients match | Pass | Strict OpenAPI lint, explicit RFC 9457/OAuth media policy and generated-client drift check |
+| No later-checkpoint learner, content, AI, speech, offline or commercial feature was introduced | Pass | Route, schema and repository inspection |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| `make verify` with the isolated Composer 2.10.2 and pinned Node/pnpm toolchain | Pass on local PHP 8.4.17 with the expected 8.4.23 patch warning: strict Composer validation with the approved exact-pin advisory excluded, Composer/pnpm audits, Pint, PHPStan level 8, 36 SQLite tests/254 assertions, 93 PostgreSQL tests/1,217 assertions, frozen pnpm install, OpenAPI drift/policy checks, ESLint, TypeScript and 16 frontend tests |
+| `make openapi` | Pass: strict Redocly validation, explicit RFC 9457 domain/OAuth JSON policy and reproducible generated TypeScript contracts |
+| `make e2e` | Pass: one Chromium secure identity-shell journey |
+| `make build` | Pass: Laravel production optimization/cache cleanup and Vite production build of 38 modules |
+| Targeted PostgreSQL acceptance audit | Pass: 25 invite/session/Passport/concurrent/token-family tests with 761 assertions plus 3 revocation-failure tests with 15 assertions |
+| Forked concurrent refresh test | Pass: one simultaneous request returned `200`, one returned OAuth `invalid_grant`, the token family was revoked and one reuse audit was appended |
+| Mobile binding and boundary tests | Pass: wrong installation and exact 30-day inactivity, 90-day absolute and refresh-record expiry boundaries revoke the family |
+| Live same-origin Vite/API/PostgreSQL smoke | Pass: CSRF `204`, OTP request `202`, verification `200`, authenticated `/me` `200`, logout `204`, revoked `/me` `401` with problem details |
+| `php artisan route:list` for Sanctum, OAuth and `/api/v1` | Pass: cookie-CSRF, PKCE/token and first-party authentication middleware are attached to the expected routes |
+| `php artisan migrate:fresh --seed --force` against the isolated PostgreSQL test database | Pass: six migrations and the idempotent Direct foundation seeder completed |
+| `make check-local-auth-env` | Pass: local environment uses encrypted sessions and a dedicated identity digest key |
+| PostgreSQL initializer idempotency check | Pass: `001-create-test-database.sql` completed twice with `ON_ERROR_STOP` |
+| Compose/CI static policy check | Pass: five services are digest-pinned and loopback-only; PostgreSQL initializer mount and exact CI runtime/extensions are present |
+| Local Markdown, YAML, link, anchor and Git hygiene checks | Pass: balanced structure, valid local targets, canonical inputs unchanged and no whitespace errors |
+
+### Security, privacy and tenancy review
+
+- Global English Direct is enforced as an ordinary organization tenant.
+- Membership-derived context is fail-closed. Caller fields and arbitrary
+  organization headers cannot establish or replace authority.
+- The `organization.context` middleware resolves an active selected membership
+  or exactly one active membership for both web and mobile principals, scopes
+  downstream tenant models and clears context after every response.
+- Composite PostgreSQL foreign keys bind tenant relationships, invite
+  acceptance, audit actors and selected mobile memberships to the same
+  organization and user.
+- Platform-global operations require a project-issued short-lived capability,
+  an allowlisted non-sensitive reason and append-only audit evidence.
+- Web uses encrypted Secure, HttpOnly, SameSite cookies and CSRF protection.
+  Android access tokens stay in memory; persistent credential operations exist
+  only on the reviewed-native-secure-store interface.
+- Identity, OTP, session, installation and refresh values are purpose-digested
+  or encrypted. Raw phone numbers, codes, tokens and provider payloads are not
+  stored in audit/outbox records or application logs.
+- The local fixed OTP is available only in `APP_ENV=local`; production uses no
+  fixed code and the fake delivery adapter fails closed outside local/testing.
+- Both OAuth endpoints accept only active first-party public mobile clients
+  with the expected provider and grants; HTTP Basic, PHP-auth and body client
+  secrets are rejected before Passport.
+- Requests without a web session resolve the Passport guard only when a bearer
+  token is present, so a local install without OAuth keys fails closed with
+  `401` rather than exposing a server error.
+- Independent security, privacy and tenancy specialist review remains required
+  before production.
+
+### Migrations and configuration reviewed
+
+- Six ordered migrations create identity/tenancy, tenant relationships,
+  audit/outbox, web authentication, Passport and mobile token-family records.
+- PostgreSQL check, uniqueness, composite foreign-key and append-only audit
+  constraints supplement application scopes and policies.
+- `AUTH_IDENTITY_DIGEST_KEY` is independent from `APP_KEY`, validated
+  fail-closed and documented as requiring a versioned migration for rotation.
+- Session/token/OTP lifetimes match ADR-0002 and remain centralized
+  configuration.
+- Compose initializes the isolated PostgreSQL integration-test role/database
+  on a fresh volume; CI runs the PostgreSQL suite.
+
+### Known limitations
+
+- Docker/Compose and a fresh PostgreSQL 18.4 container are unavailable on this
+  host; the local PostgreSQL verification service is version 14.
+- Local PHP is 8.4.17 rather than the declared 8.4.23 patch, and the GitHub
+  Actions workflow has not run remotely.
+- Production OTP delivery, privileged-MFA verification, Android native secure
+  storage and operational alert integrations require later reviewed
+  implementations.
+- Physical session-store cleanup is best effort after authoritative database
+  revocation commits. Middleware remains fail-closed, but production alerting
+  for cleanup failures is not integrated in PR-003.
+- Recovery, phone change/reassignment, admission-ID setup and account closure
+  remain gated future workflows under ADR-0002.
+- No tenant-owned queued handler or object-storage record exists yet, so those
+  isolation categories become executable at the checkpoint that introduces
+  them.
+- Independent specialist review remains outstanding.
+
+### Exit decision
+
+PR-003 implementation and its local verification gate are complete and ready
+for Accountable Product Owner review. PR-003 is not yet accepted. PR-004 must
+not begin until explicit checkpoint acceptance is recorded in
+`docs/APPROVALS.md`.

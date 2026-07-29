@@ -10,6 +10,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // PR-001 intentionally contains no business or learner seed data.
+        $this->call(FoundationSeeder::class);
     }
 }

@@ -11,7 +11,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain dev services-up services-down verify test e2e ai-eval openapi migrate seed build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev services-up services-down verify test e2e ai-eval openapi migrate seed build
 
 help:
 	@printf '%s\n' \
@@ -43,15 +43,20 @@ services-up:
 services-down:
 	$(DOCKER_COMPOSE) down
 
-dev: services-up
+check-local-auth-env:
+	@sh scripts/check-local-auth-env.sh
+
+dev: check-local-auth-env
+	$(MAKE) services-up
 	$(PNPM) run dev
 
 verify: check-toolchain
-	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-publish
+	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) audit --locked
 	cd $(API_DIR) && $(PHP) vendor/bin/pint --test
 	$(PHP) $(API_DIR)/vendor/bin/phpstan analyse --configuration=$(API_DIR)/phpstan.neon --memory-limit=1G
 	cd $(API_DIR) && $(PHP) artisan test
+	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) install --frozen-lockfile
 	$(PNPM) audit --audit-level=high
 	$(MAKE) openapi
@@ -61,6 +66,7 @@ verify: check-toolchain
 
 test:
 	cd $(API_DIR) && $(PHP) artisan test
+	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) run test
 
 e2e:

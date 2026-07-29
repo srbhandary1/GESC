@@ -5,6 +5,8 @@ deciders: []
 consulted: []
 informed: []
 amends_master_plan: false
+approval_evidence: []
+approval_reference: null
 ---
 
 # ADR-NNNN: Decision title
@@ -74,12 +76,21 @@ Otherwise state: “This ADR does not amend the master plan.”
 
 ## Approval evidence
 
-When this ADR is accepted, record:
+When this ADR is accepted:
 
-- acceptance date;
-- accountable decider or approval roles;
-- approving issue or pull-request reference;
-- impact-note and master-plan update reference when applicable.
+1. follow the durable evidence schema in
+   [`docs/APPROVALS.md`](../APPROVALS.md);
+2. add every applicable `APP-NNNN` identifier to the `approval_evidence`
+   front-matter list;
+3. record its durable human-source reference in `approval_reference`;
+4. link the evidence entry here; and
+5. summarize the acceptance date and time zone, human approver identifier,
+   exercised roles, exact human statement, Codex's recorder-only role and
+   master-plan impact.
+
+Codex may author or record an ADR but must never be listed as its approver.
+When one human exercises multiple development roles, record the independent
+specialist reviews that remain required before production.
 
 ## Verification
 
