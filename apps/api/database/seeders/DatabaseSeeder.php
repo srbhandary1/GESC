@@ -1,0 +1,13 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // PR-001 intentionally contains no business or learner seed data.
+    }
+}

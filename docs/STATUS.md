@@ -4,75 +4,93 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-000 — Governance baseline |
-| Status | Accepted |
+| Checkpoint | PR-001 — Monorepo and local platform bootstrap |
+| Status | Implementation complete — acceptance pending |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.0 |
-| Prepared date | 29 July 2026 |
-| Git branch | `pr-000-governance-baseline` |
-| Product code | Not started |
-| Next checkpoint | PR-001 — Monorepo and local platform bootstrap |
+| Updated date | 29 July 2026 |
+| Git branch | `pr-001-monorepo-bootstrap` |
+| Product code | Framework shells only; no business feature |
+| Next checkpoint | PR-002 — Contracts, health and observability, after PR-001 acceptance |
 
-## Delivered in PR-000
+## Delivered in PR-001
 
-- canonical master plan at the repository root;
-- root `AGENTS.md`;
-- repository README and source-of-truth hierarchy;
-- ADR template;
-- decision and quality-review ledgers;
-- checkpoint and decision-request issue templates;
-- pull-request template;
-- editor and ignore conventions.
+- Laravel 13 API shell under `apps/api/`, with the framework health endpoint and
+  no default identity/domain model;
+- React 19.2 TypeScript/Vite shell under `apps/web/`, with unit and browser
+  smoke tests;
+- exact Node.js, pnpm, PHP-platform and Composer declarations plus committed
+  dependency lockfiles;
+- loopback-only PostgreSQL, Redis, S3-compatible SeaweedFS, Mailpit and WireMock
+  OTP services in `compose.yaml`;
+- stable root `make` commands and toolchain validation;
+- CI that runs bootstrap, verification and production builds with the declared
+  toolchain;
+- reproducible Laravel optimization and React production builds.
 
 ## Current constraints
 
-- The repository has no commit or remote configuration yet.
-- Root `make` commands do not exist yet and must be created by PR-001.
-- No Laravel, React, database, queue, storage or CI scaffold exists.
-- External framework, legal and Google Play baselines require verification at
-  the checkpoint where they become implementation or release dependencies.
+- Docker and Docker Compose are not installed on the current host, so service
+  startup, health checks and dependency-backed readiness remain unverified
+  locally.
+- The host provides PHP 8.4.17 rather than the declared PHP 8.4.23 patch. Local
+  checks passed on PHP 8.4.17 with a visible warning; CI declares PHP 8.4.23.
+- The GitHub Actions workflow has not run on a remote GitHub runner.
+- OpenAPI, generated clients, dependency-aware readiness, correlation IDs,
+  structured logging and error boundaries are deliberately deferred to PR-002.
+- Identity, authorization and tenant-owned resources do not exist yet; their
+  security and cross-tenant tests begin in PR-003.
 
-## Next checkpoint entry criteria
+## PR-001 verification state
 
-PR-000 review confirmed:
+- `make bootstrap` passed with the locked dependency sets;
+- `make verify` passed formatting, dependency audit, static analysis, backend
+  and frontend tests, linting and type checking;
+- `make build` passed Laravel production optimization and the Vite production
+  build;
+- `make e2e` passed the React shell browser smoke test after Chromium was run
+  outside the restricted macOS sandbox;
+- local Markdown links, YAML/JSON syntax and repository hygiene checks are
+  recorded in `docs/QUALITY_REVIEW.md`.
 
-- the authority hierarchy is explicit;
-- the canonical documents are present and internally linked;
-- issue, ADR and pull-request workflows reflect checkpoint discipline;
-- no product code was introduced.
+PR-001 remains pending acceptance because the current host cannot demonstrate
+the Compose service health gate or a clean run with the exact PHP patch. Do not
+begin PR-002 until those acceptance gaps are reviewed and resolved or explicitly
+accepted.
 
-Acceptance was recorded on 29 July 2026 through the product-owner instruction
-to proceed with project implementation.
-
-## Recommended PR-001 task
+## Recommended PR-002 task
 
 ```text
 Read AGENTS.md, ENTERPRISE_PRODUCT_MASTER_PLAN.md, docs/STATUS.md,
 docs/DECISIONS.md and docs/QUALITY_REVIEW.md completely. Then read relevant
 accepted ADRs and the active issue or specification, and inspect the repository.
 
-Execute only PR-001 — Monorepo and local platform bootstrap. Do not implement
-business features.
+Confirm that PR-001 has been reviewed and accepted. Then execute only PR-002 —
+Contracts, health and observability. Do not implement identity, tenancy,
+authentication, curriculum, learning journeys or other business features.
 
 Create:
 
-- apps/api as a Laravel 13 application;
-- apps/web as a React 19.2 TypeScript Vite application;
-- exact Node 24/pnpm and PHP 8.4 runtime declarations;
-- local PostgreSQL, Redis, S3-compatible object storage and mail/OTP fake
-  services in compose.yaml;
-- the stable root Makefile commands required by the master plan;
-- basic CI;
-- reproducible API and web production builds.
+- an OpenAPI 3.1.1 baseline under /api/v1;
+- generated TypeScript client types and schemas in packages/contracts;
+- a stable RFC 9457-style problem-details contract with localized message keys;
+- end-to-end correlation IDs and privacy-safe structured logging;
+- separate liveness and dependency-aware readiness endpoints;
+- API and web error boundaries;
+- contract validation and generated-client drift checks in root commands and CI;
+- tests proving readiness fails when required dependencies are unavailable.
 
-Pin exact supported dependency versions during scaffolding. Keep provider SDKs
-and business-domain scaffolding out of this checkpoint.
+Keep provider SDK types, personal data and secrets out of logs. Do not add
+feature endpoints merely to populate the contract. Add an ADR only if a
+material architecture decision changes the canonical baseline.
 
-Before editing, state a brief implementation plan. Validate the checkpoint on a
-clean environment by running make bootstrap, make verify and make build. Do not
-claim a command passed unless it actually ran successfully. Update
-docs/STATUS.md, docs/DECISIONS.md and docs/QUALITY_REVIEW.md at completion.
+Before editing, state a brief implementation plan. Run make openapi,
+make verify, make e2e and make build as applicable, and demonstrate generated
+client drift detection plus readiness failure with an unavailable required
+dependency. Do not claim a command passed unless it actually ran successfully.
+Update docs/STATUS.md, docs/DECISIONS.md and docs/QUALITY_REVIEW.md at
+completion.
 
 Conclude with files changed, behaviour delivered, commands and results,
-configuration added, security/privacy/tenancy considerations, known limitations
-and the exact prompt recommended for PR-002.
+configuration added, security/privacy/tenancy considerations, known
+limitations and the exact prompt recommended for PR-003.
 ```

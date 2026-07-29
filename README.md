@@ -19,24 +19,47 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## Current state
 
-The repository is at **PR-000 — Governance baseline**. It contains no product
-application scaffold yet. Laravel, React, local services and executable root
-commands belong to PR-001.
+The repository is at **PR-001 — Monorepo and local platform bootstrap**. The
+Laravel API shell, React web shell, local dependency stack, root commands and CI
+are implemented. PR-001 is awaiting checkpoint acceptance; no business feature,
+identity, tenancy or API contract has been introduced.
 
 ## Prerequisites
 
-For PR-000:
+- PHP 8.4.23;
+- Composer 2.10.2;
+- Node.js 24.18.1 LTS;
+- pnpm 11.18.0;
+- Make;
+- Docker Engine with Docker Compose v2 for local services and `make dev`.
 
-- Git;
-- a Markdown-capable editor.
+Runtime declarations live in `.php-version`, `.node-version`, `.nvmrc`,
+`package.json` and the CI workflow. Composer and pnpm lockfiles are the exact
+dependency authority.
 
-PR-001 will pin and document the required PHP, Composer, Node.js, pnpm,
-container-runtime and platform versions.
+## Bootstrap and verification
 
-## Planned root commands
+From the repository root:
 
-The master plan requires the following stable repository commands. They are
-planned for PR-001 and must not be reported as available until implemented:
+```text
+make bootstrap
+make verify
+make build
+```
+
+`make bootstrap` installs locked dependencies and creates ignored local
+environment files without overwriting existing ones. To start PostgreSQL,
+Redis, object storage, mail/OTP fakes, the API, web app and queue worker:
+
+```text
+make dev
+```
+
+Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
+5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
+port 8333 and the OTP stub uses port 8089 by default.
+
+## Root commands
 
 | Command | Purpose |
 |---|---|
@@ -50,6 +73,20 @@ planned for PR-001 and must not be reported as available until implemented:
 | `make migrate` | Apply local migrations |
 | `make seed` | Load safe development seed data |
 | `make build` | Create production builds |
+
+`make openapi` and `make ai-eval` intentionally exit with a checkpoint message
+until PR-002 and PR-011 respectively. They do not report placeholder success.
+
+## Repository layout
+
+- `apps/api/` — Laravel 13 modular-monolith shell and framework health endpoint;
+- `apps/web/` — React 19.2 TypeScript/Vite shell;
+- `infra/local/` — local-only provider stubs;
+- `compose.yaml` — PostgreSQL, Redis, SeaweedFS, Mailpit and WireMock services;
+- `.github/workflows/ci.yml` — bootstrap, verification and build workflow.
+
+The example credentials in `.env.example` files are local-development values
+only. Do not reuse them outside an isolated development environment.
 
 ## Working method
 

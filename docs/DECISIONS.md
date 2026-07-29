@@ -13,6 +13,13 @@ to the master plan.
 | D-0005 | Accepted | Authoritative learning records are deterministic; AI output is advisory. | Master plan §§0.3 and 32 |
 | D-0006 | Accepted | Web/PWA uses Sanctum cookie sessions and Android uses Passport Authorization Code with PKCE behind a project authentication abstraction. | Master plan §11.2 |
 | D-0007 | Accepted | The initial audience is Kannada-speaking adults aged 18 or older. | Master plan §§1.1 and 18.4 |
+| D-0008 | Accepted | PR-001 declares PHP 8.4.23, Composer 2.10.2, Node.js 24.18.1 and pnpm 11.18.0; committed Composer and pnpm lockfiles are the exact dependency authority. | Master plan §§7, 25.2, 26 and 31 |
+| D-0009 | Accepted | Local platform dependencies use digest-pinned PostgreSQL 18.4, Redis 8.8.1, SeaweedFS 4.40, Mailpit 1.30.6 and WireMock 3.13.2 images with loopback-only host bindings. | Master plan §§12 and 26; PR-001 implementation |
+| D-0010 | Accepted | SeaweedFS is the PR-001 local S3-compatible implementation; this does not select or constrain the production object-storage provider. | Master plan §§7, 26 and 32.1; PR-001 implementation |
+| D-0011 | Accepted | Local mail and OTP paths terminate in Mailpit and WireMock fakes and must not contact real recipients or production providers. | Master plan §§7, 24 and 26 |
+| D-0012 | Accepted | Stable commands that belong to later checkpoints fail with an explicit checkpoint message rather than reporting placeholder success. | Master plan §25.2; PR-001 implementation |
+| D-0013 | Accepted | PR-001 removes Laravel's sample identity model/migration and duplicate frontend scaffold so identity remains in PR-003 and the React application remains under `apps/web`. | Master plan §§12 and 26 |
+| D-0014 | Accepted | Application package metadata is `proprietary` so scaffolding does not accidentally grant an open-source licence; final distribution and third-party notice terms remain a product-owner/legal decision. | Master plan §11.1; PR-001 implementation and DR-0009 |
 
 ## Decision requests before affected checkpoints
 
@@ -29,3 +36,4 @@ implementation becomes authoritative.
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
 | DR-0008 | First accepted ADR or approved specification | Accountable approval roles and the evidence that records acceptance or approval |
+| DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

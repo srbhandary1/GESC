@@ -6,11 +6,14 @@
 /tmp/
 /vendor/
 /node_modules/
+/.pnpm-store/
 
 /apps/api/storage/*.key
 /apps/api/storage/logs/
 /apps/api/bootstrap/cache/*.php
 /apps/web/dist/
+/apps/web/coverage/
+/apps/web/playwright-report/
+/apps/web/test-results/
 
 *.log
-
