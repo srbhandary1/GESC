@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+/tmp/
+/vendor/
+/node_modules/
+
+/apps/api/storage/*.key
+/apps/api/storage/logs/
+/apps/api/bootstrap/cache/*.php
+/apps/web/dist/
+
+*.log
+
