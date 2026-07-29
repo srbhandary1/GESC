@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "catalogKind": "ui",
+  "defaultLocale": "kn-IN",
+  "fallbackLocale": "en-IN",
+  "supportedLocales": [
+    "kn-IN",
+    "en-IN"
+  ],
+  "hashAlgorithm": "sha256-canonical-json-v1",
+  "catalogues": {
+    "kn-IN": {
+      "locale": "kn-IN",
+      "revision": "ui-kn-IN-2026-07-30.2",
+      "catalogueHash": "sha256:62e23cbe4a2eedd1aec53f4d74fb9a43b0d2dce9f9e6ab9f5739f048c59c3f48",
+      "sourceLocale": "en-IN",
+      "sourceRevision": "ui-en-IN-2026-07-30.2",
+      "sourceHash": "sha256:09c8b8ed2b8d728bc56a0fd5c00b1694fc9c7dfa02d5d0c4a9bfb5b9277adfe9",
+      "reviewStatus": "pending-independent-review",
+      "translatedBy": "Codex implementation draft",
+      "reviewedBy": null,
+      "approvedAt": null,
+      "independentReview": false
+    },
+    "en-IN": {
+      "locale": "en-IN",
+      "revision": "ui-en-IN-2026-07-30.2",
+      "catalogueHash": "sha256:09c8b8ed2b8d728bc56a0fd5c00b1694fc9c7dfa02d5d0c4a9bfb5b9277adfe9",
+      "sourceLocale": "en-IN",
+      "sourceRevision": "ui-en-IN-2026-07-30.2",
+      "sourceHash": "sha256:09c8b8ed2b8d728bc56a0fd5c00b1694fc9c7dfa02d5d0c4a9bfb5b9277adfe9",
+      "reviewStatus": "source",
+      "translatedBy": null,
+      "reviewedBy": null,
+      "approvedAt": null,
+      "independentReview": false
+    }
+  }
+}

@@ -61,8 +61,14 @@ jobs:
       - name: Bootstrap
         run: make bootstrap
 
+      - name: Install accessibility-test browser
+        run: pnpm --filter @global-english/web exec playwright install --with-deps chromium
+
       - name: Verify, including contract validation and generated-client drift
         run: make verify
+
+      - name: Test accessible learner shell
+        run: make e2e
 
       - name: Build
         run: make build

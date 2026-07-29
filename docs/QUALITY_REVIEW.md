@@ -368,7 +368,119 @@ recorded unavailable environment checks as passed.
 
 ### Exit decision
 
-PR-003 implementation and its local verification gate are complete and ready
-for Accountable Product Owner review. PR-003 is not yet accepted. PR-004 must
-not begin until explicit checkpoint acceptance is recorded in
-`docs/APPROVALS.md`.
+PR-003 implementation and its local verification gate were complete and ready
+for Accountable Product Owner review. It was subsequently accepted on 30 July
+2026 under [APP-0002](APPROVALS.md#app-0002). The accepted limitations remain
+limitations rather than passing results. APP-0002 authorizes only PR-004.
+
+---
+
+## PR-004 — Localization and accessible design system
+
+### Scope reviewed
+
+- governed `kn-IN` and `en-IN` UI catalogues and deterministic fallback;
+- Unicode normalization, source linkage and translation-review evidence;
+- mixed-language semantics, Kannada font delivery and accessible tokens;
+- responsive Home/Learn/Practice/Progress shell and focus behavior;
+- inert audio/recording presentation contracts;
+- production-versus-preview language policy and safe fallback observability;
+- unit, locale, keyboard, axe, reflow, target-size and font-resource tests;
+- preservation of PR-003 API, authentication and tenancy boundaries.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| PR-003 acceptance and PR-004 authorization are durable | Pass | APP-0002 and D-0029 |
+| UI catalogues have exact locale/key parity, deterministic hashes and current source linkage | Pass | Locale validator and governance revisions `ui-en-IN-2026-07-30.2` / `ui-kn-IN-2026-07-30.2` |
+| Pending Kannada is not represented as approved | Pass | `pending-independent-review`, attributed draft, null reviewer/approval and `independentReview=false` |
+| Ordinary production builds reject pending Kannada and visibly fall back to English | Pass | Policy unit tests and local strict-build browser inspection |
+| Development/review preview is explicit and visibly labelled | Pass | `VITE_UI_TRANSLATION_PREVIEW` policy tests and shell preview notice |
+| Fallback observability excludes text, parameters and learner data | Pass | Resolver and web reporting tests |
+| Blank messages, malformed placeholders, stale hashes and dishonest review claims fail validation | Pass | Localization validator tests |
+| Kannada text uses NFC without removing ZWJ/ZWNJ | Pass | Normalization tests |
+| Mixed-language and brand text expose explicit language metadata | Pass | Design-system and shell tests |
+| Shell landmarks, navigation, skip focus and route-title focus are keyboard operable | Pass | Component tests and Chromium journey |
+| Skip focus does not destroy the active route fragment | Pass | Component and Chromium reload tests from `#learn` |
+| Both locale variants have no automated axe violations | Pass | Chromium axe scans for Kannada preview and English |
+| Shell reflows at 320/360/412/768/1280 CSS pixels | Pass | Chromium no-horizontal-overflow matrix |
+| Enlarged text reflows at 200% and 400% stress proxies | Pass | Chromium root-text-size matrix; not claimed as actual browser zoom |
+| Primary controls meet the project 44 CSS-pixel target | Pass | Chromium bounding-box assertions |
+| Kannada-specific bundled WOFF2 face loads for Kannada sample text | Pass | FontFaceSet and resource-entry assertions |
+| Reduced-motion behavior is honored | Pass | Chromium media-emulation assertion |
+| Locale selection is ephemeral and no browser credential store is used | Pass | unit storage spies and Chromium localStorage/IndexedDB assertions |
+| Audio/recording contracts perform no media, provider, network or persistence work | Pass | component tests and forbidden-API inspection |
+| OpenAPI and generated clients remain unchanged | Pass | `make openapi` |
+| No PR-005 or later product behavior was introduced | Pass | route, schema and repository inspection |
+
+The first enlarged-text browser pass exposed horizontal overflow at the 400%
+stress proxy. Shrinkable grid/flex tracks and explicit wrapping corrected the
+defect; the complete matrix passed after the fix. An adversarial integration
+review then identified and closed strict-production preview, fallback
+visibility, static metadata, skip-route, validator, font-test, lint-coverage
+and document-language gaps before the final gate.
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| `make verify` with pinned Node.js 24.18.1, pnpm 11.18.0 and Composer 2.10.2 | Pass on local PHP 8.4.17 with the expected 8.4.23 patch warning: Composer validation/audit, pnpm frozen install/audit, Pint, PHPStan, 36 SQLite tests/254 assertions, 93 PostgreSQL tests/1,217 assertions, locale validation, OpenAPI drift/policy, centralized ESLint, recursive TypeScript and 56 frontend/package unit tests |
+| `pnpm run locale:check` | Pass for two catalogues with one expected `pending-independent-review` governance warning |
+| `make openapi` | Pass: strict Redocly validation, repository API policy and reproducible generated-client drift check |
+| `make e2e` | Pass: five Chromium scenarios covering both-language axe scans, keyboard/focus/route behavior, ephemeral locale and storage boundaries, width/reflow/targets, Kannada font loading and reduced motion |
+| `make build` | Pass: Laravel production optimization/cache cleanup and strict Vite production build of 54 modules |
+| Local strict-build browser inspection | Pass at 320 CSS pixels: visible English fallback, `lang="en-IN"`, `data-requested-locale="kn-IN"` and `scrollWidth === clientWidth` |
+| Local Kannada-preview browser inspection | Pass at 1280 and 320 CSS pixels: Kannada glyphs rendered through the bundled font stack with no 320-pixel horizontal overflow |
+| Local Markdown/YAML/link and Git hygiene validation | Pass: 19 in-scope Markdown files, two YAML files, local targets/anchors, canonical-input preservation and diff whitespace |
+
+### Security, privacy and tenancy review
+
+- Authentication, membership-derived organization context, cross-tenant
+  policies and backend schema are unchanged from accepted PR-003.
+- The locale selector is ephemeral and writes no browser persistence.
+- Structured fallback events contain allowlisted catalogue context only; raw
+  UI text, interpolation values, learner data and provider details are absent.
+- Tenant-provided organization names are isolated with `<bdi lang="">` rather
+  than assigned an inferred language.
+- Pending or stale Kannada cannot enter an ordinary production build through
+  the default resolver policy. The explicit preview build remains visibly
+  marked and is not production-authorized.
+- Audio/recording components are inert and introduce no microphone permission,
+  audio retention, transcript, provider, network or storage path.
+- No real learner data, curriculum content, captured audio, secret or
+  unlicensed media was added.
+
+### Migrations and configuration reviewed
+
+- No backend migration, route, OpenAPI operation or generated contract changed.
+- `@fontsource-variable/noto-sans-kannada` 5.3.0 and
+  `@axe-core/playwright` 4.12.1 are exact dependencies in the pnpm lockfile.
+- `VITE_UI_TRANSLATION_PREVIEW=true` is an explicit non-production review-build
+  switch; ordinary production builds remain strict without it.
+- CI installs Chromium, runs `make verify`, executes the accessibility browser
+  journey and then builds the strict production bundle.
+- Root lint now covers web, design-system and localization sources.
+
+### Known limitations
+
+- Kannada wording remains an implementation draft pending independent,
+  accountable human language review.
+- Automated 200%/400% root-text enlargement is a reflow stress proxy, not
+  actual browser-zoom evidence.
+- Manual screen-reader, actual browser-zoom and Android TalkBack review remain
+  outstanding; axe alone is not an accessibility claim.
+- The accessible media contracts have no real playback/capture behavior to
+  evaluate yet.
+- Docker/Compose, fresh PostgreSQL 18.4 and remote GitHub Actions execution
+  remain unavailable locally. PostgreSQL tests used the local version 14
+  service, and local PHP is 8.4.17 rather than the declared 8.4.23 patch.
+- Curriculum-content language approval and publication are deliberately
+  outside UI-catalogue governance and remain blocked on DR-0003.
+
+### Exit decision
+
+PR-004 implementation and its local verification gate are complete and ready
+for Accountable Product Owner review. PR-004 is not accepted by this review.
+PR-005 must not begin until explicit checkpoint acceptance is recorded and
+DR-0003 is resolved through an accepted ADR with the required human evidence.

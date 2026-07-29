@@ -12,15 +12,22 @@
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "concurrently --kill-others --names api,web,worker --prefix-colors blue,magenta,yellow \"php apps/api/artisan serve --host=127.0.0.1 --port=8000\" \"pnpm --filter @global-english/web dev\" \"php apps/api/artisan queue:work --tries=1 --timeout=60\"",
     "e2e": "pnpm --filter @global-english/web e2e",
-    "lint": "pnpm --filter @global-english/web lint",
+    "lint": "eslint apps/web packages/design-system packages/localization scripts/validate-locales.mjs --max-warnings=0",
+    "locale:check": "node scripts/validate-locales.mjs",
     "openapi:check": "REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint global-english@v1 --lint-config=error && node scripts/validate-openapi-policy.mjs && node scripts/generate-contracts.mjs --check",
-    "test": "pnpm --filter @global-english/web test",
+    "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@hey-api/openapi-ts": "0.99.0",
     "@redocly/cli": "2.41.2",
     "concurrently": "10.0.4",
-    "js-yaml": "4.3.0"
+    "eslint": "10.8.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "globals": "17.8.0",
+    "js-yaml": "4.3.0",
+    "typescript-eslint": "8.65.0"
   }
 }

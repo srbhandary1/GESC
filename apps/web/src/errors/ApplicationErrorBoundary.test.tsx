@@ -1,7 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import {
+  DEFAULT_LOCALE,
+  resolveMessage,
+  type MessageKey,
+  type ResolutionPolicy,
+} from '@global-english/localization'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApplicationErrorBoundary } from './ApplicationErrorBoundary'
 import { createRootErrorOptions } from './rootErrorReporting'
 
@@ -12,7 +18,13 @@ function BrokenChild(): ReactNode {
 }
 
 afterEach(() => {
+  cleanup()
   vi.restoreAllMocks()
+})
+
+beforeEach(() => {
+  document.documentElement.lang = DEFAULT_LOCALE
+  delete document.documentElement.dataset.requestedLocale
 })
 
 describe('ApplicationErrorBoundary', () => {
@@ -51,15 +63,15 @@ describe('ApplicationErrorBoundary', () => {
     )
 
     const title = screen.getByRole('heading', {
-      name: 'Global English could not load',
+      name: message('error.title'),
     })
 
     await waitFor(() => expect(title).toHaveFocus())
     expect(screen.getByRole('main')).toHaveAccessibleName(
-      'Global English could not load',
+      message('error.title'),
     )
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Something unexpected happened.',
+      message('error.message'),
     )
     expect(screen.queryByText(sensitiveFixture)).not.toBeInTheDocument()
     expect(onCaught).toHaveBeenCalledWith({
@@ -76,9 +88,57 @@ describe('ApplicationErrorBoundary', () => {
     )
 
     await user.click(
-      screen.getByRole('button', { name: 'Reload application' }),
+      screen.getByRole('button', { name: message('error.reload') }),
     )
 
     expect(onReload).toHaveBeenCalledOnce()
   })
+
+  it('uses a visible English fallback when pending Kannada is not allowed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const consoleWarning = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined)
+
+    render(
+      <ApplicationErrorBoundary localizationPolicy="approved-only">
+        <BrokenChild />
+      </ApplicationErrorBoundary>,
+    )
+
+    expect(
+      await screen.findByRole('status'),
+    ).toHaveTextContent(
+      message('localization.fallback_notice', 'approved-only'),
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      message('error.message', 'approved-only'),
+    )
+    expect(
+      screen
+        .getByRole('button', {
+          name: message('error.reload', 'approved-only'),
+        })
+        .querySelector('[lang="en-IN"]'),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(consoleWarning).toHaveBeenCalled())
+    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
+    expect(document.documentElement).toHaveAttribute(
+      'data-requested-locale',
+      DEFAULT_LOCALE,
+    )
+    expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
+      sensitiveFixture,
+    )
+  })
 })
+
+function message(
+  key: MessageKey,
+  policy: ResolutionPolicy = 'development-preview',
+): string {
+  return resolveMessage(key, {
+    policy,
+    requestedLocale: DEFAULT_LOCALE,
+  }).text
+}

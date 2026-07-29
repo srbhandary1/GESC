@@ -59,6 +59,7 @@ verify: check-toolchain
 	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) install --frozen-lockfile
 	$(PNPM) audit --audit-level=high
+	$(PNPM) run locale:check
 	$(MAKE) openapi
 	$(PNPM) run lint
 	$(PNPM) run typecheck

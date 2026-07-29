@@ -110,3 +110,59 @@ later checkpoints, production deployment or any unpresented scope.
   does not infer a personal identity.
 - Qualified legal counsel must still validate production privacy and
   regulatory behavior as required by the master plan.
+
+<a id="app-0002"></a>
+
+## APP-0002 — PR-003 acceptance and PR-004 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Exact human statement | `Continue` |
+| Accepted implementation revision | `457bd0b5e9486cb207882af38a5a65479534d55e` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Context and interpretation
+
+Immediately before the statement, Codex had:
+
+1. reported PR-003 implementation complete at the accepted implementation
+   revision;
+2. stated that PR-003 remained pending explicit product-owner acceptance and
+   that PR-004 had not started;
+3. presented the exact verification results, security/privacy/tenancy
+   considerations and known limitations; and
+4. supplied the exact bounded PR-004 prompt, which requires explicit PR-003
+   acceptance before PR-004 begins.
+
+The human then instructed `Continue`. Under ADR-0001's contextual-approval
+rule, this accepts PR-003 with the presented evidence and limitations and
+authorizes execution of only PR-004 — Localization and accessible design
+system.
+
+### Accepted scope and authorization
+
+- PR-003 checkpoint acceptance at
+  `457bd0b5e9486cb207882af38a5a65479534d55e`.
+- The unavailable Docker/PostgreSQL 18.4, exact PHP 8.4.23 and remote-CI
+  checks remain recorded limitations, not passing results.
+- Authorization to execute only PR-004 within the canonical checkpoint scope.
+
+### Conditions and limitations
+
+- This approval does not authorize PR-005, production deployment or any
+  later-checkpoint feature.
+- It does not waive independent security, privacy, tenancy, accessibility,
+  Kannada-language or legal review required before production.
+- Production OTP, privileged MFA, Android native secure storage, operational
+  alerts and recovery workflows remain outside PR-004.
+- The source conversation provides no timestamp-of-day or personal approver
+  name; neither is inferred.

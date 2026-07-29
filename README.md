@@ -19,12 +19,23 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## Current state
 
-The repository is at **PR-003 — Tenancy and identity foundation**. The
-PostgreSQL-backed organization and identity schema, same-origin web session
-flow, Android PKCE foundation, tenant-scoped authorization, direct-learner
-assignment and institution-invite acceptance are implemented. PR-003 remains
-pending checkpoint review and acceptance; curriculum, learning journeys, AI,
-speech, payments, offline sync and reporting have not been introduced.
+The repository is at **PR-004 — Localization and accessible design system**.
+Governed `kn-IN`/`en-IN` interface catalogues, deterministic fallback,
+mixed-language semantics, self-hosted Kannada fonts, an accessible
+Home/Learn/Practice/Progress shell and inert audio/recording presentation
+contracts are implemented. PR-004 remains pending checkpoint review and
+acceptance; curriculum publication, learning journeys, AI, speech providers,
+payments, offline sync and reporting have not been introduced.
+
+The Kannada interface is an attributed draft pending independent human review.
+Ordinary production builds use the strict `approved-only` policy and visibly
+fall back to English. Local development, tests and an explicitly requested
+review build may render the draft with a visible preview notice. The review
+flag must not be enabled for a production deployment:
+
+```text
+VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build
+```
 
 ## Prerequisites
 
@@ -105,17 +116,23 @@ must not be rotated in place without the versioned migration described in
 Use `pnpm run contracts:generate` after an intentional OpenAPI change, then
 review the generated diff. `make ai-eval` intentionally exits with a checkpoint
 message until PR-011; it does not report placeholder success.
+`pnpm run locale:check` validates catalogue parity, normalization, hashes,
+source linkage and review-state claims.
 
 ## Repository layout
 
 - `apps/api/` — Laravel 13 modular monolith with operational, tenancy and
   identity foundation APIs;
-- `apps/web/` — React 19.2 TypeScript/Vite shell, error boundary and shared
-  authentication adapters;
+- `apps/web/` — React 19.2 TypeScript/Vite localized shell, accessible error
+  boundary and shared authentication adapters;
 - `docs/api/` — canonical OpenAPI 3.1.1 contract;
 - `docs/adr/` and `docs/APPROVALS.md` — accepted architecture decisions and
   durable human approval evidence;
 - `packages/contracts/` — generated TypeScript client, types and JSON schemas;
+- `packages/design-system/` — accessible bilingual presentation primitives,
+  tokens and self-hosted Kannada font integration;
+- `packages/localization/` — governed UI catalogues, deterministic resolver,
+  Unicode normalization and locale validation;
 - `infra/local/` — local-only provider stubs;
 - `compose.yaml` — PostgreSQL, Redis, SeaweedFS, Mailpit and WireMock services;
 - `.github/workflows/ci.yml` — bootstrap, verification and build workflow.
@@ -141,6 +158,7 @@ only. Do not reuse them outside an isolated development environment.
 - [Current status](docs/STATUS.md)
 - [Decision ledger](docs/DECISIONS.md)
 - [Quality review](docs/QUALITY_REVIEW.md)
+- [PR-004 accessibility verification scope](docs/PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md)
 - [ADR template](docs/adr/0000-template.md)
 
 Archived source plans are historical evidence only and are not authoritative.

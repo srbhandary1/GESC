@@ -1,37 +1,51 @@
 .application-error {
   width: min(100% - 2rem, 48rem);
   margin: 0 auto;
-  padding: 6rem 0;
+  padding: clamp(2rem, 10vw, 6rem) 0;
 }
 
 .application-error__title {
   margin: 0;
-  color: #14261d;
+  color: var(--ge-color-text);
   font-size: clamp(2rem, 7vw, 3.5rem);
-  line-height: 1.1;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .application-error__message {
   max-width: 36rem;
   margin: 1.5rem 0 0;
-  color: #39483f;
+  color: var(--ge-color-text-muted);
   font-size: 1.125rem;
-  line-height: 1.6;
+  line-height: var(--ge-line-height-ui);
+  overflow-wrap: anywhere;
+}
+
+.application-error__fallback {
+  max-width: 36rem;
+  margin: 1.5rem 0 0;
+  padding: var(--ge-space-3) var(--ge-space-4);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  background: #fff8dd;
+  color: var(--ge-color-text);
+  overflow-wrap: anywhere;
 }
 
 .application-error__reload {
-  min-height: 2.75rem;
+  min-block-size: var(--ge-target-minimum);
+  min-inline-size: var(--ge-target-minimum);
   margin-top: 2rem;
   padding: 0.75rem 1rem;
-  border: 2px solid #24563e;
-  border-radius: 0.5rem;
-  background: #24563e;
-  color: #fff;
+  border: 2px solid var(--ge-color-action);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .application-error__reload:hover {
-  background: #193d2c;
+  background: var(--ge-color-action-hover);
 }
