@@ -10,7 +10,7 @@ describe('application shell', () => {
       screen.getByRole('heading', { name: 'Global English' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(
-      'PR-001 application shell is ready.',
+      'PR-002 contracts and health foundation is ready.',
     )
   })
 })

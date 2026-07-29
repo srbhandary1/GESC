@@ -20,11 +20,17 @@ to the master plan.
 | D-0012 | Accepted | Stable commands that belong to later checkpoints fail with an explicit checkpoint message rather than reporting placeholder success. | Master plan §25.2; PR-001 implementation |
 | D-0013 | Accepted | PR-001 removes Laravel's sample identity model/migration and duplicate frontend scaffold so identity remains in PR-003 and the React application remains under `apps/web`. | Master plan §§12 and 26 |
 | D-0014 | Accepted | Application package metadata is `proprietary` so scaffolding does not accidentally grant an open-source licence; final distribution and third-party notice terms remain a product-owner/legal decision. | Master plan §11.1; PR-001 implementation and DR-0009 |
+| D-0015 | Accepted | The product owner's 29 July 2026 instruction to continue after the PR-001 limitations were presented accepts those recorded limitations and authorizes PR-002; it does not represent the unavailable checks as having passed. | Checkpoint workflow; product-owner instruction |
+| D-0016 | Accepted | `docs/api/openapi.yaml` is the OpenAPI 3.1.1 contract source. Redocly 2.41.2 validates it and Hey API 0.99.0 deterministically generates the committed TypeScript client, types and JSON schemas; exact pins and the `js-yaml` 4.3.0 security override remain until reviewed during an upgrade. | Master plan §§11, 25.2, 26 and 32; PR-002 implementation |
+| D-0017 | Accepted | Versioned API failures use a stable RFC 9457-style `application/problem+json` shape with generic safe details, localized `message_key`, instance and correlation identifiers; framework exception messages, input values and raw validation text are not public contract fields. | Master plan §§18.1, 18.2 and 26; PR-002 implementation |
+| D-0018 | Accepted | A syntactically valid caller UUID may continue as the request correlation ID; invalid values are replaced with a generated UUID. Structured request logs contain a fixed event plus an allowlist of method, named route, status and duration, with the correlation ID supplied by Laravel context. | Master plan §§18.2, 20.3 and 26; PR-002 implementation |
+| D-0019 | Accepted | Liveness is process-only. PR-002 readiness requires PostgreSQL and Redis, returns no dependency names or diagnostics publicly, and does not gate on object storage, mail/OTP or external providers until an implemented serving path depends on them. | Master plan §§11, 20.3 and 26; PR-002 implementation |
+| D-0020 | Accepted | The web application uses a generic accessible React error boundary outside `StrictMode`; root and boundary reporting expose only allowlisted failure categories, and the typed health wrapper replaces server problem details with a generic client error. | Master plan §§18.1, 19 and 26; PR-002 implementation |
 
 ## Decision requests before affected checkpoints
 
-These items do not block PR-000. They must be resolved before the indicated
-implementation becomes authoritative.
+These items were first recorded in PR-000. They must be resolved before the
+indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|

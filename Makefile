@@ -21,7 +21,7 @@ help:
 		'make test        Run deterministic backend and frontend tests' \
 		'make e2e         Run the web bootstrap browser test' \
 		'make ai-eval     Run AI evaluation when introduced by PR-011' \
-		'make openapi     Validate OpenAPI when introduced by PR-002' \
+		'make openapi     Validate OpenAPI and check generated-client drift' \
 		'make migrate     Apply local Laravel migrations' \
 		'make seed        Load safe local Laravel seed data' \
 		'make build       Build the API configuration and React production bundle'
@@ -49,11 +49,12 @@ dev: services-up
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-publish
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) audit --locked
-	$(PHP) $(API_DIR)/vendor/bin/pint --test
+	cd $(API_DIR) && $(PHP) vendor/bin/pint --test
 	$(PHP) $(API_DIR)/vendor/bin/phpstan analyse --configuration=$(API_DIR)/phpstan.neon --memory-limit=1G
 	cd $(API_DIR) && $(PHP) artisan test
 	$(PNPM) install --frozen-lockfile
-	$(PNPM) audit --prod --audit-level=high
+	$(PNPM) audit --audit-level=high
+	$(MAKE) openapi
 	$(PNPM) run lint
 	$(PNPM) run typecheck
 	$(PNPM) run test
@@ -70,8 +71,7 @@ ai-eval:
 	@exit 2
 
 openapi:
-	@printf '%s\n' 'OpenAPI validation is not implemented before PR-002.' >&2
-	@exit 2
+	$(PNPM) run openapi:check
 
 migrate:
 	cd $(API_DIR) && $(PHP) artisan migrate
@@ -80,6 +80,13 @@ seed:
 	cd $(API_DIR) && $(PHP) artisan db:seed
 
 build:
-	@cd $(API_DIR) && trap '$(PHP) artisan optimize:clear >/dev/null 2>&1 || true' EXIT; \
-		APP_ENV=production APP_DEBUG=false $(PHP) artisan optimize
+	@cd $(API_DIR) || exit 1; \
+		build_status=0; \
+		APP_ENV=production APP_DEBUG=false $(PHP) artisan optimize || build_status=$$?; \
+		cleanup_status=0; \
+		APP_ENV=production APP_DEBUG=false $(PHP) artisan config:clear || cleanup_status=$$?; \
+		if [ $$cleanup_status -eq 0 ]; then \
+			APP_ENV=production APP_DEBUG=false CACHE_STORE=array $(PHP) artisan optimize:clear || cleanup_status=$$?; \
+		fi; \
+		test $$build_status -eq 0 && test $$cleanup_status -eq 0
 	$(PNPM) --filter $(WEB_FILTER) build

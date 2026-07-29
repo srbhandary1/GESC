@@ -45,7 +45,7 @@ jobs:
       - name: Bootstrap
         run: make bootstrap
 
-      - name: Verify
+      - name: Verify, including contract validation and generated-client drift
         run: make verify
 
       - name: Build

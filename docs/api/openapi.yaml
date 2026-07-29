@@ -1,0 +1,196 @@
+openapi: 3.1.1
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: Global English API
+  version: 0.1.0
+  description: |
+    Canonical API contract for the Global English platform. PR-002 exposes
+    only operational health contracts; business endpoints begin in later
+    checkpoints.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /api/v1
+    description: Same-origin API
+tags:
+  - name: Health
+    description: Public liveness and dependency-readiness checks.
+paths:
+  /health/live:
+    get:
+      operationId: getLiveness
+      summary: Check whether the API process can respond
+      tags:
+        - Health
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: The API process is live.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /health/ready:
+    get:
+      operationId: getReadiness
+      summary: Check whether required platform dependencies are available
+      tags:
+        - Health
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: All required platform dependencies are available.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          description: At least one required platform dependency is unavailable.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Retry-After:
+              description: Suggested minimum delay before another readiness check.
+              schema:
+                type: integer
+                minimum: 1
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        default:
+          $ref: "#/components/responses/Problem"
+components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: |
+        Optional caller-provided UUID used to correlate one request. Invalid
+        values are ignored and replaced with a server-generated UUID.
+      schema:
+        type: string
+        format: uuid
+  headers:
+    CorrelationId:
+      required: true
+      description: UUID that correlates the response with privacy-safe logs.
+      schema:
+        type: string
+        format: uuid
+    NoStore:
+      required: true
+      description: |
+        Includes the `no-store` cache-control directive so intermediaries do
+        not cache operational health state. Other defensive directives may
+        also be present.
+      schema:
+        type: string
+        pattern: '(^|,\s*)no-store(\s*,|$)'
+  responses:
+    Problem:
+      description: The request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+  schemas:
+    LivenessResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+        - checked_at
+        - correlation_id
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+          const: global-english-api
+        checked_at:
+          type: string
+          format: date-time
+        correlation_id:
+          type: string
+          format: uuid
+    ReadinessResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+        - checked_at
+        - correlation_id
+      properties:
+        status:
+          type: string
+          const: ready
+        service:
+          type: string
+          const: global-english-api
+        checked_at:
+          type: string
+          format: date-time
+        correlation_id:
+          type: string
+          format: uuid
+    ProblemDetails:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+        - message_key
+        - correlation_id
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        message_key:
+          type: string
+          pattern: "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        correlation_id:
+          type: string
+          format: uuid

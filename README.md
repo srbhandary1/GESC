@@ -19,10 +19,11 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## Current state
 
-The repository is at **PR-001 — Monorepo and local platform bootstrap**. The
-Laravel API shell, React web shell, local dependency stack, root commands and CI
-are implemented. PR-001 is awaiting checkpoint acceptance; no business feature,
-identity, tenancy or API contract has been introduced.
+The repository is at **PR-002 — Contracts, health and observability**. The
+versioned operational API contract, generated TypeScript client, health
+endpoints, correlation/logging foundation and API/web error boundaries are
+implemented. PR-002 is awaiting checkpoint acceptance; no business feature,
+identity, tenancy or authentication has been introduced.
 
 ## Prerequisites
 
@@ -69,18 +70,21 @@ port 8333 and the OTP stub uses port 8089 by default.
 | `make test` | Run all deterministic automated tests |
 | `make e2e` | Run critical browser journeys |
 | `make ai-eval` | Run the locked AI and speech evaluation suite |
-| `make openapi` | Validate OpenAPI and regenerate client types |
+| `make openapi` | Validate OpenAPI policy and check generated-client drift |
 | `make migrate` | Apply local migrations |
 | `make seed` | Load safe development seed data |
 | `make build` | Create production builds |
 
-`make openapi` and `make ai-eval` intentionally exit with a checkpoint message
-until PR-002 and PR-011 respectively. They do not report placeholder success.
+Use `pnpm run contracts:generate` after an intentional OpenAPI change, then
+review the generated diff. `make ai-eval` intentionally exits with a checkpoint
+message until PR-011; it does not report placeholder success.
 
 ## Repository layout
 
-- `apps/api/` — Laravel 13 modular-monolith shell and framework health endpoint;
-- `apps/web/` — React 19.2 TypeScript/Vite shell;
+- `apps/api/` — Laravel 13 modular-monolith shell and versioned health API;
+- `apps/web/` — React 19.2 TypeScript/Vite shell and application error boundary;
+- `docs/api/` — canonical OpenAPI 3.1.1 contract;
+- `packages/contracts/` — generated TypeScript client, types and JSON schemas;
 - `infra/local/` — local-only provider stubs;
 - `compose.yaml` — PostgreSQL, Redis, SeaweedFS, Mailpit and WireMock services;
 - `.github/workflows/ci.yml` — bootstrap, verification and build workflow.

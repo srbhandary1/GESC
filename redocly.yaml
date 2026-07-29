@@ -1,0 +1,14 @@
+apis:
+  global-english@v1:
+    root: ./docs/api/openapi.yaml
+
+extends:
+  - recommended-strict
+
+rules:
+  # The only PR-002 operations are public health checks with no meaningful
+  # client-error response. scripts/validate-openapi-policy.mjs prevents this
+  # exception from applying to later feature operations.
+  operation-4xx-response: off
+  operation-4xx-problem-details-rfc7807: error
+  spec-strict-refs: error

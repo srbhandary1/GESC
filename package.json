@@ -9,13 +9,18 @@
   },
   "scripts": {
     "build": "pnpm --filter @global-english/web build",
+    "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "concurrently --kill-others --names api,web,worker --prefix-colors blue,magenta,yellow \"php apps/api/artisan serve --host=127.0.0.1 --port=8000\" \"pnpm --filter @global-english/web dev\" \"php apps/api/artisan queue:work --tries=1 --timeout=60\"",
     "e2e": "pnpm --filter @global-english/web e2e",
     "lint": "pnpm --filter @global-english/web lint",
+    "openapi:check": "REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint global-english@v1 --lint-config=error && node scripts/validate-openapi-policy.mjs && node scripts/generate-contracts.mjs --check",
     "test": "pnpm --filter @global-english/web test",
-    "typecheck": "pnpm --filter @global-english/web typecheck"
+    "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
-    "concurrently": "10.0.4"
+    "@hey-api/openapi-ts": "0.99.0",
+    "@redocly/cli": "2.41.2",
+    "concurrently": "10.0.4",
+    "js-yaml": "4.3.0"
   }
 }

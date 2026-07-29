@@ -131,3 +131,118 @@ proceed with project implementation. PR-001 is authorized to begin.
 PR-001 implementation is complete and ready for review. Acceptance remains
 pending the unresolved environment checks above or an explicit reviewer
 decision accepting them. PR-002 is not yet authorized.
+
+PR-001 was subsequently accepted on 29 July 2026 when the product owner
+instructed Codex to continue after these limitations were presented. The
+instruction authorized PR-002 without representing the unavailable checks as
+having passed.
+
+---
+
+## PR-002 — Contracts, health and observability
+
+### Scope reviewed
+
+- OpenAPI 3.1.1 source and generated TypeScript contract package;
+- contract linting, policy enforcement and deterministic drift detection;
+- correlation IDs, problem details and privacy-safe structured logging;
+- process liveness and PostgreSQL/Redis dependency readiness;
+- API exception and React render error boundaries;
+- root-command and CI integration;
+- checkpoint boundaries, secret hygiene and future tenancy constraints.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| OpenAPI 3.1.1 contract is structurally valid | Pass | Redocly strict lint of `docs/api/openapi.yaml` |
+| Client, types and OpenAPI 3.1 JSON schemas are generated and exported | Pass | `packages/contracts/`, contract typecheck and web consumer test |
+| Generated output is deterministic and drift is rejected | Pass | Temporary generated-file sentinel caused the expected non-zero drift result; restored output passed |
+| The health-only missing-4xx exception cannot silently apply to feature operations | Pass | `scripts/validate-openapi-policy.mjs` in `make openapi` |
+| Liveness does not resolve dependency probes | Pass | Backend feature test |
+| Readiness checks all configured required dependencies | Pass | PostgreSQL and Redis probe wiring |
+| An unavailable required dependency returns a safe `503` | Pass | Injected throwing probe test; diagnostic secret absent from body and logs |
+| API errors use the stable problem-details contract in debug and non-JSON requests | Pass | 404, 405, 422 and 500 feature tests |
+| Correlation UUIDs propagate from validated input or are generated | Pass | Response-header/body and sequential-request tests |
+| Request logging uses fixed events and an allowlist | Pass | Log-spy tests and a live liveness request emitted one JSON event with correlation context |
+| Operational responses include a no-store directive | Pass | Contract plus liveness, readiness and problem tests |
+| React has an accessible generic render error boundary | Pass | Focus, alert, reload, root-callback, non-disclosure and normal-render tests |
+| Web uses the generated contract package | Pass | Typed liveness wrapper and mocked-fetch tests |
+| CI executes contract validation and drift checks | Pass, static | `make verify` integration and CI workflow |
+| No PR-003 or later feature was introduced | Pass | Route, model, migration and repository inspection |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| `make openapi` | Pass: strict OpenAPI lint, health-only 4xx policy and generated-client reproducibility |
+| Deliberate generated-client drift run | Expected failure: the temporary sentinel was detected; removal restored a passing check |
+| `make verify` with isolated Composer 2.10.2 | Pass on local PHP 8.4.17 with the expected 8.4.23 warning: Composer validation/audit, Pint, PHPStan, 12 backend tests/88 assertions, frozen pnpm install, full pnpm audit, OpenAPI checks, ESLint, contracts/web TypeScript and 8 frontend tests |
+| `make build` | Pass: Laravel configuration/events/routes/views cached and fully cleared; Vite built 20 modules |
+| `make e2e` | Pass after installing the pinned Playwright Chromium: one Chromium shell/error-boundary smoke test |
+| Focused unavailable-dependency backend test | Pass: required-probe exception produced a generic `503` without the injected secret |
+| Live liveness request on the Laravel development server | Pass: response/header correlation matched and the JSON event omitted the secret query value |
+| Live readiness request with PostgreSQL forced to an unavailable loopback port | Pass: generic `503`, `Retry-After`, no-store and matching correlation; structured warnings omitted connection diagnostics |
+| Full pnpm audit at high severity | Pass: no known vulnerabilities after the `js-yaml` 4.3.0 override |
+| Local Markdown, YAML/JSON and repository hygiene validation | Pass; repository-local links, contract YAML, package JSON, whitespace and generated-artifact ignore rules checked |
+
+The first repository-wide verification attempt stopped before code checks
+because the host default was Composer 2.9.3. The exact Composer 2.10.2 PHAR was
+downloaded from the official distribution, its published SHA-256 checksum
+passed, and the same verification command then completed. The first final
+Playwright attempt similarly stopped because the pinned browser was absent; the
+pinned Chromium build was installed and the rerun passed.
+
+### Security, privacy and tenancy review
+
+- Incoming correlation values are accepted only when they are UUIDs; otherwise
+  the server creates a UUID. Correlation state is placed in Laravel context for
+  structured logs.
+- API response and log tests use secret-like learner/transcript and database
+  diagnostic fixtures and prove those values are not returned or logged.
+- Public readiness responses do not name failed dependencies. Internal logs
+  contain only the stable dependency label, failure type and exception class.
+- Request events omit raw paths, query values, bodies, headers, IP addresses and
+  user-agent strings.
+- React root and boundary handlers report only allowlisted failure categories
+  and render no raw error text or stack.
+- No learner data, credentials, provider secret, authentication flow,
+  tenant-owned resource, migration or cross-tenant behavior was added.
+
+### Configuration and dependency review
+
+- API logging defaults to JSON on stderr with stack traces disabled.
+- Redis readiness uses a dedicated connection with 0.5-second connect/read
+  limits and no retries.
+- Production-build verification clears configuration first, then clears all
+  optimization artefacts with the non-network `array` cache store.
+- Redocly 2.41.2 and Hey API 0.99.0 are exact development pins. Their selected
+  plugins generate a self-contained client, TypeScript types and JSON schemas.
+- `js-yaml` is pinned and overridden to 4.3.0 to avoid the high-severity
+  quadratic-processing advisory in the generator's transitive parser.
+- The existing API Pint configuration is now invoked from `apps/api`; applying
+  its existing rule mechanically added `declare(strict_types=1)` to the
+  remaining pre-existing API PHP files.
+- No migration was added.
+
+### Known limitations
+
+- Docker/Compose is unavailable, so healthy PostgreSQL/Redis readiness and
+  container failure latency were not measured. A forced loopback connection
+  refusal and injectable failures prove `503` response semantics; PostgreSQL
+  still relies on the selected driver/platform connection timeout.
+- The local PHP executable is 8.4.17, not the declared 8.4.23 patch. CI declares
+  8.4.23, but the remote workflow has not run.
+- Object storage, mail/OTP and external providers are not readiness dependencies
+  before serving paths rely on them.
+- The React error boundary cannot catch event-handler, arbitrary asynchronous,
+  boundary-self or pre-mount static-import failures.
+- Metrics, distributed tracing and an external log backend remain deployment
+  choices for later operational checkpoints.
+- Final distribution terms and third-party notices remain DR-0009.
+
+### Exit decision
+
+PR-002 implementation is complete and ready for product-owner review. PR-003
+must not begin until PR-002 is accepted and DR-0001, DR-0002 and DR-0008 are
+resolved with approval evidence.
