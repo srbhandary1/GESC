@@ -41,6 +41,10 @@ final class FoundationSeederIntegrityTest extends TestCase
                 'mission_items',
                 'curriculum_graph_revisions',
                 'curriculum_graph_heads',
+                'ai_personas',
+                'persona_versions',
+                'roleplay_scenarios',
+                'scenario_versions',
             ])->mapWithKeys(
                 static fn (string $table): array => [
                     $table => DB::table($table)->count(),
@@ -96,6 +100,10 @@ final class FoundationSeederIntegrityTest extends TestCase
         );
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('curriculum_publications')->count());
+        $this->assertSame(1, DB::table('ai_personas')->count());
+        $this->assertSame(1, DB::table('persona_versions')->count());
+        $this->assertSame(1, DB::table('roleplay_scenarios')->count());
+        $this->assertSame(1, DB::table('scenario_versions')->count());
     }
 
     public function test_conflicting_synthetic_program_key_fails_closed_and_rolls_back(): void

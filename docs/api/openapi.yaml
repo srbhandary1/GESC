@@ -2,13 +2,13 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.5.0
+  version: 0.6.0
   description: |
-    Canonical API contract for the Global English platform. PR-007 adds an
-    exact-pinned offline mission bundle and one atomic idempotent reconnect
-    command over the deterministic PR-006 learner slice. Learner recording
-    bytes remain local and volatile; the API accepts only a bounded,
-    non-authoritative local-capture receipt that cannot award spoken mastery.
+    Canonical API contract for the Global English platform. PR-008 adds a
+    local/testing-only deterministic fake-provider Friend turn over the
+    accepted PR-007 baseline. No real provider or audio is accepted. Prototype
+    utterance/reply text is request-memory-only; persistent conversation rows
+    contain digests and safe state/usage metadata.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -28,6 +28,10 @@ tags:
     description: |
       Tenant-scoped onboarding, exact-pinned mission delivery, deterministic
       formative attempts, mastery projection and review scheduling.
+  - name: Conversation
+    description: |
+      Tenant-scoped PR-008 Friend prototype using deterministic local/testing
+      fake STT, conversation-model and text-only TTS adapters.
 paths:
   /health/live:
     get:
@@ -850,6 +854,167 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /conversation-sessions:
+    post:
+      operationId: startConversationSession
+      summary: Start one deterministic fake-provider Friend session
+      description: |
+        Resolves only the current organization's synthetic development persona
+        and scenario, snapshots their immutable versions and starts a
+        learner-owned Friend session. The route fails closed unless the
+        deterministic fake driver is enabled in a local or testing environment.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartConversationSessionRequest"
+      responses:
+        "200":
+          description: Exact command replay returned the original session.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "201":
+          description: A deterministic fake-provider Friend session was started.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/turns:
+    post:
+      operationId: createConversationTurn
+      summary: Run one deterministic fake-provider Friend turn
+      description: |
+        Processes a bounded typed prototype utterance in request memory through
+        project-owned fake STT, conversation-model and text-only TTS ports.
+        Persistent rows contain SHA-256 digests and safe state/usage metadata,
+        never utterance/reply content or audio. Exact replay returns the same
+        deterministic result without adding records.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConversationTurnRequest"
+      responses:
+        "200":
+          description: Exact command replay returned the original deterministic result.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationTurn"
+        "201":
+          description: The deterministic fake-provider turn reached a terminal state.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationTurn"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-turns/{conversation_turn_id}/events:
+    get:
+      operationId: streamConversationTurnEvents
+      summary: Stream the safe deterministic state history for one Friend turn
+      description: |
+        Returns a bounded SSE stream of already-recorded safe state metadata.
+        The stream contains no utterance, transcript, assistant reply, audio,
+        provider payload, prompt or personal display identifier.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/ConversationTurnId"
+      responses:
+        "200":
+          description: Bounded ordered conversation status events.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/ConversationTurnEvent"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /progress:
     get:
       operationId: getLearnerProgress
@@ -1016,6 +1181,20 @@ components:
       in: path
       required: true
       description: Project-owned public session ULID, never the Laravel session key.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    ConversationSessionId:
+      name: conversation_session_id
+      in: path
+      required: true
+      description: Learner-owned deterministic Friend-session ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    ConversationTurnId:
+      name: conversation_turn_id
+      in: path
+      required: true
+      description: Learner-owned deterministic Friend-turn ULID.
       schema:
         $ref: "#/components/schemas/Ulid"
     MissionId:
@@ -2063,6 +2242,267 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LearnerProgressObjective"
+    StartConversationSessionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - persona_key
+        - scenario_key
+        - coaching_mode
+      properties:
+        persona_key:
+          type: string
+          const: patient-friend-prototype
+        scenario_key:
+          type: string
+          const: everyday-friend-prototype
+        coaching_mode:
+          type: string
+          const: gentle
+    ConversationPersonaSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - version_id
+        - version
+        - display_name
+        - disclosure
+        - definition_hash
+        - review_status
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        key:
+          type: string
+          const: patient-friend-prototype
+        version_id:
+          $ref: "#/components/schemas/Ulid"
+        version:
+          type: integer
+          minimum: 1
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        disclosure:
+          type: string
+          minLength: 1
+          maxLength: 240
+        definition_hash:
+          $ref: "#/components/schemas/Sha256"
+        review_status:
+          type: string
+          const: synthetic_unreviewed
+    ConversationScenarioSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - version_id
+        - version
+        - topic_code
+        - definition_hash
+        - review_status
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        key:
+          type: string
+          const: everyday-friend-prototype
+        version_id:
+          $ref: "#/components/schemas/Ulid"
+        version:
+          type: integer
+          minimum: 1
+        topic_code:
+          type: string
+          const: everyday-conversation
+        definition_hash:
+          $ref: "#/components/schemas/Sha256"
+        review_status:
+          type: string
+          const: synthetic_unreviewed
+    ConversationSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - mode
+        - coaching_mode
+        - persona
+        - scenario
+        - replayed
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          const: active
+        mode:
+          type: string
+          const: friend
+        coaching_mode:
+          type: string
+          const: gentle
+        persona:
+          $ref: "#/components/schemas/ConversationPersonaSnapshot"
+        scenario:
+          $ref: "#/components/schemas/ConversationScenarioSnapshot"
+        replayed:
+          type: boolean
+    CreateConversationTurnRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - prototype_utterance
+      properties:
+        prototype_utterance:
+          type: string
+          minLength: 1
+          maxLength: 500
+    ConversationSpeechResult:
+      type: object
+      additionalProperties: false
+      required:
+        - playback_available
+        - rendering_mode
+      properties:
+        playback_available:
+          type: boolean
+          const: false
+        rendering_mode:
+          type: string
+          const: deterministic-fake-text-only
+    ConversationUsageSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - provider_attempts
+        - total_latency_ms
+        - estimated_cost_microunits
+      properties:
+        provider_attempts:
+          type: integer
+          minimum: 1
+        total_latency_ms:
+          type: integer
+          minimum: 0
+        estimated_cost_microunits:
+          type: integer
+          const: 0
+    ConversationTurn:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - conversation_session_id
+        - turn_number
+        - status
+        - transcript
+        - understood_intent
+        - assistant_reply
+        - speech
+        - usage
+        - events_url
+        - replayed
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        conversation_session_id:
+          $ref: "#/components/schemas/Ulid"
+        turn_number:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum:
+            - completed
+            - failed
+        transcript:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 500
+        understood_intent:
+          type:
+            - string
+            - "null"
+          maxLength: 100
+        assistant_reply:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+        speech:
+          oneOf:
+            - $ref: "#/components/schemas/ConversationSpeechResult"
+            - type: "null"
+        usage:
+          $ref: "#/components/schemas/ConversationUsageSummary"
+        events_url:
+          type: string
+          pattern: "^/api/v1/conversation-turns/[0-9A-HJKMNP-TV-Z]{26}/events$"
+        replayed:
+          type: boolean
+    ConversationTurnEvent:
+      type: object
+      description: |
+        The JSON payload of each `conversation-status` SSE frame. The
+        transport may emit a bounded ordered sequence of these payloads.
+      additionalProperties: false
+      required:
+        - sequence
+        - state
+        - event_code
+        - provider_stage
+        - provider_attempt
+        - recorded_at
+      properties:
+        sequence:
+          type: integer
+          minimum: 1
+        state:
+          type: string
+          enum:
+            - accepted
+            - transcribing
+            - generating_reply
+            - synthesizing
+            - completed
+            - failed
+        event_code:
+          type: string
+          enum:
+            - turn.accepted
+            - turn.transcribing
+            - turn.generating_reply
+            - turn.synthesizing
+            - turn.provider_retrying
+            - turn.completed
+            - turn.failed
+        provider_stage:
+          type:
+            - string
+            - "null"
+          enum:
+            - stt
+            - model
+            - tts
+            - null
+        provider_attempt:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        recorded_at:
+          type: string
+          format: date-time
     LivenessResponse:
       type: object
       additionalProperties: false

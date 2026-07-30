@@ -997,12 +997,12 @@ The accepted boundary and release gates are maintained in
 
 | Locale | Revision | Catalogue SHA-256 | Release status |
 |---|---|---|---|
-| `en-IN` | `ui-en-IN-2026-07-30.6` | `8aa613b07deafecc5a0872275ecf2142554a53056a88ef7530b7b181ce93d1ee` | Source |
-| `kn-IN` | `ui-kn-IN-2026-07-30.6` | `66e011e97c3baa7b5f188c0849e23cf6c9a1d929510d17f1bcfd62869f0812b8` | Pending independent review |
-| `ml-IN` | `ui-ml-IN-2026-07-30.2` | `494847c01becfc22cf53fc307a90a03ca71358bbdd9e91558f876bdc7d05c0cc` | Pending independent review |
-| `ta-IN` | `ui-ta-IN-2026-07-30.2` | `1b1cbbef782b2e64887e8a3500f0daf617ba767aa53cd508825e73648136e338` | Pending independent review |
-| `te-IN` | `ui-te-IN-2026-07-30.2` | `14f437c3fc607f411fed590814dd4742052e17db90f27b84a697a774e9823957` | Pending independent review |
-| `hi-IN` | `ui-hi-IN-2026-07-30.2` | `a299d6ff086e72709c8868ee06d6b8a6e58eee0834b1cd530688991a3bb6b2f8` | Pending independent review |
+| `en-IN` | `ui-en-IN-2026-07-30.7` | `894b0f5e95ecb9347f1eeb55a8dfed1f80991996ebb8a1d3f843030cd1b8d5e9` | Source |
+| `kn-IN` | `ui-kn-IN-2026-07-30.7` | `9dac4931d05f0b46903d40592179f13005753dde857caa4279e8e7942492e19a` | Pending independent review |
+| `ml-IN` | `ui-ml-IN-2026-07-30.3` | `c9a73cd2e78a53ca11df9d4f7e982143e3ffa9ddd7e54a0f64352d4ad98a66ac` | Pending independent review |
+| `ta-IN` | `ui-ta-IN-2026-07-30.3` | `38322af7777cac4aea5bb726a50846a25f424387f53304b1c5d3bc077881114a` | Pending independent review |
+| `te-IN` | `ui-te-IN-2026-07-30.3` | `9b678d26e3c9c7084750be702ace49a46c3c213f882bfe1d7de42eca8a939dc8` | Pending independent review |
+| `hi-IN` | `ui-hi-IN-2026-07-30.3` | `8f5818d1f9781c4522b4a2a2a48e5b89eac21616dc5d38c4cdcc7cdfe2430a65` | Pending independent review |
 
 ### Commands and results
 
@@ -1154,3 +1154,106 @@ Accountable Product Owner accepts the exact implementation commit
 `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` with its recorded limitations
 under APP-0009. That acceptance does not authorize PR-008, production or any
 later implementation checkpoint.
+
+---
+
+## PR-008 — Conversation domain with deterministic fake providers
+
+### Scope reviewed
+
+- APP-0010 authority and the accepted PR-007 baseline;
+- organization-scoped personas, scenarios, learner sessions and turns;
+- project-owned STT, conversation-model and TTS ports;
+- local/testing-only deterministic fake adapters and production fail-closed
+  bindings;
+- deterministic state transitions, bounded retry, idempotency, safe SSE
+  status history and zero-cost usage records;
+- request-memory-only typed prototype content and the no-audio boundary;
+- authenticated learner Practice UI, disclosure and six-locale draft
+  catalogue changes; and
+- OpenAPI, generated clients, PostgreSQL protection and regression coverage.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Persona and scenario definitions are versioned, synthetic and organization scoped | Pass | migration, foundation seed and PostgreSQL seed/integrity tests |
+| Sessions and turns bind the authenticated learner's exact active membership and organization | Pass | `LearnerAuthority`, composite foreign keys and same-/cross-tenant tests |
+| Provider SDK types do not enter the domain | Pass | project-owned provider interfaces, DTOs and adapter bindings |
+| Only an explicit fake driver in `local`/`testing` can resolve fake adapters | Pass | environment gate, disabled adapters and feature tests |
+| Successful and retry/failure state transitions are deterministic | Pass | state-machine and fail-once/exhausted PostgreSQL tests |
+| Exact command replay is stable and changed replay conflicts | Pass | session/turn idempotency tests and row-count assertions |
+| Persistent records exclude utterance, transcript, reply and audio content | Pass | schema allowlists plus database, audit and outbox content scans |
+| SSE contains only ordered safe state metadata | Pass | media-type, no-store, ordering and ownership tests |
+| Usage records contain bounded latency/attempt metadata and zero fake cost | Pass | cost-ledger constraints and integration assertions |
+| Conversation cannot modify attempts, mastery, progression or review schedules | Pass | before/after learning-table assertions |
+| Web UI discloses fake AI, request-memory-only text and text-only fake TTS | Pass | React tests and Chromium critical journey |
+| No browser audio/upload/provider-network path exists | Pass | source inspection and intercepted Chromium request assertions |
+| API and generated client contracts match | Pass | strict Redocly, policy and generated-drift checks |
+| PR-009, real providers and production remain absent | Pass | dependency, route, configuration and scope inspection |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| Composer validate/audit | Pass; no locked dependency advisory |
+| pnpm frozen install/audit | Pass; lockfile current and no known vulnerability |
+| Pint and PHPStan | Pass; zero formatting or static-analysis errors |
+| SQLite-safe backend suite | Pass: 42 tests, 277 assertions |
+| PostgreSQL integration suite | Pass: 169 tests, 1,981 assertions |
+| `pnpm run locale:check` | Pass: six catalogues and five expected pending-review warnings |
+| `pnpm run openapi:check` | Pass: OpenAPI 3.1.1 version 0.6.0 and generated-client parity |
+| ESLint and recursive TypeScript | Pass |
+| Workspace unit tests | Pass: localization 31, design system 9 and web 57 |
+| `pnpm run e2e` | Pass: 9 Chromium journeys, including the fake-provider conversation and axe scan |
+| Laravel optimize/cleanup and web production build | Pass: 74 Vite modules transformed |
+| `make verify` / `make build` | Wrapper blocked because GNU Make is absent; every constituent command above passed |
+
+`make ai-eval` remains not applicable: PR-008 uses fixed deterministic fake
+responses and introduces no real model, prompt selection or provider
+orchestration.
+
+### Security, privacy and tenancy review
+
+- Every mutable conversation row carries `organization_id` and exact learner
+  membership ownership. Composite constraints and application authorization
+  fail closed for same-organization other learners and other tenants.
+- Bounded typed text is processed only in request memory. The database stores
+  SHA-256 digests and safe metadata, while audit/outbox tests prove the
+  prototype utterance and fake reply do not escape.
+- Fake TTS returns metadata only. No recording permission, audio bytes,
+  multipart/base64 input, object-storage key, playback URL or retained audio
+  is introduced.
+- Provider identity, model version, state, attempt, latency and cost are
+  server-owned. The fake ledger cost is constrained to zero.
+- Production and non-local environments bind disabled adapters. There is no
+  provider credential or external provider dependency.
+- The conversation slice is advisory and has no write path to deterministic
+  learning authority.
+
+### Known limitations and release gates
+
+- The fake STT echoes bounded typed text; it does not recognize speech. Fake
+  TTS creates no audio, and the fake model returns one fixed synthetic reply.
+- The event route returns a bounded history and closes. It is not a live
+  multi-process broker or reconnectable production stream.
+- Conversation text retention, real provider processing, consent, secure
+  upload, transcript recovery and deletion remain unresolved under DR-0005
+  and are required before PR-009 can be authorized.
+- The seeded persona/scenario and all five translated UI catalogues are
+  synthetic implementation drafts, not production-approved content.
+- The Chromium journey uses contract stubs for the web boundary; backend
+  tenancy, persistence, replay and state behavior are separately proven
+  against PostgreSQL.
+- GNU Make is absent, so wrapper commands were reproduced from the Makefile.
+  GitHub Actions, real devices, screen readers and independent production
+  security/privacy/tenancy/accessibility/language/release reviews have not run.
+- No public-facing server was started. Playwright used a temporary preview
+  listener on `127.0.0.1:4173` and stopped it after each run.
+
+### Exit decision
+
+PR-008 is implemented and repository-verified within APP-0010 and is ready
+for exact-commit Accountable Product Owner review. It is not accepted yet.
+PR-009, real provider calls, audio upload/persistence and production remain
+unauthorized.

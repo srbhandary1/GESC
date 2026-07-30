@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-007 — Offline bundle and idempotent outbox |
-| Status | Implemented, repository-verified and accepted at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009 |
+| Checkpoint | PR-008 — Conversation domain with deterministic fake providers |
+| Status | Implemented and repository-verified under APP-0010; exact-commit acceptance pending |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 30 July 2026 |
-| Git branch | `codex/pr-006-deterministic-daily-speaking-slice` |
-| Product code | Accepted PR-007 deterministic offline bundle, protected personal-device store and atomic reconnect completion on the accepted PR-006 baseline; no production content or later checkpoint approved |
-| Next checkpoint | None authorized; PR-008 remains blocked pending separate explicit authorization |
+| Git branch | `codex/pr-008-conversation-fake-providers` |
+| Product code | Accepted PR-007 baseline plus the implemented PR-008 deterministic fake-provider conversation slice; no real provider, audio persistence, production or later checkpoint approved |
+| Next checkpoint | PR-009 remains unauthorized; PR-008 exact-commit acceptance is pending |
 
 ## Checkpoint authorization
 
@@ -39,6 +39,11 @@ Product Owner acceptance of PR-007 at the exact implementation commit
 `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648`, with every recorded limitation.
 It does not authorize PR-008, production or any later checkpoint.
 
+[APP-0010](APPROVALS.md#app-0010) separately authorizes only PR-008 —
+Conversation domain with deterministic fake providers. Real providers,
+provider SDKs, audio upload/persistence, PR-009, production and AI authority
+over deterministic learning records remain unauthorized.
+
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
 [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md). It adds
@@ -46,7 +51,40 @@ Malayalam, Tamil, Telugu and Hindi implementation previews without accepting
 PR-006 or expanding curriculum, speech recognition, model audio, AI
 explanations, production deployment or a later checkpoint.
 
-## PR-007 implementation state
+## PR-008 implemented boundary
+
+- The active boundary is
+  [the PR-008 conversation fake-provider verification scope](PR-008_CONVERSATION_FAKE_PROVIDER_VERIFICATION_SCOPE.md).
+- The slice is limited to organization-scoped versioned prototype
+  personas/scenarios, learner sessions/turns, project-owned STT/model/TTS
+  ports, deterministic fakes, a state/event stream and privacy-safe zero-cost
+  telemetry skeletons.
+- Prototype utterance/reply text is request-memory-only. Persistent records
+  contain digests and safe state/usage metadata, not conversation content or
+  audio.
+- Fake adapters are local/testing-only and production must fail closed.
+- The authenticated API starts a version-pinned Friend session, runs a bounded
+  typed turn through project-owned fake STT/model/text-only-TTS ports and
+  returns a safe bounded SSE status history.
+- PostgreSQL constraints and services enforce organization plus exact learner
+  membership ownership, immutable persona/scenario versions, deterministic
+  transitions, actor-bound idempotency, bounded retry and append-only
+  status/usage evidence.
+- The learner Practice view visibly discloses the AI/fake boundary and
+  request-memory-only text handling. It creates no recording, upload, audio
+  playback or provider-network path.
+- Repository verification passes with 42 SQLite tests/277 assertions, 169
+  PostgreSQL tests/1,981 assertions, 57 web tests, 31 localization tests, 9
+  design-system tests and 9 Chromium journeys. Dependency audits, formatting,
+  PHPStan, locale governance, OpenAPI/generated-client drift, lint, recursive
+  type checking and production builds pass.
+- GNU Make is not installed on this workstation, so the documented
+  `make verify` and `make build` recipes were executed command-by-command from
+  the Makefile with the pinned native toolchain. `pnpm run e2e` ran directly.
+- PR-009, real provider calls, audio upload/persistence and production remain
+  unauthorized.
+
+## Accepted PR-007 implementation state
 
 - Server-issued bundles bind the exact user, membership, organization,
   enrollment, immutable publication, mission hashes and deterministic policy
@@ -81,8 +119,9 @@ explanations, production deployment or a later checkpoint.
 - The active implementation and verification boundary is
   [the PR-007 offline bundle verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md).
 - PR-007 is accepted at
-  `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008,
-  production, recording upload/persistence and every AI/provider path remain
+  `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. APP-0010 now
+  authorizes the separate fake-only PR-008 boundary; production,
+  recording upload/persistence and real AI/provider paths remain
   unauthorized.
 - Repository verification passed: 39 SQLite tests/264 assertions, 164
   PostgreSQL tests/1,883 assertions, 54 web tests, 31 localization tests,
@@ -216,10 +255,10 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-07-30.6`.
+  `ui-en-IN-2026-07-30.7`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.6` for
-  Kannada and `.2` for each newly added locale.
+  attributed Codex implementation drafts at revisions ending in `.7` for
+  Kannada and `.3` for each newly added locale.
 - All five translated catalogues remain `pending-independent-review`: no
   reviewer, approval time or independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
@@ -290,6 +329,8 @@ review and do not waive pre-production specialist gates.
 ## Verification state
 
 Detailed evidence is recorded in [QUALITY_REVIEW.md](QUALITY_REVIEW.md),
+[the PR-008 verification scope](PR-008_CONVERSATION_FAKE_PROVIDER_VERIFICATION_SCOPE.md),
+[the PR-007 verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md),
 [the PR-006 verification scope](PR-006_DETERMINISTIC_DAILY_SPEAKING_VERIFICATION_SCOPE.md),
 [the PR-005 verification scope](PR-005_CONTENT_PUBLICATION_VERIFICATION_SCOPE.md)
 and [the PR-004 accessibility scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md).
@@ -329,7 +370,8 @@ PR-006 verification results:
 - DR-0005 remains open; PR-006 introduces no recording upload, persistent
   consent state, retention/deletion workflow or provider processing.
 - PR-007 offline behavior is accepted at its exact implementation commit.
-  Every AI/speech-provider path remains excluded.
+  PR-008 adds only project-owned deterministic fake-provider paths; every real
+  AI/speech provider and provider SDK remains excluded.
 - ADR-0004's development roles are consolidated in one human and therefore
   non-independent. Independent tenancy, English-academic and Kannada-language
   review remains required before production.
@@ -362,17 +404,16 @@ PR-006 verification results:
 - Docker Engine 29.6.2 and Compose 5.3.1 are installed, but this Codex login
   session cannot access the Docker socket until group membership is refreshed.
   PostgreSQL verification used the available loopback version 14 service.
-- Local PHP is 8.4.17 rather than the declared 8.4.23 patch. The pinned Node.js
-  24.18.1, pnpm 11.18.0 and Composer 2.10.2 toolchain was used.
+- The fresh native verification toolchain used PHP 8.4.23, Node.js 24.18.1,
+  pnpm 11.18.0 and Composer 2.10.2. GNU Make remains unavailable.
 - The GitHub Actions workflow has not run on a remote runner.
 - PR-006 is accepted at its exact implementation commit under APP-0007; every
   recorded limitation remains in force.
 
 ## Next checkpoint gate
 
-PR-007 is implemented, repository-verified and accepted at
-`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. No later
-implementation checkpoint is authorized. PR-008 and production remain blocked
-pending separate explicit authority; production also requires independent
-security, privacy, tenancy, accessibility, language/content and release
-review.
+PR-008 is implemented and repository-verified under APP-0010. It is not yet
+accepted at an exact implementation commit. PR-009, production and every
+later implementation checkpoint remain unauthorized. Production additionally
+requires independent security, privacy, tenancy, accessibility,
+language/content and release review.

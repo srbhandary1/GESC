@@ -1357,6 +1357,363 @@ export const LearnerProgressSchema = {
     }
 } as const;
 
+export const StartConversationSessionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'persona_key',
+        'scenario_key',
+        'coaching_mode'
+    ],
+    properties: {
+        persona_key: {
+            type: 'string',
+            const: 'patient-friend-prototype'
+        },
+        scenario_key: {
+            type: 'string',
+            const: 'everyday-friend-prototype'
+        },
+        coaching_mode: {
+            type: 'string',
+            const: 'gentle'
+        }
+    }
+} as const;
+
+export const ConversationPersonaSnapshotSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'version_id',
+        'version',
+        'display_name',
+        'disclosure',
+        'definition_hash',
+        'review_status'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            const: 'patient-friend-prototype'
+        },
+        version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        },
+        display_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        disclosure: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 240
+        },
+        definition_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        review_status: {
+            type: 'string',
+            const: 'synthetic_unreviewed'
+        }
+    }
+} as const;
+
+export const ConversationScenarioSnapshotSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'version_id',
+        'version',
+        'topic_code',
+        'definition_hash',
+        'review_status'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            const: 'everyday-friend-prototype'
+        },
+        version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        },
+        topic_code: {
+            type: 'string',
+            const: 'everyday-conversation'
+        },
+        definition_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        review_status: {
+            type: 'string',
+            const: 'synthetic_unreviewed'
+        }
+    }
+} as const;
+
+export const ConversationSessionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'mode',
+        'coaching_mode',
+        'persona',
+        'scenario',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'active'
+        },
+        mode: {
+            type: 'string',
+            const: 'friend'
+        },
+        coaching_mode: {
+            type: 'string',
+            const: 'gentle'
+        },
+        persona: {
+            $ref: '#/components/schemas/ConversationPersonaSnapshot'
+        },
+        scenario: {
+            $ref: '#/components/schemas/ConversationScenarioSnapshot'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const CreateConversationTurnRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'prototype_utterance'
+    ],
+    properties: {
+        prototype_utterance: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        }
+    }
+} as const;
+
+export const ConversationSpeechResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'playback_available',
+        'rendering_mode'
+    ],
+    properties: {
+        playback_available: {
+            type: 'boolean',
+            const: false
+        },
+        rendering_mode: {
+            type: 'string',
+            const: 'deterministic-fake-text-only'
+        }
+    }
+} as const;
+
+export const ConversationUsageSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'provider_attempts',
+        'total_latency_ms',
+        'estimated_cost_microunits'
+    ],
+    properties: {
+        provider_attempts: {
+            type: 'integer',
+            minimum: 1
+        },
+        total_latency_ms: {
+            type: 'integer',
+            minimum: 0
+        },
+        estimated_cost_microunits: {
+            type: 'integer',
+            const: 0
+        }
+    }
+} as const;
+
+export const ConversationTurnSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'conversation_session_id',
+        'turn_number',
+        'status',
+        'transcript',
+        'understood_intent',
+        'assistant_reply',
+        'speech',
+        'usage',
+        'events_url',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        conversation_session_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        turn_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'completed',
+                'failed'
+            ]
+        },
+        transcript: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 1,
+            maxLength: 500
+        },
+        understood_intent: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 100
+        },
+        assistant_reply: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 1,
+            maxLength: 1000
+        },
+        speech: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ConversationSpeechResult'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        usage: {
+            $ref: '#/components/schemas/ConversationUsageSummary'
+        },
+        events_url: {
+            type: 'string',
+            pattern: '^/api/v1/conversation-turns/[0-9A-HJKMNP-TV-Z]{26}/events$'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const ConversationTurnEventSchema = {
+    type: 'object',
+    description: 'The JSON payload of each `conversation-status` SSE frame. The\ntransport may emit a bounded ordered sequence of these payloads.\n',
+    additionalProperties: false,
+    required: [
+        'sequence',
+        'state',
+        'event_code',
+        'provider_stage',
+        'provider_attempt',
+        'recorded_at'
+    ],
+    properties: {
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'accepted',
+                'transcribing',
+                'generating_reply',
+                'synthesizing',
+                'completed',
+                'failed'
+            ]
+        },
+        event_code: {
+            type: 'string',
+            enum: [
+                'turn.accepted',
+                'turn.transcribing',
+                'turn.generating_reply',
+                'turn.synthesizing',
+                'turn.provider_retrying',
+                'turn.completed',
+                'turn.failed'
+            ]
+        },
+        provider_stage: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'stt',
+                'model',
+                'tts',
+                null
+            ]
+        },
+        provider_attempt: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 1
+        },
+        recorded_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
 export const LivenessResponseSchema = {
     type: 'object',
     additionalProperties: false,

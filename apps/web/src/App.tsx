@@ -22,6 +22,9 @@ import type {
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { ConversationJourney } from './conversation/ConversationJourney'
+import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
+import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
   resolveInterfaceMessage,
@@ -48,6 +51,7 @@ type SessionState =
 interface AppProps {
   authentication?: AuthenticationAdapter
   audioRecorder?: AudioRecorder
+  conversationApi?: ConversationJourneyApi
   createClientId?: () => string
   learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
@@ -90,6 +94,7 @@ const localeMessageKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
 function App({
   authentication = defaultAuthentication,
   audioRecorder,
+  conversationApi = defaultConversationJourneyApi,
   createClientId,
   learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
@@ -242,6 +247,10 @@ function App({
     ((session.status === 'authenticated' &&
       session.identity.current_membership?.membership_type === 'learner') ||
       offlineResume !== null)
+  const canPractice =
+    destination === 'practice' &&
+    session.status === 'authenticated' &&
+    session.identity.current_membership?.membership_type === 'learner'
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -378,6 +387,13 @@ function App({
             offlineBinding={offlineBinding}
             offlineStore={offlineStore}
             resumeBundle={offlineResume?.storedBundle}
+          />
+        ) : canPractice ? (
+          <ConversationJourney
+            api={conversationApi}
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
           />
         ) : (
           <p className="shell-checkpoint-notice">

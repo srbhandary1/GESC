@@ -15,6 +15,15 @@ use App\Authentication\Otp\SecureOtpCodeGenerator;
 use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\MembershipRolePrivilegeClassifier;
 use App\Authentication\Sessions\PrivilegeClassifier;
+use App\Conversation\Providers\ConversationModelProvider;
+use App\Conversation\Providers\Disabled\DisabledConversationModelProvider;
+use App\Conversation\Providers\Disabled\DisabledSpeechToTextProvider;
+use App\Conversation\Providers\Disabled\DisabledTextToSpeechProvider;
+use App\Conversation\Providers\Fake\DeterministicFakeConversationModelProvider;
+use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
+use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
+use App\Conversation\Providers\SpeechToTextProvider;
+use App\Conversation\Providers\TextToSpeechProvider;
 use App\Health\DatabaseReadinessProbe;
 use App\Health\ReadinessChecker;
 use App\Health\RedisReadinessProbe;
@@ -64,6 +73,28 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PrivilegeClassifier::class, MembershipRolePrivilegeClassifier::class);
         $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
         $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
+        $fakeConversationEnabled = (
+            $this->app->environment('local')
+            || $this->app->environment('testing')
+        ) && config('conversation.provider_driver') === 'fake';
+        $this->app->bind(
+            SpeechToTextProvider::class,
+            $fakeConversationEnabled
+                ? DeterministicFakeSpeechToTextProvider::class
+                : DisabledSpeechToTextProvider::class,
+        );
+        $this->app->bind(
+            ConversationModelProvider::class,
+            $fakeConversationEnabled
+                ? DeterministicFakeConversationModelProvider::class
+                : DisabledConversationModelProvider::class,
+        );
+        $this->app->bind(
+            TextToSpeechProvider::class,
+            $fakeConversationEnabled
+                ? DeterministicFakeTextToSpeechProvider::class
+                : DisabledTextToSpeechProvider::class,
+        );
         $this->app->bind(OtpDeliveryAdapter::class, function (): OtpDeliveryAdapter {
             if (config('authentication.otp.driver') !== 'local') {
                 throw new LogicException('No reviewed OTP delivery adapter is configured.');
@@ -152,6 +183,27 @@ class AppServiceProvider extends ServiceProvider
                 $digester->digest('oauth-token-request', $client."\0".$ip),
             );
         });
+
+        RateLimiter::for(
+            'conversation-prototype',
+            function (Request $request): Limit {
+                $digester = $this->app->make(
+                    AuthenticationSecretDigester::class,
+                );
+                $actor = (string) (
+                    $request->user()?->getAuthIdentifier()
+                    ?? 'anonymous'
+                );
+                $ip = (string) ($request->ip() ?? 'unknown');
+
+                return Limit::perMinute(30)->by(
+                    $digester->digest(
+                        'conversation-prototype',
+                        $actor."\0".$ip,
+                    ),
+                );
+            },
+        );
 
         if (! $this->app->routesAreCached()) {
             require base_path('routes/auth.php');

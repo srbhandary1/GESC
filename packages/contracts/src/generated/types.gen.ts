@@ -348,6 +348,86 @@ export type LearnerProgress = {
     objectives: Array<LearnerProgressObjective>;
 };
 
+export type StartConversationSessionRequest = {
+    persona_key: 'patient-friend-prototype';
+    scenario_key: 'everyday-friend-prototype';
+    coaching_mode: 'gentle';
+};
+
+export type ConversationPersonaSnapshot = {
+    id: Ulid;
+    key: 'patient-friend-prototype';
+    version_id: Ulid;
+    version: number;
+    display_name: string;
+    disclosure: string;
+    definition_hash: Sha256;
+    review_status: 'synthetic_unreviewed';
+};
+
+export type ConversationScenarioSnapshot = {
+    id: Ulid;
+    key: 'everyday-friend-prototype';
+    version_id: Ulid;
+    version: number;
+    topic_code: 'everyday-conversation';
+    definition_hash: Sha256;
+    review_status: 'synthetic_unreviewed';
+};
+
+export type ConversationSession = {
+    id: Ulid;
+    status: 'active';
+    mode: 'friend';
+    coaching_mode: 'gentle';
+    persona: ConversationPersonaSnapshot;
+    scenario: ConversationScenarioSnapshot;
+    replayed: boolean;
+};
+
+export type CreateConversationTurnRequest = {
+    prototype_utterance: string;
+};
+
+export type ConversationSpeechResult = {
+    playback_available: false;
+    rendering_mode: 'deterministic-fake-text-only';
+};
+
+export type ConversationUsageSummary = {
+    provider_attempts: number;
+    total_latency_ms: number;
+    estimated_cost_microunits: 0;
+};
+
+export type ConversationTurn = {
+    id: Ulid;
+    conversation_session_id: Ulid;
+    turn_number: number;
+    status: 'completed' | 'failed';
+    transcript: string | null;
+    understood_intent: string | null;
+    assistant_reply: string | null;
+    speech: ConversationSpeechResult | null;
+    usage: ConversationUsageSummary;
+    events_url: string;
+    replayed: boolean;
+};
+
+/**
+ * The JSON payload of each `conversation-status` SSE frame. The
+ * transport may emit a bounded ordered sequence of these payloads.
+ *
+ */
+export type ConversationTurnEvent = {
+    sequence: number;
+    state: 'accepted' | 'transcribing' | 'generating_reply' | 'synthesizing' | 'completed' | 'failed';
+    event_code: 'turn.accepted' | 'turn.transcribing' | 'turn.generating_reply' | 'turn.synthesizing' | 'turn.provider_retrying' | 'turn.completed' | 'turn.failed';
+    provider_stage: 'stt' | 'model' | 'tts' | null;
+    provider_attempt: number | null;
+    recorded_at: string;
+};
+
 export type LivenessResponse = {
     status: 'ok';
     service: 'global-english-api';
@@ -389,6 +469,16 @@ export type IdempotencyKey = string;
  * Project-owned public session ULID, never the Laravel session key.
  */
 export type SessionId = Ulid;
+
+/**
+ * Learner-owned deterministic Friend-session ULID.
+ */
+export type ConversationSessionId = Ulid;
+
+/**
+ * Learner-owned deterministic Friend-turn ULID.
+ */
+export type ConversationTurnId = Ulid;
 
 /**
  * Governed curriculum mission ULID from the exact publication pin.
@@ -1360,6 +1450,191 @@ export type CompleteLearnerOfflineMissionResponses = {
 };
 
 export type CompleteLearnerOfflineMissionResponse = CompleteLearnerOfflineMissionResponses[keyof CompleteLearnerOfflineMissionResponses];
+
+export type StartConversationSessionData = {
+    body: StartConversationSessionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/conversation-sessions';
+};
+
+export type StartConversationSessionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StartConversationSessionError = StartConversationSessionErrors[keyof StartConversationSessionErrors];
+
+export type StartConversationSessionResponses = {
+    /**
+     * Exact command replay returned the original session.
+     */
+    200: ConversationSession;
+    /**
+     * A deterministic fake-provider Friend session was started.
+     */
+    201: ConversationSession;
+};
+
+export type StartConversationSessionResponse = StartConversationSessionResponses[keyof StartConversationSessionResponses];
+
+export type CreateConversationTurnData = {
+    body: CreateConversationTurnRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/turns';
+};
+
+export type CreateConversationTurnErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateConversationTurnError = CreateConversationTurnErrors[keyof CreateConversationTurnErrors];
+
+export type CreateConversationTurnResponses = {
+    /**
+     * Exact command replay returned the original deterministic result.
+     */
+    200: ConversationTurn;
+    /**
+     * The deterministic fake-provider turn reached a terminal state.
+     */
+    201: ConversationTurn;
+};
+
+export type CreateConversationTurnResponse = CreateConversationTurnResponses[keyof CreateConversationTurnResponses];
+
+export type StreamConversationTurnEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-turn ULID.
+         */
+        conversation_turn_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-turns/{conversation_turn_id}/events';
+};
+
+export type StreamConversationTurnEventsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StreamConversationTurnEventsError = StreamConversationTurnEventsErrors[keyof StreamConversationTurnEventsErrors];
+
+export type StreamConversationTurnEventsResponses = {
+    /**
+     * Bounded ordered conversation status events.
+     */
+    200: ConversationTurnEvent;
+};
+
+export type StreamConversationTurnEventsResponse = StreamConversationTurnEventsResponses[keyof StreamConversationTurnEventsResponses];
 
 export type GetLearnerProgressData = {
     body?: never;

@@ -1,0 +1,64 @@
+.conversation-journey {
+  display: grid;
+  gap: var(--ge-space-5);
+  max-width: 48rem;
+}
+
+.conversation-journey__heading,
+.conversation-journey__notice,
+.conversation-journey__result,
+.conversation-journey form {
+  display: grid;
+  gap: var(--ge-space-3);
+}
+
+.conversation-journey__eyebrow {
+  color: var(--ge-color-text-muted);
+  font-weight: 700;
+  margin: 0;
+}
+
+.conversation-journey__notice {
+  background: var(--ge-color-surface);
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-4);
+}
+
+.conversation-journey textarea {
+  background: var(--ge-color-surface);
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  color: var(--ge-color-text);
+  font: inherit;
+  line-height: 1.5;
+  min-height: 8rem;
+  padding: var(--ge-space-3);
+  resize: vertical;
+}
+
+.conversation-journey button {
+  justify-self: start;
+  min-height: var(--ge-target-minimum);
+}
+
+.conversation-journey__identity {
+  font-weight: 700;
+}
+
+.conversation-journey__result dl,
+.conversation-journey__result dl div {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__result dd {
+  margin: 0;
+}
+
+.conversation-journey__events {
+  display: grid;
+  gap: var(--ge-space-2);
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}

@@ -25,9 +25,11 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 PR-006 — Deterministic daily-speaking slice is implemented, verified and
 accepted at its exact implementation commit under APP-0007. PR-007 — Offline
 bundle and idempotent outbox is implemented, repository-verified and accepted
-at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008,
-production and every later implementation checkpoint remain unauthorized.
-ADR-0005 additionally brings UI-only Malayalam
+at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008 —
+Conversation domain with deterministic fake providers — is implemented and
+repository-verified under APP-0010, with exact-commit acceptance still
+pending. Real providers, audio upload/persistence, PR-009 and production
+remain unauthorized. ADR-0005 additionally brings UI-only Malayalam
 (`ml-IN`), Tamil (`ta-IN`), Telugu
 (`te-IN`) and Hindi (`hi-IN`) implementation previews into Phase 1 alongside
 Kannada (`kn-IN`) and the English (`en-IN`) source/fallback.
@@ -76,6 +78,12 @@ make dev
 Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
 5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
 port 8333 and the OTP stub uses port 8089 by default.
+
+For the PR-008 local/testing prototype, set
+`CONVERSATION_PROVIDER_DRIVER=fake`. Production and every environment other
+than `local` or `testing` fail closed even if that value is supplied. The
+prototype accepts bounded typed text only, uses no real provider and creates
+or persists no audio.
 
 A fresh PostgreSQL Compose volume also creates the isolated
 `global_english_test` database and role used by the PostgreSQL integration

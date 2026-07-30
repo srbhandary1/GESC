@@ -145,6 +145,10 @@ final class FoundationSeeder extends Seeder
             );
 
             $this->seedSyntheticDraft($organizationId, $now);
+            $this->seedSyntheticConversationPrototype(
+                $organizationId,
+                $now,
+            );
         });
     }
 
@@ -567,6 +571,136 @@ final class FoundationSeeder extends Seeder
                 'curriculum_version_id' => $versionId,
                 'curriculum_graph_revision_id' => $graphRevisionId,
                 'graph_hash' => $projection['graph_hash'],
+            ],
+        );
+    }
+
+    private function seedSyntheticConversationPrototype(
+        string $organizationId,
+        CarbonInterface $now,
+    ): void {
+        $attribution = 'codex_synthetic_fake_pending_human_review';
+        $personaKey = 'patient-friend-prototype';
+        $personaDefinition = [
+            'disclosure' => 'I am a deterministic AI prototype, not a human.',
+            'display_name' => 'Patient Friend Prototype',
+            'style_code' => 'patient-friend-v1',
+        ];
+        $personaHash = CanonicalJson::sha256($personaDefinition);
+
+        DB::table('ai_personas')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'key' => $personaKey,
+            'status' => 'development_only',
+            'created_by_attribution' => $attribution,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $personaId = $this->requiredId('ai_personas', [
+            'organization_id' => $organizationId,
+            'key' => $personaKey,
+        ]);
+        $this->assertCanonicalRecord(
+            'ai_personas',
+            ['id' => $personaId],
+            [
+                'organization_id' => $organizationId,
+                'key' => $personaKey,
+                'status' => 'development_only',
+                'created_by_attribution' => $attribution,
+            ],
+        );
+
+        DB::table('persona_versions')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'persona_id' => $personaId,
+            'version' => 1,
+            'display_name' => $personaDefinition['display_name'],
+            'disclosure' => $personaDefinition['disclosure'],
+            'style_code' => $personaDefinition['style_code'],
+            'definition_hash' => $personaHash,
+            'review_status' => 'synthetic_unreviewed',
+            'created_at' => $now,
+        ]);
+        $personaVersionId = $this->requiredId('persona_versions', [
+            'organization_id' => $organizationId,
+            'persona_id' => $personaId,
+            'version' => 1,
+        ]);
+        $this->assertCanonicalRecord(
+            'persona_versions',
+            ['id' => $personaVersionId],
+            [
+                'organization_id' => $organizationId,
+                'persona_id' => $personaId,
+                'version' => 1,
+                ...$personaDefinition,
+                'definition_hash' => $personaHash,
+                'review_status' => 'synthetic_unreviewed',
+            ],
+        );
+
+        $scenarioKey = 'everyday-friend-prototype';
+        $scenarioDefinition = [
+            'topic_code' => 'everyday-conversation',
+            'response_code' => 'friend.everyday.follow-up.v1',
+        ];
+        $scenarioHash = CanonicalJson::sha256($scenarioDefinition);
+
+        DB::table('roleplay_scenarios')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'key' => $scenarioKey,
+            'mode' => 'friend',
+            'status' => 'development_only',
+            'created_by_attribution' => $attribution,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $scenarioId = $this->requiredId('roleplay_scenarios', [
+            'organization_id' => $organizationId,
+            'key' => $scenarioKey,
+        ]);
+        $this->assertCanonicalRecord(
+            'roleplay_scenarios',
+            ['id' => $scenarioId],
+            [
+                'organization_id' => $organizationId,
+                'key' => $scenarioKey,
+                'mode' => 'friend',
+                'status' => 'development_only',
+                'created_by_attribution' => $attribution,
+            ],
+        );
+
+        DB::table('scenario_versions')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'scenario_id' => $scenarioId,
+            'version' => 1,
+            'topic_code' => $scenarioDefinition['topic_code'],
+            'response_code' => $scenarioDefinition['response_code'],
+            'definition_hash' => $scenarioHash,
+            'review_status' => 'synthetic_unreviewed',
+            'created_at' => $now,
+        ]);
+        $scenarioVersionId = $this->requiredId('scenario_versions', [
+            'organization_id' => $organizationId,
+            'scenario_id' => $scenarioId,
+            'version' => 1,
+        ]);
+        $this->assertCanonicalRecord(
+            'scenario_versions',
+            ['id' => $scenarioVersionId],
+            [
+                'organization_id' => $organizationId,
+                'scenario_id' => $scenarioId,
+                'version' => 1,
+                ...$scenarioDefinition,
+                'definition_hash' => $scenarioHash,
+                'review_status' => 'synthetic_unreviewed',
             ],
         );
     }

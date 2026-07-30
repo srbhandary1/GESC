@@ -644,3 +644,56 @@ I accept PR-007 at commit e0e2f1b90e0eb4ecf680f5243b57ec0731c32648 with its reco
   implementation drafts pending independent human review; ordinary production
   continues to fall back visibly to English.
 - No implementation work beyond PR-007 is authorized by this record.
+
+<a id="app-0010"></a>
+
+## APP-0010 — PR-008 deterministic fake-provider implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted baseline | PR-007 implementation `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648`, accepted under APP-0009 |
+| Authorized scope | [PR-008 conversation fake-provider verification scope](PR-008_CONVERSATION_FAKE_PROVIDER_VERIFICATION_SCOPE.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I authorize only PR-008 — Conversation domain with deterministic fake providers. This includes personas, scenarios, sessions and turns; project-owned AI/speech provider ports; fake STT, LLM and TTS adapters; a deterministic turn state machine; event/status streaming; and cost/latency record skeletons. It does not authorize real provider calls, audio upload or persistence, PR-009, production, or AI authority over deterministic learning records.
+```
+
+### Accepted scope and authorization
+
+- Implement only PR-008 — Conversation domain with deterministic fake
+  providers.
+- Add organization-scoped, versioned prototype personas and scenarios,
+  learner-owned sessions and turns, deterministic status events and
+  privacy-safe cost/latency records.
+- Add project-owned STT, conversation-model and TTS ports plus deterministic
+  local/testing fake adapters.
+- Deliver one complete Friend turn through the authenticated API and learner
+  interface, with deterministic replay and retry coverage.
+- Update OpenAPI, generated clients, automated tests and checkpoint evidence.
+
+### Conditions and limitations
+
+- Fake providers are enabled only in local and testing environments. Production
+  fails closed.
+- No provider SDK, network provider call, real model, prompt orchestration or
+  provider credential is authorized.
+- No audio bytes, recording upload, generated audio persistence or object
+  storage is authorized.
+- Prototype utterance and reply text is processed in request memory and
+  returned to that request only. Persistent records contain digests and safe
+  status/usage metadata, not conversation content.
+- AI output cannot write marks, mastery, progression, attendance,
+  entitlements, enrollment or other authoritative learning records.
+- PR-009, production and every later checkpoint remain unauthorized.

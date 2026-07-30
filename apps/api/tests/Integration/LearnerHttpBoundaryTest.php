@@ -38,6 +38,8 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         $attemptId = (string) Str::ulid();
         $assetId = (string) Str::ulid();
         $enrollmentId = (string) Str::ulid();
+        $conversationSessionId = (string) Str::ulid();
+        $conversationTurnId = (string) Str::ulid();
         $idempotencyKey = (string) Str::uuid();
 
         $requests = [
@@ -105,6 +107,27 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 $enrollmentId,
                 $missionId,
             )),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson('/api/v1/conversation-sessions', [
+                'persona_key' => 'patient-friend-prototype',
+                'scenario_key' => 'everyday-friend-prototype',
+                'coaching_mode' => 'gentle',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson(sprintf(
+                '/api/v1/conversation-sessions/%s/turns',
+                $conversationSessionId,
+            ), [
+                'prototype_utterance' => 'Synthetic unauthenticated turn.',
+            ]),
+            fn (): TestResponse => $this->get(sprintf(
+                '/api/v1/conversation-turns/%s/events',
+                $conversationTurnId,
+            )),
         ];
 
         foreach ($requests as $request) {
@@ -121,6 +144,109 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
 
             $this->assertNoStore($response);
         }
+    }
+
+    public function test_fake_friend_turn_runs_through_http_and_streams_safe_events(): void
+    {
+        $this->signInWeb();
+        $sessionCommand = (string) Str::uuid();
+        $turnCommand = (string) Str::uuid();
+        $utterance = 'I practise English after work.';
+
+        $session = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => $sessionCommand,
+        ])->postJson('/api/v1/conversation-sessions', [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'everyday-friend-prototype',
+            'coaching_mode' => 'gentle',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('mode', 'friend')
+            ->assertJsonPath('status', 'active')
+            ->assertJsonPath('replayed', false)
+            ->assertJsonPath(
+                'persona.disclosure',
+                'I am a deterministic AI prototype, not a human.',
+            );
+        $this->assertNoStore($session);
+        $sessionId = $session->json('id');
+        self::assertIsString($sessionId);
+
+        $replay = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => $sessionCommand,
+        ])->postJson('/api/v1/conversation-sessions', [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'everyday-friend-prototype',
+            'coaching_mode' => 'gentle',
+        ])
+            ->assertOk()
+            ->assertJsonPath('id', $sessionId)
+            ->assertJsonPath('replayed', true);
+        $this->assertNoStore($replay);
+
+        $turnPath = sprintf(
+            '/api/v1/conversation-sessions/%s/turns',
+            $sessionId,
+        );
+        $turn = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => $turnCommand,
+        ])->postJson($turnPath, [
+            'prototype_utterance' => $utterance,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'completed')
+            ->assertJsonPath('transcript', $utterance)
+            ->assertJsonPath(
+                'assistant_reply',
+                'Thank you for sharing that. What would you like to talk about next?',
+            )
+            ->assertJsonPath('speech.playback_available', false)
+            ->assertJsonPath(
+                'speech.rendering_mode',
+                'deterministic-fake-text-only',
+            )
+            ->assertJsonPath('usage.provider_attempts', 3)
+            ->assertJsonPath('usage.estimated_cost_microunits', 0);
+        $this->assertNoStore($turn);
+        $turnId = $turn->json('id');
+        self::assertIsString($turnId);
+
+        $stream = $this->get(sprintf(
+            '/api/v1/conversation-turns/%s/events',
+            $turnId,
+        ))
+            ->assertOk()
+            ->assertHeader(
+                'Content-Type',
+                'text/event-stream; charset=UTF-8',
+            );
+        $this->assertNoStore($stream);
+        $streamed = $stream->streamedContent();
+        self::assertStringContainsString(
+            'event: conversation-status',
+            $streamed,
+        );
+        self::assertStringContainsString(
+            '"event_code":"turn.completed"',
+            $streamed,
+        );
+        self::assertStringNotContainsString($utterance, $streamed);
+
+        $rawAudioRejected = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson($turnPath, [
+            'prototype_utterance' => 'Safe visible input.',
+            'raw_audio' => 'conversation-audio-must-not-enter-api',
+        ])->assertUnprocessable();
+        self::assertStringNotContainsString(
+            'conversation-audio-must-not-enter-api',
+            (string) $rawAudioRejected->getContent(),
+        );
+        $this->assertNoStore($rawAudioRejected);
     }
 
     public function test_onboarding_and_learner_mutation_validation_runs_through_http(): void

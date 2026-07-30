@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AuthenticationSessionController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CurrentIdentityController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InstitutionInviteController;
@@ -103,5 +104,21 @@ Route::prefix('v1')->group(function (): void {
             [LearnerMediaController::class, 'show'],
         )->whereUlid('asset')
             ->name('api.v1.media-assets.content.show');
+        Route::post(
+            '/conversation-sessions',
+            [ConversationController::class, 'start'],
+        )->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.store');
+        Route::post(
+            '/conversation-sessions/{session}/turns',
+            [ConversationController::class, 'turn'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.turns.store');
+        Route::get(
+            '/conversation-turns/{turn}/events',
+            [ConversationController::class, 'events'],
+        )->whereUlid('turn')
+            ->name('api.v1.conversation-turns.events.index');
     });
 });
