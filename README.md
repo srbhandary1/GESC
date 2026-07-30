@@ -1,8 +1,11 @@
 # Global English
 
-Global English is a mobile-first, Kannada-guided spoken-English platform for
-adult learners. The canonical product, architecture, security and delivery
-baseline is [ENTERPRISE_PRODUCT_MASTER_PLAN.md](ENTERPRISE_PRODUCT_MASTER_PLAN.md).
+Global English is a mobile-first spoken-English platform for adult learners.
+English remains the learning language and Kannada remains the default
+guidance language. Phase 1 also provides UI-only review previews in Malayalam,
+Tamil, Telugu and Hindi. The canonical product, architecture, security and
+delivery baseline is
+[ENTERPRISE_PRODUCT_MASTER_PLAN.md](ENTERPRISE_PRODUCT_MASTER_PLAN.md).
 
 ## Repository authority
 
@@ -19,19 +22,21 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## Current state
 
-The repository is at **PR-004 — Localization and accessible design system**.
-Governed `kn-IN`/`en-IN` interface catalogues, deterministic fallback,
-mixed-language semantics, self-hosted Kannada fonts, an accessible
-Home/Learn/Practice/Progress shell and inert audio/recording presentation
-contracts are implemented. PR-004 remains pending checkpoint review and
-acceptance; curriculum publication, learning journeys, AI, speech providers,
-payments, offline sync and reporting have not been introduced.
+PR-006 — Deterministic daily-speaking slice is implemented, verified and
+accepted at its exact implementation commit under APP-0007. The repository is
+now limited to **PR-007 implementation** under the accepted ADR-0006 and
+APP-0008 authorization. The offline bundle and idempotent outbox slice is
+implemented and repository-verified but remains unaccepted; PR-008 and
+production are not authorized. ADR-0005 additionally brings UI-only Malayalam
+(`ml-IN`), Tamil (`ta-IN`), Telugu
+(`te-IN`) and Hindi (`hi-IN`) implementation previews into Phase 1 alongside
+Kannada (`kn-IN`) and the English (`en-IN`) source/fallback.
 
-The Kannada interface is an attributed draft pending independent human review.
-Ordinary production builds use the strict `approved-only` policy and visibly
-fall back to English. Local development, tests and an explicitly requested
-review build may render the draft with a visible preview notice. The review
-flag must not be enabled for a production deployment:
+All five translated interface catalogues are drafts pending independent human
+review. Ordinary production builds use the strict `approved-only` policy and
+visibly fall back to English. Local development, tests and an explicitly
+requested review build may render current drafts with a visible preview
+notice. The review flag must not be enabled for a production deployment:
 
 ```text
 VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build
@@ -97,6 +102,10 @@ Production must also supply an independently generated, backed-up
 `AUTH_IDENTITY_DIGEST_KEY`; it is intentionally separate from `APP_KEY` and
 must not be rotated in place without the versioned migration described in
 `docs/PR-003_TENANCY_VERIFICATION_SCOPE.md`.
+Production must independently generate and access-control a minimum 32-byte
+`OFFLINE_BUNDLE_SIGNING_KEY` (the `base64:` form is supported). The
+local-development example key and test key must never be reused outside their
+isolated environments.
 
 ## Root commands
 
@@ -123,14 +132,14 @@ source linkage and review-state claims.
 
 - `apps/api/` — Laravel 13 modular monolith with operational, tenancy and
   identity foundation APIs;
-- `apps/web/` — React 19.2 TypeScript/Vite localized shell, accessible error
-  boundary and shared authentication adapters;
+- `apps/web/` — React 19.2 TypeScript/Vite localized shell, protected offline
+  learner store, accessible error boundary and shared authentication adapters;
 - `docs/api/` — canonical OpenAPI 3.1.1 contract;
 - `docs/adr/` and `docs/APPROVALS.md` — accepted architecture decisions and
   durable human approval evidence;
 - `packages/contracts/` — generated TypeScript client, types and JSON schemas;
-- `packages/design-system/` — accessible bilingual presentation primitives,
-  tokens and self-hosted Kannada font integration;
+- `packages/design-system/` — accessible multilingual presentation primitives,
+  tokens and self-hosted Indian-script font integration;
 - `packages/localization/` — governed UI catalogues, deterministic resolver,
   Unicode normalization and locale validation;
 - `infra/local/` — local-only provider stubs;

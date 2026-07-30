@@ -1,5 +1,6 @@
 import type {
   CompleteLearnerOnboardingRequest,
+  CompleteOfflineMissionRequest,
   GovernedContent as ContractGovernedContent,
   KnowledgeState as ContractKnowledgeState,
   LearnerAttempt as ContractLearnerAttempt,
@@ -9,6 +10,7 @@ import type {
   LearnerMissionResult as ContractLearnerMissionResult,
   LearnerProgress as ContractLearnerProgress,
   LocalCaptureReceipt,
+  OfflineMissionBundle,
   RecordLearnerAttemptResponseRequest,
   SpokenState as ContractSpokenState,
 } from '@global-english/contracts'
@@ -31,6 +33,8 @@ export type KnowledgeState = ContractKnowledgeState
 export type SpokenState = ContractSpokenState
 export type MissionResult = ContractLearnerMissionResult
 export type LearnerProgress = ContractLearnerProgress
+export type OfflineBundle = OfflineMissionBundle
+export type OfflineCompletionInput = CompleteOfflineMissionRequest
 
 export interface LearnerJourneyApi {
   home(signal?: AbortSignal): Promise<LearnerHome>
@@ -71,11 +75,31 @@ export interface LearnerJourneyApi {
     enrollmentId: string,
     signal?: AbortSignal,
   ): Promise<LearnerProgress>
+
+  offlineBundle?(
+    missionId: string,
+    enrollmentId: string,
+    signal?: AbortSignal,
+  ): Promise<OfflineBundle>
+
+  downloadMedia?(
+    url: string,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array<ArrayBuffer>>
+
+  completeOffline?(
+    input: OfflineCompletionInput,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResult>
 }
 
 export class LearnerJourneyUnavailableError extends Error {
-  constructor() {
+  readonly status?: number
+
+  constructor(status?: number) {
     super('The learner journey could not be completed.')
     this.name = 'LearnerJourneyUnavailableError'
+    this.status = status
   }
 }

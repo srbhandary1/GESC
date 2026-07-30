@@ -17,6 +17,7 @@ import {
 
 export interface WebSessionAuthenticationOptions {
   baseUrl?: string
+  beforeLogout?: () => Promise<void>
   fetch?: typeof fetch
   readCookie?: () => string
 }
@@ -27,11 +28,13 @@ export class WebSessionAuthenticationAdapter
   readonly transport = 'sanctum-cookie' as const
 
   readonly #baseUrl?: string
+  readonly #beforeLogout: () => Promise<void>
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
 
   constructor(options: WebSessionAuthenticationOptions = {}) {
     this.#baseUrl = options.baseUrl
+    this.#beforeLogout = options.beforeLogout ?? (() => Promise.resolve())
     this.#fetch = options.fetch ?? globalThis.fetch
     this.#readCookie =
       options.readCookie ??
@@ -142,6 +145,8 @@ export class WebSessionAuthenticationAdapter
   }
 
   async logout(): Promise<void> {
+    await this.#beforeLogout()
+
     const result = await logoutWebSession({
       ...this.#commonOptions(),
       headers: await this.#csrfHeaders(),

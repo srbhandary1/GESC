@@ -83,3 +83,19 @@ PR-004 does not claim or test:
 - offline screen-reader behavior;
 - AI/provider output accessibility; or
 - production deployment conformance.
+
+## ADR-0005 Phase 1 UI-language amendment
+
+[ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) adds
+Malayalam (`ml-IN`), Tamil (`ta-IN`), Telugu (`te-IN`) and Hindi (`hi-IN`) as
+UI-only development previews. The same strict production fallback,
+source-linked governance, visible pending-review notice, ephemeral selection,
+axe, reflow, target-size and credential-storage requirements apply to all six
+interface locales.
+
+Self-hosted Noto Sans Malayalam, Tamil, Telugu and Devanagari variable fonts
+join the existing Kannada font. Independent linguistic review, script
+wrapping, screen-reader pronunciation, browser zoom and representative
+Android TalkBack testing are release gates for each translated catalogue.
+This amendment does not expand curriculum, speech recognition, model audio or
+AI explanations.

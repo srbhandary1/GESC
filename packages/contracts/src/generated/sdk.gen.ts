@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses } from './types.gen';
+import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -260,6 +260,26 @@ export const getLearnerMission = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
+ * Issue one protected deterministic offline mission bundle
+ *
+ * Revalidates the authenticated learner's exact active enrollment and
+ * immutable publication pin, then returns an allowlisted manifest and a
+ * purpose-specific signed authorization lease valid for no more than 24
+ * hours. The response is private and no-store; only the reviewed client
+ * offline store may persist its protected fields.
+ *
+ */
+export const getLearnerOfflineMissionBundle = <ThrowOnError extends boolean = false>(options: Options<GetLearnerOfflineMissionBundleData, ThrowOnError>): RequestResult<GetLearnerOfflineMissionBundleResponses, GetLearnerOfflineMissionBundleErrors, ThrowOnError> => (options.client ?? client).get<GetLearnerOfflineMissionBundleResponses, GetLearnerOfflineMissionBundleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/missions/{mission_id}/offline-bundle',
+    ...options
+});
+
+/**
  * Start or resume one deterministic mission attempt
  *
  * Allocates the server-owned attempt number from the exact immutable
@@ -325,6 +345,31 @@ export const submitLearnerMissionAttempt = <ThrowOnError extends boolean = false
         }, { scheme: 'bearer', type: 'http' }],
     url: '/attempts/{attempt_id}/submit',
     ...options
+});
+
+/**
+ * Atomically synchronize one offline deterministic completion
+ *
+ * Validates the exact signed bundle lease and current learner authority,
+ * then starts, responds to and submits one PR-006 attempt in one outer
+ * transaction. The server derives attempt number, correctness, mastery
+ * and review state. Exact replay returns the original result; a changed
+ * replay conflicts. Raw learner audio and caller-authored authority are
+ * forbidden.
+ *
+ */
+export const completeLearnerOfflineMission = <ThrowOnError extends boolean = false>(options: Options<CompleteLearnerOfflineMissionData, ThrowOnError>): RequestResult<CompleteLearnerOfflineMissionResponses, CompleteLearnerOfflineMissionErrors, ThrowOnError> => (options.client ?? client).post<CompleteLearnerOfflineMissionResponses, CompleteLearnerOfflineMissionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/offline-completions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

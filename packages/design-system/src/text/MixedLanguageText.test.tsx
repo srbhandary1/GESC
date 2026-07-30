@@ -38,6 +38,25 @@ describe('MixedLanguageText', () => {
     expect(screen.getByText('Café')).toHaveTextContent('Café')
   })
 
+  it('preserves language metadata for every Phase 1 interface script', () => {
+    const { container } = render(
+      <MixedLanguageText
+        segments={[
+          { locale: 'ml-IN', text: 'മലയാളം' },
+          { locale: 'ta-IN', text: 'தமிழ்' },
+          { locale: 'te-IN', text: 'తెలుగు' },
+          { locale: 'hi-IN', text: 'हिन्दी' },
+        ]}
+      />,
+    )
+
+    expect(
+      [...container.querySelectorAll('[lang]')].map((element) =>
+        element.getAttribute('lang'),
+      ),
+    ).toEqual(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'])
+  })
+
   it('supports caller-normalized text and a governed normalization hook', () => {
     const normalizeText = vi.fn((text: string) => text.toUpperCase())
     const { rerender } = render(

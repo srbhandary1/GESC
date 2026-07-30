@@ -946,12 +946,209 @@ forbidden from changing prompts, models, providers or AI orchestration.
 
 ### Exit decision
 
-PR-006 is implemented, locally verified and ready for Accountable Product
-Owner review under APP-0005. This quality review does not accept PR-006,
-approve a curriculum publication, authorize production or authorize PR-007.
+PR-006 is implemented and locally verified. This quality review itself does
+not approve a curriculum publication or authorize production.
 
-PR-007 remains blocked until all required PR-006 verification is recorded and
-the Accountable Product Owner explicitly accepts PR-006 at its exact
-implementation commit, with its recorded limitations, and authorizes only
-PR-007. A passing test suite, this document or a generic instruction to
-continue is not checkpoint acceptance.
+### Subsequent checkpoint acceptance
+
+[APP-0007](APPROVALS.md#app-0007) records `S R Bhandary`'s explicit
+Accountable Product Owner acceptance of PR-006 at
+`598ad387e65b94707564dce1e199c97deb411d82`, with its recorded limitations.
+Only PR-007 decision-resolution work is authorized. Product implementation
+remains blocked until ADR-0006 is accepted and DR-0004 is resolved.
+
+---
+
+## ADR-0005 — Phase 1 multilingual UI expansion
+
+### Scope reviewed
+
+- complete UI catalogue previews for Malayalam (`ml-IN`), Tamil (`ta-IN`),
+  Telugu (`te-IN`) and Hindi (`hi-IN`);
+- preservation of Kannada as the default requested interface locale and
+  English as the governed source, learning language and deterministic
+  fallback;
+- exact catalogue parity, source linkage, hashes and honest draft governance;
+- strict production fallback and visible development/review preview status;
+- locale selection, BCP 47 language metadata and privacy-safe fallback events;
+- self-hosted Kannada, Malayalam, Tamil, Telugu and Devanagari variable fonts;
+- six-locale unit, accessibility, reflow, font and browser coverage; and
+- exclusion of curriculum, speech recognition, model audio, AI explanations,
+  API contracts, persistence and authoritative records.
+
+The accepted boundary and release gates are maintained in
+[the Phase 1 multilingual UI expansion scope](PHASE1_MULTILINGUAL_UI_EXPANSION_SCOPE.md).
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Six complete interface catalogues have exact key and placeholder parity | Pass | `locale:check` and localization validation tests; 129 keys per catalogue |
+| English remains the source and fallback | Pass | resolver policy and strict production fallback tests |
+| All five translations are honestly marked as implementation drafts | Pass | governance metadata has `pending-independent-review`, no reviewer and no approval time |
+| Drafts render only under preview policy with a visible notice | Pass | resolver and web application tests for all four added locales |
+| Locale selection remains ephemeral and credential-free | Pass | web unit and Chromium storage checks |
+| Language metadata covers every supported BCP 47 locale | Pass | application and mixed-language component tests |
+| Script fonts are self-hosted and loaded | Pass | pinned package lock and Chromium font-resource checks |
+| Six locale states remain axe-clean and responsive | Pass | Chromium axe, width, enlarged-text and target-size checks |
+| Curriculum and provider boundaries remain unchanged | Pass | source, contract and scope inspection; no OpenAPI or backend behavior change |
+
+### Catalogue evidence
+
+| Locale | Revision | Catalogue SHA-256 | Release status |
+|---|---|---|---|
+| `en-IN` | `ui-en-IN-2026-07-30.6` | `8aa613b07deafecc5a0872275ecf2142554a53056a88ef7530b7b181ce93d1ee` | Source |
+| `kn-IN` | `ui-kn-IN-2026-07-30.6` | `66e011e97c3baa7b5f188c0849e23cf6c9a1d929510d17f1bcfd62869f0812b8` | Pending independent review |
+| `ml-IN` | `ui-ml-IN-2026-07-30.2` | `494847c01becfc22cf53fc307a90a03ca71358bbdd9e91558f876bdc7d05c0cc` | Pending independent review |
+| `ta-IN` | `ui-ta-IN-2026-07-30.2` | `1b1cbbef782b2e64887e8a3500f0daf617ba767aa53cd508825e73648136e338` | Pending independent review |
+| `te-IN` | `ui-te-IN-2026-07-30.2` | `14f437c3fc607f411fed590814dd4742052e17db90f27b84a697a774e9823957` | Pending independent review |
+| `hi-IN` | `ui-hi-IN-2026-07-30.2` | `a299d6ff086e72709c8868ee06d6b8a6e58eee0834b1cd530688991a3bb6b2f8` | Pending independent review |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| `make verify` | Wrapper blocked: GNU Make is not installed; the exact constituent commands passed with SQLite 39 tests/264 assertions, PostgreSQL 164/1,883, localization 31, design system 9 and web 54 |
+| `pnpm run e2e` (`make e2e` constituent) | Pass: 8 Chromium scenarios |
+| Laravel optimize/cleanup and `pnpm --filter @global-english/web build` (`make build` constituents) | Pass: strict production build of 70 modules |
+| `pnpm run locale:check` | Pass: 6 catalogues with the 5 expected pending-review governance warnings |
+| Changed Markdown local-link validation | Pass: 11 files, zero missing local targets |
+| `git diff --check` | Pass |
+
+`make ai-eval` is not applicable because prompts, models, providers and AI
+orchestration are explicitly unchanged.
+
+### Security, privacy and tenancy review
+
+- No authentication, authorization, organization-scoping or tenant-owned
+  record changed.
+- Locale selection remains in React memory. It is not written to
+  `localStorage`, IndexedDB, cookies, ordinary Capacitor preferences or the
+  server.
+- Fallback events contain only allowlisted catalogue metadata; they contain no
+  translated message, parameter, learner data, credential or provider
+  payload.
+- Catalogue and font assets are static repository-governed build artifacts.
+  No database migration, seed, production content, learner data or media was
+  added.
+
+### Known limitations and release gates
+
+- Kannada, Malayalam, Tamil, Telugu and Hindi wording is an
+  implementation draft authored by Codex, not a human-approved translation.
+- Each exact revision and hash requires an accountable translator and a
+  distinct independent reviewer competent in that language before production.
+- Ordinary production remains `approved-only` and visibly falls back to
+  English for every unapproved, stale, rejected or incomplete translation.
+- Manual terminology, wrapping, browser zoom, screen-reader pronunciation and
+  representative Android TalkBack review remains outstanding for every
+  translated locale.
+- UI availability does not imply curriculum, speech-recognition, model-audio,
+  text-to-speech or AI-explanation support in that language.
+- PR-006 is accepted separately under APP-0007. ADR-0006 and APP-0008 now
+  authorize the separately reviewed PR-007 implementation; that does not
+  approve any translated catalogue for production.
+
+### Exit decision
+
+The bounded Phase 1 multilingual UI implementation authorized by APP-0006 is
+implemented and locally verified. This review does not approve any translated
+catalogue for production or expand curriculum, speech, audio or AI behavior.
+PR-006 is accepted separately under APP-0007; PR-007 authority is recorded
+separately in APP-0008.
+
+---
+
+## PR-007 — Offline bundle and idempotent outbox
+
+### Scope reviewed
+
+- APP-0007 acceptance of PR-006 at its exact implementation commit;
+- accepted ADR-0006 and APP-0008 PR-007-only implementation authority;
+- signed mission-bundle and atomic reconnect-completion contracts;
+- personal-device opt-in, protected browser storage, public shell caching,
+  offline UI states and logout boundaries;
+- exact identity, membership, tenant, enrollment, publication and policy
+  binding; and
+- PostgreSQL authority, idempotency, rollback and ordinary PR-006 evidence
+  behavior.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| PR-006 acceptance is bound to the exact `598ad387e65b94707564dce1e199c97deb411d82` revision | Pass | APP-0007 |
+| ADR-0006 is accepted at the exact approved proposal hash and DR-0004 is resolved | Pass | ADR-0006 and APP-0008 |
+| Bundles are signed, purpose-specific, exact-account/publication bound, no-store and expire at or before 24 hours | Pass | service implementation and PostgreSQL expiry/tamper/identity tests |
+| Offline completion is one atomic server-authoritative PR-006 command with exact replay and changed-replay conflict | Pass | PostgreSQL lifecycle tests and one outer command assertion |
+| Invalid option or late failure leaves no partial attempt, response, mastery, review or command | Pass | PostgreSQL rollback assertions |
+| Persistent storage requires explicit personal-device confirmation and is absent before opt-in | Pass | web unit and Chromium storage tests |
+| Protected records use opaque partitions, non-exportable AES-GCM keys, authenticated metadata and verified model-audio bytes | Pass | browser implementation and Chromium ciphertext/key/hash checks |
+| Credentials, raw learner audio, names and organization display names are excluded | Pass | request/storage allowlists, validation tests and browser payload inspection |
+| Public caching excludes API, Sanctum and OAuth paths | Pass | service-worker policy and Chromium cache inspection |
+| One browser lock coordinates reconnect while server idempotency remains final | Pass | client implementation, immutable command unit test and server replay tests |
+| Logout blocks on pending work and otherwise purges keys before web or Android server revocation | Pass | authentication adapter ordering and blocked-logout tests |
+| OpenAPI and generated clients describe both offline endpoints without drift | Pass | Redocly, policy validation and generated-client check |
+| PR-008, AI/provider behavior, recording upload and production remain absent | Pass | dependency, route and scope inspection |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| `make verify` | Wrapper unavailable because GNU Make is not installed; every constituent command passed |
+| Composer validate/audit | Pass; no locked dependency advisory |
+| Pint and PHPStan | Pass; zero static-analysis errors |
+| SQLite suite | Pass: 39 tests, 264 assertions |
+| PostgreSQL suite | Pass: 164 tests, 1,883 assertions |
+| pnpm frozen install/audit | Pass; no known vulnerability |
+| Locale/OpenAPI/generated-client/lint/typecheck | Pass; five intentional translation-review warnings only |
+| Workspace unit tests | Pass: localization 31, design system 9, web 54 |
+| `pnpm run e2e` | Pass: 8 Chromium journeys |
+| Laravel production optimize/cleanup and Vite build | Pass: 70 transformed modules |
+
+`make ai-eval` is not applicable because prompts, models, providers and AI
+orchestration are unchanged.
+
+### Security, privacy and tenancy review
+
+- The lease cannot authenticate an API request; reconnect still requires the
+  current first-party principal, active exact membership, tenant context,
+  active enrollment and unchanged publication authority.
+- The browser never decides attempt number, mastery, review timing or
+  authoritative completion. Local correct/incorrect guidance is visibly
+  pending until the server returns the ordinary result.
+- Same-tenant other-learner access, signature tampering, lease expiry and
+  caller-supplied authority fail closed. Existing organization scoping remains
+  inside the project-owned learning services.
+- The APP-0008 development roles are consolidated in `S R Bhandary`; this is
+  explicitly not independent production review.
+
+### Known limitations and release gates
+
+- There is no learner-facing logout/account-management screen. The adapter
+  boundary blocks logout when pending protected commands exist, but the later
+  UI must offer sync, cancel or explicit permanent discard before retrying.
+- Browsers without `indexedDB.databases()` fail closed for offline resume;
+  they may enable the current-session download but cannot silently reopen a
+  partition after restart.
+- The browser cannot guarantee timed cleanup while it is not running. Cleanup
+  is activation/contact driven as accepted in ADR-0006.
+- Browser locks are advisory. Server transactions and idempotency remain the
+  final duplicate/concurrency authority.
+- The E2E journey uses contract-stubbed synthetic curriculum/media; production
+  content, language, accessibility-device and release review remain open.
+- The workstation has Docker Engine and Compose, but this Codex login has not
+  refreshed docker-group membership. Full PostgreSQL verification used the
+  available loopback PostgreSQL 14 service.
+- GNU Make is absent, so documented wrapper targets were reproduced from the
+  Makefile instead of invoked directly.
+- GitHub Actions and representative Android device tests have not run.
+- PR-007 is implemented but not accepted. PR-008 and production remain
+  unauthorized.
+
+### Exit decision
+
+PR-007 is implemented and repository-verified within APP-0008. This evidence
+does not accept the checkpoint or authorize PR-008 or production. The next
+action is an Accountable Product Owner review of the exact PR-007 implementation
+commit and recorded limitations.

@@ -67,6 +67,10 @@ to the master plan.
 | D-0059 | Accepted | PR-006 authoritative `spoken_state` is always `unassessed`. `local_capture_receipt_present` is a separate boolean engagement receipt and never changes spoken authority, check correctness, score, mastery or review timing. User-facing copy must describe the recording as local practice and must not call the receipt spoken evidence. | Master plan §§4.2, 4.5, 4.6 and 26; DR-0005; APP-0005 |
 | D-0060 | Accepted | Learner model audio is delivered only through an authenticated, organization-scoped route authorized from the exact enrollment/mission publication pin. Before sending a byte, the server bounds the declared object to 10 MB, reads one exact storage object, verifies its actual length and SHA-256 against the immutable publication, and serves those same verified bytes with private no-store headers; the storage key is never public. | Master plan §§10, 14.3, 18.1 and 26; ADR-0003; ADR-0004; APP-0005 |
 | D-0061 | Accepted | PR-006 is an exact-one mission slice: the eligible immutable publication must contain exactly one mission, and a requested mission must be that manifest mission. Zero, multiple or guessed additional missions fail closed. Historical submit replay is reconstructed only through that mission's server attempt number; multiple missions contributing to an objective require a later persisted projection snapshot or global objective-evidence order before they are authorized. | Master plan §26 PR-006; APP-0005; PR-006 implementation boundary |
+| D-0062 | Accepted | Phase 1 includes UI-only implementation previews for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` alongside the existing `kn-IN` default and `en-IN` source/fallback. English remains the learning language; curriculum, Kannada explanation requirements, speech recognition, model audio and AI explanations do not expand. All five translated UI catalogues remain pending independent human review and ordinary production falls back visibly to English until exact current approval exists. | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md); [APP-0006](APPROVALS.md#app-0006); master plan v3.1 §§1.1, 5.4, 9, 26 and 31 |
+| D-0063 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, accepts PR-006 at `598ad387e65b94707564dce1e199c97deb411d82` with its recorded limitations and authorizes only PR-007 decision-resolution work. PR-007 product implementation remains prohibited until DR-0004 is approved. | [APP-0007](APPROVALS.md#app-0007) |
+| D-0064 | Accepted | PR-007 offline data requires explicit personal-device opt-in, shell-only shared-device caching, encrypted opaque per-account partitions, a maximum 24-hour authorization lease, key-first logout purge and same-account-only replay. PostgreSQL remains authoritative; offline completions are atomic and idempotent, last-write-wins is prohibited, and raw audio and credentials never enter offline storage. `S R Bhandary` approved the policy in the consolidated Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy Reviewer development roles; this is not independent production review. | [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md); [APP-0008](APPROVALS.md#app-0008) |
+| D-0065 | Implemented, not accepted | PR-007 issues signed exact-account/publication mission bundles, stores allowlisted mission/audio/outbox data only after personal-device opt-in in encrypted opaque browser partitions, synchronizes one immutable completion through the ordinary PR-006 authority transaction and blocks logout while pending work remains. Public shell caching excludes API/auth paths. PR-008 and production remain unauthorized pending exact-commit PR-007 acceptance. | [PR-007 verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md); [quality evidence](QUALITY_REVIEW.md#pr-007--offline-bundle-and-idempotent-outbox) |
 
 ## Resolved decision requests
 
@@ -75,6 +79,7 @@ to the master plan.
 | DR-0001 | Resolved by [ADR-0002](adr/0002-authentication-session-token-and-recovery-policy.md) under APP-0001. |
 | DR-0002 | Resolved by [ADR-0003](adr/0003-resource-ownership-and-organization-context.md) under APP-0001. |
 | DR-0003 | Resolved by [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md) under APP-0004. |
+| DR-0004 | Resolved by [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md) under APP-0008. |
 | DR-0008 | Resolved by [ADR-0001](adr/0001-approval-authority-and-evidence.md) under APP-0001. |
 | DR-0010 | Resolved by D-0025. The canonical onboarding modes and ADR-0003's multi-organization identity model require institution-only membership for a new invite-first learner while preserving independently accepted memberships for an existing user. |
 
@@ -85,7 +90,6 @@ indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0004 | PR-007 | Offline local-data retention, shared-device isolation, logout purge and cross-device conflict policy |
 | DR-0005 | PR-009 | Recording retention, consent states, provider processing boundaries and deletion workflow |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |

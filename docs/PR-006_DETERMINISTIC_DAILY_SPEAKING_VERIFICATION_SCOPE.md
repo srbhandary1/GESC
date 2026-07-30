@@ -295,12 +295,11 @@ provider or AI orchestration. It must not be reported as passing.
 
 ## Exit gate
 
-Every repository-controlled exit condition is complete. PR-006 is ready for
-checkpoint review, but remains unaccepted. The Accountable Product Owner must
-review the exact implementation commit identified in the completion handoff,
-including the no-production-content and local-only-recording limitations.
+Every repository-controlled exit condition is complete. APP-0007 records the
+Accountable Product Owner's explicit acceptance of PR-006 at
+`598ad387e65b94707564dce1e199c97deb411d82`, including the
+no-production-content and local-only-recording limitations.
 
-PR-007 remains blocked until the Accountable Product Owner explicitly accepts
-PR-006 at that exact implementation commit, with its recorded limitations, and
-authorizes only PR-007. Verification, documentation or a generic instruction
-to continue is not checkpoint acceptance.
+Only PR-007 decision-resolution work is authorized. PR-007 product
+implementation remains blocked until ADR-0006 is explicitly accepted and
+DR-0004 is resolved.

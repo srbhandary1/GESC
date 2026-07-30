@@ -22,6 +22,8 @@ use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\Home\LearnerHomeService;
 use App\Learning\Media\VerifiedPrivateAudioResponder;
 use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Offline\OfflineCompletionService;
+use App\Learning\Offline\OfflineMissionBundleService;
 use App\Learning\Onboarding\LearnerOnboardingService;
 use App\Models\AuthenticationSession;
 use App\Models\Membership;
@@ -778,6 +780,184 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             $second['id'],
             $fourthResult['evidence']['best_attempt_id'],
         );
+
+        $offlineBundle = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $this->app->make(
+                OfflineMissionBundleService::class,
+            )->issue(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+            ),
+        );
+        self::assertSame(
+            'global-english.offline-mission-bundle.v1',
+            $offlineBundle['manifest']['schema'],
+        );
+        self::assertSame(
+            $mission->correctOptionId,
+            $offlineBundle['manifest']['mission']['offline_check'][
+                'correct_option_id'
+            ],
+        );
+        self::assertSame(
+            $mission->modelAudioContentHash,
+            $offlineBundle['manifest']['mission']['model_audio'][
+                'content_hash'
+            ],
+        );
+        self::assertArrayNotHasKey(
+            'storage_object_key',
+            $offlineBundle['manifest']['mission']['model_audio'],
+        );
+        $offlineCommandId = (string) Str::uuid();
+        $offlineClientAttemptId = (string) Str::uuid();
+        $offlineCompletions = $this->app->make(
+            OfflineCompletionService::class,
+        );
+        $offlineResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $offlineCompletions->complete(
+                learner: $learner,
+                bundleId: $offlineBundle['manifest']['bundle_id'],
+                lease: $offlineBundle['lease'],
+                clientAttemptId: $offlineClientAttemptId,
+                checkId: $mission->checkId,
+                selectedOptionId: 'polite-greeting',
+                localRecording: null,
+                idempotencyKey: $offlineCommandId,
+            ),
+        );
+        $offlineReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $offlineCompletions->complete(
+                learner: $learner,
+                bundleId: $offlineBundle['manifest']['bundle_id'],
+                lease: $offlineBundle['lease'],
+                clientAttemptId: $offlineClientAttemptId,
+                checkId: $mission->checkId,
+                selectedOptionId: 'polite-greeting',
+                localRecording: null,
+                idempotencyKey: $offlineCommandId,
+            ),
+        );
+
+        self::assertSame($offlineResult, $offlineReplay);
+        self::assertSame('correct', $offlineResult['check_state']);
+        self::assertSame('unassessed', $offlineResult['spoken_state']);
+        self::assertFalse(
+            $offlineResult['local_capture_receipt_present'],
+        );
+        self::assertSame(
+            $offlineResult['attempt_id'],
+            $offlineResult['evidence']['latest_attempt_id'],
+        );
+        self::assertSame(
+            1,
+            DB::table('learning_commands')
+                ->where('organization_id', $organization->getKey())
+                ->where('operation', 'learner.offline.complete')
+                ->where('aggregate_id', $enrollmentId)
+                ->where('idempotency_key', $offlineCommandId)
+                ->count(),
+        );
+        $this->assertLearningIdempotencyConflict(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $offlineCompletions->complete(
+                    learner: $learner,
+                    bundleId: $offlineBundle['manifest']['bundle_id'],
+                    lease: $offlineBundle['lease'],
+                    clientAttemptId: $offlineClientAttemptId,
+                    checkId: $mission->checkId,
+                    selectedOptionId: 'not-a-greeting',
+                    localRecording: null,
+                    idempotencyKey: $offlineCommandId,
+                ),
+            ),
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $otherContext,
+                fn () => $offlineCompletions->complete(
+                    learner: $otherLearner,
+                    bundleId: $offlineBundle['manifest']['bundle_id'],
+                    lease: $offlineBundle['lease'],
+                    clientAttemptId: (string) Str::uuid(),
+                    checkId: $mission->checkId,
+                    selectedOptionId: 'polite-greeting',
+                    localRecording: null,
+                    idempotencyKey: (string) Str::uuid(),
+                ),
+            ),
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $offlineCompletions->complete(
+                    learner: $learner,
+                    bundleId: $offlineBundle['manifest']['bundle_id'],
+                    lease: $offlineBundle['lease'].'x',
+                    clientAttemptId: (string) Str::uuid(),
+                    checkId: $mission->checkId,
+                    selectedOptionId: 'polite-greeting',
+                    localRecording: null,
+                    idempotencyKey: (string) Str::uuid(),
+                ),
+            ),
+        );
+        $expiringBundle = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $this->app->make(
+                OfflineMissionBundleService::class,
+            )->issue(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+            ),
+        );
+        CarbonImmutable::setTestNow('2026-07-31T10:15:00+00:00');
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $offlineCompletions->complete(
+                    learner: $learner,
+                    bundleId: $expiringBundle['manifest']['bundle_id'],
+                    lease: $expiringBundle['lease'],
+                    clientAttemptId: (string) Str::uuid(),
+                    checkId: $mission->checkId,
+                    selectedOptionId: 'polite-greeting',
+                    localRecording: null,
+                    idempotencyKey: (string) Str::uuid(),
+                ),
+            ),
+        );
+        CarbonImmutable::setTestNow('2026-07-30T10:15:00+00:00');
+        $attemptCountBeforeRejectedOfflineCommand = DB::table(
+            'learner_attempts',
+        )->count();
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $offlineCompletions->complete(
+                    learner: $learner,
+                    bundleId: $offlineBundle['manifest']['bundle_id'],
+                    lease: $offlineBundle['lease'],
+                    clientAttemptId: (string) Str::uuid(),
+                    checkId: $mission->checkId,
+                    selectedOptionId: 'unknown-option',
+                    localRecording: null,
+                    idempotencyKey: (string) Str::uuid(),
+                ),
+            ),
+        );
+        self::assertSame(
+            $attemptCountBeforeRejectedOfflineCommand,
+            DB::table('learner_attempts')->count(),
+            'A rejected atomic offline command must roll back its started attempt.',
+        );
+
         $delayedFirstSubmitReplay = $this->contexts()->run(
             $learnerContext,
             fn (): array => $attempts->submit(
@@ -820,7 +1000,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
                 'poisoned-open-attempt-definition',
             ),
             'rule_version' => 'daily-speaking-v1',
-            'attempt_number' => 5,
+            'attempt_number' => 6,
             'status' => 'in_progress',
             'started_at' => now(),
             'submitted_at' => null,
@@ -855,7 +1035,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             $progress['objectives'][0]['evidence']['best_attempt_id'],
         );
         self::assertSame(
-            $fourth['id'],
+            $offlineResult['attempt_id'],
             $progress['objectives'][0]['evidence']['latest_attempt_id'],
         );
         $this->assertLearningRejected(

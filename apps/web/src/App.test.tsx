@@ -1,6 +1,7 @@
 import {
   DEFAULT_LOCALE,
   resolveMessage,
+  SUPPORTED_LOCALES,
   type MessageKey,
   type ResolutionPolicy,
   type SupportedLocale,
@@ -102,6 +103,37 @@ describe('localized application shell', () => {
     ).toHaveAttribute('aria-current', 'page')
     expect(localStorageWrite).not.toHaveBeenCalled()
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
+  })
+
+  it('offers every approved Phase 1 preview locale with correct language metadata', async () => {
+    const user = userEvent.setup()
+
+    render(<App authentication={anonymousAuthentication()} />)
+
+    const localeSelect = screen.getByRole('combobox')
+
+    expect(
+      [...localeSelect.querySelectorAll('option')].map(
+        ({ value }) => value,
+      ),
+    ).toEqual(SUPPORTED_LOCALES)
+
+    for (const locale of ['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const) {
+      await user.selectOptions(localeSelect, locale)
+
+      expect(document.documentElement).toHaveAttribute('lang', locale)
+      expect(
+        screen
+          .getByRole('heading', {
+            level: 1,
+            name: text('page.home.title', locale),
+          })
+          .querySelector(`[lang="${locale}"]`),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(text('localization.preview_notice', locale)),
+      ).toHaveAttribute('lang', locale)
+    }
   })
 
   it('falls back visibly to English under the production policy', async () => {

@@ -20,6 +20,7 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="AUTH_IDENTITY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtaWRlbnRpdHktdGVzdC1rZXk="/>
+        <env name="OFFLINE_BUNDLE_SIGNING_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtb2ZmbGluZS10ZXN0LWtleS12MQ=="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

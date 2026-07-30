@@ -2,13 +2,13 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.4.0
+  version: 0.5.0
   description: |
-    Canonical API contract for the Global English platform. PR-006 adds the
-    deterministic daily-speaking browser slice over an enrollment's exact
-    immutable curriculum-publication pin. Learner recording bytes remain
-    local and volatile; the API accepts only a bounded, non-authoritative
-    local-capture receipt that cannot award spoken mastery.
+    Canonical API contract for the Global English platform. PR-007 adds an
+    exact-pinned offline mission bundle and one atomic idempotent reconnect
+    command over the deterministic PR-006 learner slice. Learner recording
+    bytes remain local and volatile; the API accepts only a bounded,
+    non-authoritative local-capture receipt that cannot award spoken mastery.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -617,6 +617,46 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /missions/{mission_id}/offline-bundle:
+    get:
+      operationId: getLearnerOfflineMissionBundle
+      summary: Issue one protected deterministic offline mission bundle
+      description: |
+        Revalidates the authenticated learner's exact active enrollment and
+        immutable publication pin, then returns an allowlisted manifest and a
+        purpose-specific signed authorization lease valid for no more than 24
+        hours. The response is private and no-store; only the reviewed client
+        offline store may persist its protected fields.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/MissionId"
+        - $ref: "#/components/parameters/EnrollmentId"
+      responses:
+        "200":
+          description: Exact offline manifest and signed authorization lease.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineMissionBundle"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /missions/{mission_id}/attempts:
     post:
       operationId: startLearnerMissionAttempt
@@ -743,6 +783,54 @@ paths:
       responses:
         "200":
           description: Authoritative deterministic result and review schedule.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerMissionResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /offline-completions:
+    post:
+      operationId: completeLearnerOfflineMission
+      summary: Atomically synchronize one offline deterministic completion
+      description: |
+        Validates the exact signed bundle lease and current learner authority,
+        then starts, responds to and submits one PR-006 attempt in one outer
+        transaction. The server derives attempt number, correctness, mastery
+        and review state. Exact replay returns the original result; a changed
+        replay conflicts. Raw learner audio and caller-authored authority are
+        forbidden.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteOfflineMissionRequest"
+      responses:
+        "200":
+          description: Authoritative deterministic result for the synchronized completion.
           headers:
             X-Correlation-ID:
               $ref: "#/components/headers/CorrelationId"
@@ -1560,6 +1648,214 @@ components:
           $ref: "#/components/schemas/LearnerModelAudio"
         check:
           $ref: "#/components/schemas/LearnerMissionCheck"
+    OfflineModelAudio:
+      type: object
+      additionalProperties: false
+      required:
+        - asset_id
+        - stream_url
+        - mime_type
+        - duration_ms
+        - content_hash
+        - byte_size
+      properties:
+        asset_id:
+          $ref: "#/components/schemas/Ulid"
+        stream_url:
+          type: string
+          format: uri-reference
+        mime_type:
+          type: string
+          enum:
+            - audio/mpeg
+            - audio/ogg
+            - audio/webm
+            - audio/mp4
+            - audio/wav
+        duration_ms:
+          type: integer
+          minimum: 250
+          maximum: 300000
+        content_hash:
+          $ref: "#/components/schemas/Sha256"
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10000000
+    OfflineMissionCheckAuthority:
+      type: object
+      additionalProperties: false
+      required:
+        - correct_option_id
+      properties:
+        correct_option_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9][a-z0-9._-]{0,99}$"
+    OfflineLearnerMission:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - enrollment_id
+        - publication_id
+        - objective_id
+        - title
+        - kannada_guidance
+        - model_text
+        - transcript
+        - model_audio
+        - check
+        - offline_check
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        publication_id:
+          $ref: "#/components/schemas/Ulid"
+        objective_id:
+          $ref: "#/components/schemas/Ulid"
+        title:
+          $ref: "#/components/schemas/GovernedContent"
+        kannada_guidance:
+          $ref: "#/components/schemas/GovernedContent"
+        model_text:
+          $ref: "#/components/schemas/GovernedContent"
+        transcript:
+          $ref: "#/components/schemas/GovernedContent"
+        model_audio:
+          $ref: "#/components/schemas/OfflineModelAudio"
+        check:
+          $ref: "#/components/schemas/LearnerMissionCheck"
+        offline_check:
+          $ref: "#/components/schemas/OfflineMissionCheckAuthority"
+    OfflineBundleBinding:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - organization_id
+        - membership_id
+        - enrollment_id
+      properties:
+        user_id:
+          $ref: "#/components/schemas/Ulid"
+        organization_id:
+          $ref: "#/components/schemas/Ulid"
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+    OfflineBundlePublication:
+      type: object
+      additionalProperties: false
+      required:
+        - owner_organization_id
+        - curriculum_version_id
+        - publication_id
+        - manifest_hash
+        - mission_definition_hash
+      properties:
+        owner_organization_id:
+          $ref: "#/components/schemas/Ulid"
+        curriculum_version_id:
+          $ref: "#/components/schemas/Ulid"
+        publication_id:
+          $ref: "#/components/schemas/Ulid"
+        manifest_hash:
+          $ref: "#/components/schemas/Sha256"
+        mission_definition_hash:
+          $ref: "#/components/schemas/Sha256"
+    OfflineMissionManifest:
+      type: object
+      additionalProperties: false
+      required:
+        - schema
+        - bundle_id
+        - issued_at
+        - expires_at
+        - binding
+        - publication
+        - policy_version
+        - mission
+        - bundle_hash
+      properties:
+        schema:
+          type: string
+          const: global-english.offline-mission-bundle.v1
+        bundle_id:
+          $ref: "#/components/schemas/Ulid"
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        binding:
+          $ref: "#/components/schemas/OfflineBundleBinding"
+        publication:
+          $ref: "#/components/schemas/OfflineBundlePublication"
+        policy_version:
+          type: string
+          const: daily-speaking-v1
+        mission:
+          $ref: "#/components/schemas/OfflineLearnerMission"
+        bundle_hash:
+          $ref: "#/components/schemas/Sha256"
+    OfflineMissionBundle:
+      type: object
+      additionalProperties: false
+      required:
+        - manifest
+        - lease
+      properties:
+        manifest:
+          $ref: "#/components/schemas/OfflineMissionManifest"
+        lease:
+          type: string
+          minLength: 1
+          maxLength: 8192
+          description: Purpose-specific signed lease; it is not an API credential.
+    CompleteOfflineMissionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - schema
+        - bundle_id
+        - lease
+        - client_attempt_id
+        - check_id
+        - selected_option_id
+        - local_recording
+      properties:
+        schema:
+          type: string
+          const: global-english.offline-completion.v1
+        bundle_id:
+          $ref: "#/components/schemas/Ulid"
+        lease:
+          type: string
+          minLength: 1
+          maxLength: 8192
+        client_attempt_id:
+          type: string
+          format: uuid
+        check_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9][a-z0-9._-]{0,99}$"
+        selected_option_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9][a-z0-9._-]{0,99}$"
+        local_recording:
+          oneOf:
+            - $ref: "#/components/schemas/LocalCaptureReceipt"
+            - type: "null"
     StartLearnerAttemptRequest:
       type: object
       additionalProperties: false

@@ -137,4 +137,46 @@ describe('WebSessionAuthenticationAdapter', () => {
       identity: identityResponse,
     })
   })
+
+  it('purges protected offline keys before requesting server logout', async () => {
+    const events: string[] = []
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      beforeLogout: vi.fn(async () => {
+        events.push('purge')
+      }),
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(new Request(input).url)
+        events.push(url.pathname)
+
+        return url.pathname === '/sanctum/csrf-cookie'
+          ? new Response(null, { status: 204 })
+          : Response.json({ logged_out: true })
+      }) as typeof fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await adapter.logout()
+
+    expect(events).toEqual([
+      'purge',
+      '/sanctum/csrf-cookie',
+      '/api/v1/auth/logout',
+    ])
+  })
+
+  it('does not revoke the session when protected pending work blocks logout', async () => {
+    const fetcher = vi.fn()
+    const adapter = new WebSessionAuthenticationAdapter({
+      beforeLogout: async () => {
+        throw new Error('Pending offline work.')
+      },
+      fetch: fetcher as typeof fetch,
+    })
+
+    await expect(adapter.logout()).rejects.toThrow(
+      'Pending offline work.',
+    )
+    expect(fetcher).not.toHaveBeenCalled()
+  })
 })

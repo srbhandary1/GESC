@@ -41,7 +41,14 @@ describe('message resolution', () => {
   it('declares exact locale defaults', () => {
     expect(DEFAULT_LOCALE).toBe('kn-IN')
     expect(FALLBACK_LOCALE).toBe('en-IN')
-    expect(SUPPORTED_LOCALES).toEqual(['kn-IN', 'en-IN'])
+    expect(SUPPORTED_LOCALES).toEqual([
+      'kn-IN',
+      'ml-IN',
+      'ta-IN',
+      'te-IN',
+      'hi-IN',
+      'en-IN',
+    ])
   })
 
   it('uses approved-only resolution by default', () => {
@@ -56,11 +63,50 @@ describe('message resolution', () => {
       usedFallback: true,
       reason: 'unapproved-translation',
       reviewStatus: 'source',
-      revision: 'ui-en-IN-2026-07-30.4',
+      revision: 'ui-en-IN-2026-07-30.6',
       isPreview: false,
     })
     expect(onFallback).toHaveBeenCalledOnce()
   })
+
+  it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
+    'returns the pending %s catalogue only under explicit development preview',
+    (locale) => {
+      const onFallback = vi.fn<(event: FallbackEvent) => void>()
+
+      const result = resolveMessage('nav.home', {
+        policy: 'development-preview',
+        requestedLocale: locale,
+        onFallback,
+      })
+
+      expect(result.text).toBe(catalogues[locale]['nav.home'])
+      expect(result.requestedLocale).toBe(locale)
+      expect(result.resolvedLocale).toBe(locale)
+      expect(result.usedFallback).toBe(false)
+      expect(result.reason).toBe('development-preview')
+      expect(result.reviewStatus).toBe('pending-independent-review')
+      expect(result.isPreview).toBe(true)
+      expect(onFallback).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
+    'falls back from pending %s under the production policy',
+    (locale) => {
+      const result = resolveMessage('nav.home', {
+        policy: 'approved-only',
+        requestedLocale: locale,
+      })
+
+      expect(result.text).toBe('Home')
+      expect(result.requestedLocale).toBe(locale)
+      expect(result.resolvedLocale).toBe(FALLBACK_LOCALE)
+      expect(result.reason).toBe('unapproved-translation')
+      expect(result.usedFallback).toBe(true)
+      expect(result.isPreview).toBe(false)
+    },
+  )
 
   it('returns pending Kannada only under explicit development preview', () => {
     const onFallback = vi.fn<(event: FallbackEvent) => void>()

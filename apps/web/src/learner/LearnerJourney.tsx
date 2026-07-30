@@ -5,6 +5,7 @@ import type {
   SupportedLocale,
 } from '@global-english/localization'
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -12,6 +13,12 @@ import {
 } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import type {
+  OfflineLearningStore,
+  OfflineProfileBinding,
+  StoredOfflineBundle,
+} from '../offline/OfflineLearningStore'
+import { browserOfflineLearningStore } from '../offline/BrowserOfflineLearningStore'
 import {
   defaultAudioRecorder,
   type AudioRecorder,
@@ -26,9 +33,14 @@ import type {
   LearnerProgress,
   LocalRecordingMetadata,
   MissionResult,
+  OfflineBundle,
+  OfflineCompletionInput,
   OnboardingInput,
 } from './LearnerJourneyApi'
-import { LEARNER_GOALS } from './LearnerJourneyApi'
+import {
+  LEARNER_GOALS,
+  LearnerJourneyUnavailableError,
+} from './LearnerJourneyApi'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
 import './LearnerJourney.css'
@@ -39,6 +51,13 @@ export interface LearnerJourneyProps {
   readonly localizationPolicy: ResolutionPolicy
   readonly audioRecorder?: AudioRecorder
   readonly createClientId?: () => string
+  readonly offlineBinding?: OfflineProfileBinding | null
+  readonly offlineStore?: OfflineLearningStore
+  readonly resumeBundle?: StoredOfflineBundle
+}
+
+interface OfflineMissionSession {
+  readonly bundle: OfflineBundle
 }
 
 type LoadState =
@@ -47,33 +66,115 @@ type LoadState =
   | { readonly kind: 'ready'; readonly home: LearnerHome }
   | {
       readonly kind: 'mission'
-      readonly home: LearnerHome
+      readonly home: LearnerHome | null
       readonly attemptId: string
       readonly mission: LearnerMission
+      readonly offline?: OfflineMissionSession
     }
   | {
       readonly kind: 'result'
-      readonly home: LearnerHome
+      readonly home: LearnerHome | null
       readonly mission: LearnerMission
       readonly result: MissionResult
       readonly progress: LearnerProgress | null
     }
+  | {
+      readonly kind: 'offline-saved'
+      readonly home: LearnerHome | null
+      readonly mission: LearnerMission
+      readonly commandId: string
+      readonly correct: boolean
+    }
+
+type OfflineStatus =
+  | 'available'
+  | 'confirmation'
+  | 'downloading'
+  | 'expired'
+  | 'failed'
+  | 'saved'
+  | 'synced'
+  | 'syncing'
+  | 'unavailable'
+
+const createRandomClientId = () => crypto.randomUUID()
 
 export function LearnerJourney({
   api,
   locale,
   localizationPolicy,
   audioRecorder = defaultAudioRecorder,
-  createClientId = () => crypto.randomUUID(),
+  createClientId = createRandomClientId,
+  offlineBinding = null,
+  offlineStore = browserOfflineLearningStore,
+  resumeBundle,
 }: LearnerJourneyProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(false)
+  const [offlineStatus, setOfflineStatus] =
+    useState<OfflineStatus>('unavailable')
+  const [personalDeviceConfirmed, setPersonalDeviceConfirmed] =
+    useState(false)
+  const [profileEnabled, setProfileEnabled] = useState(false)
+  const [online, setOnline] = useState(
+    () => globalThis.navigator?.onLine !== false,
+  )
   const stateTitle = useRef<HTMLHeadingElement>(null)
   const startAttemptCommandId = useRef(createClientId())
   const mounted = useRef(true)
+  const offlineAudioUrl = useRef<string | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+
+  const activateOfflineBundle = useCallback(
+    (
+      home: LearnerHome | null,
+      stored: StoredOfflineBundle,
+    ) => {
+      const expiresAt = new Date(
+        stored.bundle.manifest.expires_at,
+      ).getTime()
+
+      if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        setOfflineStatus('expired')
+        throw new Error('Offline authorization expired.')
+      }
+
+      if (offlineAudioUrl.current !== null) {
+        URL.revokeObjectURL(offlineAudioUrl.current)
+      }
+
+      const audioBytes = new Uint8Array(stored.audio)
+      const source = URL.createObjectURL(
+        new Blob([audioBytes.buffer], {
+          type: stored.bundle.manifest.mission.model_audio.mime_type,
+        }),
+      )
+      offlineAudioUrl.current = source
+      const {
+        offline_check: _offlineCheck,
+        ...downloadedMission
+      } = stored.bundle.manifest.mission
+      void _offlineCheck
+
+      setOfflineStatus('available')
+      setState({
+        attemptId: createClientId(),
+        home,
+        kind: 'mission',
+        mission: {
+          ...downloadedMission,
+          model_audio: {
+            ...downloadedMission.model_audio,
+            stream_url: source,
+          },
+        },
+        offline: { bundle: stored.bundle },
+      })
+    },
+    [createClientId],
+  )
 
   const loadHome = () => {
     const controller = new AbortController()
@@ -92,6 +193,29 @@ export function LearnerJourney({
   }
 
   useEffect(() => {
+    let active = true
+
+    if (
+      resumeBundle !== undefined &&
+      globalThis.navigator?.onLine === false
+    ) {
+      queueMicrotask(() => {
+        if (!active) {
+          return
+        }
+
+        try {
+          activateOfflineBundle(null, resumeBundle)
+        } catch {
+          setState({ kind: 'error' })
+        }
+      })
+
+      return () => {
+        active = false
+      }
+    }
+
     const controller = new AbortController()
     api
       .home(controller.signal)
@@ -102,14 +226,70 @@ export function LearnerJourney({
         }
       })
 
-    return () => controller.abort()
-  }, [api])
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [activateOfflineBundle, api, resumeBundle])
+
+  useEffect(() => {
+    let active = true
+
+    if (offlineBinding === null || !offlineStore.available()) {
+      queueMicrotask(() => {
+        if (active) {
+          setOfflineStatus('unavailable')
+          setProfileEnabled(false)
+        }
+      })
+
+      return () => {
+        active = false
+      }
+    }
+
+    offlineStore
+      .hasProfile(offlineBinding)
+      .then((enabled) => {
+        if (active) {
+          setProfileEnabled(enabled)
+          setOfflineStatus(enabled ? 'available' : 'confirmation')
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setOfflineStatus('unavailable')
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [offlineBinding, offlineStore])
 
   useEffect(() => {
     mounted.current = true
 
     return () => {
       mounted.current = false
+      if (offlineAudioUrl.current !== null) {
+        URL.revokeObjectURL(offlineAudioUrl.current)
+        offlineAudioUrl.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const updateNetworkState = () => {
+      setOnline(globalThis.navigator?.onLine !== false)
+    }
+
+    globalThis.addEventListener('online', updateNetworkState)
+    globalThis.addEventListener('offline', updateNetworkState)
+
+    return () => {
+      globalThis.removeEventListener('online', updateNetworkState)
+      globalThis.removeEventListener('offline', updateNetworkState)
     }
   }, [])
 
@@ -117,11 +297,104 @@ export function LearnerJourney({
     if (
       state.kind === 'ready' ||
       state.kind === 'mission' ||
-      state.kind === 'result'
+      state.kind === 'result' ||
+      state.kind === 'offline-saved'
     ) {
       stateTitle.current?.focus()
     }
   }, [state.kind])
+
+  const synchronizeOfflineCommands = useCallback(async () => {
+    if (
+      offlineBinding === null ||
+      api.completeOffline === undefined ||
+      globalThis.navigator?.onLine === false
+    ) {
+      return
+    }
+
+    const synchronize = async () => {
+      const commands = await offlineStore.pendingCommands(offlineBinding)
+      const pending = commands.filter(
+        ({ state: commandState }) => commandState === 'pending',
+      )
+
+      if (commands.length === 0) {
+        return
+      }
+
+      if (pending.length === 0) {
+        setOfflineStatus('failed')
+        return
+      }
+
+      setOfflineStatus('syncing')
+
+      for (const command of pending) {
+        try {
+          const result = await api.completeOffline!(
+            command.body,
+            command.commandId,
+          )
+          await offlineStore.acceptReceipt(
+            offlineBinding,
+            command.commandId,
+            result,
+          )
+          setOfflineStatus('synced')
+          setState((current) =>
+            current.kind === 'offline-saved' &&
+            current.commandId === command.commandId
+              ? {
+                  home: current.home,
+                  kind: 'result',
+                  mission: current.mission,
+                  progress: null,
+                  result,
+                }
+              : current,
+          )
+        } catch (error) {
+          if (
+            error instanceof LearnerJourneyUnavailableError &&
+            error.status !== undefined &&
+            error.status >= 400 &&
+            error.status < 500
+          ) {
+            await offlineStore.markNeedsAttention(
+              offlineBinding,
+              command.commandId,
+            )
+          }
+          setOfflineStatus('failed')
+          break
+        }
+      }
+    }
+
+    const locks = globalThis.navigator?.locks
+
+    if (locks === undefined) {
+      await synchronize()
+      return
+    }
+
+    await locks.request(
+      'global-english-offline-sync-v1',
+      { ifAvailable: true, mode: 'exclusive' },
+      async (lock) => {
+        if (lock !== null) {
+          await synchronize()
+        }
+      },
+    )
+  }, [api, offlineBinding, offlineStore])
+
+  useEffect(() => {
+    if (online) {
+      void synchronizeOfflineCommands()
+    }
+  }, [online, synchronizeOfflineCommands])
 
   const beginMission = async (home: LearnerHome) => {
     const enrollment = home.enrollment
@@ -135,6 +408,26 @@ export function LearnerJourney({
     setActionError(false)
 
     try {
+      if (globalThis.navigator?.onLine === false) {
+        if (offlineBinding === null) {
+          throw new Error('No offline profile binding.')
+        }
+
+        const stored = await offlineStore.loadBundle(
+          offlineBinding,
+          enrollment.id,
+          summary.id,
+        )
+
+        if (stored === null) {
+          setOfflineStatus('expired')
+          throw new Error('No valid offline bundle.')
+        }
+
+        activateOfflineBundle(home, stored)
+        return
+      }
+
       const mission = await api.mission(summary.id, enrollment.id)
       const attempt = await api.startAttempt(
         summary.id,
@@ -155,14 +448,58 @@ export function LearnerJourney({
     }
   }
 
+  const downloadOfflineMission = async (home: LearnerHome) => {
+    const enrollment = home.enrollment
+    const mission = home.next_mission
+
+    if (
+      enrollment === null ||
+      mission === null ||
+      offlineBinding === null ||
+      api.offlineBundle === undefined ||
+      api.downloadMedia === undefined
+    ) {
+      setOfflineStatus('unavailable')
+      return
+    }
+
+    setOfflineStatus('downloading')
+    setActionError(false)
+
+    try {
+      if (!profileEnabled) {
+        if (!personalDeviceConfirmed) {
+          setOfflineStatus('confirmation')
+          return
+        }
+
+        await offlineStore.enablePersonalDevice(offlineBinding)
+        setProfileEnabled(true)
+      }
+
+      const bundle = await api.offlineBundle(
+        mission.id,
+        enrollment.id,
+      )
+      const audio = await api.downloadMedia(
+        bundle.manifest.mission.model_audio.stream_url,
+      )
+      await offlineStore.saveBundle(offlineBinding, bundle, audio)
+      setOfflineStatus('available')
+    } catch {
+      setActionError(true)
+      setOfflineStatus(profileEnabled ? 'available' : 'confirmation')
+    }
+  }
+
   const completeMission = (
-    home: LearnerHome,
+    home: LearnerHome | null,
     mission: LearnerMission,
     result: MissionResult,
   ) => {
     setState({ home, kind: 'result', mission, progress: null, result })
 
-    if (home.enrollment === null) {
+    if (home?.enrollment === null || home === null) {
       return
     }
 
@@ -230,11 +567,83 @@ export function LearnerJourney({
         locale={locale}
         localizationPolicy={localizationPolicy}
         mission={state.mission}
+        offline={
+          state.offline === undefined || offlineBinding === null
+            ? undefined
+            : {
+                binding: offlineBinding,
+                bundle: state.offline.bundle,
+                store: offlineStore,
+              }
+        }
         onComplete={(result) =>
           completeMission(state.home, state.mission, result)
         }
+        onOfflineSaved={(commandId, correct) => {
+          setOfflineStatus('saved')
+          setState({
+            commandId,
+            correct,
+            home: state.home,
+            kind: 'offline-saved',
+            mission: state.mission,
+          })
+        }}
         titleRef={stateTitle}
       />
+    )
+  }
+
+  if (state.kind === 'offline-saved') {
+    return (
+      <section
+        aria-labelledby="offline-saved-title"
+        className="learner-card learner-offline-result"
+      >
+        <h2
+          id="offline-saved-title"
+          ref={stateTitle}
+          tabIndex={-1}
+        >
+          <LocalizedMessage resolution={message('learner.offline.saved')} />
+        </h2>
+        <p role="status">
+          <LocalizedMessage
+            resolution={message(
+              state.correct
+                ? 'learner.offline.saved_correct'
+                : 'learner.offline.saved_incorrect',
+            )}
+          />
+        </p>
+        <p className="learner-notice">
+          <LocalizedMessage
+            resolution={message('learner.offline.pending_authority')}
+          />
+        </p>
+        {online ? (
+          <button
+            className="ge-button ge-button--primary"
+            disabled={offlineStatus === 'syncing'}
+            onClick={() => void synchronizeOfflineCommands()}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message(
+                offlineStatus === 'syncing'
+                  ? 'learner.offline.syncing'
+                  : 'learner.offline.retry_sync',
+              )}
+            />
+          </button>
+        ) : (
+          <p role="status">
+            <LocalizedMessage
+              resolution={message('learner.offline.offline')}
+            />
+          </p>
+        )}
+      </section>
     )
   }
 
@@ -243,7 +652,14 @@ export function LearnerJourney({
       <MissionResultView
         locale={locale}
         localizationPolicy={localizationPolicy}
-        onRetry={() => void beginMission(state.home)}
+        onRetry={() => {
+          if (state.home === null) {
+            loadHome()
+            return
+          }
+
+          void beginMission(state.home)
+        }}
         progress={state.progress}
         result={state.result}
         titleRef={stateTitle}
@@ -330,6 +746,75 @@ export function LearnerJourney({
                 busy
                   ? 'learner.home.starting'
                   : 'learner.home.start_mission',
+              )}
+            />
+          </button>
+        </section>
+      )}
+      {state.home.enrollment === null ||
+      state.home.next_mission === null ? null : (
+        <section
+          aria-labelledby="offline-access-title"
+          className="learner-card learner-offline"
+        >
+          <h3
+            className="learner-card__title"
+            id="offline-access-title"
+          >
+            <LocalizedMessage
+              resolution={message('learner.offline.title')}
+            />
+          </h3>
+          <p className="learner-notice">
+            <LocalizedMessage
+              resolution={message('learner.offline.warning')}
+            />
+          </p>
+          {!profileEnabled &&
+          offlineStatus !== 'unavailable' ? (
+            <label className="learner-choice">
+              <input
+                checked={personalDeviceConfirmed}
+                onChange={(event) =>
+                  setPersonalDeviceConfirmed(
+                    event.currentTarget.checked,
+                  )
+                }
+                type="checkbox"
+              />
+              <LocalizedMessage
+                resolution={message(
+                  'learner.offline.personal_confirmation',
+                )}
+              />
+            </label>
+          ) : null}
+          <p
+            aria-live="polite"
+            role="status"
+          >
+            <LocalizedMessage
+              resolution={message(
+                offlineStatusMessageKey(offlineStatus, online),
+              )}
+            />
+          </p>
+          <button
+            className="ge-button"
+            disabled={
+              !online ||
+              offlineStatus === 'downloading' ||
+              offlineStatus === 'unavailable' ||
+              (!profileEnabled && !personalDeviceConfirmed)
+            }
+            onClick={() => void downloadOfflineMission(state.home)}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message(
+                offlineStatus === 'downloading'
+                  ? 'learner.offline.downloading'
+                  : 'learner.offline.download',
               )}
             />
           </button>
@@ -494,7 +979,16 @@ interface MissionExperienceProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
   readonly mission: LearnerMission
+  readonly offline?: {
+    readonly binding: OfflineProfileBinding
+    readonly bundle: OfflineBundle
+    readonly store: OfflineLearningStore
+  }
   readonly onComplete: (result: MissionResult) => void
+  readonly onOfflineSaved: (
+    commandId: string,
+    correct: boolean,
+  ) => void
   readonly titleRef: React.RefObject<HTMLHeadingElement | null>
 }
 
@@ -506,7 +1000,9 @@ function MissionExperience({
   locale,
   localizationPolicy,
   mission,
+  offline,
   onComplete,
+  onOfflineSaved,
   titleRef,
 }: MissionExperienceProps) {
   const [step, setStep] = useState<'learn' | 'speak' | 'check'>('learn')
@@ -551,6 +1047,32 @@ function MissionExperience({
     setError(false)
 
     try {
+      if (offline !== undefined) {
+        const commandId = submitCommandId.current
+        const body = {
+          bundle_id: offline.bundle.manifest.bundle_id,
+          check_id: response.check_id,
+          client_attempt_id: attemptId,
+          lease: offline.bundle.lease,
+          local_recording: response.local_recording,
+          schema: 'global-english.offline-completion.v1',
+          selected_option_id: response.selected_option_id,
+        } satisfies OfflineCompletionInput
+        await offline.store.queueCompletion(offline.binding, {
+          body,
+          commandId,
+          createdAt: new Date().toISOString(),
+          state: 'pending',
+        })
+        onOfflineSaved(
+          commandId,
+          response.selected_option_id ===
+            offline.bundle.manifest.mission.offline_check
+              .correct_option_id,
+        )
+        return
+      }
+
       await api.recordResponse(
         attemptId,
         response,
@@ -1096,6 +1618,27 @@ function goalMessageKey(goal: LearnerGoal): MessageKey {
     'travel-confidence': 'learner.onboarding.goal_travel',
     'workplace-confidence': 'learner.onboarding.goal_workplace',
   }[goal] as MessageKey
+}
+
+function offlineStatusMessageKey(
+  status: OfflineStatus,
+  online: boolean,
+): MessageKey {
+  if (!online) {
+    return 'learner.offline.offline'
+  }
+
+  return {
+    available: 'learner.offline.available',
+    confirmation: 'learner.offline.warning',
+    downloading: 'learner.offline.downloading',
+    expired: 'learner.offline.expired',
+    failed: 'learner.offline.failed',
+    saved: 'learner.offline.pending_authority',
+    synced: 'learner.offline.synced',
+    syncing: 'learner.offline.syncing',
+    unavailable: 'learner.offline.unavailable',
+  }[status] as MessageKey
 }
 
 function formatReviewDate(

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { SUPPORTED_LOCALES } from '../packages/localization/src/index.ts'
 import {
   validateCanonicalCatalogues,
 } from '../packages/localization/src/validation.ts'
@@ -27,6 +28,6 @@ if (!result.valid) {
   process.exitCode = 1
 } else {
   console.log(
-    `Locale validation passed for 2 UI catalogues with ${result.warnings.length} governance warning(s).`,
+    `Locale validation passed for ${SUPPORTED_LOCALES.length} UI catalogues with ${result.warnings.length} governance warning(s).`,
   )
 }

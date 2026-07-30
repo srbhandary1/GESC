@@ -120,6 +120,17 @@
   background: #fff8dd;
 }
 
+.learner-offline,
+.learner-offline-result {
+  display: grid;
+  gap: var(--ge-space-3);
+}
+
+.learner-offline > *,
+.learner-offline-result > * {
+  margin-block: 0;
+}
+
 .learner-result__can-do {
   font-size: var(--ge-font-size-lg);
   font-weight: 750;

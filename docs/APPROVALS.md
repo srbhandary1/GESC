@@ -389,3 +389,210 @@ execution of only PR-006 within the canonical master-plan scope.
 - Independent tenancy, security, privacy, accessibility, English-academic,
   Kannada-language and legal production gates remain in force.
 - No master-plan amendment is made.
+
+<a id="app-0006"></a>
+
+## APP-0006 — Phase 1 multilingual UI expansion
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted ADR | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Impact note | [Phase 1 multilingual UI expansion scope](PHASE1_MULTILINGUAL_UI_EXPANSION_SCOPE.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — master plan §§1.1, 5.4, 9, 26 and 31 |
+
+### Exact human statement
+
+```text
+I want Malayalam (ml-IN), Tamil (ta-IN), Telugu (te-IN), and Hindi (hi-IN) for the Phase 3 language-pack rollout in phase 1.
+English remains the learning language; curriculum, speech recognition, model audio, and AI explanations remain unchanged. Translations will be explicitly marked as implementation drafts pending independent human review, and production will fall back to English until approved.
+```
+
+### Context and interpretation
+
+Immediately before the statement, Codex:
+
+1. identified that the canonical plan placed these language packs in Phase 3;
+2. explained the distinction between UI guidance, governed curriculum and
+   speech/audio/AI support;
+3. proposed a bounded UI-only Phase 1 scope with English retained as the
+   learning and fallback language;
+4. stated that draft translations would remain pending independent review and
+   production would fall back to English; and
+5. stated that implementation required an ADR, master-plan amendment,
+   catalogue governance, fonts, tests and documentation.
+
+The human selected that bounded scope and repeated its exclusions. This is
+recorded as development approval for ADR-0005 and its same-change master-plan
+amendment. It is not linguistic approval of any translation.
+
+### Accepted scope and authorization
+
+- Add `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` to the Phase 1 interface alongside
+  `kn-IN` and `en-IN`.
+- Preserve `kn-IN` as the default requested UI locale and `en-IN` as the
+  source and fallback.
+- Record every Codex-authored translated catalogue as
+  `pending-independent-review`.
+- Permit draft rendering only in development, tests or an explicit review
+  build with a visible notice.
+- Require ordinary production to fall back to English until exact catalogue
+  revisions have independent human approval.
+- Add script fonts and automated UI, accessibility and governance coverage.
+- Amend only the master-plan sections named in ADR-0005.
+
+### Conditions and limitations
+
+- English remains the learning language.
+- Curriculum publication eligibility, Kannada explanation requirements,
+  speech recognition, speech evaluation, model audio and AI explanations do
+  not expand.
+- No translated catalogue is approved by this record. Malayalam, Tamil,
+  Telugu, Hindi and the existing Kannada draft each require an accountable
+  translator and separate independent language reviewer before production.
+- UI support must not be represented as complete curriculum or voice support.
+- Manual screen-reader, browser zoom, terminology, wrapping and
+  representative Android TalkBack review remain production gates.
+- This approval does not accept PR-006, authorize PR-007 or production, or
+  waive any existing security, privacy, tenancy, accessibility, content or
+  legal gate.
+
+<a id="app-0007"></a>
+
+## APP-0007 — PR-006 acceptance and PR-007 decision-resolution authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted implementation revision | `598ad387e65b94707564dce1e199c97deb411d82` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I accept PR-006 at commit 598ad38 with its recorded limitations and authorize only PR-007 decision-resolution work. Do not implement PR-007 until DR-0004 is approved.
+```
+
+### Context and interpretation
+
+Immediately before the statement, Codex:
+
+1. identified PR-006 as implemented and verified but unaccepted;
+2. identified `598ad38` as its exact implementation commit;
+3. stated that PR-007 implementation remained blocked by both checkpoint
+   acceptance and DR-0004;
+4. requested acceptance with the recorded PR-006 limitations; and
+5. limited the next authorization to DR-0004 decision-resolution work.
+
+The human supplied the exact requested statement. Git resolves the abbreviated
+revision to `598ad387e65b94707564dce1e199c97deb411d82`.
+
+### Accepted scope and authorization
+
+- Accept PR-006 at the exact implementation revision above, with all
+  limitations recorded in `docs/STATUS.md`, `docs/QUALITY_REVIEW.md` and
+  `docs/PR-006_DETERMINISTIC_DAILY_SPEAKING_VERIFICATION_SCOPE.md`.
+- Authorize only preparation and review of the PR-007 offline retention,
+  shared-device isolation, logout purge and conflict policy needed to resolve
+  DR-0004.
+- Permit a proposed ADR, impact note and durable decision evidence.
+
+### Conditions and limitations
+
+- PR-007 product implementation remains prohibited until DR-0004 has an
+  accepted ADR with the Technical Decision Owner, Security Reviewer, Privacy
+  Reviewer and Tenancy Reviewer roles explicitly exercised.
+- This record does not itself resolve DR-0004.
+- No service worker, Cache Storage, IndexedDB, sync API, database migration or
+  offline product behavior is authorized by this record.
+- PR-008, recording upload, offline AI, provider processing, production
+  deployment and later checkpoints remain unauthorized.
+- Every recorded PR-006 and multilingual-interface limitation remains in
+  force.
+- Independent security, privacy and tenancy specialist review remains
+  mandatory before production.
+
+<a id="app-0008"></a>
+
+## APP-0008 — ADR-0006 acceptance and PR-007 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted ADR | [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md) |
+| Approved proposal SHA-256 | `242a3cff4a5822ebb986515b670ed7c5ed0d243aa86622d80a3254892d348fbb` |
+| Impact note | [PR-007 offline policy proposal](PR-007_OFFLINE_POLICY_PROPOSAL.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy Reviewer, and Tenancy Reviewer, approve ADR-0006 as written at SHA-256 242a3cff4a5822ebb986515b670ed7c5ed0d243aa86622d80a3254892d348fbb, accept its explicit trade-offs, and authorize only PR-007 implementation. This consolidated development approval is not independent production review and does not authorize PR-008 or production.
+```
+
+### Context and interpretation
+
+The approved hash identifies the complete proposed ADR-0006 text reviewed
+immediately before this statement. That proposal:
+
+1. classified public shell, protected mission and protected learner-outbox
+   data;
+2. required explicit personal-device opt-in and prohibited protected
+   persistence on shared devices;
+3. defined encrypted opaque partitions, authorization leases, retention and
+   key-first purge;
+4. defined same-account-only atomic idempotent replay with PostgreSQL
+   authority and no last-write-wins;
+5. excluded credentials, raw audio, AI/provider data and later checkpoints;
+   and
+6. stated the browser, revocation, emergency-change and timed-deletion
+   trade-offs.
+
+### Accepted scope and authorization
+
+- Accept ADR-0006 and resolve DR-0004.
+- Implement only PR-007 — Offline bundle and idempotent outbox.
+- Add the versioned mission bundle, service-worker shell cache, encrypted
+  IndexedDB partition, visible sync state, atomic idempotent server command and
+  reconnect/cache-migration coverage required by the master plan and ADR.
+- Update OpenAPI/generated clients, tests and checkpoint documentation with
+  any public contract change.
+
+### Conditions and limitations
+
+- Consolidated development roles are not independent security, privacy or
+  tenancy specialist review.
+- Production remains blocked pending independent specialist and applicable
+  legal review.
+- Raw learner audio remains volatile and local-only. PR-007 may not upload,
+  persist, cache or synchronize it.
+- Credentials remain outside browser storage.
+- PR-008, AI/provider orchestration, recording retention/upload and production
+  deployment remain unauthorized.
+- PR-007 does not become accepted merely because implementation or tests pass;
+  checkpoint acceptance requires a later exact-commit Accountable Product
+  Owner statement.

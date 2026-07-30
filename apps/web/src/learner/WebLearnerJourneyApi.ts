@@ -7,6 +7,8 @@ import {
   type LearnerMission,
   type LearnerProgress,
   type MissionResult,
+  type OfflineBundle,
+  type OfflineCompletionInput,
   type OnboardingInput,
 } from './LearnerJourneyApi'
 
@@ -128,6 +130,57 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     )
   }
 
+  offlineBundle(
+    missionId: string,
+    enrollmentId: string,
+    signal?: AbortSignal,
+  ): Promise<OfflineBundle> {
+    const query = new URLSearchParams({ enrollment_id: enrollmentId })
+
+    return this.#json<OfflineBundle>(
+      `/missions/${encodeURIComponent(missionId)}/offline-bundle?${query.toString()}`,
+      { signal },
+    )
+  }
+
+  async downloadMedia(
+    url: string,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array<ArrayBuffer>> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(url, {
+        credentials: 'include',
+        headers: { Accept: 'audio/*' },
+        signal,
+      })
+    } catch {
+      throw new LearnerJourneyUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new LearnerJourneyUnavailableError(response.status)
+    }
+
+    return new Uint8Array(await response.arrayBuffer())
+  }
+
+  completeOffline(
+    input: OfflineCompletionInput,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResult> {
+    return this.#mutation<MissionResult>('/offline-completions', {
+      body: JSON.stringify(input),
+      headers: {
+        'Idempotency-Key': commandId,
+      },
+      method: 'POST',
+      signal,
+    })
+  }
+
   async #mutation<T>(
     path: string,
     init: RequestInit,
@@ -163,7 +216,7 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     }
 
     if (!response.ok) {
-      throw new LearnerJourneyUnavailableError()
+      throw new LearnerJourneyUnavailableError(response.status)
     }
 
     if (response.status === 204) {

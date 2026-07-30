@@ -5,10 +5,14 @@ export {
   enINCatalogue,
   FALLBACK_LOCALE,
   getCatalogue,
+  hiINCatalogue,
   isSupportedLocale,
   knINCatalogue,
   MESSAGE_KEYS,
+  mlINCatalogue,
   SUPPORTED_LOCALES,
+  taINCatalogue,
+  teINCatalogue,
 } from './catalogues.ts'
 export type {
   CatalogueCollection,

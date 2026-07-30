@@ -17,7 +17,12 @@ import type {
   LearnerMission,
   LearnerProgress,
   MissionResult,
+  OfflineBundle,
 } from './LearnerJourneyApi'
+import type {
+  OfflineLearningStore,
+  OfflineProfileBinding,
+} from '../offline/OfflineLearningStore'
 
 const ids = {
   attempt: '01J00000000000000000000021',
@@ -32,6 +37,10 @@ const ids = {
 } as const
 
 beforeEach(() => {
+  Object.defineProperty(globalThis.navigator, 'onLine', {
+    configurable: true,
+    value: true,
+  })
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(
     () => undefined,
   )
@@ -452,6 +461,144 @@ describe('deterministic learner journey', () => {
       }),
     ).toBeVisible()
   })
+
+  it('downloads with personal-device consent, completes offline, and syncs one immutable command', async () => {
+    const user = userEvent.setup()
+    const binding: OfflineProfileBinding = {
+      membershipId: '01J00000000000000000000041',
+      organizationId: '01J00000000000000000000042',
+      userId: '01J00000000000000000000043',
+    }
+    const storedBundle = {
+      audio: new Uint8Array([1, 2, 3]),
+      bundle: offlineBundle(binding),
+    }
+    let enabled = false
+    const store: OfflineLearningStore = {
+      acceptReceipt: vi.fn(async () => undefined),
+      available: () => true,
+      enablePersonalDevice: vi.fn(async () => {
+        enabled = true
+      }),
+      hasProfile: vi.fn(async () => enabled),
+      loadBundle: vi.fn(async () => storedBundle),
+      markNeedsAttention: vi.fn(async () => undefined),
+      pendingCommands: vi.fn(async () => []),
+      prepareLogout: vi.fn(async () => undefined),
+      purge: vi.fn(async () => undefined),
+      purgeAll: vi.fn(async () => undefined),
+      queueCompletion: vi.fn(async () => undefined),
+      resumePersonalDevice: vi.fn(async () => null),
+      saveBundle: vi.fn(async () => undefined),
+    }
+    const api = {
+      ...fakeApi(completeHome()),
+      completeOffline: vi.fn(async () => noSpeechResult),
+      downloadMedia: vi.fn(async () => storedBundle.audio),
+      offlineBundle: vi.fn(async () => storedBundle.bundle),
+    }
+
+    render(
+      <LearnerJourney
+        api={api}
+        audioRecorder={{
+          isSupported: () => false,
+          start: vi.fn(),
+        }}
+        createClientId={() => ids.capture}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+        offlineBinding={binding}
+        offlineStore={store}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('checkbox', {
+        name: t('learner.offline.personal_confirmation'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.offline.download'),
+      }),
+    )
+
+    expect(store.enablePersonalDevice).toHaveBeenCalledWith(binding)
+    expect(store.saveBundle).toHaveBeenCalledWith(
+      binding,
+      storedBundle.bundle,
+      storedBundle.audio,
+    )
+
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    })
+    globalThis.dispatchEvent(new Event('offline'))
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.home.start_mission'),
+      }),
+    )
+    await user.click(
+      await screen.findByRole('button', {
+        name: t('learner.mission.continue_to_speak'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.recording.continue_without'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('radio', {
+        name: 'Hello, my name is Ravi.',
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.mission.submit'),
+      }),
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: t('learner.offline.saved'),
+      }),
+    ).toBeVisible()
+    expect(store.queueCompletion).toHaveBeenCalledWith(
+      binding,
+      expect.objectContaining({
+        body: expect.objectContaining({
+          bundle_id: storedBundle.bundle.manifest.bundle_id,
+          local_recording: null,
+          selected_option_id: mission.check.options[0]?.id,
+        }),
+        commandId: ids.capture,
+        state: 'pending',
+      }),
+    )
+    expect(api.startAttempt).not.toHaveBeenCalled()
+    expect(api.recordResponse).not.toHaveBeenCalled()
+
+    vi.mocked(store.pendingCommands).mockResolvedValue([
+      vi.mocked(store.queueCompletion).mock.calls[0]![1],
+    ])
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    })
+    globalThis.dispatchEvent(new Event('online'))
+
+    expect(
+      await screen.findByRole('heading', {
+        name: t('learner.result.title'),
+      }),
+    ).toBeVisible()
+    expect(api.completeOffline).toHaveBeenCalledOnce()
+    expect(store.acceptReceipt).toHaveBeenCalledOnce()
+  })
 })
 
 function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
@@ -548,6 +695,46 @@ const mission: LearnerMission = {
   publication_id: ids.publication,
   title: content('en-IN', 'Introduce yourself'),
   transcript: content('en-IN', 'Hello, my name is Ravi.'),
+}
+
+function offlineBundle(
+  binding: OfflineProfileBinding,
+): OfflineBundle {
+  return {
+    lease: 'signed-offline-lease',
+    manifest: {
+      binding: {
+        enrollment_id: ids.enrollment,
+        membership_id: binding.membershipId,
+        organization_id: binding.organizationId,
+        user_id: binding.userId,
+      },
+      bundle_hash: 'b'.repeat(64),
+      bundle_id: '01J00000000000000000000044',
+      expires_at: '2099-08-01T10:00:00Z',
+      issued_at: '2026-07-30T10:00:00Z',
+      mission: {
+        ...mission,
+        model_audio: {
+          ...mission.model_audio,
+          byte_size: 3,
+          content_hash: 'c'.repeat(64),
+        },
+        offline_check: {
+          correct_option_id: mission.check.options[0]!.id,
+        },
+      },
+      policy_version: 'daily-speaking-v1',
+      publication: {
+        curriculum_version_id: '01J00000000000000000000045',
+        manifest_hash: 'd'.repeat(64),
+        mission_definition_hash: 'e'.repeat(64),
+        owner_organization_id: binding.organizationId,
+        publication_id: ids.publication,
+      },
+      schema: 'global-english.offline-mission-bundle.v1',
+    },
+  }
 }
 
 const result: MissionResult = {

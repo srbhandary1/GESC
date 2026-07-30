@@ -5,11 +5,13 @@ import {
   type MessageKey,
 } from '@global-english/localization'
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { createHash } from 'node:crypto'
 
 const ids = {
   asset: '01J10000000000000000000014',
   attempt: '01J10000000000000000000001',
   best: '01J10000000000000000000002',
+  bundle: '01J10000000000000000000015',
   enrollment: '01J10000000000000000000004',
   first: '01J10000000000000000000005',
   latest: '01J10000000000000000000006',
@@ -209,23 +211,51 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     .toBe(0)
   await expect
     .poll(() =>
-      page.evaluate(async () => ({
-        cacheKeys:
-          'caches' in window ? await window.caches.keys() : [],
-        serviceWorkerControlled:
-          navigator.serviceWorker?.controller !== null &&
-          navigator.serviceWorker?.controller !== undefined,
-        serviceWorkerRegistrations:
-          navigator.serviceWorker === undefined
-            ? 0
-            : (await navigator.serviceWorker.getRegistrations()).length,
-      })),
+      page.evaluate(async () => {
+        const cacheKeys =
+          'caches' in window ? await window.caches.keys() : []
+        const cachedUrls = (
+          await Promise.all(
+            cacheKeys.map(async (key) =>
+              (await (await caches.open(key)).keys()).map(
+                ({ url }) => url,
+              ),
+            ),
+          )
+        ).flat()
+
+        return {
+          cacheKeys,
+          cachedUrls,
+          serviceWorkerRegistrations:
+            navigator.serviceWorker === undefined
+              ? 0
+              : (await navigator.serviceWorker.getRegistrations()).length,
+        }
+      }),
     )
-    .toEqual({
-      cacheKeys: [],
-      serviceWorkerControlled: false,
-      serviceWorkerRegistrations: 0,
+    .toMatchObject({
+      cacheKeys: ['global-english-public-shell-v1'],
+      serviceWorkerRegistrations: 1,
     })
+  const cachedUrls = await page.evaluate(async () => {
+    const keys = await caches.keys()
+
+    return (
+      await Promise.all(
+        keys.map(async (key) =>
+          (await (await caches.open(key)).keys()).map(({ url }) => url),
+        ),
+      )
+    ).flat()
+  })
+  expect(
+    cachedUrls.every(
+      (url) =>
+        !new URL(url).pathname.startsWith('/api/') &&
+        !new URL(url).pathname.startsWith('/sanctum/'),
+    ),
+  ).toBe(true)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
@@ -278,7 +308,196 @@ test('contract-stubbed microphone denial stays spoken-unassessed', async ({
       .getByText(message('learner.result.local_capture_not_recorded'))
       .first(),
   ).toBeVisible()
-  expect(api.lastResponse?.local_recording).toBeNull()
+  await expect
+    .poll(() => api.lastResponse)
+    .toEqual(expect.objectContaining({ local_recording: null }))
+})
+
+test('encrypts a personal-device bundle, completes offline, and syncs once on reconnect', async ({
+  context,
+  page,
+}) => {
+  await installDeniedMicrophone(page)
+  const api = await mockLearnerApi(page, true)
+
+  await page.goto('/#learn')
+  await page
+    .getByRole('checkbox', {
+      name: message('learner.offline.personal_confirmation'),
+    })
+    .check()
+  await page
+    .getByRole('button', {
+      name: message('learner.offline.download'),
+    })
+    .click()
+  await expect(
+    page.getByText(message('learner.offline.available')),
+  ).toBeVisible()
+
+  const storageEvidence = await page.evaluate(async () => {
+    const request = indexedDB.open('global-english-offline-v1')
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const readAll = <T>(
+      storeName: string,
+    ): Promise<T[]> =>
+      new Promise((resolve, reject) => {
+        const all = database
+          .transaction(storeName, 'readonly')
+          .objectStore(storeName)
+          .getAll()
+        all.onsuccess = () => resolve(all.result as T[])
+        all.onerror = () => reject(all.error)
+      })
+    const profiles = await readAll<{
+      bindingHash: string
+      key: CryptoKey
+      partitionId: string
+    }>('profiles')
+    const records = await readAll<{
+      ciphertext: ArrayBuffer
+      partitionId: string
+      type: string
+    }>('records')
+    database.close()
+
+    return {
+      bindingHash: profiles[0]?.bindingHash,
+      keyExtractable: profiles[0]?.key.extractable,
+      partitionId: profiles[0]?.partitionId,
+      recordCiphertextSizes: records.map(
+        ({ ciphertext }) => ciphertext.byteLength,
+      ),
+      recordTypes: records.map(({ type }) => type).sort(),
+      serializedIndexes: JSON.stringify(
+        records.map(({ partitionId, type }) => ({
+          partitionId,
+          type,
+        })),
+      ),
+    }
+  })
+
+  expect(storageEvidence.bindingHash).toMatch(/^[0-9a-f]{64}$/)
+  expect(storageEvidence.keyExtractable).toBe(false)
+  expect(storageEvidence.partitionId).not.toContain(ids.user)
+  expect(storageEvidence.recordCiphertextSizes.every((size) => size > 0)).toBe(
+    true,
+  )
+  expect(storageEvidence.recordTypes).toEqual(['audio', 'binding', 'bundle'])
+  expect(storageEvidence.serializedIndexes).not.toContain(ids.user)
+  expect(storageEvidence.serializedIndexes).not.toContain(ids.organization)
+
+  await context.setOffline(true)
+  await page
+    .getByRole('button', {
+      name: message('learner.home.start_mission'),
+    })
+    .click()
+  await page
+    .getByRole('button', {
+      name: message('learner.mission.continue_to_speak'),
+    })
+    .click()
+  await page
+    .getByRole('button', {
+      name: message('learner.recording.start'),
+    })
+    .click()
+  await page
+    .getByRole('button', {
+      name: message('learner.recording.continue_without'),
+    })
+    .click()
+  await page
+    .getByRole('radio', { name: 'Hello, my name is Ravi.' })
+    .check()
+  await page
+    .getByRole('button', {
+      name: message('learner.mission.submit'),
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', {
+      name: message('learner.offline.saved'),
+    }),
+  ).toBeVisible()
+  expect(api.offlineCompletionBodies).toHaveLength(0)
+
+  await context.setOffline(false)
+  await expect(
+    page.getByRole('heading', {
+      name: message('learner.result.title'),
+    }),
+  ).toBeVisible()
+  expect(api.offlineCompletionBodies).toHaveLength(1)
+  expect(api.offlineCompletionBodies[0]).toMatchObject({
+    bundle_id: ids.bundle,
+    local_recording: null,
+    schema: 'global-english.offline-completion.v1',
+    selected_option_id: 'correct-option',
+  })
+  expect(
+    JSON.stringify(api.offlineCompletionBodies[0]),
+  ).not.toContain('audio')
+
+  await page.evaluate(async () => {
+    const request = indexedDB.open('global-english-offline-v1')
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const transaction = database.transaction('records', 'readwrite')
+    const store = transaction.objectStore('records')
+    const records = await new Promise<
+      Array<{ ciphertext: ArrayBuffer; type: string }>
+    >((resolve, reject) => {
+      const all = store.getAll()
+      all.onsuccess = () =>
+        resolve(
+          all.result as Array<{
+            ciphertext: ArrayBuffer
+            type: string
+          }>,
+        )
+      all.onerror = () => reject(all.error)
+    })
+    const bundle = records.find(({ type }) => type === 'bundle')
+
+    if (bundle === undefined) {
+      throw new Error('Expected encrypted bundle record.')
+    }
+
+    const corrupted = new Uint8Array(bundle.ciphertext.slice(0))
+    corrupted[0] = (corrupted[0] ?? 0) ^ 1
+    bundle.ciphertext = corrupted.buffer
+    store.put(bundle)
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error)
+    })
+    database.close()
+  })
+  await context.setOffline(true)
+  await page
+    .getByRole('button', {
+      name: message('learner.result.retry'),
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', {
+      name: message('learner.result.title'),
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: message('learner.mission.learn_title'),
+    }),
+  ).toHaveCount(0)
 })
 
 interface MockApiState {
@@ -289,6 +508,7 @@ interface MockApiState {
     url: string
   }>
   requestBodies: string[]
+  offlineCompletionBodies: unknown[]
   lastResponse: {
     local_recording: null | {
       captured: true
@@ -309,6 +529,7 @@ async function mockLearnerApi(
     commandIds: [],
     lastResponse: null,
     modelAudioRequests: [],
+    offlineCompletionBodies: [],
     requestBodies: [],
   }
   await page.context().addCookies([
@@ -362,6 +583,26 @@ async function mockLearnerApi(
     }
 
     if (
+      path === `/api/v1/missions/${ids.mission}/offline-bundle` &&
+      request.method() === 'GET'
+    ) {
+      await json(route, offlineBundle())
+      return
+    }
+
+    if (
+      path === '/api/v1/offline-completions' &&
+      request.method() === 'POST'
+    ) {
+      state.commandIds.push(request.headers()['idempotency-key'] ?? null)
+      state.offlineCompletionBodies.push(
+        JSON.parse(postData ?? 'null') as unknown,
+      )
+      await json(route, result(false))
+      return
+    }
+
+    if (
       path === `/api/v1/missions/${ids.mission}` &&
       request.method() === 'GET'
     ) {
@@ -403,7 +644,10 @@ async function mockLearnerApi(
 
     if (path === `/api/v1/attempts/${ids.attempt}/responses`) {
       state.commandIds.push(request.headers()['idempotency-key'] ?? null)
-      state.lastResponse = request.postDataJSON() as MockApiState['lastResponse']
+      expect(postData).not.toBeNull()
+      state.lastResponse = JSON.parse(
+        postData ?? 'null',
+      ) as MockApiState['lastResponse']
       await route.fulfill({ status: 204 })
       return
     }
@@ -411,12 +655,12 @@ async function mockLearnerApi(
     if (path === `/api/v1/attempts/${ids.attempt}/submit`) {
       state.commandIds.push(request.headers()['idempotency-key'] ?? null)
       expect(postData).toBeNull()
-      await json(route, result(state.lastResponse?.local_recording !== null))
+      await json(route, result(state.lastResponse?.local_recording != null))
       return
     }
 
     if (path === '/api/v1/progress') {
-      await json(route, progress(state.lastResponse?.local_recording !== null))
+      await json(route, progress(state.lastResponse?.local_recording != null))
       return
     }
 
@@ -566,6 +810,49 @@ function mission() {
     publication_id: ids.publication,
     title: content('en-IN', 'Introduce yourself'),
     transcript: content('en-IN', 'Hello, my name is Ravi.'),
+  }
+}
+
+function offlineBundle() {
+  const ordinaryMission = mission()
+  const audio = waveFile()
+
+  return {
+    lease: 'signed-purpose-specific-offline-lease',
+    manifest: {
+      binding: {
+        enrollment_id: ids.enrollment,
+        membership_id: ids.membership,
+        organization_id: ids.organization,
+        user_id: ids.user,
+      },
+      bundle_hash: 'b'.repeat(64),
+      bundle_id: ids.bundle,
+      expires_at: '2099-08-01T10:00:00Z',
+      issued_at: '2026-07-30T10:00:00Z',
+      mission: {
+        ...ordinaryMission,
+        model_audio: {
+          ...ordinaryMission.model_audio,
+          byte_size: audio.byteLength,
+          content_hash: createHash('sha256')
+            .update(audio)
+            .digest('hex'),
+        },
+        offline_check: {
+          correct_option_id: 'correct-option',
+        },
+      },
+      policy_version: 'daily-speaking-v1',
+      publication: {
+        curriculum_version_id: '01J10000000000000000000016',
+        manifest_hash: 'c'.repeat(64),
+        mission_definition_hash: 'd'.repeat(64),
+        owner_organization_id: ids.organization,
+        publication_id: ids.publication,
+      },
+      schema: 'global-english.offline-mission-bundle.v1',
+    },
   }
 }
 

@@ -777,6 +777,297 @@ export const LearnerMissionSchema = {
     }
 } as const;
 
+export const OfflineModelAudioSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'asset_id',
+        'stream_url',
+        'mime_type',
+        'duration_ms',
+        'content_hash',
+        'byte_size'
+    ],
+    properties: {
+        asset_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        stream_url: {
+            type: 'string',
+            format: 'uri-reference'
+        },
+        mime_type: {
+            type: 'string',
+            enum: [
+                'audio/mpeg',
+                'audio/ogg',
+                'audio/webm',
+                'audio/mp4',
+                'audio/wav'
+            ]
+        },
+        duration_ms: {
+            type: 'integer',
+            minimum: 250,
+            maximum: 300000
+        },
+        content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        byte_size: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 10000000
+        }
+    }
+} as const;
+
+export const OfflineMissionCheckAuthoritySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'correct_option_id'
+    ],
+    properties: {
+        correct_option_id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        }
+    }
+} as const;
+
+export const OfflineLearnerMissionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'enrollment_id',
+        'publication_id',
+        'objective_id',
+        'title',
+        'kannada_guidance',
+        'model_text',
+        'transcript',
+        'model_audio',
+        'check',
+        'offline_check'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        title: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        kannada_guidance: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        model_text: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        transcript: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        model_audio: {
+            $ref: '#/components/schemas/OfflineModelAudio'
+        },
+        check: {
+            $ref: '#/components/schemas/LearnerMissionCheck'
+        },
+        offline_check: {
+            $ref: '#/components/schemas/OfflineMissionCheckAuthority'
+        }
+    }
+} as const;
+
+export const OfflineBundleBindingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'user_id',
+        'organization_id',
+        'membership_id',
+        'enrollment_id'
+    ],
+    properties: {
+        user_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        organization_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OfflineBundlePublicationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'owner_organization_id',
+        'curriculum_version_id',
+        'publication_id',
+        'manifest_hash',
+        'mission_definition_hash'
+    ],
+    properties: {
+        owner_organization_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        mission_definition_hash: {
+            $ref: '#/components/schemas/Sha256'
+        }
+    }
+} as const;
+
+export const OfflineMissionManifestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'bundle_id',
+        'issued_at',
+        'expires_at',
+        'binding',
+        'publication',
+        'policy_version',
+        'mission',
+        'bundle_hash'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.offline-mission-bundle.v1'
+        },
+        bundle_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        issued_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        binding: {
+            $ref: '#/components/schemas/OfflineBundleBinding'
+        },
+        publication: {
+            $ref: '#/components/schemas/OfflineBundlePublication'
+        },
+        policy_version: {
+            type: 'string',
+            const: 'daily-speaking-v1'
+        },
+        mission: {
+            $ref: '#/components/schemas/OfflineLearnerMission'
+        },
+        bundle_hash: {
+            $ref: '#/components/schemas/Sha256'
+        }
+    }
+} as const;
+
+export const OfflineMissionBundleSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'manifest',
+        'lease'
+    ],
+    properties: {
+        manifest: {
+            $ref: '#/components/schemas/OfflineMissionManifest'
+        },
+        lease: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8192,
+            description: 'Purpose-specific signed lease; it is not an API credential.'
+        }
+    }
+} as const;
+
+export const CompleteOfflineMissionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'bundle_id',
+        'lease',
+        'client_attempt_id',
+        'check_id',
+        'selected_option_id',
+        'local_recording'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.offline-completion.v1'
+        },
+        bundle_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        lease: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8192
+        },
+        client_attempt_id: {
+            type: 'string',
+            format: 'uuid'
+        },
+        check_id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        selected_option_id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        local_recording: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/LocalCaptureReceipt'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
 export const StartLearnerAttemptRequestSchema = {
     type: 'object',
     additionalProperties: false,

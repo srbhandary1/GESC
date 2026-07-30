@@ -192,6 +192,78 @@ export type LearnerMission = {
     check: LearnerMissionCheck;
 };
 
+export type OfflineModelAudio = {
+    asset_id: Ulid;
+    stream_url: string;
+    mime_type: 'audio/mpeg' | 'audio/ogg' | 'audio/webm' | 'audio/mp4' | 'audio/wav';
+    duration_ms: number;
+    content_hash: Sha256;
+    byte_size: number;
+};
+
+export type OfflineMissionCheckAuthority = {
+    correct_option_id: string;
+};
+
+export type OfflineLearnerMission = {
+    id: Ulid;
+    enrollment_id: Ulid;
+    publication_id: Ulid;
+    objective_id: Ulid;
+    title: GovernedContent;
+    kannada_guidance: GovernedContent;
+    model_text: GovernedContent;
+    transcript: GovernedContent;
+    model_audio: OfflineModelAudio;
+    check: LearnerMissionCheck;
+    offline_check: OfflineMissionCheckAuthority;
+};
+
+export type OfflineBundleBinding = {
+    user_id: Ulid;
+    organization_id: Ulid;
+    membership_id: Ulid;
+    enrollment_id: Ulid;
+};
+
+export type OfflineBundlePublication = {
+    owner_organization_id: Ulid;
+    curriculum_version_id: Ulid;
+    publication_id: Ulid;
+    manifest_hash: Sha256;
+    mission_definition_hash: Sha256;
+};
+
+export type OfflineMissionManifest = {
+    schema: 'global-english.offline-mission-bundle.v1';
+    bundle_id: Ulid;
+    issued_at: string;
+    expires_at: string;
+    binding: OfflineBundleBinding;
+    publication: OfflineBundlePublication;
+    policy_version: 'daily-speaking-v1';
+    mission: OfflineLearnerMission;
+    bundle_hash: Sha256;
+};
+
+export type OfflineMissionBundle = {
+    manifest: OfflineMissionManifest;
+    /**
+     * Purpose-specific signed lease; it is not an API credential.
+     */
+    lease: string;
+};
+
+export type CompleteOfflineMissionRequest = {
+    schema: 'global-english.offline-completion.v1';
+    bundle_id: Ulid;
+    lease: string;
+    client_attempt_id: string;
+    check_id: string;
+    selected_option_id: string;
+    local_recording: LocalCaptureReceipt | null;
+};
+
 export type StartLearnerAttemptRequest = {
     enrollment_id: Ulid;
 };
@@ -1000,6 +1072,64 @@ export type GetLearnerMissionResponses = {
 
 export type GetLearnerMissionResponse = GetLearnerMissionResponses[keyof GetLearnerMissionResponses];
 
+export type GetLearnerOfflineMissionBundleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Governed curriculum mission ULID from the exact publication pin.
+         */
+        mission_id: Ulid;
+    };
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+    };
+    url: '/missions/{mission_id}/offline-bundle';
+};
+
+export type GetLearnerOfflineMissionBundleErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerOfflineMissionBundleError = GetLearnerOfflineMissionBundleErrors[keyof GetLearnerOfflineMissionBundleErrors];
+
+export type GetLearnerOfflineMissionBundleResponses = {
+    /**
+     * Exact offline manifest and signed authorization lease.
+     */
+    200: OfflineMissionBundle;
+};
+
+export type GetLearnerOfflineMissionBundleResponse = GetLearnerOfflineMissionBundleResponses[keyof GetLearnerOfflineMissionBundleResponses];
+
 export type StartLearnerMissionAttemptData = {
     body: StartLearnerAttemptRequest;
     headers: {
@@ -1177,6 +1307,59 @@ export type SubmitLearnerMissionAttemptResponses = {
 };
 
 export type SubmitLearnerMissionAttemptResponse = SubmitLearnerMissionAttemptResponses[keyof SubmitLearnerMissionAttemptResponses];
+
+export type CompleteLearnerOfflineMissionData = {
+    body: CompleteOfflineMissionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/offline-completions';
+};
+
+export type CompleteLearnerOfflineMissionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CompleteLearnerOfflineMissionError = CompleteLearnerOfflineMissionErrors[keyof CompleteLearnerOfflineMissionErrors];
+
+export type CompleteLearnerOfflineMissionResponses = {
+    /**
+     * Authoritative deterministic result for the synchronized completion.
+     */
+    200: LearnerMissionResult;
+};
+
+export type CompleteLearnerOfflineMissionResponse = CompleteLearnerOfflineMissionResponses[keyof CompleteLearnerOfflineMissionResponses];
 
 export type GetLearnerProgressData = {
     body?: never;

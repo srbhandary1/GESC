@@ -1,4 +1,8 @@
+@import "@fontsource-variable/noto-sans-devanagari/wght.css";
 @import "@fontsource-variable/noto-sans-kannada/wght.css";
+@import "@fontsource-variable/noto-sans-malayalam/wght.css";
+@import "@fontsource-variable/noto-sans-tamil/wght.css";
+@import "@fontsource-variable/noto-sans-telugu/wght.css";
 @import "./tokens.css";
 @import "./base.css";
 @import "./components.css";

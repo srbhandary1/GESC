@@ -13,6 +13,8 @@ use App\Learning\Exceptions\LearningIdempotencyConflict;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\Missions\DailyMissionDefinition;
 use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Offline\OfflineCompletionService;
+use App\Learning\Offline\OfflineMissionBundleService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Role;
@@ -33,6 +35,15 @@ use RuntimeException;
 use Tests\TestCase;
 use Throwable;
 
+/**
+ * @phpstan-type OfflineCommand array{
+ *   bundle_id: string,
+ *   lease: string,
+ *   client_attempt_id: string,
+ *   check_id: string,
+ *   selected_option_id: string
+ * }
+ */
 final class ConcurrentCurriculumPublicationTest extends TestCase
 {
     use DatabaseMigrations;
@@ -679,6 +690,94 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         self::assertSame($winner['result'], $exactReplay);
     }
 
+    public function test_concurrent_exact_offline_completion_replay_creates_one_submitted_attempt(): void
+    {
+        self::assertSame('pgsql', DB::connection()->getDriverName());
+        self::assertTrue(
+            function_exists('pcntl_fork'),
+            'The PostgreSQL concurrency gate requires the pcntl extension.',
+        );
+
+        $fixture = $this->makeConcurrentLearningFixture();
+        $this->app->instance(
+            DailyMissionReader::class,
+            new ConcurrentFixedDailyMissionReader($fixture['mission']),
+        );
+        $learner = User::query()->findOrFail(
+            $fixture['learner_user_id'],
+        );
+        $learnerContext = new OrganizationContext(
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['learner_user_id'],
+            membershipId: $fixture['learner_membership_id'],
+            source: OrganizationContextSource::Membership,
+        );
+        $bundle = $this->app
+            ->make(OrganizationContextManager::class)
+            ->run(
+                $learnerContext,
+                fn (): array => $this->app->make(
+                    OfflineMissionBundleService::class,
+                )->issue(
+                    learner: $learner,
+                    enrollmentId: $fixture['enrollment_id'],
+                    missionId: $fixture['mission']->missionId,
+                ),
+            );
+        $commandId = (string) Str::uuid();
+        $results = $this->raceLearningWorkers(
+            databaseConfig: DB::connection()->getConfig(),
+            operation: 'offline',
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['learner_user_id'],
+            actorMembershipId: $fixture['learner_membership_id'],
+            enrollmentId: $fixture['enrollment_id'],
+            missionId: $fixture['mission']->missionId,
+            attemptId: null,
+            idempotencyKeys: [$commandId, $commandId],
+            offlineCommand: [
+                'bundle_id' => $bundle['manifest']['bundle_id'],
+                'lease' => $bundle['lease'],
+                'client_attempt_id' => (string) Str::uuid(),
+                'check_id' => $fixture['mission']->checkId,
+                'selected_option_id' => $fixture['mission']
+                    ->correctOptionId,
+            ],
+        );
+
+        self::assertSame(
+            ['completed', 'completed'],
+            collect($results)
+                ->pluck('outcome')
+                ->sort()
+                ->values()
+                ->all(),
+        );
+        self::assertSame($results[0]['result'], $results[1]['result']);
+        self::assertSame(
+            1,
+            DB::table('learner_attempts')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('enrollment_id', $fixture['enrollment_id'])
+                ->where('status', 'submitted')
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('attempt_submissions')
+                ->where('organization_id', $fixture['organization_id'])
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('learning_commands')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('operation', 'learner.offline.complete')
+                ->where('idempotency_key', $commandId)
+                ->count(),
+        );
+    }
+
     public function test_transactional_authorization_recheck_locks_authority_rows_until_the_command_finishes(): void
     {
         self::assertSame('pgsql', DB::connection()->getDriverName());
@@ -1271,6 +1370,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
     /**
      * @param  array<string, mixed>  $databaseConfig
      * @param  list<string>  $idempotencyKeys
+     * @param  OfflineCommand|null  $offlineCommand
      * @return list<array<string, mixed>>
      */
     private function raceLearningWorkers(
@@ -1283,6 +1383,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         string $missionId,
         ?string $attemptId,
         array $idempotencyKeys,
+        ?array $offlineCommand = null,
     ): array {
         DB::disconnect();
 
@@ -1306,6 +1407,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                     missionId: $missionId,
                     attemptId: $attemptId,
                     idempotencyKey: $idempotencyKey,
+                    offlineCommand: $offlineCommand,
                 );
             }
 
@@ -1434,6 +1536,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
     }
 
     /**
+     * @param  OfflineCommand|null  $offlineCommand
      * @return array{pid: int, pipe: resource, reaped: bool}
      */
     private function spawnLearningWorker(
@@ -1445,6 +1548,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         string $missionId,
         ?string $attemptId,
         string $idempotencyKey,
+        ?array $offlineCommand,
     ): array {
         $sockets = stream_socket_pair(
             STREAM_PF_UNIX,
@@ -1481,6 +1585,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                 missionId: $missionId,
                 attemptId: $attemptId,
                 idempotencyKey: $idempotencyKey,
+                offlineCommand: $offlineCommand,
             );
         }
 
@@ -1495,6 +1600,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
 
     /**
      * @param  resource  $pipe
+     * @param  OfflineCommand|null  $offlineCommand
      */
     private function runLearningWorker(
         mixed $pipe,
@@ -1506,6 +1612,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         string $missionId,
         ?string $attemptId,
         string $idempotencyKey,
+        ?array $offlineCommand,
     ): never {
         try {
             DB::purge();
@@ -1550,9 +1657,36 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                         $enrollmentId,
                         $idempotencyKey,
                         $missionId,
+                        $offlineCommand,
                         $operation,
                         $service,
                     ): array {
+                        if (
+                            $operation === 'offline'
+                            && is_array($offlineCommand)
+                        ) {
+                            return $this->app->make(
+                                OfflineCompletionService::class,
+                            )->complete(
+                                learner: $actor,
+                                bundleId: (string) $offlineCommand[
+                                    'bundle_id'
+                                ],
+                                lease: (string) $offlineCommand['lease'],
+                                clientAttemptId: (string) $offlineCommand[
+                                    'client_attempt_id'
+                                ],
+                                checkId: (string) $offlineCommand[
+                                    'check_id'
+                                ],
+                                selectedOptionId: (string) $offlineCommand[
+                                    'selected_option_id'
+                                ],
+                                localRecording: null,
+                                idempotencyKey: $idempotencyKey,
+                            );
+                        }
+
                         if ($operation === 'start') {
                             return $service->start(
                                 learner: $actor,
@@ -1579,9 +1713,11 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                     },
                 );
             $payload = [
-                'outcome' => $operation === 'start'
-                    ? 'started'
-                    : 'submitted',
+                'outcome' => match ($operation) {
+                    'start' => 'started',
+                    'offline' => 'completed',
+                    default => 'submitted',
+                },
                 'idempotency_key' => $idempotencyKey,
                 'result' => $result,
             ];

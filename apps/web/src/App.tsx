@@ -11,6 +11,7 @@ import {
 } from '@global-english/localization'
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -32,6 +33,12 @@ import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
+import { browserOfflineLearningStore } from './offline/BrowserOfflineLearningStore'
+import type {
+  OfflineLearningStore,
+  OfflinePersonalDeviceResume,
+  OfflineProfileBinding,
+} from './offline/OfflineLearningStore'
 
 type SessionState =
   | AuthenticationSnapshot
@@ -44,6 +51,7 @@ interface AppProps {
   createClientId?: () => string
   learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
+  offlineStore?: OfflineLearningStore
 }
 
 const destinationMessages: Readonly<
@@ -70,17 +78,29 @@ const destinationMessages: Readonly<
   },
 }
 
+const localeMessageKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
+  'en-IN': 'locale.en_IN',
+  'hi-IN': 'locale.hi_IN',
+  'kn-IN': 'locale.kn_IN',
+  'ml-IN': 'locale.ml_IN',
+  'ta-IN': 'locale.ta_IN',
+  'te-IN': 'locale.te_IN',
+}
+
 function App({
   authentication = defaultAuthentication,
   audioRecorder,
   createClientId,
   learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
+  offlineStore = browserOfflineLearningStore,
 }: AppProps) {
   const [session, setSession] = useState<SessionState>({
     status: 'checking',
   })
   const [locale, setLocale] = useState<SupportedLocale>(DEFAULT_LOCALE)
+  const [offlineResume, setOfflineResume] =
+    useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -99,11 +119,18 @@ function App({
       .current()
       .then((snapshot) => {
         if (active) {
+          setOfflineResume(null)
           setSession(snapshot)
         }
       })
-      .catch(() => {
+      .catch(async () => {
+        const resume =
+          globalThis.navigator?.onLine === false
+            ? await offlineStore.resumePersonalDevice()
+            : null
+
         if (active) {
+          setOfflineResume(resume)
           setSession({ status: 'unavailable' })
         }
       })
@@ -111,7 +138,7 @@ function App({
     return () => {
       active = false
     }
-  }, [authentication])
+  }, [authentication, offlineStore])
 
   useEffect(() => {
     const previousLocale = document.documentElement.lang
@@ -190,10 +217,31 @@ function App({
     navigationLabel.usedFallback ||
     title.usedFallback ||
     description.usedFallback
+  const authenticatedOfflineBinding = useMemo<OfflineProfileBinding | null>(
+    () => {
+      if (session.status !== 'authenticated') {
+        return null
+      }
+
+      const membership = session.identity.current_membership
+
+      return membership === null
+        ? null
+        : {
+            membershipId: membership.id,
+            organizationId: membership.organization.id,
+            userId: session.identity.user.id,
+          }
+    },
+    [session],
+  )
+  const offlineBinding =
+    authenticatedOfflineBinding ?? offlineResume?.binding ?? null
   const canLearn =
     destination === 'learn' &&
-    session.status === 'authenticated' &&
-    session.identity.current_membership?.membership_type === 'learner'
+    ((session.status === 'authenticated' &&
+      session.identity.current_membership?.membership_type === 'learner') ||
+      offlineResume !== null)
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -229,7 +277,7 @@ function App({
           >
             {SUPPORTED_LOCALES.map((supported) => {
               const option = resolveInterfaceMessage(
-                supported === 'kn-IN' ? 'locale.kn_IN' : 'locale.en_IN',
+                localeMessageKeys[supported],
                 locale,
                 localizationPolicy,
               )
@@ -327,6 +375,9 @@ function App({
             createClientId={createClientId}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            offlineBinding={offlineBinding}
+            offlineStore={offlineStore}
+            resumeBundle={offlineResume?.storedBundle}
           />
         ) : (
           <p className="shell-checkpoint-notice">

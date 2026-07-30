@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import {
   DEFAULT_LOCALE,
   resolveMessage,
+  SUPPORTED_LOCALES,
   type MessageKey,
   type SupportedLocale,
 } from '@global-english/localization'
@@ -42,14 +43,16 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
 
   expect(accessibility.violations).toEqual([])
 
-  await page
-    .getByRole('combobox', { name: message('shell.locale_label') })
-    .selectOption('en-IN')
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en-IN')
+  for (const locale of SUPPORTED_LOCALES.filter(
+    (candidate) => candidate !== DEFAULT_LOCALE,
+  )) {
+    await page.locator('#interface-locale').selectOption(locale)
+    await expect(page.locator('html')).toHaveAttribute('lang', locale)
 
-  const englishAccessibility = await new AxeBuilder({ page }).analyze()
+    const localeAccessibility = await new AxeBuilder({ page }).analyze()
 
-  expect(englishAccessibility.violations).toEqual([])
+    expect(localeAccessibility.violations).toEqual([])
+  }
 })
 
 test('supports skip-link and destination navigation from the keyboard', async ({
@@ -188,34 +191,69 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
   }
 })
 
-test('loads the Kannada font stack and honors reduced motion', async ({
+test('loads every Phase 1 interface font and honors reduced motion', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
 
   const fontEvidence = await page.evaluate(async () => {
+    const expectedFonts = [
+      {
+        family: 'Noto Sans Kannada Variable',
+        resource: 'noto-sans-kannada-kannada-wght-normal',
+        sample: 'ಕನ್ನಡ',
+      },
+      {
+        family: 'Noto Sans Malayalam Variable',
+        resource: 'noto-sans-malayalam-malayalam-wght-normal',
+        sample: 'മലയാളം',
+      },
+      {
+        family: 'Noto Sans Tamil Variable',
+        resource: 'noto-sans-tamil-tamil-wght-normal',
+        sample: 'தமிழ்',
+      },
+      {
+        family: 'Noto Sans Telugu Variable',
+        resource: 'noto-sans-telugu-telugu-wght-normal',
+        sample: 'తెలుగు',
+      },
+      {
+        family: 'Noto Sans Devanagari Variable',
+        resource: 'noto-sans-devanagari-devanagari-wght-normal',
+        sample: 'हिन्दी',
+      },
+    ]
+
     await document.fonts.ready
-    const kannadaFaces = await document.fonts.load(
-      '16px "Noto Sans Kannada Variable"',
-      'ಕನ್ನಡ',
-    )
+    const fonts = []
+
+    for (const expected of expectedFonts) {
+      const faces = await document.fonts.load(
+        `16px "${expected.family}"`,
+        expected.sample,
+      )
+
+      fonts.push({
+        family: expected.family,
+        loaded: document.fonts.check(
+          `16px "${expected.family}"`,
+          expected.sample,
+        ),
+        loadedFaceCount: faces.length,
+        resource: expected.resource,
+      })
+    }
+
+    await document.fonts.ready
 
     return {
       family: getComputedStyle(document.documentElement).fontFamily,
-      loaded: document.fonts.check(
-        '16px "Noto Sans Kannada Variable"',
-        'ಕನ್ನಡ',
-      ),
-      loadedFaceCount: kannadaFaces.length,
+      fonts,
       resources: performance
         .getEntriesByType('resource')
-        .map(({ name }) => name)
-        .filter(
-          (name) =>
-            name.includes('noto-sans-kannada-kannada-wght-normal') &&
-            name.endsWith('.woff2'),
-        ),
+        .map(({ name }) => name),
       status: document.fonts.status,
       scrollBehavior: getComputedStyle(
         document.documentElement,
@@ -224,9 +262,18 @@ test('loads the Kannada font stack and honors reduced motion', async ({
   })
 
   expect(fontEvidence.family).toContain('Noto Sans Kannada Variable')
-  expect(fontEvidence.loaded).toBe(true)
-  expect(fontEvidence.loadedFaceCount).toBeGreaterThan(0)
-  expect(fontEvidence.resources).toHaveLength(1)
+  for (const font of fontEvidence.fonts) {
+    expect(fontEvidence.family).toContain(font.family)
+    expect(font.loaded).toBe(true)
+    expect(font.loadedFaceCount).toBeGreaterThan(0)
+    expect(
+      fontEvidence.resources.some(
+        (resource) =>
+          resource.includes(font.resource) &&
+          resource.endsWith('.woff2'),
+      ),
+    ).toBe(true)
+  }
   expect(fontEvidence.status).toBe('loaded')
   expect(fontEvidence.scrollBehavior).toBe('auto')
 })

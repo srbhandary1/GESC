@@ -5,6 +5,9 @@ import './index.css'
 import App from './App.tsx'
 import { ApplicationErrorBoundary } from './errors/ApplicationErrorBoundary.tsx'
 import { createRootErrorOptions } from './errors/rootErrorReporting.ts'
+import { registerOfflineShell } from './offline/registerOfflineShell.ts'
+
+void registerOfflineShell()
 
 createRoot(
   document.getElementById('root')!,

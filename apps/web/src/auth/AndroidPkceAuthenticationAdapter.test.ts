@@ -216,9 +216,11 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     const secureStore = new InMemoryReviewedSecureStore()
     secureStore.refreshToken = 'persisted-refresh-token'
     const requests: Request[] = []
+    const events: string[] = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const request = new Request(input, init)
       requests.push(request)
+      events.push(new URL(request.url).pathname)
 
       if (request.url.endsWith('/oauth/token')) {
         return Response.json({
@@ -246,11 +248,19 @@ describe('AndroidPkceAuthenticationAdapter', () => {
       secureStore,
       { open: vi.fn(async () => undefined) },
       fetcher,
+      async () => {
+        events.push('purge')
+      },
     )
 
     await adapter.logout()
 
     expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+      '/oauth/token',
+      '/api/v1/auth/mobile/revoke',
+    ])
+    expect(events).toEqual([
+      'purge',
       '/oauth/token',
       '/api/v1/auth/mobile/revoke',
     ])
@@ -262,12 +272,14 @@ function createAdapter(
   secureStore: NativeSecureCredentialStore,
   systemBrowser: SystemAuthorizationBrowser,
   fetcher: typeof fetch,
+  beforeLogout?: () => Promise<void>,
 ): AndroidPkceAuthenticationAdapter {
   return new AndroidPkceAuthenticationAdapter({
     apiBaseUrl: 'https://api.global-english.test/api/v1',
     authorizationEndpoint:
       'https://api.global-english.test/oauth/authorize',
     clientId: 'public-android-client',
+    beforeLogout,
     fetch: fetcher,
     redirectUri: 'com.globalenglish.app:/oauth/callback',
     secureStore,

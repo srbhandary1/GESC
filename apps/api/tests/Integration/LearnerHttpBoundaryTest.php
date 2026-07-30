@@ -54,6 +54,11 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 $missionId,
                 $enrollmentId,
             )),
+            fn (): TestResponse => $this->getJson(sprintf(
+                '/api/v1/missions/%s/offline-bundle?enrollment_id=%s',
+                $missionId,
+                $enrollmentId,
+            )),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
                 $idempotencyKey,
@@ -82,6 +87,18 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 '/api/v1/progress?enrollment_id=%s',
                 $enrollmentId,
             )),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson('/api/v1/offline-completions', [
+                'schema' => 'global-english.offline-completion.v1',
+                'bundle_id' => (string) Str::ulid(),
+                'lease' => 'not-a-valid-lease',
+                'client_attempt_id' => (string) Str::uuid(),
+                'check_id' => 'daily-check',
+                'selected_option_id' => 'option-one',
+                'local_recording' => null,
+            ]),
             fn (): TestResponse => $this->getJson(sprintf(
                 '/api/v1/media-assets/%s/content?enrollment_id=%s&mission_id=%s',
                 $assetId,
@@ -249,6 +266,46 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             sprintf('/api/v1/attempts/%s/submit', $attemptId),
             ['knowledge_score' => 100],
         )->assertUnprocessable();
+
+        $this->getJson(sprintf(
+            '/api/v1/missions/%s/offline-bundle?enrollment_id=%s&organization_id=%s',
+            $missionId,
+            $enrollmentId,
+            (string) Str::ulid(),
+        ))->assertUnprocessable();
+
+        $offlineHeaders = [
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ];
+        $offlineBody = [
+            'schema' => 'global-english.offline-completion.v1',
+            'bundle_id' => (string) Str::ulid(),
+            'lease' => 'not-a-valid-lease',
+            'client_attempt_id' => (string) Str::uuid(),
+            'check_id' => 'daily-check',
+            'selected_option_id' => 'option-one',
+            'local_recording' => null,
+        ];
+
+        $this->withHeaders($offlineHeaders)
+            ->postJson('/api/v1/offline-completions', $offlineBody)
+            ->assertNotFound()
+            ->assertJsonPath('message_key', 'problem.not_found');
+
+        $rawOfflineAudioRejected = $this
+            ->withHeaders($offlineHeaders)
+            ->postJson('/api/v1/offline-completions', [
+                ...$offlineBody,
+                'raw_audio' => 'offline-audio-must-not-enter-api',
+                'knowledge_score' => 100,
+            ])
+            ->assertUnprocessable();
+        self::assertStringNotContainsString(
+            'offline-audio-must-not-enter-api',
+            (string) $rawOfflineAudioRejected->getContent(),
+        );
+        $this->assertNoStore($rawOfflineAudioRejected);
     }
 
     private function signInWeb(): void

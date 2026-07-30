@@ -39,12 +39,21 @@ describe('UI catalogue validation', () => {
 
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
-    expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'pending-independent-review',
-        locale: 'kn-IN',
-      }),
+    expect(result.warnings).toHaveLength(5)
+    expect(result.warnings.map(({ locale }) => locale)).toEqual([
+      'kn-IN',
+      'ml-IN',
+      'ta-IN',
+      'te-IN',
+      'hi-IN',
     ])
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'pending-independent-review',
+        }),
+      ]),
+    )
   })
 
   it('rejects unsupported catalogue and governance locales', () => {
@@ -149,12 +158,14 @@ describe('UI catalogue validation', () => {
 
   it('accepts honest independent approval metadata', () => {
     const input = cloneCanonicalValidationInput()
-    const kannada = governanceEntries(input)['kn-IN']!
-    kannada.reviewStatus = 'approved'
-    kannada.translatedBy = 'translator-reference'
-    kannada.reviewedBy = 'independent-reviewer-reference'
-    kannada.approvedAt = '2026-07-30T12:00:00+05:30'
-    kannada.independentReview = true
+    for (const locale of ['kn-IN', 'ml-IN', 'ta-IN', 'te-IN', 'hi-IN']) {
+      const metadata = governanceEntries(input)[locale]!
+      metadata.reviewStatus = 'approved'
+      metadata.translatedBy = `${locale}-translator-reference`
+      metadata.reviewedBy = `${locale}-independent-reviewer-reference`
+      metadata.approvedAt = '2026-07-30T12:00:00+05:30'
+      metadata.independentReview = true
+    }
 
     const result = validateCatalogues(input)
 

@@ -1,6 +1,12 @@
 import type { HTMLAttributes } from 'react'
 
-export type SupportedLanguage = 'kn-IN' | 'en-IN'
+export type SupportedLanguage =
+  | 'en-IN'
+  | 'hi-IN'
+  | 'kn-IN'
+  | 'ml-IN'
+  | 'ta-IN'
+  | 'te-IN'
 
 export interface MixedLanguageSegment {
   locale: SupportedLanguage

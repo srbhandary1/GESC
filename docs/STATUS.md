@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-006 — Deterministic daily-speaking slice |
-| Status | Implemented and locally verified — awaiting Accountable Product Owner acceptance |
-| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.0 |
+| Checkpoint | PR-007 — Offline bundle and idempotent outbox |
+| Status | Implemented and repository-verified under ADR-0006; not accepted |
+| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 30 July 2026 |
 | Git branch | `codex/pr-006-deterministic-daily-speaking-slice` |
-| Product code | PR-006 deterministic learner slice implemented; no production content or later checkpoint approved |
-| Next checkpoint | PR-007, blocked until explicit PR-006 acceptance at its exact implementation commit |
+| Product code | PR-007 deterministic offline bundle, protected personal-device store and atomic reconnect completion added to the accepted PR-006 baseline; no production content or later checkpoint approved |
+| Next checkpoint | PR-008, blocked until the Accountable Product Owner explicitly accepts PR-007 at its exact implementation commit and authorizes only PR-008 |
 
 ## Checkpoint authorization
 
@@ -21,6 +21,70 @@ and authorizes only PR-006 — Deterministic daily-speaking slice.
 
 PR-006 does not authorize PR-007 offline bundle/outbox work, AI or
 speech-provider orchestration, production deployment or a later checkpoint.
+
+[APP-0007](APPROVALS.md#app-0007) records `S R Bhandary`'s explicit
+Accountable Product Owner acceptance of PR-006 at
+`598ad387e65b94707564dce1e199c97deb411d82`, with its recorded limitations,
+and authorizes only PR-007 decision-resolution work.
+
+[APP-0008](APPROVALS.md#app-0008) records `S R Bhandary`'s explicit approval
+of [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md) in
+the consolidated Technical Decision Owner, Security Reviewer, Privacy
+Reviewer and Tenancy Reviewer development roles. DR-0004 is resolved and only
+PR-007 implementation is authorized. The consolidated roles are not
+independent production review.
+
+[APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
+UI-only expansion in
+[ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md). It adds
+Malayalam, Tamil, Telugu and Hindi implementation previews without accepting
+PR-006 or expanding curriculum, speech recognition, model audio, AI
+explanations, production deployment or a later checkpoint.
+
+## PR-007 implementation state
+
+- Server-issued bundles bind the exact user, membership, organization,
+  enrollment, immutable publication, mission hashes and deterministic policy
+  to a signed maximum-24-hour lease. Bundle and problem responses are
+  `private, no-store`.
+- One atomic `POST /api/v1/offline-completions` command revalidates current
+  authorization and publication state, composes the ordinary PR-006
+  start/respond/submit services in one PostgreSQL transaction and returns the
+  ordinary authoritative result. Exact replay is stable and changed replay
+  conflicts.
+- Persistent learning remains off until localized personal-device
+  confirmation. Protected metadata, verified model audio and pending commands
+  use opaque per-account IndexedDB partitions with non-exportable AES-GCM
+  keys; credentials, raw audio and display identifiers are excluded.
+- The service worker caches only the same-origin public shell and never
+  intercepts `/api/`, `/sanctum/` or `/oauth/`. Reconnect uses an exclusive
+  browser lock while server idempotency remains final authority.
+- Web and Android logout adapters delete offline partition keys before server
+  revocation. The current product still has no learner-facing logout/account
+  management screen.
+- [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md)
+  requires explicit personal-device opt-in, shell-only caching on shared
+  devices, encrypted per-account IndexedDB partitions, a maximum 24-hour
+  offline authorization lease and key-first logout purge.
+- The accepted retention policy permits mission bundles for at most 30 days
+  after online revalidation. Pending learner commands remain active for 30
+  days and then become read-only until same-account reauthentication and sync
+  or explicit discard; saved work is not silently deleted.
+- PostgreSQL remains authoritative. Offline commands use exact idempotent
+  replay, atomic acceptance and visible conflicts; last-write-wins is
+  prohibited.
+- The active implementation and verification boundary is
+  [the PR-007 offline bundle verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md).
+- PR-008, production, recording upload/persistence and every AI/provider path
+  remain unauthorized.
+- Repository verification passed: 39 SQLite tests/264 assertions, 164
+  PostgreSQL tests/1,883 assertions, 54 web tests, 31 localization tests,
+  9 design-system tests and 8 Chromium journeys. Formatting, PHPStan,
+  dependency audits, locale governance, OpenAPI/generated-client drift,
+  lint, type checking and production builds passed.
+- The `make verify`, `make e2e` and `make build` wrappers could not run because
+  this workstation currently has no `make` executable. Their exact Makefile
+  constituent commands were run successfully with the pinned toolchain.
 
 ## PR-006 bounded implementation baseline
 
@@ -56,9 +120,9 @@ speech-provider orchestration, production deployment or a later checkpoint.
 PR-006 implementation and repository-controlled verification are complete.
 Backend authority passed PostgreSQL integration and concurrency coverage; the
 browser contract journey passed in Chromium; contracts, builds, migration
-exercise and local Markdown links passed. The exact implementation commit is
-identified in the completion handoff. PR-006 remains unaccepted and PR-007
-remains blocked.
+exercise and local Markdown links passed. APP-0007 accepts the exact
+implementation commit `598ad387e65b94707564dce1e199c97deb411d82`. PR-007
+implementation is present under APP-0008 but remains unaccepted.
 
 ## Accepted PR-005 authorization history
 
@@ -144,21 +208,27 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-07-30.4`.
-- The `kn-IN` catalogue is an attributed Codex implementation draft at
-  revision `ui-kn-IN-2026-07-30.4`.
-- Kannada remains `pending-independent-review`: no reviewer, approval time or
-  independent-review claim is recorded.
+  `ui-en-IN-2026-07-30.6`.
+- The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
+  attributed Codex implementation drafts at revisions ending in `.6` for
+  Kannada and `.2` for each newly added locale.
+- All five translated catalogues remain `pending-independent-review`: no
+  reviewer, approval time or independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
   the resolved English locale and show a generic fallback notice while
-  retaining `kn-IN` as the requested locale.
+  retaining the selected draft locale as the requested locale.
 - Development, tests and an explicit
-  `VITE_UI_TRANSLATION_PREVIEW=true` review build may render draft Kannada only
-  with the visible preview notice. That flag is not authorized for production
-  deployment.
+  `VITE_UI_TRANSLATION_PREVIEW=true` review build may render a current draft
+  only with the visible preview notice. That flag is not authorized for
+  production deployment.
+- Kannada remains the default requested interface locale. Malayalam, Tamil,
+  Telugu, Hindi and English are additional interface selections. Self-hosted
+  Noto Sans variable fonts cover Kannada, Malayalam, Tamil, Telugu and
+  Devanagari scripts.
 - UI catalogues are separate from curriculum, mission, transcript and media
   content. Those belong to the accepted PR-005 versioned publication
-  foundation.
+  foundation. English remains the learning language; curriculum, speech
+  recognition, model audio and AI explanations are unchanged.
 
 ## Security, privacy and tenancy state
 
@@ -219,7 +289,7 @@ and [the PR-004 accessibility scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md)
 PR-006 verification results:
 
 - `make verify` passes with 39 SQLite tests/264 assertions, 163 PostgreSQL
-  tests/1,848 assertions, 23 localization tests, 8 design-system tests and 50
+  tests/1,848 assertions, 31 localization tests, 9 design-system tests and 51
   web tests. Dependency audits, locale validation, OpenAPI/generated-client
   drift, formatting, PHPStan, lint and recursive TypeScript checks pass.
 - `make openapi` passes with OpenAPI 3.1.1 document version 0.4.0 and matching
@@ -227,7 +297,7 @@ PR-006 verification results:
 - `make e2e` passes all seven Chromium scenarios, including the explicitly
   contract-stubbed learner golden path and microphone-denial path.
 - `make build` passes Laravel production optimization/cleanup and a strict
-  production Vite build of 63 modules.
+  production Vite build of 67 modules.
 - Fresh migration, repeat seed, empty PR-006 rollback, forward reapply and
   repeated seed pass on the explicitly verified `global_english_test`
   PostgreSQL 14.19 database. Final state has migration `000024` once, 21
@@ -250,7 +320,8 @@ PR-006 verification results:
   evidence of intelligible speech.
 - DR-0005 remains open; PR-006 introduces no recording upload, persistent
   consent state, retention/deletion workflow or provider processing.
-- PR-007 offline behavior and every AI/speech-provider path remain excluded.
+- PR-007 offline behavior is implemented but unaccepted. Every
+  AI/speech-provider path remains excluded.
 - ADR-0004's development roles are consolidated in one human and therefore
   non-independent. Independent tenancy, English-academic and Kannada-language
   review remains required before production.
@@ -273,24 +344,26 @@ PR-006 verification results:
 - The APP-0004 self-appointment exception remains disabled until deployment
   binds its exact evidence to `S R Bhandary`'s stable application-user ULID.
   It does not make the consolidated reviews independent.
-- Kannada wording has not been approved by an independent accountable Kannada
-  reviewer. The current draft and visual rendering evidence are not linguistic
-  approval.
+- Kannada, Malayalam, Tamil, Telugu and Hindi wording has not been approved by
+  independent accountable reviewers. The current drafts and visual rendering
+  evidence are not linguistic approval.
 - The 200% and 400% automated checks enlarge root text and test reflow; they
   are stress proxies, not evidence of actual browser-zoom testing.
 - Manual screen-reader, real browser-zoom and representative Android TalkBack
   testing remain outstanding. Automated axe results do not replace them.
-- Docker/Compose and a fresh PostgreSQL 18.4 container remain unavailable on
-  this host. PostgreSQL verification used the available local version 14
-  service.
+- Docker Engine 29.6.2 and Compose 5.3.1 are installed, but this Codex login
+  session cannot access the Docker socket until group membership is refreshed.
+  PostgreSQL verification used the available loopback version 14 service.
 - Local PHP is 8.4.17 rather than the declared 8.4.23 patch. The pinned Node.js
   24.18.1, pnpm 11.18.0 and Composer 2.10.2 toolchain was used.
 - The GitHub Actions workflow has not run on a remote runner.
-- No PR-006 behavior is accepted until the final implementation and evidence
-  are reviewed at its exact commit.
+- PR-006 is accepted at its exact implementation commit under APP-0007; every
+  recorded limitation remains in force.
 
 ## Next checkpoint gate
 
-PR-006 is authorized under APP-0005. PR-007 stays blocked until the
-Accountable Product Owner explicitly accepts PR-006 at its exact implementation
-commit, with its recorded limitations, and authorizes only PR-007.
+PR-007 is implemented and repository-verified under APP-0008 but is not
+accepted. PR-008 stays blocked until the Accountable Product Owner accepts the
+exact PR-007 implementation commit and authorizes only PR-008. Production
+remains unauthorized and still requires independent security, privacy,
+tenancy, accessibility, language/content and release review.

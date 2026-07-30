@@ -10,6 +10,7 @@ use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
 use App\Http\Controllers\LearnerMediaController;
 use App\Http\Controllers\LearnerMissionController;
+use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OtpAuthenticationController;
@@ -69,6 +70,15 @@ Route::prefix('v1')->group(function (): void {
             [LearnerMissionController::class, 'show'],
         )->whereUlid('mission')
             ->name('api.v1.missions.show');
+        Route::get(
+            '/missions/{mission}/offline-bundle',
+            [LearnerOfflineController::class, 'bundle'],
+        )->whereUlid('mission')
+            ->name('api.v1.missions.offline-bundle.show');
+        Route::post(
+            '/offline-completions',
+            [LearnerOfflineController::class, 'complete'],
+        )->name('api.v1.offline-completions.store');
         Route::post(
             '/missions/{mission}/attempts',
             [LearnerAttemptController::class, 'start'],

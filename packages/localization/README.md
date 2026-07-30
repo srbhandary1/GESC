@@ -10,17 +10,19 @@ be added to these catalogues.
 ## Locale policy
 
 - Default requested locale: `kn-IN`
+- Additional UI-only preview locales: `ml-IN`, `ta-IN`, `te-IN`, `hi-IN`
 - Deterministic fallback locale: `en-IN`
 - Strict default resolution policy: `approved-only`
 - Explicit non-production policy: `development-preview`
 
-The Kannada catalogue is an attributed implementation draft. Its governance
-record is deliberately `pending-independent-review`; `reviewedBy` and
-`approvedAt` are `null`, and `independentReview` is `false`. The strict policy
-therefore returns English. A development shell may explicitly request
-`development-preview`, display the returned `isPreview` state, and make the
-pending-review limitation visible. Stale, rejected, missing and unsupported
-translations still fall back to English under either policy.
+The Kannada, Malayalam, Tamil, Telugu and Hindi catalogues are attributed
+implementation drafts. Their governance records are deliberately
+`pending-independent-review`; `reviewedBy` and `approvedAt` are `null`, and
+`independentReview` is `false`. The strict policy therefore returns English.
+A development shell may explicitly request `development-preview`, display the
+returned `isPreview` state, and make the pending-review limitation visible.
+Stale, rejected, missing and unsupported translations still fall back to
+English under either policy.
 
 The web application enables preview only for development, tests or an explicit
 `VITE_UI_TRANSLATION_PREVIEW=true` review build. An ordinary production build
@@ -28,10 +30,14 @@ uses `approved-only`, shows a generic English fallback notice and emits a
 structured `localization.fallback` event containing no message text or
 parameters.
 
-Do not change the Kannada record to `approved` until a distinct accountable
-translator and independent Kannada reviewer provide traceable approval
-evidence. The validator rejects an approval claim without distinct identities,
-a valid approval time and `independentReview: true`.
+Do not change a translated record to `approved` until a distinct accountable
+translator and independent reviewer for that language provide traceable
+approval evidence. The validator rejects an approval claim without distinct
+identities, a valid approval time and `independentReview: true`.
+
+These are UI catalogues only. Their availability does not expand curriculum,
+speech recognition, model audio or AI explanations beyond the governed
+`en-IN`/`kn-IN` content boundary.
 
 ## Usage
 
@@ -69,7 +75,7 @@ renderText(resolved.text, {
 - `isPreview`
 
 `MessageKey` is derived from the flat `en-IN` source catalogue. Adding a UI
-message therefore requires the same key in both catalogues, a source-linked
+message therefore requires the same key in all six catalogues, a source-linked
 governance revision/hash update and successful locale validation.
 
 ## Unicode normalization

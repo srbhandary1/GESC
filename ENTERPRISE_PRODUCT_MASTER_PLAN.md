@@ -1,8 +1,8 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.0"
+version: "3.1"
 status: "Canonical implementation baseline"
-prepared: "29 July 2026"
+prepared: "30 July 2026"
 classification: "Confidential — Product, architecture and delivery plan"
 supersedes:
   - "Global_English_High_Level_Plan_v2.md"
@@ -90,7 +90,7 @@ The product promise is:
 | Initial learner | Kannada-speaking adults aged 18 or older |
 | Primary experience | Structured Tutor + AI Friend + Role-play Studio |
 | Learning language | English |
-| Explanation and default UI | `kn-IN`, with `en-IN` available where appropriate |
+| Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
 | Authentication | Mobile OTP for direct learners; organization invite/code or admission-ID setup for institutional learners; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android |
@@ -460,6 +460,8 @@ A transcript correction must remain linked to the original recognition result fo
 Use BCP 47 locale codes:
 
 - default UI and explanation: `kn-IN`;
+- additional Phase 1 UI-only previews: `ml-IN`, `ta-IN`, `te-IN` and
+  `hi-IN`;
 - learning language: `en-IN`;
 - optional operator UI: `en-IN`.
 
@@ -484,6 +486,13 @@ Rules:
 - mixed-language spans use correct `lang` metadata;
 - fallback is explicit and observable, never silent;
 - transliteration is optional and is never the pronunciation authority.
+
+Under ADR-0005, the additional Phase 1 locales apply only to application UI
+messages. They do not expand curriculum localization, Kannada explanation
+requirements, speech recognition, model audio or AI explanations. Every
+translated UI catalogue remains a draft until its exact revision and hash
+receive independent human language review. Production falls back visibly to
+English until that approval exists.
 
 ---
 
@@ -717,7 +726,8 @@ The core data model must not confuse learning engagement with attendance, even i
 
 - organization-aware identity, memberships, roles, cohorts and enrollments;
 - adult onboarding, preferences, placement and explicit consent;
-- Kannada-first accessible learner shell;
+- Kannada-first accessible learner shell with selectable `ml-IN`, `ta-IN`,
+  `te-IN` and `hi-IN` UI-only review previews;
 - one deterministic daily-speaking vertical slice before broad feature expansion;
 - Tutor, Friend and Role-play modes;
 - turn-based voice capture, transcription, response and synthesized speech;
@@ -744,6 +754,8 @@ The core data model must not confuse learning engagement with attendance, even i
 - authoritative automated pronunciation scoring;
 - custom foundation-model training;
 - large dialect-data collection or labeling programme;
+- Malayalam, Tamil, Telugu or Hindi curriculum, speech recognition, model
+  audio or AI explanation support unless separately approved;
 - formal CEFR certification;
 - support for minors;
 - live classes or video conferencing;
@@ -1371,8 +1383,9 @@ Requirements:
 - reduced motion and no forced timers;
 - accessible recording and audio controls;
 - large touch targets;
-- `lang="kn-IN"` and `lang="en-IN"` on mixed-language spans;
-- validated Kannada font stack, Unicode normalization, line height and wrapping;
+- correct BCP 47 `lang` metadata on every localized and mixed-language span;
+- validated Kannada, Malayalam, Tamil, Telugu and Devanagari font stacks,
+  Unicode normalization, line height and wrapping;
 - clear alternatives when speaking is not possible;
 - no accessibility claim based only on automated scans;
 - manual TalkBack testing on representative Android devices;
@@ -1611,7 +1624,8 @@ Deliver:
 - health/readiness, correlation IDs and structured logging;
 - organization, membership, role, cohort and enrollment foundation;
 - same-origin Sanctum web/PWA authentication skeleton, Passport PKCE mobile-client foundation and fake/local OTP adapter;
-- `kn-IN`/`en-IN` localization bootstrap;
+- `kn-IN`, `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` and `en-IN` UI localization
+  bootstrap with strict English production fallback;
 - accessible application shell;
 - transactional outbox/audit foundations;
 - CI and stable root commands.
@@ -1938,16 +1952,17 @@ Acceptance:
 
 Deliver:
 
-- `kn-IN` and `en-IN` catalogues;
+- `kn-IN`, `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` and `en-IN` UI catalogues;
 - mixed-language semantic component;
-- Kannada font stack and normalization;
+- Kannada, Malayalam, Tamil, Telugu and Devanagari font stacks and
+  normalization;
 - accessible shell with Home/Learn/Practice/Progress;
 - core audio/recording component contracts;
 - locale validation in CI.
 
 Acceptance:
 
-- Kannada renders correctly at target widths and zoom;
+- every Phase 1 UI script renders correctly at target widths and zoom;
 - keyboard and automated accessibility checks pass for the shell.
 
 ### PR-005 — Versioned content and publication foundation
@@ -2239,14 +2254,19 @@ Ongoing provider monitoring, model changes, security updates, dependency upgrade
 
 ### Phase 3 — Pan-India language platform
 
-- language-pack rollout based on measured demand;
+- full curriculum, speech, audio and AI language-pack rollout based on
+  measured demand; Phase 1 provides only the ADR-0005 UI preview foundation
+  for Malayalam, Tamil, Telugu and Hindi;
 - separate linguistic and speech evaluation for every source language;
 - iOS application;
 - institution self-service and billing;
 - broader curriculum and assessment partnerships;
 - optional marketplace for approved courses and scenarios.
 
-Do not assume that Kannada success automatically transfers to Tamil, Telugu, Malayalam, Hindi, Marathi or other languages. Each language requires its own content, review, speech benchmark and safety evaluation.
+Do not assume that Kannada success automatically transfers to Tamil, Telugu,
+Malayalam, Hindi, Marathi or other languages. UI catalogue availability does
+not establish learning-language support. Each full language pack requires its
+own content, review, speech benchmark and safety evaluation.
 
 ---
 
@@ -2266,7 +2286,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
 | Authentication | Direct learners use mobile OTP without an organization code; institutional learners use an invite/code or admission-ID setup; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with credentials only in native secure storage; privileged MFA |
-| Localization | `kn-IN` explanation/UI, `en-IN` learning |
+| Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
 | Voice | Online, turn-based, user-visible state; no full-duplex or offline AI |

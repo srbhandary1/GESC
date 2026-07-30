@@ -32,6 +32,7 @@ export interface SystemAuthorizationBrowser {
 export interface AndroidPkceAuthenticationOptions {
   authorizationEndpoint: string
   apiBaseUrl: string
+  beforeLogout?: () => Promise<void>
   clientId: string
   fetch?: typeof fetch
   redirectUri: string
@@ -175,6 +176,8 @@ export class AndroidPkceAuthenticationAdapter
   }
 
   async logout(): Promise<void> {
+    await this.#options.beforeLogout?.()
+
     try {
       if (
         this.#accessToken === null &&
