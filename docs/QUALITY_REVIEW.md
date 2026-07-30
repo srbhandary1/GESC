@@ -511,15 +511,15 @@ limitation and authorizes only PR-005 decision-resolution work.
 | PR-004 acceptance is bounded and durable | Pass | APP-0003 and D-0034 |
 | APP-0003 is not misrepresented as DR-0003 approval | Pass | APP-0003 conditions and proposed ADR-0004 status |
 | Current repository has no curriculum/publication implementation | Pass | route, OpenAPI, model, migration, policy, seeder and test inspection |
-| Proposed ownership preserves the ordinary Direct-tenant boundary | Pass, proposed | All authored content is organization-owned; cross-organization use requires an explicit immutable-publication grant |
-| Academic, translation and publisher authority are distinct | Pass, proposed | Permission plus scoped authority appointments, creator/reviewer separation and revocation semantics |
-| Publication closure and media-rights gates are deterministic | Pass, proposed | Derived closed manifest, visible/hidden authoritative review, explicit rights predicate and successor-publication rule |
-| Published content and rollback history are immutable | Pass, proposed | Append-only revision, review, publication and activation-event rules |
-| Sharing, withdrawal and cloning have explicit semantics | Pass, proposed | ADR-0004 owner/recipient grants, continuity, suspension and lineage rules |
-| Existing enrollment shape has a safe proposed migration | Pass, proposed | `pending_curriculum`, pre-activation withdrawal, all-status preflight and atomic immutable pin/activation |
+| Accepted ownership preserves the ordinary Direct-tenant boundary | Pass | All authored content is organization-owned; cross-organization use requires an explicit immutable-publication grant |
+| Academic, translation and publisher authority are distinct | Pass | Permission plus scoped authority appointments, creator/reviewer separation and revocation semantics |
+| Publication closure and media-rights gates are deterministic | Pass | Derived closed manifest, visible/hidden authoritative review, explicit rights predicate and successor-publication rule |
+| Published content and rollback history are immutable | Pass | Append-only revision, review, publication and activation-event rules |
+| Sharing, withdrawal and cloning have explicit semantics | Pass | ADR-0004 owner/recipient grants, continuity, suspension and lineage rules |
+| Existing enrollment shape has a safe accepted migration | Pass | `pending_curriculum`, pre-activation withdrawal, all-status preflight and atomic immutable pin/activation |
 | UI catalogue review is not reused as curriculum approval | Pass | ADR-0004 localization boundary |
 | Adversarial governance review has unresolved high/medium findings | No | Final read-only re-review after ownership, authority, rights, manifest and enrollment corrections |
-| Required human decision authority is complete | Blocked | ADR-0004 has no deciders, APP evidence, committed approval revision or appointed reviewers' own acceptance statements |
+| Required human decision authority is complete | Pass | APP-0004 accepts ADR-0004 at `d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99`, records every appointment and reviewer acceptance, and authorizes only PR-005 implementation |
 | PR-005 schema or product behavior was introduced | No | Governance and proposed decision only |
 
 ### Repository integration findings
@@ -588,18 +588,22 @@ behavior.
 
 ### Known limitations
 
-- ADR-0004 remains proposed and has no human deciders or approval evidence.
-- English Academic Reviewer and Kannada Reviewer appointments, qualifications
-  and each reviewer's own acceptance evidence have not been supplied.
-- The recommended policy has not undergone independent tenancy, academic or
-  Kannada-language specialist review.
+- Every ADR-0004 development role is consolidated in `S R Bhandary` and is
+  therefore non-independent review.
+- `MA` is recorded exactly as the qualification/accountable basis supplied for
+  each reviewer role; no specialization is inferred.
+- Independent tenancy, English-academic and Kannada-language specialist review
+  remains required before production.
+- Runtime exercise of the reviewer and rights-confirmer roles still requires
+  an active organization membership, matching permission and scoped authority
+  appointment.
 - No PR-005 implementation or acceptance test has started.
 - Existing PR-004 environment, accessibility and Kannada-review limitations
   remain unchanged.
 
 ### Exit decision
 
-The PR-005 decision phase has a concrete proposal ready for human review.
-DR-0003 remains open. Schema, seed, API and product implementation must stop
-until ADR-0004 is explicitly accepted with the roles and appointments required
-by its approval-evidence section.
+The PR-005 decision phase is accepted under APP-0004. ADR-0004 is accepted and
+DR-0003 is resolved. PR-005 schema, seed, API and product implementation is
+authorized within the accepted policy. This decision does not accept PR-005,
+authorize PR-006 or waive independent pre-production review.

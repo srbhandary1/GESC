@@ -1,30 +1,29 @@
 ---
-status: proposed
+status: accepted
 date: 2026-07-30
-deciders: []
+deciders:
+  - S R Bhandary as Accountable Product Owner and Technical Decision Owner
+  - S R Bhandary as Tenancy Reviewer
 consulted:
-  - Accountable Product Owner, pending identified human approval
-  - Technical Decision Owner, pending identified human approval
-  - Tenancy Reviewer, pending identified human approval
-  - Appointed English Academic Reviewer, pending appointment and approval
-  - Appointed Kannada Reviewer, pending appointment and approval
+  - S R Bhandary as English Academic Reviewer, qualification recorded as MA
+  - S R Bhandary as Kannada Reviewer, qualification recorded as MA
   - Codex as author and evidence recorder, not approver
 informed: []
 amends_master_plan: false
-approval_evidence: []
-approval_reference: null
+approval_evidence:
+  - APP-0004
+approval_reference: Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb
 ---
 
 # ADR-0004: Content ownership, publication authority and curriculum sharing
 
 ## Status
 
-Proposed.
+Accepted under [APP-0004](../APPROVALS.md#app-0004).
 
-This ADR proposes a resolution for DR-0003. PR-005 schema, seed data, API
-contracts and authoritative publication behavior remain blocked until the
-required humans accept this ADR and the approval is recorded in
-[`docs/APPROVALS.md`](../APPROVALS.md).
+This ADR resolves DR-0003 and authorizes implementation of only PR-005 within
+this decision and the canonical master-plan scope. It does not accept PR-005,
+authorize PR-006, approve a curriculum publication or authorize production.
 
 ## Context
 
@@ -531,63 +530,20 @@ master-plan §§5.4, 6, 10, 13, 15, 16, 21, 23, 25, 26, 29 and 32 testable.
 
 ## Approval evidence
 
-[APP-0003](../APPROVALS.md#app-0003) accepts PR-004 and authorizes only this
-PR-005 decision phase. It does not accept this ADR.
+[APP-0004](../APPROVALS.md#app-0004) records acceptance of this ADR at proposal
+revision `d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99`.
 
-Before changing schema or implementing publication behavior, a new accepted
-`APP-NNNN` record must include:
+`S R Bhandary` exercised the Accountable Product Owner, Technical Decision
+Owner and Tenancy Reviewer roles, remained the Rights Confirmer, appointed
+themselves as English Academic Reviewer and Kannada Reviewer, and explicitly
+accepted both reviewer roles. `MA` is recorded exactly as the supplied
+qualification/accountable basis for each reviewer role without an inferred
+specialization.
 
-1. an identified Accountable Product Owner accepting this policy and
-   its deterministic media-rights predicate and authorizing PR-005
-   implementation;
-2. an identified Technical Decision Owner accepting this ADR;
-3. an identified Tenancy Reviewer accepting its ownership and sharing model;
-4. the stable identifier, qualification, explicit appointment and the
-   English Academic Reviewer's own exact acceptance statement;
-5. the stable identifier, qualification, explicit appointment and the Kannada
-   Reviewer's own exact acceptance statement;
-6. the rights confirmer's identifier when authority is delegated by the
-   Accountable Product Owner;
-7. whether one person holds multiple roles and which independent review still
-   remains outstanding;
-8. each exact human statement, the exact Git commit containing this proposed
-   ADR, conditions and limitations; and
-9. confirmation that the master plan is not amended.
-
-After this proposal is committed, the recommended approval evidence is:
-
-```text
-Decision-owner approval:
-Approve ADR-0004 at Git commit [exact proposal commit SHA]. I, [stable human
-identifier], act as Accountable Product Owner, Technical Decision Owner and
-Tenancy Reviewer for this development decision. I confirm its role separation,
-authority-appointment, publication-manifest, media-rights/successor-release,
-sharing, withdrawal, suspension, cloning, immutable publication and
-enrollment-pinning rules. I remain the rights confirmer [or: I delegate rights
-confirmation to stable human identifier].
-I appoint [stable human identifier] as English Academic Reviewer and [stable
-human identifier] as Kannada Reviewer.
-
-English Academic Reviewer acceptance:
-I, [stable human identifier], accept the English Academic Reviewer role and
-ADR-0004 policy at that revision. Qualification:
-[qualification or accountable basis].
-
-Kannada Reviewer acceptance:
-I, [stable human identifier], accept the Kannada Reviewer role and ADR-0004
-policy at that revision. Qualification:
-[qualification or accountable basis].
-
-Record any consolidated roles as non-independent review. Authorize only
-PR-005 implementation after every statement and appointment is recorded.
-```
-
-The applicable humans must replace every placeholder. A decision owner cannot
-accept on behalf of another appointed reviewer: each reviewer supplies their
-own statement/reference, unless the same identified human explicitly exercises
-that reviewer role. Consolidated roles require qualifications and are recorded
-as non-independent review. Another contextual `Continue` does not supply the
-missing revision, acceptances, appointments or qualifications.
+All consolidated roles are non-independent review. Independent tenancy,
+English-academic and Kannada-language specialist review remains required
+before production. Codex authored and recorded this decision but did not
+approve it. No master-plan amendment is made.
 
 ## Verification
 

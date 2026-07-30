@@ -5,31 +5,32 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-005 — Versioned content and publication foundation |
-| Status | Decision phase authorized; implementation blocked pending DR-0003 approval |
+| Status | Implementation authorized — in progress |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.0 |
 | Updated date | 30 July 2026 |
 | Git branch | `pr-005-versioned-content-publication-foundation` |
-| Product code | No PR-005 product or schema change; accepted PR-004 implementation remains unchanged |
-| Next checkpoint | PR-005 implementation, only after ADR-0004 and its required human evidence are accepted |
+| Product code | No PR-005 product or schema change at the approval checkpoint; implementation is now authorized |
+| Next checkpoint | PR-006, only after PR-005 implementation, verification and explicit acceptance |
 
 ## Checkpoint authorization
 
-[APP-0003](APPROVALS.md#app-0003) records the product owner's contextual
-instruction accepting PR-004 at
-`f9ffbe9bc3069d74ff53ddcb51d8c6972c55e216` with its stated limitations and
-authorizing only PR-005 decision-resolution work. The instruction does not
-resolve DR-0003 or authorize schema, seed, API or product implementation.
+[APP-0004](APPROVALS.md#app-0004) accepts
+[ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md)
+at `d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99`, resolves DR-0003 and authorizes
+implementation of only PR-005. `S R Bhandary` exercised every recorded
+development role. Those consolidated roles are explicitly non-independent
+review and do not waive pre-production specialist gates.
 
 ## PR-005 decision phase
 
 - Repository inspection confirms there is no curriculum, content, media-rights,
   publication or curriculum-sharing implementation.
 - [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md)
-  proposes organization ownership, review/publisher authority, sharing,
+  establishes organization ownership, review/publisher authority, sharing,
   withdrawal, cloning, immutable publication, rollback and version-pinning
   rules.
-- The ADR remains `Proposed`. Its deciders and approval evidence are empty.
-- The proposal keeps Global English curriculum inside the ordinary Global
+- The ADR is `Accepted` under APP-0004 and DR-0003 is resolved.
+- The policy keeps Global English curriculum inside the ordinary Global
   English Direct tenant and uses explicit immutable-publication grants for
   cross-organization availability.
 - It defines a closed publication manifest, deterministic Kannada and
@@ -41,8 +42,9 @@ resolve DR-0003 or authorize schema, seed, API or product implementation.
   unpinned active rows to that state, permits pre-activation withdrawal,
   preflights inconsistent completed rows and makes activation atomic with a
   valid immutable publication pin.
-- No migration, route, OpenAPI operation, generated client, model, permission,
-  seed or product behavior has been added in the decision phase.
+- At the governance-acceptance checkpoint, no migration, route, OpenAPI
+  operation, generated client, model, permission, seed or product behavior had
+  been added.
 - Repository Markdown/link validation, `git diff --check` and the existing
   full `make verify` gate pass after temporarily starting and initializing the
   local PostgreSQL 14 test service; the service was stopped afterward.
@@ -134,8 +136,12 @@ Detailed evidence is recorded in [QUALITY_REVIEW.md](QUALITY_REVIEW.md) and
 
 ## Known limitations
 
-- DR-0003 remains unresolved. Proposed ADR-0004 has no human deciders,
-  academic/language appointments or accepted approval evidence.
+- ADR-0004's development roles are consolidated in one human and therefore
+  non-independent. Independent tenancy, English-academic and Kannada-language
+  review remains required before production.
+- The human reviewer appointments still require active organization
+  memberships, permissions and scoped runtime authority-appointment records
+  before any product-data approval is valid.
 - Kannada wording has not been approved by an independent accountable Kannada
   reviewer. The current draft and visual rendering evidence are not linguistic
   approval.
@@ -149,55 +155,14 @@ Detailed evidence is recorded in [QUALITY_REVIEW.md](QUALITY_REVIEW.md) and
 - Local PHP is 8.4.17 rather than the declared 8.4.23 patch. The pinned Node.js
   24.18.1, pnpm 11.18.0 and Composer 2.10.2 toolchain was used.
 - The GitHub Actions workflow has not run on a remote runner.
-- No curriculum publication, playable mission, learner attempt, audio
-  playback/capture, speech/AI provider, offline behavior or Android UI is
-  implemented. No PR-005 schema or product code has started.
+- PR-005 implementation and acceptance verification are not yet complete. No
+  curriculum publication has been human-approved, and no playable learner
+  mission, attempt, audio playback/capture, speech/AI provider, offline
+  behavior or Android UI is authorized in this checkpoint.
 
 ## Next checkpoint gate
 
-PR-004 is accepted under APP-0003. PR-005 schema and product implementation
-must not begin until:
-
-1. the Accountable Product Owner reviews and accepts the concrete policy in
-   proposed ADR-0004, including its media-rights predicate;
-2. the Technical Decision Owner and Tenancy Reviewer accept the ADR;
-3. stable human identifiers, qualifications and explicit appointments are
-   recorded for the English Academic Reviewer and Kannada Reviewer;
-4. each appointed reviewer supplies their own exact acceptance statement, or
-   the same identified human explicitly exercises and accepts that role; and
-5. a new APP-NNNN entry records every exact statement, the exact committed ADR
-   revision, consolidated roles, limitations and authorization to implement
-   only PR-005.
-
-## Recommended approval response
-
-```text
-Decision-owner approval:
-Approve ADR-0004 at Git commit [exact proposal commit SHA]. I, [stable human
-identifier], act as Accountable Product Owner, Technical Decision Owner and
-Tenancy Reviewer for this development decision. I confirm its role separation,
-authority-appointment, publication-manifest, media-rights/successor-release,
-sharing, withdrawal, suspension, cloning, immutable publication and
-enrollment-pinning rules. I remain the rights confirmer [or: I delegate rights
-confirmation to stable human identifier].
-I appoint [stable human identifier] as English Academic Reviewer and [stable
-human identifier] as Kannada Reviewer.
-
-English Academic Reviewer acceptance:
-I, [stable human identifier], accept the English Academic Reviewer role and
-ADR-0004 policy at that revision. Qualification:
-[qualification or accountable basis].
-
-Kannada Reviewer acceptance:
-I, [stable human identifier], accept the Kannada Reviewer role and ADR-0004
-policy at that revision. Qualification:
-[qualification or accountable basis].
-
-Record any consolidated roles as non-independent review. Authorize only
-PR-005 implementation after every statement and appointment is recorded.
-```
-
-Every placeholder must be replaced after the proposal is committed. A decision
-owner cannot accept on behalf of another reviewer. If one human holds several
-roles, the response must say so explicitly; a bare `Continue` cannot supply the
-revision, reviewer acceptances, appointments or qualifications.
+APP-0004 satisfies the PR-005 implementation gate. Work may proceed only
+within PR-005 and the accepted ADR. PR-006 remains blocked until PR-005 is
+implemented, fully verified, documented and explicitly accepted by the
+Accountable Product Owner.

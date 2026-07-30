@@ -235,3 +235,100 @@ or authorize PR-005 schema and product implementation.
   checkpoint.
 - The source conversation provides no timestamp-of-day or personal approver
   name; neither is inferred.
+
+<a id="app-0004"></a>
+
+## APP-0004 — ADR-0004 acceptance and PR-005 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Tenancy Reviewer; Rights Confirmer; English Academic Reviewer; Kannada Reviewer |
+| Approval reference | `Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted ADR revision | `d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99` |
+| English Academic Reviewer qualification/accountable basis | `MA` |
+| Kannada Reviewer qualification/accountable basis | `MA` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Decision-owner approval:
+Approve ADR-0004 at Git commit d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99.
+I, S R Bhandary, act as Accountable Product Owner, Technical
+Decision Owner and Tenancy Reviewer for this development decision. I confirm
+its role separation, authority-appointment, publication-manifest,
+media-rights/successor-release, sharing, withdrawal, suspension, cloning,
+immutable publication and enrollment-pinning rules. I remain the rights
+confirmer [or: I delegate rights confirmation to stable human identifier].
+I appoint S R Bhandary as English Academic Reviewer and
+S R Bhandary as Kannada Reviewer.
+
+English Academic Reviewer acceptance:
+I,S R Bhandary, accept the English Academic Reviewer role and
+ADR-0004 policy at that revision. Qualification:
+MA.
+
+Kannada Reviewer acceptance:
+I, S R Bhandary accept the Kannada Reviewer role and ADR-0004
+policy at that revision. Qualification:
+MA.
+
+Record any consolidated roles as non-independent review. Authorize only
+PR-005 implementation after every statement and appointment is recorded.
+```
+
+### Context and interpretation
+
+The human supplied this statement in response to the committed ADR-0004
+proposal at the exact revision above. The affirmative statement `I remain the
+rights confirmer` is recorded as the selected authority declaration. The
+bracketed delegation alternative is preserved verbatim as part of the evidence
+but was not exercised; no rights-confirmation delegate is appointed.
+
+`MA` is recorded exactly as the qualification/accountable basis supplied for
+each reviewer role. This ledger does not infer an academic subject,
+institution, awarding body or additional credential.
+
+The same identified human explicitly exercised and accepted every listed
+role. Those consolidated roles are non-independent review. They are sufficient
+development authority for this bounded checkpoint, but do not constitute
+independent tenancy, English-academic or Kannada-language specialist review.
+
+### Accepted artifacts, appointments and authorization
+
+- [ADR-0004 — Content ownership, publication authority and curriculum sharing](adr/0004-content-ownership-publication-and-curriculum-sharing.md)
+  is accepted at
+  `d9d7cba4b2ccc0d9f2e8656e5fd19bab9ce9dc99`, resolving DR-0003.
+- `S R Bhandary` remains the accountable rights confirmer; no delegate is
+  appointed.
+- `S R Bhandary` is appointed and accepts the English Academic Reviewer role
+  with the supplied qualification/accountable basis `MA`.
+- `S R Bhandary` is appointed and accepts the Kannada Reviewer role with the
+  supplied qualification/accountable basis `MA`.
+- Authorization extends only to PR-005 — Versioned content and publication
+  foundation — within the accepted ADR and canonical master-plan scope.
+
+### Conditions and limitations
+
+- Every consolidated role in this record is non-independent. Independent
+  tenancy, English-academic and Kannada-language review remains mandatory
+  before production. Existing security, privacy, accessibility and legal
+  production gates also remain in force.
+- The human evidence appoints the accountable reviewers. Exercising those
+  roles in product data still requires the applicable active organization
+  membership, permission and scoped runtime authority appointment introduced
+  by PR-005.
+- The two `MA` statements are recorded without inferred specialization. An
+  independent pre-production reviewer must determine whether the evidence is
+  adequate for the content and release being reviewed.
+- This approval authorizes implementation and verification only. It does not
+  approve any future curriculum publication, waive creator/reviewer
+  separation, authorize production, accept PR-005, or authorize PR-006.
+- No master-plan amendment is made.
