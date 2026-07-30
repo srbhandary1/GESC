@@ -23,11 +23,11 @@ known limitations are recorded in [docs/STATUS.md](docs/STATUS.md).
 ## Current state
 
 PR-006 — Deterministic daily-speaking slice is implemented, verified and
-accepted at its exact implementation commit under APP-0007. The repository is
-now limited to **PR-007 implementation** under the accepted ADR-0006 and
-APP-0008 authorization. The offline bundle and idempotent outbox slice is
-implemented and repository-verified but remains unaccepted; PR-008 and
-production are not authorized. ADR-0005 additionally brings UI-only Malayalam
+accepted at its exact implementation commit under APP-0007. PR-007 — Offline
+bundle and idempotent outbox is implemented, repository-verified and accepted
+at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008,
+production and every later implementation checkpoint remain unauthorized.
+ADR-0005 additionally brings UI-only Malayalam
 (`ml-IN`), Tamil (`ta-IN`), Telugu
 (`te-IN`) and Hindi (`hi-IN`) implementation previews into Phase 1 alongside
 Kannada (`kn-IN`) and the English (`en-IN`) source/fallback.

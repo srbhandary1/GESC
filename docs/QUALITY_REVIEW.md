@@ -1143,12 +1143,14 @@ orchestration are unchanged.
 - GNU Make is absent, so documented wrapper targets were reproduced from the
   Makefile instead of invoked directly.
 - GitHub Actions and representative Android device tests have not run.
-- PR-007 is implemented but not accepted. PR-008 and production remain
+- PR-007 is accepted separately under APP-0009 at
+  `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648`. PR-008 and production remain
   unauthorized.
 
 ### Exit decision
 
-PR-007 is implemented and repository-verified within APP-0008. This evidence
-does not accept the checkpoint or authorize PR-008 or production. The next
-action is an Accountable Product Owner review of the exact PR-007 implementation
-commit and recorded limitations.
+PR-007 is implemented and repository-verified within APP-0008, and the
+Accountable Product Owner accepts the exact implementation commit
+`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` with its recorded limitations
+under APP-0009. That acceptance does not authorize PR-008, production or any
+later implementation checkpoint.

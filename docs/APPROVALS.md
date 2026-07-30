@@ -596,3 +596,51 @@ immediately before this statement. That proposal:
 - PR-007 does not become accepted merely because implementation or tests pass;
   checkpoint acceptance requires a later exact-commit Accountable Product
   Owner statement.
+
+<a id="app-0009"></a>
+
+## APP-0009 — PR-007 acceptance without later-checkpoint authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted implementation commit | `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` |
+| Verification evidence | [PR-007 offline bundle verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md) and [quality review](QUALITY_REVIEW.md#pr-007--offline-bundle-and-idempotent-outbox) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I accept PR-007 at commit e0e2f1b90e0eb4ecf680f5243b57ec0731c32648 with its recorded limitations. This does not authorize PR-008 or production.
+```
+
+### Context and interpretation
+
+- Accept the exact PR-007 implementation commit and its recorded verification
+  evidence and limitations.
+- Close the PR-007 checkpoint without changing ADR-0006 or its accepted
+  security, privacy, tenancy, retention and conflict policy.
+- Do not authorize PR-008, production deployment or any later checkpoint.
+- Do not approve draft interface translations, curriculum, model audio,
+  provider processing or recording upload/persistence.
+
+### Conditions and limitations
+
+- Every limitation in the PR-007 verification scope and quality review remains
+  in force.
+- Consolidated development review under APP-0008 is not independent
+  production review.
+- Independent security, privacy, tenancy, accessibility, language/content and
+  release review remains mandatory before production.
+- Malayalam, Tamil, Telugu, Hindi and Kannada interface catalogues remain
+  implementation drafts pending independent human review; ordinary production
+  continues to fall back visibly to English.
+- No implementation work beyond PR-007 is authorized by this record.

@@ -202,9 +202,9 @@ PR-007 is implemented only when:
 - every required automated check passes; and
 - status, decision and quality evidence records the exact limitations.
 
-PR-007 remains unaccepted after implementation. PR-008 stays blocked until the
-Accountable Product Owner accepts the exact PR-007 implementation commit and
-authorizes only PR-008.
+PR-007 was accepted under APP-0009 at the exact implementation commit
+`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648`. That acceptance does not
+authorize PR-008, production or a later implementation checkpoint.
 
 ## Implementation result
 
@@ -223,5 +223,5 @@ The bounded slice is implemented and repository-verified on 30 July 2026:
 - GNU Make is absent on this workstation, so the exact documented Makefile
   constituents were run rather than the wrapper targets.
 
-This result is implementation evidence, not checkpoint acceptance, production
-approval or PR-008 authorization.
+This result is implementation evidence. Checkpoint acceptance is recorded
+separately in APP-0009; production and PR-008 remain unauthorized.

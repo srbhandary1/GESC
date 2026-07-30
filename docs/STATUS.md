@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-007 — Offline bundle and idempotent outbox |
-| Status | Implemented and repository-verified under ADR-0006; not accepted |
+| Status | Implemented, repository-verified and accepted at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009 |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 30 July 2026 |
 | Git branch | `codex/pr-006-deterministic-daily-speaking-slice` |
-| Product code | PR-007 deterministic offline bundle, protected personal-device store and atomic reconnect completion added to the accepted PR-006 baseline; no production content or later checkpoint approved |
-| Next checkpoint | PR-008, blocked until the Accountable Product Owner explicitly accepts PR-007 at its exact implementation commit and authorizes only PR-008 |
+| Product code | Accepted PR-007 deterministic offline bundle, protected personal-device store and atomic reconnect completion on the accepted PR-006 baseline; no production content or later checkpoint approved |
+| Next checkpoint | None authorized; PR-008 remains blocked pending separate explicit authorization |
 
 ## Checkpoint authorization
 
@@ -33,6 +33,11 @@ the consolidated Technical Decision Owner, Security Reviewer, Privacy
 Reviewer and Tenancy Reviewer development roles. DR-0004 is resolved and only
 PR-007 implementation is authorized. The consolidated roles are not
 independent production review.
+
+[APP-0009](APPROVALS.md#app-0009) records `S R Bhandary`'s Accountable
+Product Owner acceptance of PR-007 at the exact implementation commit
+`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648`, with every recorded limitation.
+It does not authorize PR-008, production or any later checkpoint.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -75,8 +80,10 @@ explanations, production deployment or a later checkpoint.
   prohibited.
 - The active implementation and verification boundary is
   [the PR-007 offline bundle verification scope](PR-007_OFFLINE_BUNDLE_VERIFICATION_SCOPE.md).
-- PR-008, production, recording upload/persistence and every AI/provider path
-  remain unauthorized.
+- PR-007 is accepted at
+  `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008,
+  production, recording upload/persistence and every AI/provider path remain
+  unauthorized.
 - Repository verification passed: 39 SQLite tests/264 assertions, 164
   PostgreSQL tests/1,883 assertions, 54 web tests, 31 localization tests,
   9 design-system tests and 8 Chromium journeys. Formatting, PHPStan,
@@ -122,7 +129,8 @@ Backend authority passed PostgreSQL integration and concurrency coverage; the
 browser contract journey passed in Chromium; contracts, builds, migration
 exercise and local Markdown links passed. APP-0007 accepts the exact
 implementation commit `598ad387e65b94707564dce1e199c97deb411d82`. PR-007
-implementation is present under APP-0008 but remains unaccepted.
+implementation is accepted separately at
+`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009.
 
 ## Accepted PR-005 authorization history
 
@@ -320,8 +328,8 @@ PR-006 verification results:
   evidence of intelligible speech.
 - DR-0005 remains open; PR-006 introduces no recording upload, persistent
   consent state, retention/deletion workflow or provider processing.
-- PR-007 offline behavior is implemented but unaccepted. Every
-  AI/speech-provider path remains excluded.
+- PR-007 offline behavior is accepted at its exact implementation commit.
+  Every AI/speech-provider path remains excluded.
 - ADR-0004's development roles are consolidated in one human and therefore
   non-independent. Independent tenancy, English-academic and Kannada-language
   review remains required before production.
@@ -362,8 +370,9 @@ PR-006 verification results:
 
 ## Next checkpoint gate
 
-PR-007 is implemented and repository-verified under APP-0008 but is not
-accepted. PR-008 stays blocked until the Accountable Product Owner accepts the
-exact PR-007 implementation commit and authorizes only PR-008. Production
-remains unauthorized and still requires independent security, privacy,
-tenancy, accessibility, language/content and release review.
+PR-007 is implemented, repository-verified and accepted at
+`e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. No later
+implementation checkpoint is authorized. PR-008 and production remain blocked
+pending separate explicit authority; production also requires independent
+security, privacy, tenancy, accessibility, language/content and release
+review.
