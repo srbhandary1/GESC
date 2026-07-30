@@ -52,6 +52,10 @@ final class InstitutionInviteAcceptorTest extends TenancyIntegrationTestCase
         $this->assertSame($first->membership->getKey(), $second->membership->getKey());
         $this->assertNotNull($first->enrollment);
         $this->assertSame($first->enrollment->getKey(), $second->enrollment?->getKey());
+        $this->assertSame(
+            'pending_curriculum',
+            $first->enrollment->getAttribute('status'),
+        );
         $this->assertSame(1, DB::table('memberships')
             ->where('organization_id', $organization->getKey())
             ->where('user_id', $learner->getKey())

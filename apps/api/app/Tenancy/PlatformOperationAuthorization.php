@@ -18,5 +18,6 @@ final readonly class PlatformOperationAuthorization
         public int $issuedAtEpoch,
         public string $nonce,
         public string $signature,
+        public ?string $authenticationSessionId = null,
     ) {}
 }

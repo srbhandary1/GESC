@@ -112,7 +112,7 @@ export type InstitutionInviteAcceptance = {
 
 export type EnrollmentSummary = {
     id: Ulid;
-    status: 'active' | 'completed' | 'withdrawn';
+    status: 'pending_curriculum' | 'active' | 'completed' | 'withdrawn';
 };
 
 export type InviteAcceptanceResponse = {

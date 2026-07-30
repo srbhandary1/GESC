@@ -15,12 +15,29 @@ final readonly class OutboxEventRecorder
      * @var list<string>
      */
     private const array SAFE_PAYLOAD_KEYS = [
+        'authority_appointment_event_id',
+        'authority_appointment_id',
         'cohort_id',
+        'content_review_id',
+        'curriculum_clone_id',
+        'curriculum_owner_organization_id',
+        'curriculum_share_grant_id',
+        'curriculum_version_id',
         'enrollment_id',
         'identity_id',
         'invite_id',
+        'localized_variant_id',
+        'media_asset_id',
+        'media_rights_revision_id',
         'membership_id',
         'organization_id',
+        'previous_publication_id',
+        'program_id',
+        'publication_event_id',
+        'publication_id',
+        'recipient_organization_id',
+        'source_publication_id',
+        'source_revision_id',
         'user_id',
     ];
 

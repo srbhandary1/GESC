@@ -63,6 +63,7 @@ final readonly class AuditEventRecorder
             'subject_type' => $authorization->subjectType,
             'subject_id' => $authorization->subjectId,
             'correlation_id' => $authorization->correlationId,
+            'authorization_nonce' => $authorization->nonce,
             'occurred_at' => now(),
         ]);
     }

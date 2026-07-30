@@ -607,3 +607,161 @@ The PR-005 decision phase is accepted under APP-0004. ADR-0004 is accepted and
 DR-0003 is resolved. PR-005 schema, seed, API and product implementation is
 authorized within the accepted policy. This decision does not accept PR-005,
 authorize PR-006 or waive independent pre-production review.
+
+---
+
+## PR-005 — Versioned content and publication foundation
+
+### Scope reviewed
+
+- organization ownership, exact tenant foreign keys and immutable owner
+  identity;
+- source, Kannada, graph and media-rights revision lineage;
+- appointment authority, role separation and the bounded APP-0004
+  consolidated-role exception;
+- canonical publication closure, scheduling, activation, retirement, rollback
+  and successor rights;
+- explicit sharing, withdrawal, recipient isolation and clone lineage;
+- enrollment migration, atomic publication pinning and retained-pin access;
+- owner and named-platform emergency suspension, remediation and resumption;
+- idempotency, locking, audit/outbox evidence and concurrent first-write
+  behavior;
+- safe synthetic seed integrity, OpenAPI enrollment-state compatibility and
+  generated client drift;
+- the PR-005 checkpoint boundary and exclusion of later learner, speech, AI,
+  offline and Android behavior.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Every curriculum aggregate has a non-null immutable owner organization | Pass | composite tenant foreign keys, owner-change triggers and cross-tenant integration tests |
+| Source, Kannada and rights history is append-only with exact lineage | Pass | immediate-parent triggers and direct mutation/nonconsecutive-parent tests |
+| Same-hash Kannada evidence cannot be substituted across source identities | Pass | variant, review and publication-component composite-key rejection tests |
+| Review and rights evidence uses the exact accepted authority kind/event | Pass | PostgreSQL authority triggers and wrong-kind/nonaccepted-event tests |
+| Consolidated APP-0004 appointments remain bounded and non-independent | Pass with production gate | deny-by-default runtime user binding, exact evidence/qualification checks and APP-0004 limitations |
+| Publication is a deterministic immutable closed manifest | Pass | manifest/component hash tests and graph/content sealing |
+| Immediate and future activation histories are explicit | Pass | atomic scheduled/activated immediate events plus scheduled activation tests |
+| Scheduled-only snapshots cannot be rollback targets | Pass | fail-closed rollback test with no command/event/head/audit/outbox residue |
+| Rollback uses the stored manifest and exact still-valid pinned evidence | Pass | retirement restoration and later exact-review-withdrawal tests |
+| Program-scoped successor rights require a new publication | Pass | old/new component evidence remains distinct and the earlier manifest is unchanged |
+| Share use is explicit and recipient-isolated | Pass | preview/enrollment/clone allow/deny, withdrawal and recipient mutation/re-share tests |
+| Enrollment activation creates one immutable owned/shared pin | Pass | migration, pinner, direct-update rejection and rollback-retention tests |
+| Suspension stops all delivery but permits remediation without implicit resume | Pass | owner/platform, retired-pin and suspended-replacement tests |
+| Emergency evidence identifies the exact actor session, remediation and prior platform audit | Pass | authentication-session foreign key, PostgreSQL evidence trigger, forged-session/audit rejection and service/event assertions |
+| Signed platform authorization cannot drive a second command or duplicate replay audit | Pass | unique append-only authorization nonce plus same-command replay and cross-command reuse tests |
+| Concurrent authority revocation cannot pass an in-transaction permission recheck | Pass | locked authority joins and a second PostgreSQL connection timing out on permission removal |
+| Shared and pinned access use one locked authoritative snapshot | Pass | resolver-owned transactions and query assertions for authorization, grant/pin, publication, head, activation and evidence locks |
+| Competing first publish/schedule has one PostgreSQL winner | Pass | forked-worker concurrency tests |
+| Seed is synthetic, unpublished, atomic and replay-safe | Pass | repeat seed and conflicting/pre-existing state rejection tests |
+| Later checkpoint behavior was introduced | No | no learner mission execution, speech/AI provider, offline or Android product implementation |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| Focused PR-005 PostgreSQL suites during remediation | Pass; final serialized authority/access/platform/schema/lifecycle suite ran 44 tests with 286 assertions |
+| Full PostgreSQL integration suite | Pass: 154 tests, 1,671 assertions |
+| Fresh PostgreSQL migrate, seed, repeated seed | Pass |
+| Four-step empty-data rollback, forward migrate and seed | Pass; populated-enrollment rollback denial is separately covered |
+| `make verify` with Node.js 24.18.1, pnpm 11.18.0 and Composer 2.10.2 | Pass on local PHP 8.4.17 with the expected 8.4.23 warning: dependency validation/audits, Pint, PHPStan, 36 SQLite tests/254 assertions, 154 PostgreSQL tests/1,671 assertions, locale validation, OpenAPI/generated-client drift, ESLint, recursive TypeScript and 56 frontend/package tests |
+| `make e2e` | Pass: five Chromium scenarios after rerunning outside the macOS process sandbox |
+| `make build` | Pass: Laravel production optimization/cleanup and strict Vite production build, 54 modules |
+| Local Markdown structure/link validator | Pass: 24 in-scope Markdown files; UTF-8, final newlines, balanced fences, heading progression and repository-local links/anchors |
+| `git diff --check` and canonical-input diff | Pass; no whitespace errors and no change to `AGENTS.md` or `ENTERPRISE_PRODUCT_MASTER_PLAN.md` |
+
+The first full-gate attempt stopped at the pinned Composer check because the
+host Composer was 2.9.3. Composer 2.10.2 was downloaded to an isolated
+`/private/tmp` path and the unchanged gate then passed. The first browser run
+could not start Chromium because the macOS sandbox denied its Mach rendezvous
+port; the approved unsandboxed rerun passed all five scenarios. Neither
+environment stop is represented as a product-test failure or a passing
+attempt. `make ai-eval` was not run because it intentionally fails before
+PR-011 and PR-005 changes no prompt, model, provider or AI orchestration.
+
+### Security, privacy and tenancy review
+
+- Owner-side commands recheck membership-derived permissions inside their
+  authoritative transactions and lock the authority rows used by the decision.
+  Concurrent suspension or permission removal therefore waits for the
+  protected command. Caller-supplied organization IDs never establish context.
+- Shared access uses a dedicated recipient-context resolver. Grant use does not
+  expose owner drafts, authority records, memberships or unrelated grants, and
+  recipients cannot edit, publish or re-share owner records. Shared and pinned
+  access decisions own their transactions, capture one trusted instant and
+  lock the mutable state they evaluate.
+- Exact source identities, revision lineage, appointment kinds/events and
+  organization ownership have database enforcement, not service-only checks.
+- Raw caller idempotency keys are aggregate-scoped and replay is bound to the
+  exact actor and request. Actor mismatch fails closed.
+- Existing delivery keeps its immutable publication pin. Rights expiry or
+  withdrawal and explicit suspension stop delivery; later review invalidation
+  blocks future activation, rollback and resumption without silently rewriting
+  a live release.
+- Platform emergency authority is disabled by default and is signed, named,
+  target-bound, short-lived and fresh-MFA-bound. The resulting event links the
+  exact platform audit record created before organization context. A unique
+  audit nonce prevents one authorization from driving another command, while
+  exact idempotent replay does not manufacture another audit event.
+- Audit/outbox payloads contain identifiers and stable keys only. No curriculum
+  bodies, Kannada text, media bytes, learner data, credentials, transcripts or
+  provider payloads were introduced.
+- Seed data is synthetic and unpublished. No real learner data or unlicensed
+  media was added.
+
+### Migrations and configuration reviewed
+
+- Migrations `000020`–`000023` add curriculum structure, immutable governance
+  evidence, publication/sharing history and enrollment pins.
+- `000023` upgrades pre-content unpinned active rows to
+  `pending_curriculum`, fails closed for invalid completed rows and refuses
+  rollback once any enrollment exists.
+- Publication events require exact emergency evidence for suspend/resume rows;
+  PostgreSQL binds the session to the accountable actor and platform emergency
+  events additionally bind the exact target/capability/action/reason/program/
+  correlation audit row.
+- Migration `000022` extends append-only platform audit history with a unique
+  signed-authorization nonce; pre-existing audit rows remain nullable for
+  migration compatibility.
+- `CONTENT_GOVERNANCE_APP_0004_ACTOR_USER_ID` binds the accepted human evidence
+  to a stable runtime user and is empty/deny-by-default.
+- `PLATFORM_CONTENT_EMERGENCY_ACTOR_USER_IDS` is an empty/deny-by-default list
+  of stable platform user ULIDs.
+- OpenAPI 0.3.0 and generated clients add only the
+  `pending_curriculum` enrollment status; there is no PR-005 public
+  content/publication endpoint.
+
+### Known limitations
+
+- `S R Bhandary` holds every APP-0004 development role. Those approvals are
+  explicitly non-independent; independent tenancy, English-academic and
+  Kannada-language review remains mandatory before production.
+- `MA` is recorded exactly for the English Academic Reviewer and Kannada
+  Reviewer; no specialization is inferred.
+- No production curriculum has runtime human review evidence. The synthetic
+  seed is deliberately unpublished.
+- Media asset import and initial pending-rights creation have no public or
+  dedicated domain import command.
+- Media-bearing clone requests fail closed until reviewed object-copy,
+  retention and derivative-rights behavior exists.
+- Scheduled activation workers and schedule cancellation are not implemented;
+  the foundation exposes explicit schedule/activate commands.
+- Evidence transitions use PostgreSQL table-level share locks and need
+  representative production-volume benchmarking.
+- Public content/publication HTTP operations remain a later bounded issue.
+- Docker and the declared PostgreSQL 18.4 image were unavailable locally;
+  database verification used PostgreSQL 14. Local PHP is 8.4.17 rather than
+  the declared 8.4.23 patch.
+- Remote CI, production runbooks and independent specialist reviews remain
+  outstanding.
+- No learner mission execution, attempt/mastery record, playable/captured
+  audio, offline behavior, AI/provider integration or Android product UI is in
+  PR-005.
+
+### Exit decision
+
+PR-005 implementation and local verification are complete within APP-0004 and
+are ready for Accountable Product Owner review. This quality review does not
+accept PR-005, authorize PR-006 or authorize production. PR-006 remains blocked
+until the human explicitly accepts PR-005 at its exact implementation commit
+and authorizes only PR-006.

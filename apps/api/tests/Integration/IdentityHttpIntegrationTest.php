@@ -282,7 +282,7 @@ final class IdentityHttpIntegrationTest extends TenancyIntegrationTestCase
             ->assertJsonPath('membership.organization.id', $organization->getKey())
             ->assertJsonPath('membership.status', Membership::STATUS_ACTIVE)
             ->assertJsonPath('membership.role_keys.0', 'institution-learner')
-            ->assertJsonPath('enrollment.status', 'active')
+            ->assertJsonPath('enrollment.status', 'pending_curriculum')
             ->assertJsonPath('replayed', false);
         $this->assertNoStore($accepted);
 

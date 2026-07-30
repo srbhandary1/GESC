@@ -20,6 +20,26 @@ final readonly class PlatformOperationAuthorizer
     /**
      * @var list<string>
      */
+    private const array CONTENT_EMERGENCY_SUSPEND_REASONS = [
+        'content.emergency.legal',
+        'content.emergency.rights',
+        'content.emergency.safety',
+        'content.emergency.security',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const array CONTENT_EMERGENCY_RESUME_REASONS = [
+        'content.emergency.legal_resolved',
+        'content.emergency.rights_restored',
+        'content.emergency.safety_remediated',
+        'content.emergency.security_remediated',
+    ];
+
+    /**
+     * @var list<string>
+     */
     private const array AUTHENTICATION_SESSION_ACTIONS = [
         'authentication.session.expired',
         'authentication.session.revoked',
@@ -152,6 +172,46 @@ final readonly class PlatformOperationAuthorizer
         );
     }
 
+    public function authorizeContentEmergencySuspension(
+        Organization $targetOrganization,
+        string $programId,
+        User $actor,
+        string $authenticationSessionId,
+        string $reasonKey,
+        ?string $correlationId = null,
+    ): PlatformOperationAuthorization {
+        return $this->authorizeContentEmergencyChange(
+            targetOrganization: $targetOrganization,
+            programId: $programId,
+            actor: $actor,
+            authenticationSessionId: $authenticationSessionId,
+            action: 'curriculum.publication.suspended',
+            allowedReasons: self::CONTENT_EMERGENCY_SUSPEND_REASONS,
+            reasonKey: $reasonKey,
+            correlationId: $correlationId,
+        );
+    }
+
+    public function authorizeContentEmergencyResumption(
+        Organization $targetOrganization,
+        string $programId,
+        User $actor,
+        string $authenticationSessionId,
+        string $reasonKey,
+        ?string $correlationId = null,
+    ): PlatformOperationAuthorization {
+        return $this->authorizeContentEmergencyChange(
+            targetOrganization: $targetOrganization,
+            programId: $programId,
+            actor: $actor,
+            authenticationSessionId: $authenticationSessionId,
+            action: 'curriculum.publication.resumed',
+            allowedReasons: self::CONTENT_EMERGENCY_RESUME_REASONS,
+            reasonKey: $reasonKey,
+            correlationId: $correlationId,
+        );
+    }
+
     public function assertAuditAuthorized(
         PlatformOperationAuthorization $authorization,
     ): void {
@@ -191,6 +251,32 @@ final readonly class PlatformOperationAuthorizer
                     true,
                 )
                 && $authorization->targetOrganizationId === null,
+            PlatformCapability::ContentEmergencySuspend => $authorization
+                ->subjectType === 'program'
+                && $authorization->targetOrganizationId !== null
+                && $authorization->actorUserId !== null
+                && $authorization->authenticationSessionId !== null
+                && $authorization->correlationId !== null
+                && (
+                    (
+                        $authorization->action
+                            === 'curriculum.publication.suspended'
+                        && in_array(
+                            $authorization->reasonKey,
+                            self::CONTENT_EMERGENCY_SUSPEND_REASONS,
+                            true,
+                        )
+                    )
+                    || (
+                        $authorization->action
+                            === 'curriculum.publication.resumed'
+                        && in_array(
+                            $authorization->reasonKey,
+                            self::CONTENT_EMERGENCY_RESUME_REASONS,
+                            true,
+                        )
+                    )
+                ),
         };
 
         if (! $allowed) {
@@ -229,6 +315,7 @@ final readonly class PlatformOperationAuthorizer
             ->where('subject_type', $authorization->subjectType)
             ->where('subject_id', $authorization->subjectId)
             ->where('correlation_id', $authorization->correlationId)
+            ->where('authorization_nonce', $authorization->nonce)
             ->exists();
 
         if (! $auditExists) {
@@ -241,22 +328,131 @@ final readonly class PlatformOperationAuthorizer
     ): void {
         $this->assertAuditAuthorized($authorization);
 
+        $allowed = match ($authorization->capability) {
+            PlatformCapability::FoundationTenantBootstrap => $this
+                ->foundationContextIsCurrent($authorization),
+            PlatformCapability::ContentEmergencySuspend => $this
+                ->contentEmergencyContextIsCurrent($authorization),
+            PlatformCapability::AuthenticationSessionLifecycle,
+            PlatformCapability::MobileCredentialLifecycle => false,
+        };
+
+        if (! $allowed) {
+            throw new UnauthorizedPlatformOperation;
+        }
+    }
+
+    /**
+     * @param  list<string>  $allowedReasons
+     */
+    private function authorizeContentEmergencyChange(
+        Organization $targetOrganization,
+        string $programId,
+        User $actor,
+        string $authenticationSessionId,
+        string $action,
+        array $allowedReasons,
+        string $reasonKey,
+        ?string $correlationId,
+    ): PlatformOperationAuthorization {
+        $organizationId = (string) $targetOrganization->getKey();
+        $actorUserId = (string) $actor->getKey();
+
         if (
-            $authorization->capability
-                !== PlatformCapability::FoundationTenantBootstrap
-            || $authorization->targetOrganizationId === null
-            || $authorization->actorUserId === null
+            ! in_array($reasonKey, $allowedReasons, true)
+            || $targetOrganization->status !== Organization::STATUS_ACTIVE
+            || $actor->status !== User::STATUS_ACTIVE
+            || ! in_array(
+                $actorUserId,
+                $this->contentEmergencyActorUserIds(),
+                true,
+            )
             || ! DB::table('organizations')
-                ->where('id', $authorization->targetOrganizationId)
+                ->where('id', $organizationId)
                 ->where('status', Organization::STATUS_ACTIVE)
                 ->exists()
             || ! DB::table('users')
-                ->where('id', $authorization->actorUserId)
+                ->where('id', $actorUserId)
                 ->where('status', User::STATUS_ACTIVE)
                 ->exists()
+            || ! DB::table('programs')
+                ->where('organization_id', $organizationId)
+                ->where('id', $programId)
+                ->exists()
+            || ! $this->freshPrivilegedSessionExists(
+                $authenticationSessionId,
+                $actorUserId,
+            )
         ) {
             throw new UnauthorizedPlatformOperation;
         }
+
+        return $this->issue(
+            capability: PlatformCapability::ContentEmergencySuspend,
+            reasonKey: $reasonKey,
+            targetOrganizationId: $organizationId,
+            actorUserId: $actorUserId,
+            action: $action,
+            subjectType: 'program',
+            subjectId: $programId,
+            correlationId: $correlationId ?? (string) Str::uuid(),
+            authenticationSessionId: $authenticationSessionId,
+        );
+    }
+
+    private function foundationContextIsCurrent(
+        PlatformOperationAuthorization $authorization,
+    ): bool {
+        return $authorization->targetOrganizationId !== null
+            && $authorization->actorUserId !== null
+            && DB::table('organizations')
+                ->where('id', $authorization->targetOrganizationId)
+                ->where('status', Organization::STATUS_ACTIVE)
+                ->lockForUpdate()
+                ->first(['id']) instanceof \stdClass
+            && DB::table('users')
+                ->where('id', $authorization->actorUserId)
+                ->where('status', User::STATUS_ACTIVE)
+                ->lockForUpdate()
+                ->first(['id']) instanceof \stdClass;
+    }
+
+    private function contentEmergencyContextIsCurrent(
+        PlatformOperationAuthorization $authorization,
+    ): bool {
+        if (
+            $authorization->targetOrganizationId === null
+            || $authorization->actorUserId === null
+            || $authorization->authenticationSessionId === null
+            || ! in_array(
+                $authorization->actorUserId,
+                $this->contentEmergencyActorUserIds(),
+                true,
+            )
+        ) {
+            return false;
+        }
+
+        return DB::table('organizations')
+            ->where('id', $authorization->targetOrganizationId)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->lockForUpdate()
+            ->first(['id']) instanceof \stdClass
+            && DB::table('users')
+                ->where('id', $authorization->actorUserId)
+                ->where('status', User::STATUS_ACTIVE)
+                ->lockForUpdate()
+                ->first(['id']) instanceof \stdClass
+            && DB::table('programs')
+                ->where('organization_id', $authorization->targetOrganizationId)
+                ->where('id', $authorization->subjectId)
+                ->lockForUpdate()
+                ->first(['id']) instanceof \stdClass
+            && $this->freshPrivilegedSessionExists(
+                $authorization->authenticationSessionId,
+                $authorization->actorUserId,
+                true,
+            );
     }
 
     private function issue(
@@ -268,6 +464,7 @@ final readonly class PlatformOperationAuthorizer
         string $subjectType,
         string $subjectId,
         ?string $correlationId,
+        ?string $authenticationSessionId = null,
     ): PlatformOperationAuthorization {
         $this->assertDescriptor($reasonKey);
         $this->assertDescriptor($action);
@@ -280,6 +477,10 @@ final readonly class PlatformOperationAuthorizer
 
         if ($actorUserId !== null) {
             $this->assertUlid($actorUserId);
+        }
+
+        if ($authenticationSessionId !== null) {
+            $this->assertUlid($authenticationSessionId);
         }
 
         if ($correlationId !== null && ! Str::isUuid($correlationId)) {
@@ -300,6 +501,7 @@ final readonly class PlatformOperationAuthorizer
             issuedAtEpoch: $issuedAtEpoch,
             nonce: $nonce,
             signature: '',
+            authenticationSessionId: $authenticationSessionId,
         );
 
         return new PlatformOperationAuthorization(
@@ -314,6 +516,7 @@ final readonly class PlatformOperationAuthorizer
             issuedAtEpoch: $issuedAtEpoch,
             nonce: $nonce,
             signature: $this->signature($unsigned),
+            authenticationSessionId: $authenticationSessionId,
         );
     }
 
@@ -331,6 +534,10 @@ final readonly class PlatformOperationAuthorizer
 
         if ($authorization->actorUserId !== null) {
             $this->assertUlid($authorization->actorUserId);
+        }
+
+        if ($authorization->authenticationSessionId !== null) {
+            $this->assertUlid($authorization->authenticationSessionId);
         }
 
         if (
@@ -364,6 +571,8 @@ final readonly class PlatformOperationAuthorizer
                 'reason_key' => $authorization->reasonKey,
                 'target_organization_id' => $authorization->targetOrganizationId,
                 'actor_user_id' => $authorization->actorUserId,
+                'authentication_session_id' => $authorization
+                    ->authenticationSessionId,
                 'action' => $authorization->action,
                 'subject_type' => $authorization->subjectType,
                 'subject_id' => $authorization->subjectId,
@@ -379,6 +588,69 @@ final readonly class PlatformOperationAuthorizer
             'platform-operation-authorization',
             $payload,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function contentEmergencyActorUserIds(): array
+    {
+        $configured = config(
+            'platform.content_emergency.actor_user_ids',
+            [],
+        );
+
+        if (! is_array($configured)) {
+            throw new UnauthorizedPlatformOperation;
+        }
+
+        $actorUserIds = [];
+
+        foreach ($configured as $actorUserId) {
+            if (! is_string($actorUserId) || ! Str::isUlid($actorUserId)) {
+                throw new UnauthorizedPlatformOperation;
+            }
+
+            $actorUserIds[] = $actorUserId;
+        }
+
+        return array_values(array_unique($actorUserIds));
+    }
+
+    private function freshPrivilegedSessionExists(
+        string $authenticationSessionId,
+        string $actorUserId,
+        bool $lockForUpdate = false,
+    ): bool {
+        if (
+            ! Str::isUlid($authenticationSessionId)
+            || ! Str::isUlid($actorUserId)
+        ) {
+            return false;
+        }
+
+        $now = Date::now();
+        $query = DB::table('authentication_sessions')
+            ->where('id', $authenticationSessionId)
+            ->where('user_id', $actorUserId)
+            ->where('is_privileged', true)
+            ->whereNull('revoked_at')
+            ->where('idle_expires_at', '>', $now)
+            ->where('absolute_expires_at', '>', $now)
+            ->where(
+                'mfa_verified_at',
+                '>',
+                $now->copy()->subMinutes((int) config(
+                    'authentication.privileged.mfa_fresh_minutes',
+                    15,
+                )),
+            );
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first(['id']) instanceof \stdClass;
     }
 
     private function assertDescriptor(string $value): void

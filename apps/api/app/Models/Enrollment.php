@@ -14,7 +14,13 @@ final class Enrollment extends Model implements OrganizationOwned
 {
     use BelongsToOrganization, HasUlids;
 
+    public const string STATUS_PENDING_CURRICULUM = 'pending_curriculum';
+
     public const string STATUS_ACTIVE = 'active';
+
+    public const string STATUS_COMPLETED = 'completed';
+
+    public const string STATUS_WITHDRAWN = 'withdrawn';
 
     /**
      * @var list<string>
@@ -24,8 +30,13 @@ final class Enrollment extends Model implements OrganizationOwned
         'organization_id',
         'learner_membership_id',
         'cohort_id',
+        'curriculum_owner_organization_id',
+        'curriculum_version_id',
+        'curriculum_publication_id',
+        'curriculum_share_grant_id',
         'status',
         'enrolled_at',
+        'activated_at',
         'ended_at',
     ];
 
@@ -60,6 +71,7 @@ final class Enrollment extends Model implements OrganizationOwned
     {
         return [
             'enrolled_at' => 'immutable_datetime',
+            'activated_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
         ];
     }

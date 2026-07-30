@@ -33,7 +33,13 @@ final readonly class OrganizationAuthorization
             return false;
         }
 
-        return DB::table('memberships as memberships')
+        $query = DB::table('memberships as memberships')
+            ->join(
+                'users as users',
+                'users.id',
+                '=',
+                'memberships.user_id',
+            )
             ->join(
                 'organizations as organizations',
                 'organizations.id',
@@ -60,8 +66,22 @@ final readonly class OrganizationAuthorization
             ->where('memberships.id', $context->membershipId)
             ->where('memberships.user_id', $user->getKey())
             ->where('memberships.status', 'active')
+            ->where('users.status', User::STATUS_ACTIVE)
             ->where('organizations.status', 'active')
-            ->where('permissions.key', $permission)
-            ->exists();
+            ->where('permissions.key', $permission);
+
+        /*
+         * Authoritative commands recheck permission after opening their
+         * transaction. Lock every authority row selected by that recheck so a
+         * concurrent suspension, role removal or permission removal cannot
+         * commit between authorization and the protected write.
+         */
+        if (DB::transactionLevel() > 0) {
+            return $query
+                ->lockForUpdate()
+                ->first(['memberships.id']) !== null;
+        }
+
+        return $query->exists();
     }
 }

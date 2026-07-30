@@ -429,6 +429,7 @@ export const EnrollmentSummarySchema = {
         status: {
             type: 'string',
             enum: [
+                'pending_curriculum',
                 'active',
                 'completed',
                 'withdrawn'

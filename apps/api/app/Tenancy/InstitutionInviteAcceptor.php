@@ -439,7 +439,7 @@ final readonly class InstitutionInviteAcceptor
         $enrollment->forceFill([
             'learner_membership_id' => $membership->getKey(),
             'cohort_id' => $cohort->getKey(),
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => Enrollment::STATUS_PENDING_CURRICULUM,
             'enrolled_at' => now(),
         ])->save();
 

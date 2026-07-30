@@ -2,11 +2,12 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.2.0
+  version: 0.3.0
   description: |
-    Canonical API contract for the Global English platform. PR-003 adds the
-    tenancy and identity foundation while keeping organization context
-    server-derived and authentication credentials out of browser JavaScript.
+    Canonical API contract for the Global English platform. PR-005 adds the
+    pending-curriculum enrollment state required before immutable curriculum
+    assignment. Content-publication commands remain project-owned domain
+    interfaces; this revision adds no public PR-005 HTTP operation.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -938,6 +939,7 @@ components:
         status:
           type: string
           enum:
+            - pending_curriculum
             - active
             - completed
             - withdrawn

@@ -146,7 +146,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
             static fn (): Enrollment => Enrollment::query()->forceCreate([
                 'learner_membership_id' => $membershipA->getKey(),
                 'cohort_id' => $cohortA->getKey(),
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => Enrollment::STATUS_PENDING_CURRICULUM,
                 'enrolled_at' => now(),
             ]),
         );
@@ -244,7 +244,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
                 'organization_id' => $organizationB->getKey(),
                 'learner_membership_id' => $membershipA->getKey(),
                 'cohort_id' => $cohortA->getKey(),
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => Enrollment::STATUS_PENDING_CURRICULUM,
                 'enrolled_at' => now(),
             ]),
         ];
@@ -293,7 +293,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
             static fn (): Enrollment => Enrollment::query()->forceCreate([
                 'learner_membership_id' => $membershipB->getKey(),
                 'cohort_id' => $cohortB->getKey(),
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => Enrollment::STATUS_PENDING_CURRICULUM,
                 'enrolled_at' => now(),
             ]),
         );
@@ -463,7 +463,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
             static fn (): Enrollment => Enrollment::query()->forceCreate([
                 'learner_membership_id' => $membershipA->getKey(),
                 'cohort_id' => $cohortA->getKey(),
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => Enrollment::STATUS_PENDING_CURRICULUM,
                 'enrolled_at' => now(),
             ]),
         );
@@ -472,7 +472,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
             static fn (): Enrollment => Enrollment::query()->forceCreate([
                 'learner_membership_id' => $membershipB->getKey(),
                 'cohort_id' => $cohortB->getKey(),
-                'status' => Enrollment::STATUS_ACTIVE,
+                'status' => Enrollment::STATUS_PENDING_CURRICULUM,
                 'enrolled_at' => now(),
             ]),
         );
@@ -698,7 +698,7 @@ final class OrganizationIsolationTest extends TenancyIntegrationTestCase
             'organization_id' => $organizationA->getKey(),
             'learner_membership_id' => $membershipA->getKey(),
             'cohort_id' => $cohortB->getKey(),
-            'status' => 'active',
+            'status' => 'pending_curriculum',
             'enrolled_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
