@@ -332,3 +332,60 @@ independent tenancy, English-academic or Kannada-language specialist review.
   approve any future curriculum publication, waive creator/reviewer
   separation, authorize production, accept PR-005, or authorize PR-006.
 - No master-plan amendment is made.
+
+<a id="app-0005"></a>
+
+## APP-0005 — PR-005 acceptance and PR-006 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Exact human statement | `I, S R Bhandary, acting as Accountable Product Owner, accept PR-005 at commit daeee1df7a7e4d31427001aedece76d8121413d6 with its recorded limitations and authorize only PR-006 — Deterministic daily-speaking slice.` |
+| Accepted implementation revision | `daeee1df7a7e4d31427001aedece76d8121413d6` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Context and interpretation
+
+Immediately before the statement, Codex:
+
+1. verified that the repository remained at the exact PR-005 implementation
+   revision;
+2. stated that a generic continuation instruction could not satisfy the
+   explicit checkpoint gate;
+3. repeated that PR-006 had not started; and
+4. supplied the exact acceptance wording tying approval to the implementation
+   revision, recorded limitations and PR-006-only authorization.
+
+The human then supplied that exact statement. This accepts PR-005 with the
+limitations recorded in `docs/STATUS.md`, `docs/QUALITY_REVIEW.md` and
+`docs/PR-005_CONTENT_PUBLICATION_VERIFICATION_SCOPE.md`, and authorizes
+execution of only PR-006 within the canonical master-plan scope.
+
+### Accepted scope and authorization
+
+- PR-005 checkpoint acceptance at
+  `daeee1df7a7e4d31427001aedece76d8121413d6`.
+- Authorization to execute only PR-006 — Deterministic daily-speaking slice.
+- The accepted PR-005 governance, tenancy, publication, sharing, emergency,
+  enrollment-pinning and recovery boundaries remain authoritative.
+
+### Conditions and limitations
+
+- Every PR-005 limitation remains a limitation rather than a passing result.
+- PR-006 must preserve immutable publication and enrollment pins,
+  organization scoping, deterministic authoritative learning records and the
+  no-AI completion path.
+- This approval does not authorize offline bundle/outbox implementation from
+  PR-007, AI or speech-provider orchestration, production deployment or any
+  later checkpoint.
+- Independent tenancy, security, privacy, accessibility, English-academic,
+  Kannada-language and legal production gates remain in force.
+- No master-plan amendment is made.

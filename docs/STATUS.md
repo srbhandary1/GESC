@@ -4,15 +4,25 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-005 — Versioned content and publication foundation |
-| Status | Implementation and local verification complete — awaiting checkpoint acceptance |
+| Checkpoint | PR-006 — Deterministic daily-speaking slice |
+| Status | Authorized — implementation in progress |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.0 |
 | Updated date | 30 July 2026 |
-| Git branch | `pr-005-versioned-content-publication-foundation` |
-| Product code | PR-005 domain, schema, seed and generated enrollment-contract changes implemented; no public content/publication HTTP route |
-| Next checkpoint | PR-006, blocked until explicit PR-005 acceptance at the exact implementation commit |
+| Git branch | `codex/pr-006-deterministic-daily-speaking-slice` |
+| Product code | PR-005 accepted; PR-006 implementation authorized and bounded to one deterministic no-AI learner journey |
+| Next checkpoint | PR-007, blocked until explicit PR-006 acceptance at its exact implementation commit |
 
 ## Checkpoint authorization
+
+[APP-0005](APPROVALS.md#app-0005) records `S R Bhandary`'s explicit
+Accountable Product Owner acceptance of PR-005 at
+`daeee1df7a7e4d31427001aedece76d8121413d6`, with its recorded limitations,
+and authorizes only PR-006 — Deterministic daily-speaking slice.
+
+PR-006 does not authorize PR-007 offline bundle/outbox work, AI or
+speech-provider orchestration, production deployment or a later checkpoint.
+
+## Accepted PR-005 authorization history
 
 [APP-0004](APPROVALS.md#app-0004) accepts
 [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md)
@@ -213,7 +223,6 @@ and [the PR-004 accessibility scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md)
 
 ## Next checkpoint gate
 
-PR-005 is implemented and locally verified within APP-0004. It remains
-unaccepted. PR-006 stays blocked until the Accountable Product Owner explicitly
-accepts PR-005 at the exact implementation commit, with these limitations, and
-authorizes only PR-006.
+PR-006 is authorized under APP-0005. PR-007 stays blocked until the
+Accountable Product Owner explicitly accepts PR-006 at its exact implementation
+commit, with its recorded limitations, and authorizes only PR-007.

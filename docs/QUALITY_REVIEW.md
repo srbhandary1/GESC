@@ -765,3 +765,13 @@ are ready for Accountable Product Owner review. This quality review does not
 accept PR-005, authorize PR-006 or authorize production. PR-006 remains blocked
 until the human explicitly accepts PR-005 at its exact implementation commit
 and authorizes only PR-006.
+
+### Subsequent checkpoint acceptance
+
+[APP-0005](APPROVALS.md#app-0005) records `S R Bhandary`'s explicit
+Accountable Product Owner acceptance of PR-005 at
+`daeee1df7a7e4d31427001aedece76d8121413d6`, with every limitation above, and
+authorizes only PR-006 — Deterministic daily-speaking slice.
+
+That approval does not authorize PR-007, AI or speech-provider orchestration,
+production deployment or any later checkpoint.
