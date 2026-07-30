@@ -68,6 +68,10 @@ final class IdentityHttpIntegrationTest extends TenancyIntegrationTestCase
                 'current_membership.organization.kind',
                 Organization::KIND_PLATFORM_DIRECT,
             )
+            ->assertJsonPath(
+                'current_membership.membership_type',
+                Membership::TYPE_LEARNER,
+            )
             ->assertJsonCount(1, 'memberships');
         $this->assertNoStore($initial);
 

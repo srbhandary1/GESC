@@ -18,6 +18,8 @@ use App\Authentication\Sessions\PrivilegeClassifier;
 use App\Health\DatabaseReadinessProbe;
 use App\Health\ReadinessChecker;
 use App\Health\RedisReadinessProbe;
+use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Missions\PinnedDailyMissionReader;
 use App\Observability\HttpRequestLogger;
 use App\Tenancy\OrganizationContextManager;
 use DateInterval;
@@ -60,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
             return $this->app->make(SecureOtpCodeGenerator::class);
         });
         $this->app->bind(PrivilegeClassifier::class, MembershipRolePrivilegeClassifier::class);
+        $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
         $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
         $this->app->bind(OtpDeliveryAdapter::class, function (): OtpDeliveryAdapter {
             if (config('authentication.otp.driver') !== 'local') {

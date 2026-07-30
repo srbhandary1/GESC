@@ -5,11 +5,11 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-006 — Deterministic daily-speaking slice |
-| Status | Authorized — implementation in progress |
+| Status | Implemented and locally verified — awaiting Accountable Product Owner acceptance |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.0 |
 | Updated date | 30 July 2026 |
 | Git branch | `codex/pr-006-deterministic-daily-speaking-slice` |
-| Product code | PR-005 accepted; PR-006 implementation authorized and bounded to one deterministic no-AI learner journey |
+| Product code | PR-006 deterministic learner slice implemented; no production content or later checkpoint approved |
 | Next checkpoint | PR-007, blocked until explicit PR-006 acceptance at its exact implementation commit |
 
 ## Checkpoint authorization
@@ -21,6 +21,44 @@ and authorizes only PR-006 — Deterministic daily-speaking slice.
 
 PR-006 does not authorize PR-007 offline bundle/outbox work, AI or
 speech-provider orchestration, production deployment or a later checkpoint.
+
+## PR-006 bounded implementation baseline
+
+- Learner profiles, goals, attempts, evidence summaries, mastery and review
+  records remain organization-owned and self-only. Learning starts only from
+  the authenticated learner's active membership and active enrollment with an
+  exact immutable PR-005 publication pin; a learner cannot assign or change
+  that pin.
+- First/latest/best is calculated across submitted formative attempts for the
+  exact learner membership, enrollment, publication and mission. First is the
+  lowest server attempt number, latest is the highest, and best is the highest
+  deterministic score with the earliest attempt number winning a tie.
+- PR-006 accepts only an immutable publication containing exactly one mission;
+  zero, multiple or guessed additional missions fail closed.
+- Knowledge mastery and spoken mastery are distinct. A deterministic check may
+  advance knowledge mastery and schedule review. A browser local-capture
+  receipt is non-authoritative and cannot award spoken mastery.
+- Raw learner audio remains only in volatile browser memory for playback and
+  retry. It is not uploaded, cached offline, persisted or logged. Recording
+  upload, consent history, retention, deletion and provider processing remain
+  gated by DR-0005 and PR-009.
+- PR-007 offline bundle/outbox behavior and every AI or speech-provider path
+  remain excluded.
+- APP-0005 approves implementation scope, not curriculum content or media. The
+  canonical synthetic seed remains unpublished. Browser golden-path coverage
+  may use contract stubs and synthetic test fixtures, while backend authority
+  is verified against PostgreSQL.
+- Detailed implementation rules, verification evidence and the exit gate are in
+  [the PR-006 verification scope](PR-006_DETERMINISTIC_DAILY_SPEAKING_VERIFICATION_SCOPE.md).
+
+## PR-006 verification state
+
+PR-006 implementation and repository-controlled verification are complete.
+Backend authority passed PostgreSQL integration and concurrency coverage; the
+browser contract journey passed in Chromium; contracts, builds, migration
+exercise and local Markdown links passed. The exact implementation commit is
+identified in the completion handoff. PR-006 remains unaccepted and PR-007
+remains blocked.
 
 ## Accepted PR-005 authorization history
 
@@ -106,9 +144,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-07-30.2`.
+  `ui-en-IN-2026-07-30.4`.
 - The `kn-IN` catalogue is an attributed Codex implementation draft at
-  revision `ui-kn-IN-2026-07-30.2`.
+  revision `ui-kn-IN-2026-07-30.4`.
 - Kannada remains `pending-independent-review`: no reviewer, approval time or
   independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
@@ -119,11 +157,22 @@ review and do not waive pre-production specialist gates.
   with the visible preview notice. That flag is not authorized for production
   deployment.
 - UI catalogues are separate from curriculum, mission, transcript and media
-  content. Those belong to the versioned publication foundation after DR-0003
-  is resolved.
+  content. Those belong to the accepted PR-005 versioned publication
+  foundation.
 
 ## Security, privacy and tenancy state
 
+- Every PR-006 learner write must be bound to the membership-derived
+  organization context, the actor's exact learner membership and active
+  enrollment, and that enrollment's immutable publication pin. Learner input
+  cannot establish organization, learner, curriculum owner, publication,
+  attempt number, score or mastery authority.
+- Raw capture bytes remain local and volatile. The bounded capture receipt
+  contains no audio, transcript, filename, blob URL, media-device detail or
+  provider payload and is explicitly ineligible for spoken mastery.
+- PR-006 attempts and response evidence are append-only after submission.
+  Actor/fingerprint-bound idempotency and transactional serialization must
+  protect numbering, finalization, summary, mastery and review updates.
 - Curriculum/content ownership is non-null and tenant-scoped. Owner commands
   require active membership plus the exact permission; academic/language/rights
   evidence additionally requires an accepted scoped appointment. Authoritative
@@ -151,37 +200,57 @@ review and do not waive pre-production specialist gates.
   message text, parameters, learner content or provider payload.
 - Tenant-supplied organization names use `<bdi lang="">`; the shell does not
   infer a language or rewrite organization data.
-- Audio and recording controls are inert presentation contracts. They do not
-  access microphones, play media, make network/provider calls or persist
-  learner data.
+- The PR-004 audio and recording controls remain presentation components.
+  PR-006 composes them with project-owned browser adapters: model audio is
+  fetched only from the authenticated exact-pin route, while raw learner
+  recording uses `MediaRecorder` only after an explicit action and remains in
+  volatile browser memory for local playback/retry. No provider SDK or
+  persistent learner-audio path was added.
 - No real learner data, captured audio, unlicensed media, provider SDK or
   later-checkpoint authoritative record was added.
 
 ## Verification state
 
 Detailed evidence is recorded in [QUALITY_REVIEW.md](QUALITY_REVIEW.md),
+[the PR-006 verification scope](PR-006_DETERMINISTIC_DAILY_SPEAKING_VERIFICATION_SCOPE.md),
 [the PR-005 verification scope](PR-005_CONTENT_PUBLICATION_VERIFICATION_SCOPE.md)
 and [the PR-004 accessibility scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md).
 
-- `make verify` passes with 36 SQLite backend tests/254 assertions, 154
-  PostgreSQL tests/1,671 assertions, 56 frontend/package unit tests, dependency
-  audits, locale validation, OpenAPI/generated-client drift, formatting,
-  static analysis, centralized lint and recursive TypeScript checks.
-- `make openapi` passes with OpenAPI 0.3.0 and matching generated clients.
-- `make e2e` passes all five Chromium scenarios.
+PR-006 verification results:
+
+- `make verify` passes with 39 SQLite tests/264 assertions, 163 PostgreSQL
+  tests/1,848 assertions, 23 localization tests, 8 design-system tests and 50
+  web tests. Dependency audits, locale validation, OpenAPI/generated-client
+  drift, formatting, PHPStan, lint and recursive TypeScript checks pass.
+- `make openapi` passes with OpenAPI 3.1.1 document version 0.4.0 and matching
+  generated clients.
+- `make e2e` passes all seven Chromium scenarios, including the explicitly
+  contract-stubbed learner golden path and microphone-denial path.
 - `make build` passes Laravel production optimization/cleanup and a strict
-  production Vite build of 54 modules.
-- Fresh migration, repeat seed, four-step empty-data rollback, forward re-apply
-  and seed pass on PostgreSQL 14. The enrollment-pin migration refuses rollback
-  when any enrollment exists, so authoritative adoption requires a reviewed
-  forward fix and data reconciliation.
-- Local browser visual inspection confirms Kannada glyph rendering at 1280 CSS
-  pixels and no horizontal overflow at 320 CSS pixels; a strict production
-  build visibly falls back to English and reports `lang="en-IN"` with
-  `data-requested-locale="kn-IN"`.
+  production Vite build of 63 modules.
+- Fresh migration, repeat seed, empty PR-006 rollback, forward reapply and
+  repeated seed pass on the explicitly verified `global_english_test`
+  PostgreSQL 14.19 database. Final state has migration `000024` once, 21
+  permissions and zero publications, learner profiles or learner attempts.
+- Twenty-five in-scope Markdown files pass structure and local-link checks.
+  External URLs were not live-checked.
+- `git diff --check` and the PR-006 security/scope audit pass.
 
 ## Known limitations
 
+- PR-006 has no approved production mission, Kannada content, transcript or
+  model-audio rights evidence. The canonical seed remains unpublished.
+- Browser E2E may exercise a contract-stubbed synthetic mission. That is not a
+  true full-stack published-media journey or accountable content approval.
+- PR-006 deliberately accepts exactly one manifest mission. Multiple missions
+  contributing to an objective require a later persisted result snapshot or
+  global objective-evidence order before this boundary can expand.
+- Raw learner audio is local-only and unavailable for transcription, trainer
+  review or spoken mastery. Its non-authoritative capture receipt is not
+  evidence of intelligible speech.
+- DR-0005 remains open; PR-006 introduces no recording upload, persistent
+  consent state, retention/deletion workflow or provider processing.
+- PR-007 offline behavior and every AI/speech-provider path remain excluded.
 - ADR-0004's development roles are consolidated in one human and therefore
   non-independent. Independent tenancy, English-academic and Kannada-language
   review remains required before production.
@@ -217,9 +286,8 @@ and [the PR-004 accessibility scope](PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md)
 - Local PHP is 8.4.17 rather than the declared 8.4.23 patch. The pinned Node.js
   24.18.1, pnpm 11.18.0 and Composer 2.10.2 toolchain was used.
 - The GitHub Actions workflow has not run on a remote runner.
-- No playable learner mission, attempt, mastery, audio playback/capture,
-  speech/AI provider, offline behavior or Android product UI is authorized in
-  this checkpoint.
+- No PR-006 behavior is accepted until the final implementation and evidence
+  are reviewed at its exact commit.
 
 ## Next checkpoint gate
 

@@ -1,6 +1,5 @@
 import {
   ApplicationFrame,
-  MixedLanguageText,
   type PrimaryDestination,
 } from '@global-english/design-system'
 import {
@@ -15,7 +14,6 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type ReactNode,
 } from 'react'
 import './App.css'
 import type {
@@ -29,6 +27,11 @@ import {
   useInterfaceFallbackReporting,
   type InterfaceMessageResolution,
 } from './localization/interfaceLocalization'
+import { LocalizedMessage } from './localization/LocalizedMessage'
+import type { AudioRecorder } from './learner/BrowserAudioRecorder'
+import { LearnerJourney } from './learner/LearnerJourney'
+import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 
 type SessionState =
   | AuthenticationSnapshot
@@ -37,6 +40,9 @@ type SessionState =
 
 interface AppProps {
   authentication?: AuthenticationAdapter
+  audioRecorder?: AudioRecorder
+  createClientId?: () => string
+  learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
 }
 
@@ -66,6 +72,9 @@ const destinationMessages: Readonly<
 
 function App({
   authentication = defaultAuthentication,
+  audioRecorder,
+  createClientId,
+  learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
 }: AppProps) {
   const [session, setSession] = useState<SessionState>({
@@ -181,6 +190,10 @@ function App({
     navigationLabel.usedFallback ||
     title.usedFallback ||
     description.usedFallback
+  const canLearn =
+    destination === 'learn' &&
+    session.status === 'authenticated' &&
+    session.identity.current_membership?.membership_type === 'learner'
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -307,11 +320,21 @@ function App({
           </p>
         </section>
 
-        <p className="shell-checkpoint-notice">
-          <LocalizedMessage
-            resolution={message('shell.checkpoint_notice')}
+        {canLearn ? (
+          <LearnerJourney
+            api={learnerJourneyApi}
+            audioRecorder={audioRecorder}
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
           />
-        </p>
+        ) : (
+          <p className="shell-checkpoint-notice">
+            <LocalizedMessage
+              resolution={message('shell.checkpoint_notice')}
+            />
+          </p>
+        )}
 
         <SessionSummary
           message={message}
@@ -367,31 +390,6 @@ function SessionSummary({ message, session }: SessionSummaryProps) {
         )}
       </div>
     </section>
-  )
-}
-
-interface LocalizedMessageProps {
-  resolution: InterfaceMessageResolution
-}
-
-function LocalizedMessage({
-  resolution,
-}: LocalizedMessageProps): ReactNode {
-  useInterfaceFallbackReporting([resolution])
-
-  return (
-    <MixedLanguageText
-      data-fallback-locale={
-        resolution.usedFallback ? resolution.resolvedLocale : undefined
-      }
-      data-message-review-status={resolution.reviewStatus}
-      segments={[
-        {
-          locale: resolution.resolvedLocale,
-          text: resolution.text,
-        },
-      ]}
-    />
   )
 }
 

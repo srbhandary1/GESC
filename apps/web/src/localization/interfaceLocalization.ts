@@ -2,6 +2,7 @@ import {
   resolveMessage,
   type FallbackEvent,
   type MessageKey,
+  type MessageParameters,
   type ResolvedMessage,
   type ResolutionPolicy,
   type SupportedLocale,
@@ -42,12 +43,14 @@ export function resolveInterfaceMessage(
   key: MessageKey,
   locale: SupportedLocale,
   policy: ResolutionPolicy = INTERFACE_RESOLUTION_POLICY,
+  parameters: MessageParameters = {},
 ): InterfaceMessageResolution {
   let fallbackEvent: FallbackEvent | null = null
   const resolution = resolveMessage(key, {
     onFallback: (event) => {
       fallbackEvent = event
     },
+    parameters,
     policy,
     requestedLocale: locale,
   })

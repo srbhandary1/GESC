@@ -87,6 +87,10 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
      */
     private function runEnrollmentPinMigration(string $direction): void
     {
+        if ($direction === 'down') {
+            $this->runDeterministicLearningMigration('down');
+        }
+
         $migration = require database_path(
             'migrations/2026_07_30_000023_pin_enrollments_to_curriculum_publications.php',
         );
@@ -97,6 +101,31 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
         ) {
             throw new RuntimeException(
                 'The PR-005 enrollment-pin migration is not executable.',
+            );
+        }
+
+        Closure::fromCallable([$migration, $direction])();
+
+        if ($direction === 'up') {
+            $this->runDeterministicLearningMigration('up');
+        }
+    }
+
+    /**
+     * @param  'down'|'up'  $direction
+     */
+    private function runDeterministicLearningMigration(string $direction): void
+    {
+        $migration = require database_path(
+            'migrations/2026_07_30_000024_create_deterministic_learning_tables.php',
+        );
+
+        if (
+            ! $migration instanceof Migration
+            || ! is_callable([$migration, $direction])
+        ) {
+            throw new RuntimeException(
+                'The PR-006 deterministic-learning migration is not executable.',
             );
         }
 

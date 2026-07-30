@@ -191,6 +191,7 @@ export const MembershipSummarySchema = {
         'id',
         'organization',
         'status',
+        'membership_type',
         'role_keys'
     ],
     properties: {
@@ -206,6 +207,14 @@ export const MembershipSummarySchema = {
                 'active',
                 'suspended',
                 'ended'
+            ]
+        },
+        membership_type: {
+            type: 'string',
+            enum: [
+                'learner',
+                'trainer',
+                'organization_admin'
             ]
         },
         role_keys: {
@@ -462,6 +471,597 @@ export const InviteAcceptanceResponseSchema = {
         },
         replayed: {
             type: 'boolean'
+        }
+    }
+} as const;
+
+export const Sha256Schema = {
+    type: 'string',
+    minLength: 64,
+    maxLength: 64,
+    pattern: '^[0-9a-f]{64}$'
+} as const;
+
+export const LearnerGoalSchema = {
+    type: 'string',
+    enum: [
+        'everyday-conversation',
+        'workplace-confidence',
+        'travel-confidence'
+    ]
+} as const;
+
+export const GovernedContentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'locale',
+        'text',
+        'revision_id',
+        'content_hash'
+    ],
+    properties: {
+        locale: {
+            type: 'string',
+            enum: [
+                'en-IN',
+                'kn-IN'
+            ]
+        },
+        text: {
+            type: 'string',
+            minLength: 1
+        },
+        revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        }
+    }
+} as const;
+
+export const LearnerOnboardingStateSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'completed',
+        'adult_confirmed',
+        'goal_key'
+    ],
+    properties: {
+        completed: {
+            type: 'boolean'
+        },
+        adult_confirmed: {
+            type: 'boolean'
+        },
+        goal_key: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/LearnerGoal'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const ActiveLearnerEnrollmentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'active'
+        }
+    }
+} as const;
+
+export const LearnerMissionSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'estimated_minutes',
+        'title'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        estimated_minutes: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 60
+        },
+        title: {
+            $ref: '#/components/schemas/GovernedContent'
+        }
+    }
+} as const;
+
+export const LearnerHomeSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'onboarding',
+        'enrollment',
+        'next_mission'
+    ],
+    properties: {
+        onboarding: {
+            $ref: '#/components/schemas/LearnerOnboardingState'
+        },
+        enrollment: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ActiveLearnerEnrollment'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        next_mission: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/LearnerMissionSummary'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const CompleteLearnerOnboardingRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'adult_confirmed',
+        'goal_key'
+    ],
+    properties: {
+        adult_confirmed: {
+            type: 'boolean',
+            const: true
+        },
+        goal_key: {
+            $ref: '#/components/schemas/LearnerGoal'
+        }
+    }
+} as const;
+
+export const LearnerModelAudioSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'asset_id',
+        'stream_url',
+        'mime_type',
+        'duration_ms'
+    ],
+    properties: {
+        asset_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        stream_url: {
+            type: 'string',
+            format: 'uri-reference'
+        },
+        mime_type: {
+            type: 'string',
+            enum: [
+                'audio/mpeg',
+                'audio/ogg',
+                'audio/webm',
+                'audio/mp4',
+                'audio/wav'
+            ]
+        },
+        duration_ms: {
+            type: 'integer',
+            minimum: 250,
+            maximum: 300000
+        }
+    }
+} as const;
+
+export const LearnerMissionCheckOptionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'label'
+    ],
+    properties: {
+        id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        label: {
+            $ref: '#/components/schemas/GovernedContent'
+        }
+    }
+} as const;
+
+export const LearnerMissionCheckSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'prompt',
+        'options'
+    ],
+    properties: {
+        id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        prompt: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        options: {
+            type: 'array',
+            minItems: 2,
+            maxItems: 8,
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/LearnerMissionCheckOption'
+            }
+        }
+    }
+} as const;
+
+export const LearnerMissionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'enrollment_id',
+        'publication_id',
+        'objective_id',
+        'title',
+        'kannada_guidance',
+        'model_text',
+        'transcript',
+        'model_audio',
+        'check'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        title: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        kannada_guidance: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        model_text: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        transcript: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        model_audio: {
+            $ref: '#/components/schemas/LearnerModelAudio'
+        },
+        check: {
+            $ref: '#/components/schemas/LearnerMissionCheck'
+        }
+    }
+} as const;
+
+export const StartLearnerAttemptRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'enrollment_id'
+    ],
+    properties: {
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const LearnerAttemptSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'in_progress'
+        }
+    }
+} as const;
+
+export const LocalCaptureReceiptSchema = {
+    type: 'object',
+    additionalProperties: false,
+    description: 'Non-authoritative client metadata for local practice. It contains no\nlearner-audio bytes or digest and cannot satisfy spoken mastery.\n',
+    required: [
+        'captured',
+        'client_capture_id',
+        'mime_type',
+        'byte_size',
+        'duration_ms'
+    ],
+    properties: {
+        captured: {
+            type: 'boolean',
+            const: true
+        },
+        client_capture_id: {
+            type: 'string',
+            format: 'uuid'
+        },
+        mime_type: {
+            type: 'string',
+            enum: [
+                'audio/webm',
+                'audio/webm;codecs=opus',
+                'audio/ogg',
+                'audio/ogg;codecs=opus',
+                'audio/mp4'
+            ]
+        },
+        byte_size: {
+            type: 'integer',
+            minimum: 128,
+            maximum: 10000000
+        },
+        duration_ms: {
+            type: 'integer',
+            minimum: 250,
+            maximum: 120000
+        }
+    }
+} as const;
+
+export const RecordLearnerAttemptResponseRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'check_id',
+        'selected_option_id',
+        'local_recording'
+    ],
+    properties: {
+        check_id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        selected_option_id: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+        },
+        local_recording: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/LocalCaptureReceipt'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const KnowledgeStateSchema = {
+    type: 'string',
+    enum: [
+        'developing',
+        'mastered'
+    ]
+} as const;
+
+export const SpokenStateSchema = {
+    type: 'string',
+    const: 'unassessed',
+    description: 'PR-006 has no eligible spoken evidence, so a local-capture receipt\nnever changes this authoritative state.\n'
+} as const;
+
+export const LearnerAttemptEvidenceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'first_attempt_id',
+        'first_attempt_number',
+        'latest_attempt_id',
+        'latest_attempt_number',
+        'best_attempt_id',
+        'best_attempt_number'
+    ],
+    properties: {
+        first_attempt_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        first_attempt_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        latest_attempt_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        latest_attempt_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        best_attempt_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        best_attempt_number: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const LearnerReviewScheduleSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'due_at',
+        'timezone'
+    ],
+    properties: {
+        due_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const LearnerMissionResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'attempt_id',
+        'check_state',
+        'knowledge_state',
+        'spoken_state',
+        'local_capture_receipt_present',
+        'can_do',
+        'evidence',
+        'review'
+    ],
+    properties: {
+        attempt_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        check_state: {
+            type: 'string',
+            enum: [
+                'correct',
+                'incorrect'
+            ]
+        },
+        knowledge_state: {
+            $ref: '#/components/schemas/KnowledgeState'
+        },
+        spoken_state: {
+            $ref: '#/components/schemas/SpokenState'
+        },
+        local_capture_receipt_present: {
+            type: 'boolean',
+            description: 'Engagement receipt only; never authoritative spoken evidence.'
+        },
+        can_do: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        evidence: {
+            $ref: '#/components/schemas/LearnerAttemptEvidence'
+        },
+        review: {
+            $ref: '#/components/schemas/LearnerReviewSchedule'
+        }
+    }
+} as const;
+
+export const LearnerProgressObjectiveSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'objective_id',
+        'label',
+        'knowledge_state',
+        'spoken_state',
+        'local_capture_receipt_present',
+        'evidence',
+        'review_due_at',
+        'review_timezone'
+    ],
+    properties: {
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        label: {
+            $ref: '#/components/schemas/GovernedContent'
+        },
+        knowledge_state: {
+            $ref: '#/components/schemas/KnowledgeState'
+        },
+        spoken_state: {
+            $ref: '#/components/schemas/SpokenState'
+        },
+        local_capture_receipt_present: {
+            type: 'boolean',
+            description: 'Engagement receipt only; never authoritative spoken evidence.'
+        },
+        evidence: {
+            $ref: '#/components/schemas/LearnerAttemptEvidence'
+        },
+        review_due_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        review_timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const LearnerProgressSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'enrollment_id',
+        'objectives'
+    ],
+    properties: {
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objectives: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerProgressObjective'
+            }
         }
     }
 } as const;

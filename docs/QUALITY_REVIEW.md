@@ -775,3 +775,183 @@ authorizes only PR-006 — Deterministic daily-speaking slice.
 
 That approval does not authorize PR-007, AI or speech-provider orchestration,
 production deployment or any later checkpoint.
+
+---
+
+## PR-006 — Deterministic daily-speaking slice
+
+### Scope reviewed
+
+- minimal adult learner onboarding and allowlisted goal selection;
+- active authenticated learner identity, organization context and exact
+  enrollment publication pin;
+- one deterministic no-AI mission contract;
+- browser model-audio/transcript presentation and volatile local
+  recording/playback/retry;
+- submitted formative attempts, append-only responses and exact
+  first/latest/best evidence;
+- deterministic knowledge mastery, spoken-mastery denial and review
+  scheduling;
+- transaction, idempotency and concurrent-attempt behavior;
+- tenant, learner, enrollment, curriculum-owner, publication and mission
+  relationship protection;
+- OpenAPI/generated-client compatibility and safe problem responses;
+- browser contract golden path, accessibility and raw-audio
+  storage/network-cleanup assertions;
+- honest production-seed and test-fixture boundaries; and
+- exclusion of PR-007 offline/outbox, AI/speech-provider and PR-009 recording
+  upload/retention behavior.
+
+Detailed rules and the final evidence map are maintained in
+[the PR-006 verification scope](PR-006_DETERMINISTIC_DAILY_SPEAKING_VERIFICATION_SCOPE.md).
+
+### Accepted implementation rules
+
+| Rule | Required outcome | Current evidence |
+|---|---|---|
+| Learner ownership | every learner record is organization-owned and tied to the authenticated learner membership | Pass: PostgreSQL composite relationships, policy checks, same-tenant-other-learner denial and authenticated HTTP boundary |
+| Enrollment authority | only an active enrollment's exact immutable publication pin can select a mission; learners cannot self-pin | Pass: pinned-access resolver and pending/completed/withdrawn, poisoned-pin and mission-mismatch tests |
+| Evidence scope | summaries cover submitted attempts for the exact learner membership, enrollment, publication and mission | Pass: governed lifecycle and historical replay tests |
+| First evidence | lowest server-assigned attempt number | Pass: ordered retry evidence |
+| Latest evidence | highest server-assigned attempt number | Pass: ordered retry and score-regression evidence |
+| Best evidence | highest deterministic score; earliest attempt number wins a tie | Pass: correct/incorrect retries and equal-score tie evidence |
+| Canonical evidence | submitted attempts and responses are append-only; summary pointers remain derived | Pass: PostgreSQL mutation triggers and post-submit response rejection |
+| Deterministic authority | caller input cannot set attempt number, score, mastery or review outcome | Pass: strict HTTP requests, versioned policy and direct-database forgery rejection |
+| Mastery separation | a deterministic check may advance knowledge mastery; spoken mastery requires eligible spoken evidence | Pass: every no-capture and capture-receipt result remains `spoken_state=unassessed` |
+| Capture receipt | local-capture receipt is non-authoritative and cannot satisfy spoken mastery | Pass: bounded receipt validation, deterministic results and progress assertions |
+| Raw-audio privacy | audio bytes stay in volatile browser memory and never enter API, storage, cache, log, audit or outbox data | Pass: browser storage/network/cleanup assertions, strict payload rejection and safe-event source audit |
+| Checkpoint boundary | no PR-007 offline/outbox, provider orchestration, transcription, generated voice or recording-upload workflow | Pass: source/dependency/route/storage scope audit |
+| Content authority | canonical synthetic seed remains unpublished; contract fixtures create no human approval or media-rights claim | Pass: repeated seed and zero-publication assertions |
+| Browser evidence | a stubbed browser journey is labeled as contract evidence, not a true full-stack published-media path | Pass: two explicitly contract-stubbed Chromium learner scenarios |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| Focused PR-006 PostgreSQL suites | Pass: lifecycle/exact-one 2 tests/78 assertions; concurrency 1/24; HTTP 2/65; request validation 3/10; verified audio 4/8 |
+| Fresh PostgreSQL migration and seed | Pass on the explicitly verified `global_english_test` database |
+| Empty-data rollback, forward migration and repeat seed | Pass; migration `000024` reapplied once, seed remained idempotent, 21 permissions and zero publications/profiles/attempts |
+| `make verify` | Pass: SQLite 39/264, PostgreSQL 163/1,848, localization 23, design system 8 and web 50; audits, formatting, PHPStan, lint, type and contract checks passed |
+| `make e2e` | Pass: 7 Chromium scenarios |
+| `make openapi` | Pass: OpenAPI 3.1.1 version 0.4.0 and generated clients match |
+| `make build` | Pass: Laravel production cache exercise and Vite build of 63 modules |
+| Local Markdown structure/link validator | Pass: 25 in-scope files, zero structural/local-link failures |
+| `git diff --check` and checkpoint-scope audit | Pass; unrelated `deliverables/` and `docs/archive/` remain outside the checkpoint |
+
+The passing PR-005 commands remain the starting baseline and are not counted
+as PR-006 evidence. `make ai-eval` is not applicable because PR-006 is
+forbidden from changing prompts, models, providers or AI orchestration.
+
+### Security, privacy and tenancy review
+
+- Organization context must be reconstructed from the accepted authenticated
+  principal and active membership. Request bodies cannot supply authoritative
+  organization, learner, enrollment owner, curriculum owner or publication
+  scope.
+- Learner commands must prove exact user-membership ownership and active
+  enrollment state. Same-tenant access to another learner is denied just as
+  cross-tenant access is.
+- Start, response and submission paths must resolve the exact enrollment pin
+  and mission. `pending_curriculum`, completed and withdrawn enrollments fail
+  closed. Ordinary share withdrawal preserves an existing pin, while owner
+  inactivity, current rights failure and emergency suspension deny delivery
+  and new learning writes.
+- Attempt-number allocation, response append, submission, summary refresh,
+  mastery and review scheduling require a transactional lock boundary.
+  Actor/fingerprint-bound idempotency returns exact replay and rejects changed
+  requests or another actor.
+- The server derives score, knowledge mastery and review timing from governed
+  versioned rules. Client-supplied score, mastery, attempt number or spoken
+  authority is rejected.
+- Raw learner audio remains entirely in volatile browser memory. Retry,
+  cancellation, route exit and unmount release media tracks and object URLs.
+  No raw audio or transcript belongs in logs, metrics, requests, PostgreSQL,
+  object storage, IndexedDB, service-worker cache, audit or outbox data.
+- A bounded local-capture receipt is retained only as non-authoritative input
+  metadata. It contains no audio, transcript, filename, blob URL, device label
+  or provider data and cannot award spoken mastery.
+- Cross-tenant and same-tenant-other-learner failures use safe errors that do
+  not disclose record existence.
+
+### Content, media and test-fixture review
+
+- APP-0005 authorizes PR-006 implementation but approves no future curriculum
+  publication, Kannada wording, transcript, model audio or media-rights
+  evidence.
+- The canonical `FoundationSeeder` must remain an unpublished
+  Codex-attributed draft. It cannot manufacture human review, rights
+  confirmation or a production publication.
+- A browser contract stub or synthetic media fixture may demonstrate client
+  states and accessibility. It is not accountable human review and is not
+  evidence that a real published media asset is deliverable.
+- Backend PostgreSQL integration tests remain authoritative for tenant
+  ownership, publication pins, immutable evidence, idempotency, concurrency,
+  mastery and review rules unless a true full-stack journey is implemented
+  and separately identified.
+
+### Migrations, contracts and configuration reviewed
+
+- `2026_07_30_000024_create_deterministic_learning_tables.php` adds
+  `learner_profiles`, `learner_goals`, `learner_attempts`, `item_responses`,
+  `attempt_submissions`, `mastery_states`, `review_schedules` and
+  `learning_commands`, plus the composite enrollment-pin identity required by
+  their foreign keys.
+- PostgreSQL partial uniqueness, checks, composite foreign keys and triggers
+  enforce one open attempt, immutable snapshots, sequential responses,
+  deterministic submission/mastery/review projections and append-only
+  evidence. The migration refuses rollback after learner profiles or attempts
+  exist; authoritative adoption therefore requires a reviewed forward fix or
+  backup restoration rather than silent evidence loss.
+- OpenAPI 3.1.1 document version 0.4.0 adds `getLearnerHome`,
+  `completeLearnerOnboarding`, `getLearnerMission`,
+  `startLearnerMissionAttempt`, `recordLearnerAttemptResponse`,
+  `submitLearnerMissionAttempt`, `getLearnerProgress` and
+  `streamLearnerModelAudio`. Generated TypeScript clients, types and JSON
+  schemas are committed under `packages/contracts/src/generated/`.
+- The current-identity response now includes the authoritative
+  `membership_type`; the React journey renders only for a selected learner
+  membership rather than inferring learner authority from a mutable role key.
+- `config/learning.php` owns the allowlisted goals, versioned
+  `daily-speaking-v1` rule selection, local-capture MIME/size/duration bounds
+  and private model-audio MIME/10 MB bounds. `LEARNING_MODEL_AUDIO_DISK`
+  separates governed delivery from a caller-supplied storage location.
+- Interface catalogue revisions are `ui-en-IN-2026-07-30.4` and
+  `ui-kn-IN-2026-07-30.4`. English is the approved source; the Codex-authored
+  Kannada interface draft remains `pending-independent-review` and falls back
+  to English under the production `approved-only` policy.
+
+### Known limitations
+
+- No production learner mission, Kannada guidance, transcript or model-audio
+  asset has accountable runtime publication evidence.
+- The canonical synthetic mission remains unpublished.
+- Browser E2E is contract-stubbed and therefore does not prove a real
+  API-to-PostgreSQL-to-governed-media path.
+- PR-006 deliberately rejects publications with zero or multiple missions.
+  Multi-mission objective progress requires a later persisted result snapshot
+  or global objective-evidence order before this implementation can expand.
+- Raw learner audio is not uploaded, retained, transcribed, analyzed or
+  available for trainer review.
+- A local-capture receipt cannot award spoken mastery.
+- DR-0005 remains open for recording consent states, retention, deletion and
+  provider-processing boundaries.
+- PR-007 offline mission bundles, service-worker caching, IndexedDB outbox and
+  reconnect synchronization remain excluded.
+- AI conversation, speech-to-text, generated voice, pronunciation signals and
+  other provider orchestration remain excluded.
+- Independent production reviews and environment limitations remain in force.
+- Docker/Compose and PostgreSQL 18.4 were unavailable; local PostgreSQL 14.19
+  was used. Local PHP 8.4.17 differs from pinned 8.4.23, and GitHub Actions
+  did not run on a remote runner.
+
+### Exit decision
+
+PR-006 is implemented, locally verified and ready for Accountable Product
+Owner review under APP-0005. This quality review does not accept PR-006,
+approve a curriculum publication, authorize production or authorize PR-007.
+
+PR-007 remains blocked until all required PR-006 verification is recorded and
+the Accountable Product Owner explicitly accepts PR-006 at its exact
+implementation commit, with its recorded limitations, and authorizes only
+PR-007. A passing test suite, this document or a generic instruction to
+continue is not checkpoint acceptance.

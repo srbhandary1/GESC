@@ -81,7 +81,19 @@ final class FoundationSeederIntegrityTest extends TestCase
             $before['graph_hash'],
             DB::table('curriculum_graph_revisions')->value('graph_hash'),
         );
-        $this->assertSame(20, DB::table('permissions')->count());
+        $this->assertSame(21, DB::table('permissions')->count());
+        $this->assertSame(
+            1,
+            DB::table('role_permissions')
+                ->join(
+                    'permissions',
+                    'permissions.id',
+                    '=',
+                    'role_permissions.permission_id',
+                )
+                ->where('permissions.key', 'learning.participate')
+                ->count(),
+        );
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('curriculum_publications')->count());
     }

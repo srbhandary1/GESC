@@ -19,7 +19,7 @@ help:
 		'make dev         Start local services, API, web application and queue worker' \
 		'make verify      Run formatting, static analysis, tests and dependency audits' \
 		'make test        Run deterministic backend and frontend tests' \
-		'make e2e         Run the web bootstrap browser test' \
+		'make e2e         Run the critical web browser journeys' \
 		'make ai-eval     Run AI evaluation when introduced by PR-011' \
 		'make openapi     Validate OpenAPI and check generated-client drift' \
 		'make migrate     Apply local Laravel migrations' \

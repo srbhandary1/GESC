@@ -6,6 +6,11 @@ use App\Http\Controllers\AuthenticationSessionController;
 use App\Http\Controllers\CurrentIdentityController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InstitutionInviteController;
+use App\Http\Controllers\LearnerAttemptController;
+use App\Http\Controllers\LearnerHomeController;
+use App\Http\Controllers\LearnerMediaController;
+use App\Http\Controllers\LearnerMissionController;
+use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -47,5 +52,46 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.me.organization-context.update');
         Route::post('/institution-invites/accept', [InstitutionInviteController::class, 'accept'])
             ->name('api.v1.institution-invites.accept');
+    });
+
+    Route::middleware([
+        'auth.first-party',
+        'organization.context',
+    ])->group(function (): void {
+        Route::get('/home', [LearnerHomeController::class, 'show'])
+            ->name('api.v1.home.show');
+        Route::put(
+            '/me/onboarding',
+            [LearnerOnboardingController::class, 'update'],
+        )->name('api.v1.me.onboarding.update');
+        Route::get(
+            '/missions/{mission}',
+            [LearnerMissionController::class, 'show'],
+        )->whereUlid('mission')
+            ->name('api.v1.missions.show');
+        Route::post(
+            '/missions/{mission}/attempts',
+            [LearnerAttemptController::class, 'start'],
+        )->whereUlid('mission')
+            ->name('api.v1.missions.attempts.store');
+        Route::post(
+            '/attempts/{attempt}/responses',
+            [LearnerAttemptController::class, 'respond'],
+        )->whereUlid('attempt')
+            ->name('api.v1.attempts.responses.store');
+        Route::post(
+            '/attempts/{attempt}/submit',
+            [LearnerAttemptController::class, 'submit'],
+        )->whereUlid('attempt')
+            ->name('api.v1.attempts.submit');
+        Route::get(
+            '/progress',
+            [LearnerAttemptController::class, 'progress'],
+        )->name('api.v1.progress.show');
+        Route::get(
+            '/media-assets/{asset}/content',
+            [LearnerMediaController::class, 'show'],
+        )->whereUlid('asset')
+            ->name('api.v1.media-assets.content.show');
     });
 });

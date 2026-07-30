@@ -16,6 +16,13 @@ use App\Curriculum\Publication\CurriculumRetirementService;
 use App\Curriculum\Publication\CurriculumRollbackService;
 use App\Curriculum\Publication\PublicationEvidenceRevalidator;
 use App\Curriculum\Sharing\CurriculumSharingService;
+use App\Learning\Attempts\DailyMissionAttemptService;
+use App\Learning\Exceptions\LearningIdempotencyConflict;
+use App\Learning\Exceptions\LearningOperationRejected;
+use App\Learning\Home\LearnerHomeService;
+use App\Learning\Media\VerifiedPrivateAudioResponder;
+use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Onboarding\LearnerOnboardingService;
 use App\Models\AuthenticationSession;
 use App\Models\Membership;
 use App\Models\Organization;
@@ -26,6 +33,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -201,6 +209,1046 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
                 $exception->getMessage(),
             );
         }
+    }
+
+    public function test_pr006_delivers_a_governed_pinned_daily_mission_and_deterministic_learning_results(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-30T10:15:00+00:00');
+        config()->set('learning.model_audio_disk', 'local');
+        Storage::fake('local');
+        $organization = $this->createOrganization(
+            'Daily Speaking Slice Tenant',
+        );
+        $authority = $this->createPublicationAuthority($organization);
+        $version = $this->createReadyVersion(
+            authority: $authority,
+            versionKey: 'daily-speaking-v1',
+            dailyMission: true,
+        );
+        $audio = 'governed-daily-model-audio';
+        $rights = $this->attachApprovedMediaRights(
+            authority: $authority,
+            version: $version,
+            usageKey: 'model_audio',
+            audio: $audio,
+        );
+        Storage::disk('local')->put(
+            $rights['storage_object_key'],
+            $audio,
+        );
+        $publication = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app->make(CurriculumPublisher::class)
+                ->publish(
+                    actor: $authority['operator'],
+                    curriculumVersionId: $version['version_id'],
+                    expectedHeadVersion: 0,
+                    idempotencyKey: 'publish-daily-speaking-v1',
+                ),
+        );
+        $learner = $this->createUser();
+        [$learnerMembership, $learnerContext] = $this->createMembership(
+            $organization,
+            $learner,
+        );
+        $this->grantPermissions(
+            membership: $learnerMembership,
+            context: $learnerContext,
+            permissionKeys: ['learning.participate'],
+        );
+        $cohort = $this->createCohort(
+            $authority['operator_context'],
+            'Daily speaking learners',
+        );
+        $enrollmentId = (string) Str::ulid();
+        DB::table('enrollments')->insert([
+            'id' => $enrollmentId,
+            'organization_id' => $organization->getKey(),
+            'learner_membership_id' => $learnerMembership->getKey(),
+            'cohort_id' => $cohort->getKey(),
+            'status' => 'pending_curriculum',
+            'enrolled_at' => now(),
+            'ended_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app->make(EnrollmentCurriculumPinner::class)
+                ->activate(
+                    actor: $authority['operator'],
+                    enrollmentId: $enrollmentId,
+                    publicationId: $publication->publicationId,
+                    shareGrantId: null,
+                    idempotencyKey: 'pin-daily-speaking-learner',
+                ),
+        );
+        $reader = $this->app->make(DailyMissionReader::class);
+        $home = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $this->app->make(
+                LearnerHomeService::class,
+            )->forLearner($learner),
+        );
+
+        self::assertFalse($home['onboarding']['completed']);
+        self::assertSame($enrollmentId, $home['enrollment']['id']);
+        self::assertNull($home['next_mission']);
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $reader->resolve(
+                    $learner,
+                    $enrollmentId,
+                    $version['mission_id'],
+                ),
+            ),
+        );
+
+        $onboarding = $this->contexts()->run(
+            $learnerContext,
+            fn () => $this->app->make(
+                LearnerOnboardingService::class,
+            )->complete(
+                learner: $learner,
+                adultConfirmed: true,
+                goalKey: 'everyday-conversation',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+        self::assertFalse($onboarding->replayed);
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $reader->resolve(
+                    $learner,
+                    $enrollmentId,
+                    (string) Str::ulid(),
+                ),
+            ),
+        );
+        $mission = $this->contexts()->run(
+            $learnerContext,
+            fn () => $reader->resolve(
+                $learner,
+                $enrollmentId,
+                $version['mission_id'],
+            ),
+        );
+
+        self::assertSame($publication->publicationId, $mission->publicationId);
+        self::assertSame($version['objective_id'], $mission->objectiveId);
+        self::assertSame('daily-greeting-check', $mission->checkId);
+        self::assertSame($rights['media_asset_id'], $mission->modelAudioAssetId);
+        self::assertSame(strlen($audio), $mission->modelAudioByteSize);
+        self::assertArrayNotHasKey(
+            'correct_option_id',
+            $mission->publicPayload()['check'],
+        );
+        $stream = $this->app->make(
+            VerifiedPrivateAudioResponder::class,
+        )->respond($mission);
+        $callback = $stream->getCallback();
+
+        if (! is_callable($callback)) {
+            self::fail('The verified audio response must be streamable.');
+        }
+
+        ob_start();
+        $callback();
+        self::assertSame($audio, ob_get_clean());
+
+        $configuredMaximum = config('learning.model_audio_maximum_bytes');
+        config()->set(
+            'learning.model_audio_maximum_bytes',
+            strlen($audio) - 1,
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $reader->resolve(
+                    $learner,
+                    $enrollmentId,
+                    $version['mission_id'],
+                ),
+            ),
+        );
+        config()->set(
+            'learning.model_audio_maximum_bytes',
+            $configuredMaximum,
+        );
+
+        $otherLearner = $this->createUser();
+        [$otherMembership, $otherContext] = $this->createMembership(
+            $organization,
+            $otherLearner,
+        );
+        $this->grantPermissions(
+            membership: $otherMembership,
+            context: $otherContext,
+            permissionKeys: ['learning.participate'],
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $otherContext,
+                fn () => $reader->resolve(
+                    $otherLearner,
+                    $enrollmentId,
+                    $version['mission_id'],
+                ),
+            ),
+        );
+
+        $attempts = $this->app->make(
+            DailyMissionAttemptService::class,
+        );
+        $firstStartKey = (string) Str::uuid();
+        $first = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                $firstStartKey,
+            ),
+        );
+        $this->assertDatabaseHas('learner_attempts', [
+            'id' => $first['id'],
+            'rule_version' => 'daily-speaking-v1',
+        ]);
+        config()->set(
+            'learning.default_rule_version',
+            'unsupported-future-rule',
+        );
+        $firstReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                $firstStartKey,
+            ),
+        );
+        $firstResume = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                (string) Str::uuid(),
+            ),
+        );
+
+        self::assertFalse($first['replayed']);
+        self::assertTrue($firstReplay['replayed']);
+        self::assertTrue($firstResume['replayed']);
+        self::assertSame($first['id'], $firstReplay['id']);
+        self::assertSame($first['id'], $firstResume['id']);
+
+        $firstResponseKey = (string) Str::uuid();
+        $responseReplay = $this->contexts()->run(
+            $learnerContext,
+            function () use (
+                $attempts,
+                $learner,
+                $first,
+                $mission,
+                $firstResponseKey,
+            ): array {
+                $recorded = $attempts->respond(
+                    $learner,
+                    $first['id'],
+                    $mission->checkId,
+                    'not-a-greeting',
+                    null,
+                    $firstResponseKey,
+                );
+                $replayed = $attempts->respond(
+                    $learner,
+                    $first['id'],
+                    $mission->checkId,
+                    'not-a-greeting',
+                    null,
+                    $firstResponseKey,
+                );
+
+                return [$recorded, $replayed];
+            },
+        );
+        self::assertSame([false, true], $responseReplay);
+        $this->assertLearningIdempotencyConflict(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $attempts->respond(
+                    $learner,
+                    $first['id'],
+                    $mission->checkId,
+                    'polite-greeting',
+                    null,
+                    $firstResponseKey,
+                ),
+            ),
+        );
+        $firstSubmitKey = (string) Str::uuid();
+        $this->installPr006SubmitOutboxFailureTrigger();
+
+        try {
+            try {
+                $this->contexts()->run(
+                    $learnerContext,
+                    fn (): array => $attempts->submit(
+                        $learner,
+                        $first['id'],
+                        $firstSubmitKey,
+                    ),
+                );
+                self::fail(
+                    'A deterministic late outbox failure must abort submit.',
+                );
+            } catch (QueryException $exception) {
+                self::assertSame('55000', (string) $exception->getCode());
+                self::assertStringContainsString(
+                    'PR-006 forced late submit failure',
+                    $exception->getMessage(),
+                );
+            }
+        } finally {
+            $this->removePr006SubmitOutboxFailureTrigger();
+        }
+
+        $this->assertDatabaseHas('learner_attempts', [
+            'organization_id' => $organization->getKey(),
+            'id' => $first['id'],
+            'status' => 'in_progress',
+            'submitted_at' => null,
+        ]);
+        self::assertSame(
+            0,
+            DB::table('attempt_submissions')
+                ->where('organization_id', $organization->getKey())
+                ->where('learner_attempt_id', $first['id'])
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('mastery_states')
+                ->where('organization_id', $organization->getKey())
+                ->where('enrollment_id', $enrollmentId)
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('review_schedules')
+                ->where('organization_id', $organization->getKey())
+                ->where('source_attempt_id', $first['id'])
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('learning_commands')
+                ->where('organization_id', $organization->getKey())
+                ->where('operation', 'learner.attempt.submit')
+                ->where('aggregate_id', $first['id'])
+                ->where('idempotency_key', $firstSubmitKey)
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('audit_events')
+                ->where('organization_id', $organization->getKey())
+                ->where('action', 'learner.attempt.submitted')
+                ->where('subject_id', $first['id'])
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('outbox_events')
+                ->where('organization_id', $organization->getKey())
+                ->where('event_type', 'learner.attempt.submitted')
+                ->where('aggregate_id', $first['id'])
+                ->count(),
+        );
+        $firstResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $first['id'],
+                $firstSubmitKey,
+            ),
+        );
+        $firstSubmitReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $first['id'],
+                $firstSubmitKey,
+            ),
+        );
+
+        self::assertSame($firstResult, $firstSubmitReplay);
+        self::assertSame('incorrect', $firstResult['check_state']);
+        self::assertSame('developing', $firstResult['knowledge_state']);
+        self::assertSame('unassessed', $firstResult['spoken_state']);
+        self::assertFalse($firstResult['local_capture_receipt_present']);
+        self::assertSame(
+            $first['id'],
+            $firstResult['evidence']['best_attempt_id'],
+        );
+        self::assertTrue(
+            CarbonImmutable::parse($firstResult['review']['due_at'])
+                ->equalTo(CarbonImmutable::now()),
+        );
+        $firstStartReplayAfterSubmission = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                $firstStartKey,
+            ),
+        );
+        self::assertSame([
+            'id' => $first['id'],
+            'status' => 'in_progress',
+            'replayed' => true,
+        ], $firstStartReplayAfterSubmission);
+        config()->set(
+            'learning.default_rule_version',
+            'daily-speaking-v1',
+        );
+
+        $second = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                (string) Str::uuid(),
+            ),
+        );
+        $captureId = (string) Str::uuid();
+        $this->contexts()->run(
+            $learnerContext,
+            fn (): bool => $attempts->respond(
+                $learner,
+                $second['id'],
+                $mission->checkId,
+                'polite-greeting',
+                [
+                    'captured' => true,
+                    'client_capture_id' => $captureId,
+                    'mime_type' => 'audio/webm',
+                    'byte_size' => 512,
+                    'duration_ms' => 1200,
+                ],
+                (string) Str::uuid(),
+            ),
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $attempts->respond(
+                    $learner,
+                    $second['id'],
+                    $mission->checkId,
+                    'polite-greeting',
+                    [
+                        'captured' => true,
+                        'client_capture_id' => $captureId,
+                        'mime_type' => 'audio/webm',
+                        'byte_size' => 512,
+                        'duration_ms' => 1200,
+                    ],
+                    (string) Str::uuid(),
+                ),
+            ),
+        );
+        $secondResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $second['id'],
+                (string) Str::uuid(),
+            ),
+        );
+
+        self::assertSame('correct', $secondResult['check_state']);
+        self::assertSame('mastered', $secondResult['knowledge_state']);
+        self::assertSame('unassessed', $secondResult['spoken_state']);
+        self::assertTrue($secondResult['local_capture_receipt_present']);
+        self::assertSame(
+            $first['id'],
+            $secondResult['evidence']['first_attempt_id'],
+        );
+        self::assertSame(
+            $second['id'],
+            $secondResult['evidence']['latest_attempt_id'],
+        );
+        self::assertSame(
+            $second['id'],
+            $secondResult['evidence']['best_attempt_id'],
+        );
+        self::assertSame(
+            '2026-07-31T03:30:00+00:00',
+            CarbonImmutable::parse(
+                $secondResult['review']['due_at'],
+            )->toIso8601String(),
+        );
+        $this->assertDatabaseHas('item_responses', [
+            'organization_id' => $organization->getKey(),
+            'learner_attempt_id' => $second['id'],
+            'client_capture_id' => $captureId,
+            'capture_byte_size' => 512,
+        ]);
+
+        $third = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                (string) Str::uuid(),
+            ),
+        );
+        $this->contexts()->run(
+            $learnerContext,
+            fn (): bool => $attempts->respond(
+                $learner,
+                $third['id'],
+                $mission->checkId,
+                'polite-greeting',
+                null,
+                (string) Str::uuid(),
+            ),
+        );
+        $thirdResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $third['id'],
+                (string) Str::uuid(),
+            ),
+        );
+
+        self::assertSame(
+            $third['id'],
+            $thirdResult['evidence']['latest_attempt_id'],
+        );
+        self::assertSame(
+            $second['id'],
+            $thirdResult['evidence']['best_attempt_id'],
+        );
+        self::assertSame('unassessed', $thirdResult['spoken_state']);
+        self::assertFalse($thirdResult['local_capture_receipt_present']);
+        $fourth = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                (string) Str::uuid(),
+            ),
+        );
+        $this->contexts()->run(
+            $learnerContext,
+            fn (): bool => $attempts->respond(
+                $learner,
+                $fourth['id'],
+                $mission->checkId,
+                'not-a-greeting',
+                null,
+                (string) Str::uuid(),
+            ),
+        );
+        $fourthResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $fourth['id'],
+                (string) Str::uuid(),
+            ),
+        );
+        self::assertSame('incorrect', $fourthResult['check_state']);
+        self::assertSame('mastered', $fourthResult['knowledge_state']);
+        self::assertSame(
+            $fourth['id'],
+            $fourthResult['evidence']['latest_attempt_id'],
+        );
+        self::assertSame(
+            $second['id'],
+            $fourthResult['evidence']['best_attempt_id'],
+        );
+        $delayedFirstSubmitReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $first['id'],
+                $firstSubmitKey,
+            ),
+        );
+        $delayedFirstStartReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                $firstStartKey,
+            ),
+        );
+        self::assertSame($firstResult, $delayedFirstSubmitReplay);
+        self::assertSame([
+            'id' => $first['id'],
+            'status' => 'in_progress',
+            'replayed' => true,
+        ], $delayedFirstStartReplay);
+
+        $poisonedAttemptId = (string) Str::ulid();
+        DB::table('learner_attempts')->insert([
+            'id' => $poisonedAttemptId,
+            'organization_id' => $organization->getKey(),
+            'enrollment_id' => $enrollmentId,
+            'learner_membership_id' => $learnerMembership->getKey(),
+            'curriculum_owner_organization_id' => $mission
+                ->ownerOrganizationId,
+            'curriculum_version_id' => $mission->curriculumVersionId,
+            'curriculum_publication_id' => $mission->publicationId,
+            'curriculum_mission_id' => $mission->missionId,
+            'learning_objective_id' => $mission->objectiveId,
+            'publication_manifest_hash' => $mission->manifestHash,
+            'mission_definition_hash' => hash(
+                'sha256',
+                'poisoned-open-attempt-definition',
+            ),
+            'rule_version' => 'daily-speaking-v1',
+            'attempt_number' => 5,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'submitted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $attempts->start(
+                    $learner,
+                    $enrollmentId,
+                    $mission->missionId,
+                    (string) Str::uuid(),
+                ),
+            ),
+        );
+        $progress = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->progress(
+                $learner,
+                $enrollmentId,
+            ),
+        );
+        self::assertSame('mastered', $progress['objectives'][0]['knowledge_state']);
+        self::assertSame('unassessed', $progress['objectives'][0]['spoken_state']);
+        self::assertFalse(
+            $progress['objectives'][0]['local_capture_receipt_present'],
+        );
+        self::assertSame(
+            $second['id'],
+            $progress['objectives'][0]['evidence']['best_attempt_id'],
+        );
+        self::assertSame(
+            $fourth['id'],
+            $progress['objectives'][0]['evidence']['latest_attempt_id'],
+        );
+        $this->assertLearningRejected(
+            fn () => $this->contexts()->run(
+                $learnerContext,
+                fn () => $attempts->respond(
+                    $learner,
+                    $poisonedAttemptId,
+                    $mission->checkId,
+                    'polite-greeting',
+                    null,
+                    (string) Str::uuid(),
+                ),
+            ),
+        );
+        self::assertSame(
+            0,
+            DB::table('item_responses')
+                ->where('learner_attempt_id', $poisonedAttemptId)
+                ->count(),
+        );
+
+        $this->assertLearningSchemaRejected(
+            fn (): int => DB::table('learner_attempts')
+                ->where('id', $first['id'])
+                ->update([
+                    'rule_version' => 'unsupported-future-rule',
+                    'updated_at' => now(),
+                ]),
+        );
+        $this->assertLearningSchemaRejected(
+            fn (): int => DB::table('mastery_states')
+                ->where('organization_id', $organization->getKey())
+                ->where('enrollment_id', $enrollmentId)
+                ->where('learning_objective_id', $mission->objectiveId)
+                ->update([
+                    'id' => (string) Str::ulid(),
+                    'updated_at' => now(),
+                ]),
+        );
+        $lateResponse = [
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organization->getKey(),
+            'learner_attempt_id' => $fourth['id'],
+            'learner_membership_id' => $learnerMembership->getKey(),
+            'curriculum_owner_organization_id' => $mission
+                ->ownerOrganizationId,
+            'curriculum_version_id' => $mission->curriculumVersionId,
+            'curriculum_mission_id' => $mission->missionId,
+            'learning_item_id' => $mission->learningItemId,
+            'response_number' => 2,
+            'check_id' => $mission->checkId,
+            'selected_option_id' => 'not-a-greeting',
+            'check_correct' => false,
+            'client_capture_id' => null,
+            'capture_mime_type' => null,
+            'capture_byte_size' => null,
+            'capture_duration_ms' => null,
+            'captured_at' => null,
+            'created_at' => now(),
+        ];
+        $this->assertLearningSchemaRejected(
+            fn (): bool => DB::table('item_responses')
+                ->insert($lateResponse),
+        );
+        $this->assertLearningSchemaRejected(
+            fn (): bool => DB::table('item_responses')->insert([
+                ...$lateResponse,
+                'id' => (string) Str::ulid(),
+                'learner_attempt_id' => $poisonedAttemptId,
+                'response_number' => 1,
+                'check_id' => 'Invalid Check Identifier',
+                'created_at' => now(),
+            ]),
+            '23514',
+        );
+
+        foreach ([
+            'capture_mime_type',
+            'capture_byte_size',
+            'capture_duration_ms',
+            'captured_at',
+        ] as $missingReceiptField) {
+            $receipt = [
+                ...$lateResponse,
+                'id' => (string) Str::ulid(),
+                'learner_attempt_id' => $poisonedAttemptId,
+                'response_number' => 1,
+                'client_capture_id' => (string) Str::uuid(),
+                'capture_mime_type' => 'audio/webm',
+                'capture_byte_size' => 512,
+                'capture_duration_ms' => 1200,
+                'captured_at' => now(),
+                'created_at' => now(),
+            ];
+            $receipt[$missingReceiptField] = null;
+            $this->assertLearningSchemaRejected(
+                fn (): bool => DB::table('item_responses')
+                    ->insert($receipt),
+            );
+        }
+
+        $this->assertLearningSchemaRejected(
+            function () use ($poisonedAttemptId): void {
+                $submittedAt = CarbonImmutable::now();
+                DB::table('learner_attempts')
+                    ->where('id', $poisonedAttemptId)
+                    ->update([
+                        'status' => 'submitted',
+                        'submitted_at' => $submittedAt,
+                        'updated_at' => $submittedAt,
+                    ]);
+                DB::statement(
+                    'SET CONSTRAINTS learner_attempts_submission_required IMMEDIATE',
+                );
+            },
+        );
+        $this->assertLearningSchemaRejected(
+            fn () => $this->directlyFinalizeIncorrectAttempt(
+                $poisonedAttemptId,
+                $mission->learningItemId,
+                [
+                    'knowledge_score' => 100,
+                    'knowledge_check_correct' => true,
+                    'knowledge_state' => 'mastered',
+                    'result_key' => 'mission.passed',
+                ],
+            ),
+        );
+        $this->assertLearningSchemaRejected(
+            function () use (
+                $poisonedAttemptId,
+                $mission,
+            ): void {
+                $submittedAt = $this->directlyFinalizeIncorrectAttempt(
+                    $poisonedAttemptId,
+                    $mission->learningItemId,
+                );
+                $attempt = DB::table('learner_attempts')
+                    ->where('id', $poisonedAttemptId)
+                    ->firstOrFail();
+                DB::table('mastery_states')->insert([
+                    'id' => (string) Str::ulid(),
+                    'organization_id' => $attempt->organization_id,
+                    'enrollment_id' => $attempt->enrollment_id,
+                    'learner_membership_id' => $attempt
+                        ->learner_membership_id,
+                    'curriculum_owner_organization_id' => $attempt
+                        ->curriculum_owner_organization_id,
+                    'curriculum_version_id' => $attempt
+                        ->curriculum_version_id,
+                    'curriculum_publication_id' => $attempt
+                        ->curriculum_publication_id,
+                    'learning_objective_id' => $attempt
+                        ->learning_objective_id,
+                    'knowledge_state' => 'mastered',
+                    'spoken_state' => 'unassessed',
+                    'best_knowledge_score' => 100,
+                    'evidence_attempt_id' => $poisonedAttemptId,
+                    'rule_version' => 'daily-speaking-v1',
+                    'mastered_at' => $submittedAt,
+                    'lock_version' => 0,
+                    'created_at' => $submittedAt,
+                    'updated_at' => $submittedAt,
+                ]);
+            },
+        );
+        $this->assertLearningSchemaRejected(
+            function () use (
+                $poisonedAttemptId,
+                $mission,
+            ): void {
+                $submittedAt = $this->directlyFinalizeIncorrectAttempt(
+                    $poisonedAttemptId,
+                    $mission->learningItemId,
+                );
+                $attempt = DB::table('learner_attempts')
+                    ->where('id', $poisonedAttemptId)
+                    ->firstOrFail();
+                DB::table('review_schedules')->insert([
+                    'id' => (string) Str::ulid(),
+                    'organization_id' => $attempt->organization_id,
+                    'enrollment_id' => $attempt->enrollment_id,
+                    'learner_membership_id' => $attempt
+                        ->learner_membership_id,
+                    'curriculum_owner_organization_id' => $attempt
+                        ->curriculum_owner_organization_id,
+                    'curriculum_version_id' => $attempt
+                        ->curriculum_version_id,
+                    'curriculum_publication_id' => $attempt
+                        ->curriculum_publication_id,
+                    'learning_objective_id' => $attempt
+                        ->learning_objective_id,
+                    'source_attempt_id' => $poisonedAttemptId,
+                    'schedule_kind' => 'delayed_review',
+                    'rule_version' => 'daily-speaking-v1',
+                    'timezone' => 'Asia/Kolkata',
+                    'due_at' => $submittedAt->addDay(),
+                    'created_at' => $submittedAt,
+                ]);
+            },
+        );
+    }
+
+    public function test_pr006_zero_mission_publication_and_multiple_mission_delivery_fail_closed(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-30T10:15:00+00:00');
+        config()->set('learning.model_audio_disk', 'local');
+        Storage::fake('local');
+        $zeroMissionOrganization = $this->createOrganization(
+            'Zero Daily Mission Tenant',
+        );
+        $zeroMissionAuthority = $this->createPublicationAuthority(
+            $zeroMissionOrganization,
+        );
+        $zeroMissionVersion = $this->createReadyVersion(
+            authority: $zeroMissionAuthority,
+            versionKey: 'zero-daily-speaking-v1',
+            dailyMission: true,
+        );
+        DB::table('mission_items')
+            ->where(
+                'organization_id',
+                $zeroMissionOrganization->getKey(),
+            )
+            ->where(
+                'curriculum_version_id',
+                $zeroMissionVersion['version_id'],
+            )
+            ->delete();
+        DB::table('curriculum_missions')
+            ->where(
+                'organization_id',
+                $zeroMissionOrganization->getKey(),
+            )
+            ->where(
+                'curriculum_version_id',
+                $zeroMissionVersion['version_id'],
+            )
+            ->delete();
+        $this->assertOperationRejected(
+            fn () => $this->contexts()->run(
+                $zeroMissionAuthority['operator_context'],
+                fn () => $this->app->make(CurriculumPublisher::class)
+                    ->publish(
+                        actor: $zeroMissionAuthority['operator'],
+                        curriculumVersionId: $zeroMissionVersion[
+                            'version_id'
+                        ],
+                        expectedHeadVersion: 0,
+                        idempotencyKey: 'publish-zero-daily-speaking-v1',
+                    ),
+            ),
+        );
+        self::assertSame(
+            0,
+            DB::table('curriculum_publications')
+                ->where(
+                    'organization_id',
+                    $zeroMissionOrganization->getKey(),
+                )
+                ->where(
+                    'curriculum_version_id',
+                    $zeroMissionVersion['version_id'],
+                )
+                ->count(),
+        );
+
+        $organization = $this->createOrganization(
+            'Ambiguous Daily Mission Tenant',
+        );
+        $authority = $this->createPublicationAuthority($organization);
+        $version = $this->createReadyVersion(
+            authority: $authority,
+            versionKey: 'ambiguous-daily-speaking-v1',
+            dailyMission: true,
+            additionalMission: true,
+        );
+        $audio = 'governed-ambiguous-model-audio';
+        $rights = $this->attachApprovedMediaRights(
+            authority: $authority,
+            version: $version,
+            usageKey: 'model_audio',
+            audio: $audio,
+        );
+        Storage::disk('local')->put(
+            $rights['storage_object_key'],
+            $audio,
+        );
+        $publication = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app->make(CurriculumPublisher::class)
+                ->publish(
+                    actor: $authority['operator'],
+                    curriculumVersionId: $version['version_id'],
+                    expectedHeadVersion: 0,
+                    idempotencyKey: 'publish-ambiguous-daily-speaking-v1',
+                ),
+        );
+        $manifestJson = DB::table('curriculum_publications')
+            ->where('organization_id', $organization->getKey())
+            ->where('id', $publication->publicationId)
+            ->value('manifest');
+        self::assertIsString($manifestJson);
+        $manifest = json_decode(
+            $manifestJson,
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertIsArray($manifest);
+        self::assertCount(2, $manifest['missions']);
+        self::assertSame(
+            $publication->manifestHash,
+            CanonicalJson::sha256($manifest),
+        );
+
+        $learner = $this->createUser();
+        [$learnerMembership, $learnerContext] = $this->createMembership(
+            $organization,
+            $learner,
+        );
+        $this->grantPermissions(
+            membership: $learnerMembership,
+            context: $learnerContext,
+            permissionKeys: ['learning.participate'],
+        );
+        $cohort = $this->createCohort(
+            $authority['operator_context'],
+            'Ambiguous daily speaking learners',
+        );
+        $enrollmentId = (string) Str::ulid();
+        DB::table('enrollments')->insert([
+            'id' => $enrollmentId,
+            'organization_id' => $organization->getKey(),
+            'learner_membership_id' => $learnerMembership->getKey(),
+            'cohort_id' => $cohort->getKey(),
+            'status' => 'pending_curriculum',
+            'enrolled_at' => now(),
+            'ended_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app->make(EnrollmentCurriculumPinner::class)
+                ->activate(
+                    actor: $authority['operator'],
+                    enrollmentId: $enrollmentId,
+                    publicationId: $publication->publicationId,
+                    shareGrantId: null,
+                    idempotencyKey: 'pin-ambiguous-daily-speaking-learner',
+                ),
+        );
+        $this->contexts()->run(
+            $learnerContext,
+            fn () => $this->app->make(
+                LearnerOnboardingService::class,
+            )->complete(
+                learner: $learner,
+                adultConfirmed: true,
+                goalKey: 'everyday-conversation',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+        $reader = $this->app->make(DailyMissionReader::class);
+        $operations = [
+            fn () => $reader->first($learner, $enrollmentId),
+            fn () => $reader->resolve(
+                $learner,
+                $enrollmentId,
+                $version['mission_id'],
+            ),
+            fn () => $reader->resolve(
+                $learner,
+                $enrollmentId,
+                (string) Str::ulid(),
+            ),
+        ];
+        $rejections = 0;
+
+        foreach ($operations as $operation) {
+            try {
+                $this->contexts()->run($learnerContext, $operation);
+                self::fail(
+                    'An ambiguous published mission manifest must fail closed.',
+                );
+            } catch (LearningOperationRejected) {
+                $rejections++;
+            }
+        }
+
+        self::assertSame(3, $rejections);
     }
 
     public function test_missing_stale_or_rejected_graph_review_blocks_publication(): void
@@ -1594,7 +2642,9 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
      *   variant_hash: string,
      *   graph_revision_id: string,
      *   graph_hash: string,
-     *   graph_review_id: string
+     *   graph_review_id: string,
+     *   mission_id: string,
+     *   learning_item_id: string
      * }
      */
     private function createReadyVersion(
@@ -1602,6 +2652,8 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         string $versionKey,
         bool $includeKannadaReview = true,
         bool $includeGraphReview = true,
+        bool $dailyMission = false,
+        bool $additionalMission = false,
     ): array {
         $versionId = (string) Str::ulid();
         $objectiveId = (string) Str::ulid();
@@ -1612,18 +2664,49 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         $variantId = (string) Str::ulid();
         $itemId = (string) Str::ulid();
         $missionId = (string) Str::ulid();
-        $sourcePayload = [
-            'instruction' => sprintf(
-                'Synthetic English instruction for %s.',
-                $versionKey,
-            ),
-        ];
-        $variantPayload = [
-            'instruction' => sprintf(
-                'ಸಿಂಥೆಟಿಕ್ ಕನ್ನಡ ಸೂಚನೆ %s.',
-                $versionKey,
-            ),
-        ];
+        $sourcePayload = $dailyMission
+            ? [
+                'schema' => 'global-english.daily-speaking-mission.v1',
+                'goal_key' => 'everyday-conversation',
+                'estimated_minutes' => 5,
+                'title' => 'Greet a neighbour',
+                'model_text' => 'Hello. How are you today?',
+                'transcript' => 'Hello. How are you today?',
+                'can_do' => 'I can greet a neighbour politely.',
+                'model_audio_duration_ms' => 1400,
+                'check' => [
+                    'id' => 'daily-greeting-check',
+                    'prompt' => 'Which option is a polite greeting?',
+                    'options' => [
+                        [
+                            'id' => 'polite-greeting',
+                            'label' => 'Hello. How are you today?',
+                        ],
+                        [
+                            'id' => 'not-a-greeting',
+                            'label' => 'Close the door.',
+                        ],
+                    ],
+                    'correct_option_id' => 'polite-greeting',
+                ],
+            ]
+            : [
+                'instruction' => sprintf(
+                    'Synthetic English instruction for %s.',
+                    $versionKey,
+                ),
+            ];
+        $variantPayload = $dailyMission
+            ? [
+                'schema' => 'global-english.daily-speaking-mission.v1',
+                'guidance' => 'ನೆರೆಯವರಿಗೆ ವಿನಯವಾಗಿ ಶುಭಾಶಯ ಹೇಳಿ.',
+            ]
+            : [
+                'instruction' => sprintf(
+                    'ಸಿಂಥೆಟಿಕ್ ಕನ್ನಡ ಸೂಚನೆ %s.',
+                    $versionKey,
+                ),
+            ];
         $sourceHash = CanonicalJson::sha256($sourcePayload);
         $variantHash = CanonicalJson::sha256($variantPayload);
         $now = now();
@@ -1760,6 +2843,29 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+        if ($additionalMission) {
+            $additionalMissionId = (string) Str::ulid();
+            DB::table('curriculum_missions')->insert([
+                'id' => $additionalMissionId,
+                'organization_id' => $authority['organization_id'],
+                'curriculum_version_id' => $versionId,
+                'instruction_content_document_id' => $documentId,
+                'key' => 'additional-mission-'.$versionKey,
+                'sequence' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            DB::table('mission_items')->insert([
+                'organization_id' => $authority['organization_id'],
+                'curriculum_version_id' => $versionId,
+                'mission_id' => $additionalMissionId,
+                'learning_item_id' => $itemId,
+                'sequence' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
         $graph = $this->app->make(CurriculumGraphProjector::class)->project(
             $authority['organization_id'],
             $versionId,
@@ -1837,6 +2943,8 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'graph_revision_id' => $graphRevisionId,
             'graph_hash' => $graph['graph_hash'],
             'graph_review_id' => $graphReviewId,
+            'mission_id' => $missionId,
+            'learning_item_id' => $itemId,
         ];
 
         if ($includeKannadaReview) {
@@ -2076,13 +3184,17 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
      *   asset_hash: string,
      *   confirmer_membership_id: string,
      *   appointment_id: string,
-     *   appointment_event_id: string
+     *   appointment_event_id: string,
+     *   storage_object_key: string,
+     *   audio: string
      * }
      */
     private function attachApprovedMediaRights(
         array $authority,
         array $version,
         ?CarbonInterface $expiresAt = null,
+        string $usageKey = 'instruction_audio',
+        string $audio = 'synthetic-scheduled-audio',
     ): array {
         $organization = Organization::query()->findOrFail(
             $authority['organization_id'],
@@ -2106,8 +3218,10 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             );
         $mediaAssetId = (string) Str::ulid();
         $rightsRevisionId = (string) Str::ulid();
-        $assetHash = hash('sha256', 'synthetic-scheduled-audio');
+        $assetHash = hash('sha256', $audio);
         $evidenceHash = hash('sha256', 'synthetic-scheduled-rights-evidence');
+        $storageObjectKey = 'synthetic/scheduled-audio-'
+            .strtolower($mediaAssetId).'.ogg';
         $now = now();
 
         DB::table('media_assets')->insert([
@@ -2115,9 +3229,9 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'organization_id' => $authority['organization_id'],
             'key' => 'scheduled-audio-'.strtolower((string) Str::ulid()),
             'asset_kind' => 'instruction_audio',
-            'storage_object_key' => 'synthetic/scheduled-audio.ogg',
+            'storage_object_key' => $storageObjectKey,
             'mime_type' => 'audio/ogg',
-            'byte_size' => 128,
+            'byte_size' => strlen($audio),
             'asset_hash' => $assetHash,
             'uploaded_by_membership_id' => $authority['operator_membership']->getKey(),
             'uploader_attribution' => 'synthetic-test-uploader',
@@ -2163,7 +3277,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'curriculum_version_id' => $version['version_id'],
             'content_revision_id' => $version['source_revision_id'],
             'media_asset_id' => $mediaAssetId,
-            'usage_key' => 'instruction_audio',
+            'usage_key' => $usageKey,
             'sequence' => 1,
             'created_at' => $now,
             'updated_at' => $now,
@@ -2176,7 +3290,123 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'confirmer_membership_id' => (string) $confirmerMembership->getKey(),
             'appointment_id' => $appointmentId,
             'appointment_event_id' => $appointmentEventId,
+            'storage_object_key' => $storageObjectKey,
+            'audio' => $audio,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $submissionOverrides
+     */
+    private function directlyFinalizeIncorrectAttempt(
+        string $attemptId,
+        string $learningItemId,
+        array $submissionOverrides = [],
+    ): CarbonImmutable {
+        $attempt = DB::table('learner_attempts')
+            ->where('id', $attemptId)
+            ->firstOrFail();
+        $submittedAt = CarbonImmutable::now();
+        DB::table('item_responses')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $attempt->organization_id,
+            'learner_attempt_id' => $attemptId,
+            'learner_membership_id' => $attempt->learner_membership_id,
+            'curriculum_owner_organization_id' => $attempt
+                ->curriculum_owner_organization_id,
+            'curriculum_version_id' => $attempt->curriculum_version_id,
+            'curriculum_mission_id' => $attempt->curriculum_mission_id,
+            'learning_item_id' => $learningItemId,
+            'response_number' => 1,
+            'check_id' => 'daily-greeting-check',
+            'selected_option_id' => 'not-a-greeting',
+            'check_correct' => false,
+            'client_capture_id' => null,
+            'capture_mime_type' => null,
+            'capture_byte_size' => null,
+            'capture_duration_ms' => null,
+            'captured_at' => null,
+            'created_at' => $submittedAt,
+        ]);
+        DB::table('learner_attempts')
+            ->where('id', $attemptId)
+            ->update([
+                'status' => 'submitted',
+                'submitted_at' => $submittedAt,
+                'updated_at' => $submittedAt,
+            ]);
+        DB::table('attempt_submissions')->insert([
+            'organization_id' => $attempt->organization_id,
+            'learner_attempt_id' => $attemptId,
+            'learner_membership_id' => $attempt->learner_membership_id,
+            'attempt_number' => $attempt->attempt_number,
+            'knowledge_score' => 0,
+            'knowledge_check_correct' => false,
+            'local_capture_receipt_present' => false,
+            'knowledge_state' => 'not_mastered',
+            'spoken_state' => 'unassessed',
+            'result_key' => 'mission.retry',
+            'rule_version' => 'daily-speaking-v1',
+            'submitted_at' => $submittedAt,
+            'created_at' => $submittedAt,
+            ...$submissionOverrides,
+        ]);
+
+        return $submittedAt;
+    }
+
+    private function installPr006SubmitOutboxFailureTrigger(): void
+    {
+        DB::unprepared(<<<'SQL'
+CREATE OR REPLACE FUNCTION test_pr006_fail_submit_outbox()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.event_type = 'learner.attempt.submitted' THEN
+        RAISE EXCEPTION 'PR-006 forced late submit failure'
+            USING ERRCODE = '55000';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER test_pr006_fail_submit_outbox
+BEFORE INSERT ON outbox_events
+FOR EACH ROW
+EXECUTE FUNCTION test_pr006_fail_submit_outbox();
+SQL);
+    }
+
+    private function removePr006SubmitOutboxFailureTrigger(): void
+    {
+        DB::unprepared(<<<'SQL'
+DROP TRIGGER IF EXISTS test_pr006_fail_submit_outbox ON outbox_events;
+DROP FUNCTION IF EXISTS test_pr006_fail_submit_outbox();
+SQL);
+    }
+
+    /**
+     * @param  callable(): mixed  $operation
+     */
+    private function assertLearningSchemaRejected(
+        callable $operation,
+        string $expectedCode = '55000',
+    ): void {
+        try {
+            DB::transaction(function () use ($operation): void {
+                $operation();
+            });
+            self::fail(
+                'The PostgreSQL learning authority should have rejected the mutation.',
+            );
+        } catch (QueryException $exception) {
+            self::assertSame(
+                $expectedCode,
+                (string) $exception->getCode(),
+            );
+        }
     }
 
     private function assertScheduledActivationDidNotAdvance(
@@ -2237,6 +3467,38 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         }
 
         self::fail('The curriculum idempotency key should have conflicted.');
+    }
+
+    /**
+     * @param  callable(): mixed  $operation
+     */
+    private function assertLearningRejected(callable $operation): void
+    {
+        try {
+            $operation();
+            self::fail('The learning operation should have failed closed.');
+        } catch (
+            CurriculumOperationRejected
+            |LearningOperationRejected
+        ) {
+            return;
+        }
+    }
+
+    /**
+     * @param  callable(): mixed  $operation
+     */
+    private function assertLearningIdempotencyConflict(
+        callable $operation,
+    ): void {
+        try {
+            $operation();
+            self::fail(
+                'The learning idempotency key should have conflicted.',
+            );
+        } catch (LearningIdempotencyConflict) {
+            return;
+        }
     }
 
     /**

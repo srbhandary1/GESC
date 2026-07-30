@@ -41,6 +41,7 @@ final class FoundationSeeder extends Seeder
         'curriculum.authority.manage' => 'Manage scoped curriculum authority appointments.',
         'media.rights.approve' => 'Confirm media-rights evidence under an appointment.',
         'curriculum.suspend' => 'Suspend or resume organization curriculum delivery.',
+        'learning.participate' => 'Use assigned learner missions and record self-owned learning evidence.',
     ];
 
     public function run(): void
@@ -112,6 +113,34 @@ final class FoundationSeeder extends Seeder
                     'key' => Role::DIRECT_LEARNER_KEY,
                     'name' => 'Learner',
                     'is_system' => true,
+                ],
+            );
+
+            $learnerRoleId = $this->requiredId('roles', [
+                'organization_id' => $organizationId,
+                'key' => Role::DIRECT_LEARNER_KEY,
+            ]);
+            $learningPermissionId = $this->requiredId('permissions', [
+                'key' => 'learning.participate',
+            ]);
+            DB::table('role_permissions')->insertOrIgnore([
+                'organization_id' => $organizationId,
+                'role_id' => $learnerRoleId,
+                'permission_id' => $learningPermissionId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $this->assertCanonicalRecord(
+                'role_permissions',
+                [
+                    'organization_id' => $organizationId,
+                    'role_id' => $learnerRoleId,
+                    'permission_id' => $learningPermissionId,
+                ],
+                [
+                    'organization_id' => $organizationId,
+                    'role_id' => $learnerRoleId,
+                    'permission_id' => $learningPermissionId,
                 ],
             );
 

@@ -8,8 +8,14 @@ use App\Curriculum\CanonicalJson;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Curriculum\Publication\CurriculumPublicationScheduler;
 use App\Curriculum\Publication\CurriculumPublisher;
+use App\Learning\Attempts\DailyMissionAttemptService;
+use App\Learning\Exceptions\LearningIdempotencyConflict;
+use App\Learning\Exceptions\LearningOperationRejected;
+use App\Learning\Missions\DailyMissionDefinition;
+use App\Learning\Missions\DailyMissionReader;
 use App\Models\Membership;
 use App\Models\Organization;
+use App\Models\Role;
 use App\Models\User;
 use App\Tenancy\OrganizationAuthorization;
 use App\Tenancy\OrganizationContext;
@@ -19,6 +25,7 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use PDO;
 use PDOException;
@@ -35,6 +42,32 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         parent::setUp();
 
         $this->seed(FoundationSeeder::class);
+    }
+
+    protected function tearDown(): void
+    {
+        if (
+            DB::connection()->getDriverName() === 'pgsql'
+            && Schema::hasTable('learner_attempts')
+        ) {
+            DB::statement(
+                <<<'SQL'
+                    TRUNCATE TABLE
+                        learning_commands,
+                        review_schedules,
+                        mastery_states,
+                        attempt_submissions,
+                        item_responses,
+                        learner_attempts,
+                        learner_goals,
+                        learner_profiles,
+                        enrollments
+                    CASCADE
+                    SQL,
+            );
+        }
+
+        parent::tearDown();
     }
 
     public function test_two_first_publications_with_the_same_expected_head_allow_exactly_one_winner(): void
@@ -407,6 +440,245 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         );
     }
 
+    public function test_concurrent_learning_start_and_submit_have_one_authoritative_attempt_and_submission(): void
+    {
+        self::assertSame('pgsql', DB::connection()->getDriverName());
+        self::assertTrue(
+            function_exists('pcntl_fork'),
+            'The PostgreSQL concurrency gate requires the pcntl extension.',
+        );
+
+        $fixture = $this->makeConcurrentLearningFixture();
+        $this->app->instance(
+            DailyMissionReader::class,
+            new ConcurrentFixedDailyMissionReader($fixture['mission']),
+        );
+        $databaseConfig = DB::connection()->getConfig();
+        $startKeys = [(string) Str::uuid(), (string) Str::uuid()];
+        $startResults = $this->raceLearningWorkers(
+            databaseConfig: $databaseConfig,
+            operation: 'start',
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['learner_user_id'],
+            actorMembershipId: $fixture['learner_membership_id'],
+            enrollmentId: $fixture['enrollment_id'],
+            missionId: $fixture['mission']->missionId,
+            attemptId: null,
+            idempotencyKeys: $startKeys,
+        );
+
+        self::assertSame(
+            ['started', 'started'],
+            collect($startResults)
+                ->pluck('outcome')
+                ->sort()
+                ->values()
+                ->all(),
+        );
+        self::assertSame(
+            [false, true],
+            collect($startResults)
+                ->pluck('result.replayed')
+                ->sort()
+                ->values()
+                ->all(),
+        );
+        self::assertCount(
+            1,
+            collect($startResults)
+                ->pluck('result.id')
+                ->unique()
+                ->values()
+                ->all(),
+        );
+        $attemptId = (string) $startResults[0]['result']['id'];
+        $attempt = DB::table('learner_attempts')
+            ->where('organization_id', $fixture['organization_id'])
+            ->where('enrollment_id', $fixture['enrollment_id'])
+            ->where(
+                'curriculum_mission_id',
+                $fixture['mission']->missionId,
+            )
+            ->sole();
+
+        self::assertSame($attemptId, $attempt->id);
+        self::assertSame(1, $attempt->attempt_number);
+        self::assertSame('in_progress', $attempt->status);
+        self::assertSame(
+            2,
+            DB::table('learning_commands')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('operation', 'learner.attempt.start')
+                ->where('aggregate_id', $fixture['enrollment_id'])
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('audit_events')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('action', 'learner.attempt.started')
+                ->where('subject_id', $attemptId)
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('outbox_events')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('event_type', 'learner.attempt.started')
+                ->where('aggregate_id', $attemptId)
+                ->count(),
+        );
+
+        $learner = User::query()->findOrFail(
+            $fixture['learner_user_id'],
+        );
+        $learnerContext = new OrganizationContext(
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['learner_user_id'],
+            membershipId: $fixture['learner_membership_id'],
+            source: OrganizationContextSource::Membership,
+        );
+        $this->app
+            ->make(OrganizationContextManager::class)
+            ->run(
+                $learnerContext,
+                fn (): bool => $this->app->make(
+                    DailyMissionAttemptService::class,
+                )->respond(
+                    learner: $learner,
+                    attemptId: $attemptId,
+                    checkId: $fixture['mission']->checkId,
+                    selectedOptionId: $fixture['mission']->correctOptionId,
+                    localRecording: null,
+                    idempotencyKey: (string) Str::uuid(),
+                ),
+            );
+
+        $submitKeys = [(string) Str::uuid(), (string) Str::uuid()];
+        $submitResults = $this->raceLearningWorkers(
+            databaseConfig: $databaseConfig,
+            operation: 'submit',
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['learner_user_id'],
+            actorMembershipId: $fixture['learner_membership_id'],
+            enrollmentId: $fixture['enrollment_id'],
+            missionId: $fixture['mission']->missionId,
+            attemptId: $attemptId,
+            idempotencyKeys: $submitKeys,
+        );
+
+        self::assertSame(
+            ['rejected', 'submitted'],
+            collect($submitResults)
+                ->pluck('outcome')
+                ->sort()
+                ->values()
+                ->all(),
+        );
+        /** @var array{
+         *   outcome: string,
+         *   idempotency_key: string,
+         *   result: array<string, mixed>
+         * } $winner
+         */
+        $winner = collect($submitResults)
+            ->firstWhere('outcome', 'submitted');
+        /** @var array{
+         *   outcome: string,
+         *   idempotency_key: string,
+         *   rejection_class: class-string
+         * } $loser
+         */
+        $loser = collect($submitResults)
+            ->firstWhere('outcome', 'rejected');
+        self::assertSame(
+            LearningIdempotencyConflict::class,
+            $loser['rejection_class'],
+        );
+        self::assertSame(
+            [
+                'first_attempt_id' => $attemptId,
+                'first_attempt_number' => 1,
+                'latest_attempt_id' => $attemptId,
+                'latest_attempt_number' => 1,
+                'best_attempt_id' => $attemptId,
+                'best_attempt_number' => 1,
+            ],
+            $winner['result']['evidence'],
+        );
+        self::assertSame(
+            1,
+            DB::table('attempt_submissions')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('learner_attempt_id', $attemptId)
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('mastery_states')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('enrollment_id', $fixture['enrollment_id'])
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('review_schedules')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('source_attempt_id', $attemptId)
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('learning_commands')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('operation', 'learner.attempt.submit')
+                ->where('aggregate_id', $attemptId)
+                ->count(),
+        );
+        self::assertSame(
+            0,
+            DB::table('learning_commands')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('operation', 'learner.attempt.submit')
+                ->where('aggregate_id', $attemptId)
+                ->where('idempotency_key', $loser['idempotency_key'])
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('audit_events')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('action', 'learner.attempt.submitted')
+                ->where('subject_id', $attemptId)
+                ->count(),
+        );
+        self::assertSame(
+            1,
+            DB::table('outbox_events')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('event_type', 'learner.attempt.submitted')
+                ->where('aggregate_id', $attemptId)
+                ->count(),
+        );
+
+        $learner = User::query()->findOrFail(
+            $fixture['learner_user_id'],
+        );
+        $exactReplay = $this->app
+            ->make(OrganizationContextManager::class)
+            ->run(
+                $learnerContext,
+                fn (): array => $this->app->make(
+                    DailyMissionAttemptService::class,
+                )->submit(
+                    learner: $learner,
+                    attemptId: $attemptId,
+                    idempotencyKey: $winner['idempotency_key'],
+                ),
+            );
+        self::assertSame($winner['result'], $exactReplay);
+    }
+
     public function test_transactional_authorization_recheck_locks_authority_rows_until_the_command_finishes(): void
     {
         self::assertSame('pgsql', DB::connection()->getDriverName());
@@ -474,6 +746,185 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                 ->where('role_id', $roleId)
                 ->count(),
         );
+    }
+
+    /**
+     * @return array{
+     *   organization_id: string,
+     *   learner_user_id: string,
+     *   learner_membership_id: string,
+     *   enrollment_id: string,
+     *   mission: DailyMissionDefinition
+     * }
+     */
+    private function makeConcurrentLearningFixture(): array
+    {
+        $fixture = $this->makeSeededDraftPublishable();
+        $publisher = User::query()->findOrFail(
+            $fixture['actor_user_id'],
+        );
+        $publisherContext = new OrganizationContext(
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['actor_user_id'],
+            membershipId: $fixture['actor_membership_id'],
+            source: OrganizationContextSource::Membership,
+        );
+        $publication = $this->app
+            ->make(OrganizationContextManager::class)
+            ->run(
+                $publisherContext,
+                fn () => $this->app->make(
+                    CurriculumPublisher::class,
+                )->publish(
+                    actor: $publisher,
+                    curriculumVersionId: $fixture[
+                        'curriculum_version_id'
+                    ],
+                    expectedHeadVersion: 0,
+                    idempotencyKey: 'learning-concurrency-publication',
+                ),
+            );
+        $learner = $this->createUserAndMembership(
+            $fixture['organization_id'],
+            Membership::TYPE_LEARNER,
+        );
+        $learnerRoleId = $this->requiredStringValue(
+            'roles',
+            'id',
+            [
+                'organization_id' => $fixture['organization_id'],
+                'key' => Role::DIRECT_LEARNER_KEY,
+            ],
+        );
+        $now = now();
+        DB::table('membership_roles')->insert([
+            'organization_id' => $fixture['organization_id'],
+            'membership_id' => $learner['membership_id'],
+            'role_id' => $learnerRoleId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $enrollmentId = (string) Str::ulid();
+        DB::table('enrollments')->insert([
+            'id' => $enrollmentId,
+            'organization_id' => $fixture['organization_id'],
+            'learner_membership_id' => $learner['membership_id'],
+            'cohort_id' => null,
+            'curriculum_owner_organization_id' => $fixture[
+                'organization_id'
+            ],
+            'curriculum_version_id' => $fixture[
+                'curriculum_version_id'
+            ],
+            'curriculum_publication_id' => $publication->publicationId,
+            'curriculum_share_grant_id' => null,
+            'status' => 'active',
+            'enrolled_at' => $now,
+            'activated_at' => $now,
+            'ended_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $missionId = $this->requiredStringValue(
+            'curriculum_missions',
+            'id',
+            [
+                'organization_id' => $fixture['organization_id'],
+                'curriculum_version_id' => $fixture[
+                    'curriculum_version_id'
+                ],
+                'key' => 'synthetic-introduction-mission',
+            ],
+        );
+        $objectiveId = $this->requiredStringValue(
+            'learning_objectives',
+            'id',
+            [
+                'organization_id' => $fixture['organization_id'],
+                'curriculum_version_id' => $fixture[
+                    'curriculum_version_id'
+                ],
+                'key' => 'introduce-yourself',
+            ],
+        );
+        $learningItemId = $this->requiredStringValue(
+            'learning_items',
+            'id',
+            [
+                'organization_id' => $fixture['organization_id'],
+                'curriculum_version_id' => $fixture[
+                    'curriculum_version_id'
+                ],
+                'key' => 'synthetic-introduction-prompt',
+            ],
+        );
+        $sourceRevision = DB::table('content_revisions')
+            ->where('organization_id', $fixture['organization_id'])
+            ->where(
+                'curriculum_version_id',
+                $fixture['curriculum_version_id'],
+            )
+            ->where('revision_number', 1)
+            ->sole(['id', 'content_hash']);
+        $localizedVariant = DB::table('localized_variants')
+            ->where('organization_id', $fixture['organization_id'])
+            ->where(
+                'curriculum_version_id',
+                $fixture['curriculum_version_id'],
+            )
+            ->where('locale', 'kn-IN')
+            ->sole(['id', 'content_hash']);
+        $definitionHash = CanonicalJson::sha256([
+            'fixture' => 'concurrent-learning',
+            'mission_id' => $missionId,
+            'publication_id' => $publication->publicationId,
+        ]);
+        $mission = new DailyMissionDefinition(
+            missionId: $missionId,
+            enrollmentId: $enrollmentId,
+            publicationId: $publication->publicationId,
+            ownerOrganizationId: $fixture['organization_id'],
+            curriculumVersionId: $fixture['curriculum_version_id'],
+            objectiveId: $objectiveId,
+            learningItemId: $learningItemId,
+            manifestHash: $publication->manifestHash,
+            definitionHash: $definitionHash,
+            sourceRevisionId: (string) $sourceRevision->id,
+            sourceContentHash: (string) $sourceRevision->content_hash,
+            kannadaVariantId: (string) $localizedVariant->id,
+            kannadaContentHash: (string) $localizedVariant->content_hash,
+            goalKey: 'everyday-conversation',
+            estimatedMinutes: 3,
+            title: 'Synthetic concurrency mission',
+            kannadaGuidance: 'Synthetic test guidance.',
+            modelText: 'Hello.',
+            transcript: 'Hello.',
+            canDo: 'I can choose the governed greeting.',
+            checkId: 'concurrent-check',
+            checkPrompt: 'Choose the greeting.',
+            checkOptions: [
+                ['id' => 'correct', 'label' => 'Hello'],
+                ['id' => 'incorrect', 'label' => 'Goodbye'],
+            ],
+            correctOptionId: 'correct',
+            modelAudioAssetId: (string) Str::ulid(),
+            modelAudioMimeType: 'audio/webm',
+            modelAudioContentHash: hash(
+                'sha256',
+                'synthetic-concurrency-audio',
+            ),
+            modelAudioByteSize: 512,
+            modelAudioDurationMs: 1200,
+            modelAudioStorageKey: 'test/concurrent-learning.webm',
+        );
+
+        return [
+            'organization_id' => $fixture['organization_id'],
+            'learner_user_id' => $learner['user_id'],
+            'learner_membership_id' => $learner['membership_id'],
+            'enrollment_id' => $enrollmentId,
+            'mission' => $mission,
+        ];
     }
 
     /**
@@ -818,6 +1269,350 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
     }
 
     /**
+     * @param  array<string, mixed>  $databaseConfig
+     * @param  list<string>  $idempotencyKeys
+     * @return list<array<string, mixed>>
+     */
+    private function raceLearningWorkers(
+        array $databaseConfig,
+        string $operation,
+        string $organizationId,
+        string $actorUserId,
+        string $actorMembershipId,
+        string $enrollmentId,
+        string $missionId,
+        ?string $attemptId,
+        array $idempotencyKeys,
+    ): array {
+        DB::disconnect();
+
+        /** @var list<array{pid: int, pipe: resource, reaped: bool}> $workers */
+        $workers = [];
+        /** @var list<int> $backendPids */
+        $backendPids = [];
+        /** @var list<array<string, mixed>> $results */
+        $results = [];
+        $lockConnection = null;
+        $bothWorkersBlocked = false;
+
+        try {
+            foreach ($idempotencyKeys as $idempotencyKey) {
+                $workers[] = $this->spawnLearningWorker(
+                    operation: $operation,
+                    organizationId: $organizationId,
+                    actorUserId: $actorUserId,
+                    actorMembershipId: $actorMembershipId,
+                    enrollmentId: $enrollmentId,
+                    missionId: $missionId,
+                    attemptId: $attemptId,
+                    idempotencyKey: $idempotencyKey,
+                );
+            }
+
+            foreach ($workers as $worker) {
+                stream_set_timeout($worker['pipe'], 10);
+                $ready = fgets($worker['pipe']);
+
+                if (
+                    ! is_string($ready)
+                    || preg_match('/\Aready:(\d+)\n\z/', $ready, $match)
+                        !== 1
+                ) {
+                    throw new RuntimeException(
+                        'A concurrent learning worker did not become ready.',
+                    );
+                }
+
+                $backendPids[] = (int) $match[1];
+            }
+
+            $lockConnection = $this->openPostgreSqlConnection(
+                $databaseConfig,
+            );
+            $lockConnection->beginTransaction();
+            $lock = $lockConnection->prepare(
+                'select id from memberships where id = :id for update',
+            );
+            $lock->execute(['id' => $actorMembershipId]);
+
+            foreach ($workers as $worker) {
+                if (fwrite($worker['pipe'], "go\n") === false) {
+                    throw new RuntimeException(
+                        'A concurrent learning worker could not be released.',
+                    );
+                }
+
+                fflush($worker['pipe']);
+            }
+
+            $bothWorkersBlocked = $this->waitUntilLearningWorkersBlock(
+                $lockConnection,
+                $backendPids,
+            );
+            $lockConnection->commit();
+
+            foreach ($workers as $index => $worker) {
+                $line = fgets($worker['pipe']);
+
+                if (! is_string($line)) {
+                    throw new RuntimeException(
+                        'A concurrent learning worker returned no result.',
+                    );
+                }
+
+                /** @var array<string, mixed> $result */
+                $result = json_decode(
+                    $line,
+                    true,
+                    flags: JSON_THROW_ON_ERROR,
+                );
+                $results[] = $result;
+                $waited = pcntl_waitpid(
+                    $worker['pid'],
+                    $processStatus,
+                );
+
+                if (
+                    $waited !== $worker['pid']
+                    || pcntl_wexitstatus($processStatus) !== 0
+                ) {
+                    throw new RuntimeException(
+                        'A concurrent learning worker failed.',
+                    );
+                }
+
+                $workers[$index]['reaped'] = true;
+            }
+        } finally {
+            if (
+                $lockConnection instanceof PDO
+                && $lockConnection->inTransaction()
+            ) {
+                $lockConnection->rollBack();
+            }
+
+            foreach ($workers as $index => $worker) {
+                if (is_resource($worker['pipe'])) {
+                    fclose($worker['pipe']);
+                }
+
+                if ($worker['reaped']) {
+                    continue;
+                }
+
+                $waited = pcntl_waitpid(
+                    $worker['pid'],
+                    $processStatus,
+                    WNOHANG,
+                );
+
+                if (
+                    $waited === 0
+                    && function_exists('posix_kill')
+                ) {
+                    posix_kill($worker['pid'], SIGKILL);
+                    pcntl_waitpid($worker['pid'], $processStatus);
+                }
+
+                $workers[$index]['reaped'] = true;
+            }
+
+            DB::purge();
+            DB::reconnect();
+        }
+
+        self::assertTrue(
+            $bothWorkersBlocked,
+            sprintf(
+                'Both %s workers must enter the PostgreSQL lock queue; results: %s.',
+                $operation,
+                json_encode($results, JSON_THROW_ON_ERROR),
+            ),
+        );
+
+        return $results;
+    }
+
+    /**
+     * @return array{pid: int, pipe: resource, reaped: bool}
+     */
+    private function spawnLearningWorker(
+        string $operation,
+        string $organizationId,
+        string $actorUserId,
+        string $actorMembershipId,
+        string $enrollmentId,
+        string $missionId,
+        ?string $attemptId,
+        string $idempotencyKey,
+    ): array {
+        $sockets = stream_socket_pair(
+            STREAM_PF_UNIX,
+            STREAM_SOCK_STREAM,
+            STREAM_IPPROTO_IP,
+        );
+
+        if ($sockets === false) {
+            throw new RuntimeException(
+                'The concurrent learning worker pipe could not be created.',
+            );
+        }
+
+        $pid = pcntl_fork();
+
+        if ($pid === -1) {
+            fclose($sockets[0]);
+            fclose($sockets[1]);
+
+            throw new RuntimeException(
+                'The concurrent learning worker could not be forked.',
+            );
+        }
+
+        if ($pid === 0) {
+            fclose($sockets[0]);
+            $this->runLearningWorker(
+                pipe: $sockets[1],
+                operation: $operation,
+                organizationId: $organizationId,
+                actorUserId: $actorUserId,
+                actorMembershipId: $actorMembershipId,
+                enrollmentId: $enrollmentId,
+                missionId: $missionId,
+                attemptId: $attemptId,
+                idempotencyKey: $idempotencyKey,
+            );
+        }
+
+        fclose($sockets[1]);
+
+        return [
+            'pid' => $pid,
+            'pipe' => $sockets[0],
+            'reaped' => false,
+        ];
+    }
+
+    /**
+     * @param  resource  $pipe
+     */
+    private function runLearningWorker(
+        mixed $pipe,
+        string $operation,
+        string $organizationId,
+        string $actorUserId,
+        string $actorMembershipId,
+        string $enrollmentId,
+        string $missionId,
+        ?string $attemptId,
+        string $idempotencyKey,
+    ): never {
+        try {
+            DB::purge();
+            DB::reconnect();
+            $backend = DB::selectOne(
+                'select pg_backend_pid() as backend_pid',
+            );
+            $backendPid = $backend->backend_pid ?? null;
+
+            if (! is_int($backendPid)) {
+                throw new RuntimeException(
+                    'The learning worker could not resolve its backend PID.',
+                );
+            }
+
+            fwrite($pipe, sprintf("ready:%d\n", $backendPid));
+            fflush($pipe);
+
+            if (fgets($pipe) !== "go\n") {
+                throw new RuntimeException(
+                    'The learning worker received an invalid release signal.',
+                );
+            }
+
+            $actor = User::query()->findOrFail($actorUserId);
+            $context = new OrganizationContext(
+                organizationId: $organizationId,
+                actorUserId: $actorUserId,
+                membershipId: $actorMembershipId,
+                source: OrganizationContextSource::Membership,
+            );
+            $service = $this->app->make(
+                DailyMissionAttemptService::class,
+            );
+            $result = $this->app
+                ->make(OrganizationContextManager::class)
+                ->run(
+                    $context,
+                    function () use (
+                        $actor,
+                        $attemptId,
+                        $enrollmentId,
+                        $idempotencyKey,
+                        $missionId,
+                        $operation,
+                        $service,
+                    ): array {
+                        if ($operation === 'start') {
+                            return $service->start(
+                                learner: $actor,
+                                enrollmentId: $enrollmentId,
+                                missionId: $missionId,
+                                idempotencyKey: $idempotencyKey,
+                            );
+                        }
+
+                        if (
+                            $operation !== 'submit'
+                            || $attemptId === null
+                        ) {
+                            throw new RuntimeException(
+                                'The learning worker operation is invalid.',
+                            );
+                        }
+
+                        return $service->submit(
+                            learner: $actor,
+                            attemptId: $attemptId,
+                            idempotencyKey: $idempotencyKey,
+                        );
+                    },
+                );
+            $payload = [
+                'outcome' => $operation === 'start'
+                    ? 'started'
+                    : 'submitted',
+                'idempotency_key' => $idempotencyKey,
+                'result' => $result,
+            ];
+        } catch (LearningIdempotencyConflict $exception) {
+            $payload = [
+                'outcome' => 'rejected',
+                'idempotency_key' => $idempotencyKey,
+                'rejection_class' => $exception::class,
+            ];
+        } catch (LearningOperationRejected $exception) {
+            $payload = [
+                'outcome' => 'operation_rejected',
+                'idempotency_key' => $idempotencyKey,
+                'rejection_class' => $exception::class,
+            ];
+        } catch (Throwable $exception) {
+            $this->writeWorkerResult($pipe, [
+                'outcome' => 'error',
+                'worker_exception' => $exception::class,
+                'worker_message' => $exception->getMessage(),
+            ]);
+
+            exit(1);
+        }
+
+        $this->writeWorkerResult($pipe, $payload);
+
+        exit(0);
+    }
+
+    /**
      * @return array{pid: int, pipe: resource, reaped: bool}
      */
     private function spawnPublicationWorker(
@@ -966,7 +1761,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
 
     /**
      * @param  resource  $pipe
-     * @param  array<string, int|string>  $payload
+     * @param  array<string, mixed>  $payload
      */
     private function writeWorkerResult(mixed $pipe, array $payload): void
     {
@@ -1004,6 +1799,45 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         );
     }
 
+    /**
+     * @param  list<int>  $backendPids
+     */
+    private function waitUntilLearningWorkersBlock(
+        PDO $connection,
+        array $backendPids,
+    ): bool {
+        if (count($backendPids) !== 2) {
+            throw new RuntimeException(
+                'Exactly two learning worker backend PIDs are required.',
+            );
+        }
+
+        $waiting = $connection->prepare(
+            <<<'SQL'
+                select count(*)
+                from pg_stat_activity
+                where pid in (:first_pid, :second_pid)
+                  and wait_event_type = 'Lock'
+                SQL,
+        );
+
+        for ($attempt = 0; $attempt < 200; $attempt++) {
+            $connection->exec('select pg_stat_clear_snapshot()');
+            $waiting->execute([
+                'first_pid' => $backendPids[0],
+                'second_pid' => $backendPids[1],
+            ]);
+
+            if ((int) $waiting->fetchColumn() === 2) {
+                return true;
+            }
+
+            usleep(10_000);
+        }
+
+        return false;
+    }
+
     private function waitUntilBothWorkersBlock(PDO $connection): bool
     {
         for ($attempt = 0; $attempt < 200; $attempt++) {
@@ -1038,5 +1872,36 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         }
 
         return false;
+    }
+}
+
+final readonly class ConcurrentFixedDailyMissionReader implements DailyMissionReader
+{
+    public function __construct(
+        private DailyMissionDefinition $mission,
+    ) {}
+
+    public function resolve(
+        User $learner,
+        string $enrollmentId,
+        string $missionId,
+    ): DailyMissionDefinition {
+        if (
+            $enrollmentId !== $this->mission->enrollmentId
+            || $missionId !== $this->mission->missionId
+        ) {
+            throw new LearningOperationRejected;
+        }
+
+        return $this->mission;
+    }
+
+    public function first(
+        User $learner,
+        string $enrollmentId,
+    ): ?DailyMissionDefinition {
+        return $enrollmentId === $this->mission->enrollmentId
+            ? $this->mission
+            : null;
     }
 }

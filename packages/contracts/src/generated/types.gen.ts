@@ -60,6 +60,7 @@ export type MembershipSummary = {
     id: Ulid;
     organization: OrganizationSummary;
     status: 'active' | 'suspended' | 'ended';
+    membership_type: 'learner' | 'trainer' | 'organization_admin';
     role_keys: Array<string>;
 };
 
@@ -121,6 +122,160 @@ export type InviteAcceptanceResponse = {
     replayed: boolean;
 };
 
+export type Sha256 = string;
+
+export type LearnerGoal = 'everyday-conversation' | 'workplace-confidence' | 'travel-confidence';
+
+export type GovernedContent = {
+    locale: 'en-IN' | 'kn-IN';
+    text: string;
+    revision_id: Ulid;
+    content_hash: Sha256;
+};
+
+export type LearnerOnboardingState = {
+    completed: boolean;
+    adult_confirmed: boolean;
+    goal_key: LearnerGoal | null;
+};
+
+export type ActiveLearnerEnrollment = {
+    id: Ulid;
+    status: 'active';
+};
+
+export type LearnerMissionSummary = {
+    id: Ulid;
+    estimated_minutes: number;
+    title: GovernedContent;
+};
+
+export type LearnerHome = {
+    onboarding: LearnerOnboardingState;
+    enrollment: ActiveLearnerEnrollment | null;
+    next_mission: LearnerMissionSummary | null;
+};
+
+export type CompleteLearnerOnboardingRequest = {
+    adult_confirmed: true;
+    goal_key: LearnerGoal;
+};
+
+export type LearnerModelAudio = {
+    asset_id: Ulid;
+    stream_url: string;
+    mime_type: 'audio/mpeg' | 'audio/ogg' | 'audio/webm' | 'audio/mp4' | 'audio/wav';
+    duration_ms: number;
+};
+
+export type LearnerMissionCheckOption = {
+    id: string;
+    label: GovernedContent;
+};
+
+export type LearnerMissionCheck = {
+    id: string;
+    prompt: GovernedContent;
+    options: Array<LearnerMissionCheckOption>;
+};
+
+export type LearnerMission = {
+    id: Ulid;
+    enrollment_id: Ulid;
+    publication_id: Ulid;
+    objective_id: Ulid;
+    title: GovernedContent;
+    kannada_guidance: GovernedContent;
+    model_text: GovernedContent;
+    transcript: GovernedContent;
+    model_audio: LearnerModelAudio;
+    check: LearnerMissionCheck;
+};
+
+export type StartLearnerAttemptRequest = {
+    enrollment_id: Ulid;
+};
+
+export type LearnerAttempt = {
+    id: Ulid;
+    status: 'in_progress';
+};
+
+/**
+ * Non-authoritative client metadata for local practice. It contains no
+ * learner-audio bytes or digest and cannot satisfy spoken mastery.
+ *
+ */
+export type LocalCaptureReceipt = {
+    captured: true;
+    client_capture_id: string;
+    mime_type: 'audio/webm' | 'audio/webm;codecs=opus' | 'audio/ogg' | 'audio/ogg;codecs=opus' | 'audio/mp4';
+    byte_size: number;
+    duration_ms: number;
+};
+
+export type RecordLearnerAttemptResponseRequest = {
+    check_id: string;
+    selected_option_id: string;
+    local_recording: LocalCaptureReceipt | null;
+};
+
+export type KnowledgeState = 'developing' | 'mastered';
+
+/**
+ * PR-006 has no eligible spoken evidence, so a local-capture receipt
+ * never changes this authoritative state.
+ *
+ */
+export type SpokenState = 'unassessed';
+
+export type LearnerAttemptEvidence = {
+    first_attempt_id: Ulid;
+    first_attempt_number: number;
+    latest_attempt_id: Ulid;
+    latest_attempt_number: number;
+    best_attempt_id: Ulid;
+    best_attempt_number: number;
+};
+
+export type LearnerReviewSchedule = {
+    due_at: string;
+    timezone: string;
+};
+
+export type LearnerMissionResult = {
+    attempt_id: Ulid;
+    check_state: 'correct' | 'incorrect';
+    knowledge_state: KnowledgeState;
+    spoken_state: SpokenState;
+    /**
+     * Engagement receipt only; never authoritative spoken evidence.
+     */
+    local_capture_receipt_present: boolean;
+    can_do: GovernedContent;
+    evidence: LearnerAttemptEvidence;
+    review: LearnerReviewSchedule;
+};
+
+export type LearnerProgressObjective = {
+    objective_id: Ulid;
+    label: GovernedContent;
+    knowledge_state: KnowledgeState;
+    spoken_state: SpokenState;
+    /**
+     * Engagement receipt only; never authoritative spoken evidence.
+     */
+    local_capture_receipt_present: boolean;
+    evidence: LearnerAttemptEvidence;
+    review_due_at: string;
+    review_timezone: string;
+};
+
+export type LearnerProgress = {
+    enrollment_id: Ulid;
+    objectives: Array<LearnerProgressObjective>;
+};
+
 export type LivenessResponse = {
     status: 'ok';
     service: 'global-english-api';
@@ -162,6 +317,34 @@ export type IdempotencyKey = string;
  * Project-owned public session ULID, never the Laravel session key.
  */
 export type SessionId = Ulid;
+
+/**
+ * Governed curriculum mission ULID from the exact publication pin.
+ */
+export type MissionId = Ulid;
+
+/**
+ * Server-assigned learner-attempt ULID.
+ */
+export type AttemptId = Ulid;
+
+/**
+ * Governed model-audio asset ULID from the exact mission manifest.
+ */
+export type MediaAssetId = Ulid;
+
+/**
+ * Candidate enrollment ULID. The server accepts it only when it belongs
+ * to the authenticated active learner membership and has an exact active
+ * curriculum-publication pin.
+ *
+ */
+export type EnrollmentId = Ulid;
+
+/**
+ * Mission ULID used to authorize the requested model-audio asset.
+ */
+export type MissionQueryId = Ulid;
 
 export type GetLivenessData = {
     body?: never;
@@ -664,6 +847,451 @@ export type SelectOrganizationContextResponses = {
 };
 
 export type SelectOrganizationContextResponse = SelectOrganizationContextResponses[keyof SelectOrganizationContextResponses];
+
+export type GetLearnerHomeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/home';
+};
+
+export type GetLearnerHomeErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerHomeError = GetLearnerHomeErrors[keyof GetLearnerHomeErrors];
+
+export type GetLearnerHomeResponses = {
+    /**
+     * Learner onboarding and exact-pinned mission state.
+     */
+    200: LearnerHome;
+};
+
+export type GetLearnerHomeResponse = GetLearnerHomeResponses[keyof GetLearnerHomeResponses];
+
+export type CompleteLearnerOnboardingData = {
+    body: CompleteLearnerOnboardingRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/onboarding';
+};
+
+export type CompleteLearnerOnboardingErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CompleteLearnerOnboardingError = CompleteLearnerOnboardingErrors[keyof CompleteLearnerOnboardingErrors];
+
+export type CompleteLearnerOnboardingResponses = {
+    /**
+     * Onboarding is complete and current learner home is returned.
+     */
+    200: LearnerHome;
+};
+
+export type CompleteLearnerOnboardingResponse = CompleteLearnerOnboardingResponses[keyof CompleteLearnerOnboardingResponses];
+
+export type GetLearnerMissionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Governed curriculum mission ULID from the exact publication pin.
+         */
+        mission_id: Ulid;
+    };
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+    };
+    url: '/missions/{mission_id}';
+};
+
+export type GetLearnerMissionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerMissionError = GetLearnerMissionErrors[keyof GetLearnerMissionErrors];
+
+export type GetLearnerMissionResponses = {
+    /**
+     * Exact governed mission presentation and check choices.
+     */
+    200: LearnerMission;
+};
+
+export type GetLearnerMissionResponse = GetLearnerMissionResponses[keyof GetLearnerMissionResponses];
+
+export type StartLearnerMissionAttemptData = {
+    body: StartLearnerAttemptRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Governed curriculum mission ULID from the exact publication pin.
+         */
+        mission_id: Ulid;
+    };
+    query?: never;
+    url: '/missions/{mission_id}/attempts';
+};
+
+export type StartLearnerMissionAttemptErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StartLearnerMissionAttemptError = StartLearnerMissionAttemptErrors[keyof StartLearnerMissionAttemptErrors];
+
+export type StartLearnerMissionAttemptResponses = {
+    /**
+     * An exact replay or existing unfinished attempt was returned.
+     */
+    200: LearnerAttempt;
+    /**
+     * A new deterministic attempt was started.
+     */
+    201: LearnerAttempt;
+};
+
+export type StartLearnerMissionAttemptResponse = StartLearnerMissionAttemptResponses[keyof StartLearnerMissionAttemptResponses];
+
+export type RecordLearnerAttemptResponseData = {
+    body: RecordLearnerAttemptResponseRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Server-assigned learner-attempt ULID.
+         */
+        attempt_id: Ulid;
+    };
+    query?: never;
+    url: '/attempts/{attempt_id}/responses';
+};
+
+export type RecordLearnerAttemptResponseErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordLearnerAttemptResponseError = RecordLearnerAttemptResponseErrors[keyof RecordLearnerAttemptResponseErrors];
+
+export type RecordLearnerAttemptResponseResponses = {
+    /**
+     * The immutable response was appended.
+     */
+    204: void;
+};
+
+export type RecordLearnerAttemptResponseResponse = RecordLearnerAttemptResponseResponses[keyof RecordLearnerAttemptResponseResponses];
+
+export type SubmitLearnerMissionAttemptData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Server-assigned learner-attempt ULID.
+         */
+        attempt_id: Ulid;
+    };
+    query?: never;
+    url: '/attempts/{attempt_id}/submit';
+};
+
+export type SubmitLearnerMissionAttemptErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SubmitLearnerMissionAttemptError = SubmitLearnerMissionAttemptErrors[keyof SubmitLearnerMissionAttemptErrors];
+
+export type SubmitLearnerMissionAttemptResponses = {
+    /**
+     * Authoritative deterministic result and review schedule.
+     */
+    200: LearnerMissionResult;
+};
+
+export type SubmitLearnerMissionAttemptResponse = SubmitLearnerMissionAttemptResponses[keyof SubmitLearnerMissionAttemptResponses];
+
+export type GetLearnerProgressData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+    };
+    url: '/progress';
+};
+
+export type GetLearnerProgressErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerProgressError = GetLearnerProgressErrors[keyof GetLearnerProgressErrors];
+
+export type GetLearnerProgressResponses = {
+    /**
+     * Derived mastery, evidence and current review state.
+     */
+    200: LearnerProgress;
+};
+
+export type GetLearnerProgressResponse = GetLearnerProgressResponses[keyof GetLearnerProgressResponses];
+
+export type StreamLearnerModelAudioData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Governed model-audio asset ULID from the exact mission manifest.
+         */
+        asset_id: Ulid;
+    };
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+        /**
+         * Mission ULID used to authorize the requested model-audio asset.
+         */
+        mission_id: Ulid;
+    };
+    url: '/media-assets/{asset_id}/content';
+};
+
+export type StreamLearnerModelAudioErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StreamLearnerModelAudioError = StreamLearnerModelAudioErrors[keyof StreamLearnerModelAudioErrors];
+
+export type StreamLearnerModelAudioResponses = {
+    /**
+     * The verified model-audio object.
+     */
+    200: Blob | File;
+};
+
+export type StreamLearnerModelAudioResponse = StreamLearnerModelAudioResponses[keyof StreamLearnerModelAudioResponses];
 
 export type AcceptInstitutionInviteData = {
     body: InstitutionInviteAcceptance;

@@ -561,6 +561,17 @@ final class CurriculumSchemaProtectionTest extends TenancyIntegrationTestCase
     {
         self::assertSame(1, $this->programAppendOnlyTriggerCount());
 
+        $learningMigration = require database_path(
+            'migrations/2026_07_30_000024_create_deterministic_learning_tables.php',
+        );
+        if (
+            ! $learningMigration instanceof Migration
+            || ! method_exists($learningMigration, 'down')
+        ) {
+            self::fail('The deterministic learning migration must provide down().');
+        }
+        $learningMigration->down();
+
         $pinMigration = require database_path(
             'migrations/2026_07_30_000023_pin_enrollments_to_curriculum_publications.php',
         );

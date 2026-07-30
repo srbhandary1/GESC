@@ -13,6 +13,7 @@ import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
+import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 
 afterEach(() => {
   cleanup()
@@ -208,6 +209,7 @@ describe('localized application shell', () => {
                 kind: 'institution',
                 name: organizationName,
               },
+              membership_type: 'learner',
               role_keys: ['learner'],
               status: 'active',
             },
@@ -231,6 +233,61 @@ describe('localized application shell', () => {
       'lang',
       DEFAULT_LOCALE,
     )
+  })
+
+  it('opens Learn for a learner membership without inferring role keys', async () => {
+    window.history.replaceState(null, '', '/#learn')
+    const home = vi.fn(async () => ({
+      enrollment: null,
+      next_mission: null,
+      onboarding: {
+        adult_confirmed: false,
+        completed: false,
+        goal_key: null,
+      },
+    }) as const)
+
+    render(
+      <App
+        authentication={membershipAuthentication(
+          'learner',
+          ['institution-student'],
+        )}
+        learnerJourneyApi={learnerApi(home)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('learner.onboarding.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(home).toHaveBeenCalledOnce()
+  })
+
+  it('does not open Learn for a non-learner membership with a learner role key', async () => {
+    window.history.replaceState(null, '', '/#learn')
+    const home = vi.fn(async () => {
+      throw new Error('Learner API must not be called.')
+    })
+
+    render(
+      <App
+        authentication={membershipAuthentication(
+          'trainer',
+          ['learner'],
+        )}
+        learnerJourneyApi={learnerApi(home)}
+      />,
+    )
+
+    expect(
+      await screen.findByText(text('session.authenticated')),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(text('shell.checkpoint_notice')),
+    ).toBeInTheDocument()
+    expect(home).not.toHaveBeenCalled()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {
@@ -260,6 +317,54 @@ function anonymousAuthentication(): AuthenticationAdapter {
       }),
     ),
     logout: vi.fn(async () => undefined),
+  }
+}
+
+function membershipAuthentication(
+  membershipType: 'learner' | 'trainer' | 'organization_admin',
+  roleKeys: string[],
+): AuthenticationAdapter {
+  return {
+    transport: 'sanctum-cookie',
+    current: vi.fn(
+      async (): Promise<AuthenticationSnapshot> => ({
+        status: 'authenticated',
+        identity: {
+          current_membership: {
+            id: '01J00000000000000000000002',
+            membership_type: membershipType,
+            organization: {
+              id: '01J00000000000000000000003',
+              kind: 'institution',
+              name: 'Hithaishi Learning Hub',
+            },
+            role_keys: roleKeys,
+            status: 'active',
+          },
+          memberships: [],
+          user: { id: '01J00000000000000000000001' },
+        },
+      }),
+    ),
+    logout: vi.fn(async () => undefined),
+  }
+}
+
+function learnerApi(
+  home: LearnerJourneyApi['home'],
+): LearnerJourneyApi {
+  const unreachable = async (): Promise<never> => {
+    throw new Error('Unexpected learner journey call.')
+  }
+
+  return {
+    home,
+    mission: vi.fn(unreachable),
+    progress: vi.fn(unreachable),
+    recordResponse: vi.fn(unreachable),
+    startAttempt: vi.fn(unreachable),
+    submitAttempt: vi.fn(unreachable),
+    updateOnboarding: vi.fn(unreachable),
   }
 }
 

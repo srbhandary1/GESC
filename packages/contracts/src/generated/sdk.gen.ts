@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses } from './types.gen';
+import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -197,6 +197,165 @@ export const selectOrganizationContext = <ThrowOnError extends boolean = false>(
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get the active learner's deterministic home state
+ *
+ * Returns onboarding state and, only when one exists, the active
+ * enrollment and first mission matching the learner's selected goal
+ * from that enrollment's exact immutable publication pin. The response
+ * cannot create or replace a curriculum pin.
+ *
+ */
+export const getLearnerHome = <ThrowOnError extends boolean = false>(options?: Options<GetLearnerHomeData, ThrowOnError>): RequestResult<GetLearnerHomeResponses, GetLearnerHomeErrors, ThrowOnError> => (options?.client ?? client).get<GetLearnerHomeResponses, GetLearnerHomeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/home',
+    ...options
+});
+
+/**
+ * Confirm adult status and select one learner goal
+ *
+ * Completes onboarding once for the authenticated active learner
+ * membership. The command is actor- and request-fingerprint-bound.
+ *
+ */
+export const completeLearnerOnboarding = <ThrowOnError extends boolean = false>(options: Options<CompleteLearnerOnboardingData, ThrowOnError>): RequestResult<CompleteLearnerOnboardingResponses, CompleteLearnerOnboardingErrors, ThrowOnError> => (options.client ?? client).put<CompleteLearnerOnboardingResponses, CompleteLearnerOnboardingErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/onboarding',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get one governed mission from an exact publication pin
+ *
+ * Resolves the mission only through the authenticated learner's active
+ * enrollment, completed onboarding and selected goal. The deterministic
+ * correct option and storage object key are never returned. PR-006
+ * accepts only an immutable publication containing exactly one mission;
+ * zero or multiple missions fail closed.
+ *
+ */
+export const getLearnerMission = <ThrowOnError extends boolean = false>(options: Options<GetLearnerMissionData, ThrowOnError>): RequestResult<GetLearnerMissionResponses, GetLearnerMissionErrors, ThrowOnError> => (options.client ?? client).get<GetLearnerMissionResponses, GetLearnerMissionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/missions/{mission_id}',
+    ...options
+});
+
+/**
+ * Start or resume one deterministic mission attempt
+ *
+ * Allocates the server-owned attempt number from the exact immutable
+ * publication snapshot. If an unfinished attempt already exists for
+ * this learner, enrollment and mission, it is resumed. Exact command
+ * replay returns the original in-progress start response even after the
+ * attempt is finalized; it does not reopen or otherwise mutate the
+ * authoritative attempt.
+ *
+ */
+export const startLearnerMissionAttempt = <ThrowOnError extends boolean = false>(options: Options<StartLearnerMissionAttemptData, ThrowOnError>): RequestResult<StartLearnerMissionAttemptResponses, StartLearnerMissionAttemptErrors, ThrowOnError> => (options.client ?? client).post<StartLearnerMissionAttemptResponses, StartLearnerMissionAttemptErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/missions/{mission_id}/attempts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one deterministic check response
+ *
+ * Records the selected governed option and server-derived correctness.
+ * An optional local-capture receipt contains metadata only: raw learner
+ * audio, transcripts, hashes, blob URLs and device details are forbidden.
+ *
+ */
+export const recordLearnerAttemptResponse = <ThrowOnError extends boolean = false>(options: Options<RecordLearnerAttemptResponseData, ThrowOnError>): RequestResult<RecordLearnerAttemptResponseResponses, RecordLearnerAttemptResponseErrors, ThrowOnError> => (options.client ?? client).post<RecordLearnerAttemptResponseResponses, RecordLearnerAttemptResponseErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/attempts/{attempt_id}/responses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Finalize one deterministic mission attempt
+ *
+ * Atomically submits the latest appended response, derives the
+ * deterministic result, refreshes first/latest/best evidence, advances
+ * knowledge mastery when qualified and schedules review. PR-006 never
+ * awards spoken mastery. Exact command replay reconstructs the original
+ * result as of this attempt and excludes later attempts; progress reads
+ * remain current across every submitted attempt.
+ *
+ */
+export const submitLearnerMissionAttempt = <ThrowOnError extends boolean = false>(options: Options<SubmitLearnerMissionAttemptData, ThrowOnError>): RequestResult<SubmitLearnerMissionAttemptResponses, SubmitLearnerMissionAttemptErrors, ThrowOnError> => (options.client ?? client).post<SubmitLearnerMissionAttemptResponses, SubmitLearnerMissionAttemptErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/attempts/{attempt_id}/submit',
+    ...options
+});
+
+/**
+ * Get deterministic progress for one exact-pinned enrollment
+ */
+export const getLearnerProgress = <ThrowOnError extends boolean = false>(options: Options<GetLearnerProgressData, ThrowOnError>): RequestResult<GetLearnerProgressResponses, GetLearnerProgressErrors, ThrowOnError> => (options.client ?? client).get<GetLearnerProgressResponses, GetLearnerProgressErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/progress',
+    ...options
+});
+
+/**
+ * Stream exact governed model-audio bytes
+ *
+ * Authorizes through the learner's exact enrollment and mission pin,
+ * verifies the stored bytes against the published size and SHA-256, and
+ * streams those same verified bytes without exposing the storage key.
+ *
+ */
+export const streamLearnerModelAudio = <ThrowOnError extends boolean = false>(options: Options<StreamLearnerModelAudioData, ThrowOnError>): RequestResult<StreamLearnerModelAudioResponses, StreamLearnerModelAudioErrors, ThrowOnError> => (options.client ?? client).get<StreamLearnerModelAudioResponses, StreamLearnerModelAudioErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/media-assets/{asset_id}/content',
+    ...options
 });
 
 /**

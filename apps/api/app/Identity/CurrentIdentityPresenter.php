@@ -17,12 +17,14 @@ final class CurrentIdentityPresenter
      *     current_membership: array{
      *         id: string,
      *         organization: array{id: string, name: string, kind: string},
+     *         membership_type: string,
      *         status: string,
      *         role_keys: list<string>
      *     }|null,
      *     memberships: list<array{
      *         id: string,
      *         organization: array{id: string, name: string, kind: string},
+     *         membership_type: string,
      *         status: string,
      *         role_keys: list<string>
      *     }>
@@ -68,6 +70,7 @@ final class CurrentIdentityPresenter
      * @return array{
      *     id: string,
      *     organization: array{id: string, name: string, kind: string},
+     *     membership_type: string,
      *     status: string,
      *     role_keys: list<string>
      * }
@@ -87,6 +90,7 @@ final class CurrentIdentityPresenter
      * @return list<array{
      *     id: string,
      *     organization: array{id: string, name: string, kind: string},
+     *     membership_type: string,
      *     status: string,
      *     role_keys: list<string>
      * }>
@@ -106,6 +110,7 @@ final class CurrentIdentityPresenter
             ->orderBy('memberships.id')
             ->get([
                 'memberships.id',
+                'memberships.membership_type',
                 'memberships.status',
                 'memberships.organization_id',
                 'organizations.name as organization_name',
@@ -169,6 +174,10 @@ final class CurrentIdentityPresenter
                             'organization_kind',
                         ),
                     ],
+                    'membership_type' => $this->stringProperty(
+                        $row,
+                        'membership_type',
+                    ),
                     'status' => $this->stringProperty($row, 'status'),
                     'role_keys' => $roleKeysByMembership[$membershipId] ?? [],
                 ];

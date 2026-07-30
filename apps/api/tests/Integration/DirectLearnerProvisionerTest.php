@@ -31,7 +31,7 @@ final class DirectLearnerProvisionerTest extends TenancyIntegrationTestCase
             ->where('organization_id', $organization->getKey())
             ->where('key', 'learner')
             ->count());
-        $this->assertSame(20, DB::table('permissions')->count());
+        $this->assertSame(21, DB::table('permissions')->count());
     }
 
     public function test_verified_identity_provisioning_is_transactional_and_replay_safe(): void
@@ -70,7 +70,26 @@ final class DirectLearnerProvisionerTest extends TenancyIntegrationTestCase
 
     public function test_missing_foundation_role_rolls_back_identity_and_membership_writes(): void
     {
-        DB::table('roles')->where('key', 'learner')->delete();
+        $learnerRole = DB::table('roles')
+            ->join(
+                'organizations',
+                'organizations.id',
+                '=',
+                'roles.organization_id',
+            )
+            ->where('organizations.system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->where('roles.key', 'learner')
+            ->select(['roles.id', 'roles.organization_id'])
+            ->sole();
+
+        DB::table('role_permissions')
+            ->where('organization_id', $learnerRole->organization_id)
+            ->where('role_id', $learnerRole->id)
+            ->delete();
+        DB::table('roles')
+            ->where('organization_id', $learnerRole->organization_id)
+            ->where('id', $learnerRole->id)
+            ->delete();
 
         try {
             $this->app->make(DirectLearnerProvisioner::class)

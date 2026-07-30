@@ -12,6 +12,7 @@ const identityResponse = {
       name: 'Global English Direct',
       kind: 'platform_direct',
     },
+    membership_type: 'learner',
     status: 'active',
     role_keys: ['learner'],
   },
