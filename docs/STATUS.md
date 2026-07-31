@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | Azure adapter and locked benchmark implementation repository-verified; live benchmark blocked |
+| Status | DR-0012 encrypted listener workflow authorized for implementation; live benchmark blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
 | Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery plus disabled Azure STT/TTS adapters and synthetic runner implemented; no live request made |
-| Next checkpoint | Resolve DR-0012's encrypted listener-fixture workflow before any live synthetic request; PR-010 remains unauthorized |
+| Next checkpoint | Implement and repository-verify DR-0012; operational evidence, credentials, spend and live requests remain blocked |
 
 ## Checkpoint authorization
 
@@ -65,6 +65,15 @@ in the consolidated Technical Decision Owner, Security Reviewer, Privacy
 Reviewer and Tenancy Reviewer roles. DR-0011 is resolved and only the remaining
 PR-009 Azure adapters and benchmark implementation are authorized. No
 credential, live request or provider spend is approved.
+
+[APP-0014](APPROVALS.md#app-0014) records `S R Bhandary`'s exact-artifact
+approval of
+[ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md) in the
+consolidated Technical Decision Owner, Security Reviewer, Privacy Reviewer and
+Tenancy Reviewer roles. DR-0012 is resolved and only its bounded
+prepare/review/complete/purge implementation within PR-009 is authorized. No
+credential, provider spend, live request, benchmark success, PR-009
+acceptance, learner data, PR-010 or production is authorized.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -192,15 +201,13 @@ select a provider, permit learner-audio processing or approve production.
   no-call sequence are documented in the
   [PR-009 benchmark evidence handoff](PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md).
   The document is a template only and supplies no evidence or authorization.
-- DR-0012 is open because valid listener evidence must follow review of the 96
-  actual Azure TTS outputs, while the current safe runner requires that
-  evidence before dispatch and persists no audio. No gate will be weakened and
-  no plaintext fixture path will be introduced without an exact
-  privacy/security decision.
-- [Proposed ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md)
-  selects an encrypted prepare/review/complete bundle and token-protected
-  `127.0.0.1` browser-memory review while preserving the 544-operation cap.
-  It is not approved and authorizes no implementation or live request.
+- DR-0012 is resolved under APP-0014 by
+  [accepted ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md).
+  Its bounded implementation may add an authenticated encrypted
+  prepare/review/complete bundle, token-protected `127.0.0.1` browser-memory
+  review, fixed 24-hour expiry and content-free deletion evidence while
+  preserving the 544-operation cap. This decision does not weaken any
+  credential, evidence, spend or live-request gate.
 
 ## Accepted PR-007 implementation state
 

@@ -1590,8 +1590,10 @@ Resolving this requires a reviewed encrypted two-phase fixture bundle or a
 reviewed bounded in-process playback/attestation mechanism. This is a
 privacy/security workflow decision, not permission to weaken preflight.
 
-Proposed ADR-0009 resolves the design on paper through an encrypted
+Accepted ADR-0009 resolves the design through an encrypted
 prepare/review/complete state machine, a token-protected loopback-only
 browser-memory review utility, 24-hour expiry and deletion evidence. The
 proposal preserves the 544-operation cap by reusing the 96 prepared outputs.
-It changes no source, configuration, API or environment and is not approved.
+APP-0014 authorizes only this bounded DR-0012 implementation. It does not
+authorize credentials, provider spend, live requests, benchmark success,
+PR-009 acceptance, learner data, PR-010 or production.

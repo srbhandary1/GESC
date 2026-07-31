@@ -1,24 +1,30 @@
 ---
-status: proposed
+status: accepted
 date: 2026-07-31
-deciders: []
+deciders:
+  - S R Bhandary, Technical Decision Owner
+  - S R Bhandary, Security Reviewer
+  - S R Bhandary, Privacy Reviewer
+  - S R Bhandary, Tenancy Reviewer
 consulted:
   - Codex as author and evidence recorder, not approver
 informed: []
 amends_master_plan: false
-approval_evidence: []
-approval_reference: null
+approval_evidence:
+  - APP-0014
+approval_reference: docs/APPROVALS.md#app-0014
 ---
 
 # ADR-0009: Synthetic TTS listener fixture review workflow
 
 ## Status
 
-Proposed.
+Accepted under APP-0014 at proposal SHA-256
+`a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f`.
 
-This proposal addresses DR-0012 within PR-009. It does not authorize a
-credential, provider spend, a live request, implementation, benchmark success,
-PR-009 acceptance, learner data, PR-010 or production.
+This decision resolves DR-0012 and authorizes only its implementation within
+PR-009. It does not authorize a credential, provider spend, a live request,
+benchmark success, PR-009 acceptance, learner data, PR-010 or production.
 
 ## Context
 

@@ -875,3 +875,51 @@ I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy 
   accessibility, language/content, vendor and release review remain mandatory
   before production.
 - No master-plan amendment is made.
+
+<a id="app-0014"></a>
+
+## APP-0014 — ADR-0009 and DR-0012 implementation approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-31 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Approved ADR | [ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md) |
+| Approved ADR proposal SHA-256 | `a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy Reviewer, and Tenancy Reviewer, approve ADR-0009 as written at SHA-256 a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f, accept its encrypted two-phase fixture bundle, loopback browser-memory review, and 24-hour expiry/deletion trade-offs, and authorize only DR-0012 implementation within PR-009. This does not authorize credentials, provider spend, live requests, benchmark success, PR-009 acceptance, learner data, PR-010, or production.
+```
+
+### Accepted scope and authorization
+
+- Accept the exact ADR-0009 proposal at its recorded SHA-256.
+- Resolve DR-0012 for the synthetic TTS listener-fixture workflow.
+- Implement only the encrypted prepare/review/complete/purge state machine,
+  loopback browser-memory review utility, fixed 24-hour expiry and
+  content-free deletion evidence within PR-009.
+- Preserve the locked 544-operation and 1,088-attempt caps by reusing the 96
+  reviewed prepared outputs.
+
+### Conditions and limitations
+
+- No Azure credential, provider spend or live synthetic request is authorized.
+- This approval does not represent benchmark success or PR-009 acceptance.
+- Learner data, PR-010, production and all later checkpoints remain
+  unauthorized.
+- Consolidated development roles are not independent security, privacy or
+  tenancy review.
+- Qualified legal review and independent security, privacy, tenancy,
+  accessibility, language/content, vendor and release review remain mandatory
+  before production.
+- No master-plan amendment is made.
