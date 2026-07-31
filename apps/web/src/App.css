@@ -80,6 +80,24 @@
   overflow-wrap: anywhere;
 }
 
+.shell-demo {
+  display: grid;
+  min-width: 0;
+  gap: var(--ge-space-2);
+  padding: var(--ge-space-4);
+  border: 2px solid var(--ge-color-action);
+  border-radius: var(--ge-radius-md);
+  background: #eaf4ff;
+  color: var(--ge-color-text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.shell-demo strong {
+  color: var(--ge-color-action);
+  font-size: var(--ge-font-size-lg);
+}
+
 .shell-introduction {
   min-width: 0;
 }

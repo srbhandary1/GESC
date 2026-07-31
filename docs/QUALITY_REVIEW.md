@@ -1688,3 +1688,55 @@ a dedicated credential, reviewed price/content-scan evidence, separate
 provider-spend approval, explicit live-request authorization, two accountable
 listener reviews and the locked live result remain outstanding. Learner data,
 PR-010 and production remain unauthorized.
+
+---
+
+## Local synthetic presentation demo
+
+### Scope reviewed
+
+- development-only activation and production refusal;
+- in-memory learner identity, lesson, deterministic result/progress and Friend
+  adapters;
+- explicit synthetic-data and no-real-provider disclosure;
+- model-audio generation, microphone-denial fallback and text practice;
+- localization parity/governance for the demo notice; and
+- network, persistence, accessibility and existing-test regression.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Normal runtime remains unchanged | Pass | demo adapters are selected only when the explicit flag and Vite `DEV` are both true |
+| Production cannot activate the demo | Pass | runtime-policy unit test denies an explicit request when `development=false` |
+| Useful lesson is visible immediately | Pass | demo defaults to Learn with a populated introduction mission, model text, local tone, recording fallback, check and result |
+| Conversation is clearly fake | Pass | deterministic text-only Friend disclosure, fixed response, five status events and zero cost |
+| No authoritative data is created | Pass | adapters are browser-memory objects; no database, API mutation, publication, enrollment or mastery authority path exists |
+| No provider or application API call occurs | Pass | Chromium journey observes zero `/api/` requests |
+| Browser persistence remains bounded | Pass | Chromium journey observes zero `localStorage` entries; demo state resets on reload |
+| Accessibility | Pass | complete demo lesson/result/Friend journey has zero automated axe violations |
+| Language governance | Pass with expected warnings | six catalogues have exact parity/hashes; Kannada, Malayalam, Tamil, Telugu and Hindi notices remain pending independent review |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 63 web tests |
+| `make build` with the pinned Linux-native toolchain | Pass: Laravel production optimize/cleanup and Vite production build, 77 modules |
+| `make e2e` | Pass: 10 existing Chromium journeys; temporary loopback server stopped |
+| `make demo-e2e` | Pass: one synthetic journey on temporary `127.0.0.1:4174`; server stopped |
+| API/provider requests during browser journey | Zero |
+
+### Security, privacy and limitations
+
+- The demo has no real identity, phone number, credential, learner content,
+  provider configuration, transcript persistence or tenant data.
+- Microphone capture, when a presenter chooses it, stays under the existing
+  local browser-memory practice controls and is not uploaded by the demo.
+- The generated WAV is a short synthetic tone, not model speech and not
+  licensed or approved learning media.
+- The demo is not evidence that the backend, database, OTP, offline sync,
+  secure upload or Azure provider paths are operating. Their existing
+  verification and authorization gates remain unchanged.
+- Human language, accessibility/device and production reviews remain required.
+  PR-009 acceptance, learner data, PR-010 and production remain unauthorized.

@@ -1,6 +1,8 @@
 {
   "app.description": "Indian-language-guided spoken-English platform",
   "app.name": "Global English",
+  "demo.label": "Synthetic local demo",
+  "demo.notice": "This demo uses in-memory synthetic fixtures. It does not use learner data, real AI, approved curriculum, or production services.",
   "conversation.disclosure_title": "About this AI prototype",
   "conversation.error": "The AI Friend prototype is unavailable. Try again.",
   "conversation.events_title": "Turn status",

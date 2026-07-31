@@ -11,15 +11,17 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev services-up services-down verify test e2e ai-eval openapi migrate seed build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo services-up services-down verify test e2e demo-e2e ai-eval openapi migrate seed build
 
 help:
 	@printf '%s\n' \
 		'make bootstrap   Install locked dependencies and prepare ignored local environment files' \
 		'make dev         Start local services, API, web application and queue worker' \
+		'make demo        Start the synthetic in-memory browser demo on 127.0.0.1' \
 		'make verify      Run formatting, static analysis, tests and dependency audits' \
 		'make test        Run deterministic backend and frontend tests' \
 		'make e2e         Run the critical web browser journeys' \
+		'make demo-e2e    Run the synthetic local-demo browser journey' \
 		'make ai-eval     Run the locked PR-009 synthetic speech benchmark' \
 		'make openapi     Validate OpenAPI and check generated-client drift' \
 		'make migrate     Apply local Laravel migrations' \
@@ -50,6 +52,9 @@ dev: check-local-auth-env
 	$(MAKE) services-up
 	$(PNPM) run dev
 
+demo:
+	@sh scripts/run-local-demo.sh
+
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) audit --locked
@@ -72,6 +77,9 @@ test:
 
 e2e:
 	$(PNPM) run e2e
+
+demo-e2e:
+	$(PNPM) --filter $(WEB_FILTER) e2e:demo
 
 ai-eval:
 	cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID:-}"

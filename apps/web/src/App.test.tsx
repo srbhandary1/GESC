@@ -15,6 +15,7 @@ import type {
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { createLocalDemoRuntime } from './demo/localDemo'
 
 afterEach(() => {
   cleanup()
@@ -24,6 +25,37 @@ afterEach(() => {
 })
 
 describe('localized application shell', () => {
+  it('opens the explicit synthetic demo on a populated lesson', async () => {
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    expect(
+      screen.getByRole('complementary', {
+        name: text('demo.label'),
+      }),
+    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    expect(
+      await screen.findByRole('heading', {
+        name: text('learner.home.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Introduce yourself')).toHaveAttribute(
+      'lang',
+      'en-IN',
+    )
+    expect(
+      screen.getByText('Global English Local Demo'),
+    ).toBeInTheDocument()
+  })
+
   it('renders Kannada first with semantic landmarks and inert destinations', async () => {
     const authentication = anonymousAuthentication()
 

@@ -53,6 +53,7 @@ interface AppProps {
   audioRecorder?: AudioRecorder
   conversationApi?: ConversationJourneyApi
   createClientId?: () => string
+  demoMode?: boolean
   learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
@@ -96,6 +97,7 @@ function App({
   audioRecorder,
   conversationApi = defaultConversationJourneyApi,
   createClientId,
+  demoMode = false,
   learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
@@ -109,7 +111,9 @@ function App({
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
   const [destination, setDestination] = useState<PrimaryDestination>(
-    () => destinationFromHash(globalThis.location?.hash) ?? 'home',
+    () =>
+      destinationFromHash(globalThis.location?.hash) ??
+      (demoMode ? 'learn' : 'home'),
   )
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
@@ -327,6 +331,21 @@ function App({
       }
     >
       <div className="shell-content">
+        {demoMode ? (
+          <aside
+            className="shell-demo"
+            aria-label={message('demo.label').text}
+            data-demo-mode="synthetic-local"
+          >
+            <strong>
+              <LocalizedMessage resolution={message('demo.label')} />
+            </strong>
+            <span>
+              <LocalizedMessage resolution={message('demo.notice')} />
+            </span>
+          </aside>
+        ) : null}
+
         {previewNotice.isPreview ? (
           <aside
             className="shell-preview"

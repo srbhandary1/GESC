@@ -9,7 +9,7 @@
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
-| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; no live request made |
+| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; a separate development-only in-memory demo presents accepted features without provider/data authority; no live request made |
 | Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
 
 ## Checkpoint authorization
@@ -466,6 +466,28 @@ review and do not waive pre-production specialist gates.
 - No real learner data, captured audio, unlicensed media, provider SDK or
   later-checkpoint authoritative record was added.
 
+## Local synthetic demo
+
+- `make demo` starts a Vite-development-only preview on `127.0.0.1:5173`.
+  It does not start or require Laravel, PostgreSQL, Redis, object storage or a
+  provider.
+- The preview uses explicit in-memory learner identity, mission, result,
+  progress and deterministic Friend fixtures adapted from the already
+  disclosed contract-test journeys. It writes no authoritative learning or
+  tenant record and resets on reload.
+- The demo opens on Learn, includes a generated local WAV tone, supports local
+  browser recording/playback and the no-recording path, and returns a
+  deterministic zero-cost text-only Friend response.
+- A visible localized notice states that the fixtures are synthetic and use
+  no learner data, real AI, approved curriculum or production service. All
+  five non-English notices remain implementation drafts pending independent
+  human review.
+- `VITE_LOCAL_DEMO=true` is effective only when Vite reports a development
+  runtime. A production build cannot activate the demo adapters.
+- This preview is presentation evidence only. It is not a full-stack
+  published-content journey, human curriculum approval, Azure benchmark,
+  checkpoint acceptance or production authorization.
+
 ## Verification state
 
 Detailed evidence is recorded in [QUALITY_REVIEW.md](QUALITY_REVIEW.md),
@@ -546,17 +568,19 @@ PR-006 verification results:
   session cannot access the Docker socket until group membership is refreshed.
   PostgreSQL verification used the available loopback version 14 service.
 - The fresh native verification toolchain used PHP 8.4.23, Node.js 24.18.1,
-  pnpm 11.18.0 and Composer 2.10.2. GNU Make remains unavailable.
+  pnpm 11.18.0, Composer 2.10.2 and GNU Make 4.4.1.
 - The GitHub Actions workflow has not run on a remote runner.
 - PR-006 is accepted at its exact implementation commit under APP-0007; every
   recorded limitation remains in force.
 
 ## Next checkpoint gate
 
-PR-008 is implemented and repository-verified under APP-0010. It is not yet
-accepted at an exact implementation commit. DR-0005 is resolved under
-APP-0011, but PR-009 still requires separate Accountable Product Owner
-authorization. PR-009, production and every later implementation checkpoint
-remain unauthorized. Production additionally requires qualified legal review
-and independent security, privacy, tenancy, accessibility, language/content
-and release review.
+PR-008 is accepted at `11f7b597ad2db3b8cf65a1394c1171a8280045d1`
+under APP-0012, which authorizes only PR-009 implementation within accepted
+ADR-0007. PR-009 implementation is repository-verified but remains incomplete
+and unaccepted pending exact vendor/privacy evidence, separate provider-spend
+and live-request approvals, two accountable listener reviews and the locked
+live Azure result. PR-010, production and every later implementation
+checkpoint remain unauthorized. Production additionally requires qualified
+legal review and independent security, privacy, tenancy, accessibility,
+language/content and release review.

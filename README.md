@@ -94,6 +94,30 @@ Redis, object storage, mail/OTP fakes, the API, web app and queue worker:
 make dev
 ```
 
+For a presentation-ready local preview that needs no database, sign-in,
+provider credential or published curriculum, run:
+
+```text
+make demo
+```
+
+The demo starts only the Vite development server on `127.0.0.1:5173`, opens
+directly on a populated synthetic lesson and provides the deterministic
+text-only Friend journey. Its authentication, lesson, result and conversation
+fixtures exist only in browser memory and reset on reload. A prominent notice
+states that the preview contains no learner data, real AI, approved curriculum
+or production service. `VITE_LOCAL_DEMO=true` is ignored outside Vite
+development mode and must never be treated as product, benchmark or
+publication evidence.
+
+On this prepared workstation, `make demo` automatically selects the ignored
+Linux-native Node.js/pnpm toolchain under `tmp/toolchain` when it is present.
+It does not depend on copied or system-wide Node modules.
+
+To view it from another computer without exposing the application port, use
+SSH local forwarding to workstation `127.0.0.1:5173` and open
+`http://127.0.0.1:5173` on the viewing computer.
+
 Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
 5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
 port 8333 and the OTP stub uses port 8089 by default.
@@ -140,9 +164,11 @@ isolated environments.
 |---|---|
 | `make bootstrap` | Install dependencies and prepare the local environment |
 | `make dev` | Run the API, web application, workers and local dependencies |
+| `make demo` | Run the populated synthetic browser demo on loopback only |
 | `make verify` | Run formatting, linting, static analysis, tests and contract checks |
 | `make test` | Run all deterministic automated tests |
 | `make e2e` | Run critical browser journeys |
+| `make demo-e2e` | Verify the synthetic browser demo without application API calls |
 | `make ai-eval` | Run the locked AI and speech evaluation suite |
 | `make openapi` | Validate OpenAPI policy and check generated-client drift |
 | `make migrate` | Apply local migrations |
