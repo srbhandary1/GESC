@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | ADR-0008 accepted and DR-0011 resolved; remaining Azure adapters and locked synthetic benchmark authorized with live calls blocked |
+| Status | Azure adapter and locked benchmark implementation repository-verified; live benchmark blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
-| Product code | PR-008 accepted at its exact implementation commit; PR-009 provider-neutral secure speech/transcript foundation implemented; live providers remain disabled |
-| Next checkpoint | Implement only the accepted PR-009 Azure adapters and fail-closed benchmark harness; no live request before vendor/spend gates |
+| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery plus disabled Azure STT/TTS adapters and synthetic runner implemented; no live request made |
+| Next checkpoint | Obtain exact subscription/DPA/subprocessor and spend evidence, then separately authorize and run only the locked synthetic benchmark |
 
 ## Checkpoint authorization
 
@@ -164,16 +164,17 @@ select a provider, permit learner-audio processing or approve production.
   production resolution falls back to English.
 - OpenAPI 3.1.1 version 0.7.0 and generated TypeScript contracts cover consent,
   multipart upload, transcript review, recording state and deletion status.
-- `make verify` passes with 49 SQLite tests/288 assertions, 173 PostgreSQL
+- `make verify` passes with 66 SQLite tests/365 assertions, 173 PostgreSQL
   tests/2,016 assertions, 31 localization tests, 9 design-system tests and 59
   web tests. `make build` passes with 76 Vite modules, and 10 Chromium
   journeys pass against a temporary `127.0.0.1:4173` listener that stops after
   the run.
 - PR-009 is not complete or acceptable yet. ADR-0008 resolves the provider
-  policy, but the exact STT/TTS implementation, operational vendor evidence,
-  separate spend approval and locked benchmark evidence remain outstanding.
-  There is no live provider, generated TTS audio, streaming quarantine worker,
-  reviewed malware scanner, production private object store, provider deletion
+  policy, and the exact STT/TTS adapter plus benchmark harness are now
+  implemented. Operational vendor evidence, a separate spend approval and live
+  locked benchmark evidence remain outstanding. There is no live provider
+  result, generated Azure TTS fixture, streaming quarantine worker, reviewed
+  malware scanner, production private object store, provider deletion
   reconciliation or production authorization.
 - [Accepted ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
   selects Azure Speech Fast Transcription REST `2025-10-15` and real-time
@@ -182,8 +183,11 @@ select a provider, permit learner-audio processing or approve production.
   project-authored strings and generated synthetic audio, with no learner data.
 - ADR-0008 is accepted and DR-0011 is resolved under APP-0013. No Azure
   credential, subscription contract, DPA/subprocessor snapshot, spend approval
-  or benchmark result exists in the repository. Provider binding and every
-  live request remain disabled until all operational evidence gates pass.
+  or benchmark result exists in the repository. The application provider
+  binding remains disabled. `make ai-eval` fails before HTTP unless the named
+  non-production environment, matching external mode-`0600` vendor/spend
+  evidence records, secret reference, committed runner revision and approved
+  spend cap all validate.
 
 ## Accepted PR-007 implementation state
 

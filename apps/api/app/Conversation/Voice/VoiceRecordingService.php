@@ -568,7 +568,10 @@ final readonly class VoiceRecordingService
                         $usage,
                     );
 
-                    if ($attempt !== $maximumAttempts) {
+                    if (
+                        $error->retryable
+                        && $attempt !== $maximumAttempts
+                    ) {
                         return null;
                     }
 

@@ -9,5 +9,6 @@ final readonly class TextToSpeechRequest
     public function __construct(
         public string $interactionId,
         public string $text,
+        public string $voice = 'en-IN-NeerjaNeural',
     ) {}
 }

@@ -20,7 +20,7 @@ help:
 		'make verify      Run formatting, static analysis, tests and dependency audits' \
 		'make test        Run deterministic backend and frontend tests' \
 		'make e2e         Run the critical web browser journeys' \
-		'make ai-eval     Run AI evaluation when introduced by PR-011' \
+		'make ai-eval     Run the locked PR-009 synthetic speech benchmark' \
 		'make openapi     Validate OpenAPI and check generated-client drift' \
 		'make migrate     Apply local Laravel migrations' \
 		'make seed        Load safe local Laravel seed data' \
@@ -74,8 +74,7 @@ e2e:
 	$(PNPM) run e2e
 
 ai-eval:
-	@printf '%s\n' 'AI evaluation is not implemented before PR-011.' >&2
-	@exit 2
+	cd $(API_DIR) && $(PHP) artisan speech:benchmark
 
 openapi:
 	$(PNPM) run openapi:check

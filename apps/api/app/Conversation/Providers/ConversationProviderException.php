@@ -15,6 +15,7 @@ final class ConversationProviderException extends RuntimeException
         public readonly int $latencyMilliseconds = 0,
         public readonly int $inputUnits = 0,
         public readonly int $outputUnits = 0,
+        public readonly bool $retryable = false,
     ) {
         parent::__construct('The conversation provider could not complete the request.');
     }

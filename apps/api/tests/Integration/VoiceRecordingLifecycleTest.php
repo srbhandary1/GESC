@@ -266,7 +266,7 @@ final class VoiceRecordingLifecycleTest extends TenancyIntegrationTestCase
 
         $this->assertSame('provider_failed_recoverable', $recording['status']);
         $this->assertSame(
-            ['malformed_response', 'malformed_response'],
+            ['malformed_response'],
             DB::table('voice_provider_runs')
                 ->orderBy('provider_attempt')
                 ->pluck('safe_failure_code')
@@ -403,6 +403,7 @@ final class AlwaysFailRecordedSpeechProvider implements RecordedSpeechToTextProv
             modelVersion: 'failure-v1',
             latencyMilliseconds: 3,
             inputUnits: strlen($request->audioBytes),
+            retryable: true,
         );
     }
 }

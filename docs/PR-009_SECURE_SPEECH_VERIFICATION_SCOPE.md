@@ -139,24 +139,32 @@ Required evidence:
 - OpenAPI/generated-client, localization, accessibility, unit and Chromium
   coverage;
 - `make verify`, `make e2e` and `make build`; and
-- `make ai-eval` only after DR-0011 selects a reviewed benchmark adapter.
+- fail-closed `make ai-eval` preflight and the locked benchmark only after all
+  APP-0013 operational evidence and spend gates pass.
 
 ## Exit gate
 
-The provider-neutral implementation may be repository-verified while DR-0011
-is open, but PR-009 cannot be accepted as complete until one reviewed STT and
-one reviewed TTS adapter has locked synthetic benchmark evidence. Production
-remains separately prohibited.
+The provider-neutral implementation and disabled adapter/runner code may be
+repository-verified, but PR-009 cannot be accepted as complete until the
+reviewed STT and TTS adapters have live locked synthetic benchmark evidence.
+Production remains separately prohibited.
 
 ## Current verification state
 
 The provider-neutral vertical slice is implemented and repository-verified.
 `make verify` passes: Composer/pnpm locked dependency audits, Pint, PHPStan,
-49 SQLite tests/288 assertions, 173 PostgreSQL tests/2,016 assertions,
+66 SQLite tests/365 assertions, 173 PostgreSQL tests/2,016 assertions,
 localization governance, OpenAPI/generated-client parity, ESLint, recursive
 TypeScript and 99 workspace tests all pass. `make build` and 10 axe-checked
 Chromium journeys also pass; Playwright uses only a temporary
 `127.0.0.1:4173` preview listener and stops it after the run.
+
+ADR-0008 is accepted under APP-0013. The Azure Fast Transcription and
+real-time TTS REST adapters, exact 48-string corpus, deterministic audio
+transforms, bounded runner, safe aggregate report and `make ai-eval` command
+are implemented but not live-benchmarked. The application provider binding
+remains disabled: only the dedicated command constructs these adapters after
+every operational gate passes.
 
 Implemented adversarial coverage includes malformed RIFF/WAV input, wrong
 codec/channel/rate, truncated and unknown chunks, provider outage, malformed

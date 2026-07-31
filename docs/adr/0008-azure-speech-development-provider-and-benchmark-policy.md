@@ -416,6 +416,29 @@ decision and benchmark policy requested by master-plan §§14.4, 14.7, 14.8,
 Codex is the author and evidence recorder only, never the approver. The
 consolidated development roles are not independent production review.
 
+## Implementation status
+
+The authorized adapter and runner implementation is present on the PR-009
+branch:
+
+- project-owned Azure Fast Transcription and real-time TTS REST adapters;
+- exact endpoint-host, Central India, locale, API, voice, format and response
+  validation;
+- external mode-`0600` secret-file references with no `.env`, database,
+  browser or log credential path;
+- the exact 48-string corpus, two voices, three deterministic audio conditions
+  and four fixed rate fixtures;
+- 544-logical-operation, 1,088-attempt and `₹1,000` hard caps;
+- aggregate-only safe reports and in-memory synthetic media;
+- deterministic HTTP-fake coverage for the complete run and required fault
+  categories; and
+- a fail-closed `make ai-eval` command.
+
+The ordinary application binding remains disabled. No Azure credential,
+provider request or synthetic Azure media was used during implementation or
+repository verification. Exact subscription/DPA/subprocessor evidence,
+separate spend approval and a live benchmark remain outstanding.
+
 ## Verification
 
 Before proposal review:

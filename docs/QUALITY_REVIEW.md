@@ -1444,9 +1444,9 @@ production review. PR-010 and production remain unauthorized.
 | Exact legal entity, DPA and subprocessors | Blocked pending Product Owner account evidence | public DPA/subprocessor process cannot identify the future subscription's contracting entity or acceptance |
 | Credential | Missing by design | no secret or Azure account data was requested, created or written |
 | Callback/replay boundary | Pass by proposed design | synchronous REST only; callback, webhook, redirects and URL input prohibited |
-| Synthetic benchmark definition | Ready for human decision | 48 strings, two voices, three deterministic conditions, 288 STT clips, 96 TTS outputs and conjunctive thresholds |
+| Synthetic benchmark definition | Approved and implemented; not run live | 48 strings, two voices, three deterministic conditions, 288 STT clips, 96 TTS outputs and conjunctive thresholds |
 | Real learner/accent validation | Explicitly not satisfied | synthetic round trip is circular and production remains blocked |
-| Provider enabled or called | No | source/config/environment unchanged; existing disabled binding remains authoritative |
+| Provider enabled or called | No | ordinary binding remains disabled and fail-closed preflight blocks missing operational evidence |
 
 ### Commands and results
 
@@ -1462,7 +1462,7 @@ production review. PR-010 and production remain unauthorized.
 | PostgreSQL suite | Pass: 173 tests, 2,016 assertions |
 | Localization, design-system and web tests | Pass: 31, 9 and 59 tests |
 | OpenAPI/generated-client, lint and type checking | Pass |
-| Provider calls and `make ai-eval` | Not run; prohibited while ADR-0008 is proposed and credentials/evidence are absent |
+| Provider calls and `make ai-eval` | No provider call; command now exits 2 at preflight because credentials/evidence/spend approval are absent |
 
 The first verification attempt used the host toolchain and stopped at its
 Node.js mismatch. The next pinned-toolchain attempt reached the Composer audit
@@ -1487,3 +1487,91 @@ contract/DPA/subprocessor evidence, non-production credential and separate
 provider-spend approval are still required before the first live synthetic
 request. No benchmark pass, PR-009 acceptance, learner-data use, PR-010 or
 production is approved.
+
+---
+
+## PR-009 — Azure Speech adapter and locked benchmark implementation
+
+### Scope reviewed
+
+- APP-0013's exact authorization boundary and accepted ADR-0008;
+- Azure Fast Transcription REST `2025-10-15` and real-time TTS adapter code;
+- endpoint, credential-reference, response-size, media and retry controls;
+- exact corpus, deterministic transforms, WER/hallucination measurements,
+  thresholds, operation/attempt/spend caps and aggregate safe report;
+- fault-injected adapter and complete-run tests using Laravel HTTP fakes only;
+- ordinary application binding, learner-data and deterministic-authority
+  isolation; and
+- root verification, localhost-only Chromium journeys, build and fail-closed
+  benchmark preflight.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Ordinary application/provider path remains disabled | Pass | `AppServiceProvider` has no Azure binding; concrete adapters are constructed only by the benchmark runner |
+| Exact Azure endpoint and configuration fail closed | Pass | HTTPS exact-host allowlist, `centralindia`, fixed `en-IN`, API, profanity, voice and format validation |
+| Credential and evidence handling follows ADR-0008 | Pass for implemented workstation boundary | external, owner-readable mode-`0600`, non-repository credential, vendor-evidence and spend-approval files must match the configured hashes, IDs, region, disabled data-use settings, scope, cap and validity dates |
+| Request/response content stays out of safe evidence | Pass for tests | generic exceptions, bounded bodies, hashed allowlisted provider metadata and aggregate-only report |
+| Corpus and transforms are locked | Pass | exact 48-entry NFC manifest hash plus deterministic 24 kHz-to-16 kHz clean/noise/low-pass tests |
+| Logical operation and spend boundaries are locked | Pass | 544 logical operations, 1,088 maximum attempts and `₹1,000` maximum approved cap validated before dispatch |
+| Retry policy is bounded and category aware | Pass | only connection/408/429/5xx categories are retryable; policy, authentication, authorization, redirect, size and malformed failures are terminal |
+| Complete runner behavior is deterministic | Pass for HTTP-fake evidence only | 544 logical operations, one injected transient retry, 545 fake HTTP attempts, 368 STT results and 176 TTS results |
+| Required fault categories fail closed | Pass | 401, 403, 408, 413, 429, 500, 503, redirect, connection failure, malformed JSON, malformed WAV and oversized response |
+| Learner/tenant/learning authority remains untouched | Pass | runner accepts only committed synthetic corpus and performs no database or application-binding write |
+| Live benchmark evidence | Blocked | exact subscription/DPA/subprocessor evidence, credential reference and separate spend approval are absent |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| Approved proposal hash verification | Pass: `b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51` |
+| Approved benchmark-plan hash verification | Pass: `817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab` |
+| Targeted Azure/benchmark/PcmWav tests | Pass: 24 tests, 88 assertions |
+| `make verify` with pinned Linux-native toolchain | Pass |
+| Composer and pnpm locked audits | Pass; no known vulnerability |
+| Pint and PHPStan | Pass; zero errors |
+| SQLite suite | Pass: 66 tests, 365 assertions |
+| PostgreSQL suite | Pass: 173 tests, 2,016 assertions |
+| Localization, design-system and web tests | Pass: 31, 9 and 59 tests |
+| OpenAPI/generated-client, lint and type checking | Pass; no public API change or generated-client drift |
+| First sandboxed `make e2e` attempt | Did not start tests: sandbox denied the loopback bind with `EPERM` |
+| Approved loopback-only `make e2e` retry | Pass: 10 Chromium journeys; temporary `127.0.0.1:4173` process stopped |
+| `make build` | Pass: Laravel optimize/cleanup and 76-module Vite build |
+| `make ai-eval` | Expected blocked exit 2 before HTTP; missing operational evidence, secret reference, runner commit, pricing/scan evidence and spend approval |
+| Live Azure calls | Zero |
+
+The first full `make verify` attempt stopped at three PHPStan findings before
+tests. The endpoint-array shape, redundant header check and Artisan
+pending-command narrowing were corrected without suppressions; the complete
+gate then passed. This stopped attempt is not represented as a test failure.
+
+### Security, privacy and tenancy review
+
+- Authentication headers are built only after complete preflight and never
+  enter provider results, safe reports, exception messages or logs.
+- Redirects are disabled; endpoint paths are fixed; filenames and request
+  bodies contain no tenant, learner, organization or interaction identifier.
+- Synthetic text/audio remains in process memory. The only writable artifact
+  is a mode-`0600` aggregate report containing hashes, metrics and safe evidence
+  identifiers.
+- Azure adapters parse into project-owned results and expose no SDK or HTTP
+  type to the conversation/voice domain.
+- The existing learner upload/transcript path remains separately tenant
+  scoped, consent gated and deterministic. This benchmark code has no learner
+  query, tenant selector or learning-record write.
+
+### Known limitations and exit decision
+
+Repository implementation and mocked integration verification are complete.
+They are not provider evidence and do not report benchmark success. No Azure
+credential, exact subscription contract/DPA/subprocessor snapshot, price
+snapshot, content-scan evidence, listener evidence or separately approved
+spend exists in repository configuration, so `make ai-eval` correctly blocks
+before HTTP.
+
+The benchmark retains the explicitly accepted circular Azure-TTS-to-Azure-STT
+bias and provider-managed STT rotation limitation. It cannot validate learner
+speech, Karnataka accents, accessibility, pedagogy or production fitness.
+PR-009 is not accepted; learner data, PR-010 and production remain
+unauthorized.

@@ -12,5 +12,6 @@ final readonly class RecordedSpeechToTextResult
         public string $transcript,
         public int $confidenceBps,
         public ProviderUsage $usage,
+        public ?string $responseMetadataSha256 = null,
     ) {}
 }

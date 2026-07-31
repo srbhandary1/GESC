@@ -26,10 +26,12 @@ PR-006 — Deterministic daily-speaking slice is implemented, verified and
 accepted at its exact implementation commit under APP-0007. PR-007 — Offline
 bundle and idempotent outbox is implemented, repository-verified and accepted
 at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` under APP-0009. PR-008 —
-Conversation domain with deterministic fake providers — is implemented and
-repository-verified under APP-0010, with exact-commit acceptance still
-pending. Real providers, audio upload/persistence, PR-009 and production
-remain unauthorized. ADR-0005 additionally brings UI-only Malayalam
+Conversation domain with deterministic fake providers — is accepted at
+`11f7b597ad2db3b8cf65a1394c1171a8280045d1` under APP-0012. PR-009 now has
+its provider-neutral recording/recovery slice plus disabled-by-default Azure
+Speech adapters and a locked synthetic benchmark harness. No Azure credential,
+live provider request, benchmark result, learner-data use, PR-009 acceptance,
+PR-010 or production is authorized. ADR-0005 additionally brings UI-only Malayalam
 (`ml-IN`), Tamil (`ta-IN`), Telugu
 (`te-IN`) and Hindi (`hi-IN`) implementation previews into Phase 1 alongside
 Kannada (`kn-IN`) and the English (`en-IN`) source/fallback.
@@ -131,8 +133,13 @@ isolated environments.
 | `make build` | Create production builds |
 
 Use `pnpm run contracts:generate` after an intentional OpenAPI change, then
-review the generated diff. `make ai-eval` intentionally exits with a checkpoint
-message until PR-011; it does not report placeholder success.
+review the generated diff. `make ai-eval` runs only the locked PR-009 Azure
+Speech benchmark. It fails before an HTTP request unless the dedicated
+`speech-benchmark` environment, exact vendor evidence, runner commit, external
+mode-`0600` secret/vendor/spend evidence files and separately approved spend
+cap are present.
+Routine verification uses HTTP fakes and never treats them as live benchmark
+evidence.
 `pnpm run locale:check` validates catalogue parity, normalization, hashes,
 source linkage and review-state claims.
 
