@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-008 — Conversation domain with deterministic fake providers |
-| Status | Implemented and repository-verified under APP-0010; exact-commit acceptance pending; DR-0005 decision proposal drafted |
+| Status | PR-008 implemented and repository-verified under APP-0010 with exact-commit acceptance pending; DR-0005 resolved under APP-0011 |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/dr-0005-recording-policy` |
 | Product code | Accepted PR-007 baseline plus the implemented PR-008 deterministic fake-provider conversation slice; no real provider, audio persistence, production or later checkpoint approved |
-| Next checkpoint | Review proposed ADR-0007; PR-009 remains unauthorized and PR-008 exact-commit acceptance is pending |
+| Next checkpoint | PR-008 exact-commit acceptance remains pending; PR-009 remains unauthorized |
 
 ## Checkpoint authorization
 
@@ -43,6 +43,14 @@ It does not authorize PR-008, production or any later checkpoint.
 Conversation domain with deterministic fake providers. Real providers,
 provider SDKs, audio upload/persistence, PR-009, production and AI authority
 over deterministic learning records remain unauthorized.
+
+[APP-0011](APPROVALS.md#app-0011) records `S R Bhandary`'s exact-artifact
+acceptance of
+[ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md)
+in the consolidated Technical Decision Owner, Security Reviewer, Privacy
+Reviewer and Tenancy Reviewer development roles. It resolves DR-0005 without
+accepting PR-008, authorizing PR-009 implementation, selecting a real provider
+or approving production.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -84,11 +92,11 @@ explanations, production deployment or a later checkpoint.
 - PR-009, real provider calls, audio upload/persistence and production remain
   unauthorized.
 
-## DR-0005 decision proposal
+## Accepted DR-0005 recording policy
 
 [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md)
-is a proposed recording-consent, retention, provider-processing and deletion
-policy. It defines:
+is the accepted recording-consent, retention, provider-processing and deletion
+policy under APP-0011. It defines:
 
 - separate, versioned upload/provider/history purposes and per-turn learner
   submission;
@@ -104,11 +112,11 @@ policy. It defines:
 - legal, vendor, independent specialist and explicit release gates before
   production.
 
-The proposal has no approval evidence. DR-0005 remains open until the
-Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy
-Reviewer accept the exact artifact and trade-offs through a durable approval
-record. Drafting it does not accept PR-008, authorize PR-009, select a
-provider, permit learner-audio processing or approve production.
+The approved proposal SHA-256 is
+`e831e09092256d18804e5c6c7292a432ecfb71ac7d52544d16fde8d751a12ff9`.
+DR-0005 is resolved. The consolidated development approval is not independent
+production review and does not accept PR-008, authorize PR-009 implementation,
+select a provider, permit learner-audio processing or approve production.
 
 ## Accepted PR-007 implementation state
 
@@ -177,7 +185,7 @@ provider, permit learner-audio processing or approve production.
 - Raw learner audio remains only in volatile browser memory for playback and
   retry. It is not uploaded, cached offline, persisted or logged. Recording
   upload, consent history, retention, deletion and provider processing remain
-  gated by DR-0005 and PR-009.
+  governed by ADR-0007 and gated by separate PR-009 authorization.
 - PR-007 offline bundle/outbox behavior and every AI or speech-provider path
   remain excluded.
 - APP-0005 approves implementation scope, not curriculum content or media. The
@@ -393,9 +401,9 @@ PR-006 verification results:
 - Raw learner audio is local-only and unavailable for transcription, trainer
   review or spoken mastery. Its non-authoritative capture receipt is not
   evidence of intelligible speech.
-- DR-0005 remains open. ADR-0007 is a proposed, unapproved decision artifact;
-  no recording upload, persistent consent state, retention/deletion workflow
-  or real-provider processing is authorized.
+- DR-0005 is resolved by accepted ADR-0007 under APP-0011, but no recording
+  upload, persistent consent state, retention/deletion implementation or
+  real-provider processing is authorized.
 - PR-007 offline behavior is accepted at its exact implementation commit.
   PR-008 adds only project-owned deterministic fake-provider paths; every real
   AI/speech provider and provider SDK remains excluded.
@@ -440,8 +448,9 @@ PR-006 verification results:
 ## Next checkpoint gate
 
 PR-008 is implemented and repository-verified under APP-0010. It is not yet
-accepted at an exact implementation commit. DR-0005 remains open with
-ADR-0007 proposed for exact-artifact review. PR-009, production and every
-later implementation checkpoint remain unauthorized. Production additionally
-requires qualified legal review and independent security, privacy, tenancy,
-accessibility, language/content and release review.
+accepted at an exact implementation commit. DR-0005 is resolved under
+APP-0011, but PR-009 still requires separate Accountable Product Owner
+authorization. PR-009, production and every later implementation checkpoint
+remain unauthorized. Production additionally requires qualified legal review
+and independent security, privacy, tenancy, accessibility, language/content
+and release review.

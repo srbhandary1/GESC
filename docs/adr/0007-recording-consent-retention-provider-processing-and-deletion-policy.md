@@ -1,30 +1,35 @@
 ---
-status: proposed
+status: accepted
 date: 2026-07-31
-deciders: []
+deciders:
+  - S R Bhandary as Technical Decision Owner
+  - S R Bhandary as Security Reviewer
+  - S R Bhandary as Privacy Reviewer
+  - S R Bhandary as Tenancy Reviewer
 consulted:
   - S R Bhandary requested the DR-0005 policy draft
   - Codex as author and evidence recorder, not approver
 informed: []
 amends_master_plan: false
-approval_evidence: []
-approval_reference: null
+approval_evidence:
+  - APP-0011
+approval_reference: Codex task 019fb263-fe9a-77f0-a1db-e3d563707715
 ---
 
 # ADR-0007: Recording consent, retention, provider processing and deletion policy
 
 ## Status
 
-Proposed.
+Accepted on 2026-07-31 under
+[APP-0011](../APPROVALS.md#app-0011). The approved proposal SHA-256 is
+`e831e09092256d18804e5c6c7292a432ecfb71ac7d52544d16fde8d751a12ff9`.
 
-This proposal addresses DR-0005. It does not resolve DR-0005 until the
-Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy
-Reviewer accept this exact artifact and its trade-offs through durable approval
-evidence.
+This ADR resolves DR-0005 and establishes the recording-policy prerequisite
+for a separately authorized PR-009 implementation.
 
-Approval of this ADR would establish policy prerequisites for PR-009. It would
-not accept PR-008, authorize PR-009 implementation, select a production
-provider, approve production, or permit audio/model data to train a provider.
+This approval does not accept PR-008, authorize PR-009 implementation, select
+a production provider, approve production, or permit audio/model data to train
+a provider.
 
 ## Context
 
@@ -578,27 +583,23 @@ PR-009.
 
 ## Approval evidence
 
-No approval evidence exists yet.
-
-Acceptance requires a durable `APP-NNNN` record containing:
-
-- the exact SHA-256 of this proposed ADR;
-- the exact human approval statement;
-- the human approver identifier;
-- the Technical Decision Owner, Security Reviewer, Privacy Reviewer and
-  Tenancy Reviewer roles exercised;
-- explicit acceptance of the retention, deletion, provider and legal-review
-  trade-offs;
-- confirmation that consolidated development approval is not independent
-  production review; and
-- confirmation that accepting the ADR alone does not authorize PR-009 or
-  production.
+- Evidence ID: `APP-0011`
+- Approved proposal SHA-256:
+  `e831e09092256d18804e5c6c7292a432ecfb71ac7d52544d16fde8d751a12ff9`
+- Acceptance date: 2026-07-31, Asia/Kolkata
+- Human approver identifier: `S R Bhandary`
+- Roles exercised: Technical Decision Owner; Security Reviewer; Privacy
+  Reviewer; Tenancy Reviewer
+- Scope: accept ADR-0007 and resolve DR-0005 only
+- Limitations: consolidated development approval is not independent production
+  review and does not authorize PR-009 implementation or production
+- Master-plan impact: none
 
 Codex is the author and evidence recorder only, never the approver.
 
 ## Verification
 
-Before ADR acceptance:
+ADR acceptance evidence requires:
 
 - validate front matter, headings, local links and final newline;
 - verify the proposal hash independently;
@@ -635,10 +636,9 @@ An authorized PR-009 implementation specification must require:
 
 ## Follow-up
 
-- Obtain exact-artifact development approval for this ADR.
 - Separately accept PR-008 at its exact implementation commit.
-- After both gates, obtain Accountable Product Owner authorization for only
-  PR-009 before implementation.
+- Obtain Accountable Product Owner authorization for only PR-009 before
+  implementation.
 - Select and benchmark provider candidates only inside the accepted boundary.
 - Obtain qualified legal and independent specialist review before production.
 

@@ -933,8 +933,9 @@ forbidden from changing prompts, models, providers or AI orchestration.
 - Raw learner audio is not uploaded, retained, transcribed, analyzed or
   available for trainer review.
 - A local-capture receipt cannot award spoken mastery.
-- DR-0005 remains open for recording consent states, retention, deletion and
-  provider-processing boundaries.
+- At PR-006 exit, DR-0005 remained open for recording consent states,
+  retention, deletion and provider-processing boundaries. It was subsequently
+  resolved by ADR-0007 under APP-0011 without authorizing PR-009.
 - PR-007 offline mission bundles, service-worker caching, IndexedDB outbox and
   reconnect synchronization remain excluded.
 - AI conversation, speech-to-text, generated voice, pronunciation signals and
@@ -1238,8 +1239,9 @@ orchestration.
 - The event route returns a bounded history and closes. It is not a live
   multi-process broker or reconnectable production stream.
 - Conversation text retention, real provider processing, consent, secure
-  upload, transcript recovery and deletion remain unresolved under DR-0005
-  and are required before PR-009 can be authorized.
+  upload, transcript recovery and deletion were unresolved at PR-008
+  implementation time. ADR-0007 now supplies the accepted policy under
+  APP-0011, but PR-009 implementation remains separately unauthorized.
 - The seeded persona/scenario and all five translated UI catalogues are
   synthetic implementation drafts, not production-approved content.
 - The Chromium journey uses contract stubs for the web boundary; backend
@@ -1260,13 +1262,13 @@ unauthorized.
 
 ---
 
-## DR-0005 — Recording policy decision proposal
+## DR-0005 — Recording policy decision and acceptance
 
 ### Scope reviewed
 
 - master-plan recording, privacy, provider, tenancy and PR-009 constraints;
 - accepted ADR-0001, ADR-0002, ADR-0003 and ADR-0006 boundaries;
-- proposed consent purposes and per-turn learner submission;
+- accepted consent purposes and per-turn learner submission;
 - upload quarantine and media-validation limits;
 - raw-audio, transcript, generated-media, evidence and backup retention;
 - withdrawal, deletion, provider deletion and reconciliation;
@@ -1278,8 +1280,10 @@ unauthorized.
 
 | Check | Result | Evidence |
 |---|---|---|
-| Proposal remains non-authoritative | Pass | ADR front matter is `proposed`, has no decider and contains no approval evidence |
-| DR-0005 remains open | Pass | open-decision table links the proposal without moving the request to resolved |
+| Exact proposal integrity | Pass | approved SHA-256 matches the committed ADR-0007 proposal at `98c46584b298cbf18623b140dbe5dc3dbc7737e6` |
+| Approval authority and evidence | Pass | APP-0011 records the exact statement and all four required development roles |
+| ADR acceptance | Pass | accepted front matter links APP-0011 and preserves the approved proposal hash |
+| DR-0005 resolution | Pass | resolved-decision table links ADR-0007 and APP-0011 |
 | PR-009 remains unauthorized | Pass | ADR status, fail-closed rollout and repository status |
 | Raw audio is temporary, private and excluded from ordinary logs/backups | Pass | data-classification, validation and retention sections |
 | Consent, withdrawal and deletion are purpose-specific and measurable | Pass | consent ledger, per-turn authorization and deletion objectives |
@@ -1287,16 +1291,16 @@ unauthorized.
 | Organization and exact-membership ownership remain mandatory | Pass | tenancy and authorization section |
 | Automated transcript/speech output cannot alter learning authority | Pass | transcript-recovery and authoritative-record sections |
 | Production has explicit legal and independent-review gates | Pass | context and fail-closed rollout |
-| No source, API, schema, configuration or environment change is proposed | Pass | documentation-only diff inspection |
+| No source, API, schema, configuration or environment change is authorized | Pass | documentation-only diff inspection |
 
 ### Commands and results
 
 | Command or check | Result |
 |---|---|
-| Node/js-yaml front matter, final-newline and local-link validation | Pass: four changed Markdown files |
-| Proposed-status and absent-approval evidence assertions | Pass |
+| Node/js-yaml front matter, heading, fence, final-newline, local-link and anchor validation | Pass: five changed Markdown files |
+| Accepted-status and APP-0011 evidence assertions | Pass |
 | `git diff --check` | Pass |
-| Scoped status/diff inspection | Pass: only the proposed ADR and three governance records belong to this checkpoint |
+| Scoped status/diff inspection | Pass: only the accepted ADR and four governance records belong to this checkpoint |
 | SHA-256 proposal hashing | Pass; exact hash reported with the proposal commit |
 
 Application test, E2E, AI-evaluation and build commands are not applicable
@@ -1305,7 +1309,7 @@ behavior.
 
 ### Security, privacy and tenancy review
 
-The proposal treats learner voice and transcript content as sensitive,
+The accepted policy treats learner voice and transcript content as sensitive,
 purpose-limited data. It requires fail-closed adult eligibility, consent,
 private encrypted media, short retention, deletion reconciliation,
 content-free telemetry, project-owned provider adapters, exact tenant
@@ -1317,20 +1321,17 @@ production review. Qualified Indian privacy counsel must confirm applicable
 commencement, notice, retention, erasure, processor and transfer obligations
 before production.
 
-### Known limitations and decision gate
+### Known limitations and implementation gate
 
-- No human reviewer has accepted the exact proposal artifact.
-- Consolidated development-role acceptance, if later supplied, would still
-  not be independent production review.
+- `S R Bhandary` accepted the exact proposal artifact while exercising four
+  consolidated development roles; this is not independent production review.
 - No real provider has been selected, reviewed, contracted or benchmarked.
 - No notice or translation has independent legal or language approval.
-- The proposal intentionally leaves PR-009 implementation, provider
+- The accepted policy intentionally leaves PR-009 implementation, provider
   configuration, audio processing and production unauthorized.
 - PR-008 exact-commit acceptance remains a separate pending checkpoint gate.
 
 ### Exit decision
 
-ADR-0007 is ready for exact-artifact Technical Decision Owner, Security
-Reviewer, Privacy Reviewer and Tenancy Reviewer consideration. DR-0005 remains
-open. No approval, PR-009 implementation authority or production authority is
-recorded.
+ADR-0007 is accepted under APP-0011 and DR-0005 is resolved. The approval
+records no PR-009 implementation authority or production authority.

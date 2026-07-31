@@ -74,6 +74,7 @@ to the master plan.
 | D-0066 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, accepts PR-007 at `e0e2f1b90e0eb4ecf680f5243b57ec0731c32648` with its recorded limitations. This acceptance does not authorize PR-008, production or any later implementation checkpoint. | [APP-0009](APPROVALS.md#app-0009) |
 | D-0067 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, authorizes only PR-008 — Conversation domain with deterministic fake providers. The bounded slice may add versioned personas/scenarios, tenant-owned sessions/turns, project-owned STT/model/TTS ports, deterministic fakes, a turn state machine, safe event stream and cost/latency skeleton. Real providers, provider SDKs, audio upload/persistence, PR-009, production and AI authority over deterministic learning records remain prohibited. | [APP-0010](APPROVALS.md#app-0010); [PR-008 verification scope](PR-008_CONVERSATION_FAKE_PROVIDER_VERIFICATION_SCOPE.md) |
 | D-0068 | Accepted | The PR-008 prototype processes bounded typed utterance and deterministic reply text only in request memory. Persistent conversation rows contain SHA-256 digests, immutable version snapshots, safe state events and zero-cost usage metadata; fake TTS is text-only and creates no audio. Fake adapters may resolve only in `local`/`testing` with the explicit fake driver, while every other environment binds disabled adapters and fails closed. Conversation output is advisory and cannot update deterministic learning records. | [APP-0010](APPROVALS.md#app-0010); [PR-008 verification scope](PR-008_CONVERSATION_FAKE_PROVIDER_VERIFICATION_SCOPE.md) |
+| D-0069 | Accepted | Recording and provider processing use the purpose-specific consent, per-turn submission, private validation, short retention, deletion, provider-minimization, tenancy and deterministic-authority boundaries in ADR-0007. `S R Bhandary` accepted the exact proposal in the consolidated Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy Reviewer development roles. This is not independent production review and does not authorize PR-009 implementation or production. | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md); [APP-0011](APPROVALS.md#app-0011) |
 
 ## Resolved decision requests
 
@@ -83,6 +84,7 @@ to the master plan.
 | DR-0002 | Resolved by [ADR-0003](adr/0003-resource-ownership-and-organization-context.md) under APP-0001. |
 | DR-0003 | Resolved by [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md) under APP-0004. |
 | DR-0004 | Resolved by [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md) under APP-0008. |
+| DR-0005 | Resolved by [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) under APP-0011. PR-009 implementation and production remain separately gated. |
 | DR-0008 | Resolved by [ADR-0001](adr/0001-approval-authority-and-evidence.md) under APP-0001. |
 | DR-0010 | Resolved by D-0025. The canonical onboarding modes and ADR-0003's multi-organization identity model require institution-only membership for a new invite-first learner while preserving independently accepted memberships for an existing user. |
 
@@ -93,7 +95,6 @@ indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0005 | PR-009 | Review the unapproved [ADR-0007 proposal](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) for recording consent, retention, provider-processing and deletion policy; exact-artifact acceptance and PR-009 authorization remain separate gates |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

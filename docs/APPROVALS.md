@@ -697,3 +697,67 @@ I authorize only PR-008 — Conversation domain with deterministic fake provider
 - AI output cannot write marks, mastery, progression, attendance,
   entitlements, enrollment or other authoritative learning records.
 - PR-009, production and every later checkpoint remain unauthorized.
+
+<a id="app-0011"></a>
+
+## APP-0011 — ADR-0007 recording-policy acceptance
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-31 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted ADR | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) |
+| Approved proposal SHA-256 | `e831e09092256d18804e5c6c7292a432ecfb71ac7d52544d16fde8d751a12ff9` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy Reviewer, and Tenancy Reviewer, approve ADR-0007 as written at SHA-256 e831e09092256d18804e5c6c7292a432ecfb71ac7d52544d16fde8d751a12ff9 and accept its explicit trade-offs. This consolidated development approval is not independent production review and does not authorize PR-009 implementation or production.
+```
+
+### Context and interpretation
+
+The approved hash identifies the complete proposed ADR-0007 text committed at
+`98c46584b298cbf18623b140dbe5dc3dbc7737e6` and presented immediately before
+the human statement. That proposal:
+
+1. separated voice-upload, provider-processing and optional transcript-history
+   consent purposes;
+2. defined per-turn submission, private quarantine, strict media validation
+   and fail-closed adult eligibility;
+3. set short raw-audio, transcript and generated-media retention maximums;
+4. required withdrawal, tombstones, provider deletion and reconciliation;
+5. minimized provider requests and prohibited training, human review and
+   secondary use in PR-009;
+6. required organization plus exact-membership ownership and cross-tenant
+   protection; and
+7. preserved learner transcript correction without granting automated speech
+   authority over deterministic learning records.
+
+### Accepted scope
+
+- Accept ADR-0007 and resolve DR-0005.
+- Establish the policy prerequisite for a separately authorized PR-009
+  specification and implementation.
+- Preserve the master plan and every existing checkpoint-acceptance gate.
+
+### Conditions and limitations
+
+- This approval does not accept PR-008 at its implementation commit.
+- This approval does not authorize PR-009 implementation, a real provider,
+  learner-audio upload or persistence, provider credentials, production or a
+  later checkpoint.
+- Consolidated development roles are not independent security, privacy or
+  tenancy specialist review.
+- Qualified legal review, independent specialist review, approved
+  notices/translations, provider due diligence and explicit production release
+  authorization remain mandatory before production.
+- No master-plan amendment is made.
