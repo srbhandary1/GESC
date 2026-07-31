@@ -1417,3 +1417,73 @@ TTS audio, approved scanner, isolated streaming quarantine worker, reviewed
 production object store, provider deletion reconciliation, restore/tombstone
 drill or independent production review. PR-010 and production remain
 unauthorized.
+
+---
+
+## DR-0011 — Proposed Azure Speech development provider
+
+### Scope reviewed
+
+- accepted ADR-0007 provider, consent, retention and deletion requirements;
+- current official Azure Speech regions, data handling, REST operations,
+  language/voice support, DPA, Product Terms and subprocessor process;
+- current official Google Cloud and AWS data-use/region alternatives;
+- open-weight Whisper, Kokoro and Piper licence/runtime considerations;
+- a synthetic-only PR-009 quality, latency, cost and safe-failure benchmark;
+  and
+- credentials, callbacks, region, training, human-review and rollout controls.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact development STT/TTS stack proposed | Ready for human decision | proposed ADR-0008 selects Azure Fast Transcription REST `2025-10-15`, `en-IN`, and real-time `en-IN-NeerjaNeural` TTS |
+| India-region service support | Documented, not account-verified | official Azure region documentation lists `centralindia` for core STT/TTS and states Speech data stays in the resource region |
+| Provider content retention | Documented, not contract-verified | official Azure documentation states no retention for fast STT and real-time TTS with logging/customization off |
+| No training/model improvement | Documented, not account-verified | official Azure Speech documentation plus mandatory configuration/evidence gate |
+| Exact legal entity, DPA and subprocessors | Blocked pending Product Owner account evidence | public DPA/subprocessor process cannot identify the future subscription's contracting entity or acceptance |
+| Credential | Missing by design | no secret or Azure account data was requested, created or written |
+| Callback/replay boundary | Pass by proposed design | synchronous REST only; callback, webhook, redirects and URL input prohibited |
+| Synthetic benchmark definition | Ready for human decision | 48 strings, two voices, three deterministic conditions, 288 STT clips, 96 TTS outputs and conjunctive thresholds |
+| Real learner/accent validation | Explicitly not satisfied | synthetic round trip is circular and production remains blocked |
+| Provider enabled or called | No | source/config/environment unchanged; existing disabled binding remains authoritative |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| Current official provider/contract documentation review | Pass for proposal drafting; account-specific evidence remains blocked |
+| Local Markdown final-newline and link-target validation | Pass for all five affected documentation files |
+| `git diff --check` and trailing-whitespace scan | Pass |
+| `make verify` with the pinned Linux-native toolchain | Pass |
+| Composer and pnpm locked audits | Pass; no known vulnerability |
+| Pint and PHPStan | Pass; zero errors |
+| SQLite suite | Pass: 49 tests, 288 assertions |
+| PostgreSQL suite | Pass: 173 tests, 2,016 assertions |
+| Localization, design-system and web tests | Pass: 31, 9 and 59 tests |
+| OpenAPI/generated-client, lint and type checking | Pass |
+| Provider calls and `make ai-eval` | Not run; prohibited while ADR-0008 is proposed and credentials/evidence are absent |
+
+The first verification attempt used the host toolchain and stopped at its
+Node.js mismatch. The next pinned-toolchain attempt reached the Composer audit
+and stopped because the sandbox could not resolve Packagist. The complete
+pinned-toolchain gate then ran with approved advisory-registry access and
+passed. Neither stopped attempt is represented as a test failure or a provider
+call.
+
+`make e2e` and `make build` were not rerun because this decision package
+changes no application source, API, user journey, packaging or deployment
+behavior. The previously recorded PR-009 results remain unchanged.
+
+### Decision gate
+
+ADR-0008 and its benchmark plan are proposals. DR-0011 remains open. The four
+named development decision roles must accept the exact proposal hash and its
+managed-model-rotation and circular-synthetic-benchmark trade-offs before
+provider implementation. A dedicated Central India Azure subscription,
+contract/DPA/subprocessor evidence and non-production credential are still
+required before the first live synthetic request.
+
+Approval would authorize only the remaining PR-009 adapter and benchmark work.
+It would not report a benchmark pass, accept PR-009, authorize learner data,
+PR-010 or production.

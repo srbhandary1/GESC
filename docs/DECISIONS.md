@@ -101,4 +101,4 @@ indicated implementation becomes authoritative.
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |
-| DR-0011 | PR-009 live benchmark | Select and review the exact STT/TTS service or local model, region, sub-processors/licences, processing terms, transfer path, no-training/human-review settings, retention/deletion guarantees, security/callback behavior, credentials and locked synthetic benchmark plan required by ADR-0007 |
+| DR-0011 | PR-009 live benchmark | Review the unapproved [ADR-0008 proposal](adr/0008-azure-speech-development-provider-and-benchmark-policy.md) and [locked benchmark plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md) selecting Azure Speech in `centralindia`; exact-artifact approval, subscription/DPA/subprocessor evidence, credentials, implementation and benchmark success remain separate gates |

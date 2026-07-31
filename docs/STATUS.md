@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | Authorized under APP-0012; implementation in progress within accepted ADR-0007 |
+| Status | Provider-neutral implementation verified; DR-0011 Azure Speech decision proposal ready for exact-artifact review |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
-| Product code | PR-008 accepted at its exact implementation commit; PR-009 secure speech/transcript implementation authorized with live providers and production fail-closed pending required review evidence |
-| Next checkpoint | Complete and verify only PR-009; production, PR-010 and later checkpoints remain unauthorized |
+| Product code | PR-008 accepted at its exact implementation commit; PR-009 provider-neutral secure speech/transcript foundation implemented; live providers remain disabled |
+| Next checkpoint | Review proposed ADR-0008; after acceptance and vendor evidence, complete only PR-009 adapters and synthetic benchmark |
 
 ## Checkpoint authorization
 
@@ -167,6 +167,15 @@ select a provider, permit learner-audio processing or approve production.
   generated TTS audio, streaming quarantine worker, reviewed malware scanner,
   production private object store, provider deletion reconciliation or
   production authorization.
+- [Proposed ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
+  selects Azure Speech Fast Transcription REST `2025-10-15` and real-time
+  prebuilt TTS in `centralindia` for a development-only benchmark. The
+  [locked plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md) uses only
+  project-authored strings and generated synthetic audio, with no learner data.
+- ADR-0008 is not approved and DR-0011 remains open. No Azure credential,
+  subscription contract, DPA/subprocessor snapshot or benchmark result exists
+  in the repository. Provider binding remains disabled until exact-artifact
+  approval and every recorded evidence gate passes.
 
 ## Accepted PR-007 implementation state
 
