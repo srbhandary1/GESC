@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | DR-0012 encrypted listener workflow authorized for implementation; live benchmark blocked |
+| Status | DR-0012 encrypted listener workflow implemented and repository-verified; live benchmark blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
-| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery plus disabled Azure STT/TTS adapters and synthetic runner implemented; no live request made |
-| Next checkpoint | Implement and repository-verify DR-0012; operational evidence, credentials, spend and live requests remain blocked |
+| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; no live request made |
+| Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
 
 ## Checkpoint authorization
 
@@ -173,7 +173,7 @@ select a provider, permit learner-audio processing or approve production.
   production resolution falls back to English.
 - OpenAPI 3.1.1 version 0.7.0 and generated TypeScript contracts cover consent,
   multipart upload, transcript review, recording state and deletion status.
-- `make verify` passes with 66 SQLite tests/365 assertions, 173 PostgreSQL
+- `make verify` passes with 70 SQLite tests/701 assertions, 173 PostgreSQL
   tests/2,016 assertions, 31 localization tests, 9 design-system tests and 59
   web tests. `make build` passes with 76 Vite modules, and 10 Chromium
   journeys pass against a temporary `127.0.0.1:4173` listener that stops after
@@ -203,11 +203,26 @@ select a provider, permit learner-audio processing or approve production.
   The document is a template only and supplies no evidence or authorization.
 - DR-0012 is resolved under APP-0014 by
   [accepted ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md).
-  Its bounded implementation may add an authenticated encrypted
+  Its bounded implementation now provides an authenticated encrypted
   prepare/review/complete bundle, token-protected `127.0.0.1` browser-memory
   review, fixed 24-hour expiry and content-free deletion evidence while
   preserving the 544-operation cap. This decision does not weaken any
   credential, evidence, spend or live-request gate.
+- `speech:benchmark` defaults to no-call preflight and exposes explicit
+  `prepare`, `review`, `complete` and `purge` phases. The first 96 TTS
+  operations are encrypted individually outside repository/web roots and are
+  reused by completion, which restores their attempts/spend before the
+  remaining 448 operations. Partial preparation and completion replay fail
+  closed.
+- Review binds only an operating-system-assigned `127.0.0.1` port and uses a
+  256-bit URL-fragment token, authorization headers, `no-store`, restrictive
+  CSP and memory-only browser blobs. It stores two anonymous disposition slots
+  but no reviewer identity, IP, browser identifier or free text.
+- Targeted HTTP-fake verification passes with 21 tests/413 assertions,
+  including exact 544-operation accounting, no double billing, encryption,
+  token/proxy/public-host refusal, tamper/expiry/replay rejection, failed
+  deletion visibility, immutable successful receipts and zero database
+  queries. No Azure request was made.
 
 ## Accepted PR-007 implementation state
 

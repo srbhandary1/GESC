@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkCorpus;
+use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
+use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
 use App\Conversation\Voice\Benchmark\SyntheticAudioTransformer;
 use App\Conversation\Voice\Benchmark\TranscriptMetrics;
 use App\Conversation\Voice\PcmWavInspector;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Testing\PendingCommand;
@@ -20,12 +24,19 @@ final class SpeechBenchmarkPolicyTest extends TestCase
     /** @var list<string> */
     private array $temporaryFiles = [];
 
+    /** @var list<string> */
+    private array $temporaryDirectories = [];
+
     protected function tearDown(): void
     {
+        CarbonImmutable::setTestNow();
         foreach ($this->temporaryFiles as $path) {
             if (is_file($path)) {
                 unlink($path);
             }
+        }
+        foreach (array_reverse($this->temporaryDirectories) as $path) {
+            $this->deleteDirectory($path);
         }
 
         parent::tearDown();
@@ -89,7 +100,9 @@ final class SpeechBenchmarkPolicyTest extends TestCase
     {
         Http::preventStrayRequests();
 
-        $command = $this->artisan('speech:benchmark --preflight');
+        $command = $this->artisan(
+            'speech:benchmark --phase=preflight',
+        );
         $this->assertInstanceOf(PendingCommand::class, $command);
         $command->expectsOutputToContain('"status":"blocked"')
             ->assertExitCode(2);
@@ -103,9 +116,29 @@ final class SpeechBenchmarkPolicyTest extends TestCase
         Http::preventStrayRequests();
         $currentText = '';
         $requestCount = 0;
+        $sttRequestCount = 0;
+        $expectedSttTexts = [];
+        $utterances = $this->app->make(SpeechBenchmarkCorpus::class)->load();
+        foreach ($utterances as $utterance) {
+            for ($index = 0; $index < 6; $index++) {
+                $expectedSttTexts[] = $utterance['text'];
+            }
+        }
+        $byId = array_column($utterances, null, 'id');
+        for ($round = 1; $round <= 20; $round++) {
+            foreach (config('speech.benchmark.repetition_fixture_ids') as $id) {
+                $expectedSttTexts[] = $byId[$id]['text'];
+            }
+        }
+        $databaseQueries = [];
+        DB::listen(static function () use (&$databaseQueries): void {
+            $databaseQueries[] = true;
+        });
         Http::fake(function (Request $request) use (
             &$currentText,
             &$requestCount,
+            &$sttRequestCount,
+            $expectedSttTexts,
         ) {
             $requestCount++;
             if (str_ends_with($request->url(), '/cognitiveservices/v1')) {
@@ -131,9 +164,12 @@ final class SpeechBenchmarkPolicyTest extends TestCase
                 );
             }
 
+            $transcript = $expectedSttTexts[$sttRequestCount] ?? '';
+            $sttRequestCount++;
+
             return Http::response([
                 'combinedPhrases' => [
-                    ['channel' => 0, 'text' => $currentText],
+                    ['channel' => 0, 'text' => $transcript],
                 ],
                 'phrases' => [[
                     'locale' => 'en-IN',
@@ -144,7 +180,48 @@ final class SpeechBenchmarkPolicyTest extends TestCase
             ], 200, ['Content-Type' => 'application/json']);
         });
 
-        $report = $this->app->make(SpeechBenchmarkRunner::class)->run();
+        $runner = $this->app->make(SpeechBenchmarkRunner::class);
+        $summary = $runner->prepare();
+        $runId = (string) $summary['run_id'];
+        $store = $this->app->make(SpeechBenchmarkRunStore::class);
+        $runDirectory = (string) config('speech.benchmark.ephemeral_root')
+            .'/'.$runId;
+        $this->assertSame('prepared', $summary['status']);
+        $this->assertSame(96, $summary['fixture_count']);
+        $this->assertSame(96, $summary['logical_operations']);
+        $this->assertSame(97, $summary['http_attempts']);
+        $this->assertSame(
+            $summary,
+            $runner->prepare($runId),
+        );
+        Http::assertSentCount(97);
+        $this->assertCount(96, glob($runDirectory.'/*.fixture') ?: []);
+        foreach (glob($runDirectory.'/*.fixture') ?: [] as $fixturePath) {
+            $ciphertext = file_get_contents($fixturePath);
+            $this->assertIsString($ciphertext);
+            $this->assertStringNotContainsString('RIFF', $ciphertext);
+            $this->assertSame(0600, fileperms($fixturePath) & 0777);
+        }
+        $choices = array_map(
+            static fn (array $fixture): array => [
+                'review_id' => $fixture['review_id'],
+                'intelligible' => true,
+                'acceptable' => true,
+                'critical_defect' => false,
+            ],
+            $store->reviewManifest($runId),
+        );
+        $store->recordReview($runId, 1, $choices);
+        $aggregate = $store->recordReview($runId, 2, $choices);
+        $this->assertSame(96, $aggregate['output_count']);
+        $completionPreflight = $runner->preflightCompletion($runId);
+        $this->assertSame(
+            'complete_ready',
+            $completionPreflight['status'],
+        );
+        Http::assertSentCount(97);
+
+        $report = $runner->complete($runId);
 
         $this->assertTrue($report['passed']);
         $this->assertSame(544, $report['operations']['logical']);
@@ -155,7 +232,314 @@ final class SpeechBenchmarkPolicyTest extends TestCase
             + 80);
         $this->assertSame(176, $report['tts']['valid_outputs']);
         $this->assertSame([], $report['operations']['safe_failures']);
+        $this->assertTrue($report['ephemeral_content']['bundle_deleted']);
+        $this->assertDirectoryDoesNotExist($runDirectory);
+        $this->assertFileExists(
+            (string) config('speech.benchmark.ephemeral_root')
+                .'/receipts/'.$runId.'.json',
+        );
+        $receiptPath = (string) config('speech.benchmark.ephemeral_root')
+            .'/receipts/'.$runId.'.json';
+        $receiptBeforeReplay = file_get_contents($receiptPath);
+        try {
+            $runner->complete($runId);
+            $this->fail('A completed benchmark run must not replay.');
+        } catch (\RuntimeException) {
+            $this->assertSame(
+                $receiptBeforeReplay,
+                file_get_contents($receiptPath),
+            );
+        }
+        $this->assertSame([], $databaseQueries);
         Http::assertSentCount(545);
+    }
+
+    public function test_review_utility_requires_memory_only_loopback_token(): void
+    {
+        $this->configureAuthorizedBenchmark();
+        Http::preventStrayRequests();
+        Http::fake([
+            '*' => Http::response(
+                self::wav(),
+                200,
+                ['Content-Type' => 'audio/wav'],
+            ),
+        ]);
+        $summary = $this->app
+            ->make(SpeechBenchmarkRunner::class)
+            ->prepare();
+        $runId = (string) $summary['run_id'];
+        $server = $this->app->make(SpeechBenchmarkReviewServer::class);
+        $token = str_repeat('a', 64);
+
+        $page = $server->handle($runId, 1, $token, 'GET', '/', [], '');
+        $this->assertSame(200, $page['status']);
+        $this->assertSame(
+            'no-store, max-age=0',
+            $page['headers']['Cache-Control'],
+        );
+        $this->assertStringContainsString(
+            "frame-ancestors 'none'",
+            $page['headers']['Content-Security-Policy'],
+        );
+        $script = $server->handle(
+            $runId,
+            1,
+            $token,
+            'GET',
+            '/review.js',
+            [],
+            '',
+        );
+        $this->assertStringContainsString(
+            'URL.revokeObjectURL',
+            $script['body'],
+        );
+        $this->assertStringNotContainsString(
+            'localStorage',
+            $script['body'],
+        );
+        $this->assertStringNotContainsString(
+            'indexedDB',
+            $script['body'],
+        );
+
+        $unauthorized = $server->handle(
+            $runId,
+            1,
+            $token,
+            'GET',
+            '/api/manifest',
+            ['authorization' => 'Bearer '.str_repeat('b', 64)],
+            '',
+        );
+        $this->assertSame(401, $unauthorized['status']);
+        $proxied = $server->handle(
+            $runId,
+            1,
+            $token,
+            'GET',
+            '/api/manifest',
+            [
+                'authorization' => 'Bearer '.$token,
+                'x-forwarded-for' => '127.0.0.1',
+            ],
+            '',
+        );
+        $this->assertSame(403, $proxied['status']);
+        $publicHost = $server->handle(
+            $runId,
+            1,
+            $token,
+            'GET',
+            '/api/manifest',
+            [
+                'authorization' => 'Bearer '.$token,
+                'host' => '192.168.1.20:8080',
+            ],
+            '',
+        );
+        $this->assertSame(403, $publicHost['status']);
+        $manifest = $server->handle(
+            $runId,
+            1,
+            $token,
+            'GET',
+            '/api/manifest',
+            ['authorization' => 'Bearer '.$token],
+            '',
+        );
+        $this->assertSame(200, $manifest['status']);
+        $this->assertStringContainsString(
+            'Hello, how are you today?',
+            $manifest['body'],
+        );
+        $this->assertStringNotContainsString(
+            'development-listener',
+            $manifest['body'],
+        );
+        $store = $this->app->make(SpeechBenchmarkRunStore::class);
+        $choices = array_map(
+            static fn (array $fixture): array => [
+                'review_id' => $fixture['review_id'],
+                'intelligible' => true,
+                'acceptable' => true,
+                'critical_defect' => false,
+            ],
+            $store->reviewManifest($runId),
+        );
+        $submitted = $server->handle(
+            $runId,
+            1,
+            $token,
+            'POST',
+            '/api/submit',
+            [
+                'authorization' => 'Bearer '.$token,
+                'content-type' => 'application/json',
+            ],
+            json_encode(['choices' => $choices], JSON_THROW_ON_ERROR),
+        );
+        $this->assertTrue($submitted['review_completed'] ?? false);
+        $mutated = $choices;
+        $mutated[0]['acceptable'] = false;
+        $replayed = $server->handle(
+            $runId,
+            1,
+            $token,
+            'POST',
+            '/api/submit',
+            [
+                'authorization' => 'Bearer '.$token,
+                'content-type' => 'application/json',
+            ],
+            json_encode(['choices' => $mutated], JSON_THROW_ON_ERROR),
+        );
+        $this->assertSame(409, $replayed['status']);
+        $store->recordReview($runId, 2, $choices);
+        $root = (string) config('speech.benchmark.ephemeral_root');
+        $runDirectory = $root.'/'.$runId;
+        chmod($runDirectory, 0500);
+        try {
+            $this->app->make(SpeechBenchmarkRunner::class)->complete($runId);
+            $this->fail('A failed deletion must block completion.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                'The encrypted benchmark bundle deletion failed.',
+                $exception->getMessage(),
+            );
+        } finally {
+            chmod($runDirectory, 0700);
+        }
+        $this->assertNotSame(
+            [],
+            glob($root.'/receipts/'.$runId.'.failed.*.json') ?: [],
+        );
+        $fixturePath = (glob($runDirectory.'/*.fixture') ?: [])[0] ?? null;
+        $this->assertIsString($fixturePath);
+        file_put_contents($fixturePath, 'modified-ciphertext', LOCK_EX);
+        chmod($fixturePath, 0600);
+        try {
+            $this->app->make(SpeechBenchmarkRunner::class)->complete($runId);
+            $this->fail('Modified ciphertext must block completion.');
+        } catch (\RuntimeException) {
+            $this->assertDirectoryDoesNotExist($runDirectory);
+            $this->assertFileExists(
+                $root.'/receipts/'.$runId.'.json',
+            );
+        }
+        Http::assertSentCount(96);
+    }
+
+    public function test_expired_bundle_is_not_reviewed_and_is_purged(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-31T00:00:00Z');
+        $this->configureAuthorizedBenchmark();
+        Http::preventStrayRequests();
+        Http::fake([
+            '*' => Http::response(
+                self::wav(),
+                200,
+                ['Content-Type' => 'audio/wav'],
+            ),
+        ]);
+        $summary = $this->app
+            ->make(SpeechBenchmarkRunner::class)
+            ->prepare();
+        $runId = (string) $summary['run_id'];
+        $root = (string) config('speech.benchmark.ephemeral_root');
+        CarbonImmutable::setTestNow('2026-08-01T00:00:01Z');
+        $store = $this->app->make(SpeechBenchmarkRunStore::class);
+
+        try {
+            $store->reviewManifest($runId);
+            $this->fail('Expired fixtures must not be reviewable.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                'The encrypted benchmark run expired.',
+                $exception->getMessage(),
+            );
+        }
+
+        $this->assertSame(
+            ['purged' => 1, 'failed' => 0],
+            $store->purgeExpired(),
+        );
+        $this->assertDirectoryDoesNotExist($root.'/'.$runId);
+        $receipt = json_decode(
+            (string) file_get_contents(
+                $root.'/receipts/'.$runId.'.json',
+            ),
+            true,
+            8,
+            JSON_THROW_ON_ERROR,
+        );
+        $this->assertTrue($receipt['success']);
+        $this->assertSame('expired', $receipt['reason']);
+    }
+
+    public function test_partial_preparation_cannot_restart_billable_operations(): void
+    {
+        $this->configureAuthorizedBenchmark();
+        Http::preventStrayRequests();
+        $attempt = 0;
+        Http::fake(function () use (&$attempt) {
+            $attempt++;
+
+            return $attempt === 1
+                ? Http::response(
+                    self::wav(),
+                    200,
+                    ['Content-Type' => 'audio/wav'],
+                )
+                : Http::response('', 400);
+        });
+        $store = $this->app->make(SpeechBenchmarkRunStore::class);
+        $runner = $this->app->make(SpeechBenchmarkRunner::class);
+        $runId = $store->generateRunId();
+
+        try {
+            $runner->prepare($runId);
+            $this->fail('Partial preparation must fail.');
+        } catch (\RuntimeException) {
+            $state = $store->load($runId, true);
+            $this->assertSame('preparation_failed', $state['status']);
+            $this->assertCount(1, $state['fixtures']);
+            $this->assertSame(2, $state['accounting']['logical_operations']);
+        }
+        try {
+            $runner->prepare($runId);
+            $this->fail('Partial preparation must not restart.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                'The benchmark run cannot be restarted.',
+                $exception->getMessage(),
+            );
+        }
+        Http::assertSentCount(2);
+        $receipt = $store->purge($runId, 'cancelled');
+        $this->assertTrue($receipt['success']);
+    }
+
+    public function test_external_secure_root_is_required_before_http(): void
+    {
+        $this->configureAuthorizedBenchmark();
+        config()->set(
+            'speech.benchmark.ephemeral_root',
+            storage_path('speech-benchmark'),
+        );
+        if (! is_dir(storage_path('speech-benchmark'))) {
+            mkdir(storage_path('speech-benchmark'), 0700);
+            $this->temporaryDirectories[] = storage_path('speech-benchmark');
+        }
+        Http::preventStrayRequests();
+
+        $this->expectException(\RuntimeException::class);
+        try {
+            $this->app->make(SpeechBenchmarkRunner::class)->prepare();
+        } finally {
+            Http::assertNothingSent();
+        }
     }
 
     private function configureAuthorizedBenchmark(): void
@@ -168,6 +552,7 @@ final class SpeechBenchmarkPolicyTest extends TestCase
         $spend = $this->temporaryPath('spend.json');
         $listener = $this->temporaryPath('listener.json');
         $report = $this->temporaryPath('report.json');
+        $ephemeralRoot = $this->temporaryDirectory('fixtures');
         file_put_contents($secret, 'not-a-real-provider-key');
         chmod($secret, 0600);
         $this->writeEvidence($vendor, [
@@ -219,6 +604,8 @@ final class SpeechBenchmarkPolicyTest extends TestCase
             'speech.benchmark.spend_approval_path' => $spend,
             'speech.benchmark.safe_report_path' => $report,
             'speech.benchmark.listener_evidence_path' => $listener,
+            'speech.benchmark.ephemeral_root' => $ephemeralRoot,
+            'speech.benchmark.ephemeral_storage_acknowledged' => true,
             'speech.benchmark.evidence.subscription' => 'subscription-evidence-v1',
             'speech.benchmark.evidence.contracting_entity' => 'entity-review-v1',
             'speech.benchmark.evidence.agreement_sha256' => str_repeat('a', 64),
@@ -244,6 +631,41 @@ final class SpeechBenchmarkPolicyTest extends TestCase
         $this->temporaryFiles[] = $path;
 
         return $path;
+    }
+
+    private function temporaryDirectory(string $suffix): string
+    {
+        $path = sys_get_temp_dir()
+            .'/pr009-benchmark-'.Str::random(20).'-'.$suffix;
+        mkdir($path, 0700);
+        chmod($path, 0700);
+        $this->temporaryDirectories[] = $path;
+
+        return $path;
+    }
+
+    private function deleteDirectory(string $path): void
+    {
+        if (! is_dir($path) || is_link($path)) {
+            return;
+        }
+        chmod($path, 0700);
+        $entries = scandir($path);
+        if (! is_array($entries)) {
+            return;
+        }
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            $child = $path.'/'.$entry;
+            if (is_dir($child) && ! is_link($child)) {
+                $this->deleteDirectory($child);
+            } else {
+                unlink($child);
+            }
+        }
+        rmdir($path);
     }
 
     /**

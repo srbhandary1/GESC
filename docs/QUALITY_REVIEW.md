@@ -1597,3 +1597,94 @@ proposal preserves the 544-operation cap by reusing the 96 prepared outputs.
 APP-0014 authorizes only this bounded DR-0012 implementation. It does not
 authorize credentials, provider spend, live requests, benchmark success,
 PR-009 acceptance, learner data, PR-010 or production.
+
+---
+
+## PR-009 — DR-0012 encrypted fixture and listener-review workflow
+
+### Scope reviewed
+
+- APP-0014's exact authorization boundary and accepted ADR-0009;
+- authenticated per-fixture encryption and encrypted atomic resume state;
+- exact 24-hour lifetime, external owner/mode/path/symlink checks and purge
+  scheduling;
+- prepare idempotency, partial-run refusal, completion replay prevention and
+  resumed operation/attempt/spend accounting;
+- two anonymous listener-disposition slots and exact external aggregate
+  matching;
+- the ephemeral loopback HTTP server, fragment token, authorization header,
+  proxy/public-host refusal, cache/CSP headers and browser-memory playback;
+- terminal deletion receipts, retry-visible failed deletion and tamper/expiry
+  handling; and
+- database, tenant, learner, public API, web/mobile bundle and provider-call
+  isolation.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Locked operation plan survives phase split | Pass with HTTP fakes | prepare persists 96 logical TTS operations; complete restores them and performs 448 more for exactly 544 total |
+| Duplicate spend/replay is prevented | Pass | prepared rerun performs zero calls; partial preparation cannot restart; completion atomically enters non-replayable state |
+| Fixture confidentiality and integrity | Pass | separate authenticated application ciphertext, random opaque filenames, mode-`0600`, exact ciphertext/plaintext hashes and no persisted `RIFF` bytes |
+| External path boundary | Pass | absolute owner-controlled mode-`0700` local root required outside repository, Laravel storage/public and web roots; symlinks/wrong modes fail closed |
+| Listener privacy | Pass | only required booleans in two anonymous slots; no human identifier, contact detail, IP, browser value or free text |
+| Loopback review boundary | Pass | hard-coded `127.0.0.1:0`, 256-bit fragment token, bearer authorization, proxy/public-host rejection, `no-store`, restrictive CSP and revoked object URLs |
+| Expiry, corruption and deletion | Pass | exact 24-hour expiry, corrupt ciphertext rejection, hourly/manual purge, visible failed-delete receipts and immutable successful receipt |
+| Completion binding | Pass | exact configuration/evidence hashes, corpus, plan, ADR hash, runner revision/commit, transform, dependency locks, fixture plan and counters revalidated before HTTP |
+| Tenancy and deterministic authority | Pass | test listener observed zero database queries; workflow has no organization, learner, curriculum, marks, mastery, progression or review-schedule path |
+| Public application surface | Pass | no route/OpenAPI/generated-client/web/mobile change; review utility exists only behind the benchmark command |
+| Live provider evidence | Blocked | no credential, provider-spend approval, live-request authorization, listener evidence or Azure result exists |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| ADR-0009 proposal hash verification | Pass: `a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f` |
+| Targeted Azure/benchmark tests | Pass: 21 tests, 413 assertions; Laravel HTTP fakes only |
+| Targeted Pint and PHPStan level 8 | Pass; zero errors |
+| `make verify` with pinned Linux-native toolchain | Pass |
+| Composer and pnpm locked audits | Pass; no known vulnerability |
+| SQLite suite | Pass: 70 tests, 701 assertions |
+| PostgreSQL suite | Pass: 173 tests, 2,016 assertions |
+| Localization, design-system and web tests | Pass: 31, 9 and 59 tests |
+| OpenAPI/generated-client, lint and recursive type checking | Pass |
+| `make build` | Pass: Laravel optimize/cleanup and 76-module Vite build |
+| `make e2e` | Pass: 10 Chromium journeys; temporary `127.0.0.1:4173` server stopped |
+| `make ai-eval` | Expected blocked exit 2 before HTTP because no opaque run ID or live authorization exists |
+| Live Azure calls | Zero |
+
+The first full verification attempt used the workstation-default Node.js and
+stopped at the declared-toolchain check. The first pinned attempt stopped when
+the sandbox could not resolve the Composer advisory service. The pinned retry
+with approved advisory-registry access passed. Neither stopped attempt is
+represented as a product test failure or provider call.
+
+### Security, privacy and tenancy review
+
+- Plaintext fixture audio exists only in bounded provider/process memory and
+  one authenticated loopback response/browser blob at a time.
+- The encrypted state contains opaque fixture mapping and counters; no
+  transcript, SSML, credential, evidence document, learner/tenant value or
+  human reviewer identifier is written.
+- Successful or ordinary failed completion deletes the bundle. A crash leaves
+  encrypted content for the scheduled/manual purge, and a deletion failure
+  remains visible and blocks acceptance.
+- Revoked or changed provider, evidence, pricing, credential-version,
+  configuration, code or dependency bindings block completion before a new
+  provider request; the terminal complete path purges the bundle.
+- There is no migration, database record, public endpoint, ordinary provider
+  binding or change to deterministic learning authority.
+
+### Known limitations and exit decision
+
+The DR-0012 implementation is complete and repository-verified, but no
+preparation or completion phase was run against Azure. The browser utility has
+automated contract/security coverage and hard-coded loopback binding; the two
+accountable listener sessions, actual audio-device behavior and independent
+accessibility/security/privacy review remain human gates.
+
+PR-009 is not accepted. Exact subscription/contract/DPA/subprocessor evidence,
+a dedicated credential, reviewed price/content-scan evidence, separate
+provider-spend approval, explicit live-request authorization, two accountable
+listener reviews and the locked live result remain outstanding. Learner data,
+PR-010 and production remain unauthorized.

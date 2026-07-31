@@ -74,7 +74,7 @@ e2e:
 	$(PNPM) run e2e
 
 ai-eval:
-	cd $(API_DIR) && $(PHP) artisan speech:benchmark
+	cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID:-}"
 
 openapi:
 	$(PNPM) run openapi:check

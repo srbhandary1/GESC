@@ -21,11 +21,19 @@ final class AzureSpeechAdapterTest extends TestCase
     /** @var list<string> */
     private array $temporaryFiles = [];
 
+    /** @var list<string> */
+    private array $temporaryDirectories = [];
+
     protected function tearDown(): void
     {
         foreach ($this->temporaryFiles as $path) {
             if (is_file($path)) {
                 unlink($path);
+            }
+        }
+        foreach ($this->temporaryDirectories as $path) {
+            if (is_dir($path)) {
+                rmdir($path);
             }
         }
 
@@ -287,6 +295,7 @@ final class AzureSpeechAdapterTest extends TestCase
         $secretPath = $this->temporaryPath('secret');
         $vendorPath = $this->temporaryPath('vendor.json');
         $spendPath = $this->temporaryPath('spend.json');
+        $ephemeralRoot = $this->temporaryDirectory('fixtures');
         file_put_contents($secretPath, 'not-a-real-provider-key');
         chmod($secretPath, 0600);
         $this->writeEvidence($vendorPath, [
@@ -329,6 +338,8 @@ final class AzureSpeechAdapterTest extends TestCase
             'speech.benchmark.vendor_evidence_path' => $vendorPath,
             'speech.benchmark.spend_approval_path' => $spendPath,
             'speech.benchmark.safe_report_path' => '/tmp/pr009-safe-report.json',
+            'speech.benchmark.ephemeral_root' => $ephemeralRoot,
+            'speech.benchmark.ephemeral_storage_acknowledged' => true,
             'speech.benchmark.evidence.subscription' => 'subscription-evidence-v1',
             'speech.benchmark.evidence.contracting_entity' => 'entity-review-v1',
             'speech.benchmark.evidence.agreement_sha256' => str_repeat('a', 64),
@@ -352,6 +363,17 @@ final class AzureSpeechAdapterTest extends TestCase
         $path = sys_get_temp_dir()
             .'/pr009-speech-'.Str::random(20).'-'.$suffix;
         $this->temporaryFiles[] = $path;
+
+        return $path;
+    }
+
+    private function temporaryDirectory(string $suffix): string
+    {
+        $path = sys_get_temp_dir()
+            .'/pr009-speech-'.Str::random(20).'-'.$suffix;
+        mkdir($path, 0700);
+        chmod($path, 0700);
+        $this->temporaryDirectories[] = $path;
 
         return $path;
     }

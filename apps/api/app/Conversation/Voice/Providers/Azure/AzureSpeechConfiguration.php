@@ -206,6 +206,25 @@ final readonly class AzureSpeechConfiguration
         }
 
         if (
+            ! $this->secureExternalDirectory(
+                $this->string('speech.benchmark.ephemeral_root'),
+            )
+            || ! $this->boolean(
+                'speech.benchmark.ephemeral_storage_acknowledged',
+            )
+        ) {
+            $errors[] = 'ephemeral_storage_invalid';
+        }
+
+        if (
+            $this->string(
+                'speech.benchmark.approved_listener_workflow_sha256',
+            ) !== 'a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f'
+        ) {
+            $errors[] = 'listener_workflow_hash_mismatch';
+        }
+
+        if (
             $requireListenerEvidence
             && ! $this->externalReadableFile(
                 $this->string('speech.benchmark.listener_evidence_path'),
@@ -305,6 +324,69 @@ final readonly class AzureSpeechConfiguration
             'credential_version' => $this->string(
                 'speech.benchmark.evidence.credential_version',
             ),
+            'credential_kind' => $this->string(
+                'speech.azure.credential_kind',
+            ),
+            'benchmark_id' => $this->string('speech.benchmark.id'),
+            'approved_adr_proposal_sha256' => $this->string(
+                'speech.benchmark.approved_adr_proposal_sha256',
+            ),
+            'approved_plan_sha256' => $this->string(
+                'speech.benchmark.approved_plan_sha256',
+            ),
+            'approved_listener_workflow_sha256' => $this->string(
+                'speech.benchmark.approved_listener_workflow_sha256',
+            ),
+            'corpus_sha256' => $this->string(
+                'speech.benchmark.expected_corpus_sha256',
+            ),
+            'runner_revision' => $this->string(
+                'speech.benchmark.runner_revision',
+            ),
+            'runner_commit' => $this->string(
+                'speech.benchmark.runner_commit',
+            ),
+            'transform_revision' => $this->string(
+                'speech.benchmark.transform_revision',
+            ),
+            'logical_operation_cap' => $this->integer(
+                'speech.benchmark.logical_operation_cap',
+            ),
+            'http_attempt_cap' => $this->integer(
+                'speech.benchmark.http_attempt_cap',
+            ),
+            'maximum_spend_inr' => $this->float(
+                'speech.benchmark.maximum_spend_inr',
+            ),
+            'approved_spend_cap_inr' => $this->float(
+                'speech.benchmark.approved_spend_cap_inr',
+            ),
+            'vendor_evidence_sha256' => $this->externalFileHash(
+                $this->string('speech.benchmark.vendor_evidence_path'),
+            ),
+            'spend_approval_sha256' => $this->externalFileHash(
+                $this->string('speech.benchmark.spend_approval_path'),
+            ),
+            'safe_report_path_sha256' => hash(
+                'sha256',
+                $this->string('speech.benchmark.safe_report_path'),
+            ),
+            'ephemeral_root_sha256' => hash(
+                'sha256',
+                $this->string('speech.benchmark.ephemeral_root'),
+            ),
+            'evidence' => $this->config->get(
+                'speech.benchmark.evidence',
+                [],
+            ),
+            'pricing' => $this->config->get(
+                'speech.benchmark.pricing',
+                [],
+            ),
+            'toolchain' => $this->config->get(
+                'speech.benchmark.toolchain',
+                [],
+            ),
         ];
 
         return hash(
@@ -401,6 +483,56 @@ final readonly class AzureSpeechConfiguration
                 ! function_exists('posix_geteuid')
                 || fileowner($realPath) === posix_geteuid()
             );
+    }
+
+    private function externalFileHash(string $path): string
+    {
+        if (! $this->externalReadableFile($path)) {
+            return '';
+        }
+        $hash = hash_file('sha256', $path);
+
+        return is_string($hash) ? $hash : '';
+    }
+
+    private function secureExternalDirectory(string $path): bool
+    {
+        $realPath = realpath($path);
+        $repositoryRoot = dirname(dirname(base_path()));
+        $forbidden = [
+            $repositoryRoot,
+            storage_path(),
+            public_path(),
+        ];
+        if (
+            ! $this->absolutePath($path)
+            || $realPath === false
+            || is_link($path)
+            || ! is_dir($realPath)
+            || ! is_readable($realPath)
+            || ! is_writable($realPath)
+            || (fileperms($realPath) & 0777) !== 0700
+            || (
+                function_exists('posix_geteuid')
+                && fileowner($realPath) !== posix_geteuid()
+            )
+        ) {
+            return false;
+        }
+        foreach ($forbidden as $prefix) {
+            $resolved = realpath($prefix);
+            if (
+                is_string($resolved)
+                && (
+                    $realPath === $resolved
+                    || str_starts_with($realPath.'/', $resolved.'/')
+                )
+            ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

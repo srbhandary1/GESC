@@ -13,6 +13,7 @@ use App\Conversation\Voice\Providers\Azure\AzureSpeechConfiguration;
 use App\Conversation\Voice\Providers\Azure\AzureTextToSpeechProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextRequest;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextResult;
+use Carbon\CarbonImmutable;
 use JsonException;
 use RuntimeException;
 
@@ -50,6 +51,11 @@ final class SpeechBenchmarkRunner
     /** @var array<string, true> */
     private array $responseMetadataHashes = [];
 
+    /** @var array<string, int> */
+    private array $listenerAggregate = [];
+
+    private ?CarbonImmutable $runExpiresAt = null;
+
     public function __construct(
         private readonly AzureSpeechConfiguration $configuration,
         private readonly SpeechBenchmarkCorpus $corpus,
@@ -58,15 +64,222 @@ final class SpeechBenchmarkRunner
         private readonly AzureTextToSpeechProvider $textToSpeech,
         private readonly AzureRecordedSpeechToTextProvider $speechToText,
         private readonly PcmWavInspector $wavInspector,
+        private readonly SpeechBenchmarkRunStore $runStore,
     ) {}
 
     /**
      * @return array<string, mixed>
      */
-    public function run(): array
+    public function prepare(?string $requestedRunId = null): array
     {
-        $this->configuration->assertLiveAuthorized(true);
+        $this->reset();
+        $this->configuration->assertLiveAuthorized(false);
         $utterances = $this->corpus->load();
+        $voices = $this->lockedVoices();
+        $runId = $requestedRunId ?? $this->runStore->generateRunId();
+        $state = $this->runStore->begin($runId, $this->accounting());
+        if (($state['status'] ?? null) === 'prepared') {
+            return $this->runStore->safeSummary($state);
+        }
+        $this->runExpiresAt = CarbonImmutable::parse(
+            (string) $state['expires_at'],
+            'UTC',
+        );
+
+        try {
+            foreach ($utterances as $utterance) {
+                foreach ($voices as $voice) {
+                    $tts = $this->tts(
+                        $utterance['id'],
+                        $utterance['text'],
+                        $voice,
+                    );
+                    if (! $tts instanceof TextToSpeechResult) {
+                        throw new RuntimeException(
+                            'A benchmark TTS fixture could not be prepared.',
+                        );
+                    }
+                    $audio = (string) $tts->audioBytes;
+                    $this->wavInspector->inspect($audio);
+                    $this->runStore->appendFixture(
+                        $runId,
+                        $utterance['id'],
+                        $utterance['category'],
+                        $voice,
+                        $audio,
+                        $this->accounting(),
+                    );
+                }
+            }
+            $state = $this->runStore->markPrepared(
+                $runId,
+                $this->accounting(),
+            );
+        } catch (\Throwable $exception) {
+            $this->runStore->markPreparationFailed(
+                $runId,
+                $this->accounting(),
+            );
+            throw $exception;
+        }
+
+        return $this->runStore->safeSummary($state);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function complete(string $runId): array
+    {
+        $this->reset();
+        $reason = 'failed';
+        $state = null;
+        $lease = null;
+        try {
+            $this->configuration->assertLiveAuthorized(true);
+            $lease = $this->runStore->beginCompletion($runId);
+            $state = $lease->state;
+            $this->runExpiresAt = CarbonImmutable::parse(
+                (string) $state['expires_at'],
+                'UTC',
+            );
+            $this->restoreAccounting($state['accounting']);
+            $this->listenerAggregate = $this->runStore->reviewAggregate(
+                $state,
+            );
+            $this->assertListenerEvidence($this->listenerAggregate);
+            $utterances = $this->corpus->load();
+            $voices = $this->lockedVoices();
+
+            foreach ($utterances as $utterance) {
+                foreach ($voices as $voice) {
+                    $preparedAudio = $this->runStore->preparedAudio(
+                        $runId,
+                        $state,
+                        $utterance['id'],
+                        $voice,
+                    );
+                    foreach (['clean', 'snr20', 'snr10_lowpass'] as $condition) {
+                        $seed = hash(
+                            'sha256',
+                            $this->configuration->string('speech.benchmark.id')
+                                .$utterance['id'].$voice.$condition,
+                        );
+                        $audio = $this->transformer->transform(
+                            $preparedAudio,
+                            $seed,
+                            $condition,
+                        );
+                        $this->stt(
+                            phase: 'corpus',
+                            fixtureId: $utterance['id'],
+                            category: $utterance['category'],
+                            reference: $utterance['text'],
+                            voice: $voice,
+                            condition: $condition,
+                            audio: $audio,
+                        );
+                    }
+                }
+            }
+
+            $byId = [];
+            foreach ($utterances as $utterance) {
+                $byId[$utterance['id']] = $utterance;
+            }
+            $repetitions = config(
+                'speech.benchmark.repetition_fixture_ids',
+                [],
+            );
+            if (! is_array($repetitions) || count($repetitions) !== 4) {
+                throw new RuntimeException('The repetition fixtures changed.');
+            }
+
+            for ($round = 1; $round <= 20; $round++) {
+                foreach ($repetitions as $fixtureId) {
+                    $utterance = is_string($fixtureId)
+                        ? ($byId[$fixtureId] ?? null)
+                        : null;
+                    if (! is_array($utterance)) {
+                        throw new RuntimeException(
+                            'A repetition fixture is unavailable.',
+                        );
+                    }
+
+                    $tts = $this->tts(
+                        'repeat-'.$round.'-'.$fixtureId,
+                        $utterance['text'],
+                        'en-IN-NeerjaNeural',
+                    );
+                    if (! $tts instanceof TextToSpeechResult) {
+                        continue;
+                    }
+
+                    $audio = $this->transformer->transform(
+                        (string) $tts->audioBytes,
+                        hash(
+                            'sha256',
+                            $this->configuration->string('speech.benchmark.id')
+                                .$fixtureId.'en-IN-NeerjaNeuralclean',
+                        ),
+                        'clean',
+                    );
+                    $this->stt(
+                        phase: 'repetition',
+                        fixtureId: 'repeat-'.$round.'-'.$fixtureId,
+                        category: $utterance['category'],
+                        reference: $utterance['text'],
+                        voice: 'en-IN-NeerjaNeural',
+                        condition: 'clean',
+                        audio: $audio,
+                    );
+                }
+            }
+
+            $report = $this->report(
+                (string) $state['created_at'],
+                gmdate('Y-m-d\TH:i:s\Z'),
+            );
+            $reason = $report['passed'] === true ? 'completed' : 'failed';
+        } finally {
+            $lease?->release();
+            $receipt = $this->runStore->purge($runId, $reason);
+        }
+
+        $report['ephemeral_content'] = [
+            'storage_mode' => 'application_encrypted_ephemeral_bundle',
+            'content_files_written' => 96,
+            'bundle_deleted' => $receipt['success'],
+            'deletion_receipt' => $receipt,
+        ];
+        $this->writeSafeReport($report);
+
+        return $report;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function preflightCompletion(string $runId): array
+    {
+        $this->reset();
+        $this->configuration->assertLiveAuthorized(true);
+        $state = $this->runStore->completionState($runId);
+        $this->restoreAccounting($state['accounting']);
+        $aggregate = $this->runStore->reviewAggregate($state);
+        $this->assertListenerEvidence($aggregate);
+        $summary = $this->runStore->safeSummary($state);
+        $summary['status'] = 'complete_ready';
+        $summary['listener_evidence'] = $aggregate;
+
+        return $summary;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lockedVoices(): array
+    {
         $voices = config('speech.azure.tts.fixture_voices', []);
         if (
             $voices !== ['en-IN-NeerjaNeural', 'en-IN-PrabhatNeural']
@@ -74,99 +287,111 @@ final class SpeechBenchmarkRunner
             throw new RuntimeException('The locked fixture voices changed.');
         }
 
-        $startedAt = gmdate('Y-m-d\TH:i:s\Z');
-        foreach ($utterances as $utterance) {
-            foreach ($voices as $voice) {
-                $tts = $this->tts(
-                    $utterance['id'],
-                    $utterance['text'],
-                    $voice,
-                );
-                if (! $tts instanceof TextToSpeechResult) {
-                    continue;
-                }
+        return $voices;
+    }
 
-                foreach (['clean', 'snr20', 'snr10_lowpass'] as $condition) {
-                    $seed = hash(
-                        'sha256',
-                        $this->configuration->string('speech.benchmark.id')
-                            .$utterance['id'].$voice.$condition,
-                    );
-                    $audio = $this->transformer->transform(
-                        (string) $tts->audioBytes,
-                        $seed,
-                        $condition,
-                    );
-                    $this->stt(
-                        phase: 'corpus',
-                        fixtureId: $utterance['id'],
-                        category: $utterance['category'],
-                        reference: $utterance['text'],
-                        voice: $voice,
-                        condition: $condition,
-                        audio: $audio,
-                    );
-                }
-            }
+    /**
+     * @return array<string, mixed>
+     */
+    private function accounting(): array
+    {
+        $metadataHashes = array_keys($this->responseMetadataHashes);
+        sort($metadataHashes);
+
+        return [
+            'logical_operations' => $this->logicalOperations,
+            'http_attempts' => $this->httpAttempts,
+            'first_attempt_successes' => $this->firstAttemptSuccesses,
+            'estimated_spend_inr' => $this->estimatedSpendInr,
+            'safe_failures' => $this->failures,
+            'tts_latencies' => $this->ttsLatencies,
+            'response_metadata_sha256' => $metadataHashes,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $accounting
+     */
+    private function restoreAccounting(array $accounting): void
+    {
+        $latencies = $accounting['tts_latencies'] ?? null;
+        $failures = $accounting['safe_failures'] ?? null;
+        $hashes = $accounting['response_metadata_sha256'] ?? null;
+        $httpAttempts = $accounting['http_attempts'] ?? null;
+        $firstAttemptSuccesses = $accounting[
+            'first_attempt_successes'
+        ] ?? null;
+        $estimatedSpend = $accounting['estimated_spend_inr'] ?? null;
+        if (
+            ($accounting['logical_operations'] ?? null) !== 96
+            || ! is_int($httpAttempts)
+            || $httpAttempts < 96
+            || $httpAttempts > 192
+            || ! is_int($firstAttemptSuccesses)
+            || $firstAttemptSuccesses < 0
+            || $firstAttemptSuccesses > 96
+            || ! is_numeric($estimatedSpend)
+            || (float) $estimatedSpend < 0.0
+            || (float) $estimatedSpend > $this->configuration->float(
+                'speech.benchmark.approved_spend_cap_inr',
+            )
+            || ! is_array($latencies)
+            || count($latencies) !== 96
+            || array_filter(
+                $latencies,
+                static fn (mixed $value): bool => ! is_int($value)
+                    || $value < 0,
+            )
+                !== []
+            || ! is_array($failures)
+            || $failures !== []
+            || ! is_array($hashes)
+        ) {
+            throw new RuntimeException('The benchmark operation state is invalid.');
         }
 
-        $byId = [];
-        foreach ($utterances as $utterance) {
-            $byId[$utterance['id']] = $utterance;
-        }
-        $repetitions = config(
-            'speech.benchmark.repetition_fixture_ids',
-            [],
-        );
-        if (! is_array($repetitions) || count($repetitions) !== 4) {
-            throw new RuntimeException('The repetition fixtures changed.');
-        }
-
-        for ($round = 1; $round <= 20; $round++) {
-            foreach ($repetitions as $fixtureId) {
-                $utterance = is_string($fixtureId)
-                    ? ($byId[$fixtureId] ?? null)
-                    : null;
-                if (! is_array($utterance)) {
-                    throw new RuntimeException(
-                        'A repetition fixture is unavailable.',
-                    );
-                }
-
-                $tts = $this->tts(
-                    'repeat-'.$round.'-'.$fixtureId,
-                    $utterance['text'],
-                    'en-IN-NeerjaNeural',
-                );
-                if (! $tts instanceof TextToSpeechResult) {
-                    continue;
-                }
-
-                $audio = $this->transformer->transform(
-                    (string) $tts->audioBytes,
-                    hash(
-                        'sha256',
-                        $this->configuration->string('speech.benchmark.id')
-                            .$fixtureId.'en-IN-NeerjaNeuralclean',
-                    ),
-                    'clean',
-                );
-                $this->stt(
-                    phase: 'repetition',
-                    fixtureId: 'repeat-'.$round.'-'.$fixtureId,
-                    category: $utterance['category'],
-                    reference: $utterance['text'],
-                    voice: 'en-IN-NeerjaNeural',
-                    condition: 'clean',
-                    audio: $audio,
+        $this->logicalOperations = 96;
+        $this->httpAttempts = $httpAttempts;
+        $this->firstAttemptSuccesses = $firstAttemptSuccesses;
+        $this->estimatedSpendInr = (float) $estimatedSpend;
+        $this->ttsLatencies = array_values($latencies);
+        foreach ($hashes as $hash) {
+            if (
+                ! is_string($hash)
+                || preg_match('/\A[a-f0-9]{64}\z/', $hash) !== 1
+            ) {
+                throw new RuntimeException(
+                    'The benchmark response metadata state is invalid.',
                 );
             }
+            $this->responseMetadataHashes[$hash] = true;
         }
+    }
 
-        $report = $this->report($startedAt, gmdate('Y-m-d\TH:i:s\Z'));
-        $this->writeSafeReport($report);
+    private function reset(): void
+    {
+        $this->logicalOperations = 0;
+        $this->httpAttempts = 0;
+        $this->firstAttemptSuccesses = 0;
+        $this->estimatedSpendInr = 0.0;
+        $this->failures = [];
+        $this->sttMeasurements = [];
+        $this->ttsLatencies = [];
+        $this->responseMetadataHashes = [];
+        $this->listenerAggregate = [];
+        $this->runExpiresAt = null;
+    }
 
-        return $report;
+    /**
+     * @param  array<string, int>  $aggregate
+     */
+    private function assertListenerEvidence(array $aggregate): void
+    {
+        if ($this->listenerEvidence() !== $aggregate) {
+            throw new RuntimeException(
+                'The listener evidence does not match the reviewed fixtures.',
+            );
+        }
     }
 
     private function tts(
@@ -259,6 +484,18 @@ final class SpeechBenchmarkRunner
 
     private function providerOperation(float $attemptCost, callable $call): mixed
     {
+        $this->configuration->assertLiveAuthorized(
+            $this->listenerAggregate !== [],
+        );
+        if (
+            $this->runExpiresAt instanceof CarbonImmutable
+            && $this->runExpiresAt->lessThanOrEqualTo(
+                CarbonImmutable::now('UTC'),
+            )
+        ) {
+            throw new RuntimeException('The benchmark run expired.');
+        }
+
         $this->logicalOperations++;
         if (
             $this->logicalOperations
@@ -385,7 +622,9 @@ final class SpeechBenchmarkRunner
                 'material_hallucination'
             ],
         ));
-        $listener = $this->listenerEvidence();
+        $listener = $this->listenerAggregate !== []
+            ? $this->listenerAggregate
+            : $this->listenerEvidence();
         $listenerPass = ($listener['output_count'] ?? 0) === 96
             && ($listener['reviewer_count'] ?? 0) === 2
             && ($listener['intelligibility_accepted_by_both'] ?? 0) >= 92

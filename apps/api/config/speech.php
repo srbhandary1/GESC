@@ -44,8 +44,9 @@ return [
         'plan_path' => dirname(base_path()).'/../docs/PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md',
         'approved_adr_proposal_sha256' => 'b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51',
         'approved_plan_sha256' => '817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab',
+        'approved_listener_workflow_sha256' => 'a0848d462f9363cc2fb9a2babd2f50fd8ae7ad4ed99ee2cd3abaaeb828413e0f',
         'expected_corpus_sha256' => 'aec1b1c4d7f3a5159be3b674c9cf66c52164252b24885b4389789d0dfd9a7210',
-        'runner_revision' => 'pr009-azure-speech-runner-v1',
+        'runner_revision' => 'pr009-azure-speech-runner-v2',
         'runner_commit' => env('SPEECH_BENCHMARK_RUNNER_COMMIT', ''),
         'transform_revision' => 'pcm16-linear-noise-lowpass-v1',
         'toolchain' => [
@@ -64,6 +65,11 @@ return [
         'spend_approval_path' => env('SPEECH_BENCHMARK_SPEND_APPROVAL_PATH', ''),
         'safe_report_path' => env('SPEECH_BENCHMARK_SAFE_REPORT_PATH', ''),
         'listener_evidence_path' => env('SPEECH_BENCHMARK_LISTENER_EVIDENCE_PATH', ''),
+        'ephemeral_root' => env('SPEECH_BENCHMARK_EPHEMERAL_ROOT', ''),
+        'ephemeral_storage_acknowledged' => env(
+            'SPEECH_BENCHMARK_EPHEMERAL_STORAGE_ACKNOWLEDGED',
+            false,
+        ),
         'evidence' => [
             'subscription' => env('AZURE_SPEECH_SUBSCRIPTION_EVIDENCE_ID', ''),
             'contracting_entity' => env('AZURE_SPEECH_CONTRACTING_ENTITY_REVIEW_ID', ''),
