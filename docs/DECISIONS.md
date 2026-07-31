@@ -93,7 +93,7 @@ indicated implementation becomes authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0005 | PR-009 | Recording retention, consent states, provider processing boundaries and deletion workflow |
+| DR-0005 | PR-009 | Review the unapproved [ADR-0007 proposal](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) for recording consent, retention, provider-processing and deletion policy; exact-artifact acceptance and PR-009 authorization remain separate gates |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

@@ -1257,3 +1257,80 @@ PR-008 is implemented and repository-verified within APP-0010 and is ready
 for exact-commit Accountable Product Owner review. It is not accepted yet.
 PR-009, real provider calls, audio upload/persistence and production remain
 unauthorized.
+
+---
+
+## DR-0005 — Recording policy decision proposal
+
+### Scope reviewed
+
+- master-plan recording, privacy, provider, tenancy and PR-009 constraints;
+- accepted ADR-0001, ADR-0002, ADR-0003 and ADR-0006 boundaries;
+- proposed consent purposes and per-turn learner submission;
+- upload quarantine and media-validation limits;
+- raw-audio, transcript, generated-media, evidence and backup retention;
+- withdrawal, deletion, provider deletion and reconciliation;
+- provider eligibility, request minimization and no-training rules;
+- learner transcript recovery and deterministic learning authority; and
+- non-production, legal, independent-review and release gates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Proposal remains non-authoritative | Pass | ADR front matter is `proposed`, has no decider and contains no approval evidence |
+| DR-0005 remains open | Pass | open-decision table links the proposal without moving the request to resolved |
+| PR-009 remains unauthorized | Pass | ADR status, fail-closed rollout and repository status |
+| Raw audio is temporary, private and excluded from ordinary logs/backups | Pass | data-classification, validation and retention sections |
+| Consent, withdrawal and deletion are purpose-specific and measurable | Pass | consent ledger, per-turn authorization and deletion objectives |
+| Provider data is minimized and secondary use is prohibited | Pass | provider-processing boundary |
+| Organization and exact-membership ownership remain mandatory | Pass | tenancy and authorization section |
+| Automated transcript/speech output cannot alter learning authority | Pass | transcript-recovery and authoritative-record sections |
+| Production has explicit legal and independent-review gates | Pass | context and fail-closed rollout |
+| No source, API, schema, configuration or environment change is proposed | Pass | documentation-only diff inspection |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| Node/js-yaml front matter, final-newline and local-link validation | Pass: four changed Markdown files |
+| Proposed-status and absent-approval evidence assertions | Pass |
+| `git diff --check` | Pass |
+| Scoped status/diff inspection | Pass: only the proposed ADR and three governance records belong to this checkpoint |
+| SHA-256 proposal hashing | Pass; exact hash reported with the proposal commit |
+
+Application test, E2E, AI-evaluation and build commands are not applicable
+because this checkpoint changes documentation only and authorizes no runtime
+behavior.
+
+### Security, privacy and tenancy review
+
+The proposal treats learner voice and transcript content as sensitive,
+purpose-limited data. It requires fail-closed adult eligibility, consent,
+private encrypted media, short retention, deletion reconciliation,
+content-free telemetry, project-owned provider adapters, exact tenant
+ownership and same-/cross-tenant tests before any later implementation can be
+accepted.
+
+This is a development policy draft, not legal advice or independent
+production review. Qualified Indian privacy counsel must confirm applicable
+commencement, notice, retention, erasure, processor and transfer obligations
+before production.
+
+### Known limitations and decision gate
+
+- No human reviewer has accepted the exact proposal artifact.
+- Consolidated development-role acceptance, if later supplied, would still
+  not be independent production review.
+- No real provider has been selected, reviewed, contracted or benchmarked.
+- No notice or translation has independent legal or language approval.
+- The proposal intentionally leaves PR-009 implementation, provider
+  configuration, audio processing and production unauthorized.
+- PR-008 exact-commit acceptance remains a separate pending checkpoint gate.
+
+### Exit decision
+
+ADR-0007 is ready for exact-artifact Technical Decision Owner, Security
+Reviewer, Privacy Reviewer and Tenancy Reviewer consideration. DR-0005 remains
+open. No approval, PR-009 implementation authority or production authority is
+recorded.

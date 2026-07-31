@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-008 — Conversation domain with deterministic fake providers |
-| Status | Implemented and repository-verified under APP-0010; exact-commit acceptance pending |
+| Status | Implemented and repository-verified under APP-0010; exact-commit acceptance pending; DR-0005 decision proposal drafted |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 30 July 2026 |
-| Git branch | `codex/pr-008-conversation-fake-providers` |
+| Updated date | 31 July 2026 |
+| Git branch | `codex/dr-0005-recording-policy` |
 | Product code | Accepted PR-007 baseline plus the implemented PR-008 deterministic fake-provider conversation slice; no real provider, audio persistence, production or later checkpoint approved |
-| Next checkpoint | PR-009 remains unauthorized; PR-008 exact-commit acceptance is pending |
+| Next checkpoint | Review proposed ADR-0007; PR-009 remains unauthorized and PR-008 exact-commit acceptance is pending |
 
 ## Checkpoint authorization
 
@@ -83,6 +83,32 @@ explanations, production deployment or a later checkpoint.
   the Makefile with the pinned native toolchain. `pnpm run e2e` ran directly.
 - PR-009, real provider calls, audio upload/persistence and production remain
   unauthorized.
+
+## DR-0005 decision proposal
+
+[ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md)
+is a proposed recording-consent, retention, provider-processing and deletion
+policy. It defines:
+
+- separate, versioned upload/provider/history purposes and per-turn learner
+  submission;
+- fail-closed adult eligibility, private quarantine, validation and
+  organization plus exact-membership ownership;
+- short raw-audio, transcript and generated-media lifetimes with tombstones,
+  deletion receipts and provider-deletion reconciliation;
+- reviewed, minimized provider requests with training, human review and
+  secondary use prohibited in PR-009;
+- learner transcript confirmation, correction, discard, re-record and
+  text-only recovery without authority over deterministic learning records;
+  and
+- legal, vendor, independent specialist and explicit release gates before
+  production.
+
+The proposal has no approval evidence. DR-0005 remains open until the
+Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy
+Reviewer accept the exact artifact and trade-offs through a durable approval
+record. Drafting it does not accept PR-008, authorize PR-009, select a
+provider, permit learner-audio processing or approve production.
 
 ## Accepted PR-007 implementation state
 
@@ -367,8 +393,9 @@ PR-006 verification results:
 - Raw learner audio is local-only and unavailable for transcription, trainer
   review or spoken mastery. Its non-authoritative capture receipt is not
   evidence of intelligible speech.
-- DR-0005 remains open; PR-006 introduces no recording upload, persistent
-  consent state, retention/deletion workflow or provider processing.
+- DR-0005 remains open. ADR-0007 is a proposed, unapproved decision artifact;
+  no recording upload, persistent consent state, retention/deletion workflow
+  or real-provider processing is authorized.
 - PR-007 offline behavior is accepted at its exact implementation commit.
   PR-008 adds only project-owned deterministic fake-provider paths; every real
   AI/speech provider and provider SDK remains excluded.
@@ -413,7 +440,8 @@ PR-006 verification results:
 ## Next checkpoint gate
 
 PR-008 is implemented and repository-verified under APP-0010. It is not yet
-accepted at an exact implementation commit. PR-009, production and every
+accepted at an exact implementation commit. DR-0005 remains open with
+ADR-0007 proposed for exact-artifact review. PR-009, production and every
 later implementation checkpoint remain unauthorized. Production additionally
-requires independent security, privacy, tenancy, accessibility,
-language/content and release review.
+requires qualified legal review and independent security, privacy, tenancy,
+accessibility, language/content and release review.
