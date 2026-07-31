@@ -1,30 +1,39 @@
 ---
-status: proposed
+status: accepted
 date: 2026-07-31
-deciders: []
+deciders:
+  - S R Bhandary as Technical Decision Owner
+  - S R Bhandary as Security Reviewer
+  - S R Bhandary as Privacy Reviewer
+  - S R Bhandary as Tenancy Reviewer
 consulted:
   - Codex as author and evidence recorder, not approver
 informed: []
 amends_master_plan: false
-approval_evidence: []
-approval_reference: null
+approval_evidence:
+  - APP-0013
+approval_reference: Codex task 019fb263-fe9a-77f0-a1db-e3d563707715
 ---
 
 # ADR-0008: Azure Speech development provider and benchmark policy
 
 ## Status
 
-Proposed.
+Accepted on 2026-07-31 under
+[APP-0013](../APPROVALS.md#app-0013). The approved proposal SHA-256 is
+`b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51`;
+the separately hashed benchmark plan SHA-256 is
+`817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab`.
 
-This proposal addresses DR-0011. It does not resolve DR-0011 until the
-Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy
-Reviewer accept this exact artifact and its trade-offs through durable approval
-evidence.
+This acceptance resolves DR-0011 for the PR-009 provider selection and
+benchmark policy. It authorizes only the remaining Azure Speech adapter and
+locked synthetic-benchmark implementation.
 
-Approval would select one managed STT/TTS stack for the PR-009 development
-benchmark. It would not supply credentials, approve a vendor contract, report
-the benchmark as passed, accept PR-009, authorize PR-010, approve production or
-waive qualified legal and independent specialist review.
+It does not supply a credential, approve provider spend, report the benchmark
+as passed, accept PR-009, authorize learner data, PR-010 or production. No
+credential or live synthetic request is permitted until the exact
+subscription/DPA/subprocessor evidence and separate provider-spend approval
+required by this ADR are recorded.
 
 ## Context
 
@@ -387,18 +396,25 @@ decision and benchmark policy requested by master-plan §§14.4, 14.7, 14.8,
 
 ## Approval evidence
 
-When accepted, approval must:
+- Evidence ID: `APP-0013`
+- Approved proposal SHA-256:
+  `b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51`
+- Approved benchmark-plan SHA-256:
+  `817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab`
+- Acceptance date: 2026-07-31, Asia/Kolkata
+- Human approver identifier: `S R Bhandary`
+- Roles exercised: Technical Decision Owner; Security Reviewer; Privacy
+  Reviewer; Tenancy Reviewer
+- Scope: resolve DR-0011 and authorize only the remaining PR-009 adapter and
+  locked synthetic-benchmark implementation
+- Explicitly accepted limitations: provider-managed STT model rotation and the
+  circular synthetic benchmark
+- Limitations: no credential, live request, provider spend, benchmark success,
+  PR-009 acceptance, learner data, PR-010 or production approval
+- Master-plan impact: none
 
-1. identify this exact proposal and the linked benchmark plan by SHA-256;
-2. name the Technical Decision Owner, Security Reviewer, Privacy Reviewer and
-   Tenancy Reviewer roles exercised;
-3. explicitly accept the provider-managed STT model-rotation and circular
-   synthetic-benchmark limitations;
-4. state that credentials, provider spend, benchmark success, PR-009
-   acceptance, PR-010 and production are not authorized by the decision; and
-5. be recorded in `docs/APPROVALS.md`.
-
-Codex is the author and evidence recorder only, never the approver.
+Codex is the author and evidence recorder only, never the approver. The
+consolidated development roles are not independent production review.
 
 ## Verification
 
@@ -408,7 +424,8 @@ Before proposal review:
 - hash the exact proposal and benchmark plan;
 - confirm source/API/schema/configuration/environment files did not change;
 - check every external claim against the current official source; and
-- confirm DR-0011 remains open and providers remain disabled.
+- confirm DR-0011 is resolved only for policy selection and live provider
+  requests remain disabled.
 
 After acceptance and before a live benchmark:
 
@@ -421,7 +438,6 @@ After acceptance and before a live benchmark:
 
 ## Follow-up
 
-- Obtain exact-artifact development approval for this proposal.
 - Provision the dedicated Central India Azure Speech resource and private
   vendor evidence outside Git.
 - Obtain separate approval for the benchmark's bounded provider spend.

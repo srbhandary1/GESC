@@ -14,18 +14,23 @@ privacy-safe telemetry. It does not authorize PR-010 orchestration,
 pronunciation scoring, spoken mastery, provider training, human review,
 production or a later checkpoint.
 
-## Provider decision gate
+## Provider implementation and operational gate
 
-No live provider is selected by the repository. DR-0011 must record the exact
-STT/TTS service, legal entity, region, sub-processors, data-processing terms,
-transfer path, no-training/human-review configuration, retention/deletion
-guarantees, security behavior, credentials, callback behavior, model versions
-and synthetic benchmark evidence before a live adapter can be enabled.
+[ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
+and its locked benchmark plan resolve DR-0011 under
+[APP-0013](APPROVALS.md#app-0013). They select Azure Speech in `centralindia`
+for the PR-009 development benchmark only.
 
-Until DR-0011 is resolved:
+Before any live synthetic adapter call, the exact subscription, legal entity,
+region, subprocessors, data-processing terms, transfer path,
+no-training/human-review configuration, retention/deletion guarantees,
+security behavior, credential reference, callback behavior and separate
+provider-spend approval must be recorded and validated.
 
-- every non-testing provider binding is disabled;
-- no live provider call or credential is permitted;
+Until every operational gate is satisfied:
+
+- every live provider binding and request remains disabled;
+- no live provider call or credential use is permitted;
 - deterministic testing adapters prove project contracts but do not count as
   the required live benchmark;
 - upload is disabled by default and may be enabled only in local/testing for

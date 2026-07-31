@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | Provider-neutral implementation verified; DR-0011 Azure Speech decision proposal ready for exact-artifact review |
+| Status | ADR-0008 accepted and DR-0011 resolved; remaining Azure adapters and locked synthetic benchmark authorized with live calls blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
 | Product code | PR-008 accepted at its exact implementation commit; PR-009 provider-neutral secure speech/transcript foundation implemented; live providers remain disabled |
-| Next checkpoint | Review proposed ADR-0008; after acceptance and vendor evidence, complete only PR-009 adapters and synthetic benchmark |
+| Next checkpoint | Implement only the accepted PR-009 Azure adapters and fail-closed benchmark harness; no live request before vendor/spend gates |
 
 ## Checkpoint authorization
 
@@ -57,6 +57,14 @@ Product Owner acceptance of PR-008 at
 `11f7b597ad2db3b8cf65a1394c1171a8280045d1` with its recorded limitations and
 authorizes only PR-009 implementation within accepted ADR-0007. It does not
 approve a provider, production, PR-010 or any later checkpoint.
+
+[APP-0013](APPROVALS.md#app-0013) records `S R Bhandary`'s exact-artifact
+approval of [ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
+and the [locked PR-009 benchmark plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md)
+in the consolidated Technical Decision Owner, Security Reviewer, Privacy
+Reviewer and Tenancy Reviewer roles. DR-0011 is resolved and only the remaining
+PR-009 Azure adapters and benchmark implementation are authorized. No
+credential, live request or provider spend is approved.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -161,21 +169,21 @@ select a provider, permit learner-audio processing or approve production.
   web tests. `make build` passes with 76 Vite modules, and 10 Chromium
   journeys pass against a temporary `127.0.0.1:4173` listener that stops after
   the run.
-- PR-009 is not complete or acceptable yet. DR-0011 remains open for the exact
-  reviewed STT and TTS provider/local model, contractual/privacy/security
-  evidence and locked synthetic benchmarks. There is no live provider,
-  generated TTS audio, streaming quarantine worker, reviewed malware scanner,
-  production private object store, provider deletion reconciliation or
-  production authorization.
-- [Proposed ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
+- PR-009 is not complete or acceptable yet. ADR-0008 resolves the provider
+  policy, but the exact STT/TTS implementation, operational vendor evidence,
+  separate spend approval and locked benchmark evidence remain outstanding.
+  There is no live provider, generated TTS audio, streaming quarantine worker,
+  reviewed malware scanner, production private object store, provider deletion
+  reconciliation or production authorization.
+- [Accepted ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md)
   selects Azure Speech Fast Transcription REST `2025-10-15` and real-time
   prebuilt TTS in `centralindia` for a development-only benchmark. The
   [locked plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md) uses only
   project-authored strings and generated synthetic audio, with no learner data.
-- ADR-0008 is not approved and DR-0011 remains open. No Azure credential,
-  subscription contract, DPA/subprocessor snapshot or benchmark result exists
-  in the repository. Provider binding remains disabled until exact-artifact
-  approval and every recorded evidence gate passes.
+- ADR-0008 is accepted and DR-0011 is resolved under APP-0013. No Azure
+  credential, subscription contract, DPA/subprocessor snapshot, spend approval
+  or benchmark result exists in the repository. Provider binding and every
+  live request remain disabled until all operational evidence gates pass.
 
 ## Accepted PR-007 implementation state
 

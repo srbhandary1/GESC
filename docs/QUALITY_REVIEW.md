@@ -1372,7 +1372,7 @@ records no PR-009 implementation authority or production authority.
 | Recording access is exact-learner and cross-tenant safe | Pass | composite foreign keys and cross-tenant service test |
 | Telemetry/database evidence excludes audio and transcript bodies | Pass for tested provider-neutral paths | ciphertext/digest and safe provider-run scans |
 | API/generated clients, localization and accessible UI match | Pass | OpenAPI policy/drift, locale validation, React and axe Chromium tests |
-| One live reviewed STT and TTS adapter has benchmark evidence | Blocked | DR-0011 remains open; no live adapter or credential exists |
+| One live reviewed STT and TTS adapter has benchmark evidence | Blocked | ADR-0008 is accepted, but no live adapter, operational vendor evidence, approved credential or benchmark result exists |
 | Production media storage/scanning/provider deletion is reviewed | Blocked | production and specialist reviews remain unauthorized |
 
 ### Commands and results
@@ -1389,7 +1389,7 @@ records no PR-009 implementation authority or production authority.
 | OpenAPI/generated-client drift, ESLint and recursive TypeScript | Pass |
 | `make e2e` equivalent (`pnpm run e2e`) | Pass: 10 Chromium journeys |
 | `make build` | Pass: Laravel optimize/cleanup and 76-module Vite build |
-| `make ai-eval` | Not run; DR-0011 has not selected a benchmark adapter |
+| `make ai-eval` | Not run; ADR-0008 selects the benchmark adapter, but its implementation and operational evidence gates are not complete |
 
 ### Security, privacy and tenancy review
 
@@ -1411,16 +1411,16 @@ records no PR-009 implementation authority or production authority.
 
 The provider-neutral development slice is implemented and verified, but
 PR-009 is not complete or ready for Accountable Product Owner acceptance.
-DR-0011 must select and review exact STT and TTS implementations and establish
-locked synthetic benchmarks. The current implementation has no live provider,
-TTS audio, approved scanner, isolated streaming quarantine worker, reviewed
-production object store, provider deletion reconciliation, restore/tombstone
-drill or independent production review. PR-010 and production remain
-unauthorized.
+ADR-0008 now selects the exact STT and TTS implementations and locked synthetic
+benchmark. The current implementation has no live provider, TTS audio,
+operational vendor evidence, separate spend approval, approved scanner,
+isolated streaming quarantine worker, reviewed production object store,
+provider deletion reconciliation, restore/tombstone drill or independent
+production review. PR-010 and production remain unauthorized.
 
 ---
 
-## DR-0011 — Proposed Azure Speech development provider
+## DR-0011 — Accepted Azure Speech development provider
 
 ### Scope reviewed
 
@@ -1437,7 +1437,7 @@ unauthorized.
 
 | Check | Result | Evidence |
 |---|---|---|
-| Exact development STT/TTS stack proposed | Ready for human decision | proposed ADR-0008 selects Azure Fast Transcription REST `2025-10-15`, `en-IN`, and real-time `en-IN-NeerjaNeural` TTS |
+| Exact development STT/TTS stack approved | Pass | accepted ADR-0008 selects Azure Fast Transcription REST `2025-10-15`, `en-IN`, and real-time `en-IN-NeerjaNeural` TTS under APP-0013 |
 | India-region service support | Documented, not account-verified | official Azure region documentation lists `centralindia` for core STT/TTS and states Speech data stays in the resource region |
 | Provider content retention | Documented, not contract-verified | official Azure documentation states no retention for fast STT and real-time TTS with logging/customization off |
 | No training/model improvement | Documented, not account-verified | official Azure Speech documentation plus mandatory configuration/evidence gate |
@@ -1475,15 +1475,15 @@ call.
 changes no application source, API, user journey, packaging or deployment
 behavior. The previously recorded PR-009 results remain unchanged.
 
-### Decision gate
+### Decision result and implementation gate
 
-ADR-0008 and its benchmark plan are proposals. DR-0011 remains open. The four
-named development decision roles must accept the exact proposal hash and its
-managed-model-rotation and circular-synthetic-benchmark trade-offs before
-provider implementation. A dedicated Central India Azure subscription,
-contract/DPA/subprocessor evidence and non-production credential are still
-required before the first live synthetic request.
+ADR-0008 and its benchmark plan are accepted under APP-0013 at their exact
+recorded SHA-256 values. DR-0011 is resolved, including explicit acceptance of
+managed STT model rotation and the circular synthetic benchmark.
 
-Approval would authorize only the remaining PR-009 adapter and benchmark work.
-It would not report a benchmark pass, accept PR-009, authorize learner data,
-PR-010 or production.
+Only the remaining PR-009 adapter and locked benchmark implementation is
+authorized. A dedicated Central India Azure subscription, exact
+contract/DPA/subprocessor evidence, non-production credential and separate
+provider-spend approval are still required before the first live synthetic
+request. No benchmark pass, PR-009 acceptance, learner-data use, PR-010 or
+production is approved.

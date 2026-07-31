@@ -823,3 +823,55 @@ Immediately before this statement, Codex:
 - Independent security, privacy, tenancy, accessibility, language/content,
   legal, vendor and production-release reviews remain mandatory.
 - No master-plan amendment is made.
+
+<a id="app-0013"></a>
+
+## APP-0013 — ADR-0008 and PR-009 benchmark-plan approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-31 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Approved ADR | [ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md) |
+| Approved ADR proposal SHA-256 | `b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51` |
+| Approved benchmark plan | [PR-009 speech provider benchmark plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md) |
+| Approved benchmark-plan SHA-256 | `817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab` |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy Reviewer, and Tenancy Reviewer, approve ADR-0008 as written at SHA-256 b1c778753ab9b0b6b7b8202f8d106a8ee302485455189afce76baac361841b51 and the PR-009 benchmark plan at SHA-256 817f430aabd93eb06d9ecd1b980994862e1ddfe19f3285fe184ba508204581ab, accept the provider-managed STT model-rotation and circular synthetic-benchmark limitations, and authorize only the remaining PR-009 Azure Speech adapter and locked synthetic-benchmark implementation. No credential or live synthetic request is authorized until exact subscription/DPA/subprocessor evidence and separate provider-spend approval are recorded. This consolidated development approval does not approve benchmark success, accept PR-009, authorize learner data, PR-010, or production.
+```
+
+### Accepted scope and authorization
+
+- Accept the exact ADR-0008 proposal and linked benchmark plan at their
+  recorded SHA-256 values.
+- Resolve DR-0011 for the PR-009 provider selection and benchmark policy.
+- Implement only the Azure Speech STT/TTS adapters and locked synthetic
+  benchmark within accepted ADR-0007 and ADR-0008.
+- Accept the provider-managed STT model-rotation and circular
+  synthetic-benchmark limitations as development trade-offs.
+
+### Conditions and limitations
+
+- No credential or live synthetic provider request is authorized until exact
+  subscription, contracting-entity, agreement, DPA and subprocessor evidence
+  and separate provider-spend approval are recorded.
+- This approval does not represent a benchmark pass or PR-009 acceptance.
+- Real learner data, PR-010, production and all later checkpoints remain
+  unauthorized.
+- Consolidated development roles are not independent security, privacy or
+  tenancy review.
+- Qualified legal review and independent security, privacy, tenancy,
+  accessibility, language/content, vendor and release review remain mandatory
+  before production.
+- No master-plan amendment is made.
