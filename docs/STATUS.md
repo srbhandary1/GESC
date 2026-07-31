@@ -197,6 +197,10 @@ select a provider, permit learner-audio processing or approve production.
   evidence before dispatch and persists no audio. No gate will be weakened and
   no plaintext fixture path will be introduced without an exact
   privacy/security decision.
+- [Proposed ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md)
+  selects an encrypted prepare/review/complete bundle and token-protected
+  `127.0.0.1` browser-memory review while preserving the 544-operation cap.
+  It is not approved and authorizes no implementation or live request.
 
 ## Accepted PR-007 implementation state
 
