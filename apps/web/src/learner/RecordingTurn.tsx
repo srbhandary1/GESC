@@ -26,6 +26,7 @@ export interface RecordingTurnLabels {
 interface RecordingTurnProps {
   readonly createClientId: () => string
   readonly labels: RecordingTurnLabels
+  readonly onAudioCaptureChange?: (audio: CapturedAudio | null) => void
   readonly onCaptureChange: (
     metadata: LocalRecordingMetadata | null,
   ) => void
@@ -42,6 +43,7 @@ interface LocalCapture {
 export function RecordingTurn({
   createClientId,
   labels,
+  onAudioCaptureChange,
   onCaptureChange,
   onContinueWithoutRecording,
   recorder,
@@ -137,6 +139,7 @@ export function RecordingTurn({
       sessionRef.current = null
       captureRef.current = nextCapture
       setCapture(nextCapture)
+      onAudioCaptureChange?.(audio)
       onCaptureChange(metadata)
       setState('ready')
     } catch {
@@ -167,6 +170,7 @@ export function RecordingTurn({
     }
     captureRef.current = null
     setCapture(null)
+    onAudioCaptureChange?.(null)
     onCaptureChange(null)
   }
 

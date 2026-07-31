@@ -15,6 +15,7 @@ use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OtpAuthenticationController;
+use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
 use Illuminate\Support\Facades\Route;
 
@@ -120,5 +121,47 @@ Route::prefix('v1')->group(function (): void {
             [ConversationController::class, 'events'],
         )->whereUlid('turn')
             ->name('api.v1.conversation-turns.events.index');
+        Route::get('/voice-consents', [VoiceController::class, 'consents'])
+            ->name('api.v1.voice-consents.index');
+        Route::post('/voice-consents', [VoiceController::class, 'grant'])
+            ->middleware('throttle:voice-recording')
+            ->name('api.v1.voice-consents.store');
+        Route::delete(
+            '/voice-consents/{purpose}',
+            [VoiceController::class, 'withdraw'],
+        )->whereIn('purpose', [
+            'voice_upload_and_transcription',
+            'conversation_provider_processing',
+            'transcript_history',
+        ])->middleware('throttle:voice-recording')
+            ->name('api.v1.voice-consents.destroy');
+        Route::post(
+            '/conversation-sessions/{session}/recordings',
+            [VoiceController::class, 'upload'],
+        )->whereUlid('session')
+            ->middleware('throttle:voice-recording')
+            ->name('api.v1.conversation-sessions.recordings.store');
+        Route::get(
+            '/voice-recordings/{recording}',
+            [VoiceController::class, 'show'],
+        )->whereUlid('recording')
+            ->name('api.v1.voice-recordings.show');
+        Route::post(
+            '/voice-recordings/{recording}/transcript-review',
+            [VoiceController::class, 'review'],
+        )->whereUlid('recording')
+            ->middleware('throttle:voice-recording')
+            ->name('api.v1.voice-recordings.transcript-review.store');
+        Route::delete(
+            '/voice-recordings/{recording}',
+            [VoiceController::class, 'delete'],
+        )->whereUlid('recording')
+            ->middleware('throttle:voice-recording')
+            ->name('api.v1.voice-recordings.destroy');
+        Route::get(
+            '/voice-recordings/{recording}/deletion',
+            [VoiceController::class, 'deletion'],
+        )->whereUlid('recording')
+            ->name('api.v1.voice-recordings.deletion.show');
     });
 });

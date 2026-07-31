@@ -119,4 +119,54 @@ describe('web deterministic conversation API', () => {
       }),
     )
   })
+
+  it('uploads WAV with CSRF and lets the browser set the multipart boundary', async () => {
+    const recording = {
+      byte_size: 48,
+      codec: 'pcm_s16le',
+      created_at: '2026-07-31T12:00:00Z',
+      deletion_url:
+        '/api/v1/voice-recordings/01J00000000000000000000007/deletion',
+      duration_ms: 1,
+      id: '01J00000000000000000000007',
+      mime_type: 'audio/wav',
+      replayed: false,
+      source_deleted: true,
+      status: 'awaiting_learner_confirmation',
+      transcript: 'I practise English every day.',
+      transcript_confidence: 0.87,
+      transcript_review_url:
+        '/api/v1/voice-recordings/01J00000000000000000000007/transcript-review',
+    } as const
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json(recording, { status: 201 }))
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=voice-csrf',
+    })
+
+    await expect(
+      api.uploadVoiceRecording(
+        '01J00000000000000000000001',
+        new Blob(['RIFF'], { type: 'audio/wav' }),
+        'voice-command',
+      ),
+    ).resolves.toEqual(recording)
+
+    const request = fetch.mock.calls[1]
+    const init = request?.[1]
+    expect(request?.[0]).toBe(
+      '/api/v1/conversation-sessions/01J00000000000000000000001/recordings',
+    )
+    expect(init?.body).toBeInstanceOf(FormData)
+    expect(new Headers(init?.headers).get('Content-Type')).toBeNull()
+    expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(
+      'voice-command',
+    )
+    expect(new Headers(init?.headers).get('X-XSRF-TOKEN')).toBe(
+      'voice-csrf',
+    )
+  })
 })

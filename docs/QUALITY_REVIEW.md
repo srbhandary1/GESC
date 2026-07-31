@@ -1335,3 +1335,85 @@ before production.
 
 ADR-0007 is accepted under APP-0011 and DR-0005 is resolved. The approval
 records no PR-009 implementation authority or production authority.
+
+---
+
+## PR-009 — Provider-neutral secure speech and transcript recovery
+
+### Scope reviewed
+
+- APP-0012 authorization and accepted ADR-0007;
+- separate upload/transcription and provider-processing consent purposes;
+- local volatile capture, explicit submit and browser PCM/WAV conversion;
+- server-side media signature/container/codec/duration/size verification;
+- application-encrypted transient private storage and scheduled deletion;
+- project-owned recorded-STT port with disabled and deterministic-test
+  adapters only;
+- transcript confidence, learner correction/discard, history-off behavior and
+  deletion evidence;
+- organization/exact-membership ownership, replay protection and
+  deterministic-learning isolation;
+- version 0.7.0 OpenAPI/generated clients and the accessible Practice UI; and
+- six-locale governance with production English fallback.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Voice collection is disabled by default and production fails closed | Pass | `voice.php`, feature gate, disabled adapter and environment binding |
+| Upload/provider purposes are separately granted from a versioned notice | Pass | append-only consent service/schema and UI/unit coverage |
+| Client cannot choose tenant, learner, provider, model, confidence, retention or state | Pass | authenticated route inputs, server-owned configuration and services |
+| Actual media is strictly bounded and inspected rather than trusting filename/extension | Pass for the local PCM/WAV slice | RIFF/WAVE inspector and malformed/codec/channel/rate tests |
+| Private object keys contain no learner/tenant identifiers and stored bytes are application encrypted | Pass for local/testing | random object-key generation, `Crypt` encryption and content scan |
+| Successful source is removed after transcript candidate commit | Pass | storage fake and lifecycle assertions |
+| Provider outage/malformed output retries twice and fails recoverably | Pass | deterministic adversarial adapters and provider-run assertions |
+| Due source/transcript content is purged with visible deletion evidence | Pass | scheduled `voice:purge-expired` service and expiry test |
+| Transcript can be corrected/discarded without learning authority writes | Pass | lifecycle and before/after learning-table assertions |
+| Recording access is exact-learner and cross-tenant safe | Pass | composite foreign keys and cross-tenant service test |
+| Telemetry/database evidence excludes audio and transcript bodies | Pass for tested provider-neutral paths | ciphertext/digest and safe provider-run scans |
+| API/generated clients, localization and accessible UI match | Pass | OpenAPI policy/drift, locale validation, React and axe Chromium tests |
+| One live reviewed STT and TTS adapter has benchmark evidence | Blocked | DR-0011 remains open; no live adapter or credential exists |
+| Production media storage/scanning/provider deletion is reviewed | Blocked | production and specialist reviews remain unauthorized |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| `make verify` with pinned Linux-native toolchain | Pass |
+| Composer validate/audit and pnpm frozen install/audit | Pass; no known locked vulnerability |
+| Pint and PHPStan | Pass; zero formatting/static-analysis errors |
+| SQLite backend suite | Pass: 49 tests, 288 assertions |
+| PostgreSQL integration suite on `127.0.0.1:5432` | Pass: 173 tests, 2,016 assertions |
+| Workspace tests | Pass: localization 31, design system 9, web 59 |
+| Locale governance | Pass with five expected pending-independent-review warnings |
+| OpenAPI/generated-client drift, ESLint and recursive TypeScript | Pass |
+| `make e2e` equivalent (`pnpm run e2e`) | Pass: 10 Chromium journeys |
+| `make build` | Pass: Laravel optimize/cleanup and 76-module Vite build |
+| `make ai-eval` | Not run; DR-0011 has not selected a benchmark adapter |
+
+### Security, privacy and tenancy review
+
+- Voice records, provider runs and deletion evidence are tenant owned and bind
+  the exact learner membership. Consent additionally binds the actor user and
+  its organization/membership composite identity.
+- Candidate transcript and source audio are encrypted; database/provider-run
+  records contain only digests and bounded technical metadata. The UI never
+  puts voice bytes or credentials into browser persistent storage.
+- Upload, provider invocation, review and deletion are rate limited or
+  idempotent as applicable. Withdrawal deletes affected active content.
+- Provider output remains advisory and learner-correctable. It cannot update
+  marks, mastery, progression, review schedules or any deterministic learning
+  record.
+- All development services observed during verification publish only to
+  `127.0.0.1`; Playwright's preview server was temporary and stopped.
+
+### Known limitations and exit decision
+
+The provider-neutral development slice is implemented and verified, but
+PR-009 is not complete or ready for Accountable Product Owner acceptance.
+DR-0011 must select and review exact STT and TTS implementations and establish
+locked synthetic benchmarks. The current implementation has no live provider,
+TTS audio, approved scanner, isolated streaming quarantine worker, reviewed
+production object store, provider deletion reconciliation, restore/tombstone
+drill or independent production review. PR-010 and production remain
+unauthorized.

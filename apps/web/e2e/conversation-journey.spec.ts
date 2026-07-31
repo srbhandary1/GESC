@@ -92,6 +92,54 @@ test('completes the disclosed deterministic fake-provider conversation journey',
   expect(accessibility.violations).toEqual([])
 })
 
+test('shows separate optional voice purposes before microphone capture', async ({
+  page,
+}) => {
+  const requests: Array<{
+    contentType: string | undefined
+    method: string
+    path: string
+    postData: string | null
+    url: string
+  }> = []
+  await mockConversationApi(page, requests)
+  await page.goto('/#practice')
+  await page
+    .getByRole('combobox', { name: message('shell.locale_label') })
+    .selectOption('en-IN')
+  await page
+    .getByRole('button', { name: 'Start AI Friend prototype' })
+    .click()
+  await page
+    .getByRole('button', { name: 'Set up optional voice practice' })
+    .click()
+
+  await expect(
+    page.getByText(
+      'Implementation draft: audio is uploaded privately and deleted after transcription.',
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', {
+      name: 'Allow private upload and transcription',
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', {
+      name: 'Allow automated conversation processing',
+    }),
+  ).toBeVisible()
+  expect(
+    requests.some(
+      ({ method, path }) =>
+        method === 'GET' && path === '/api/v1/voice-consents',
+    ),
+  ).toBe(true)
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
 async function mockConversationApi(
   page: Page,
   requests: Array<{
@@ -170,6 +218,14 @@ async function mockConversationApi(
         },
         status: 200,
       })
+      return
+    }
+
+    if (
+      path === '/api/v1/voice-consents' &&
+      request.method() === 'GET'
+    ) {
+      await json(route, voiceConsents())
       return
     }
 
@@ -252,6 +308,44 @@ function events(): string {
         })}\n\n`,
     )
     .join('')
+}
+
+function voiceConsents() {
+  return {
+    consents: [
+      {
+        effective_at: null,
+        purpose: 'voice_upload_and_transcription',
+        state: 'not_granted',
+      },
+      {
+        effective_at: null,
+        purpose: 'conversation_provider_processing',
+        state: 'not_granted',
+      },
+      {
+        effective_at: null,
+        purpose: 'transcript_history',
+        state: 'not_granted',
+      },
+    ],
+    notice: {
+      history_optional: true,
+      notice:
+        'Implementation draft: audio is uploaded privately and deleted after transcription.',
+      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_sha256: 'c'.repeat(64),
+      policy_version: 'recording-policy-v1',
+      purposes: [
+        'voice_upload_and_transcription',
+        'conversation_provider_processing',
+        'transcript_history',
+      ],
+      requested_locale: 'en-IN',
+      resolved_locale: 'en-IN',
+      review_status: 'implementation_draft',
+    },
+  }
 }
 
 async function json(

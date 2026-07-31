@@ -124,6 +124,50 @@ DR-0005 is resolved. The consolidated development approval is not independent
 production review and does not accept PR-008, authorize PR-009 implementation,
 select a provider, permit learner-audio processing or approve production.
 
+## PR-009 provider-neutral implementation state
+
+- The active boundary is
+  [the PR-009 secure speech verification scope](PR-009_SECURE_SPEECH_VERIFICATION_SCOPE.md).
+- Upload and consent collection are disabled by default. They resolve only in
+  `local`/`testing` when `VOICE_UPLOAD_ENABLED=true`; the deterministic
+  recorded-STT adapter additionally requires
+  `VOICE_PROVIDER_DRIVER=deterministic-test`. Every other environment binds a
+  disabled adapter and fails closed.
+- Adult learners grant the upload/transcription and provider-processing
+  purposes separately from a versioned notice. Consent events are append-only,
+  actor-, organization- and exact-membership-bound, and replay protected.
+- The browser keeps capture volatile, provides local playback, then converts an
+  explicitly submitted recording to mono 16-bit 16 kHz PCM/WAV. The server
+  verifies RIFF length, chunks, codec, channels, sample rate, byte rate,
+  duration and size before using a random private object key and Laravel
+  application encryption.
+- The testing-only STT port returns a deterministic English candidate and
+  confidence. Successful source audio is deleted immediately; provider failure
+  retains only encrypted source for at most 24 hours. A scheduled
+  `voice:purge-expired` command deletes due source/transcript content and writes
+  deletion evidence.
+- Learners can accept, correct, discard or explicitly delete a transcript.
+  History is off by default. Confirmation never updates marks, attempts,
+  mastery, progression or review schedules.
+- The Practice UI displays the exact implementation-draft notice and two
+  separate consent actions before exposing microphone controls. Text remains
+  available on refusal or failure. New voice UI strings in `kn-IN`, `ml-IN`,
+  `ta-IN`, `te-IN` and `hi-IN` remain pending independent review; approved-only
+  production resolution falls back to English.
+- OpenAPI 3.1.1 version 0.7.0 and generated TypeScript contracts cover consent,
+  multipart upload, transcript review, recording state and deletion status.
+- `make verify` passes with 49 SQLite tests/288 assertions, 173 PostgreSQL
+  tests/2,016 assertions, 31 localization tests, 9 design-system tests and 59
+  web tests. `make build` passes with 76 Vite modules, and 10 Chromium
+  journeys pass against a temporary `127.0.0.1:4173` listener that stops after
+  the run.
+- PR-009 is not complete or acceptable yet. DR-0011 remains open for the exact
+  reviewed STT and TTS provider/local model, contractual/privacy/security
+  evidence and locked synthetic benchmarks. There is no live provider,
+  generated TTS audio, streaming quarantine worker, reviewed malware scanner,
+  production private object store, provider deletion reconciliation or
+  production authorization.
+
 ## Accepted PR-007 implementation state
 
 - Server-issued bundles bind the exact user, membership, organization,

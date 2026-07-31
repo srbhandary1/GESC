@@ -20,6 +20,8 @@
         <env name="AUTH_IDENTITY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtaWRlbnRpdHktdGVzdC1rZXk=" force="true"/>
         <env name="OFFLINE_BUNDLE_SIGNING_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtb2ZmbGluZS10ZXN0LWtleS12MQ==" force="true"/>
         <env name="CONVERSATION_PROVIDER_DRIVER" value="fake" force="true"/>
+        <env name="VOICE_UPLOAD_ENABLED" value="true" force="true"/>
+        <env name="VOICE_PROVIDER_DRIVER" value="deterministic-test" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>

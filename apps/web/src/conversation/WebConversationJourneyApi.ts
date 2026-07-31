@@ -1,4 +1,15 @@
 import type { ConversationTurnEvent } from '@global-english/contracts'
+import type {
+  GrantVoiceConsentRequest,
+  ReviewVoiceTranscriptRequest,
+  SupportedLocale,
+  VoiceConsentEvent,
+  VoiceConsentListing,
+  VoiceConsentPurpose,
+  VoiceDeletion,
+  VoiceRecording,
+  WithdrawVoiceConsentRequest,
+} from '@global-english/contracts'
 import {
   ConversationJourneyUnavailableError,
   type ConversationJourneyApi,
@@ -82,6 +93,93 @@ export class WebConversationJourneyApi
     return parseEventStream(await response.text())
   }
 
+  voiceConsents(
+    locale: SupportedLocale,
+    signal?: AbortSignal,
+  ): Promise<VoiceConsentListing> {
+    return this.#json<VoiceConsentListing>(
+      `/voice-consents?locale=${encodeURIComponent(locale)}`,
+      { method: 'GET', signal },
+    )
+  }
+
+  grantVoiceConsent(
+    input: GrantVoiceConsentRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<VoiceConsentEvent> {
+    return this.#mutation<VoiceConsentEvent>('/voice-consents', {
+      body: JSON.stringify(input),
+      headers: { 'Idempotency-Key': commandId },
+      method: 'POST',
+      signal,
+    })
+  }
+
+  withdrawVoiceConsent(
+    purpose: VoiceConsentPurpose,
+    input: WithdrawVoiceConsentRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<VoiceConsentEvent> {
+    return this.#mutation<VoiceConsentEvent>(
+      `/voice-consents/${encodeURIComponent(purpose)}`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'DELETE',
+        signal,
+      },
+    )
+  }
+
+  uploadVoiceRecording(
+    sessionId: string,
+    audio: Blob,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<VoiceRecording> {
+    const body = new FormData()
+    body.append('audio', audio, 'voice-practice.wav')
+
+    return this.#mutation<VoiceRecording>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/recordings`,
+      {
+        body,
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
+  reviewVoiceTranscript(
+    recordingId: string,
+    input: ReviewVoiceTranscriptRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<VoiceRecording> {
+    return this.#mutation<VoiceRecording>(
+      `/voice-recordings/${encodeURIComponent(recordingId)}/transcript-review`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
+  deleteVoiceRecording(
+    recordingId: string,
+    signal?: AbortSignal,
+  ): Promise<VoiceDeletion> {
+    return this.#mutation<VoiceDeletion>(
+      `/voice-recordings/${encodeURIComponent(recordingId)}`,
+      { method: 'DELETE', signal },
+    )
+  }
+
   async #mutation<T>(
     path: string,
     init: RequestInit,
@@ -107,6 +205,7 @@ export class WebConversationJourneyApi
         headers: {
           Accept: 'application/json',
           ...(init.body === undefined
+            || init.body instanceof FormData
             ? {}
             : { 'Content-Type': 'application/json' }),
           ...init.headers,

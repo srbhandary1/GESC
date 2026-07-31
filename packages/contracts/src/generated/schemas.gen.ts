@@ -7,6 +7,18 @@ export const UlidSchema = {
     pattern: '^[0-9A-HJKMNP-TV-Z]{26}$'
 } as const;
 
+export const SupportedLocaleSchema = {
+    type: 'string',
+    enum: [
+        'en-IN',
+        'kn-IN',
+        'ml-IN',
+        'ta-IN',
+        'te-IN',
+        'hi-IN'
+    ]
+} as const;
+
 export const OtpRequestSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1710,6 +1722,392 @@ export const ConversationTurnEventSchema = {
         recorded_at: {
             type: 'string',
             format: 'date-time'
+        }
+    }
+} as const;
+
+export const VoiceConsentPurposeSchema = {
+    type: 'string',
+    enum: [
+        'voice_upload_and_transcription',
+        'conversation_provider_processing',
+        'transcript_history'
+    ]
+} as const;
+
+export const VoiceConsentStateSchema = {
+    type: 'string',
+    enum: [
+        'not_granted',
+        'granted',
+        'withdrawn'
+    ]
+} as const;
+
+export const VoiceConsentSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'purpose',
+        'state',
+        'effective_at'
+    ],
+    properties: {
+        purpose: {
+            $ref: '#/components/schemas/VoiceConsentPurpose'
+        },
+        state: {
+            $ref: '#/components/schemas/VoiceConsentState'
+        },
+        effective_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const VoiceNoticeSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'history_optional',
+        'notice',
+        'notice_revision',
+        'notice_sha256',
+        'policy_version',
+        'purposes',
+        'requested_locale',
+        'resolved_locale',
+        'review_status'
+    ],
+    properties: {
+        history_optional: {
+            type: 'boolean',
+            const: true
+        },
+        notice: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 3000
+        },
+        notice_revision: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        notice_sha256: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        policy_version: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 32
+        },
+        purposes: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: {
+                $ref: '#/components/schemas/VoiceConsentPurpose'
+            }
+        },
+        requested_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        resolved_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        review_status: {
+            type: 'string',
+            const: 'implementation_draft'
+        }
+    }
+} as const;
+
+export const VoiceConsentListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'consents',
+        'notice'
+    ],
+    properties: {
+        consents: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: {
+                $ref: '#/components/schemas/VoiceConsentSummary'
+            }
+        },
+        notice: {
+            $ref: '#/components/schemas/VoiceNotice'
+        }
+    }
+} as const;
+
+export const GrantVoiceConsentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'purpose',
+        'requested_locale'
+    ],
+    properties: {
+        purpose: {
+            $ref: '#/components/schemas/VoiceConsentPurpose'
+        },
+        requested_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        }
+    }
+} as const;
+
+export const WithdrawVoiceConsentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'requested_locale'
+    ],
+    properties: {
+        requested_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        }
+    }
+} as const;
+
+export const VoiceConsentEventSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'effective_at',
+        'id',
+        'notice_revision',
+        'notice_sha256',
+        'policy_version',
+        'purpose',
+        'replayed',
+        'requested_locale',
+        'resolved_locale',
+        'state'
+    ],
+    properties: {
+        effective_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        notice_revision: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        notice_sha256: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        policy_version: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 32
+        },
+        purpose: {
+            $ref: '#/components/schemas/VoiceConsentPurpose'
+        },
+        replayed: {
+            type: 'boolean'
+        },
+        requested_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        resolved_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'granted',
+                'withdrawn'
+            ]
+        }
+    }
+} as const;
+
+export const VoiceRecordingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'byte_size',
+        'codec',
+        'created_at',
+        'deletion_url',
+        'duration_ms',
+        'id',
+        'mime_type',
+        'replayed',
+        'source_deleted',
+        'status',
+        'transcript',
+        'transcript_confidence',
+        'transcript_review_url'
+    ],
+    properties: {
+        byte_size: {
+            type: 'integer',
+            minimum: 44,
+            maximum: 10485760
+        },
+        codec: {
+            type: 'string',
+            const: 'pcm_s16le'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        deletion_url: {
+            type: 'string',
+            pattern: '^/api/v1/voice-recordings/[0-9A-HJKMNP-TV-Z]{26}/deletion$'
+        },
+        duration_ms: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 120000
+        },
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        mime_type: {
+            type: 'string',
+            const: 'audio/wav'
+        },
+        replayed: {
+            type: 'boolean'
+        },
+        source_deleted: {
+            type: 'boolean'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'processing',
+                'awaiting_learner_confirmation',
+                'confirmed',
+                'corrected',
+                'discarded',
+                'provider_failed_recoverable',
+                'expired_deleted',
+                'withdrawn_deleted'
+            ]
+        },
+        transcript: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 1,
+            maxLength: 500
+        },
+        transcript_confidence: {
+            type: [
+                'number',
+                'null'
+            ],
+            minimum: 0,
+            maximum: 1
+        },
+        transcript_review_url: {
+            type: 'string',
+            pattern: '^/api/v1/voice-recordings/[0-9A-HJKMNP-TV-Z]{26}/transcript-review$'
+        }
+    }
+} as const;
+
+export const ReviewVoiceTranscriptRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'action'
+    ],
+    properties: {
+        action: {
+            type: 'string',
+            enum: [
+                'accept',
+                'correct',
+                'discard'
+            ]
+        },
+        corrected_transcript: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 1,
+            maxLength: 500
+        }
+    }
+} as const;
+
+export const VoiceDeletionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'completed_at',
+        'id',
+        'provider_deletion_status',
+        'recording_id',
+        'requested_at',
+        'source_deleted',
+        'status',
+        'transcript_deleted'
+    ],
+    properties: {
+        completed_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        provider_deletion_status: {
+            type: 'string',
+            enum: [
+                'not_dispatched',
+                'not_required',
+                'requested',
+                'confirmed',
+                'failed'
+            ]
+        },
+        recording_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        requested_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        source_deleted: {
+            type: 'boolean'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'completed',
+                'partially_completed',
+                'restricted'
+            ]
+        },
+        transcript_deleted: {
+            type: 'boolean'
         }
     }
 } as const;

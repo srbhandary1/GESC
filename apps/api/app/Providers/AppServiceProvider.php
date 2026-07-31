@@ -24,6 +24,9 @@ use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
+use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
+use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
+use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Health\DatabaseReadinessProbe;
 use App\Health\ReadinessChecker;
 use App\Health\RedisReadinessProbe;
@@ -94,6 +97,16 @@ class AppServiceProvider extends ServiceProvider
             $fakeConversationEnabled
                 ? DeterministicFakeTextToSpeechProvider::class
                 : DisabledTextToSpeechProvider::class,
+        );
+        $testingVoiceEnabled = (
+            $this->app->environment('local')
+            || $this->app->environment('testing')
+        ) && config('voice.provider_driver') === 'deterministic-test';
+        $this->app->bind(
+            RecordedSpeechToTextProvider::class,
+            $testingVoiceEnabled
+                ? DeterministicTestingSpeechToTextProvider::class
+                : DisabledRecordedSpeechToTextProvider::class,
         );
         $this->app->bind(OtpDeliveryAdapter::class, function (): OtpDeliveryAdapter {
             if (config('authentication.otp.driver') !== 'local') {
@@ -201,6 +214,22 @@ class AppServiceProvider extends ServiceProvider
                         'conversation-prototype',
                         $actor."\0".$ip,
                     ),
+                );
+            },
+        );
+        RateLimiter::for(
+            'voice-recording',
+            function (Request $request): Limit {
+                $digester = $this->app->make(
+                    AuthenticationSecretDigester::class,
+                );
+                $actor = (string) (
+                    $request->user()?->getAuthIdentifier()
+                    ?? 'anonymous'
+                );
+
+                return Limit::perMinute(10)->by(
+                    $digester->digest('voice-recording', $actor),
                 );
             },
         );

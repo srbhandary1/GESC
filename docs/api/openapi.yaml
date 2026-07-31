@@ -2,13 +2,15 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.6.0
+  version: 0.7.0
   description: |
-    Canonical API contract for the Global English platform. PR-008 adds a
-    local/testing-only deterministic fake-provider Friend turn over the
-    accepted PR-007 baseline. No real provider or audio is accepted. Prototype
-    utterance/reply text is request-memory-only; persistent conversation rows
-    contain digests and safe state/usage metadata.
+    Canonical API contract for the Global English platform. PR-009 adds an
+    explicit-consent secure recording and transcript-review lifecycle over the
+    accepted PR-008 Friend prototype. Upload remains disabled by default and
+    only the deterministic test adapter is selectable in local/testing until
+    provider review DR-0011 is resolved. Raw PCM/WAV is encrypted transiently,
+    deleted after successful transcription, and never changes authoritative
+    learning records.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -32,6 +34,10 @@ tags:
     description: |
       Tenant-scoped PR-008 Friend prototype using deterministic local/testing
       fake STT, conversation-model and text-only TTS adapters.
+  - name: Voice
+    description: |
+      Tenant-scoped PR-009 consent, secure PCM/WAV recording, transcript review
+      and verifiable deletion. No reviewed live STT/TTS provider is configured.
 paths:
   /health/live:
     get:
@@ -1015,6 +1021,332 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /voice-consents:
+    get:
+      operationId: listVoiceConsents
+      summary: Get the current voice consent states and localized notice
+      description: |
+        Returns the latest append-only state for each purpose. Unsupported or
+        unreviewed notice locales resolve to the English implementation draft.
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: locale
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SupportedLocale"
+      responses:
+        "200":
+          description: Current consent states and the exact notice to display.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceConsentListing"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: grantVoiceConsent
+      summary: Append an explicit voice consent grant
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantVoiceConsentRequest"
+      responses:
+        "200":
+          description: Exact command replay returned the original consent event.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceConsentEvent"
+        "201":
+          description: A consent grant event was appended.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceConsentEvent"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /voice-consents/{voice_purpose}:
+    delete:
+      operationId: withdrawVoiceConsent
+      summary: Append a voice consent withdrawal and delete affected content
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/VoicePurpose"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawVoiceConsentRequest"
+      responses:
+        "200":
+          description: Withdrawal event appended and affected content deletion requested.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceConsentEvent"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/recordings:
+    post:
+      operationId: uploadVoiceRecording
+      summary: Validate, encrypt and transcribe one consented PCM/WAV recording
+      description: |
+        Accepts at most 10 MiB and 120 seconds of mono 16-bit PCM/WAV. The
+        server verifies container and codec metadata, encrypts transient source
+        bytes, and invokes only the configured project-owned STT port. The
+        default and every non-local environment fail closed.
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - audio
+              properties:
+                audio:
+                  type: string
+                  format: binary
+            encoding:
+              audio:
+                contentType: audio/wav
+      responses:
+        "200":
+          description: Exact upload command replay returned the same recording.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceRecording"
+        "201":
+          description: Recording accepted and reached a reviewable or recoverable state.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceRecording"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /voice-recordings/{voice_recording_id}:
+    get:
+      operationId: getVoiceRecording
+      summary: Get one learner-owned recording state
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/VoiceRecordingId"
+      responses:
+        "200":
+          description: Current recording and transcript-review state.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceRecording"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteVoiceRecording
+      summary: Delete source audio and transcript for one recording
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/VoiceRecordingId"
+      responses:
+        "200":
+          description: Idempotent deletion status.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceDeletion"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /voice-recordings/{voice_recording_id}/transcript-review:
+    post:
+      operationId: reviewVoiceTranscript
+      summary: Accept, correct or discard an STT transcript candidate
+      description: |
+        The learner action is deterministic and never writes marks, mastery,
+        progression, review scheduling or other authoritative learning state.
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/VoiceRecordingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewVoiceTranscriptRequest"
+      responses:
+        "200":
+          description: Transcript review was applied or exactly replayed.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceRecording"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /voice-recordings/{voice_recording_id}/deletion:
+    get:
+      operationId: getVoiceDeletion
+      summary: Get verifiable deletion status for one recording
+      tags:
+        - Voice
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/VoiceRecordingId"
+      responses:
+        "200":
+          description: Current deletion status and evidence flags.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceDeletion"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /progress:
     get:
       operationId: getLearnerProgress
@@ -1197,6 +1529,20 @@ components:
       description: Learner-owned deterministic Friend-turn ULID.
       schema:
         $ref: "#/components/schemas/Ulid"
+    VoicePurpose:
+      name: voice_purpose
+      in: path
+      required: true
+      description: Separately revocable voice-processing purpose.
+      schema:
+        $ref: "#/components/schemas/VoiceConsentPurpose"
+    VoiceRecordingId:
+      name: voice_recording_id
+      in: path
+      required: true
+      description: Learner-owned secure recording ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
     MissionId:
       name: mission_id
       in: path
@@ -1302,6 +1648,15 @@ components:
       minLength: 26
       maxLength: 26
       pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+    SupportedLocale:
+      type: string
+      enum:
+        - en-IN
+        - kn-IN
+        - ml-IN
+        - ta-IN
+        - te-IN
+        - hi-IN
     OtpRequest:
       type: object
       additionalProperties: false
@@ -2503,6 +2858,288 @@ components:
         recorded_at:
           type: string
           format: date-time
+    VoiceConsentPurpose:
+      type: string
+      enum:
+        - voice_upload_and_transcription
+        - conversation_provider_processing
+        - transcript_history
+    VoiceConsentState:
+      type: string
+      enum:
+        - not_granted
+        - granted
+        - withdrawn
+    VoiceConsentSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - state
+        - effective_at
+      properties:
+        purpose:
+          $ref: "#/components/schemas/VoiceConsentPurpose"
+        state:
+          $ref: "#/components/schemas/VoiceConsentState"
+        effective_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    VoiceNotice:
+      type: object
+      additionalProperties: false
+      required:
+        - history_optional
+        - notice
+        - notice_revision
+        - notice_sha256
+        - policy_version
+        - purposes
+        - requested_locale
+        - resolved_locale
+        - review_status
+      properties:
+        history_optional:
+          type: boolean
+          const: true
+        notice:
+          type: string
+          minLength: 1
+          maxLength: 3000
+        notice_revision:
+          type: string
+          minLength: 1
+          maxLength: 64
+        notice_sha256:
+          $ref: "#/components/schemas/Sha256"
+        policy_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+        purposes:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/VoiceConsentPurpose"
+        requested_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+        resolved_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+        review_status:
+          type: string
+          const: implementation_draft
+    VoiceConsentListing:
+      type: object
+      additionalProperties: false
+      required:
+        - consents
+        - notice
+      properties:
+        consents:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/VoiceConsentSummary"
+        notice:
+          $ref: "#/components/schemas/VoiceNotice"
+    GrantVoiceConsentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - requested_locale
+      properties:
+        purpose:
+          $ref: "#/components/schemas/VoiceConsentPurpose"
+        requested_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+    WithdrawVoiceConsentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - requested_locale
+      properties:
+        requested_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+    VoiceConsentEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - effective_at
+        - id
+        - notice_revision
+        - notice_sha256
+        - policy_version
+        - purpose
+        - replayed
+        - requested_locale
+        - resolved_locale
+        - state
+      properties:
+        effective_at:
+          type: string
+          format: date-time
+        id:
+          $ref: "#/components/schemas/Ulid"
+        notice_revision:
+          type: string
+          minLength: 1
+          maxLength: 64
+        notice_sha256:
+          $ref: "#/components/schemas/Sha256"
+        policy_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+        purpose:
+          $ref: "#/components/schemas/VoiceConsentPurpose"
+        replayed:
+          type: boolean
+        requested_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+        resolved_locale:
+          $ref: "#/components/schemas/SupportedLocale"
+        state:
+          type: string
+          enum:
+            - granted
+            - withdrawn
+    VoiceRecording:
+      type: object
+      additionalProperties: false
+      required:
+        - byte_size
+        - codec
+        - created_at
+        - deletion_url
+        - duration_ms
+        - id
+        - mime_type
+        - replayed
+        - source_deleted
+        - status
+        - transcript
+        - transcript_confidence
+        - transcript_review_url
+      properties:
+        byte_size:
+          type: integer
+          minimum: 44
+          maximum: 10485760
+        codec:
+          type: string
+          const: pcm_s16le
+        created_at:
+          type: string
+          format: date-time
+        deletion_url:
+          type: string
+          pattern: "^/api/v1/voice-recordings/[0-9A-HJKMNP-TV-Z]{26}/deletion$"
+        duration_ms:
+          type: integer
+          minimum: 1
+          maximum: 120000
+        id:
+          $ref: "#/components/schemas/Ulid"
+        mime_type:
+          type: string
+          const: audio/wav
+        replayed:
+          type: boolean
+        source_deleted:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - processing
+            - awaiting_learner_confirmation
+            - confirmed
+            - corrected
+            - discarded
+            - provider_failed_recoverable
+            - expired_deleted
+            - withdrawn_deleted
+        transcript:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 500
+        transcript_confidence:
+          type:
+            - number
+            - "null"
+          minimum: 0
+          maximum: 1
+        transcript_review_url:
+          type: string
+          pattern: "^/api/v1/voice-recordings/[0-9A-HJKMNP-TV-Z]{26}/transcript-review$"
+    ReviewVoiceTranscriptRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum:
+            - accept
+            - correct
+            - discard
+        corrected_transcript:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 500
+    VoiceDeletion:
+      type: object
+      additionalProperties: false
+      required:
+        - completed_at
+        - id
+        - provider_deletion_status
+        - recording_id
+        - requested_at
+        - source_deleted
+        - status
+        - transcript_deleted
+      properties:
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        id:
+          $ref: "#/components/schemas/Ulid"
+        provider_deletion_status:
+          type: string
+          enum:
+            - not_dispatched
+            - not_required
+            - requested
+            - confirmed
+            - failed
+        recording_id:
+          $ref: "#/components/schemas/Ulid"
+        requested_at:
+          type: string
+          format: date-time
+        source_deleted:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - partially_completed
+            - restricted
+        transcript_deleted:
+          type: boolean
     LivenessResponse:
       type: object
       additionalProperties: false

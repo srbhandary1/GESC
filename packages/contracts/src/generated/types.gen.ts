@@ -6,6 +6,8 @@ export type ClientOptions = {
 
 export type Ulid = string;
 
+export type SupportedLocale = 'en-IN' | 'kn-IN' | 'ml-IN' | 'ta-IN' | 'te-IN' | 'hi-IN';
+
 export type OtpRequest = {
     mobile_number: string;
 };
@@ -428,6 +430,95 @@ export type ConversationTurnEvent = {
     recorded_at: string;
 };
 
+export type VoiceConsentPurpose = 'voice_upload_and_transcription' | 'conversation_provider_processing' | 'transcript_history';
+
+export type VoiceConsentState = 'not_granted' | 'granted' | 'withdrawn';
+
+export type VoiceConsentSummary = {
+    purpose: VoiceConsentPurpose;
+    state: VoiceConsentState;
+    effective_at: string | null;
+};
+
+export type VoiceNotice = {
+    history_optional: true;
+    notice: string;
+    notice_revision: string;
+    notice_sha256: Sha256;
+    policy_version: string;
+    purposes: [
+        VoiceConsentPurpose,
+        VoiceConsentPurpose,
+        VoiceConsentPurpose
+    ];
+    requested_locale: SupportedLocale;
+    resolved_locale: SupportedLocale;
+    review_status: 'implementation_draft';
+};
+
+export type VoiceConsentListing = {
+    consents: [
+        VoiceConsentSummary,
+        VoiceConsentSummary,
+        VoiceConsentSummary
+    ];
+    notice: VoiceNotice;
+};
+
+export type GrantVoiceConsentRequest = {
+    purpose: VoiceConsentPurpose;
+    requested_locale: SupportedLocale;
+};
+
+export type WithdrawVoiceConsentRequest = {
+    requested_locale: SupportedLocale;
+};
+
+export type VoiceConsentEvent = {
+    effective_at: string;
+    id: Ulid;
+    notice_revision: string;
+    notice_sha256: Sha256;
+    policy_version: string;
+    purpose: VoiceConsentPurpose;
+    replayed: boolean;
+    requested_locale: SupportedLocale;
+    resolved_locale: SupportedLocale;
+    state: 'granted' | 'withdrawn';
+};
+
+export type VoiceRecording = {
+    byte_size: number;
+    codec: 'pcm_s16le';
+    created_at: string;
+    deletion_url: string;
+    duration_ms: number;
+    id: Ulid;
+    mime_type: 'audio/wav';
+    replayed: boolean;
+    source_deleted: boolean;
+    status: 'processing' | 'awaiting_learner_confirmation' | 'confirmed' | 'corrected' | 'discarded' | 'provider_failed_recoverable' | 'expired_deleted' | 'withdrawn_deleted';
+    transcript: string | null;
+    transcript_confidence: number | null;
+    transcript_review_url: string;
+};
+
+export type ReviewVoiceTranscriptRequest = {
+    action: 'accept' | 'correct' | 'discard';
+    corrected_transcript?: string | null;
+};
+
+export type VoiceDeletion = {
+    completed_at: string | null;
+    id: Ulid;
+    provider_deletion_status: 'not_dispatched' | 'not_required' | 'requested' | 'confirmed' | 'failed';
+    recording_id: Ulid;
+    requested_at: string;
+    source_deleted: boolean;
+    status: 'pending' | 'completed' | 'partially_completed' | 'restricted';
+    transcript_deleted: boolean;
+};
+
 export type LivenessResponse = {
     status: 'ok';
     service: 'global-english-api';
@@ -479,6 +570,16 @@ export type ConversationSessionId = Ulid;
  * Learner-owned deterministic Friend-turn ULID.
  */
 export type ConversationTurnId = Ulid;
+
+/**
+ * Separately revocable voice-processing purpose.
+ */
+export type VoicePurpose = VoiceConsentPurpose;
+
+/**
+ * Learner-owned secure recording ULID.
+ */
+export type VoiceRecordingId = Ulid;
 
 /**
  * Governed curriculum mission ULID from the exact publication pin.
@@ -1635,6 +1736,440 @@ export type StreamConversationTurnEventsResponses = {
 };
 
 export type StreamConversationTurnEventsResponse = StreamConversationTurnEventsResponses[keyof StreamConversationTurnEventsResponses];
+
+export type ListVoiceConsentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        locale?: SupportedLocale;
+    };
+    url: '/voice-consents';
+};
+
+export type ListVoiceConsentsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListVoiceConsentsError = ListVoiceConsentsErrors[keyof ListVoiceConsentsErrors];
+
+export type ListVoiceConsentsResponses = {
+    /**
+     * Current consent states and the exact notice to display.
+     */
+    200: VoiceConsentListing;
+};
+
+export type ListVoiceConsentsResponse = ListVoiceConsentsResponses[keyof ListVoiceConsentsResponses];
+
+export type GrantVoiceConsentData = {
+    body: GrantVoiceConsentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/voice-consents';
+};
+
+export type GrantVoiceConsentErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GrantVoiceConsentError = GrantVoiceConsentErrors[keyof GrantVoiceConsentErrors];
+
+export type GrantVoiceConsentResponses = {
+    /**
+     * Exact command replay returned the original consent event.
+     */
+    200: VoiceConsentEvent;
+    /**
+     * A consent grant event was appended.
+     */
+    201: VoiceConsentEvent;
+};
+
+export type GrantVoiceConsentResponse = GrantVoiceConsentResponses[keyof GrantVoiceConsentResponses];
+
+export type WithdrawVoiceConsentData = {
+    body: WithdrawVoiceConsentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Separately revocable voice-processing purpose.
+         */
+        voice_purpose: VoiceConsentPurpose;
+    };
+    query?: never;
+    url: '/voice-consents/{voice_purpose}';
+};
+
+export type WithdrawVoiceConsentErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type WithdrawVoiceConsentError = WithdrawVoiceConsentErrors[keyof WithdrawVoiceConsentErrors];
+
+export type WithdrawVoiceConsentResponses = {
+    /**
+     * Withdrawal event appended and affected content deletion requested.
+     */
+    200: VoiceConsentEvent;
+};
+
+export type WithdrawVoiceConsentResponse = WithdrawVoiceConsentResponses[keyof WithdrawVoiceConsentResponses];
+
+export type UploadVoiceRecordingData = {
+    body: {
+        audio: Blob | File;
+    };
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/recordings';
+};
+
+export type UploadVoiceRecordingErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type UploadVoiceRecordingError = UploadVoiceRecordingErrors[keyof UploadVoiceRecordingErrors];
+
+export type UploadVoiceRecordingResponses = {
+    /**
+     * Exact upload command replay returned the same recording.
+     */
+    200: VoiceRecording;
+    /**
+     * Recording accepted and reached a reviewable or recoverable state.
+     */
+    201: VoiceRecording;
+};
+
+export type UploadVoiceRecordingResponse = UploadVoiceRecordingResponses[keyof UploadVoiceRecordingResponses];
+
+export type DeleteVoiceRecordingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned secure recording ULID.
+         */
+        voice_recording_id: Ulid;
+    };
+    query?: never;
+    url: '/voice-recordings/{voice_recording_id}';
+};
+
+export type DeleteVoiceRecordingErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteVoiceRecordingError = DeleteVoiceRecordingErrors[keyof DeleteVoiceRecordingErrors];
+
+export type DeleteVoiceRecordingResponses = {
+    /**
+     * Idempotent deletion status.
+     */
+    200: VoiceDeletion;
+};
+
+export type DeleteVoiceRecordingResponse = DeleteVoiceRecordingResponses[keyof DeleteVoiceRecordingResponses];
+
+export type GetVoiceRecordingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned secure recording ULID.
+         */
+        voice_recording_id: Ulid;
+    };
+    query?: never;
+    url: '/voice-recordings/{voice_recording_id}';
+};
+
+export type GetVoiceRecordingErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetVoiceRecordingError = GetVoiceRecordingErrors[keyof GetVoiceRecordingErrors];
+
+export type GetVoiceRecordingResponses = {
+    /**
+     * Current recording and transcript-review state.
+     */
+    200: VoiceRecording;
+};
+
+export type GetVoiceRecordingResponse = GetVoiceRecordingResponses[keyof GetVoiceRecordingResponses];
+
+export type ReviewVoiceTranscriptData = {
+    body: ReviewVoiceTranscriptRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned secure recording ULID.
+         */
+        voice_recording_id: Ulid;
+    };
+    query?: never;
+    url: '/voice-recordings/{voice_recording_id}/transcript-review';
+};
+
+export type ReviewVoiceTranscriptErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ReviewVoiceTranscriptError = ReviewVoiceTranscriptErrors[keyof ReviewVoiceTranscriptErrors];
+
+export type ReviewVoiceTranscriptResponses = {
+    /**
+     * Transcript review was applied or exactly replayed.
+     */
+    200: VoiceRecording;
+};
+
+export type ReviewVoiceTranscriptResponse = ReviewVoiceTranscriptResponses[keyof ReviewVoiceTranscriptResponses];
+
+export type GetVoiceDeletionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned secure recording ULID.
+         */
+        voice_recording_id: Ulid;
+    };
+    query?: never;
+    url: '/voice-recordings/{voice_recording_id}/deletion';
+};
+
+export type GetVoiceDeletionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetVoiceDeletionError = GetVoiceDeletionErrors[keyof GetVoiceDeletionErrors];
+
+export type GetVoiceDeletionResponses = {
+    /**
+     * Current deletion status and evidence flags.
+     */
+    200: VoiceDeletion;
+};
+
+export type GetVoiceDeletionResponse = GetVoiceDeletionResponses[keyof GetVoiceDeletionResponses];
 
 export type GetLearnerProgressData = {
     body?: never;

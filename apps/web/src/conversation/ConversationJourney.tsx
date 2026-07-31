@@ -17,6 +17,7 @@ import type {
   FriendTurnEvent,
 } from './ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
+import { VoicePracticePanel } from './VoicePracticePanel'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -65,6 +66,7 @@ export function ConversationJourney({
   const turnCommandId = useRef(createClientId())
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const text = (key: MessageKey) => message(key).text
 
   const start = () => {
     setState({ kind: 'starting' })
@@ -179,6 +181,14 @@ export function ConversationJourney({
           >
             {session.persona.disclosure}
           </p>
+          <VoicePracticePanel
+            api={api}
+            createClientId={createClientId}
+            locale={locale}
+            onTranscriptSelected={setUtterance}
+            sessionId={session.id}
+            text={text}
+          />
           <form onSubmit={send}>
             <label htmlFor="prototype-utterance">
               <LocalizedMessage
