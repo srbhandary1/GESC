@@ -761,3 +761,65 @@ the human statement. That proposal:
   notices/translations, provider due diligence and explicit production release
   authorization remain mandatory before production.
 - No master-plan amendment is made.
+
+<a id="app-0012"></a>
+
+## APP-0012 — PR-008 acceptance and PR-009 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-07-31 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Approval reference | `Codex task 019fb263-fe9a-77f0-a1db-e3d563707715` |
+| Evidence source | Human instruction in the referenced Codex task |
+| Accepted implementation commit | `11f7b597ad2db3b8cf65a1394c1171a8280045d1` |
+| Governing policy | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) under APP-0011 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I, S R Bhandary, acting as Accountable Product Owner, accept PR-008 at commit 11f7b597ad2db3b8cf65a1394c1171a8280045d1 with its recorded limitations and authorize only PR-009 implementation within accepted ADR-0007. This does not authorize production or later checkpoints.
+```
+
+### Context and interpretation
+
+Immediately before this statement, Codex:
+
+1. showed the authenticated PR-008 Practice interface using synthetic data;
+2. verified the web build and four learner/conversation Chromium journeys;
+3. identified that PR-008 exact-commit acceptance remained pending;
+4. identified secure recording, real speech adapters and transcript recovery
+   as the PR-009 boundary; and
+5. repeated that production and later checkpoints remained separately gated.
+
+### Accepted scope and authorization
+
+- Accept PR-008 at
+  `11f7b597ad2db3b8cf65a1394c1171a8280045d1` with every recorded limitation.
+- Implement only master-plan §26 PR-009 — Real speech adapters and transcript
+  recovery — within accepted ADR-0007.
+- Add secure recording upload/validation, consent/withdrawal, lifecycle and
+  deletion controls, transcript confidence/review/recovery, text/TTS fallback,
+  privacy-safe telemetry, provider-owned ports/adapters and required
+  contracts/tests.
+
+### Conditions and limitations
+
+- Provider selection remains server owned and requires the review evidence in
+  ADR-0007 before any live benchmark or provider call.
+- Missing provider review, credentials, encryption, validation, deletion,
+  organization context or consent must fail closed.
+- Synthetic, licensed or separately consented evaluation material is required
+  for any authorized non-production benchmark; real learner production data is
+  prohibited.
+- This record does not approve a provider, production, PR-010 or any later
+  checkpoint.
+- Independent security, privacy, tenancy, accessibility, language/content,
+  legal, vendor and production-release reviews remain mandatory.
+- No master-plan amendment is made.

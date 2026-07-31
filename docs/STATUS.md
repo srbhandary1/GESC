@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-008 — Conversation domain with deterministic fake providers |
-| Status | PR-008 implemented and repository-verified under APP-0010 with exact-commit acceptance pending; DR-0005 resolved under APP-0011 |
+| Checkpoint | PR-009 — Real speech adapters and transcript recovery |
+| Status | Authorized under APP-0012; implementation in progress within accepted ADR-0007 |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 31 July 2026 |
-| Git branch | `codex/dr-0005-recording-policy` |
-| Product code | Accepted PR-007 baseline plus the implemented PR-008 deterministic fake-provider conversation slice; no real provider, audio persistence, production or later checkpoint approved |
-| Next checkpoint | PR-008 exact-commit acceptance remains pending; PR-009 remains unauthorized |
+| Git branch | `codex/pr-009-secure-speech` |
+| Product code | PR-008 accepted at its exact implementation commit; PR-009 secure speech/transcript implementation authorized with live providers and production fail-closed pending required review evidence |
+| Next checkpoint | Complete and verify only PR-009; production, PR-010 and later checkpoints remain unauthorized |
 
 ## Checkpoint authorization
 
@@ -51,6 +51,12 @@ in the consolidated Technical Decision Owner, Security Reviewer, Privacy
 Reviewer and Tenancy Reviewer development roles. It resolves DR-0005 without
 accepting PR-008, authorizing PR-009 implementation, selecting a real provider
 or approving production.
+
+[APP-0012](APPROVALS.md#app-0012) records `S R Bhandary`'s Accountable
+Product Owner acceptance of PR-008 at
+`11f7b597ad2db3b8cf65a1394c1171a8280045d1` with its recorded limitations and
+authorizes only PR-009 implementation within accepted ADR-0007. It does not
+approve a provider, production, PR-010 or any later checkpoint.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
