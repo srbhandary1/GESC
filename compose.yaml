@@ -50,7 +50,7 @@ services:
     volumes:
       - object-storage-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1:8333/ || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1:9333/cluster/status || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 24
@@ -78,7 +78,7 @@ services:
   otp-stub:
     image: wiremock/wiremock:3.13.2@sha256:0d4ecb3e4dc8213fd7a4d37d6a78f6e6b553a6d2e15bd51b0999781282ac61b3
     restart: unless-stopped
-    command: ["--global-response-templating", "--disable-gzip", "--disable-request-journal"]
+    command: ["--global-response-templating", "--disable-gzip", "--no-request-journal"]
     ports:
       - "127.0.0.1:${OTP_STUB_PORT:-8089}:8080"
     volumes:
