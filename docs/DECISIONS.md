@@ -104,3 +104,4 @@ indicated implementation becomes authoritative.
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |
+| DR-0012 | PR-009 live synthetic benchmark listener workflow | Select the exact privacy-reviewed mechanism for the two accountable listeners to assess the 96 actual Azure TTS outputs within the 544-operation cap: either an encrypted two-phase fixture bundle with access, playback, 24-hour expiry and deletion evidence, or a bounded in-process review mechanism. Placeholder/pre-run listener evidence and plaintext fixture persistence are prohibited. |

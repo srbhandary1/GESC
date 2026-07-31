@@ -182,6 +182,7 @@ only. Do not reuse them outside an isolated development environment.
 - [Current status](docs/STATUS.md)
 - [Decision ledger](docs/DECISIONS.md)
 - [Quality review](docs/QUALITY_REVIEW.md)
+- [PR-009 benchmark evidence handoff](docs/PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md)
 - [PR-004 accessibility verification scope](docs/PR-004_ACCESSIBILITY_VERIFICATION_SCOPE.md)
 - [ADR template](docs/adr/0000-template.md)
 

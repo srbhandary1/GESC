@@ -10,7 +10,7 @@
 | Updated date | 31 July 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
 | Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery plus disabled Azure STT/TTS adapters and synthetic runner implemented; no live request made |
-| Next checkpoint | Obtain exact subscription/DPA/subprocessor and spend evidence, then separately authorize and run only the locked synthetic benchmark |
+| Next checkpoint | Resolve DR-0012's encrypted listener-fixture workflow before any live synthetic request; PR-010 remains unauthorized |
 
 ## Checkpoint authorization
 
@@ -188,6 +188,15 @@ select a provider, permit learner-audio processing or approve production.
   non-production environment, matching external mode-`0600` vendor/spend
   evidence records, secret reference, committed runner revision and approved
   spend cap all validate.
+- The exact non-secret JSON shapes, permissions, environment mappings and
+  no-call sequence are documented in the
+  [PR-009 benchmark evidence handoff](PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md).
+  The document is a template only and supplies no evidence or authorization.
+- DR-0012 is open because valid listener evidence must follow review of the 96
+  actual Azure TTS outputs, while the current safe runner requires that
+  evidence before dispatch and persists no audio. No gate will be weakened and
+  no plaintext fixture path will be introduced without an exact
+  privacy/security decision.
 
 ## Accepted PR-007 implementation state
 

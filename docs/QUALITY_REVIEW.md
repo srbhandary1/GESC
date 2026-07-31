@@ -1575,3 +1575,17 @@ bias and provider-managed STT rotation limitation. It cannot validate learner
 speech, Karnataka accents, accessibility, pedagogy or production fitness.
 PR-009 is not accepted; learner data, PR-010 and production remain
 unauthorized.
+
+The subsequent no-network handoff review added
+`PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md` so operational reviewers have
+the exact external JSON shapes, file permissions, environment mappings and
+sequencing enforced by the implementation. Its values are explicit
+placeholders; it creates no approval, credential, live request or benchmark
+evidence.
+
+That review also found the circular listener-evidence dependency now recorded
+as DR-0012. The runner correctly makes no request without listener evidence,
+but valid listener evidence must be based on the actual 96 Azure TTS outputs.
+Resolving this requires a reviewed encrypted two-phase fixture bundle or a
+reviewed bounded in-process playback/attestation mechanism. This is a
+privacy/security workflow decision, not permission to weaken preflight.
