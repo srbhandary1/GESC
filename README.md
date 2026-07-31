@@ -59,6 +59,23 @@ Runtime declarations live in `.php-version`, `.node-version`, `.nvmrc`,
 `package.json` and the CI workflow. Composer and pnpm lockfiles are the exact
 dependency authority.
 
+## Hosting boundary
+
+The committed Compose stack is for local development only. Its published
+ports remain bound to `127.0.0.1`; it is not a production definition for AWS,
+Hostinger or another VPS. A later authorized deployment checkpoint must add a
+reviewed environment-specific design for TLS and ingress, managed secrets,
+PostgreSQL, Redis, private object storage, queues, workers, scheduler,
+backups, monitoring, restoration and rollback.
+
+Credentials, real vendor evidence and PR-009 encrypted benchmark fixtures
+must remain outside Git and outside application release artefacts. Cloud or
+VPS deployment must inject secrets through the selected platform's protected
+secret mechanism and create any required private state directories at deploy
+time. The current repository status does not authorize production deployment;
+see [docs/STATUS.md](docs/STATUS.md) and the
+[PR-009 evidence handoff](docs/PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md).
+
 ## Bootstrap and verification
 
 From the repository root:
