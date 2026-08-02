@@ -500,6 +500,10 @@ review and do not waive pre-production specialist gates.
   worker, no device storage, no API or provider request, visible demo
   notice). `make demo-serve` serves it on `127.0.0.1:4175`, and
   `make demo-dist-e2e` verifies the built artifact in Chromium.
+- The demo bundle is an explicitly requested review artifact and renders the
+  draft interface locales (Kannada first) with the existing visible preview
+  notice through `VITE_UI_TRANSLATION_PREVIEW=true` (ADR-0005). Ordinary
+  production builds remain `approved-only`.
 - Under D-0078, `make demo-android` wraps the same bundle in the Capacitor 8
   project at `apps/web/android` and builds
   `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`

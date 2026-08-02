@@ -30,6 +30,11 @@ provider path or authorize production deployment.
 - The visible synthetic-demo notice remains part of every demo surface. All
   five translated notices remain implementation drafts pending independent
   review; English is the reviewed source.
+- The demo distribution is an explicitly requested review artifact and sets
+  `VITE_UI_TRANSLATION_PREVIEW=true`, so the Kannada-first interface and the
+  other draft locales render with the existing visible preview notice
+  (ADR-0005 review mechanism). Ordinary production builds remain
+  `approved-only` and fall back visibly to English.
 - The demo journey covers Home (recommended mission), Learn (Kannada-guided
   mission with model audio, local-only recording practice, deterministic
   check and result evidence), Progress (synthetic objective progress) and

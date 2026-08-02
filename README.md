@@ -134,8 +134,10 @@ into `apps/web/dist-demo`. The ordinary production build (`make build`,
 `dist/`) is untouched and can never activate the demo runtime. The demo
 bundle uses relative asset paths, registers no service worker, stores
 nothing on the device and makes no API or provider request; the visible
-synthetic-demo notice remains part of the bundle. Verify the built artifact
-with `make demo-dist-e2e`.
+synthetic-demo notice remains part of the bundle. As an explicitly requested
+review artifact it renders the draft interface locales (Kannada first) with
+the visible preview notice; production stays `approved-only`. Verify the
+built artifact with `make demo-dist-e2e`.
 
 ### Android demo APK
 
