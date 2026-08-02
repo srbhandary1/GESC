@@ -106,9 +106,10 @@ directly on a populated synthetic lesson and provides the deterministic
 text-only Friend journey. Its authentication, lesson, result and conversation
 fixtures exist only in browser memory and reset on reload. A prominent notice
 states that the preview contains no learner data, real AI, approved curriculum
-or production service. `VITE_LOCAL_DEMO=true` is ignored outside Vite
-development mode and must never be treated as product, benchmark or
-publication evidence.
+or production service. `VITE_LOCAL_DEMO=true` is honoured only in Vite
+development mode and in the explicit `demo` distribution build mode below,
+and demo output must never be treated as product, benchmark or publication
+evidence.
 
 On this prepared workstation, `make demo` automatically selects the ignored
 Linux-native Node.js/pnpm toolchain under `tmp/toolchain` when it is present.
@@ -117,6 +118,49 @@ It does not depend on copied or system-wide Node modules.
 To view it from another computer without exposing the application port, use
 SSH local forwarding to workstation `127.0.0.1:5173` and open
 `http://127.0.0.1:5173` on the viewing computer.
+
+### Distributable demo bundle
+
+The same disclosed synthetic demo can be built once and served as static
+files for a presentation:
+
+```text
+make demo-build
+make demo-serve
+```
+
+`make demo-build` runs the explicit `vite build --mode demo` distribution
+into `apps/web/dist-demo`. The ordinary production build (`make build`,
+`dist/`) is untouched and can never activate the demo runtime. The demo
+bundle uses relative asset paths, registers no service worker, stores
+nothing on the device and makes no API or provider request; the visible
+synthetic-demo notice remains part of the bundle. Verify the built artifact
+with `make demo-dist-e2e`.
+
+### Android demo APK
+
+The Capacitor 8 wrapper in `apps/web/android` packages the same synthetic
+demo bundle as an installable Android demo app (`Global English Demo`,
+placeholder identifier `com.globalenglish.demo`, minimum API 24, target API
+36). It is presentation packaging only: it contains no credentials, no
+provider access and no learner data, and it is not the separately authorized
+PR-014 production Android application (Passport PKCE, native secure storage,
+Play release engineering).
+
+Requirements: JDK 21 (`JAVA_HOME`) and an Android SDK with platform 36
+(`ANDROID_HOME`). Then:
+
+```text
+make demo-android
+```
+
+The debug APK is written to
+`apps/web/android/app/build/outputs/apk/debug/app-debug.apk` and can be
+installed on a device with `adb install` or by copying the file. Recording
+in the demo mission uses the device microphone only for local playback and
+retry; nothing is uploaded. On an IPv6-limited network, pass
+`GRADLE_OPTS=-Djava.net.preferIPv4Stack=true` so Gradle can download its
+distribution and dependencies.
 
 Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
 5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
@@ -165,10 +209,14 @@ isolated environments.
 | `make bootstrap` | Install dependencies and prepare the local environment |
 | `make dev` | Run the API, web application, workers and local dependencies |
 | `make demo` | Run the populated synthetic browser demo on loopback only |
+| `make demo-build` | Build the distributable synthetic demo bundle into `apps/web/dist-demo` |
+| `make demo-serve` | Serve the built synthetic demo bundle on `127.0.0.1:4175` |
+| `make demo-android` | Build the Android demo APK from the synthetic demo bundle |
 | `make verify` | Run formatting, linting, static analysis, tests and contract checks |
 | `make test` | Run all deterministic automated tests |
 | `make e2e` | Run critical browser journeys |
 | `make demo-e2e` | Verify the synthetic browser demo without application API calls |
+| `make demo-dist-e2e` | Verify the built demo bundle without application API calls |
 | `make ai-eval` | Run the locked AI and speech evaluation suite |
 | `make openapi` | Validate OpenAPI policy and check generated-client drift |
 | `make migrate` | Apply local migrations |
@@ -192,6 +240,8 @@ source linkage and review-state claims.
   identity foundation APIs;
 - `apps/web/` — React 19.2 TypeScript/Vite localized shell, protected offline
   learner store, accessible error boundary and shared authentication adapters;
+- `apps/web/android/` — Capacitor 8 demo-only Android wrapper for the
+  synthetic demo bundle; not the PR-014 production Android application;
 - `docs/api/` — canonical OpenAPI 3.1.1 contract;
 - `docs/adr/` and `docs/APPROVALS.md` — accepted architecture decisions and
   durable human approval evidence;

@@ -1740,3 +1740,59 @@ PR-010 and production remain unauthorized.
   verification and authorization gates remain unchanged.
 - Human language, accessibility/device and production reviews remain required.
   PR-009 acceptance, learner data, PR-010 and production remain unauthorized.
+
+## Synthetic demo distribution — web bundle and Android demo APK
+
+### Scope reviewed
+
+- the explicit `demo` build mode boundary against the ordinary production
+  build (D-0077);
+- demo-runtime enrichment: Home opens on the recommended mission, a demo-only
+  Progress destination, rotating deterministic Friend replies and a curated
+  set of gentle pattern tips;
+- storage-free behaviour of the distribution (no service worker, no
+  `localStorage`, no API/provider requests);
+- the Capacitor 8 Android wrapper (D-0078) and its permission surface; and
+- dependency, lint and regression impact on the existing verified suites.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Ordinary production build cannot activate the demo | Pass | runtime-policy unit test denies `development=false, distribution=false`; configuration test proves production mode builds to `dist/` while only the explicit demo mode builds `dist-demo/` |
+| Demo distribution activates only through the dedicated script | Pass | `build:demo` alone sets `VITE_LOCAL_DEMO=true` with `--mode demo`; no `.env` file or default mode carries the flag |
+| Built artifact runs the full demo journey | Pass | Chromium journey against `vite preview` of `dist-demo`: Home mission, lesson with microphone-denial fallback, check, result, progress objectives and two Friend turns |
+| No storage or network leaves the device | Pass | journey observes zero `/api/` requests, zero `localStorage` entries and zero service-worker registrations |
+| Friend replies stay deterministic and advisory | Pass | unit tests pin the four-reply rotation and the four curated pattern tips; replies remain presentation text with no learning-record path |
+| Accessibility | Pass | zero automated axe violations across the extended journey |
+| Android APK identity and permissions | Pass | `aapt2 dump badging`: `com.globalenglish.demo`, `Global English Demo`, minSdk 24, targetSdk 36, `INTERNET`/`RECORD_AUDIO`/`MODIFY_AUDIO_SETTINGS` only, demo assets bundled |
+| Dependency audit | Pass | `uuid@<11.1.1` override patches the moderate advisory in the dev-only Capacitor CLI path; `pnpm audit` reports no known vulnerabilities |
+| Existing suites unchanged | Pass | full `make verify`, `make e2e` and `make build` re-run green after the change |
+
+### Commands and results
+
+| Command or check | Result |
+|---|---|
+| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 68 web tests |
+| `make e2e` | Pass: 10 existing Chromium journeys |
+| `make build` | Pass: Laravel production optimize/cleanup and strict production Vite build |
+| `make demo-e2e` | Pass: extended synthetic journey on the development server |
+| `make demo-dist-e2e` | Pass: the same journey against the built `dist-demo` artifact (three consecutive runs during stabilization) |
+| `make demo-android` | Pass: Capacitor sync plus Gradle `assembleDebug` producing `app-debug.apk` (~4.9 MB) with JDK 21, AGP 8.13.0, Gradle 8.14.3 |
+
+### Security, privacy and limitations
+
+- The demo distribution and APK contain no credential, identity, provider
+  configuration, tenant data or learner content; recordings stay in volatile
+  browser memory for local playback/retry.
+- `com.globalenglish.demo` is a placeholder demo identity; the client-owned
+  production package identity, Passport PKCE authentication, native secure
+  storage and Play release engineering remain PR-014 scope.
+- The APK is debug-signed presentation packaging. It has not been executed
+  on a device or emulator in this session (no `/dev/kvm` access); an
+  on-device pass on representative hardware remains outstanding evidence.
+- Gentle pattern tips are scripted demo content and must not be represented
+  as grammar analysis, correction authority or AI capability.
+- The demo distribution is not curriculum approval, benchmark evidence,
+  checkpoint acceptance or production authorization; every existing PR-009
+  and later gate is unchanged.

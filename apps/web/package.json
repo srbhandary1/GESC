@@ -6,15 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && VITE_LOCAL_DEMO=true vite build --mode demo",
     "e2e": "playwright test",
     "e2e:demo": "playwright test --config=playwright.demo.config.ts",
+    "e2e:demo-dist": "pnpm build:demo && playwright test --config=playwright.demo-dist.config.ts",
     "lint": "pnpm --dir ../.. exec eslint apps/web --max-warnings=0",
     "preview": "vite preview",
+    "preview:demo": "vite preview --mode demo --host 127.0.0.1 --port 4175 --strictPort",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "@capacitor/core": "8.5.0",
     "@global-english/contracts": "workspace:*",
     "@global-english/design-system": "workspace:*",
     "@global-english/localization": "workspace:*",
@@ -23,6 +27,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
+    "@capacitor/android": "8.5.0",
+    "@capacitor/cli": "8.5.0",
     "@playwright/test": "1.62.0",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",

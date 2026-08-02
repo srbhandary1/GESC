@@ -23,6 +23,7 @@ import type {
 } from './auth/AuthenticationAdapter'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
+import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
@@ -110,10 +111,10 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
+  // In demo mode Home renders the learner journey directly, so every
+  // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
-    () =>
-      destinationFromHash(globalThis.location?.hash) ??
-      (demoMode ? 'learn' : 'home'),
+    () => destinationFromHash(globalThis.location?.hash) ?? 'home',
   )
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
@@ -246,15 +247,17 @@ function App({
   )
   const offlineBinding =
     authenticatedOfflineBinding ?? offlineResume?.binding ?? null
-  const canLearn =
-    destination === 'learn' &&
-    ((session.status === 'authenticated' &&
-      session.identity.current_membership?.membership_type === 'learner') ||
-      offlineResume !== null)
-  const canPractice =
-    destination === 'practice' &&
+  const isLearnerSession =
     session.status === 'authenticated' &&
     session.identity.current_membership?.membership_type === 'learner'
+  const canLearn =
+    (destination === 'learn' ||
+      (demoMode && destination === 'home')) &&
+    (isLearnerSession || offlineResume !== null)
+  const canPractice =
+    destination === 'practice' && isLearnerSession
+  const canShowDemoProgress =
+    demoMode && destination === 'progress' && isLearnerSession
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -411,6 +414,12 @@ function App({
           <ConversationJourney
             api={conversationApi}
             createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canShowDemoProgress ? (
+          <DemoLearnerProgress
+            api={learnerJourneyApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />

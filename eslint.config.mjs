@@ -9,10 +9,13 @@ export default tseslint.config(
     ignores: [
       '**/coverage',
       '**/dist',
+      '**/dist-demo',
       '**/node_modules',
       '**/playwright-report',
       '**/test-results',
       'apps/api/vendor',
+      // Native demo wrapper: Gradle project plus the copied built bundle.
+      'apps/web/android',
     ],
   },
   {

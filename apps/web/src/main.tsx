@@ -11,13 +11,18 @@ import {
 } from './demo/localDemo.ts'
 import { registerOfflineShell } from './offline/registerOfflineShell.ts'
 
-void registerOfflineShell()
-
 const demoMode = isLocalDemoEnabled({
   development: import.meta.env.DEV,
+  distribution: import.meta.env.MODE === 'demo',
   requested: import.meta.env.VITE_LOCAL_DEMO === 'true',
 })
 const demoRuntime = demoMode ? createLocalDemoRuntime() : null
+
+if (!demoMode) {
+  // The synthetic demo must stay storage-free: it registers no service
+  // worker and caches nothing, so closing it leaves no learner trace.
+  void registerOfflineShell()
+}
 
 createRoot(
   document.getElementById('root')!,

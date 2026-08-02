@@ -7,9 +7,9 @@
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
 | Status | DR-0012 encrypted listener workflow implemented and repository-verified; live benchmark blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 31 July 2026 |
+| Updated date | 2 August 2026 |
 | Git branch | `codex/pr-009-secure-speech` |
-| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; a separate development-only in-memory demo presents accepted features without provider/data authority; no live request made |
+| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; the disclosed synthetic demo now additionally ships as an explicit demo-distribution web bundle and a Capacitor 8 Android demo APK under D-0077/D-0078 without provider/data authority; no live request made |
 | Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
 
 ## Checkpoint authorization
@@ -475,18 +475,50 @@ review and do not waive pre-production specialist gates.
   progress and deterministic Friend fixtures adapted from the already
   disclosed contract-test journeys. It writes no authoritative learning or
   tenant record and resets on reload.
-- The demo opens on Learn, includes a generated local WAV tone, supports local
-  browser recording/playback and the no-recording path, and returns a
-  deterministic zero-cost text-only Friend response.
+- The demo opens on Home with the recommended synthetic mission, includes a
+  generated local WAV tone, supports local browser recording/playback and the
+  no-recording path, shows synthetic objective progress on the Progress
+  destination, and returns deterministic zero-cost text-only Friend replies
+  (rotating follow-up questions plus a tiny curated set of gentle pattern
+  tips that are scripted demo content, not grammar analysis).
 - A visible localized notice states that the fixtures are synthetic and use
   no learner data, real AI, approved curriculum or production service. All
   five non-English notices remain implementation drafts pending independent
   human review.
-- `VITE_LOCAL_DEMO=true` is effective only when Vite reports a development
-  runtime. A production build cannot activate the demo adapters.
+- `VITE_LOCAL_DEMO=true` is effective only in a Vite development runtime or
+  in the explicit `vite build --mode demo` distribution build (D-0077). The
+  ordinary production build mode cannot activate the demo adapters; unit and
+  configuration tests enforce the boundary in both directions.
 - This preview is presentation evidence only. It is not a full-stack
   published-content journey, human curriculum approval, Azure benchmark,
   checkpoint acceptance or production authorization.
+
+## Synthetic demo distribution (web and Android)
+
+- Under D-0077, `make demo-build` produces the disclosed synthetic demo as a
+  static bundle in `apps/web/dist-demo` (relative asset paths, no service
+  worker, no device storage, no API or provider request, visible demo
+  notice). `make demo-serve` serves it on `127.0.0.1:4175`, and
+  `make demo-dist-e2e` verifies the built artifact in Chromium.
+- Under D-0078, `make demo-android` wraps the same bundle in the Capacitor 8
+  project at `apps/web/android` and builds
+  `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`
+  (`Global English Demo`, placeholder identifier `com.globalenglish.demo`,
+  minimum API 24, target API 36). Microphone permission supports the existing
+  local-only practice capture; nothing is uploaded or persisted.
+- The wrapper is presentation packaging only. It contains no credential,
+  authentication path, provider access or learner data, and it is not the
+  separately authorized PR-014 production Android application (Passport
+  PKCE, native secure storage, device-matrix testing, Play release
+  engineering).
+- The APK was verified statically (`aapt2 dump badging`: identity, label,
+  API levels, permissions and bundled demo assets). It has not been executed
+  on a device or emulator in this workstation session because the login
+  session has no `/dev/kvm` access; an on-device installation pass remains
+  outstanding evidence before the APK is shown beyond a controlled
+  presentation.
+- The boundary and evidence live in
+  [the demo distribution scope](DEMO_DISTRIBUTION_SCOPE.md).
 
 ## Verification state
 

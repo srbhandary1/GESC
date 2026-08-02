@@ -6,27 +6,32 @@ COMPOSER_CMD ?= composer
 DOCKER_COMPOSE ?= docker compose
 
 API_DIR := apps/api
+WEB_DIR := apps/web
 WEB_FILTER := @global-english/web
 COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo services-up services-down verify test e2e demo-e2e ai-eval openapi migrate seed build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-android services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build
 
 help:
 	@printf '%s\n' \
-		'make bootstrap   Install locked dependencies and prepare ignored local environment files' \
-		'make dev         Start local services, API, web application and queue worker' \
-		'make demo        Start the synthetic in-memory browser demo on 127.0.0.1' \
-		'make verify      Run formatting, static analysis, tests and dependency audits' \
-		'make test        Run deterministic backend and frontend tests' \
-		'make e2e         Run the critical web browser journeys' \
-		'make demo-e2e    Run the synthetic local-demo browser journey' \
-		'make ai-eval     Run the locked PR-009 synthetic speech benchmark' \
-		'make openapi     Validate OpenAPI and check generated-client drift' \
-		'make migrate     Apply local Laravel migrations' \
-		'make seed        Load safe local Laravel seed data' \
-		'make build       Build the API configuration and React production bundle'
+		'make bootstrap     Install locked dependencies and prepare ignored local environment files' \
+		'make dev           Start local services, API, web application and queue worker' \
+		'make demo          Start the synthetic in-memory browser demo on 127.0.0.1' \
+		'make demo-build    Build the distributable synthetic demo bundle into apps/web/dist-demo' \
+		'make demo-serve    Serve the built synthetic demo bundle on 127.0.0.1:4175' \
+		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
+		'make verify        Run formatting, static analysis, tests and dependency audits' \
+		'make test          Run deterministic backend and frontend tests' \
+		'make e2e           Run the critical web browser journeys' \
+		'make demo-e2e      Run the synthetic local-demo browser journey' \
+		'make demo-dist-e2e Run the browser journey against the built demo bundle' \
+		'make ai-eval       Run the locked PR-009 synthetic speech benchmark' \
+		'make openapi       Validate OpenAPI and check generated-client drift' \
+		'make migrate       Apply local Laravel migrations' \
+		'make seed          Load safe local Laravel seed data' \
+		'make build         Build the API configuration and React production bundle'
 
 check-toolchain:
 	@sh scripts/check-toolchain.sh
@@ -55,6 +60,18 @@ dev: check-local-auth-env
 demo:
 	@sh scripts/run-local-demo.sh
 
+demo-build:
+	$(PNPM) --filter $(WEB_FILTER) build:demo
+
+demo-serve:
+	$(PNPM) --filter $(WEB_FILTER) preview:demo
+
+# Requires JAVA_HOME pointing to JDK 21 and ANDROID_HOME pointing to an
+# Android SDK with platform 36. See README "Android demo APK".
+demo-android: demo-build
+	cd $(WEB_DIR) && $(PNPM) exec cap sync android
+	cd $(WEB_DIR)/android && ./gradlew assembleDebug
+
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) audit --locked
@@ -80,6 +97,9 @@ e2e:
 
 demo-e2e:
 	$(PNPM) --filter $(WEB_FILTER) e2e:demo
+
+demo-dist-e2e:
+	$(PNPM) --filter $(WEB_FILTER) e2e:demo-dist
 
 ai-eval:
 	cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID:-}"

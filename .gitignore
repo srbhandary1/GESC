@@ -12,6 +12,7 @@ node_modules/
 /apps/api/storage/logs/
 /apps/api/bootstrap/cache/*.php
 /apps/web/dist/
+/apps/web/dist-demo/
 /apps/web/coverage/
 /apps/web/playwright-report/
 /apps/web/test-results/

@@ -38,17 +38,26 @@ const ids = {
   session: '01J30000000000000000000016',
   turn: '01J30000000000000000000017',
   user: '01J30000000000000000000018',
+  greetingObjective: '01J30000000000000000000020',
 } as const
 
 export interface LocalDemoEnvironment {
   readonly development: boolean
+  /**
+   * True only for the explicit `vite build --mode demo` distribution
+   * artifact. The ordinary production build mode never sets this.
+   */
+  readonly distribution: boolean
   readonly requested: boolean
 }
 
 export function isLocalDemoEnabled(
   environment: LocalDemoEnvironment,
 ): boolean {
-  return environment.development && environment.requested
+  return (
+    (environment.development || environment.distribution) &&
+    environment.requested
+  )
 }
 
 export function createLocalDemoRuntime() {
@@ -172,6 +181,23 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
           review_timezone: result.review.timezone,
           spoken_state: 'unassessed',
         },
+        {
+          evidence: {
+            best_attempt_id: ids.best,
+            best_attempt_number: 1,
+            first_attempt_id: ids.first,
+            first_attempt_number: 1,
+            latest_attempt_id: ids.latest,
+            latest_attempt_number: 1,
+          },
+          knowledge_state: 'developing',
+          label: content('en-IN', 'Greet a colleague at work'),
+          local_capture_receipt_present: false,
+          objective_id: ids.greetingObjective,
+          review_due_at: '2026-08-02T09:00:00Z',
+          review_timezone: 'Asia/Kolkata',
+          spoken_state: 'unassessed',
+        },
       ],
     }
   }
@@ -224,8 +250,10 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     this.#turnNumber += 1
 
     return {
-      assistant_reply:
-        'Thank you for sharing that. What would you like to talk about next?',
+      assistant_reply: demoFriendReply(
+        input.prototype_utterance,
+        this.#turnNumber,
+      ),
       conversation_session_id: ids.session,
       events_url: `local-demo://turn/${this.#turnNumber}`,
       id: ids.turn,
@@ -270,6 +298,64 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       }),
     )
   }
+}
+
+interface DemoCoachingPattern {
+  readonly matcher: RegExp
+  readonly reply: string
+}
+
+/**
+ * A tiny curated set of deterministic pattern replies so a presentation can
+ * show the "respond to meaning first, then one gentle correction" behaviour
+ * without any provider. This is synthetic demo scripting, not grammar
+ * analysis, and it produces no authoritative record.
+ */
+const demoCoachingPatterns: readonly DemoCoachingPattern[] = [
+  {
+    matcher: /yesterday\s+i\s+go\b/iu,
+    reply:
+      'That sounds like a full day. One gentle tip: with "yesterday", use the past form — "Yesterday I went to the market." Would you like to try that once more?',
+  },
+  {
+    matcher: /\bi\s+am\s+agree\b/iu,
+    reply:
+      'It is nice that we think alike. One gentle tip: say "I agree" instead of "I am agree". What do you agree with the most?',
+  },
+  {
+    matcher: /\bdidn'?t\s+went\b/iu,
+    reply:
+      'Thank you for telling me. One gentle tip: after "didn\'t", keep the base verb — "I didn\'t go". Where do you usually go instead?',
+  },
+  {
+    matcher: /\b(?:he|she)\s+don'?t\b/iu,
+    reply:
+      'I understand. One gentle tip: with "he" or "she", say "doesn\'t" — "He doesn\'t like tea." Does that match what you meant?',
+  },
+]
+
+const demoFriendFollowUps = [
+  'That sounds interesting. What happened next?',
+  'I see. How did that make you feel?',
+  'Nice! Tell me a little more about it.',
+  'Thank you for sharing that. What would you like to talk about next?',
+] as const
+
+function demoFriendReply(
+  utterance: string,
+  turnNumber: number,
+): string {
+  for (const pattern of demoCoachingPatterns) {
+    if (pattern.matcher.test(utterance)) {
+      return pattern.reply
+    }
+  }
+
+  return (
+    demoFriendFollowUps[
+      (turnNumber - 1) % demoFriendFollowUps.length
+    ] ?? demoFriendFollowUps[0]
+  )
 }
 
 function demoHome(): LearnerHome {

@@ -56,6 +56,33 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the synthetic objective progress on the demo progress destination', async () => {
+    window.history.replaceState(null, '', '/#progress')
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('learner.progress.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Introduce myself')).toHaveAttribute(
+      'lang',
+      'en-IN',
+    )
+    expect(
+      screen.getByText('Greet a colleague at work'),
+    ).toBeInTheDocument()
+  })
+
   it('renders Kannada first with semantic landmarks and inert destinations', async () => {
     const authentication = anonymousAuthentication()
 
