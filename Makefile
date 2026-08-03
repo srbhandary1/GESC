@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-android services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,8 @@ help:
 		'make demo          Start the synthetic in-memory browser demo on 127.0.0.1' \
 		'make demo-build    Build the distributable synthetic demo bundle into apps/web/dist-demo' \
 		'make demo-serve    Serve the built synthetic demo bundle on 127.0.0.1:4175' \
+		'make demo-client   Serve the synthetic demo on 0.0.0.0:8080 for static-IP client testing' \
+		'make demo-client-tunnel  Temporary HTTPS Cloudflare tunnel for remote client testing' \
 		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
 		'make test          Run deterministic backend and frontend tests' \
@@ -65,6 +67,30 @@ demo-build:
 
 demo-serve:
 	$(PNPM) --filter $(WEB_FILTER) preview:demo
+
+# Opt-in remote client testing over the workstation static IP. Does not
+# change the loopback-only make demo / make demo-serve defaults. See
+# docs/CLIENT_DEMO_RUNBOOK.md.
+demo-client:
+	@bash scripts/run-client-static-ip-demo.sh start
+
+demo-client-check:
+	@bash scripts/run-client-static-ip-demo.sh check
+
+demo-client-status:
+	@bash scripts/run-client-static-ip-demo.sh status
+
+demo-client-stop:
+	@bash scripts/run-client-static-ip-demo.sh stop
+
+demo-client-tunnel:
+	@bash scripts/run-client-demo-tunnel.sh start
+
+demo-client-tunnel-status:
+	@bash scripts/run-client-demo-tunnel.sh status
+
+demo-client-tunnel-stop:
+	@bash scripts/run-client-demo-tunnel.sh stop
 
 # Requires JAVA_HOME pointing to JDK 21 and ANDROID_HOME pointing to an
 # Android SDK with platform 36. See README "Android demo APK".

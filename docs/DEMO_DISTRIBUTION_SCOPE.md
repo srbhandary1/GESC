@@ -57,6 +57,7 @@ provider path or authorize production deployment.
 | `make demo` | Development-server demo on `127.0.0.1:5173` (unchanged) |
 | `make demo-build` | Build the distribution bundle into `apps/web/dist-demo` |
 | `make demo-serve` | Serve the built bundle on `127.0.0.1:4175` |
+| `make demo-client` | Opt-in static-IP client serve on `0.0.0.0:8080` (see [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md)) |
 | `make demo-e2e` | Chromium journey against the development-server demo |
 | `make demo-dist-e2e` | Chromium journey against the built bundle |
 | `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` |

@@ -139,6 +139,23 @@ review artifact it renders the draft interface locales (Kannada first) with
 the visible preview notice; production stays `approved-only`. Verify the
 built artifact with `make demo-dist-e2e`.
 
+### Remote client testing over the static IP
+
+To let a client outside this Wi-Fi open the same synthetic demo, use the
+opt-in launcher (loopback defaults are unchanged):
+
+```text
+make demo-client
+```
+
+This serves the built demo on `0.0.0.0:8080` and advertises
+`http://117.254.108.143:8080`. Port `8000` is reserved for another local
+project demo on this workstation. One-time router setup: forward TCP `8080`
+on the static IP to this laptop's LAN address on port `8080`. Until that
+forward exists, `make demo-client-tunnel` publishes a temporary HTTPS
+Cloudflare URL. Full steps and limits are in
+[docs/CLIENT_DEMO_RUNBOOK.md](docs/CLIENT_DEMO_RUNBOOK.md).
+
 ### Android demo APK
 
 The Capacitor 8 wrapper in `apps/web/android` packages the same synthetic
@@ -213,6 +230,7 @@ isolated environments.
 | `make demo` | Run the populated synthetic browser demo on loopback only |
 | `make demo-build` | Build the distributable synthetic demo bundle into `apps/web/dist-demo` |
 | `make demo-serve` | Serve the built synthetic demo bundle on `127.0.0.1:4175` |
+| `make demo-client` | Serve the synthetic demo on `0.0.0.0:8080` for static-IP client testing |
 | `make demo-android` | Build the Android demo APK from the synthetic demo bundle |
 | `make verify` | Run formatting, linting, static analysis, tests and contract checks |
 | `make test` | Run all deterministic automated tests |

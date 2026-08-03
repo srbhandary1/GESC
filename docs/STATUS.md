@@ -7,8 +7,8 @@
 | Checkpoint | PR-009 — Real speech adapters and transcript recovery |
 | Status | DR-0012 encrypted listener workflow implemented and repository-verified; live benchmark blocked |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 2 August 2026 |
-| Git branch | `codex/pr-009-secure-speech` |
+| Updated date | 3 August 2026 |
+| Git branch | `main` |
 | Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; the disclosed synthetic demo now additionally ships as an explicit demo-distribution web bundle and a Capacitor 8 Android demo APK under D-0077/D-0078 without provider/data authority; no live request made |
 | Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
 
@@ -500,6 +500,10 @@ review and do not waive pre-production specialist gates.
   worker, no device storage, no API or provider request, visible demo
   notice). `make demo-serve` serves it on `127.0.0.1:4175`, and
   `make demo-dist-e2e` verifies the built artifact in Chromium.
+- Opt-in remote client review uses `make demo-client` on `0.0.0.0:8080`
+  advertising static IP `117.254.108.143` (port 8000 is reserved by another
+  local project). See [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md).
+  Loopback defaults for `make demo` / `make demo-serve` are unchanged.
 - The demo bundle is an explicitly requested review artifact and renders the
   draft interface locales (Kannada first) with the existing visible preview
   notice through `VITE_UI_TRANSLATION_PREVIEW=true` (ADR-0005). Ordinary
