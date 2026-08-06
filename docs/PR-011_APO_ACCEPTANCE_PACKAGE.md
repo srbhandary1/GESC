@@ -1,19 +1,21 @@
 # PR-011 APO acceptance package
 
-This package prepares exact-artifact Accountable Product Owner acceptance of
-PR-011. It is **not** acceptance. APP-0019 only authorized beginning
-implementation. A new APP record is required after the APO statement below.
+This package prepared exact-artifact Accountable Product Owner acceptance of
+PR-011. **Accepted** under [APP-0020](APPROVALS.md#app-0020) / D-0093 at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with the recorded limitations
+below. APP-0019 only authorized beginning implementation.
 
-## Artifact to accept
+## Artifact accepted
 
 | Field | Value |
 |---|---|
 | Checkpoint | Master-plan §26 PR-011 — Evaluation harness and memory controls |
 | Branch | `codex/pr-011-evaluation-memory` |
 | Governing implementation authorization | [APP-0019](APPROVALS.md#app-0019) |
+| Acceptance record | [APP-0020](APPROVALS.md#app-0020) |
 | Verification scope | [PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md](PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md) |
 | Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md#pr-011--evaluation-harness-and-memory-controls) |
-| Exact commit | The tip commit that contains this package and the PR-011 closure changes (list/edit/delete UI, import-review fail-closed tests, verification scope). Record the full SHA at acceptance time. |
+| Exact commit | `220628f4d4c69284af0b1f2534e8902f3b272088` |
 
 ## Delivered behaviour
 
@@ -63,13 +65,10 @@ implementation. A new APP record is required after the APO statement below.
    production deployment, Google Play release or real learner production data.
 7. AI remains advisory and must not mutate authoritative learning records.
 
-## Proposed APO statement
-
-When the exact tip commit SHA is known, the Accountable Product Owner may
-state:
+## APO statement (recorded)
 
 ```text
-APO accept PR-011 at <FULL_COMMIT_SHA> with its recorded limitations
+APO accept PR-011 at 220628f4d4c69284af0b1f2534e8902f3b272088 with its recorded limitations
 ```
 
 Interpretation for the recorder (Codex is never an approver):
@@ -82,11 +81,10 @@ Interpretation for the recorder (Codex is never an approver):
 
 ## Recorder checklist after APO statement
 
-1. Append APP-0020 (or next free APP id) to [APPROVALS.md](APPROVALS.md).
-2. Append D-0092 (or next free decision id) to [DECISIONS.md](DECISIONS.md).
-3. Update [STATUS.md](STATUS.md) current checkpoint to accepted PR-011 and
-   next gate to PR-012 authorization only.
-4. Append a short acceptance row to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+1. Appended [APP-0020](APPROVALS.md#app-0020) to [APPROVALS.md](APPROVALS.md).
+2. Appended D-0093 to [DECISIONS.md](DECISIONS.md).
+3. Updated [STATUS.md](STATUS.md) current checkpoint to accepted PR-011.
+4. Appended acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
 5. Do **not** start PR-012 code until a distinct APP authorizes the bounded
    synthetic role-play slice in
    [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).

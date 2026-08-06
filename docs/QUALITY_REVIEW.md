@@ -2086,6 +2086,14 @@ implementation is completed and separately accepted.
 | Full host `make verify` / remote CI | Not claimed | Host PHP 8.5.4 lacks `pdo_pgsql`; Node 22 cannot load locale `.ts` imports without pinned Node 24 |
 | Real LLM / PR-012 / production / Play | Not authorized | APP-0019; STATUS |
 
+### Subsequent checkpoint acceptance
+
+[APP-0020](APPROVALS.md#app-0020) records Accountable Product Owner acceptance
+of PR-011 at exact commit `220628f4d4c69284af0b1f2534e8902f3b272088` with
+every recorded limitation in this section and
+[PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md). PR-012
+implementation remains unauthorized until a separate APP.
+
 ### Security, privacy and tenancy
 
 - Memory list returns all active facts for the owning membership; no hidden active facts.
@@ -2106,6 +2114,5 @@ implementation is completed and separately accepted.
 - Preview-locale memory strings may reuse English pending independent review.
 - Eval cost rollup remains zero on deterministic fakes and is not live spend.
 - Speech half of `make ai-eval` remains PR-009-gated and was not run.
-- PR-011 awaits Accountable Product Owner exact-commit acceptance before
-  PR-012 authorization; see
-  [PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md).
+- PR-011 is accepted under APP-0020 at
+  `220628f4d4c69284af0b1f2534e8902f3b272088`; PR-012 remains unauthorized.

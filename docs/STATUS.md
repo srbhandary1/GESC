@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-011 — Evaluation harness and memory controls |
-| Status | PR-011 acceptance package ready under [APP-0019](APPROVALS.md#app-0019); awaiting Accountable Product Owner exact-commit acceptance |
+| Status | Accepted under [APP-0020](APPROVALS.md#app-0020) at `220628f4d4c69284af0b1f2534e8902f3b272088` with recorded limitations |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 6 August 2026 |
 | Git branch | `codex/pr-011-evaluation-memory` |
-| Product code | PR-008 through PR-010 accepted; PR-011 deterministic evaluation harness and learner-visible AI memory (list/edit/delete) implemented; real model providers, PR-012+, production/Play unauthorized |
-| Next checkpoint | APO exact-commit acceptance of PR-011; only then consider PR-012 authorization. Production/Play remain unauthorized |
-| Professional client path | APP-0016–0019; PR-009/PR-010 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-011 accepted; real model providers, PR-012+, production/Play unauthorized |
+| Next checkpoint | Separate APO APP required before any PR-012 implementation. Production/Play remain unauthorized |
+| Professional client path | APP-0016–0020; PR-009 through PR-011 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -92,6 +92,12 @@ release.
 Owner authorization to begin only PR-011 — Evaluation harness and memory
 controls. It is not acceptance of completed PR-011 work and does not authorize
 PR-012, production or Google Play release.
+
+[APP-0020](APPROVALS.md#app-0020) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-011 at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with every recorded limitation. It
+does not authorize PR-012 implementation, real model providers, production or
+Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -681,14 +687,13 @@ PR-006 verification results:
 
 ## Next checkpoint gate
 
-PR-011 is implemented under [APP-0019](APPROVALS.md#app-0019) and awaits
-Accountable Product Owner exact-commit acceptance with its recorded
-limitations; the acceptance package is summarized in
-[PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md). PR-012,
-production, Google Play release and every later implementation checkpoint
-remain unauthorized. A proposed post-acceptance PR-012 authorization boundary
-is drafted in
-[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
-and is not authorization. Production additionally requires qualified legal
-review and independent security, privacy, tenancy, accessibility,
-language/content and release review.
+PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with its recorded limitations
+([PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md)).
+PR-012 implementation, production, Google Play release and every later
+checkpoint remain unauthorized until a distinct APP. A proposed PR-012
+authorization boundary remains drafted only in
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
+Production additionally requires qualified legal review and independent
+security, privacy, tenancy, accessibility, language/content and release
+review.

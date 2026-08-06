@@ -1203,3 +1203,71 @@ only. It is not acceptance of completed PR-011 deliverables.
   production.
 - AI remains advisory and must not mutate authoritative learning records.
 - No master-plan amendment is made.
+
+<a id="app-0020"></a>
+
+## APP-0020 — PR-011 acceptance with recorded limitations
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-06 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `220628f4d4c69284af0b1f2534e8902f3b272088` |
+| Governing authorization | [APP-0019](APPROVALS.md#app-0019); D-0090; D-0091 |
+| Acceptance package | [PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-011 at 220628f4d4c69284af0b1f2534e8902f3b272088 with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-011 was implemented under APP-0019 and closed on commit
+   `220628f4d4c69284af0b1f2534e8902f3b272088` (memory list/edit/delete UI,
+   fail-closed evaluation import review, verification and acceptance
+   packages, plus concurrent client-demo presentation work on the same tip);
+2. STATUS recorded PR-011 as awaiting Accountable Product Owner exact-commit
+   acceptance;
+3. QUALITY_REVIEW recorded Docker PostgreSQL, OpenAPI, locale, vitest and
+   `ai:evaluate` evidence with host `pdo_pgsql` / full `make verify`
+   limitations; and
+4. the Accountable Product Owner instructed: commit the branch, then accept
+   PR-011 at that SHA.
+
+### Accepted scope
+
+- Accept PR-011 — Evaluation harness and memory controls — at exact
+  implementation commit `220628f4d4c69284af0b1f2534e8902f3b272088`, with every
+  recorded limitation in
+  [PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, D-0090 and D-0091.
+
+### Conditions and limitations
+
+- This acceptance does **not** authorize PR-012 implementation. It only
+  permits consideration of a separate PR-012 APP using the drafted
+  [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
+- Real LLM / conversation-model providers remain unauthorized; the accepted
+  slice uses deterministic fake adapters with fail-closed production bindings.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- AI remains advisory: it must not mutate authoritative learning records.
+- Full remote CI / host `make verify` remains a follow-up verification gate
+  and is not waived by this acceptance.
+- Demo-local Azure TTS (D-0092) is presentation-only and does not amend
+  ADR-0008 ordinary application bindings.
+- No master-plan amendment is made.
