@@ -2002,4 +2002,30 @@ this APP-0017 record.
 - Full `make verify` / remote CI was not completed in this session.
 - No real LLM provider is wired; Tutor beta uses deterministic fake outputs.
 - Kannada and preview-locale UI copy remain pending independent review.
-- PR-010 awaits Accountable Product Owner acceptance before PR-011.
+
+
+---
+
+## APP-0018 — PR-010 acceptance
+
+### Scope reviewed
+
+- APO statement accepting PR-010 with recorded limitations;
+- exact implementation commit `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`;
+- STATUS/DECISIONS updated without authorizing PR-011.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0018](APPROVALS.md#app-0018) |
+| Exact commit cited | Pass | `13eb5ac56f04402a2571346e9fd8e24f1a05ea80` |
+| PR-010 closed with limitations | Pass | APP-0018 conditions; D-0088 |
+| PR-011 authorized | No | APP-0018 limitations; STATUS next checkpoint |
+| Production/Play claimed | No | APP-0018 limitations |
+
+### Known limitation
+
+PR-011 remains blocked until a separate explicit Accountable Product Owner
+authorization. This acceptance does not waive independent specialist reviews
+or full CI/`make verify` follow-up.

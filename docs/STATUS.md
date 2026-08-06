@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-010 — AI orchestration, correction and Tutor beta |
-| Status | PR-010 implemented under [APP-0017](APPROVALS.md#app-0017); awaiting Accountable Product Owner acceptance |
+| Status | PR-010 accepted under [APP-0018](APPROVALS.md#app-0018) at `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`; PR-011 not yet authorized |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 6 August 2026 |
 | Git branch | `codex/demo-professional-speech-ui` |
-| Product code | PR-008/PR-009 accepted; PR-010 deterministic orchestration/correction slice implemented with fake adapters; real model providers, PR-011+, production/Play unauthorized |
-| Next checkpoint | APO acceptance of PR-010; only then consider PR-011 authorization. Production/Play remain unauthorized |
-| Professional client path | APP-0016/0017; PR-009 closed with passed safe-report; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-010 accepted; PR-010 is the deterministic fake orchestration/correction slice; real model providers, PR-011+, production/Play unauthorized |
+| Next checkpoint | Separate APO authorization required before PR-011 — Evaluation harness and memory controls. Production/Play remain unauthorized |
+| Professional client path | APP-0016/0017/0018; PR-009/PR-010 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -81,6 +81,12 @@ Owner acceptance of PR-009 with its recorded limitations and live synthetic
 benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`, and authorizes only
 PR-010 — AI orchestration, correction and Tutor beta. It does not authorize
 PR-011, production or Google Play release.
+
+[APP-0018](APPROVALS.md#app-0018) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-010 at
+`13eb5ac56f04402a2571346e9fd8e24f1a05ea80` with every recorded limitation. It
+does not authorize PR-011, real model providers, production or Google Play
+release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -638,9 +644,10 @@ PR-006 verification results:
 
 ## Next checkpoint gate
 
-PR-010 is implemented under [APP-0017](APPROVALS.md#app-0017) and awaits
-Accountable Product Owner acceptance with its recorded limitations. PR-011,
-production, Google Play release and every later implementation checkpoint
-remain unauthorized. Production additionally requires qualified legal review
-and independent security, privacy, tenancy, accessibility, language/content
-and release review.
+PR-010 is accepted under [APP-0018](APPROVALS.md#app-0018) at
+`13eb5ac56f04402a2571346e9fd8e24f1a05ea80` with its recorded limitations.
+PR-011, real model providers, production, Google Play release and every later
+implementation checkpoint remain unauthorized until a separate explicit
+Accountable Product Owner authorization. Production additionally requires
+qualified legal review and independent security, privacy, tenancy,
+accessibility, language/content and release review.

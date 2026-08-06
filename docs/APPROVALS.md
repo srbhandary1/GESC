@@ -1080,3 +1080,62 @@ Immediately before this statement:
 - Development listeners and APO demo approvals are not independent language
   or specialist production review.
 - No master-plan amendment is made.
+
+<a id="app-0018"></a>
+
+## APP-0018 — PR-010 acceptance with recorded limitations
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-06 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `13eb5ac56f04402a2571346e9fd8e24f1a05ea80` |
+| Pull request | https://github.com/srbhandary1/GESC/pull/1 |
+| Governing authorization | [APP-0017](APPROVALS.md#app-0017); D-0087 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-010 with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-010 was implemented under APP-0017 on commit
+   `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`;
+2. STATUS recorded PR-010 as implemented and awaiting Accountable Product
+   Owner acceptance;
+3. QUALITY_REVIEW recorded schema/safety, learning-isolation, OpenAPI and UI
+   correction-card evidence with host `pdo_pgsql` and full `make verify`
+   limitations; and
+4. the open pull request was https://github.com/srbhandary1/GESC/pull/1.
+
+### Accepted scope
+
+- Accept PR-010 — AI orchestration, correction and Tutor beta — at exact
+  implementation commit `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`, with every
+  recorded limitation in STATUS, QUALITY_REVIEW, D-0087 and APP-0017.
+
+### Conditions and limitations
+
+- This acceptance does **not** authorize PR-011 or any later checkpoint.
+- Real LLM / conversation-model providers remain unauthorized; the accepted
+  slice uses deterministic fake adapters with fail-closed production bindings.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- AI remains advisory: it must not mutate authoritative learning records.
+- Full remote CI / `make verify` on the host toolchain remains a follow-up
+  verification gate and is not waived by this acceptance.
+- No master-plan amendment is made.
