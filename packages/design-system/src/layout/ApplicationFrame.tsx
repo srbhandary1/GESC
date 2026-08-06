@@ -17,6 +17,11 @@ export interface ApplicationFrameProps {
   navigationLinks: PrimaryNavigationLinks
   skipToContentLabel: ReactNode
   headerActions?: ReactNode
+  /**
+   * When true, omits the primary destination navigation. Used by the demo
+   * Phase-1 shell, which renders its own module navigation.
+   */
+  hidePrimaryNavigation?: boolean
   mainId?: string
 }
 
@@ -30,6 +35,7 @@ export function ApplicationFrame({
   navigationLinks,
   skipToContentLabel,
   headerActions,
+  hidePrimaryNavigation = false,
   mainId = 'main-content',
 }: ApplicationFrameProps) {
   return (
@@ -53,12 +59,14 @@ export function ApplicationFrame({
           )}
         </div>
       </header>
-      <PrimaryNavigation
-        ariaLabel={navigationLabel}
-        ariaLabelLocale={navigationLabelLocale}
-        currentDestination={currentDestination}
-        links={navigationLinks}
-      />
+      {hidePrimaryNavigation ? null : (
+        <PrimaryNavigation
+          ariaLabel={navigationLabel}
+          ariaLabelLocale={navigationLabelLocale}
+          currentDestination={currentDestination}
+          links={navigationLinks}
+        />
+      )}
       <main
         className="ge-application-frame__main"
         id={mainId}

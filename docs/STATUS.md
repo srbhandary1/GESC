@@ -4,13 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | DR-0012 encrypted listener workflow implemented and repository-verified; live benchmark blocked |
+| Checkpoint | PR-010 — AI orchestration, correction and Tutor beta |
+| Status | PR-009 accepted under [APP-0017](APPROVALS.md#app-0017); PR-010 authorized and not yet implemented |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 3 August 2026 |
-| Git branch | `main` |
-| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; the disclosed synthetic demo now additionally ships as an explicit demo-distribution web bundle and a Capacitor 8 Android demo APK under D-0077/D-0078 without provider/data authority; no live request made |
-| Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
+| Updated date | 6 August 2026 |
+| Git branch | `codex/demo-professional-speech-ui` |
+| Product code | PR-008 and PR-009 accepted; live synthetic Azure benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`; Phase 1 demo shell remains; PR-010 implementation now authorized |
+| Next checkpoint | Implement only PR-010 within master-plan §26; PR-011+ and production/Play remain unauthorized |
+| Professional client path | APP-0016/0017; PR-009 closed with passed safe-report; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -74,6 +75,12 @@ Tenancy Reviewer roles. DR-0012 is resolved and only its bounded
 prepare/review/complete/purge implementation within PR-009 is authorized. No
 credential, provider spend, live request, benchmark success, PR-009
 acceptance, learner data, PR-010 or production is authorized.
+
+[APP-0017](APPROVALS.md#app-0017) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-009 with its recorded limitations and live synthetic
+benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`, and authorizes only
+PR-010 — AI orchestration, correction and Tutor beta. It does not authorize
+PR-011, production or Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -615,12 +622,11 @@ PR-006 verification results:
 
 ## Next checkpoint gate
 
-PR-008 is accepted at `11f7b597ad2db3b8cf65a1394c1171a8280045d1`
-under APP-0012, which authorizes only PR-009 implementation within accepted
-ADR-0007. PR-009 implementation is repository-verified but remains incomplete
-and unaccepted pending exact vendor/privacy evidence, separate provider-spend
-and live-request approvals, two accountable listener reviews and the locked
-live Azure result. PR-010, production and every later implementation
-checkpoint remain unauthorized. Production additionally requires qualified
-legal review and independent security, privacy, tenancy, accessibility,
-language/content and release review.
+PR-009 is accepted under [APP-0017](APPROVALS.md#app-0017) with its recorded
+limitations and live synthetic benchmark pass
+`e1dc9d3c8daff9e33c20bdd00d2dd4d0`. APP-0017 authorizes only
+PR-010 — AI orchestration, correction and Tutor beta. PR-011, production,
+Google Play release and every later implementation checkpoint remain
+unauthorized. Production additionally requires qualified legal review and
+independent security, privacy, tenancy, accessibility, language/content and
+release review.

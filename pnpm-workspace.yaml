@@ -6,6 +6,9 @@ overrides:
   # Patches the moderate uuid advisory in the dev-only Capacitor CLI
   # dependency path (xcode>uuid); xcode uses the stable root uuid API.
   'uuid@<11.1.1': 11.1.1
+  # Patches GHSA-rgw5-rvv9-x895 in eslint/minimatch dependency paths.
+  brace-expansion: 5.0.9
+
 minimumReleaseAgeExclude:
   - jsdom@30.0.1
   - '@redocly/cli@2.41.2'

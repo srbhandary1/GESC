@@ -35,12 +35,18 @@ provider path or authorize production deployment.
   other draft locales render with the existing visible preview notice
   (ADR-0005 review mechanism). Ordinary production builds remain
   `approved-only` and fall back visibly to English.
-- The demo journey covers Home (recommended mission), Learn (Kannada-guided
-  mission with model audio, local-only recording practice, deterministic
-  check and result evidence), Progress (synthetic objective progress) and
-  Practice (deterministic text-only Friend prototype with rotating follow-up
-  replies and a tiny curated set of gentle pattern tips). Pattern tips are
-  scripted demo content, not grammar analysis, and remain advisory.
+- Under D-0081 the demo journey presents a Phase 1 learner dashboard shell:
+  Dashboard, Attendance, AI Teacher (scripted replies only), Daily Activity
+  (one audio lesson stub + 5-question / 5-mark quiz), My Levels (Pre-Level 1,
+  Pre-Level 2, Levels 1–17 with eight room cards) and Notice Board. All module
+  data is synthetic in-memory fixtures. Real AI, cloud speech, approved
+  curriculum and trainer workflows remain deferred.
+- Browser speech uses the device `speechSynthesis` / `SpeechRecognition`
+  APIs only. It never calls Azure or another cloud speech provider, never
+  uploads audio, and never creates authoritative learning records. Production
+  STT/TTS remains behind the project-owned provider ports (PR-009+) and is
+  unchanged. Support varies by browser; when recognition is unavailable the
+  learner can still type.
 - The Android wrapper packages the bundle with Capacitor 8.5.0 (minimum API
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the
   existing local-only practice capture; recordings stay in browser memory
@@ -58,9 +64,15 @@ provider path or authorize production deployment.
 | `make demo-build` | Build the distribution bundle into `apps/web/dist-demo` |
 | `make demo-serve` | Serve the built bundle on `127.0.0.1:4175` |
 | `make demo-client` | Opt-in static-IP client serve on `0.0.0.0:8080` (see [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md)) |
+| `make demo-client-tunnel` | Temporary HTTPS Cloudflare tunnel for mic-capable remote review |
 | `make demo-e2e` | Chromium journey against the development-server demo |
 | `make demo-dist-e2e` | Chromium journey against the built bundle |
 | `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` |
+
+Client presentation disclosure/walkthrough:
+[CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md). Path from presentation to
+Azure Speech evidence workspace:
+[PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md).
 
 `make demo-android` requires JDK 21 (`JAVA_HOME`) and an Android SDK with
 platform 36 (`ANDROID_HOME`). On an IPv6-limited network pass

@@ -22,7 +22,9 @@ return [
             'model_version' => 'fast-transcription-2025-10-15-provider-managed',
         ],
         'tts' => [
-            'route' => '/cognitiveservices/v1',
+            // Custom-domain Speech resources require the /tts prefix on
+            // *.cognitiveservices.azure.com (bare /cognitiveservices/v1 → 404).
+            'route' => '/tts/cognitiveservices/v1',
             'locale' => 'en-IN',
             'voice' => 'en-IN-NeerjaNeural',
             'fixture_voices' => [

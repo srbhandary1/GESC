@@ -923,3 +923,160 @@ I, S R Bhandary, acting as Technical Decision Owner, Security Reviewer, Privacy 
   accessibility, language/content, vendor and release review remain mandatory
   before production.
 - No master-plan amendment is made.
+
+<a id="app-0015"></a>
+
+## APP-0015 — Blanket demo authorization and ₹1,000 provider-spend cap
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-05 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+You have a blanket approval.
+A demo budget is Rs.1000.
+```
+
+### Accepted scope and authorization
+
+- Authorize continued demo/non-production implementation of the Phase 1 learner
+  shell and related synthetic product surfaces under D-0081/D-0082.
+- Authorize provider spend for the locked PR-009 synthetic Azure Speech
+  benchmark up to a hard cap of **₹1,000** (INR), once the remaining fail-closed
+  evidence and credential gates are satisfied.
+- Authorize treating APO-accepted synthetic curriculum and in-demo attendance /
+  notice / trainer workflows as **presentation authority inside the disclosed
+  demo only**, not as independently reviewed production curriculum or
+  institutional source of record.
+
+### Conditions and limitations
+
+- Production deployment, Play release, and independent specialist reviews remain
+  required before any production claim.
+- Live Azure requests still require a real `centralindia` Speech credential,
+  vendor/DPA/subprocessor evidence, and the fail-closed benchmark environment;
+  this approval does not invent those artifacts.
+- Real learner personal data must not be used under this demo budget.
+- Consolidated APO approval is not independent security, privacy, tenancy,
+  legal or language/content review.
+- No master-plan amendment is made.
+
+<a id="app-0016"></a>
+
+## APP-0016 — Blanket production-path authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-06 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+You have blanket authorization to complete this till production.
+```
+
+### Accepted scope and authorization
+
+- Authorize continued **sequential** implementation toward Phase 1 production
+  readiness under the master plan and accepted ADRs.
+- Authorize further provider spend for the locked PR-009 synthetic Azure Speech
+  benchmark within the existing hard cap of **₹1,000** INR unless a higher
+  spend approval is later recorded.
+- Authorize the next bounded checkpoint: PR-009 WER/completeness remediation
+  (or an explicit fail-closed production speech hold) under D-0084.
+
+### Conditions and limitations
+
+- This does **not** accept PR-009 while locked quality/completeness gates fail.
+- This does **not** authorize skipping independent legal, security, privacy,
+  tenancy, accessibility, language/content, vendor or release review.
+- This does **not** authorize immediate Google Play cutover, public production
+  deployment, or real learner personal data use.
+- Locked benchmark thresholds must not be silently loosened after results are
+  seen; any threshold/corpus change requires a versioned plan amendment.
+- Fake-passing benchmarks and invented vendor/legal evidence remain prohibited.
+- No master-plan amendment is made.
+
+<a id="app-0017"></a>
+
+## APP-0017 — PR-009 acceptance and PR-010 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-06 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Accepted PR-009 live evidence | Safe report for run `e1dc9d3c8daff9e33c20bdd00d2dd4d0` (`passed: true`) under APP-0015/APP-0016 spend authority |
+| Repository baseline at authoring | `09514b8259fcb7b1c3f5d59ec6071c8e66d03fb9` plus the uncommitted PR-009 remediation and demo-path working tree that produced that pass |
+| Governing policy | ADR-0007, ADR-0008, ADR-0009; D-0083–D-0085 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I formally accept PR-009 and authorize PR-010.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. the locked PR-009 synthetic Azure Speech benchmark completed with
+   `status: passed` for run `e1dc9d3c8daff9e33c20bdd00d2dd4d0`;
+2. D-0085 remediation (WER digit/spoken equivalence and duration over-claim
+   check) was in the working tree that produced that pass;
+3. APP-0016 authorized sequential production-path work without claiming Play
+   cutover; and
+4. ordinary application speech bindings remained fail-closed pending this
+   acceptance.
+
+### Accepted scope and authorization
+
+- Accept PR-009 — Real speech adapters and transcript recovery — with every
+  recorded limitation in STATUS, QUALITY_REVIEW, ADR-0007/0008/0009 and the
+  locked benchmark plan.
+- Authorize only master-plan §26 **PR-010 — AI orchestration, correction and
+  Tutor beta**.
+- PR-010 may deliver context allowlist, versioned prompts, structured output
+  validators, conversation reply plus priority correction, Kannada
+  explanation, Gentle/Tutor/Fluency modes, safety/report/fallback, and retry /
+  error-pattern update — without allowing AI to mutate authoritative learning
+  records.
+
+### Conditions and limitations
+
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- PR-011 and all later checkpoints remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- Azure Speech remains bounded by ADR-0008/0009 fail-closed gates; ordinary
+  app wiring of live speech still requires explicit configuration and must not
+  bypass organization scoping, consent or retention rules.
+- Development listeners and APO demo approvals are not independent language
+  or specialist production review.
+- No master-plan amendment is made.

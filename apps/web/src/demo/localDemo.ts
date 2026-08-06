@@ -18,6 +18,7 @@ import type {
   MissionResult,
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
+import { encodeDemoSpeechUrl } from './browserSpeech'
 
 const ids = {
   asset: '01J30000000000000000000001',
@@ -395,9 +396,14 @@ function demoMission(): LearnerMission {
     kannada_guidance: content('kn-IN', 'ನಿಮ್ಮ ಹೆಸರನ್ನು ಹೇಳಿ.'),
     model_audio: {
       asset_id: ids.asset,
-      duration_ms: 500,
+      duration_ms: 2_400,
+      // Contract mime remains a media type; playback is browser TTS via the
+      // demo-speech: stream URL, not a WAV byte stream.
       mime_type: 'audio/wav',
-      stream_url: demoWaveDataUrl(),
+      stream_url: encodeDemoSpeechUrl(
+        'en-IN',
+        'Hello, my name is Ravi.',
+      ),
     },
     model_text: content('en-IN', 'Hello, my name is Ravi.'),
     objective_id: ids.objective,
@@ -451,52 +457,5 @@ function content(
 function abortIfNeeded(signal?: AbortSignal): void {
   if (signal?.aborted === true) {
     throw new DOMException('The local demo operation was aborted.', 'AbortError')
-  }
-}
-
-let cachedWaveDataUrl: string | null = null
-
-function demoWaveDataUrl(): string {
-  if (cachedWaveDataUrl !== null) {
-    return cachedWaveDataUrl
-  }
-
-  const sampleRate = 8_000
-  const sampleCount = sampleRate / 2
-  const buffer = new ArrayBuffer(44 + sampleCount * 2)
-  const view = new DataView(buffer)
-  writeAscii(view, 0, 'RIFF')
-  view.setUint32(4, buffer.byteLength - 8, true)
-  writeAscii(view, 8, 'WAVEfmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeAscii(view, 36, 'data')
-  view.setUint32(40, sampleCount * 2, true)
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const sample = Math.round(
-      Math.sin((2 * Math.PI * 440 * index) / sampleRate) * 3_200,
-    )
-    view.setInt16(44 + index * 2, sample, true)
-  }
-
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte)
-  }
-
-  cachedWaveDataUrl = `data:audio/wav;base64,${btoa(binary)}`
-  return cachedWaveDataUrl
-}
-
-function writeAscii(view: DataView, offset: number, value: string): void {
-  for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index))
   }
 }

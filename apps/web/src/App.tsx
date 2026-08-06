@@ -17,6 +17,7 @@ import {
   type ChangeEvent,
 } from 'react'
 import './App.css'
+import './demo/demoExperience.css'
 import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
@@ -24,6 +25,7 @@ import type {
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
+import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
@@ -81,6 +83,30 @@ const destinationMessages: Readonly<
   progress: {
     description: 'page.progress.description',
     title: 'page.progress.title',
+  },
+}
+
+const demoDestinationMessages: Readonly<
+  Record<
+    PrimaryDestination,
+    Readonly<{ description: MessageKey; title: MessageKey }>
+  >
+> = {
+  home: {
+    description: 'demo.page.home.description',
+    title: 'demo.page.home.title',
+  },
+  learn: {
+    description: 'demo.page.learn.description',
+    title: 'demo.page.learn.title',
+  },
+  practice: {
+    description: 'demo.page.practice.description',
+    title: 'demo.page.practice.title',
+  },
+  progress: {
+    description: 'demo.page.progress.description',
+    title: 'demo.page.progress.title',
   },
 }
 
@@ -202,9 +228,18 @@ function App({
   const fallbackNotice = message('localization.fallback_notice')
   const previewLabel = message('localization.preview_label')
   const previewNotice = message('localization.preview_notice')
-  const routeMessages = destinationMessages[destination]
+  const routeMessages = (
+    demoMode ? demoDestinationMessages : destinationMessages
+  )[destination]
   const title = message(routeMessages.title)
   const description = message(routeMessages.description)
+  const shellEyebrow = message(
+    demoMode ? 'demo.shell.eyebrow' : 'shell.eyebrow',
+  )
+  const demoOrganization =
+    demoMode && session.status === 'authenticated'
+      ? session.identity.current_membership?.organization.name
+      : undefined
   const navigationLinks = {
     home: {
       href: '#home',
@@ -273,10 +308,15 @@ function App({
   }
 
   return (
+    <div
+      className={demoMode ? 'demo-experience' : undefined}
+      data-demo-mode={demoMode ? 'synthetic-local' : undefined}
+    >
     <ApplicationFrame
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
+      hidePrimaryNavigation={demoMode}
       headerActions={
         <div className="shell-locale-control">
           <label
@@ -346,6 +386,11 @@ function App({
             <span>
               <LocalizedMessage resolution={message('demo.notice')} />
             </span>
+            {demoOrganization === undefined ? null : (
+              <span className="shell-demo__organization">
+                {demoOrganization}
+              </span>
+            )}
           </aside>
         ) : null}
 
@@ -379,27 +424,34 @@ function App({
           </aside>
         ) : null}
 
-        <section
-          className="shell-introduction"
-          aria-labelledby="destination-title"
-        >
-          <p className="shell-eyebrow">
-            <LocalizedMessage resolution={message('shell.eyebrow')} />
-          </p>
-          <h1
-            className="shell-title"
-            id="destination-title"
-            ref={destinationTitle}
-            tabIndex={-1}
+        {demoMode ? null : (
+          <section
+            className="shell-introduction"
+            aria-labelledby="destination-title"
           >
-            <LocalizedMessage resolution={title} />
-          </h1>
-          <p className="shell-description">
-            <LocalizedMessage resolution={description} />
-          </p>
-        </section>
+            <p className="shell-eyebrow">
+              <LocalizedMessage resolution={shellEyebrow} />
+            </p>
+            <h1
+              className="shell-title"
+              id="destination-title"
+              ref={destinationTitle}
+              tabIndex={-1}
+            >
+              <LocalizedMessage resolution={title} />
+            </h1>
+            <p className="shell-description">
+              <LocalizedMessage resolution={description} />
+            </p>
+          </section>
+        )}
 
-        {canLearn ? (
+        {demoMode ? (
+          <DemoPhase1Shell
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canLearn ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
@@ -414,6 +466,7 @@ function App({
           <ConversationJourney
             api={conversationApi}
             createClientId={createClientId}
+            demoMode={demoMode}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />
@@ -431,12 +484,15 @@ function App({
           </p>
         )}
 
-        <SessionSummary
-          message={message}
-          session={session}
-        />
+        {demoMode ? null : (
+          <SessionSummary
+            message={message}
+            session={session}
+          />
+        )}
       </div>
     </ApplicationFrame>
+    </div>
   )
 }
 

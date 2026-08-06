@@ -2,6 +2,7 @@ import type {
   LearnerMissionResult,
   OfflineMissionBundle,
 } from '@global-english/contracts'
+import { createClientId } from '../shared/createClientId'
 import {
   offlineBundleRecordId,
   type OfflineLearningStore,
@@ -148,7 +149,7 @@ export class BrowserOfflineLearningStore
       const bindingHash = await hashBinding(binding)
       const profile: StoredProfile = {
         bindingHash,
-        partitionId: crypto.randomUUID(),
+        partitionId: createClientId(),
         key: await crypto.subtle.generateKey(
           { name: 'AES-GCM', length: 256 },
           false,

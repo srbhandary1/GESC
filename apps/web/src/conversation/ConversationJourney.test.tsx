@@ -102,6 +102,75 @@ describe('deterministic Friend prototype', () => {
     expect(api.events).toHaveBeenCalledWith(turn.events_url)
   })
 
+  it('exposes browser speech actions in the disclosed demo mode', async () => {
+    class FakeUtterance {
+      lang = ''
+      text = ''
+      onend: ((event: Event) => void) | null = null
+      onerror: ((event: Event) => void) | null = null
+
+      constructor(text: string) {
+        this.text = text
+      }
+    }
+
+    const speak = vi.fn((utterance: FakeUtterance) => {
+      utterance.onend?.(new Event('end'))
+    })
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance)
+    vi.stubGlobal('speechSynthesis', {
+      cancel: vi.fn(),
+      getVoices: () => [],
+      speak,
+    })
+
+    const session = fakeSession()
+    const turn = fakeTurn(session.id)
+    const events = fakeEvents()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(async () => turn),
+      events: vi.fn(async () => events),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'demo-command'}
+        demoMode
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      screen.getByRole('region', { name: 'Practice with your Friend' }),
+    ).toHaveAttribute('data-demo-speech', 'browser')
+    expect(
+      screen.queryByRole('button', { name: 'Set up optional voice practice' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Start speaking practice' }),
+    )
+    await user.type(
+      await screen.findByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+      'I practise English after work.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Play Friend reply' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Speak your turn' }),
+    ).toBeInTheDocument()
+    expect(speak).toHaveBeenCalled()
+  })
+
   it('shows a visible error when the fake provider is disabled', async () => {
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => {

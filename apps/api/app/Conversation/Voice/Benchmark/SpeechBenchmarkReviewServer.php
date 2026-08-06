@@ -90,16 +90,22 @@ final readonly class SpeechBenchmarkReviewServer
                         continue;
                     }
 
-                    $request = $this->readRequest($connection);
-                    $response = $this->handle(
-                        $runId,
-                        $listenerSlot,
-                        $token,
-                        $request['method'],
-                        $request['path'],
-                        $request['headers'],
-                        $request['body'],
-                    );
+                    try {
+                        $request = $this->readRequest($connection);
+                        $response = $this->handle(
+                            $runId,
+                            $listenerSlot,
+                            $token,
+                            $request['method'],
+                            $request['path'],
+                            $request['headers'],
+                            $request['body'],
+                        );
+                    } catch (RuntimeException|JsonException) {
+                        // Keep the review session alive across malformed probes
+                        // (health checks, premature browser disconnects, etc.).
+                        $response = $this->response(400, 'Bad Request');
+                    }
                     $this->writeResponse($connection, $response);
                     $lastActivityAt = time();
                     if (
@@ -109,6 +115,9 @@ final readonly class SpeechBenchmarkReviewServer
                         $completed = true;
                         $aggregate = $response['aggregate'];
                     }
+                } catch (RuntimeException) {
+                    // Response write failures must not abort the whole session.
+                    continue;
                 } finally {
                     fclose($connection);
                 }
@@ -455,8 +464,8 @@ HTML;
         return <<<'JS'
 (() => {
   'use strict';
-  const token = new URLSearchParams(location.hash.slice(1)).get('token');
   const root = document.getElementById('review');
+  let bearer = new URLSearchParams(location.hash.slice(1)).get('token') || '';
   let fixtures = [];
   let index = 0;
   const choices = [];
@@ -468,7 +477,7 @@ HTML;
     credentials: 'omit',
     headers: {
       ...(options.headers || {}),
-      Authorization: `Bearer ${token || ''}`
+      Authorization: `Bearer ${bearer}`
     }
   });
   const stopAudio = () => {
@@ -565,15 +574,44 @@ HTML;
       ? 'Review recorded. You may close this page.'
       : 'Review was not recorded. Close this page and ask the operator to retry.';
   };
+  const begin = () => {
+    request('/api/manifest')
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .then(payload => { fixtures = payload.fixtures; render(); })
+      .catch(() => { root.textContent = 'The review session is unavailable.'; });
+  };
+  const askForToken = () => {
+    root.replaceChildren();
+    const note = document.createElement('p');
+    note.textContent = 'The #token fragment was missing (often stripped when opening from chat). Paste the 64-character hex token, then continue.';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.placeholder = '64-character hex token';
+    input.style.width = '100%';
+    input.setAttribute('aria-label', 'Review token');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Continue review';
+    button.addEventListener('click', () => {
+      const value = input.value.trim().toLowerCase();
+      if (!/^[a-f0-9]{64}$/.test(value)) {
+        note.textContent = 'Token must be exactly 64 lowercase hex characters. Try again.';
+        return;
+      }
+      bearer = value;
+      location.hash = `token=${value}`;
+      begin();
+    });
+    root.append(note, input, button);
+  };
   addEventListener('pagehide', stopAudio);
-  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
-    root.textContent = 'This review link is invalid.';
+  if (!/^[a-f0-9]{64}$/.test(bearer)) {
+    askForToken();
     return;
   }
-  request('/api/manifest')
-    .then(response => response.ok ? response.json() : Promise.reject())
-    .then(payload => { fixtures = payload.fixtures; render(); })
-    .catch(() => { root.textContent = 'The review session is unavailable.'; });
+  begin();
 })();
 JS;
     }

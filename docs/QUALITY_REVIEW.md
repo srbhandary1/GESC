@@ -1691,28 +1691,106 @@ PR-010 and production remain unauthorized.
 
 ---
 
+## Demo Phase 1 dashboard shell (D-0081)
+
+### Scope reviewed
+
+- demo-only Phase 1 module navigation and synthetic fixtures for Attendance,
+  AI Teacher, Daily Activity, My Levels and Notice Board;
+- ordinary product shell unchanged when `demoMode` is false;
+- no cloud AI/speech calls; scripted AI Teacher replies only;
+- locale parity for new demo.phase1.* keys.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Five modules reachable from dashboard | Pass | DemoPhase1Shell unit + demo e2e |
+| Levels list Pre-1/Pre-2/1–17 with rooms | Pass | fixtures + UI |
+| Daily quiz 5×1 mark | Pass | in-memory scoring |
+| Non-demo shell unchanged | Pass | `hidePrimaryNavigation` only when demoMode |
+| No API/provider calls | Pass | demo e2e zero `/api/` |
+
+---
+
+## Professional client setup path (Phase A + Phase B scaffold)
+
+### Scope reviewed
+
+- Phase A client runbook: HTTPS tunnel preference, APK share, disclosure script
+  and walkthrough ([CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md));
+- Phase B outside-repo evidence workspace and env path map
+  ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md));
+- fail-closed `speech:benchmark --phase=preflight` with incomplete evidence;
+- live-prepare script refusal without APO authorization file / secret.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Presentation path documented | Pass | HTTPS-first runbook + disclosure + 8-minute walkthrough |
+| Secrets stay outside Git | Pass | `$HOME/ge-speech-benchmark` mode 0700/0600; empty secret file |
+| Ordinary app remains fail-closed | Pass | docs require `VOICE_PROVIDER_DRIVER=disabled` and live flags false in app `.env` |
+| Preflight blocks without evidence | Pass | `scripts/run-speech-benchmark-preflight.sh` → `"status":"blocked"` exit 2 |
+| Live prepare blocked without APO text | Pass | `scripts/run-speech-benchmark-live-prepare.sh` exit 2; missing `LIVE_AUTHORIZATION.txt` |
+| No Azure network call made | Pass | preflight/live-prepare gates only; no prepare/complete executed |
+
+### Known limitation
+
+Live Azure prepare/complete/`make ai-eval` remain unauthorized until the
+operator supplies centralindia endpoint, secret, real evidence JSON and the
+exact APO authorization sentence.
+
+---
+
+## APP-0015 / D-0082 — Blanket demo approval and ₹1,000 spend cap
+
+### Scope reviewed
+
+- APO exact statement recorded as [APP-0015](APPROVALS.md#app-0015);
+- outside-repo `LIVE_AUTHORIZATION.txt` and `spend-approval.json` (`cap_inr` 1000);
+- decision ledger D-0082; STATUS professional-client row updated.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Spend authorization text present | Pass | `$HOME/ge-speech-benchmark/LIVE_AUTHORIZATION.txt` |
+| Spend cap file written | Pass | `evidence/spend-approval.json` approved, cap 1000 |
+| Production not claimed | Pass | APP-0015 conditions; D-0082 limitations |
+| No live Azure call made | Pass | secret file still empty; vendor evidence still templates only |
+
+### Known limitation
+
+Credential, vendor/DPA evidence and filled `speech-benchmark.env` remain
+operator-supplied. This approval does not fabricate those artifacts.
+
+---
+
 ## Local synthetic presentation demo
 
 ### Scope reviewed
 
-- development-only activation and production refusal;
+- development/distribution-only activation and production refusal;
 - in-memory learner identity, lesson, deterministic result/progress and Friend
   adapters;
 - explicit synthetic-data and no-real-provider disclosure;
-- model-audio generation, microphone-denial fallback and text practice;
-- localization parity/governance for the demo notice; and
+- on-device browser Web Speech for model audio and Friend practice (D-0079);
+- professional demo-scoped presentation surface;
+- microphone-denial fallback and typed practice;
+- localization parity/governance for demo speech/UI copy; and
 - network, persistence, accessibility and existing-test regression.
 
 ### Review result
 
 | Check | Result | Evidence |
 |---|---|---|
-| Normal runtime remains unchanged | Pass | demo adapters are selected only when the explicit flag and Vite `DEV` are both true |
-| Production cannot activate the demo | Pass | runtime-policy unit test denies an explicit request when `development=false` |
-| Useful lesson is visible immediately | Pass | demo defaults to Learn with a populated introduction mission, model text, local tone, recording fallback, check and result |
-| Conversation is clearly fake | Pass | deterministic text-only Friend disclosure, fixed response, five status events and zero cost |
+| Normal runtime remains unchanged | Pass | demo adapters are selected only when the explicit flag and Vite `DEV`/demo mode are true |
+| Production cannot activate the demo | Pass | runtime-policy unit test denies an explicit request when `development=false` and `distribution=false` |
+| Useful lesson is visible immediately | Pass | demo defaults to Home with a populated introduction mission, model text, browser TTS model speech, recording fallback, check and result |
+| Conversation is clearly synthetic | Pass | deterministic Friend disclosure, rotating replies, browser TTS/STT presentation helpers, five status events and zero cost |
 | No authoritative data is created | Pass | adapters are browser-memory objects; no database, API mutation, publication, enrollment or mastery authority path exists |
-| No provider or application API call occurs | Pass | Chromium journey observes zero `/api/` requests |
+| No provider or application API call occurs | Pass | Chromium journey observes zero `/api/` requests; browser speech stays on-device |
 | Browser persistence remains bounded | Pass | Chromium journey observes zero `localStorage` entries; demo state resets on reload |
 | Accessibility | Pass | complete demo lesson/result/Friend journey has zero automated axe violations |
 | Language governance | Pass with expected warnings | six catalogues have exact parity/hashes; Kannada, Malayalam, Tamil, Telugu and Hindi notices remain pending independent review |
@@ -1721,10 +1799,10 @@ PR-010 and production remain unauthorized.
 
 | Command or check | Result |
 |---|---|
-| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 63 web tests |
-| `make build` with the pinned Linux-native toolchain | Pass: Laravel production optimize/cleanup and Vite production build, 77 modules |
-| `make e2e` | Pass: 10 existing Chromium journeys; temporary loopback server stopped |
-| `make demo-e2e` | Pass: one synthetic journey on temporary `127.0.0.1:4174`; server stopped |
+| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 72 web tests |
+| `make demo-e2e` | Pass: one synthetic journey on temporary `127.0.0.1:4174` including browser TTS playback controls; server stopped |
+| `make demo-dist-e2e` | Pass: dist-demo rebuild and Chromium journey on `127.0.0.1:4175` |
+| `make demo-android` | Pass: debug APK rebuilt with the updated demo bundle |
 | API/provider requests during browser journey | Zero |
 
 ### Security, privacy and limitations
@@ -1733,8 +1811,9 @@ PR-010 and production remain unauthorized.
   provider configuration, transcript persistence or tenant data.
 - Microphone capture, when a presenter chooses it, stays under the existing
   local browser-memory practice controls and is not uploaded by the demo.
-- The generated WAV is a short synthetic tone, not model speech and not
-  licensed or approved learning media.
+- Model speech and Friend replies use the browser Web Speech APIs when
+  available. This is device speech for presentation only, not Azure/cloud
+  STT/TTS, not licensed media and not PR-009 acceptance evidence.
 - The demo is not evidence that the backend, database, OTP, offline sync,
   secure upload or Azure provider paths are operating. Their existing
   verification and authorization gates remain unchanged.
@@ -1796,3 +1875,85 @@ PR-010 and production remain unauthorized.
 - The demo distribution is not curriculum approval, benchmark evidence,
   checkpoint acceptance or production authorization; every existing PR-009
   and later gate is unchanged.
+
+
+---
+
+## Live Azure complete (APP-0015 / 2026-08-05)
+
+### Scope reviewed
+
+- APO instruction to mark all listener dispositions good;
+- two development listener slots recorded 96/96 acceptances;
+- `make ai-eval` complete phase executed against centralindia Speech;
+- safe aggregate report written outside Git.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Listener all-pass recorded | Pass | aggregate 96/96/0 critical |
+| Live complete executed | Pass (ran) | safe-report.json; ~₹13.22 estimated |
+| Quality gate | Fail | clean/snr WER above locked thresholds; numbers category ~0.37–0.42 |
+| Completeness gate | Fail | snr20/snr10 clip_count 94 (duration mismatch failures: 4) |
+| Cost / listener / performance / reliability | Pass | report gates |
+| PR-009 acceptance / production | Not authorized | limitations in report |
+
+### Known limitation
+
+Development listeners under APO instruction are not independent language review.
+Failing WER does not authorize relaxing locked thresholds without a new decision.
+
+
+---
+
+## APP-0016 / D-0084 / D-0085 — Production-path authority and PR-009 remediation
+
+### Scope reviewed
+
+- APP-0016 blanket production-path authorization recorded with limitations;
+- WER scoring normalization for spoken/digit/currency equivalence (D-0085);
+- STT duration over-claim-only check;
+- live prepare/review/complete re-run under ₹1,000 cap.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Number-form WER unit cases | Pass | SpeechBenchmarkPolicyTest number equivalence cases |
+| Targeted PHPUnit speech suite | Pass | 22 tests |
+| Live complete remediation | Pass | `make ai-eval` status passed; run `e1dc9d3c8daff9e33c20bdd00d2dd4d0` |
+| All conjunctive gates | Pass | safe-report gates all true; clean WER ~2.6% |
+| Cost under cap | Pass | ~₹13.21 estimated; cap ₹1,000 |
+| Production/Play claimed | No | STATUS limitations; APP-0016 conditions |
+
+### Known limitation
+
+Formal APO PR-009 checkpoint acceptance and PR-010 authorization remain separate
+human steps. Independent specialist reviews remain mandatory before production.
+
+
+---
+
+## APP-0017 — PR-009 acceptance and PR-010 authorization
+
+### Scope reviewed
+
+- APO exact statement accepting PR-009 and authorizing PR-010;
+- prior live synthetic benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`;
+- STATUS/DECISIONS updated to open only PR-010.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0017](APPROVALS.md#app-0017) |
+| PR-009 closed with limitations | Pass | APP-0017 conditions; D-0086 |
+| Only PR-010 authorized | Pass | STATUS next checkpoint; no PR-011/production |
+| Production/Play claimed | No | APP-0017 limitations |
+
+### Known limitation
+
+PR-009 remediation and related demo-path files may still be uncommitted at
+record authoring; the evidence repository revision is the commit that contains
+this APP-0017 record.
