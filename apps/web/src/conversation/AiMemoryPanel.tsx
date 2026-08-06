@@ -29,6 +29,8 @@ export function AiMemoryPanel({
 }: AiMemoryPanelProps) {
   const [facts, setFacts] = useState<readonly LearnerMemoryFact[]>([])
   const [draft, setDraft] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
   const message = (key: MessageKey) =>
@@ -83,12 +85,52 @@ export function AiMemoryPanel({
       .finally(() => setBusy(false))
   }
 
+  const beginEdit = (fact: LearnerMemoryFact) => {
+    setEditingId(fact.id)
+    setEditDraft(fact.fact_text)
+    setError(false)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditDraft('')
+  }
+
+  const saveEdit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const factId = editingId
+    const factText = editDraft.trim()
+
+    if (factId === null || factText === '' || busy) {
+      return
+    }
+
+    setBusy(true)
+    setError(false)
+    void api
+      .updateAiMemoryFact!(factId, { fact_text: factText }, createClientId())
+      .then(() => {
+        setEditingId(null)
+        setEditDraft('')
+        return api.listAiMemory!()
+      })
+      .then((listing) => setFacts(listing.facts))
+      .catch(() => setError(true))
+      .finally(() => setBusy(false))
+  }
+
   const remove = (factId: string) => {
     setBusy(true)
     setError(false)
     void api
       .deleteAiMemoryFact!(factId, createClientId())
-      .then(() => api.listAiMemory!())
+      .then(() => {
+        if (editingId === factId) {
+          setEditingId(null)
+          setEditDraft('')
+        }
+        return api.listAiMemory!()
+      })
       .then((listing) => setFacts(listing.facts))
       .catch(() => setError(true))
       .finally(() => setBusy(false))
@@ -110,15 +152,64 @@ export function AiMemoryPanel({
       <ul className="conversation-journey__memory-list">
         {facts.map((fact) => (
           <li key={fact.id}>
-            <p lang="en-IN">{fact.fact_text}</p>
-            <button
-              className="ge-button"
-              type="button"
-              disabled={busy}
-              onClick={() => remove(fact.id)}
-            >
-              {text('conversation.memory.delete')}
-            </button>
+            {editingId === fact.id ? (
+              <form
+                className="conversation-journey__memory-edit"
+                onSubmit={saveEdit}
+              >
+                <label htmlFor={`ai-memory-edit-${fact.id}`}>
+                  <LocalizedMessage
+                    resolution={message('conversation.memory.edit_label')}
+                  />
+                </label>
+                <textarea
+                  id={`ai-memory-edit-${fact.id}`}
+                  maxLength={200}
+                  rows={3}
+                  value={editDraft}
+                  onChange={(event) => setEditDraft(event.currentTarget.value)}
+                />
+                <div className="conversation-journey__memory-actions">
+                  <button
+                    className="ge-button ge-button--primary"
+                    type="submit"
+                    disabled={busy || editDraft.trim() === ''}
+                  >
+                    {text('conversation.memory.save')}
+                  </button>
+                  <button
+                    className="ge-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={cancelEdit}
+                  >
+                    {text('conversation.memory.cancel')}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p lang="en-IN">{fact.fact_text}</p>
+                <div className="conversation-journey__memory-actions">
+                  <button
+                    className="ge-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => beginEdit(fact)}
+                  >
+                    {text('conversation.memory.edit')}
+                  </button>
+                  <button
+                    className="ge-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => remove(fact.id)}
+                  >
+                    {text('conversation.memory.delete')}
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>

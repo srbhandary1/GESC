@@ -286,13 +286,13 @@ function App({
     session.status === 'authenticated' &&
     session.identity.current_membership?.membership_type === 'learner'
   const canLearn =
-    (destination === 'learn' ||
-      (demoMode && destination === 'home')) &&
+    destination === 'learn' &&
     (isLearnerSession || offlineResume !== null)
   const canPractice =
     destination === 'practice' && isLearnerSession
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
+  const showDemoPhase1 = demoMode && destination === 'home'
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -316,7 +316,7 @@ function App({
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
-      hidePrimaryNavigation={demoMode}
+      hidePrimaryNavigation={false}
       headerActions={
         <div className="shell-locale-control">
           <label
@@ -332,6 +332,8 @@ function App({
             onChange={handleLocaleChange}
           >
             {SUPPORTED_LOCALES.map((supported) => {
+              // Language names are endonyms in every catalogue. Tag each
+              // option with that language so assistive tech and fonts match.
               const option = resolveInterfaceMessage(
                 localeMessageKeys[supported],
                 locale,
@@ -339,11 +341,7 @@ function App({
               )
 
               return (
-                <option
-                  key={supported}
-                  lang={option.resolvedLocale}
-                  value={supported}
-                >
+                <option key={supported} lang={supported} value={supported}>
                   {option.text}
                 </option>
               )
@@ -424,7 +422,7 @@ function App({
           </aside>
         ) : null}
 
-        {demoMode ? null : (
+        {showDemoPhase1 ? null : (
           <section
             className="shell-introduction"
             aria-labelledby="destination-title"
@@ -446,7 +444,7 @@ function App({
           </section>
         )}
 
-        {demoMode ? (
+        {showDemoPhase1 ? (
           <DemoPhase1Shell
             locale={locale}
             localizationPolicy={localizationPolicy}

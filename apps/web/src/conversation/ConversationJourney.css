@@ -32,8 +32,15 @@
 }
 
 .conversation-journey__memory-list li,
-.conversation-journey__memory-form {
+.conversation-journey__memory-form,
+.conversation-journey__memory-edit {
   display: grid;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__memory-actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--ge-space-2);
 }
 

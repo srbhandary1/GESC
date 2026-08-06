@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // storage) remains a separately authorized checkpoint.
 const config: CapacitorConfig = {
   appId: 'com.globalenglish.demo',
-  appName: 'Global English Demo',
+  appName: 'Global English Speaking Course',
   webDir: 'dist-demo',
 }
 

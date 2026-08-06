@@ -1775,7 +1775,8 @@ operator-supplied. This approval does not fabricate those artifacts.
 - in-memory learner identity, lesson, deterministic result/progress and Friend
   adapters;
 - explicit synthetic-data and no-real-provider disclosure;
-- on-device browser Web Speech for model audio and Friend practice (D-0079);
+- on-device browser Web Speech as fallback; local Vite demo may use Azure
+  neural TTS via `/demo/tts` when credentials are configured (D-0092);
 - professional demo-scoped presentation surface;
 - microphone-denial fallback and typed practice;
 - localization parity/governance for demo speech/UI copy; and
@@ -1790,7 +1791,7 @@ operator-supplied. This approval does not fabricate those artifacts.
 | Useful lesson is visible immediately | Pass | demo defaults to Home with a populated introduction mission, model text, browser TTS model speech, recording fallback, check and result |
 | Conversation is clearly synthetic | Pass | deterministic Friend disclosure, rotating replies, browser TTS/STT presentation helpers, five status events and zero cost |
 | No authoritative data is created | Pass | adapters are browser-memory objects; no database, API mutation, publication, enrollment or mastery authority path exists |
-| No provider or application API call occurs | Pass | Chromium journey observes zero `/api/` requests; browser speech stays on-device |
+| No ordinary application API call occurs | Pass | Chromium journey observes zero `/api/` requests; Azure TTS (when configured) uses only local `POST /demo/tts` middleware, never ordinary Laravel routes |
 | Browser persistence remains bounded | Pass | Chromium journey observes zero `localStorage` entries; demo state resets on reload |
 | Accessibility | Pass | complete demo lesson/result/Friend journey has zero automated axe violations |
 | Language governance | Pass with expected warnings | six catalogues have exact parity/hashes; Kannada, Malayalam, Tamil, Telugu and Hindi notices remain pending independent review |
@@ -2061,36 +2062,50 @@ implementation is completed and separately accepted.
 
 ### Scope reviewed
 
-- learner-visible AI memory CRUD + audit;
+- learner-visible AI memory list/create/edit/delete + audit;
 - allowlisted memory in conversation orchestration;
-- locked deterministic AI evaluation suite, human-review export/import,
-  prompt comparison and cost rollup;
-- OpenAPI 0.8.0 memory routes and Practice UI panel.
+- locked deterministic AI evaluation suite, human-review export/import with
+  fail-closed suite binding, prompt comparison and cost rollup;
+- OpenAPI 0.8.0 memory routes and Practice UI panel;
+- [PR-011 verification scope](PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md).
 
 ### Review result
 
 | Check | Result | Evidence |
 |---|---|---|
-| Memory isolation / learning freeze | Pass | LearnerMemoryTest |
+| Memory isolation / learning freeze | Pass | LearnerMemoryTest (PostgreSQL via Docker PHP 8.4.24 + pdo_pgsql) |
 | AI evaluation suite pass | Pass | AiEvaluationRunnerTest |
-| Suite hash stability | Pass | AiEvaluationSuiteTest |
-| HTTP auth + orchestration suite | Pass | LearnerHttpBoundaryTest + ConversationOrchestrationTest (8 tests / 187 assertions via Docker PHP 8.4) |
-| OpenAPI / contracts | Pass | `pnpm run openapi:check` |
-| PHPStan PR-011 paths | Pass | 0 errors |
-| Web memory panel + conversation tests | Pass | AiMemoryPanel + ConversationJourney vitest |
-| Locale governance | Pass | `pnpm run locale:check` (5 pending-review warnings) |
+| Human-review import accept/pending/reject + fail-closed mismatch | Pass | AiEvaluationRunnerTest import cases |
+| Suite hash stability | Pass | AiEvaluationSuiteTest (host `php artisan test`) |
+| HTTP auth + orchestration + memory/eval filter | Pass | 13 PostgreSQL tests / 204 assertions via Docker PHP 8.4.24 (`AiEvaluationRunnerTest\|LearnerMemoryTest\|ConversationOrchestrationTest\|LearnerHttpBoundaryTest`) |
+| OpenAPI / contracts | Pass | `pnpm run openapi:check` on host Node v22.22.1 / pnpm 11.18.0 |
+| PHPStan PR-011 paths | Pass | 0 errors (`app/Conversation/Evaluation`, `Memory`, `LearnerMemoryController`) |
+| Web memory panel list/create/edit/delete | Pass | AiMemoryPanel vitest 1 passed |
+| Locale governance | Pass | `node scripts/validate-locales.mjs` in `node:24.18.1-bookworm-slim` — 6 catalogues, 5 pending-review warnings |
+| `php artisan ai:evaluate` | Pass | Docker PHP 8.4.24 against `global_english_test` after migrate/seed: status `completed`, 4 passed / 0 failed, suite_hash `9d1f8d6069af09abbc9c20dd5048af6c640a4c77c927f0f43eed3364c13dc5e6`, report_digest `407d67cc39091c5703a291c042da3ba7bb14b1f1f67f236b70a305ab883cd318`, estimated_cost_microunits 0; speech half skipped (no `SPEECH_BENCHMARK_RUN_ID`) |
+| Full host `make verify` / remote CI | Not claimed | Host PHP 8.5.4 lacks `pdo_pgsql`; Node 22 cannot load locale `.ts` imports without pinned Node 24 |
 | Real LLM / PR-012 / production / Play | Not authorized | APP-0019; STATUS |
 
 ### Security, privacy and tenancy
 
 - Memory list returns all active facts for the owning membership; no hidden active facts.
+- Practice UI edit uses the existing PATCH contract; no hidden active facts.
 - Audit events store digests, not fact plaintext after delete/update trails.
 - Eval fixtures are synthetic; reports are aggregate digests with zero fake cost.
+- Import packages must match the exact suite key and hash; unknown cases,
+  missing files and malformed dispositions fail closed.
 - Organization + membership FKs and same-tenant denial mirror conversation patterns.
 
 ### Known limitations
 
-- Host PHP may lack `pdo_pgsql`; PostgreSQL evidence uses Docker PHP when needed.
-- Full `make verify` / remote CI may remain incomplete in-session.
+- Host PHP 8.5.4 lacks `pdo_pgsql`; PostgreSQL evidence used Docker PHP 8.4.24
+  against local Compose Postgres.
+- Host Node v22.22.1 cannot load locale `.ts` imports; locale governance was
+  verified in `node:24.18.1-bookworm-slim`.
+- Full host `make verify` / remote CI were not claimed green in this session.
 - Preview-locale memory strings may reuse English pending independent review.
-- PR-011 awaits Accountable Product Owner acceptance before PR-012.
+- Eval cost rollup remains zero on deterministic fakes and is not live spend.
+- Speech half of `make ai-eval` remains PR-009-gated and was not run.
+- PR-011 awaits Accountable Product Owner exact-commit acceptance before
+  PR-012 authorization; see
+  [PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md).

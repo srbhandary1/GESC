@@ -11,11 +11,9 @@ import {
 } from 'react'
 import {
   browserSpeechRecognitionAvailable,
-  browserSpeechSynthesisAvailable,
   recognizeWithBrowserSpeech,
-  speakWithBrowserSpeech,
-  stopBrowserSpeech,
 } from '../demo/browserSpeech'
+import { speakDemoText, stopDemoSpeech } from '../demo/demoTts'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
@@ -36,7 +34,8 @@ export interface ConversationJourneyProps {
   readonly api?: ConversationJourneyApi
   readonly createClientId?: () => string
   /**
-   * When true, enables on-device browser TTS/STT for the disclosed demo.
+   * When true, enables demo Azure-first TTS (local `/demo/tts`) with browser
+   * speech fallback, plus on-device recognition for spoken turns.
    * Production conversation paths remain unchanged.
    */
   readonly demoMode?: boolean
@@ -92,18 +91,19 @@ export function ConversationJourney({
   useEffect(() => {
     return () => {
       stopRecognition.current?.()
-      stopBrowserSpeech()
+      stopDemoSpeech()
     }
   }, [])
 
   const speakReply = (reply: string) => {
-    if (!demoMode || !browserSpeechSynthesisAvailable()) {
+    if (!demoMode) {
       return
     }
 
     setSpeechError(false)
     setSpeakingReply(true)
-    void speakWithBrowserSpeech(reply, 'en-IN')
+    // Friend practice replies are English learning content → en-IN voice.
+    void speakDemoText(reply, 'en-IN')
       .catch(() => setSpeechError(true))
       .finally(() => setSpeakingReply(false))
   }
@@ -480,7 +480,6 @@ export function ConversationJourney({
                     type="button"
                     disabled={
                       speakingReply ||
-                      !browserSpeechSynthesisAvailable() ||
                       state.turn.assistant_reply === null
                     }
                     onClick={playReply}

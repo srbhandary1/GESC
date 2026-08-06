@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 describe('AI memory panel', () => {
-  it('lists creates and deletes learner-visible facts', async () => {
+  it('lists creates edits and deletes learner-visible facts', async () => {
     const facts = [
       {
         created_at: '2026-08-06T01:00:00Z',
@@ -32,7 +32,13 @@ describe('AI memory panel', () => {
         deleted_at: null,
         replayed: false,
       })),
-      updateAiMemoryFact: vi.fn(),
+      updateAiMemoryFact: vi.fn(async () => ({
+        ...facts[0],
+        fact_text: 'I practise English before meetings.',
+        updated_at: '2026-08-06T01:04:00Z',
+        deleted_at: null,
+        replayed: false,
+      })),
       deleteAiMemoryFact: vi.fn(async () => ({
         ...facts[0],
         status: 'deleted' as const,
@@ -80,6 +86,44 @@ describe('AI memory panel', () => {
     expect(api.createAiMemoryFact).toHaveBeenCalled()
     expect(
       await screen.findByText('I want clearer articles.'),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getAllByRole('button', {
+        name: 'conversation.memory.edit',
+      })[0]!,
+    )
+    const editField = screen.getByLabelText('Edit this practice note')
+    await user.clear(editField)
+    await user.type(editField, 'I practise English before meetings.')
+    api.listAiMemory = vi.fn(async () => ({
+      facts: [
+        {
+          ...facts[0]!,
+          fact_text: 'I practise English before meetings.',
+          updated_at: '2026-08-06T01:04:00Z',
+        },
+        {
+          created_at: '2026-08-06T01:02:00Z',
+          fact_text: 'I want clearer articles.',
+          id: '01J00000000000000000000022',
+          purpose: 'conversation_context' as const,
+          source: 'learner_explicit' as const,
+          status: 'active' as const,
+          updated_at: '2026-08-06T01:02:00Z',
+        },
+      ],
+    }))
+    await user.click(
+      screen.getByRole('button', { name: 'conversation.memory.save' }),
+    )
+    expect(api.updateAiMemoryFact).toHaveBeenCalledWith(
+      '01J00000000000000000000021',
+      { fact_text: 'I practise English before meetings.' },
+      'memory-command',
+    )
+    expect(
+      await screen.findByText('I practise English before meetings.'),
     ).toBeInTheDocument()
 
     api.listAiMemory = vi.fn(async () => ({ facts: [] }))

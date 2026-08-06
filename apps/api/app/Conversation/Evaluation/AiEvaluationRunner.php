@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Conversation\Evaluation;
 
+use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Orchestration\ConversationOutputValidator;
 use App\Conversation\Orchestration\ConversationPromptCatalog;
+use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
@@ -36,7 +38,7 @@ final readonly class AiEvaluationRunner
             (! app()->environment('local') && ! app()->environment('testing'))
             || config('conversation.provider_driver') !== 'fake'
         ) {
-            throw new \App\Conversation\Exceptions\ConversationOperationRejected;
+            throw new ConversationOperationRejected;
         }
 
         $suite = $this->suite->load();
@@ -46,7 +48,7 @@ final readonly class AiEvaluationRunner
         $passed = 0;
         $failed = 0;
         $estimatedCost = 0;
-        $humanReview = $this->loadHumanReview($importReviewPath);
+        $humanReview = $this->loadHumanReview($importReviewPath, $suite);
 
         foreach ($suite['cases'] as $case) {
             $prompt = $this->prompts->active($case['coaching_mode']);
@@ -70,7 +72,8 @@ final readonly class AiEvaluationRunner
             $schemaValid = $this->validator->validate($result);
             $humanDisposition = $humanReview[$case['id']] ?? null;
             $humanPass = $humanDisposition === null
-                || $humanDisposition === 'accept';
+                || $humanDisposition === 'accept'
+                || $humanDisposition === 'pending';
             $casePassed = $categoryMatch && $safetyMatch && $schemaValid && $humanPass;
             $passed += $casePassed ? 1 : 0;
             $failed += $casePassed ? 0 : 1;
@@ -190,33 +193,65 @@ final readonly class AiEvaluationRunner
     }
 
     /**
+     * @param  array<string, mixed>  $suite
      * @return array<string, string>
      */
-    private function loadHumanReview(?string $path): array
+    private function loadHumanReview(?string $path, array $suite): array
     {
-        if (! is_string($path) || $path === '' || ! File::isFile($path)) {
+        if (! is_string($path) || $path === '') {
             return [];
         }
 
-        $decoded = json_decode(File::get($path), true, 512, JSON_THROW_ON_ERROR);
+        if (! File::isFile($path)) {
+            throw new ConversationOperationRejected;
+        }
 
-        if (! is_array($decoded) || ! is_array($decoded['dispositions'] ?? null)) {
-            return [];
+        try {
+            $decoded = json_decode(File::get($path), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new ConversationOperationRejected;
+        }
+
+        if (
+            ! is_array($decoded)
+            || ($decoded['suite_key'] ?? null) !== $suite['suite_key']
+            || ($decoded['suite_hash'] ?? null) !== $suite['suite_hash']
+            || ! is_array($decoded['dispositions'] ?? null)
+        ) {
+            throw new ConversationOperationRejected;
+        }
+
+        $knownCaseIds = [];
+
+        foreach ($suite['cases'] as $case) {
+            $knownCaseIds[(string) $case['id']] = true;
         }
 
         $map = [];
 
         foreach ($decoded['dispositions'] as $row) {
             if (! is_array($row)) {
-                continue;
+                throw new ConversationOperationRejected;
             }
 
             $caseId = $row['case_id'] ?? null;
             $disposition = $row['disposition'] ?? null;
 
-            if (is_string($caseId) && is_string($disposition)) {
-                $map[$caseId] = $disposition;
+            if (
+                ! is_string($caseId)
+                || $caseId === ''
+                || ! isset($knownCaseIds[$caseId])
+                || ! is_string($disposition)
+                || ! in_array($disposition, ['pending', 'accept', 'reject'], true)
+            ) {
+                throw new ConversationOperationRejected;
             }
+
+            if (isset($map[$caseId])) {
+                throw new ConversationOperationRejected;
+            }
+
+            $map[$caseId] = $disposition;
         }
 
         return $map;
@@ -260,10 +295,10 @@ final readonly class AiEvaluationRunner
             understoodIntent: 'safe_fallback',
             assistantReply: 'Thank you. Let us continue with a simple next sentence.',
             providerUsage: $result->usage(),
-            priorityCorrection: new \App\Conversation\Orchestration\PriorityCorrection(
+            priorityCorrection: new PriorityCorrection(
                 errorCategory: 'safety.fallback',
                 correctionEn: 'Please try one short, clear English sentence.',
-                explanationKn: "ದಯವಿಟ್ಟು ಒಂದು ಸಣ್ಣ, ಸ್ಪಷ್ಟ ಇಂಗ್ಲಿಷ್ ವಾಕ್ಯ ಹೇಳಿ.",
+                explanationKn: 'ದಯವಿಟ್ಟು ಒಂದು ಸಣ್ಣ, ಸ್ಪಷ್ಟ ಇಂಗ್ಲಿಷ್ ವಾಕ್ಯ ಹೇಳಿ.',
                 retryRecommended: true,
             ),
             safetyState: 'fallback',
