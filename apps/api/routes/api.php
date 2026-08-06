@@ -12,6 +12,7 @@ use App\Http\Controllers\LearnerHomeController;
 use App\Http\Controllers\LearnerMediaController;
 use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
+use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OtpAuthenticationController;
@@ -67,6 +68,24 @@ Route::prefix('v1')->group(function (): void {
             '/me/onboarding',
             [LearnerOnboardingController::class, 'update'],
         )->name('api.v1.me.onboarding.update');
+        Route::get(
+            '/me/ai-memory',
+            [LearnerMemoryController::class, 'index'],
+        )->name('api.v1.me.ai-memory.index');
+        Route::post(
+            '/me/ai-memory',
+            [LearnerMemoryController::class, 'store'],
+        )->name('api.v1.me.ai-memory.store');
+        Route::patch(
+            '/me/ai-memory/{fact}',
+            [LearnerMemoryController::class, 'update'],
+        )->whereUlid('fact')
+            ->name('api.v1.me.ai-memory.update');
+        Route::delete(
+            '/me/ai-memory/{fact}',
+            [LearnerMemoryController::class, 'destroy'],
+        )->whereUlid('fact')
+            ->name('api.v1.me.ai-memory.destroy');
         Route::get(
             '/missions/{mission}',
             [LearnerMissionController::class, 'show'],

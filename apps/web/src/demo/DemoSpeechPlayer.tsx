@@ -7,9 +7,8 @@ import { useEffect, useRef, useState } from 'react'
 import {
   browserSpeechSynthesisAvailable,
   decodeDemoSpeechUrl,
-  speakWithBrowserSpeech,
-  stopBrowserSpeech,
 } from './browserSpeech'
+import { speakDemoText, stopDemoSpeech } from './demoTts'
 
 export interface DemoSpeechPlayerProps {
   readonly labels: AudioControlLabels
@@ -17,8 +16,8 @@ export interface DemoSpeechPlayerProps {
 }
 
 /**
- * Demo-only model-audio player that uses the browser speechSynthesis API
- * instead of a WAV file. Activated only for `demo-speech:` URLs.
+ * Demo-only model-audio player. Prefers Azure neural TTS via `/demo/tts`,
+ * then falls back to on-device browser speech for `demo-speech:` URLs.
  */
 export function DemoSpeechPlayer({
   labels,
@@ -26,16 +25,14 @@ export function DemoSpeechPlayer({
 }: DemoSpeechPlayerProps) {
   const utterance = decodeDemoSpeechUrl(source)
   const [state, setState] = useState<AudioControlState>(
-    utterance === null || !browserSpeechSynthesisAvailable()
-      ? 'unavailable'
-      : 'ready',
+    utterance === null ? 'unavailable' : 'ready',
   )
   const playing = useRef(false)
 
   useEffect(() => {
     return () => {
       playing.current = false
-      stopBrowserSpeech()
+      stopDemoSpeech()
     }
   }, [source])
 
@@ -52,22 +49,19 @@ export function DemoSpeechPlayer({
   }
 
   const play = async () => {
-    if (!browserSpeechSynthesisAvailable()) {
-      setState('unavailable')
-      return
-    }
-
     playing.current = true
     setState('playing')
 
     try {
-      await speakWithBrowserSpeech(utterance.text, utterance.locale)
+      await speakDemoText(utterance.text, utterance.locale)
       if (playing.current) {
         setState('ended')
       }
     } catch {
       if (playing.current) {
-        setState('error')
+        setState(
+          browserSpeechSynthesisAvailable() ? 'error' : 'unavailable',
+        )
       }
     } finally {
       playing.current = false
@@ -75,7 +69,7 @@ export function DemoSpeechPlayer({
   }
 
   return (
-    <div data-demo-speech="browser-tts">
+    <div data-demo-speech="azure-first-tts">
       <p className="demo-speech-caption" lang={utterance.locale}>
         {utterance.text}
       </p>
@@ -83,7 +77,7 @@ export function DemoSpeechPlayer({
         labels={labels}
         onRequestPause={() => {
           playing.current = false
-          stopBrowserSpeech()
+          stopDemoSpeech()
           setState('paused')
         }}
         onRequestPlay={() => void play()}

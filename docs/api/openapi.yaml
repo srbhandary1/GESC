@@ -2,15 +2,12 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.7.0
+  version: 0.8.0
   description: |
-    Canonical API contract for the Global English platform. PR-009 adds an
-    explicit-consent secure recording and transcript-review lifecycle over the
-    accepted PR-008 Friend prototype. Upload remains disabled by default and
-    only the deterministic test adapter is selectable in local/testing until
-    provider review DR-0011 is resolved. Raw PCM/WAV is encrypted transiently,
-    deleted after successful transcription, and never changes authoritative
-    learning records.
+    Canonical API contract for the Global English platform. PR-011 adds
+    learner-visible AI memory controls and keeps conversation/speech paths on
+    deterministic local adapters unless separately configured. Authoritative
+    learning records remain deterministic and are never mutated by AI output.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -38,6 +35,10 @@ tags:
     description: |
       Tenant-scoped PR-009 consent, secure PCM/WAV recording, transcript review
       and verifiable deletion. No reviewed live STT/TTS provider is configured.
+  - name: Memory
+    description: |
+      Tenant-scoped learner-visible AI memory facts with explicit create, edit
+      and delete. Facts are purpose-bound and never hidden from the learner.
 paths:
   /health/live:
     get:
@@ -1018,6 +1019,167 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/ai-memory:
+    get:
+      operationId: listLearnerAiMemory
+      summary: List all active learner-visible AI memory facts
+      description: |
+        Returns every active AI memory fact for the authenticated learner
+        membership. No active fact is omitted.
+      tags:
+        - Memory
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Active AI memory facts.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerAiMemoryListing"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createLearnerAiMemoryFact
+      summary: Create one explicit learner-visible AI memory fact
+      tags:
+        - Memory
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearnerAiMemoryFactRequest"
+      responses:
+        "201":
+          description: Memory fact created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerAiMemoryFact"
+        "200":
+          description: Idempotent replay of the same create command.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerAiMemoryFact"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/ai-memory/{fact}:
+    parameters:
+      - $ref: "#/components/parameters/CorrelationId"
+      - name: fact
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Ulid"
+    patch:
+      operationId: updateLearnerAiMemoryFact
+      summary: Update one active learner-visible AI memory fact
+      tags:
+        - Memory
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLearnerAiMemoryFactRequest"
+      responses:
+        "200":
+          description: Memory fact updated or idempotently replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerAiMemoryFact"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteLearnerAiMemoryFact
+      summary: Soft-delete one learner-visible AI memory fact
+      description: |
+        Marks the fact deleted for conversation use and appends an immutable
+        audit event. Legal and authoritative learning records are unchanged.
+      tags:
+        - Memory
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Memory fact deleted or idempotently replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerAiMemoryFact"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -2755,6 +2917,113 @@ components:
         estimated_cost_microunits:
           type: integer
           const: 0
+    CreateLearnerAiMemoryFactRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - fact_text
+      properties:
+        fact_text:
+          type: string
+          minLength: 1
+          maxLength: 200
+    UpdateLearnerAiMemoryFactRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - fact_text
+      properties:
+        fact_text:
+          type: string
+          minLength: 1
+          maxLength: 200
+    LearnerAiMemoryFact:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - purpose
+        - source
+        - status
+        - fact_text
+        - created_at
+        - updated_at
+        - replayed
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        purpose:
+          type: string
+          const: conversation_context
+        source:
+          type: string
+          const: learner_explicit
+        status:
+          type: string
+          enum:
+            - active
+            - deleted
+        fact_text:
+          type: string
+          minLength: 1
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        replayed:
+          type: boolean
+    LearnerAiMemoryListing:
+      type: object
+      additionalProperties: false
+      required:
+        - facts
+      properties:
+        facts:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/LearnerAiMemoryFactListingItem"
+    LearnerAiMemoryFactListingItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - purpose
+        - source
+        - status
+        - fact_text
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        purpose:
+          type: string
+          const: conversation_context
+        source:
+          type: string
+          const: learner_explicit
+        status:
+          type: string
+          const: active
+        fact_text:
+          type: string
+          minLength: 1
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     PriorityCorrection:
       type: object
       additionalProperties: false

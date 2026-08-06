@@ -26,4 +26,27 @@ if ! command -v pnpm >/dev/null 2>&1 || [ "$(pnpm --version)" != "$expected_pnpm
 fi
 
 cd "$repository_root"
+
+# Prefer existing speech-benchmark workspace credentials for local demo TTS
+# (D-0092). Never print secret values.
+speech_env="${GE_SPEECH_BENCHMARK_ROOT:-$HOME/ge-speech-benchmark}/env/speech-benchmark.env"
+if [ -z "${AZURE_SPEECH_ENDPOINT:-}" ] && [ -f "$speech_env" ]; then
+  # shellcheck disable=SC1090
+  set -a
+  . "$speech_env"
+  set +a
+  echo "info: loaded Azure demo TTS settings from $speech_env" >&2
+fi
+
+if [ -z "${AZURE_SPEECH_ENDPOINT:-}" ] || {
+  [ -z "${AZURE_SPEECH_KEY:-}" ] && [ -z "${AZURE_SPEECH_SECRET_FILE:-}" ]
+}; then
+  echo "warning: Azure demo TTS is not configured." >&2
+  echo "  Set AZURE_SPEECH_ENDPOINT and AZURE_SPEECH_KEY (or AZURE_SPEECH_SECRET_FILE)," >&2
+  echo "  or configure \$HOME/ge-speech-benchmark/env/speech-benchmark.env." >&2
+  echo "  See docs/DEMO_AZURE_TTS.md. Browser speech remains the fallback." >&2
+else
+  echo "info: Azure demo TTS credentials detected for /demo/tts." >&2
+fi
+
 exec env VITE_LOCAL_DEMO=true pnpm --filter @global-english/web dev --host 127.0.0.1 --port 5173

@@ -1588,6 +1588,155 @@ export const ConversationUsageSummarySchema = {
     }
 } as const;
 
+export const CreateLearnerAiMemoryFactRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'fact_text'
+    ],
+    properties: {
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        }
+    }
+} as const;
+
+export const UpdateLearnerAiMemoryFactRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'fact_text'
+    ],
+    properties: {
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryFactSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'purpose',
+        'source',
+        'status',
+        'fact_text',
+        'created_at',
+        'updated_at',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        purpose: {
+            type: 'string',
+            const: 'conversation_context'
+        },
+        source: {
+            type: 'string',
+            const: 'learner_explicit'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'deleted'
+            ]
+        },
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        deleted_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'facts'
+    ],
+    properties: {
+        facts: {
+            type: 'array',
+            maxItems: 5,
+            items: {
+                $ref: '#/components/schemas/LearnerAiMemoryFactListingItem'
+            }
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryFactListingItemSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'purpose',
+        'source',
+        'status',
+        'fact_text',
+        'created_at',
+        'updated_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        purpose: {
+            type: 'string',
+            const: 'conversation_context'
+        },
+        source: {
+            type: 'string',
+            const: 'learner_explicit'
+        },
+        status: {
+            type: 'string',
+            const: 'active'
+        },
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
 export const PriorityCorrectionSchema = {
     type: 'object',
     additionalProperties: false,

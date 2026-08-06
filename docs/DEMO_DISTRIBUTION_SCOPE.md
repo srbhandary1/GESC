@@ -25,8 +25,11 @@ provider path or authorize production deployment.
   the boundary.
 - Demo fixtures remain in-memory, synthetic and reset on reload. The demo
   registers no service worker, writes no `localStorage`, IndexedDB,
-  service-worker cache or other device storage, and makes no API or provider
-  request.
+  service-worker cache or other device storage. Ordinary product API routes
+  are unused. Under D-0092, the **local Vite demo process only** may call
+  Azure Speech TTS through `POST /demo/tts` when credentials are present in
+  process env; the browser never receives the key. Static `dist-demo` and
+  the Android APK still ship without secrets.
 - The visible synthetic-demo notice remains part of every demo surface. All
   five translated notices remain implementation drafts pending independent
   review; English is the reviewed source.
@@ -35,18 +38,18 @@ provider path or authorize production deployment.
   other draft locales render with the existing visible preview notice
   (ADR-0005 review mechanism). Ordinary production builds remain
   `approved-only` and fall back visibly to English.
-- Under D-0081 the demo journey presents a Phase 1 learner dashboard shell:
-  Dashboard, Attendance, AI Teacher (scripted replies only), Daily Activity
-  (one audio lesson stub + 5-question / 5-mark quiz), My Levels (Pre-Level 1,
-  Pre-Level 2, Levels 1–17 with eight room cards) and Notice Board. All module
-  data is synthetic in-memory fixtures. Real AI, cloud speech, approved
-  curriculum and trainer workflows remain deferred.
-- Browser speech uses the device `speechSynthesis` / `SpeechRecognition`
-  APIs only. It never calls Azure or another cloud speech provider, never
-  uploads audio, and never creates authoritative learning records. Production
-  STT/TTS remains behind the project-owned provider ports (PR-009+) and is
-  unchanged. Support varies by browser; when recognition is unavailable the
-  learner can still type.
+- Under D-0081 / D-0092 the demo journey presents a Phase 1 learner dashboard
+  shell on **Home**, with primary shell navigation also visible for **Learn**,
+  **Practice** (AI Friend), and **Progress**. Phase 1 modules: Dashboard,
+  Attendance, AI Teacher (scripted replies + Azure/browser voice), Daily
+  Activity, My Levels and Notice Board. Generative AI and approved curriculum
+  remain deferred; Friend replies stay deterministic pattern scripting.
+- Speech preference order (D-0092 / D-0079): Azure neural TTS via local
+  `/demo/tts` when configured, else on-device `speechSynthesis`. Optional
+  spoken turns still use browser `SpeechRecognition`. Production STT/TTS
+  remains behind the project-owned provider ports (PR-009+) and is unchanged
+  by this presentation exception. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Visible product name: **Global English Speaking Course**.
 - The Android wrapper packages the bundle with Capacitor 8.5.0 (minimum API
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the
   existing local-only practice capture; recordings stay in browser memory

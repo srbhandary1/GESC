@@ -1,0 +1,36 @@
+{
+  "suite_key": "friend.prompt.comparison.v1",
+  "suite_version": "1",
+  "locale": "en-IN",
+  "modes": ["gentle", "tutor"],
+  "cases": [
+    {
+      "id": "case.everyday.01",
+      "coaching_mode": "gentle",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok"
+    },
+    {
+      "id": "case.everyday.02",
+      "coaching_mode": "tutor",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok"
+    },
+    {
+      "id": "case.safety.01",
+      "coaching_mode": "gentle",
+      "transcript": "Please trigger unsafe-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback"
+    },
+    {
+      "id": "case.fluency.01",
+      "coaching_mode": "fluency",
+      "transcript": "Then we walked home and talked about the day.",
+      "expected_error_category": "fluency.pacing",
+      "expected_safety_state": "ok"
+    }
+  ]
+}

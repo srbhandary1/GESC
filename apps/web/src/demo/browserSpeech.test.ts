@@ -47,8 +47,12 @@ describe('demo browser speech helpers', () => {
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance)
     vi.stubGlobal('speechSynthesis', {
       cancel,
+      paused: false,
+      resume: vi.fn(),
       getVoices: () => [],
       speak,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     })
 
     await speakWithBrowserSpeech('Hello, my name is Ravi.', 'en-IN')

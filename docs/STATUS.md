@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-011 — Evaluation harness and memory controls |
-| Status | PR-010 accepted under [APP-0018](APPROVALS.md#app-0018); PR-011 authorized under [APP-0019](APPROVALS.md#app-0019) and not yet implemented |
+| Status | Accepted under [APP-0020](APPROVALS.md#app-0020) at `220628f4d4c69284af0b1f2534e8902f3b272088` with recorded limitations |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 6 August 2026 |
-| Git branch | `codex/demo-professional-speech-ui` |
-| Product code | PR-008 through PR-010 accepted; PR-011 implementation now authorized within master-plan §26; real production/Play and PR-012+ remain unauthorized |
-| Next checkpoint | Implement only PR-011; PR-012+, production and Play remain unauthorized |
-| Professional client path | APP-0016–0019; PR-009/PR-010 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Git branch | `codex/pr-011-evaluation-memory` |
+| Product code | PR-008 through PR-011 accepted; real model providers, PR-012+, production/Play unauthorized |
+| Next checkpoint | Separate APO APP required before any PR-012 implementation. Production/Play remain unauthorized |
+| Professional client path | APP-0016–0020; PR-009 through PR-011 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -92,6 +92,12 @@ release.
 Owner authorization to begin only PR-011 — Evaluation harness and memory
 controls. It is not acceptance of completed PR-011 work and does not authorize
 PR-012, production or Google Play release.
+
+[APP-0020](APPROVALS.md#app-0020) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-011 at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with every recorded limitation. It
+does not authorize PR-012 implementation, real model providers, production or
+Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -413,10 +419,20 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-07-30.7`.
+  `ui-en-IN-2026-08-06.8`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.7` for
-  Kannada and `.3` for each newly added locale.
+  attributed Codex implementation drafts at revisions ending in `.8`.
+- Visible product name is **Global English Speaking Course**.
+- Interface language picker options use native endonyms (ಕನ್ನಡ, English,
+  हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
+- Demo Phase 1 chrome, notices, rooms, attendance status and AI Teacher
+  replies resolve from the selected interface locale (`en`/`kn`/`hi`/`ml`/
+  `ta`/`te`); the AI toggle is that locale’s endonym vs English. English quiz
+  stems remain English learning content.
+- Under D-0092, local `make demo` may synthesize Azure neural TTS for AI
+  Teacher, Daily audio, Friend Listen and model audio via `/demo/tts`, with
+  voice selected from the UI language map; browser speech is fallback. See
+  [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
 - All five translated catalogues remain `pending-independent-review`: no
   reviewer, approval time or independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
@@ -647,10 +663,37 @@ PR-006 verification results:
 - OpenAPI and generated contracts include `priority_correction` and
   `safety_state`.
 
+## PR-011 implemented boundary
+
+- The active boundary is
+  [the PR-011 evaluation and memory verification scope](PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md).
+- Learner-visible AI memory facts are purpose-bound plaintext (`conversation_context`
+  / `learner_explicit`), listed completely when active, and soft-deleted with
+  immutable `memory_events` audit digests. Clearing memory does not delete
+  learning or account records.
+- `/api/v1/me/ai-memory` supports GET/POST/PATCH/DELETE with membership ownership
+  and idempotent writes. Active facts are allowlisted into conversation context
+  with hard caps (5 × 200 characters).
+- The Practice UI exposes list, create, edit and delete for learner-visible
+  facts.
+- Locked deterministic AI evaluation suite lives under
+  `apps/api/resources/ai-evaluation/v1/` and runs via `php artisan ai:evaluate`
+  / `make ai-eval` (speech half runs only when `SPEECH_BENCHMARK_RUN_ID` is set).
+- Human-review export/import packages bind the exact suite key and hash,
+  accept `pending`/`accept`/`reject` dispositions, fail closed on mismatch or
+  unknown cases, and keep prompt/cost rollups aggregate-only and
+  synthetic-fixture based.
+- Real LLM providers, PR-012, production and Play remain unauthorized.
+
 ## Next checkpoint gate
 
-PR-011 is authorized under [APP-0019](APPROVALS.md#app-0019) within master-plan
-§26 and is not yet implemented. PR-012, production, Google Play release and
-every later implementation checkpoint remain unauthorized. Production
-additionally requires qualified legal review and independent security,
-privacy, tenancy, accessibility, language/content and release review.
+PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with its recorded limitations
+([PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md)).
+PR-012 implementation, production, Google Play release and every later
+checkpoint remain unauthorized until a distinct APP. A proposed PR-012
+authorization boundary remains drafted only in
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
+Production additionally requires qualified legal review and independent
+security, privacy, tenancy, accessibility, language/content and release
+review.

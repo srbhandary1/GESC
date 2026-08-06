@@ -53,7 +53,52 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
+      screen.getByRole('navigation', {
+        name: text('shell.navigation_label'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: text('nav.practice') }),
+    ).toHaveAttribute('href', '#practice')
+    expect(
+      screen.getByRole('link', { name: text('nav.learn') }),
+    ).toHaveAttribute('href', '#learn')
+    expect(
+      screen.getByRole('link', { name: text('nav.progress') }),
+    ).toHaveAttribute('href', '#progress')
+    expect(
       screen.getByText('Global English Local Demo'),
+    ).toBeInTheDocument()
+  })
+
+  it('opens Friend speaking practice from the demo primary navigation', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('link', { name: text('nav.practice') }),
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('demo.page.practice.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: text('conversation.demo.title'),
+      }),
     ).toBeInTheDocument()
   })
 
@@ -75,8 +120,18 @@ describe('localized application shell', () => {
         name: text('demo.phase1.nav.levels'),
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Pre-Level 1')).toBeInTheDocument()
-    expect(screen.getByText('Content Room')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        resolveMessage('demo.phase1.levels.pre_level_title', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { number: 1 },
+        }).text,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(text('demo.phase1.rooms.content.title')),
+    ).toBeInTheDocument()
   })
 
   it('renders Kannada first with semantic landmarks and inert destinations', async () => {
@@ -240,7 +295,7 @@ describe('localized application shell', () => {
           'approved-only',
         ),
       }),
-    ).toHaveAttribute('lang', 'en-IN')
+    ).toHaveAttribute('lang', 'kn-IN')
     expect(
       await screen.findByText(
         text(

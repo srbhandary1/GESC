@@ -1,9 +1,9 @@
 /**
- * Browser Web Speech helpers for the disclosed synthetic demo only.
+ * Browser Web Speech helpers for the disclosed synthetic demo.
  *
- * These adapters use the device's built-in speechSynthesis / SpeechRecognition
- * APIs. They never call a cloud provider, never upload audio, and never create
- * authoritative learning records. Production product speech remains behind
+ * Prefer `speakDemoText` from `./demoTts` for playback: Azure neural TTS via
+ * local `/demo/tts` first, then these browser adapters as fallback (D-0092).
+ * Recognition remains on-device only. Production product speech remains behind
  * the project-owned STT/TTS ports (PR-009+) and is unchanged.
  */
 
@@ -65,6 +65,28 @@ export function stopBrowserSpeech(): void {
   globalThis.speechSynthesis.cancel()
 }
 
+async function loadBrowserVoices(): Promise<SpeechSynthesisVoice[]> {
+  if (!browserSpeechSynthesisAvailable()) {
+    return []
+  }
+
+  const immediate = globalThis.speechSynthesis.getVoices()
+  if (immediate.length > 0) {
+    return immediate
+  }
+
+  await new Promise<void>((resolve) => {
+    const finish = () => {
+      globalThis.speechSynthesis.removeEventListener('voiceschanged', finish)
+      resolve()
+    }
+    globalThis.speechSynthesis.addEventListener('voiceschanged', finish)
+    globalThis.setTimeout(finish, 750)
+  })
+
+  return globalThis.speechSynthesis.getVoices()
+}
+
 export async function speakWithBrowserSpeech(
   text: string,
   locale = 'en-IN',
@@ -76,37 +98,63 @@ export async function speakWithBrowserSpeech(
   }
 
   stopBrowserSpeech()
+  const voices = await loadBrowserVoices()
+  const timeoutMs = Math.min(45_000, Math.max(6_000, [...trimmed].length * 90))
 
   await new Promise<void>((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(trimmed)
     utterance.lang = locale
     utterance.rate = 0.92
     utterance.pitch = 1
-    utterance.onend = () => resolve()
+
+    let settled = false
+    const finish = (action: () => void) => {
+      if (settled) {
+        return
+      }
+      settled = true
+      globalThis.clearTimeout(timer)
+      action()
+    }
+
+    const timer = globalThis.setTimeout(() => {
+      stopBrowserSpeech()
+      finish(() =>
+        reject(new Error('Browser speech synthesis timed out.')),
+      )
+    }, timeoutMs)
+
+    utterance.onend = () => finish(() => resolve())
     utterance.onerror = (event) => {
       if (event.error === 'canceled' || event.error === 'interrupted') {
-        resolve()
+        finish(() => resolve())
         return
       }
 
-      reject(new Error(`Browser speech synthesis failed: ${event.error}`))
+      finish(() =>
+        reject(new Error(`Browser speech synthesis failed: ${event.error}`)),
+      )
     }
 
-    const preferred = pickVoice(locale)
+    const preferred = pickVoice(locale, voices)
     if (preferred !== null) {
       utterance.voice = preferred
     }
 
     globalThis.speechSynthesis.speak(utterance)
+    // Chromium sometimes leaves the queue paused after cancel().
+    if (globalThis.speechSynthesis.paused) {
+      globalThis.speechSynthesis.resume()
+    }
   })
 }
 
-function pickVoice(locale: string): SpeechSynthesisVoice | null {
-  if (!browserSpeechSynthesisAvailable()) {
-    return null
-  }
-
-  const voices = globalThis.speechSynthesis.getVoices()
+function pickVoice(
+  locale: string,
+  voices = browserSpeechSynthesisAvailable()
+    ? globalThis.speechSynthesis.getVoices()
+    : [],
+): SpeechSynthesisVoice | null {
   const exact = voices.find((voice) => voice.lang === locale)
   if (exact !== undefined) {
     return exact
@@ -114,7 +162,12 @@ function pickVoice(locale: string): SpeechSynthesisVoice | null {
 
   const prefix = locale.split('-')[0] ?? locale
   return (
-    voices.find((voice) => voice.lang.startsWith(prefix)) ?? null
+    voices.find((voice) =>
+      voice.lang.toLowerCase().startsWith(prefix.toLowerCase()),
+    ) ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith('en')) ??
+    voices[0] ??
+    null
   )
 }
 

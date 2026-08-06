@@ -128,6 +128,29 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 '/api/v1/conversation-turns/%s/events',
                 $conversationTurnId,
             )),
+            fn (): TestResponse => $this->getJson('/api/v1/me/ai-memory'),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson('/api/v1/me/ai-memory', [
+                'fact_text' => 'Synthetic unauthenticated memory.',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->patchJson(sprintf(
+                '/api/v1/me/ai-memory/%s',
+                (string) Str::ulid(),
+            ), [
+                'fact_text' => 'Synthetic unauthenticated memory update.',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->deleteJson(sprintf(
+                '/api/v1/me/ai-memory/%s',
+                (string) Str::ulid(),
+            )),
         ];
 
         foreach ($requests as $request) {

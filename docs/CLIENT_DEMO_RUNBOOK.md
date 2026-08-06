@@ -2,12 +2,14 @@
 
 ## Purpose
 
-Let a remote client open the disclosed synthetic Global English demo over the
-workstation static public IP. This is presentation packaging only: in-memory
-fixtures, on-device browser speech, no learner accounts, no application API, no
-cloud speech/AI providers and no production data.
+Let a remote client open the disclosed synthetic Global English Speaking
+Course demo over the workstation static public IP. This is presentation
+packaging only: in-memory fixtures, Azure neural TTS when the local demo
+process is configured (D-0092) otherwise on-device browser speech, no learner
+accounts, no ordinary application API and no production data.
 
 Ordinary local commands remain loopback-only (`make demo`, `make demo-serve`).
+For Azure voice setup on `make demo`, see [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
 This runbook is an explicit opt-in for remote review.
 
 For the path from this presentation to real Azure Speech evidence, see
