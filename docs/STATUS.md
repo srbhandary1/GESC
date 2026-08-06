@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-010 — AI orchestration, correction and Tutor beta |
-| Status | PR-009 accepted under [APP-0017](APPROVALS.md#app-0017); PR-010 authorized and not yet implemented |
+| Status | PR-010 implemented under [APP-0017](APPROVALS.md#app-0017); awaiting Accountable Product Owner acceptance |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 6 August 2026 |
 | Git branch | `codex/demo-professional-speech-ui` |
-| Product code | PR-008 and PR-009 accepted; live synthetic Azure benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`; Phase 1 demo shell remains; PR-010 implementation now authorized |
-| Next checkpoint | Implement only PR-010 within master-plan §26; PR-011+ and production/Play remain unauthorized |
+| Product code | PR-008/PR-009 accepted; PR-010 deterministic orchestration/correction slice implemented with fake adapters; real model providers, PR-011+, production/Play unauthorized |
+| Next checkpoint | APO acceptance of PR-010; only then consider PR-011 authorization. Production/Play remain unauthorized |
 | Professional client path | APP-0016/0017; PR-009 closed with passed safe-report; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
@@ -620,13 +620,27 @@ PR-006 verification results:
 - PR-006 is accepted at its exact implementation commit under APP-0007; every
   recorded limitation remains in force.
 
+## PR-010 implemented boundary
+
+- Context allowlist, versioned prompts (`prompt_versions`), structured output
+  validation, curated safety fallback, advisory correction digests and
+  learner error-pattern counters are implemented behind the existing
+  conversation turn pipeline.
+- Gentle / Tutor / Fluency coaching modes are accepted for Friend sessions.
+- Priority correction is returned as a separate API field and rendered as a
+  separate correction card; it is never merged into the Friend reply text.
+- Deterministic fake model adapters remain the only local/testing path.
+  Production remains fail-closed for conversation providers.
+- Authoritative learning records (`learner_attempts`, `mastery_states`, and
+  related tables) are not written by the AI orchestration path.
+- OpenAPI and generated contracts include `priority_correction` and
+  `safety_state`.
+
 ## Next checkpoint gate
 
-PR-009 is accepted under [APP-0017](APPROVALS.md#app-0017) with its recorded
-limitations and live synthetic benchmark pass
-`e1dc9d3c8daff9e33c20bdd00d2dd4d0`. APP-0017 authorizes only
-PR-010 — AI orchestration, correction and Tutor beta. PR-011, production,
-Google Play release and every later implementation checkpoint remain
-unauthorized. Production additionally requires qualified legal review and
-independent security, privacy, tenancy, accessibility, language/content and
-release review.
+PR-010 is implemented under [APP-0017](APPROVALS.md#app-0017) and awaits
+Accountable Product Owner acceptance with its recorded limitations. PR-011,
+production, Google Play release and every later implementation checkpoint
+remain unauthorized. Production additionally requires qualified legal review
+and independent security, privacy, tenancy, accessibility, language/content
+and release review.

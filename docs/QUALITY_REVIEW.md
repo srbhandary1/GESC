@@ -1957,3 +1957,49 @@ human steps. Independent specialist reviews remain mandatory before production.
 PR-009 remediation and related demo-path files may still be uncommitted at
 record authoring; the evidence repository revision is the commit that contains
 this APP-0017 record.
+
+
+---
+
+## PR-010 — AI orchestration, correction and Tutor beta
+
+### Scope reviewed
+
+- context allowlist, versioned prompts, structured validators, curated fallback;
+- Gentle/Tutor/Fluency modes;
+- separate priority correction API field and UI card with Kannada explanation;
+- advisory correction digests and error-pattern counters;
+- learning-record isolation tests;
+- OpenAPI/contract regeneration and localization catalogue updates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Output validator unit tests | Pass | ConversationOutputValidatorTest |
+| Request validation accepts tutor mode | Pass | ConversationRequestValidationTest |
+| PostgreSQL conversation + orchestration suite | Pass | 6 tests / 70 assertions via Docker PHP 8.4 + pdo_pgsql |
+| SQLite unit/feature conversation filter | Pass | 5 tests / 17 assertions |
+| OpenAPI lint + contract drift check | Pass | `pnpm run openapi:check` |
+| PHPStan on PR-010 conversation paths | Pass | 0 errors |
+| Web conversation/demo tests | Pass | 76 web tests in targeted vitest run |
+| Locale governance | Pass | `pnpm run locale:check` (5 pending-review warnings) |
+| Learning records unchanged by AI path | Pass | orchestration + fake-provider isolation assertions |
+| Correction separate from Friend reply | Pass | API field + UI card test |
+| Real model provider / production / Play | Not authorized | APP-0017; STATUS |
+
+### Security, privacy and tenancy
+
+- Persistent correction records store digests, not reply/correction text.
+- Allowlisted model context excludes personal identifiers and learning authority.
+- Organization scoping of correction/error-pattern rows follows conversation turn ownership.
+- Fake adapters remain local/testing-only; production conversation providers stay fail-closed.
+
+### Known limitations
+
+- Host PHP lacks `pdo_pgsql`; PostgreSQL integration evidence used a Docker
+  `php:8.4-cli` container against the local Compose Postgres service.
+- Full `make verify` / remote CI was not completed in this session.
+- No real LLM provider is wired; Tutor beta uses deterministic fake outputs.
+- Kannada and preview-locale UI copy remain pending independent review.
+- PR-010 awaits Accountable Product Owner acceptance before PR-011.

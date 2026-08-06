@@ -28,6 +28,17 @@ final class ConversationRequestValidationTest extends TestCase
         );
         $this->assertFalse($this->validator($valid)->fails());
 
+        $tutor = StartConversationSessionRequest::create(
+            '/api/v1/conversation-sessions',
+            'POST',
+            [
+                'persona_key' => 'patient-friend-prototype',
+                'scenario_key' => 'everyday-friend-prototype',
+                'coaching_mode' => 'tutor',
+            ],
+        );
+        $this->assertFalse($this->validator($tutor)->fails());
+
         $unsupported = StartConversationSessionRequest::create(
             '/api/v1/conversation-sessions',
             'POST',

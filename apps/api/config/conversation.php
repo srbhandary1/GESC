@@ -9,6 +9,7 @@ return [
     ),
     'maximum_provider_attempts' => 2,
     'maximum_utterance_characters' => 500,
+    'coaching_modes' => ['gentle', 'tutor', 'fluency'],
     'prototype' => [
         'persona_key' => 'patient-friend-prototype',
         'scenario_key' => 'everyday-friend-prototype',

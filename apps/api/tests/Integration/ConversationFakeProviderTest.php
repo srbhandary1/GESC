@@ -108,6 +108,16 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         $this->assertSame($normalizedUtterance, $turn['transcript']);
         $this->assertSame($reply, $turn['assistant_reply']);
         $this->assertSame('prototype_utterance_received', $turn['understood_intent']);
+        $this->assertSame('ok', $turn['safety_state']);
+        $this->assertIsArray($turn['priority_correction']);
+        $this->assertSame(
+            'grammar.article',
+            $turn['priority_correction']['error_category'],
+        );
+        $this->assertNotSame(
+            $turn['assistant_reply'],
+            $turn['priority_correction']['correction_en'],
+        );
         $this->assertFalse($turn['speech']['playback_available']);
         $this->assertSame(
             'deterministic-fake-text-only',
@@ -118,11 +128,17 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         $this->assertTrue($turnReplay['replayed']);
         $this->assertSame($turn['id'], $turnReplay['id']);
         $this->assertSame($turn['assistant_reply'], $turnReplay['assistant_reply']);
+        $this->assertSame(
+            $turn['priority_correction'],
+            $turnReplay['priority_correction'],
+        );
         $this->assertSame(1, DB::table('conversation_sessions')->count());
         $this->assertSame(1, DB::table('conversation_turns')->count());
         $this->assertSame(5, DB::table('conversation_turn_events')->count());
         $this->assertSame(3, DB::table('ai_cost_ledger')->count());
         $this->assertSame(2, DB::table('conversation_commands')->count());
+        $this->assertSame(1, DB::table('correction_suggestions')->count());
+        $this->assertSame(1, DB::table('learner_error_patterns')->count());
         $this->assertSame($learningBefore, $this->learningCounts());
 
         $eventRows = $this->contexts()->run(
@@ -288,6 +304,8 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         $this->assertSame('failed', $turn['status']);
         $this->assertNull($turn['transcript']);
         $this->assertNull($turn['assistant_reply']);
+        $this->assertNull($turn['priority_correction']);
+        $this->assertNull($turn['safety_state']);
         $this->assertSame(2, $turn['usage']['provider_attempts']);
         $this->assertSame(
             ['accepted', 'transcribing', 'transcribing', 'failed'],

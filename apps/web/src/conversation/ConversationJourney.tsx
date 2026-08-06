@@ -75,6 +75,9 @@ export function ConversationJourney({
 }: ConversationJourneyProps) {
   const [state, setState] = useState<ConversationState>({ kind: 'idle' })
   const [utterance, setUtterance] = useState('')
+  const [coachingMode, setCoachingMode] = useState<
+    'gentle' | 'tutor' | 'fluency'
+  >('gentle')
   const [listening, setListening] = useState(false)
   const [speakingReply, setSpeakingReply] = useState(false)
   const [speechError, setSpeechError] = useState(false)
@@ -109,7 +112,7 @@ export function ConversationJourney({
     api
       .startSession(
         {
-          coaching_mode: 'gentle',
+          coaching_mode: coachingMode,
           persona_key: 'patient-friend-prototype',
           scenario_key: 'everyday-friend-prototype',
         },
@@ -256,22 +259,49 @@ export function ConversationJourney({
       </aside>
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
-        <button
-          className="ge-button ge-button--primary"
-          type="button"
-          disabled={state.kind === 'starting'}
-          onClick={start}
-        >
-          <LocalizedMessage
-            resolution={message(
-              state.kind === 'starting'
-                ? 'conversation.starting'
-                : demoMode
-                  ? 'conversation.demo.start'
-                  : 'conversation.start',
-            )}
-          />
-        </button>
+        <div className="conversation-journey__start">
+          <label htmlFor="coaching-mode">
+            <LocalizedMessage
+              resolution={message('conversation.coaching_mode.label')}
+            />
+          </label>
+          <select
+            id="coaching-mode"
+            value={coachingMode}
+            disabled={state.kind === 'starting'}
+            onChange={(event) =>
+              setCoachingMode(
+                event.currentTarget.value as 'gentle' | 'tutor' | 'fluency',
+              )
+            }
+          >
+            <option value="gentle">
+              {text('conversation.coaching_mode.gentle')}
+            </option>
+            <option value="tutor">
+              {text('conversation.coaching_mode.tutor')}
+            </option>
+            <option value="fluency">
+              {text('conversation.coaching_mode.fluency')}
+            </option>
+          </select>
+          <button
+            className="ge-button ge-button--primary"
+            type="button"
+            disabled={state.kind === 'starting'}
+            onClick={start}
+          >
+            <LocalizedMessage
+              resolution={message(
+                state.kind === 'starting'
+                  ? 'conversation.starting'
+                  : demoMode
+                    ? 'conversation.demo.start'
+                    : 'conversation.start',
+              )}
+            />
+          </button>
+        </div>
       ) : null}
 
       {session === undefined ? null : (
@@ -386,6 +416,53 @@ export function ConversationJourney({
                   <dd lang="en-IN">{state.turn.assistant_reply}</dd>
                 </div>
               </dl>
+              {state.turn.priority_correction ? (
+                <aside
+                  className="conversation-journey__correction"
+                  aria-labelledby="conversation-correction"
+                >
+                  <h3 id="conversation-correction">
+                    <LocalizedMessage
+                      resolution={message('conversation.correction.title')}
+                    />
+                  </h3>
+                  <dl>
+                    <div>
+                      <dt>
+                        <LocalizedMessage
+                          resolution={message(
+                            'conversation.correction.suggestion_label',
+                          )}
+                        />
+                      </dt>
+                      <dd lang="en-IN">
+                        {state.turn.priority_correction.correction_en}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>
+                        <LocalizedMessage
+                          resolution={message(
+                            'conversation.correction.explanation_label',
+                          )}
+                        />
+                      </dt>
+                      <dd lang="kn-IN">
+                        {state.turn.priority_correction.explanation_kn}
+                      </dd>
+                    </div>
+                  </dl>
+                  {state.turn.priority_correction.retry_recommended ? (
+                    <p>
+                      <LocalizedMessage
+                        resolution={message(
+                          'conversation.correction.retry',
+                        )}
+                      />
+                    </p>
+                  ) : null}
+                </aside>
+              ) : null}
               {demoMode ? (
                 <div className="conversation-journey__speech-actions">
                   <button

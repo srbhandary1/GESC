@@ -80,6 +80,17 @@ describe('deterministic Friend prototype', () => {
     expect(
       screen.getByText('I practise English after work.'),
     ).toHaveAttribute('lang', 'en-IN')
+    expect(screen.getByText('Priority correction')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'A clearer sentence is: "I enjoy learning English after work."',
+      ),
+    ).toHaveAttribute('lang', 'en-IN')
+    expect(
+      screen.getByText(
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      ),
+    ).toHaveAttribute('lang', 'kn-IN')
     expect(
       screen.getByText(
         'Fake TTS is text-only. No audio was created or stored.',
@@ -239,7 +250,16 @@ function fakeTurn(sessionId: string): FriendTurn {
     events_url:
       '/api/v1/conversation-turns/01J00000000000000000000006/events',
     id: '01J00000000000000000000006',
+    priority_correction: {
+      correction_en:
+        'A clearer sentence is: "I enjoy learning English after work."',
+      error_category: 'grammar.article',
+      explanation_kn:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      retry_recommended: false,
+    },
     replayed: false,
+    safety_state: 'ok',
     speech: {
       playback_available: false,
       rendering_mode: 'deterministic-fake-text-only',

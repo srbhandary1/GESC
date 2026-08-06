@@ -12,5 +12,7 @@ final readonly class ConversationModelRequest
         public string $personaStyleCode,
         public string $scenarioResponseCode,
         public string $coachingMode,
+        public string $promptVersionId,
+        public string $promptBodySha256,
     ) {}
 }

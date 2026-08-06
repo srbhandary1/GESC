@@ -31,7 +31,7 @@ final class StartConversationSessionRequest extends FormRequest
             'coaching_mode' => [
                 'required',
                 'string',
-                Rule::in(['gentle']),
+                Rule::in(['gentle', 'tutor', 'fluency']),
             ],
             'idempotency_key' => [
                 'required',

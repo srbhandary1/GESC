@@ -1388,7 +1388,11 @@ export const StartConversationSessionRequestSchema = {
         },
         coaching_mode: {
             type: 'string',
-            const: 'gentle'
+            enum: [
+                'gentle',
+                'tutor',
+                'fluency'
+            ]
         }
     }
 } as const;
@@ -1508,7 +1512,11 @@ export const ConversationSessionSchema = {
         },
         coaching_mode: {
             type: 'string',
-            const: 'gentle'
+            enum: [
+                'gentle',
+                'tutor',
+                'fluency'
+            ]
         },
         persona: {
             $ref: '#/components/schemas/ConversationPersonaSnapshot'
@@ -1580,6 +1588,39 @@ export const ConversationUsageSummarySchema = {
     }
 } as const;
 
+export const PriorityCorrectionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    description: 'One logically separate priority correction. Never merged into the\nFriend conversational reply text.\n',
+    required: [
+        'error_category',
+        'correction_en',
+        'explanation_kn',
+        'retry_recommended'
+    ],
+    properties: {
+        error_category: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,63}$'
+        },
+        correction_en: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        explanation_kn: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        retry_recommended: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
 export const ConversationTurnSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1591,6 +1632,8 @@ export const ConversationTurnSchema = {
         'transcript',
         'understood_intent',
         'assistant_reply',
+        'priority_correction',
+        'safety_state',
         'speech',
         'usage',
         'events_url',
@@ -1636,6 +1679,30 @@ export const ConversationTurnSchema = {
             ],
             minLength: 1,
             maxLength: 1000
+        },
+        priority_correction: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/PriorityCorrection'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        safety_state: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'ok',
+                        'fallback'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         speech: {
             oneOf: [

@@ -120,12 +120,14 @@ final readonly class ConversationSessionService
         string $scenarioKey,
         string $coachingMode,
     ): stdClass {
+        $allowedModes = config('conversation.coaching_modes', ['gentle']);
+
         if (
             $personaKey !== config('conversation.prototype.persona_key')
             || $scenarioKey
                 !== config('conversation.prototype.scenario_key')
-            || $coachingMode
-                !== config('conversation.prototype.coaching_mode')
+            || ! is_array($allowedModes)
+            || ! in_array($coachingMode, $allowedModes, true)
         ) {
             throw new ConversationOperationRejected;
         }

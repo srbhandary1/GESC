@@ -35,7 +35,16 @@ describe('web deterministic conversation API', () => {
       events_url:
         '/api/v1/conversation-turns/01J00000000000000000000006/events',
       id: '01J00000000000000000000006',
+      priority_correction: {
+        correction_en:
+          'A clearer sentence is: "I enjoy learning English after work."',
+        error_category: 'grammar.article',
+        explanation_kn:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        retry_recommended: false,
+      },
       replayed: false,
+      safety_state: 'ok',
       speech: {
         playback_available: false,
         rendering_mode: 'deterministic-fake-text-only',

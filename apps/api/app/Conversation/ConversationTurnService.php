@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
-use App\Conversation\Providers\ConversationModelProvider;
-use App\Conversation\Providers\ConversationModelRequest;
+use App\Conversation\Orchestration\ConversationOrchestrator;
+use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderResult;
@@ -32,7 +32,7 @@ final readonly class ConversationTurnService
         private ConversationCommandIdempotency $commands,
         private ConversationTurnStateMachine $states,
         private SpeechToTextProvider $speechToText,
-        private ConversationModelProvider $conversationModel,
+        private ConversationOrchestrator $orchestrator,
         private TextToSpeechProvider $textToSpeech,
     ) {}
 
@@ -133,6 +133,8 @@ final readonly class ConversationTurnService
             $transcript = null;
             $assistantReply = null;
             $understoodIntent = null;
+            $priorityCorrection = null;
+            $safetyState = null;
             $speech = null;
 
             try {
@@ -187,9 +189,12 @@ final readonly class ConversationTurnService
                     state: $state,
                     stage: 'model',
                     operation: fn (): ConversationModelResult => $this
-                        ->conversationModel
-                        ->respond(new ConversationModelRequest(
-                            interactionId: $turnId,
+                        ->orchestrator
+                        ->respond(
+                            organizationId: $context->organizationId,
+                            membershipId: $membershipId,
+                            sessionId: $sessionId,
+                            turnId: $turnId,
                             transcript: $transcript,
                             personaStyleCode: $this->string(
                                 $session,
@@ -203,7 +208,7 @@ final readonly class ConversationTurnService
                                 $session,
                                 'coaching_mode',
                             ),
-                        )),
+                        ),
                 );
 
                 if (! $modelResult instanceof ConversationModelResult) {
@@ -212,6 +217,8 @@ final readonly class ConversationTurnService
 
                 $assistantReply = $modelResult->assistantReply;
                 $understoodIntent = $modelResult->understoodIntent;
+                $priorityCorrection = $modelResult->priorityCorrection;
+                $safetyState = $modelResult->safetyState;
                 $state = $this->transition(
                     organizationId: $context->organizationId,
                     membershipId: $membershipId,
@@ -285,6 +292,8 @@ final readonly class ConversationTurnService
                 $transcript = null;
                 $assistantReply = null;
                 $understoodIntent = null;
+                $priorityCorrection = null;
+                $safetyState = null;
                 $speech = null;
             }
 
@@ -311,6 +320,8 @@ final readonly class ConversationTurnService
                 transcript: $transcript,
                 assistantReply: $assistantReply,
                 understoodIntent: $understoodIntent,
+                priorityCorrection: $priorityCorrection,
+                safetyState: $safetyState,
                 speech: $speech,
                 replayed: false,
             );
@@ -632,6 +643,8 @@ final readonly class ConversationTurnService
                 transcript: null,
                 assistantReply: null,
                 understoodIntent: null,
+                priorityCorrection: null,
+                safetyState: null,
                 speech: null,
                 replayed: $replayed,
             );
@@ -643,23 +656,25 @@ final readonly class ConversationTurnService
                 prototypeUtterance: $utterance,
             ),
         );
-        $modelResult = $this->conversationModel->respond(
-            new ConversationModelRequest(
-                interactionId: $turnId,
-                transcript: $speechResult->transcript,
-                personaStyleCode: $this->string(
-                    $session,
-                    'persona_style_code',
-                ),
-                scenarioResponseCode: $this->string(
-                    $session,
-                    'scenario_response_code',
-                ),
-                coachingMode: $this->string(
-                    $session,
-                    'coaching_mode',
-                ),
+        $modelResult = $this->orchestrator->respond(
+            organizationId: $organizationId,
+            membershipId: $membershipId,
+            sessionId: $this->string($session, 'id'),
+            turnId: $turnId,
+            transcript: $speechResult->transcript,
+            personaStyleCode: $this->string(
+                $session,
+                'persona_style_code',
             ),
+            scenarioResponseCode: $this->string(
+                $session,
+                'scenario_response_code',
+            ),
+            coachingMode: $this->string(
+                $session,
+                'coaching_mode',
+            ),
+            persistAdvisory: false,
         );
         $textToSpeechResult = $this->textToSpeech->synthesize(
             new TextToSpeechRequest(
@@ -691,6 +706,8 @@ final readonly class ConversationTurnService
             transcript: $speechResult->transcript,
             assistantReply: $modelResult->assistantReply,
             understoodIntent: $modelResult->understoodIntent,
+            priorityCorrection: $modelResult->priorityCorrection,
+            safetyState: $modelResult->safetyState,
             speech: [
                 'playback_available' => $textToSpeechResult
                     ->playbackAvailable,
@@ -714,6 +731,8 @@ final readonly class ConversationTurnService
         ?string $transcript,
         ?string $assistantReply,
         ?string $understoodIntent,
+        ?PriorityCorrection $priorityCorrection,
+        ?string $safetyState,
         ?array $speech,
         bool $replayed,
     ): array {
@@ -738,6 +757,8 @@ final readonly class ConversationTurnService
             'transcript' => $transcript,
             'understood_intent' => $understoodIntent,
             'assistant_reply' => $assistantReply,
+            'priority_correction' => $priorityCorrection?->toArray(),
+            'safety_state' => $safetyState,
             'speech' => $speech,
             'usage' => [
                 'provider_attempts' => $this->integer(

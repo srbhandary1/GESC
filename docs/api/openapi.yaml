@@ -2613,7 +2613,10 @@ components:
           const: everyday-friend-prototype
         coaching_mode:
           type: string
-          const: gentle
+          enum:
+            - gentle
+            - tutor
+            - fluency
     ConversationPersonaSnapshot:
       type: object
       additionalProperties: false
@@ -2702,7 +2705,10 @@ components:
           const: friend
         coaching_mode:
           type: string
-          const: gentle
+          enum:
+            - gentle
+            - tutor
+            - fluency
         persona:
           $ref: "#/components/schemas/ConversationPersonaSnapshot"
         scenario:
@@ -2749,6 +2755,33 @@ components:
         estimated_cost_microunits:
           type: integer
           const: 0
+    PriorityCorrection:
+      type: object
+      additionalProperties: false
+      description: |
+        One logically separate priority correction. Never merged into the
+        Friend conversational reply text.
+      required:
+        - error_category
+        - correction_en
+        - explanation_kn
+        - retry_recommended
+      properties:
+        error_category:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[a-z0-9][a-z0-9._-]{0,63}$"
+        correction_en:
+          type: string
+          minLength: 1
+          maxLength: 500
+        explanation_kn:
+          type: string
+          minLength: 1
+          maxLength: 500
+        retry_recommended:
+          type: boolean
     ConversationTurn:
       type: object
       additionalProperties: false
@@ -2760,6 +2793,8 @@ components:
         - transcript
         - understood_intent
         - assistant_reply
+        - priority_correction
+        - safety_state
         - speech
         - usage
         - events_url
@@ -2794,6 +2829,17 @@ components:
             - "null"
           minLength: 1
           maxLength: 1000
+        priority_correction:
+          oneOf:
+            - $ref: "#/components/schemas/PriorityCorrection"
+            - type: "null"
+        safety_state:
+          oneOf:
+            - type: string
+              enum:
+                - ok
+                - fallback
+            - type: "null"
         speech:
           oneOf:
             - $ref: "#/components/schemas/ConversationSpeechResult"

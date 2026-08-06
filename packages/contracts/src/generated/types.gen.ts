@@ -353,7 +353,7 @@ export type LearnerProgress = {
 export type StartConversationSessionRequest = {
     persona_key: 'patient-friend-prototype';
     scenario_key: 'everyday-friend-prototype';
-    coaching_mode: 'gentle';
+    coaching_mode: 'gentle' | 'tutor' | 'fluency';
 };
 
 export type ConversationPersonaSnapshot = {
@@ -381,7 +381,7 @@ export type ConversationSession = {
     id: Ulid;
     status: 'active';
     mode: 'friend';
-    coaching_mode: 'gentle';
+    coaching_mode: 'gentle' | 'tutor' | 'fluency';
     persona: ConversationPersonaSnapshot;
     scenario: ConversationScenarioSnapshot;
     replayed: boolean;
@@ -402,6 +402,18 @@ export type ConversationUsageSummary = {
     estimated_cost_microunits: 0;
 };
 
+/**
+ * One logically separate priority correction. Never merged into the
+ * Friend conversational reply text.
+ *
+ */
+export type PriorityCorrection = {
+    error_category: string;
+    correction_en: string;
+    explanation_kn: string;
+    retry_recommended: boolean;
+};
+
 export type ConversationTurn = {
     id: Ulid;
     conversation_session_id: Ulid;
@@ -410,6 +422,8 @@ export type ConversationTurn = {
     transcript: string | null;
     understood_intent: string | null;
     assistant_reply: string | null;
+    priority_correction: PriorityCorrection | null;
+    safety_state: 'ok' | 'fallback' | null;
     speech: ConversationSpeechResult | null;
     usage: ConversationUsageSummary;
     events_url: string;
