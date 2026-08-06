@@ -1139,3 +1139,67 @@ Immediately before this statement:
 - Full remote CI / `make verify` on the host toolchain remains a follow-up
   verification gate and is not waived by this acceptance.
 - No master-plan amendment is made.
+
+<a id="app-0019"></a>
+
+## APP-0019 — PR-011 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-06 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0018](APPROVALS.md#app-0018) (PR-010 at `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`) |
+| Pull request context | https://github.com/srbhandary1/GESC/pull/1 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-011.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-010 had been accepted under APP-0018 with recorded limitations;
+2. STATUS recorded that PR-011 remained unauthorized until a separate explicit
+   Accountable Product Owner authorization; and
+3. PR-011 itself was not yet implemented.
+
+Interpretation: because PR-011 has no accepted implementation artifact, this
+statement authorizes **beginning implementation** of master-plan §26 PR-011
+only. It is not acceptance of completed PR-011 deliverables.
+
+### Authorized scope
+
+- Authorize only master-plan §26 **PR-011 — Evaluation harness and memory
+  controls**.
+- PR-011 may deliver: locked AI/speech evaluation suite; human-review
+  export/import; model/prompt comparison report; AI cost ledger;
+  learner-visible memory list/edit/delete; memory policy and audit.
+- Acceptance criteria remain those in the master plan: prompt/model changes
+  produce a comparable evaluation report; no memory fact is hidden from the
+  learner.
+
+### Conditions and limitations
+
+- This does **not** accept completed PR-011 work; that requires a later exact-
+  artifact APO acceptance.
+- PR-012 and all later checkpoints remain unauthorized.
+- Real LLM / conversation-model providers remain unauthorized unless a later
+  explicit decision selects and gates them within PR-011 or a later authorized
+  checkpoint.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- AI remains advisory and must not mutate authoritative learning records.
+- No master-plan amendment is made.

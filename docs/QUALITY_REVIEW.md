@@ -2026,6 +2026,30 @@ this APP-0017 record.
 
 ### Known limitation
 
-PR-011 remains blocked until a separate explicit Accountable Product Owner
-authorization. This acceptance does not waive independent specialist reviews
-or full CI/`make verify` follow-up.
+This acceptance does not waive independent specialist reviews or full
+CI/`make verify` follow-up.
+
+
+---
+
+## APP-0019 — PR-011 implementation authorization
+
+### Scope reviewed
+
+- APO statement `APO accept PR-011.`;
+- interpretation as authorization to begin unimplemented PR-011 only;
+- STATUS/DECISIONS updated without accepting completed PR-011 work.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0019](APPROVALS.md#app-0019) |
+| Interpreted as begin-implementation only | Pass | APP-0019 context; no PR-011 artifact exists |
+| Only PR-011 authorized | Pass | STATUS next checkpoint; D-0089 |
+| PR-012 / production / Play claimed | No | APP-0019 limitations |
+
+### Known limitation
+
+PR-011 deliverables remain unimplemented until a bounded checkpoint
+implementation is completed and separately accepted.
