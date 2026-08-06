@@ -29,7 +29,7 @@ help:
 		'make e2e           Run the critical web browser journeys' \
 		'make demo-e2e      Run the synthetic local-demo browser journey' \
 		'make demo-dist-e2e Run the browser journey against the built demo bundle' \
-		'make ai-eval       Run the locked PR-009 synthetic speech benchmark' \
+		'make ai-eval       Run locked AI evaluation; speech complete when SPEECH_BENCHMARK_RUN_ID is set' \
 		'make openapi       Validate OpenAPI and check generated-client drift' \
 		'make migrate       Apply local Laravel migrations' \
 		'make seed          Load safe local Laravel seed data' \
@@ -128,7 +128,12 @@ demo-dist-e2e:
 	$(PNPM) --filter $(WEB_FILTER) e2e:demo-dist
 
 ai-eval:
-	cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID:-}"
+	cd $(API_DIR) && $(PHP) artisan ai:evaluate
+	@if [ -n "$${SPEECH_BENCHMARK_RUN_ID}" ]; then \
+		cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID}"; \
+	else \
+		echo 'speech benchmark skipped (set SPEECH_BENCHMARK_RUN_ID to include the PR-009 speech half)'; \
+	fi
 
 openapi:
 	$(PNPM) run openapi:check

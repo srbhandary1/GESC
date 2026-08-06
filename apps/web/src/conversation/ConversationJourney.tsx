@@ -26,6 +26,7 @@ import type {
   FriendTurnEvent,
 } from './ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
+import { AiMemoryPanel } from './AiMemoryPanel'
 import { VoicePracticePanel } from './VoicePracticePanel'
 import './ConversationJourney.css'
 
@@ -313,14 +314,23 @@ export function ConversationJourney({
             {session.persona.disclosure}
           </p>
           {demoMode ? null : (
-            <VoicePracticePanel
-              api={api}
-              createClientId={createClientId}
-              locale={locale}
-              onTranscriptSelected={setUtterance}
-              sessionId={session.id}
-              text={text}
-            />
+            <>
+              <VoicePracticePanel
+                api={api}
+                createClientId={createClientId}
+                locale={locale}
+                onTranscriptSelected={setUtterance}
+                sessionId={session.id}
+                text={text}
+              />
+              <AiMemoryPanel
+                api={api}
+                createClientId={createClientId}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                text={text}
+              />
+            </>
           )}
           <form
             className="conversation-journey__form"

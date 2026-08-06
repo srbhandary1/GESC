@@ -10,9 +10,31 @@
 .conversation-journey__correction,
 .conversation-journey__start,
 .conversation-journey__voice,
+.conversation-journey__memory,
 .conversation-journey form {
   display: grid;
   gap: var(--ge-space-3);
+}
+
+.conversation-journey__memory {
+  background: var(--ge-color-surface);
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-4);
+}
+
+.conversation-journey__memory-list {
+  display: grid;
+  gap: var(--ge-space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.conversation-journey__memory-list li,
+.conversation-journey__memory-form {
+  display: grid;
+  gap: var(--ge-space-2);
 }
 
 .conversation-journey__correction {

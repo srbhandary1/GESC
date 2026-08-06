@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Orchestration;
 
+use App\Conversation\Memory\LearnerMemoryService;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
@@ -19,6 +20,7 @@ final readonly class ConversationOrchestrator
         private ConversationPromptCatalog $prompts,
         private ConversationContextAllowlist $allowlist,
         private ConversationOutputValidator $validator,
+        private LearnerMemoryService $memory,
     ) {}
 
     public function respond(
@@ -33,6 +35,10 @@ final readonly class ConversationOrchestrator
         bool $persistAdvisory = true,
     ): ConversationModelResult {
         $prompt = $this->prompts->active($coachingMode);
+        $memoryFacts = $this->memory->activeFactTexts(
+            organizationId: $organizationId,
+            membershipId: $membershipId,
+        );
         $context = $this->allowlist->build(
             transcript: $transcript,
             personaStyleCode: $personaStyleCode,
@@ -41,6 +47,7 @@ final readonly class ConversationOrchestrator
             promptKey: $prompt['prompt_key'],
             promptVersion: $prompt['version'],
             promptBodySha256: $prompt['body_sha256'],
+            memoryFacts: $memoryFacts,
         );
 
         $result = $this->conversationModel->respond(
@@ -52,6 +59,7 @@ final readonly class ConversationOrchestrator
                 coachingMode: $context['coaching_mode'],
                 promptVersionId: $prompt['id'],
                 promptBodySha256: $prompt['body_sha256'],
+                memoryFacts: $context['memory_facts'],
             ),
         );
 

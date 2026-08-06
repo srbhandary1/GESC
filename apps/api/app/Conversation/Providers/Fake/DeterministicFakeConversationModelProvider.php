@@ -55,6 +55,10 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
             'fluency' => 'Nice flow. What happened after that?',
             default => 'Thank you for sharing that. What would you like to talk about next?',
         };
+
+        if ($request->memoryFacts !== []) {
+            $reply .= ' I will keep your shared practice notes in mind.';
+        }
         $correction = match ($request->coachingMode) {
             'tutor' => new PriorityCorrection(
                 errorCategory: 'grammar.article',

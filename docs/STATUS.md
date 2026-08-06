@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-011 — Evaluation harness and memory controls |
-| Status | PR-010 accepted under [APP-0018](APPROVALS.md#app-0018); PR-011 authorized under [APP-0019](APPROVALS.md#app-0019) and not yet implemented |
+| Status | PR-011 implemented under [APP-0019](APPROVALS.md#app-0019); awaiting Accountable Product Owner acceptance |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 6 August 2026 |
-| Git branch | `codex/demo-professional-speech-ui` |
-| Product code | PR-008 through PR-010 accepted; PR-011 implementation now authorized within master-plan §26; real production/Play and PR-012+ remain unauthorized |
-| Next checkpoint | Implement only PR-011; PR-012+, production and Play remain unauthorized |
+| Git branch | `codex/pr-011-evaluation-memory` |
+| Product code | PR-008 through PR-010 accepted; PR-011 deterministic evaluation harness and learner-visible AI memory implemented; real model providers, PR-012+, production/Play unauthorized |
+| Next checkpoint | APO acceptance of PR-011; only then consider PR-012 authorization. Production/Play remain unauthorized |
 | Professional client path | APP-0016–0019; PR-009/PR-010 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
@@ -647,10 +647,27 @@ PR-006 verification results:
 - OpenAPI and generated contracts include `priority_correction` and
   `safety_state`.
 
+## PR-011 implemented boundary
+
+- Learner-visible AI memory facts are purpose-bound plaintext (`conversation_context`
+  / `learner_explicit`), listed completely when active, and soft-deleted with
+  immutable `memory_events` audit digests. Clearing memory does not delete
+  learning or account records.
+- `/api/v1/me/ai-memory` supports GET/POST/PATCH/DELETE with membership ownership
+  and idempotent writes. Active facts are allowlisted into conversation context
+  with hard caps (5 × 200 characters).
+- Locked deterministic AI evaluation suite lives under
+  `apps/api/resources/ai-evaluation/v1/` and runs via `php artisan ai:evaluate`
+  / `make ai-eval` (speech half runs only when `SPEECH_BENCHMARK_RUN_ID` is set).
+- Human-review export/import packages and prompt comparison / cost-ledger
+  rollups are aggregate-only and synthetic-fixture based.
+- Real LLM providers, PR-012, production and Play remain unauthorized.
+
 ## Next checkpoint gate
 
-PR-011 is authorized under [APP-0019](APPROVALS.md#app-0019) within master-plan
-§26 and is not yet implemented. PR-012, production, Google Play release and
-every later implementation checkpoint remain unauthorized. Production
-additionally requires qualified legal review and independent security,
-privacy, tenancy, accessibility, language/content and release review.
+PR-011 is implemented under [APP-0019](APPROVALS.md#app-0019) and awaits
+Accountable Product Owner acceptance with its recorded limitations. PR-012,
+production, Google Play release and every later implementation checkpoint
+remain unauthorized. Production additionally requires qualified legal review
+and independent security, privacy, tenancy, accessibility, language/content
+and release review.

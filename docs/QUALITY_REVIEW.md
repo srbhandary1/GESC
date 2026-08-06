@@ -2053,3 +2053,44 @@ CI/`make verify` follow-up.
 
 PR-011 deliverables remain unimplemented until a bounded checkpoint
 implementation is completed and separately accepted.
+
+
+---
+
+## PR-011 — Evaluation harness and memory controls
+
+### Scope reviewed
+
+- learner-visible AI memory CRUD + audit;
+- allowlisted memory in conversation orchestration;
+- locked deterministic AI evaluation suite, human-review export/import,
+  prompt comparison and cost rollup;
+- OpenAPI 0.8.0 memory routes and Practice UI panel.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Memory isolation / learning freeze | Pass | LearnerMemoryTest |
+| AI evaluation suite pass | Pass | AiEvaluationRunnerTest |
+| Suite hash stability | Pass | AiEvaluationSuiteTest |
+| HTTP auth + orchestration suite | Pass | LearnerHttpBoundaryTest + ConversationOrchestrationTest (8 tests / 187 assertions via Docker PHP 8.4) |
+| OpenAPI / contracts | Pass | `pnpm run openapi:check` |
+| PHPStan PR-011 paths | Pass | 0 errors |
+| Web memory panel + conversation tests | Pass | AiMemoryPanel + ConversationJourney vitest |
+| Locale governance | Pass | `pnpm run locale:check` (5 pending-review warnings) |
+| Real LLM / PR-012 / production / Play | Not authorized | APP-0019; STATUS |
+
+### Security, privacy and tenancy
+
+- Memory list returns all active facts for the owning membership; no hidden active facts.
+- Audit events store digests, not fact plaintext after delete/update trails.
+- Eval fixtures are synthetic; reports are aggregate digests with zero fake cost.
+- Organization + membership FKs and same-tenant denial mirror conversation patterns.
+
+### Known limitations
+
+- Host PHP may lack `pdo_pgsql`; PostgreSQL evidence uses Docker PHP when needed.
+- Full `make verify` / remote CI may remain incomplete in-session.
+- Preview-locale memory strings may reuse English pending independent review.
+- PR-011 awaits Accountable Product Owner acceptance before PR-012.

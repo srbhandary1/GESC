@@ -402,6 +402,40 @@ export type ConversationUsageSummary = {
     estimated_cost_microunits: 0;
 };
 
+export type CreateLearnerAiMemoryFactRequest = {
+    fact_text: string;
+};
+
+export type UpdateLearnerAiMemoryFactRequest = {
+    fact_text: string;
+};
+
+export type LearnerAiMemoryFact = {
+    id: Ulid;
+    purpose: 'conversation_context';
+    source: 'learner_explicit';
+    status: 'active' | 'deleted';
+    fact_text: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
+    replayed: boolean;
+};
+
+export type LearnerAiMemoryListing = {
+    facts: Array<LearnerAiMemoryFactListingItem>;
+};
+
+export type LearnerAiMemoryFactListingItem = {
+    id: Ulid;
+    purpose: 'conversation_context';
+    source: 'learner_explicit';
+    status: 'active';
+    fact_text: string;
+    created_at: string;
+    updated_at: string;
+};
+
 /**
  * One logically separate priority correction. Never merged into the
  * Friend conversational reply text.
@@ -1750,6 +1784,202 @@ export type StreamConversationTurnEventsResponses = {
 };
 
 export type StreamConversationTurnEventsResponse = StreamConversationTurnEventsResponses[keyof StreamConversationTurnEventsResponses];
+
+export type ListLearnerAiMemoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/ai-memory';
+};
+
+export type ListLearnerAiMemoryErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListLearnerAiMemoryError = ListLearnerAiMemoryErrors[keyof ListLearnerAiMemoryErrors];
+
+export type ListLearnerAiMemoryResponses = {
+    /**
+     * Active AI memory facts.
+     */
+    200: LearnerAiMemoryListing;
+};
+
+export type ListLearnerAiMemoryResponse = ListLearnerAiMemoryResponses[keyof ListLearnerAiMemoryResponses];
+
+export type CreateLearnerAiMemoryFactData = {
+    body: CreateLearnerAiMemoryFactRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/ai-memory';
+};
+
+export type CreateLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateLearnerAiMemoryFactError = CreateLearnerAiMemoryFactErrors[keyof CreateLearnerAiMemoryFactErrors];
+
+export type CreateLearnerAiMemoryFactResponses = {
+    /**
+     * Idempotent replay of the same create command.
+     */
+    200: LearnerAiMemoryFact;
+    /**
+     * Memory fact created.
+     */
+    201: LearnerAiMemoryFact;
+};
+
+export type CreateLearnerAiMemoryFactResponse = CreateLearnerAiMemoryFactResponses[keyof CreateLearnerAiMemoryFactResponses];
+
+export type DeleteLearnerAiMemoryFactData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        fact: Ulid;
+    };
+    query?: never;
+    url: '/me/ai-memory/{fact}';
+};
+
+export type DeleteLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteLearnerAiMemoryFactError = DeleteLearnerAiMemoryFactErrors[keyof DeleteLearnerAiMemoryFactErrors];
+
+export type DeleteLearnerAiMemoryFactResponses = {
+    /**
+     * Memory fact deleted or idempotently replayed.
+     */
+    200: LearnerAiMemoryFact;
+};
+
+export type DeleteLearnerAiMemoryFactResponse = DeleteLearnerAiMemoryFactResponses[keyof DeleteLearnerAiMemoryFactResponses];
+
+export type UpdateLearnerAiMemoryFactData = {
+    body: UpdateLearnerAiMemoryFactRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        fact: Ulid;
+    };
+    query?: never;
+    url: '/me/ai-memory/{fact}';
+};
+
+export type UpdateLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateLearnerAiMemoryFactError = UpdateLearnerAiMemoryFactErrors[keyof UpdateLearnerAiMemoryFactErrors];
+
+export type UpdateLearnerAiMemoryFactResponses = {
+    /**
+     * Memory fact updated or idempotently replayed.
+     */
+    200: LearnerAiMemoryFact;
+};
+
+export type UpdateLearnerAiMemoryFactResponse = UpdateLearnerAiMemoryFactResponses[keyof UpdateLearnerAiMemoryFactResponses];
 
 export type ListVoiceConsentsData = {
     body?: never;

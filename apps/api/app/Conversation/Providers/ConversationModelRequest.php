@@ -6,6 +6,9 @@ namespace App\Conversation\Providers;
 
 final readonly class ConversationModelRequest
 {
+    /**
+     * @param  list<string>  $memoryFacts
+     */
     public function __construct(
         public string $interactionId,
         public string $transcript,
@@ -14,5 +17,6 @@ final readonly class ConversationModelRequest
         public string $coachingMode,
         public string $promptVersionId,
         public string $promptBodySha256,
+        public array $memoryFacts = [],
     ) {}
 }
