@@ -58,7 +58,7 @@ in-memory access token inside the JS adapter.
 
 | Device ID | Build SHA / versionName | Journeys 1–8 | Storage negative | Tester | Date |
 |---|---|---|---|---|---|
-| DM-01 (emulator substitute) | `d97e66bd…` / `1.0` | Install + cold launch only (not 1–8) | Not run | Codex terminal setup | 2026-08-07 |
+| DM-01 (emulator substitute) | `67de668` / `1.0` | Install + cold launch + shell UI; PKCE/Learn/mic/logout **not** claimed | Not run | Codex terminal + APO KVM grant | 2026-08-07 |
 | DM-02 | | | | | |
 | DM-03 | | | | | |
 | DM-04 | | | | | |
@@ -67,11 +67,13 @@ in-memory access token inside the JS adapter.
 
 | Field | Value |
 |---|---|
-| AVD | `DM01_API34_Pixel7` (API 34 Google APIs x86_64) |
-| Acceleration | Software (`-accel off`) — user not in `kvm` group; `/dev/kvm` present but ACL denied |
-| Package | `com.globalenglish.app` installed successfully |
-| Launch | Process/activity started; first screenshot showed System UI ANR under software accel (`artifacts/android/dm01-emulator-launch-20260807.png`) |
-| Limitation | Emulator substitute for **install smoke only**. UI journeys 1–8 **not claimed** (software accel too slow without KVM group membership). Physical DM-01/DM-02 still preferred. Grant KVM via `bash scripts/setup-android-emulator-kvm.sh` (interactive sudo once), then `bash scripts/run-android-emulator-matrix.sh`. |
+| AVD | `DM01_API34_Pixel7` (API 34 Google APIs x86_64; Android 14) |
+| Acceleration | **KVM** after `scripts/setup-android-emulator-kvm.sh` (`kvm` group + ACL) |
+| Boot / install | `scripts/run-android-emulator-matrix.sh` — boot completed; `adb install -r` Success |
+| Package | `com.globalenglish.app` (`minSdk=24`, `targetSdk=36`, `versionName=1.0`) |
+| Launch | `MainActivity` pid present; Home shell renders with language-fallback banner and Secure session CTA |
+| Screenshots | `artifacts/android/dm01-kvm-launch-20260807.png`, `dm01-kvm-secure-session-20260807.png` (gitignored artifacts/) |
+| Limitation | Emulator substitute for **install + cold-launch shell smoke**. Journeys 1–8 (PKCE against live API, Learn/mic, logout, storage negatives) **not claimed**. Physical DM-01/DM-02 still preferred for AN-07/AN-08 acceptance. |
 
 ## Workstation assemble note (APP-0034)
 

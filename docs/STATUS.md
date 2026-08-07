@@ -10,7 +10,7 @@
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | Free-flow AI = Practice Confidence Conversation; dashboard AI Teacher remains non-generative |
-| Next checkpoint | Physical DM-01/DM-02; specialist reviews ([F0_SPECIALIST_REVIEW_PACKET.md](F0_SPECIALIST_REVIEW_PACKET.md)); then F0 Option A/B |
+| Next checkpoint | Complete DM-01/DM-02 journeys 1–8 against a reachable API (or keep emulator-substitute limitation); specialist reviews; then F0 Option A/B |
 | Professional client path | Staging Friend runbook [STAGING_CONFIDENCE_CONVERSATION.md](STAGING_CONFIDENCE_CONVERSATION.md); closed-beta [CLOSED_BETA_PILOT_RUNBOOK.md](CLOSED_BETA_PILOT_RUNBOOK.md) |
 
 ## Checkpoint authorization
