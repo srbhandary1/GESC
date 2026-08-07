@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | Checkpoint | Confidence Conversation enterprise slice (plan Steps A1–A7) |
-| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A6 done; Active step A7 |
+| Status | **Accepted** under [APP-0025](APPROVALS.md#app-0025) at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with recorded limitations |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A6 at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`; A7 package ready ([CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)); PR-012+, production/Play unauthorized |
-| Next checkpoint | APO exact-commit accept A7 at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`; then separate APP for PR-012. Production/Play remain unauthorized |
-| Professional client path | APP-0016–0024; PR-009 through PR-011 closed; A4–A6 enterprise Confidence Conversation path; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A7 accepted ([APP-0025](APPROVALS.md#app-0025)); PR-012+, production/Play unauthorized |
+| Next checkpoint | Separate APP for PR-012 Role-play (plan B0 / [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)). Production/Play remain unauthorized |
+| Professional client path | APP-0016–0025; PR-009 through PR-011 and Confidence Conversation closed; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -107,6 +107,12 @@ slice under
 ADR+APP gates are still required before real conversation-model DI or
 ordinary multi-locale TTS spend. Demo D-0092/D-0094 paths are not enterprise
 evidence. PR-012, production and Play remain unauthorized.
+
+[APP-0025](APPROVALS.md#app-0025) records `S R Bhandary`'s Accountable Product
+Owner acceptance of the Confidence Conversation enterprise slice at
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with every recorded limitation. It
+does not authorize PR-012 implementation, live multi-locale TTS spend,
+production or Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -704,22 +710,19 @@ PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
 `220628f4d4c69284af0b1f2534e8902f3b272088` with its recorded limitations
 ([PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md)).
 
-[APP-0021](APPROVALS.md#app-0021) authorizes only the Confidence Conversation
-enterprise slice ([ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
-Steps A1–A7) before PR-012. Steps A0–A4 are done (structured turn contract +
-Confidence Conversation product UI + accepted ADR-0010 Azure conversation-model
-adapter under [APP-0022](APPROVALS.md#app-0022)). Steps A0–A6 are done
-([ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md) /
-[APP-0024](APPROVALS.md#app-0024); A6 hash-locked suite `friend.l1.locale.v1`
-with per-UI-locale L1 / shame / false-correction / cost gates). Active work is
-Step A7 — APO acceptance package ready in
-[CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)
-for Exact commit `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`. Live multi-locale
-Azure TTS spend and ordinary Azure Speech DI expansion remain unauthorized.
-Live Azure OpenAI calls remain operator-gated (outside-repo evidence + ₹500
-cap); production DI stays `disabled`. Demo-local Azure TTS / OpenRouter
-(D-0092 / D-0094) are presentation-only and do not count as enterprise
-verification evidence.
+[APP-0021](APPROVALS.md#app-0021) authorized beginning the Confidence Conversation
+enterprise slice. [APP-0025](APPROVALS.md#app-0025) records Accountable Product
+Owner acceptance of that slice at
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with every recorded limitation
+([CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)).
+Nested A4/A5 gates remain as accepted under
+[APP-0022](APPROVALS.md#app-0022) / [ADR-0010](adr/0010-conversation-model-provider-policy.md)
+and [APP-0024](APPROVALS.md#app-0024) / [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md).
+Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
+remain unauthorized. Live Azure OpenAI calls remain operator-gated
+(outside-repo evidence + ₹500 cap); production DI stays `disabled`.
+Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
+and do not count as enterprise verification evidence.
 
 PR-012 implementation, production, Google Play release and every later
 master-plan checkpoint remain unauthorized until a distinct APP. A proposed

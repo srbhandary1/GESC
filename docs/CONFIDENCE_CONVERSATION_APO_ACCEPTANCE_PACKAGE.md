@@ -1,11 +1,13 @@
 # Confidence Conversation APO acceptance package
 
-This package prepares exact-artifact Accountable Product Owner acceptance of
+This package prepared exact-artifact Accountable Product Owner acceptance of
 the Confidence Conversation enterprise slice (plan Steps A1–A7 under
-[APP-0021](APPROVALS.md#app-0021)). **Not yet accepted** — Exact commit is
-filled; reply with the APO statement below to close A7.
+[APP-0021](APPROVALS.md#app-0021)). **Accepted** under
+[APP-0025](APPROVALS.md#app-0025) / D-0103 at
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with the recorded limitations
+below.
 
-## Artifact to accept
+## Artifact accepted
 
 | Field | Value |
 |---|---|
@@ -14,9 +16,10 @@ filled; reply with the APO statement below to close A7.
 | Governing slice authorization | [APP-0021](APPROVALS.md#app-0021) |
 | Nested A4 authorization | [APP-0022](APPROVALS.md#app-0022) / [ADR-0010](adr/0010-conversation-model-provider-policy.md) |
 | Nested A5 authorization | [APP-0024](APPROVALS.md#app-0024) / [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md) |
+| Acceptance record | [APP-0025](APPROVALS.md#app-0025) |
 | Spec | [CONFIDENCE_CONVERSATION_SPEC.md](CONFIDENCE_CONVERSATION_SPEC.md) |
 | Verification scope | [CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md) |
-| Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (A1–A6 sections) |
+| Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (A1–A7 sections) |
 | Exact commit | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
 
 ## Delivered behaviour (A1–A6)
@@ -85,7 +88,7 @@ evidence.
    or waiver of independent legal / security / privacy / tenancy /
    accessibility / language / vendor / release review.
 
-## APO statement (reply exactly)
+## APO statement (recorded)
 
 ```text
 APO accept Confidence Conversation slice at 5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b with its recorded limitations
@@ -101,11 +104,11 @@ Interpretation for the recorder (Codex is never an approver):
 
 ## Recorder checklist after APO statement
 
-1. Fill Exact commit SHA in this package (must match the accepted artifact).
-2. Append APP-0025 to [APPROVALS.md](APPROVALS.md).
-3. Append acceptance decision to [DECISIONS.md](DECISIONS.md).
-4. Update [STATUS.md](STATUS.md) and [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) (A7 done; next = B0 / PR-012 APP).
-5. Append acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+1. Exact commit SHA filled in this package (`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`).
+2. Appended [APP-0025](APPROVALS.md#app-0025) to [APPROVALS.md](APPROVALS.md).
+3. Appended D-0103 to [DECISIONS.md](DECISIONS.md).
+4. Updated [STATUS.md](STATUS.md) and [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) (A7 done; Active step = B0).
+5. Appended acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
 6. Do **not** start PR-012 code until a distinct APP authorizes the bounded
    synthetic role-play slice in
    [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).

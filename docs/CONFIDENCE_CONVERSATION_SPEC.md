@@ -1,15 +1,14 @@
 # Confidence Conversation — product specification
 
-**Status:** Authorized under [APP-0021](APPROVALS.md#app-0021) (plan Step A1)  
+**Status:** Accepted under [APP-0025](APPROVALS.md#app-0025) (plan Steps A1–A7)  
 **Date:** 2026-08-07  
 **Plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)  
 **UX design:** [STUDENT_AI_CONVERSATION_LEARNING_FLOW.md](STUDENT_AI_CONVERSATION_LEARNING_FLOW.md)  
 **Verification:** [CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md)
 
 This specification bounds the enterprise Confidence Conversation slice
-(Steps A2–A7). It is not an ADR. Nested A4 (real conversation model) and A5
-(multi-locale guidance TTS) still require their own ADRs/APPs before live
-provider spend.
+(Steps A2–A7). Nested A4 (ADR-0010 / APP-0022) and A5 (ADR-0011 / APP-0024)
+gates are accepted; live multi-locale TTS spend remains unauthorized.
 
 ---
 

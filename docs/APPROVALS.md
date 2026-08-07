@@ -1580,3 +1580,85 @@ Interpretation:
 - Changes to locked PR-009 en-IN benchmark allowlist
 - Production / Play / PR-012+
 - Waiver of A6 locale eval gates
+
+<a id="app-0025"></a>
+
+## APP-0025 — Confidence Conversation slice acceptance with recorded limitations
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
+| Governing authorization | [APP-0021](APPROVALS.md#app-0021); [APP-0022](APPROVALS.md#app-0022); [APP-0024](APPROVALS.md#app-0024); D-0095–D-0102 |
+| Acceptance package | [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept Confidence Conversation slice at 5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. Confidence Conversation Steps A1–A6 were implemented under APP-0021 with
+   nested A4/A5 gates (APP-0022 / ADR-0010; APP-0024 / ADR-0011) and closed on
+   exact commit `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`;
+2. the A7 acceptance package recorded delivered behaviour, verification
+   evidence and limitations;
+3. STATUS / plan Active step was A7 awaiting exact-commit APO acceptance;
+4. the Accountable Product Owner supplied the accept statement exactly as
+   drafted.
+
+Interpretation:
+
+- Accept the Confidence Conversation enterprise slice (A1–A7) at that exact
+  commit only, with every recorded limitation in the acceptance package.
+- Close plan Step A7. Next checkpoint is consideration of a separate PR-012
+  APP (plan B0) only.
+- Do **not** authorize PR-012 implementation, production, Play, unlimited
+  spend, or live multi-locale Azure TTS spend.
+
+### Accepted scope
+
+- Accept Confidence Conversation Steps A1–A7 at exact implementation commit
+  `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`, with every recorded limitation in
+  [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, and D-0095–D-0102.
+
+### Conditions and limitations
+
+- This acceptance does **not** authorize PR-012 implementation. It only
+  permits consideration of a separate PR-012 APP using the drafted
+  [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
+- Default CI/local conversation-model binding remains `fake` / `disabled`;
+  production stays fail-closed. Live Azure OpenAI remains allowlisted
+  non-production only under APP-0022 (₹500 INR hard ceiling).
+- Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
+  beyond ADR-0008 / ADR-0011 remain unauthorized (APP-0024).
+- Product Listen/reply remains text-first; on-device English browser speech is
+  interim non-evidence.
+- UI locale catalogues pending independent language/content review retain
+  ADR-0005 governance; ordinary production stays `approved-only` English
+  fallback.
+- Host `make verify` / remote GitHub Actions were not claimed green by this
+  acceptance and are not waived.
+- AI remains advisory and must not mutate authoritative learning records.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) remain presentation-only
+  and are not enterprise acceptance evidence.
+- No master-plan amendment is made.
+

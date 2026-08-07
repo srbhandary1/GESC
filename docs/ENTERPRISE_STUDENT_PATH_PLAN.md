@@ -83,7 +83,7 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **A4** | Conversation-model provider ADR + secure binding (fail-closed) | `done` | [APP-0022](APPROVALS.md#app-0022); ADR-0010 accepted |
 | **A5** | Multi-locale guidance TTS policy (AI-only lesson audio) | `done` | [APP-0024](APPROVALS.md#app-0024); ADR-0011 accepted |
 | **A6** | Locale eval fixtures + `make ai-eval` gates for L1 explanations | `done` | `friend.l1.locale.v1` hash-locked; APP-0021 |
-| **A7** | APO acceptance of Confidence Conversation slice | `in_progress` | [Acceptance package](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md); Exact commit `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
+| **A7** | APO acceptance of Confidence Conversation slice | `done` | [APP-0025](APPROVALS.md#app-0025) at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
 | **B0** | Authorize PR-012 Role-play (synthetic first) | `pending` | APP (draft exists) |
 | **B1** | Implement PR-012 verification scope | `pending` | After B0 |
 | **B2** | Pilot content path (synthetic → reviewed modules) | `pending` | Content DR / reviewers |
@@ -92,7 +92,7 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `A7` — APO exact-commit acceptance; package ready at [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md) for `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`.
+**Active step:** `B0` — Authorize PR-012 Role-play (synthetic first) via separate APP; Confidence Conversation A1–A7 accepted under [APP-0025](APPROVALS.md#app-0025).
 
 ---
 
@@ -310,9 +310,9 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO accept Confidence Conversation at
-`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with recorded limitations. Do not
-start PR-012 without a separate APP.
+**Immediate next action:** Consider a separate APP for PR-012 Role-play using
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
+Do not start PR-012 code without that APP.
 
 ---
 
@@ -344,3 +344,4 @@ start PR-012 without a separate APP.
 | 2026-08-07 | A6 done (`friend.l1.locale.v1` hash-locked L1/shame/false-correction gates; ai-eval green on fakes); Active step = A7 |
 | 2026-08-07 | A7 acceptance package drafted; Exact commit SHA pending authorized commit of uncommitted A1–A6 workspace |
 | 2026-08-07 | Slice committed at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`; A7 awaiting APO accept statement |
+| 2026-08-07 | A7 done ([APP-0025](APPROVALS.md#app-0025) / D-0103); Active step = B0 (PR-012 APP consideration only) |

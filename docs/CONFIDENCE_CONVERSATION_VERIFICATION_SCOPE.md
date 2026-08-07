@@ -1,10 +1,10 @@
 # Confidence Conversation — verification scope
 
-**Status:** Authorized under [APP-0021](APPROVALS.md#app-0021) (plan Step A1)  
+**Status:** Accepted under [APP-0025](APPROVALS.md#app-0025) at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`  
 **Date:** 2026-08-07  
 **Spec:** [CONFIDENCE_CONVERSATION_SPEC.md](CONFIDENCE_CONVERSATION_SPEC.md)  
 **Plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A2–A7  
-**Baseline:** PR-008–PR-011 accepted; fake conversation providers; production fail-closed
+**Baseline:** PR-008–PR-011 accepted; Confidence Conversation A1–A7 accepted; production fail-closed
 
 This document defines what must be proven for the enterprise Confidence
 Conversation slice. Demo Vite middleware (`/demo/tts`, `/demo/chat`) is
@@ -39,7 +39,7 @@ organization isolation.
 | A4 | Nested — only after ADR+APP; HTTP fakes mandatory; live smoke only if APP allows |
 | A5 | Done — ADR-0011 / APP-0024; text-first L1; no live multi-locale TTS spend |
 | A6 | Done — `friend.l1.locale.v1` hash-locked; shame / L1 / false-correction gates |
-| A7 | Exact-commit APO acceptance package |
+| A7 | Exact-commit APO acceptance — done ([APP-0025](APPROVALS.md#app-0025)) |
 
 ---
 

@@ -2374,27 +2374,28 @@ explanations.
 A6 complete. Next: A7 APO exact-commit acceptance of the Confidence Conversation
 slice.
 
-## Confidence Conversation — Step A7 (acceptance package drafted)
+## Confidence Conversation — Step A7 (accepted)
 
 ### Evidence reviewed
 
+- Exact APO statement: `APO accept Confidence Conversation slice at 5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b with its recorded limitations`
+- [APP-0025](APPROVALS.md#app-0025) / D-0103
 - [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)
 - A1–A6 QUALITY_REVIEW sections; APP-0021 / APP-0022 / APP-0024; ADR-0010 / ADR-0011
-- Recorded limitations include fake-default DI, ₹500 live model cap,
-  unauthorized multi-locale TTS spend, locale review pending, host verify not claimed
 
 ### Gate checklist
 
 | Check | Result | Evidence |
 |---|---|---|
-| Acceptance package drafted | Pass | CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md |
+| Acceptance package | Pass | CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md |
 | Limitations explicit | Pass | package § Recorded limitations |
 | Exact commit SHA | Pass | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
-| APO accept statement | Pending | exact-commit accept with recorded limitations |
-| PR-012 / production / Play | Not authorized | package non-goals |
+| APO accept statement | Pass | APP-0025 |
+| PR-012 / production / Play | Not authorized | APP-0025 non-goals |
+| Live multi-locale TTS spend | Not authorized | APP-0024 / APP-0025 |
 
 ### Outcome
 
-A7 package ready with Exact commit
-`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`. Close A7 only after APO accepts
-with recorded limitations.
+A7 complete. Confidence Conversation enterprise slice accepted. Next: separate
+APP for PR-012 Role-play (plan B0) only — do not start PR-012 code without it.
+
