@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
-| Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
+| Checkpoint | Pre-F0 evidence recorded; enterprise Friend productionization in progress |
+| Status | APP-0034 evidence package recorded ([F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md)); F0 DoD / Play still unauthorized |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
-| Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
-| Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | Free-flow AI = Practice Confidence Conversation; dashboard AI Teacher remains non-generative |
+| Next checkpoint | APO authorize remaining PR-013 privacy/support; close DR-0007; physical Android matrix; specialist reviews; then F0 Exact-commit consideration |
+| Professional client path | Staging Friend runbook [STAGING_CONFIDENCE_CONVERSATION.md](STAGING_CONFIDENCE_CONVERSATION.md); closed-beta [CLOSED_BETA_PILOT_RUNBOOK.md](CLOSED_BETA_PILOT_RUNBOOK.md) |
 
 ## Checkpoint authorization
 
@@ -178,10 +178,15 @@ load-soak/backup execution remain unclaimed.
 
 [APP-0034](APPROVALS.md#app-0034) records `S R Bhandary`'s Accountable Product
 Owner authorization to begin only pre-F0 Phase 1 evidence-closure under
-[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). It is not
-acceptance of Phase 1 Definition of Done and does not authorize Google Play
-public release, specialist-review waiver, remaining PR-013 sampled
-review/privacy ops or real learner production data.
+[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). Evidence
+executed and recorded in
+[F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md) at
+`21f577cb2b1ac032124f65d3774b46e45e665196` (local assemble, PH-06, PH-07, §27
+matrix). It is not acceptance of Phase 1 Definition of Done and does not
+authorize Google Play public release, specialist-review waiver, remaining
+PR-013 privacy/support ops or real learner production data. Physical device
+matrix remains open. F0 consideration package:
+[F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md).
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -804,11 +809,18 @@ presentation-only.
 and closed-beta evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839`
 with recorded limitations
 ([PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)).
-Active plan step is **F0** pre-F0 evidence-closure under
-[APP-0034](APPROVALS.md#app-0034)
-([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)).
-F0 Definition of Done sign-off and Google Play public release remain
-unauthorized.
+Active plan step is **F0** with APP-0034 evidence recorded; Exact-commit DoD
+accept remains unauthorized
+([F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md)).
+Staging Confidence Conversation DI documented under
+[STAGING_CONFIDENCE_CONVERSATION.md](STAGING_CONFIDENCE_CONVERSATION.md)
+(APP-0022 caps; production driver stays disabled). Remaining PR-013
+privacy/support draft:
+[PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md).
+DR-0007 commissioning:
+[DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md).
+Closed-beta pilot:
+[CLOSED_BETA_PILOT_RUNBOOK.md](CLOSED_BETA_PILOT_RUNBOOK.md).
 [APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
 closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
 recorded limitations

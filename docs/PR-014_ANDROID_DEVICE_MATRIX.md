@@ -62,3 +62,13 @@ in-memory access token inside the JS adapter.
 | DM-02 | | | | | |
 | DM-03 | | | | | |
 | DM-04 | | | | | |
+
+## Workstation assemble note (APP-0034)
+
+| Field | Value |
+|---|---|
+| Commit | `21f577cb2b1ac032124f65d3774b46e45e665196` |
+| Date | 2026-08-07 |
+| Result | `assembleDebug` Pass locally (~5.8 MB `app-debug.apk`) |
+| Physical DM-01/DM-02 | **Not run** — no device attached; matrix remains open |
+| Limitation | Recorded under [F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md) |

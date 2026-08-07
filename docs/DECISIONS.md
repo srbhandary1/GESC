@@ -143,5 +143,5 @@ indicated implementation becomes authoritative.
 | ID | Needed by | Decision required |
 |---|---|---|
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
-| DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned |
+| DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned — commissioning request drafted in [DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md) |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

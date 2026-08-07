@@ -93,9 +93,9 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | **E0** | PR-015 bounded operations hardening authorization | `done` | [APP-0032](APPROVALS.md#app-0032) / D-0112 |
 | **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `done` | [APP-0033](APPROVALS.md#app-0033) at `5eca7515291ea571a7f697dcdc2da6197535f839` |
-| **F0** | Phase 1 Definition of Done sign-off | `evidence_in_progress` | [APP-0034](APPROVALS.md#app-0034) pre-F0 evidence; DoD sign-off still unauthorized |
+| **F0** | Phase 1 Definition of Done sign-off | `evidence_recorded` | [APP-0034](APPROVALS.md#app-0034) evidence package recorded; Exact-commit DoD still unauthorized |
 
-**Active step:** `F0` — pre-F0 evidence-closure under [APP-0034](APPROVALS.md#app-0034) / [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). Phase 1 DoD sign-off and Play public release remain unauthorized.
+**Active step:** `F0` — evidence recorded ([F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md)); awaiting APO gates for privacy/support, DR-0007, device matrix, specialist reviews, then Exact-commit DoD consideration. Play public release remains unauthorized. Free-flow AI spine = Practice Confidence Conversation (not dashboard AI Teacher).
 
 ---
 
@@ -340,9 +340,10 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** Execute APP-0034 pre-F0 evidence closure
-(Android closed-beta assemble + matrix notes, load-soak/backup drills, §27
-evidence matrix). Do **not** claim F0 DoD or Play public release.
+**Immediate next action:** Present APO authorize statements for remaining
+PR-013 privacy/support and DR-0007 commissioning; execute physical Android
+matrix; complete specialist reviews; then Exact-commit F0 consideration.
+Do **not** claim F0 DoD or Play public release without those Exact statements.
 
 ---
 
@@ -395,3 +396,4 @@ evidence matrix). Do **not** claim F0 DoD or Play public release.
 | 2026-08-07 | E1 done ([APP-0033](APPROVALS.md#app-0033) / D-0113); Active step = F0 (Phase 1 DoD APP / release-board consideration only) |
 | 2026-08-07 | F0: §27 gap assessment drafted ([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)); DoD not ready; awaiting APO pre-F0 authorize or deferral |
 | 2026-08-07 | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); F0 DoD sign-off still unauthorized |
+| 2026-08-07 | APP-0034 evidence recorded at `21f577cb…` (assemble, PH-06, PH-07, §27); staging Friend runbook + privacy/DR-0007/F0 consideration/pilot packages drafted; DoD/Play still unauthorized |

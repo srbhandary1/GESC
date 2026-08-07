@@ -25,6 +25,7 @@ use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
+use App\Conversation\Voice\Providers\Azure\AzureTextToSpeechProvider;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
@@ -78,9 +79,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
         $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
         $conversationDriver = (string) config('conversation.provider_driver');
-        $nonProductionConversationEnv = $this->app->environment('local')
-            || $this->app->environment('testing')
-            || $this->app->environment('conversation-model-dev');
+        // Non-production only: production must keep CONVERSATION_PROVIDER_DRIVER=disabled.
+        $nonProductionConversationEnv = $this->app->environment(
+            ...self::conversationNonProductionEnvironments(),
+        );
         $fakeConversationEnabled = $nonProductionConversationEnv
             && $conversationDriver === 'fake';
         $azureConversationEnabled = $nonProductionConversationEnv
@@ -99,11 +101,15 @@ class AppServiceProvider extends ServiceProvider
                 default => DisabledConversationModelProvider::class,
             },
         );
+        // Typed turns remain primary. Azure TTS binds for Friend/model lines when
+        // azure-openai-dev is active; fail-closed speech config still blocks spend.
         $this->app->bind(
             TextToSpeechProvider::class,
-            $fakeConversationEnabled
-                ? DeterministicFakeTextToSpeechProvider::class
-                : DisabledTextToSpeechProvider::class,
+            match (true) {
+                $fakeConversationEnabled => DeterministicFakeTextToSpeechProvider::class,
+                $azureConversationEnabled => AzureTextToSpeechProvider::class,
+                default => DisabledTextToSpeechProvider::class,
+            },
         );
         $testingVoiceEnabled = (
             $this->app->environment('local')
@@ -251,5 +257,21 @@ class AppServiceProvider extends ServiceProvider
                 ->make(HttpRequestLogger::class)
                 ->handle($event),
         );
+    }
+
+    /**
+     * Environments that may bind non-disabled conversation providers.
+     * Production is intentionally absent.
+     *
+     * @return list<string>
+     */
+    public static function conversationNonProductionEnvironments(): array
+    {
+        return [
+            'local',
+            'testing',
+            'conversation-model-dev',
+            'staging',
+        ];
     }
 }

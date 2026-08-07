@@ -29,13 +29,13 @@ The script:
 
 | Field | Value |
 |---|---|
-| Commit SHA | |
-| Environment | local / staging-like |
-| Dump started at | |
-| Restore completed at | |
-| Measured RPO gap | |
-| Measured RTO | |
-| Result | pass / fail + notes |
+| Commit SHA | `21f577cb2b1ac032124f65d3774b46e45e665196` |
+| Environment | local Docker Compose Postgres |
+| Dump started at | 2026-08-07T16:18:01Z |
+| Restore completed at | 2026-08-07T16:18:02Z |
+| Measured RPO gap | Planning target ≤ 15 minutes (WAL/PITR not claimed) |
+| Measured RTO | 2 seconds |
+| Result | Pass — `artifacts/ops/backup-restore-20260807T161800Z.json` |
 
 ## Limitations
 

@@ -2906,8 +2906,37 @@ APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
 accept and Play public release remain unauthorized.
 
+## F0 — APP-0034 evidence closure executed
 
+### Evidence reviewed
 
+- [F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md)
+- Android `assembleDebug` Pass at `21f577cb2b1ac032124f65d3774b46e45e665196`
+- PH-06 load-soak Pass (`artifacts/ops/load-soak-20260807T161805Z.json`, 200/200)
+- PH-07 backup/restore Pass (`artifacts/ops/backup-restore-20260807T161800Z.json`, RTO 2s)
+- §27 matrix filled; PR-013 privacy/support APP-deferred with draft authorize request
+- Staging Friend DI runbook [STAGING_CONFIDENCE_CONVERSATION.md](STAGING_CONFIDENCE_CONVERSATION.md)
+- F0 consideration package (not accept):
+  [F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md)
+- Closed-beta pilot runbook [CLOSED_BETA_PILOT_RUNBOOK.md](CLOSED_BETA_PILOT_RUNBOOK.md)
+- Physical DM-01/DM-02: **not claimed**
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| APP-0034 evidence package | Pass (recorded) | F0_APP0034_EVIDENCE_PACKAGE |
+| Local assemble + PH-06 + PH-07 | Pass | artifacts/ops + QUALITY |
+| Physical device matrix | Open | PR-014_ANDROID_DEVICE_MATRIX |
+| F0 DoD Exact accept | Not authorized | Consideration package only |
+| Play public release | Not authorized | APP-0034 non-goals |
+| Staging Friend path documented | Pass | STAGING_CONFIDENCE_CONVERSATION |
+
+### Outcome
+
+APP-0034 evidence-closure deliverables recorded. Exact-commit F0 DoD and Play
+remain unauthorized. Next APO gates: privacy/support APP, DR-0007, device
+matrix, specialist reviews.
 
 
 
