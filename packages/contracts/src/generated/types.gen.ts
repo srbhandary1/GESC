@@ -354,6 +354,7 @@ export type StartConversationSessionRequest = {
     persona_key: 'patient-friend-prototype';
     scenario_key: 'everyday-friend-prototype';
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
+    ui_locale: SupportedLocale;
 };
 
 export type ConversationPersonaSnapshot = {
@@ -382,6 +383,7 @@ export type ConversationSession = {
     status: 'active';
     mode: 'friend';
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
+    ui_locale: SupportedLocale;
     persona: ConversationPersonaSnapshot;
     scenario: ConversationScenarioSnapshot;
     replayed: boolean;
@@ -438,13 +440,25 @@ export type LearnerAiMemoryFactListingItem = {
 
 /**
  * One logically separate priority correction. Never merged into the
- * Friend conversational reply text.
+ * Friend conversational reply text. explanation_l1 is the active UI
+ * locale explanation. explanation_kn is a deprecated dual-write alias
+ * present only when explanation_locale is kn-IN.
  *
  */
 export type PriorityCorrection = {
+    needed: boolean;
     error_category: string;
     correction_en: string;
-    explanation_kn: string;
+    explanation_l1: string;
+    explanation_locale: SupportedLocale;
+    /**
+     * Deprecated dual-write alias when explanation_locale is kn-IN.
+     *
+     * @deprecated
+     */
+    explanation_kn?: string;
+    learner_span?: string;
+    encouragement_l1?: string;
     retry_recommended: boolean;
 };
 

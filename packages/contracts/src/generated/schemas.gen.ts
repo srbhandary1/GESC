@@ -1375,7 +1375,8 @@ export const StartConversationSessionRequestSchema = {
     required: [
         'persona_key',
         'scenario_key',
-        'coaching_mode'
+        'coaching_mode',
+        'ui_locale'
     ],
     properties: {
         persona_key: {
@@ -1393,6 +1394,9 @@ export const StartConversationSessionRequestSchema = {
                 'tutor',
                 'fluency'
             ]
+        },
+        ui_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
         }
     }
 } as const;
@@ -1494,6 +1498,7 @@ export const ConversationSessionSchema = {
         'status',
         'mode',
         'coaching_mode',
+        'ui_locale',
         'persona',
         'scenario',
         'replayed'
@@ -1517,6 +1522,9 @@ export const ConversationSessionSchema = {
                 'tutor',
                 'fluency'
             ]
+        },
+        ui_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
         },
         persona: {
             $ref: '#/components/schemas/ConversationPersonaSnapshot'
@@ -1740,14 +1748,19 @@ export const LearnerAiMemoryFactListingItemSchema = {
 export const PriorityCorrectionSchema = {
     type: 'object',
     additionalProperties: false,
-    description: 'One logically separate priority correction. Never merged into the\nFriend conversational reply text.\n',
+    description: 'One logically separate priority correction. Never merged into the\nFriend conversational reply text. explanation_l1 is the active UI\nlocale explanation. explanation_kn is a deprecated dual-write alias\npresent only when explanation_locale is kn-IN.\n',
     required: [
+        'needed',
         'error_category',
         'correction_en',
-        'explanation_kn',
+        'explanation_l1',
+        'explanation_locale',
         'retry_recommended'
     ],
     properties: {
+        needed: {
+            type: 'boolean'
+        },
         error_category: {
             type: 'string',
             minLength: 1,
@@ -1759,7 +1772,27 @@ export const PriorityCorrectionSchema = {
             minLength: 1,
             maxLength: 500
         },
+        explanation_l1: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        explanation_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
         explanation_kn: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500,
+            deprecated: true,
+            description: 'Deprecated dual-write alias when explanation_locale is kn-IN.'
+        },
+        learner_span: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        encouragement_l1: {
             type: 'string',
             minLength: 1,
             maxLength: 500

@@ -114,6 +114,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
             ]),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
@@ -183,6 +184,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             'persona_key' => 'patient-friend-prototype',
             'scenario_key' => 'everyday-friend-prototype',
             'coaching_mode' => 'gentle',
+            'ui_locale' => 'kn-IN',
         ])
             ->assertCreated()
             ->assertJsonPath('mode', 'friend')
@@ -203,6 +205,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             'persona_key' => 'patient-friend-prototype',
             'scenario_key' => 'everyday-friend-prototype',
             'coaching_mode' => 'gentle',
+            'ui_locale' => 'kn-IN',
         ])
             ->assertOk()
             ->assertJsonPath('id', $sessionId)

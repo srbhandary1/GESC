@@ -208,6 +208,10 @@ final readonly class ConversationTurnService
                                 $session,
                                 'coaching_mode',
                             ),
+                            uiLocale: $this->string(
+                                $session,
+                                'ui_locale',
+                            ),
                         ),
                 );
 
@@ -378,6 +382,7 @@ final readonly class ConversationTurnService
             ->first([
                 'session.id',
                 'session.coaching_mode',
+                'session.ui_locale',
                 'persona_version.style_code as persona_style_code',
                 'scenario_version.response_code as scenario_response_code',
             ]);
@@ -673,6 +678,10 @@ final readonly class ConversationTurnService
             coachingMode: $this->string(
                 $session,
                 'coaching_mode',
+            ),
+            uiLocale: $this->string(
+                $session,
+                'ui_locale',
             ),
             persistAdvisory: false,
         );

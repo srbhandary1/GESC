@@ -19,6 +19,7 @@ import type {
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
+import { requestDemoChatReply } from './demoChat'
 
 const ids = {
   asset: '01J30000000000000000000001',
@@ -219,7 +220,8 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       mode: 'friend',
       persona: {
         definition_hash: 'b'.repeat(64),
-        disclosure: 'I am a deterministic local demo, not a human.',
+        disclosure:
+          'I am a demo practice Friend. When OpenRouter is configured I use a free model; otherwise I use scripted replies. I am not a human.',
         display_name: 'Patient Friend Demo',
         id: ids.persona,
         key: 'patient-friend-prototype',
@@ -238,6 +240,7 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         version_id: ids.scenarioVersion,
       },
       status: 'active',
+      ui_locale: _input.ui_locale,
     }
   }
 
@@ -250,11 +253,14 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     abortIfNeeded(signal)
     this.#turnNumber += 1
 
+    const openRouter = await requestDemoChatReply(input.prototype_utterance)
+    abortIfNeeded(signal)
+    const assistantReply =
+      openRouter?.reply ??
+      demoFriendReply(input.prototype_utterance, this.#turnNumber)
+
     return {
-      assistant_reply: demoFriendReply(
-        input.prototype_utterance,
-        this.#turnNumber,
-      ),
+      assistant_reply: assistantReply,
       conversation_session_id: ids.session,
       events_url: `local-demo://turn/${this.#turnNumber}`,
       id: ids.turn,
@@ -262,8 +268,12 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         correction_en:
           'A clearer sentence is: "I enjoy learning English after work."',
         error_category: 'grammar.article',
+        explanation_l1:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        explanation_locale: 'kn-IN',
         explanation_kn:
           'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        needed: true,
         retry_recommended: false,
       },
       replayed: false,
@@ -278,8 +288,8 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       understood_intent: 'prototype_utterance_received',
       usage: {
         estimated_cost_microunits: 0,
-        provider_attempts: 3,
-        total_latency_ms: 14,
+        provider_attempts: openRouter === null ? 3 : 1,
+        total_latency_ms: openRouter === null ? 14 : 0,
       },
     }
   }

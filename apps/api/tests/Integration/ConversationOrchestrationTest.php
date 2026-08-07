@@ -30,6 +30,7 @@ final class ConversationOrchestrationTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'tutor',
+                uiLocale: 'kn-IN',
                 idempotencyKey: (string) Str::uuid(),
             ),
         );
@@ -78,6 +79,7 @@ final class ConversationOrchestrationTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
                 idempotencyKey: (string) Str::uuid(),
             ),
         );

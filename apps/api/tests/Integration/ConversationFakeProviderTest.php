@@ -45,6 +45,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
                 idempotencyKey: $sessionCommand,
             ),
         );
@@ -55,6 +56,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
                 idempotencyKey: $sessionCommand,
             ),
         );
@@ -77,6 +79,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                     personaKey: 'patient-friend-prototype',
                     scenarioKey: 'different-prototype',
                     coachingMode: 'gentle',
+                    uiLocale: 'kn-IN',
                     idempotencyKey: $sessionCommand,
                 ),
             );
@@ -232,6 +235,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
                 idempotencyKey: (string) Str::uuid(),
             ),
         );
@@ -287,6 +291,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                 personaKey: 'patient-friend-prototype',
                 scenarioKey: 'everyday-friend-prototype',
                 coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
                 idempotencyKey: (string) Str::uuid(),
             ),
         );
@@ -338,6 +343,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                     personaKey: 'patient-friend-prototype',
                     scenarioKey: 'everyday-friend-prototype',
                     coachingMode: 'gentle',
+                    uiLocale: 'kn-IN',
                     idempotencyKey: (string) Str::uuid(),
                 ),
         );

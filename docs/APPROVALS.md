@@ -1271,3 +1271,90 @@ Immediately before this statement:
 - Demo-local Azure TTS (D-0092) is presentation-only and does not amend
   ADR-0008 ordinary application bindings.
 - No master-plan amendment is made.
+
+<a id="app-0021"></a>
+
+## APP-0021 — Confidence Conversation enterprise slice authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Governing plan | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A1–A7 |
+| Learning-flow design | [STUDENT_AI_CONVERSATION_LEARNING_FLOW.md](STUDENT_AI_CONVERSATION_LEARNING_FLOW.md) |
+| Prior acceptance | [APP-0020](APPROVALS.md#app-0020) (PR-011 at `220628f4d4c69284af0b1f2534e8902f3b272088`) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | Sequencing only: Confidence Conversation enterprise slice is inserted **before** PR-012 Role-play; no change to Phase 1 Definition of Done |
+
+### Exact human statement
+
+```text
+APO authorize only Confidence Conversation enterprise slice under
+docs/ENTERPRISE_STUDENT_PATH_PLAN.md Steps A1–A7; PR-012+ and production
+remain unauthorized until separate APPs.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-011 was accepted under APP-0020 with recorded limitations;
+2. STATUS recorded that PR-012 remained unauthorized until a separate APP;
+3. the Accountable Product Owner directed creation of an enterprise (not demo)
+   student path plan and then instructed to start that plan step by step;
+4. Step A0 required this exact authorize sentence before any A1–A7 work.
+
+Interpretation: authorize **begin-implementation** of only the Confidence
+Conversation enterprise slice defined by plan Steps A1–A7. This is **not**
+acceptance of completed A1–A7 work, not authorization of PR-012 Role-play,
+and not authorization of production or Play.
+
+### Authorized scope
+
+Only Steps A1–A7 under
+[ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md):
+
+1. **A1** — Spec + verification scope.
+2. **A2** — Structured turn contract (English reply + L1 explanation) for all
+   Phase 1 UI locales, with validators and fake-provider fixtures.
+3. **A3** — Product UI vertical slice (ordinary app path, not Vite `/demo/*`):
+   warm-up → listen → talk → correct → reflect.
+4. **A4** — Conversation-model provider ADR + fail-closed binding (requires
+   nested ADR/APP and spend/DPA gates inside A4; this APP alone does not
+   approve a vendor, credential, or live spend).
+5. **A5** — AI-only lesson audio / multi-locale guidance TTS policy (ADR vs
+   ADR-0008; this APP alone does not approve live TTS spend).
+6. **A6** — Locale eval fixtures and `make ai-eval` gates for L1 explanations.
+7. **A7** — Separate APO exact-commit acceptance of the completed slice.
+
+Working rules for A1–A7:
+
+- Prefer Laravel modular-monolith ordinary DI, OpenAPI, tenancy tests and
+  deterministic fakes until nested A4/A5 gates pass.
+- Demo-local Azure TTS (D-0092) and OpenRouter chat (D-0094) remain
+  presentation-only and are **not** enterprise verification evidence.
+- AI remains advisory and must not mutate marks, mastery, attendance,
+  entitlements or unlocks.
+- No human-recorded lesson audio; spoken output is AI TTS by product intent.
+
+### Conditions and limitations
+
+- This does **not** accept completed Confidence Conversation work; that
+  requires a later exact-artifact APO acceptance (plan Step A7).
+- PR-012 and all later master-plan checkpoints remain unauthorized.
+- Real LLM / conversation-model providers remain unauthorized until the
+  nested A4 ADR + APP (and spend/DPA) pass.
+- Ordinary Azure Speech DI expansion beyond existing ADR-0008 gates remains
+  unauthorized until nested A5 ADR + APP pass.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- Unlimited provider spend is not authorized.
+- No waiver of `make verify` / CI evidence for implementation steps.

@@ -2,10 +2,11 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.8.0
+  version: 0.9.0
   description: |
-    Canonical API contract for the Global English platform. PR-011 adds
-    learner-visible AI memory controls and keeps conversation/speech paths on
+    Canonical API contract for the Global English platform. Confidence
+    Conversation Step A2 generalizes priority corrections to explanation_l1
+    for all Phase 1 UI locales while keeping conversation/speech paths on
     deterministic local adapters unless separately configured. Authoritative
     learning records remain deterministic and are never mutated by AI output.
   license:
@@ -2766,6 +2767,7 @@ components:
         - persona_key
         - scenario_key
         - coaching_mode
+        - ui_locale
       properties:
         persona_key:
           type: string
@@ -2779,6 +2781,8 @@ components:
             - gentle
             - tutor
             - fluency
+        ui_locale:
+          $ref: "#/components/schemas/SupportedLocale"
     ConversationPersonaSnapshot:
       type: object
       additionalProperties: false
@@ -2853,6 +2857,7 @@ components:
         - status
         - mode
         - coaching_mode
+        - ui_locale
         - persona
         - scenario
         - replayed
@@ -2871,6 +2876,8 @@ components:
             - gentle
             - tutor
             - fluency
+        ui_locale:
+          $ref: "#/components/schemas/SupportedLocale"
         persona:
           $ref: "#/components/schemas/ConversationPersonaSnapshot"
         scenario:
@@ -3029,13 +3036,19 @@ components:
       additionalProperties: false
       description: |
         One logically separate priority correction. Never merged into the
-        Friend conversational reply text.
+        Friend conversational reply text. explanation_l1 is the active UI
+        locale explanation. explanation_kn is a deprecated dual-write alias
+        present only when explanation_locale is kn-IN.
       required:
+        - needed
         - error_category
         - correction_en
-        - explanation_kn
+        - explanation_l1
+        - explanation_locale
         - retry_recommended
       properties:
+        needed:
+          type: boolean
         error_category:
           type: string
           minLength: 1
@@ -3045,7 +3058,23 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        explanation_l1:
+          type: string
+          minLength: 1
+          maxLength: 500
+        explanation_locale:
+          $ref: "#/components/schemas/SupportedLocale"
         explanation_kn:
+          type: string
+          minLength: 1
+          maxLength: 500
+          deprecated: true
+          description: Deprecated dual-write alias when explanation_locale is kn-IN.
+        learner_span:
+          type: string
+          minLength: 1
+          maxLength: 200
+        encouragement_l1:
           type: string
           minLength: 1
           maxLength: 500

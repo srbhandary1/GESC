@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\Support\ConversationUiLocales;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -28,6 +29,7 @@ final readonly class ConversationSessionService
         string $personaKey,
         string $scenarioKey,
         string $coachingMode,
+        string $uiLocale,
         string $idempotencyKey,
     ): array {
         $this->environment->requireDeterministicFakes();
@@ -38,6 +40,7 @@ final readonly class ConversationSessionService
             $personaKey,
             $scenarioKey,
             $coachingMode,
+            $uiLocale,
             $idempotencyKey,
         ): array {
             $context = $this->authority->require($learner);
@@ -47,6 +50,7 @@ final readonly class ConversationSessionService
                 'mode' => 'friend',
                 'persona_key' => $personaKey,
                 'scenario_key' => $scenarioKey,
+                'ui_locale' => $uiLocale,
             ]);
             $replay = $this->commands->replay(
                 actor: $learner,
@@ -71,6 +75,7 @@ final readonly class ConversationSessionService
                 personaKey: $personaKey,
                 scenarioKey: $scenarioKey,
                 coachingMode: $coachingMode,
+                uiLocale: $uiLocale,
             );
             $now = Date::now()->toImmutable();
             $sessionId = (string) Str::ulid();
@@ -87,6 +92,7 @@ final readonly class ConversationSessionService
                 'scenario_definition_hash' => $prototype->scenario_definition_hash,
                 'mode' => 'friend',
                 'coaching_mode' => $coachingMode,
+                'ui_locale' => $uiLocale,
                 'status' => 'active',
                 'started_at' => $now,
                 'ended_at' => null,
@@ -119,8 +125,13 @@ final readonly class ConversationSessionService
         string $personaKey,
         string $scenarioKey,
         string $coachingMode,
+        string $uiLocale,
     ): stdClass {
         $allowedModes = config('conversation.coaching_modes', ['gentle']);
+        $allowedLocales = config(
+            'conversation.ui_locales',
+            ConversationUiLocales::all(),
+        );
 
         if (
             $personaKey !== config('conversation.prototype.persona_key')
@@ -128,6 +139,8 @@ final readonly class ConversationSessionService
                 !== config('conversation.prototype.scenario_key')
             || ! is_array($allowedModes)
             || ! in_array($coachingMode, $allowedModes, true)
+            || ! is_array($allowedLocales)
+            || ! in_array($uiLocale, $allowedLocales, true)
         ) {
             throw new ConversationOperationRejected;
         }
@@ -275,6 +288,7 @@ final readonly class ConversationSessionService
                 'session.status',
                 'session.mode',
                 'session.coaching_mode',
+                'session.ui_locale',
                 'persona.id as persona_id',
                 'persona.key as persona_key',
                 'persona_version.id as persona_version_id',
@@ -301,6 +315,7 @@ final readonly class ConversationSessionService
             'status' => $this->string($row, 'status'),
             'mode' => $this->string($row, 'mode'),
             'coaching_mode' => $this->string($row, 'coaching_mode'),
+            'ui_locale' => $this->string($row, 'ui_locale'),
             'persona' => [
                 'id' => $this->string($row, 'persona_id'),
                 'key' => $this->string($row, 'persona_key'),

@@ -14,6 +14,7 @@ final class ConversationContextAllowlist
      * @param  list<string>  $memoryFacts
      * @return array{
      *   coaching_mode: string,
+     *   ui_locale: string,
      *   persona_style_code: string,
      *   scenario_response_code: string,
      *   transcript: string,
@@ -28,6 +29,7 @@ final class ConversationContextAllowlist
         string $personaStyleCode,
         string $scenarioResponseCode,
         string $coachingMode,
+        string $uiLocale,
         string $promptKey,
         int $promptVersion,
         string $promptBodySha256,
@@ -64,6 +66,7 @@ final class ConversationContextAllowlist
 
         return [
             'coaching_mode' => $coachingMode,
+            'ui_locale' => $uiLocale,
             'persona_style_code' => $personaStyleCode,
             'scenario_response_code' => $scenarioResponseCode,
             'transcript' => $transcript,

@@ -9,6 +9,8 @@ use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ProviderUsage;
+use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\SyntheticL1Explanations;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -32,8 +34,12 @@ final readonly class ConversationOrchestrator
         string $personaStyleCode,
         string $scenarioResponseCode,
         string $coachingMode,
+        string $uiLocale,
         bool $persistAdvisory = true,
     ): ConversationModelResult {
+        $locale = ConversationUiLocales::isSupported($uiLocale)
+            ? $uiLocale
+            : ConversationUiLocales::default();
         $prompt = $this->prompts->active($coachingMode);
         $memoryFacts = $this->memory->activeFactTexts(
             organizationId: $organizationId,
@@ -44,6 +50,7 @@ final readonly class ConversationOrchestrator
             personaStyleCode: $personaStyleCode,
             scenarioResponseCode: $scenarioResponseCode,
             coachingMode: $coachingMode,
+            uiLocale: $locale,
             promptKey: $prompt['prompt_key'],
             promptVersion: $prompt['version'],
             promptBodySha256: $prompt['body_sha256'],
@@ -57,6 +64,7 @@ final readonly class ConversationOrchestrator
                 personaStyleCode: $context['persona_style_code'],
                 scenarioResponseCode: $context['scenario_response_code'],
                 coachingMode: $context['coaching_mode'],
+                uiLocale: $context['ui_locale'],
                 promptVersionId: $prompt['id'],
                 promptBodySha256: $prompt['body_sha256'],
                 memoryFacts: $context['memory_facts'],
@@ -64,7 +72,7 @@ final readonly class ConversationOrchestrator
         );
 
         if (! $this->validator->validate($result)) {
-            $result = $this->fallback($result->usage());
+            $result = $this->fallback($result->usage(), $locale);
         }
 
         if ($persistAdvisory) {
@@ -82,8 +90,10 @@ final readonly class ConversationOrchestrator
         return $result;
     }
 
-    private function fallback(ProviderUsage $usage): ConversationModelResult
-    {
+    private function fallback(
+        ProviderUsage $usage,
+        string $uiLocale,
+    ): ConversationModelResult {
         return new ConversationModelResult(
             understoodIntent: 'safe_fallback',
             assistantReply: 'Thank you. Let us continue with a simple next sentence.',
@@ -91,7 +101,11 @@ final readonly class ConversationOrchestrator
             priorityCorrection: new PriorityCorrection(
                 errorCategory: 'safety.fallback',
                 correctionEn: 'Please try one short, clear English sentence.',
-                explanationKn: 'ದಯವಿಟ್ಟು ಒಂದು ಸಣ್ಣ, ಸ್ಪಷ್ಟ ಇಂಗ್ಲಿಷ್ ವಾಕ್ಯ ಹೇಳಿ.',
+                explanationL1: SyntheticL1Explanations::for(
+                    SyntheticL1Explanations::safetyFallback(),
+                    $uiLocale,
+                ),
+                explanationLocale: $uiLocale,
                 retryRecommended: true,
             ),
             safetyState: 'fallback',
@@ -110,7 +124,7 @@ final readonly class ConversationOrchestrator
     ): void {
         $correction = $result->priorityCorrection;
 
-        if ($correction === null) {
+        if ($correction === null || $correction->needed === false) {
             return;
         }
 
@@ -124,6 +138,7 @@ final readonly class ConversationOrchestrator
         }
 
         $now = Date::now()->toImmutable();
+        $explanationDigest = hash('sha256', $correction->explanationL1);
         DB::table('correction_suggestions')->insert([
             'id' => (string) Str::ulid(),
             'organization_id' => $organizationId,
@@ -133,10 +148,9 @@ final readonly class ConversationOrchestrator
             'coaching_mode' => $coachingMode,
             'error_category' => $correction->errorCategory,
             'correction_digest' => hash('sha256', $correction->correctionEn),
-            'explanation_kn_digest' => hash(
-                'sha256',
-                $correction->explanationKn,
-            ),
+            'explanation_kn_digest' => $explanationDigest,
+            'explanation_l1_digest' => $explanationDigest,
+            'explanation_locale' => $correction->explanationLocale,
             'retry_recommended' => $correction->retryRecommended,
             'safety_state' => $result->safetyState,
             'prompt_version_id' => $promptVersionId,

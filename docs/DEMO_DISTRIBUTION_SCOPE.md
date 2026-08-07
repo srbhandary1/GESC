@@ -49,6 +49,9 @@ provider path or authorize production deployment.
   spoken turns still use browser `SpeechRecognition`. Production STT/TTS
   remains behind the project-owned provider ports (PR-009+) and is unchanged
   by this presentation exception. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Friend chat preference order (D-0094): OpenRouter free model via local
+  `/demo/chat` when configured, else deterministic pattern replies. No
+  ordinary Laravel LLM binding. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
 - Visible product name: **Global English Speaking Course**.
 - The Android wrapper packages the bundle with Capacitor 8.5.0 (minimum API
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the

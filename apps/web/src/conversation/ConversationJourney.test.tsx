@@ -53,7 +53,7 @@ describe('deterministic Friend prototype', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start AI Friend prototype',
+        name: 'Start Confidence Conversation',
       }),
     )
     expect(
@@ -61,6 +61,17 @@ describe('deterministic Friend prototype', () => {
         'I am a deterministic AI prototype, not a human.',
       ),
     ).toHaveAttribute('lang', 'en-IN')
+    expect(screen.getByRole('heading', { name: 'Warm-up' })).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to listen' }),
+    )
+    expect(screen.getByRole('heading', { name: 'Listen' })).toBeInTheDocument()
+    expect(
+      screen.getByText('I went to the market this morning.'),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to talk' }),
+    )
 
     await user.type(
       screen.getByRole('textbox', {
@@ -97,11 +108,18 @@ describe('deterministic Friend prototype', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Say that again' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Hint in my language' }),
+    ).toBeInTheDocument()
     expect(api.startSession).toHaveBeenCalledWith(
       {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'en-IN',
       },
       'session-command',
     )
@@ -117,6 +135,9 @@ describe('deterministic Friend prototype', () => {
     class FakeUtterance {
       lang = ''
       text = ''
+      rate = 1
+      pitch = 1
+      voice: SpeechSynthesisVoice | null = null
       onend: ((event: Event) => void) | null = null
       onerror: ((event: Event) => void) | null = null
 
@@ -130,10 +151,23 @@ describe('deterministic Friend prototype', () => {
     })
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance)
     vi.stubGlobal('speechSynthesis', {
+      addEventListener: vi.fn(),
       cancel: vi.fn(),
       getVoices: () => [],
+      paused: false,
+      removeEventListener: vi.fn(),
+      resume: vi.fn(),
       speak,
     })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ configured: false }),
+      })),
+    )
+    const { resetDemoAzureTtsStatusCache } = await import('../demo/demoTts')
+    resetDemoAzureTtsStatusCache()
 
     const session = fakeSession()
     const turn = fakeTurn(session.id)
@@ -165,6 +199,12 @@ describe('deterministic Friend prototype', () => {
     await user.click(
       screen.getByRole('button', { name: 'Start speaking practice' }),
     )
+    await user.click(
+      await screen.findByRole('button', { name: 'Continue to listen' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to talk' }),
+    )
     await user.type(
       await screen.findByRole('textbox', {
         name: 'Type one English practice turn',
@@ -179,7 +219,9 @@ describe('deterministic Friend prototype', () => {
     expect(
       screen.getByRole('button', { name: 'Speak your turn' }),
     ).toBeInTheDocument()
-    expect(speak).toHaveBeenCalled()
+    await vi.waitFor(() => {
+      expect(speak).toHaveBeenCalled()
+    })
   })
 
   it('shows a visible error when the fake provider is disabled', async () => {
@@ -201,7 +243,7 @@ describe('deterministic Friend prototype', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start AI Friend prototype',
+        name: 'Start Confidence Conversation',
       }),
     )
 
@@ -239,6 +281,7 @@ function fakeSession(): FriendSession {
       version_id: '01J00000000000000000000005',
     },
     status: 'active',
+    ui_locale: 'kn-IN',
   }
 }
 
@@ -254,8 +297,12 @@ function fakeTurn(sessionId: string): FriendTurn {
       correction_en:
         'A clearer sentence is: "I enjoy learning English after work."',
       error_category: 'grammar.article',
+      explanation_l1:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      explanation_locale: 'kn-IN',
       explanation_kn:
         'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      needed: true,
       retry_recommended: false,
     },
     replayed: false,

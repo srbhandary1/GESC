@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-011 — Evaluation harness and memory controls |
-| Status | Accepted under [APP-0020](APPROVALS.md#app-0020) at `220628f4d4c69284af0b1f2534e8902f3b272088` with recorded limitations |
+| Checkpoint | Confidence Conversation enterprise slice (plan Steps A1–A7) |
+| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A3 done; Active step A4 (conversation-model ADR — nested gate) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 6 August 2026 |
-| Git branch | `codex/pr-011-evaluation-memory` |
-| Product code | PR-008 through PR-011 accepted; real model providers, PR-012+, production/Play unauthorized |
-| Next checkpoint | Separate APO APP required before any PR-012 implementation. Production/Play remain unauthorized |
-| Professional client path | APP-0016–0020; PR-009 through PR-011 closed with recorded limitations; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Updated date | 7 August 2026 |
+| Git branch | `codex/confidence-conversation` |
+| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A7 authorized; real LLM DI nested under A4; PR-012+, production/Play unauthorized |
+| Next checkpoint | Complete plan Steps A1–A7 under APP-0021; then separate APP for PR-012. Production/Play remain unauthorized |
+| Professional client path | APP-0016–0021; PR-009 through PR-011 closed; Confidence Conversation authorized; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -98,6 +98,15 @@ Owner acceptance of PR-011 at
 `220628f4d4c69284af0b1f2534e8902f3b272088` with every recorded limitation. It
 does not authorize PR-012 implementation, real model providers, production or
 Google Play release.
+
+[APP-0021](APPROVALS.md#app-0021) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only the Confidence Conversation enterprise
+slice under
+[ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A1–A7
+(before PR-012). It is not acceptance of completed A1–A7 work. Nested A4/A5
+ADR+APP gates are still required before real conversation-model DI or
+ordinary multi-locale TTS spend. Demo D-0092/D-0094 paths are not enterprise
+evidence. PR-012, production and Play remain unauthorized.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -433,6 +442,10 @@ review and do not waive pre-production specialist gates.
   Teacher, Daily audio, Friend Listen and model audio via `/demo/tts`, with
   voice selected from the UI language map; browser speech is fallback. See
   [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Under D-0094, local `make demo` Practice Friend may call OpenRouter free
+  models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
+  scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
+  Ordinary app LLM bindings stay unauthorized.
 - All five translated catalogues remain `pending-independent-review`: no
   reviewer, approval time or independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
@@ -690,9 +703,17 @@ PR-006 verification results:
 PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
 `220628f4d4c69284af0b1f2534e8902f3b272088` with its recorded limitations
 ([PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md)).
+
+[APP-0021](APPROVALS.md#app-0021) authorizes only the Confidence Conversation
+enterprise slice ([ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
+Steps A1–A7) before PR-012. Steps A0–A3 are done (structured turn contract + Confidence Conversation
+product UI stages). Active work is Step A4 (ADR only until nested APP).
+Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only and
+do not count as enterprise verification evidence.
+
 PR-012 implementation, production, Google Play release and every later
-checkpoint remain unauthorized until a distinct APP. A proposed PR-012
-authorization boundary remains drafted only in
+master-plan checkpoint remain unauthorized until a distinct APP. A proposed
+PR-012 authorization boundary remains drafted only in
 [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
 Production additionally requires qualified legal review and independent
 security, privacy, tenancy, accessibility, language/content and release

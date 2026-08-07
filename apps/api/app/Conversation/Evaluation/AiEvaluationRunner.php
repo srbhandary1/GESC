@@ -11,6 +11,7 @@ use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
+use App\Conversation\Support\SyntheticL1Explanations;
 use App\Curriculum\CanonicalJson;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,7 @@ final readonly class AiEvaluationRunner
                 personaStyleCode: 'patient-friend-v1',
                 scenarioResponseCode: 'friend.everyday.follow-up.v1',
                 coachingMode: $case['coaching_mode'],
+                uiLocale: 'kn-IN',
                 promptVersionId: $prompt['id'],
                 promptBodySha256: $prompt['body_sha256'],
             ));
@@ -298,7 +300,11 @@ final readonly class AiEvaluationRunner
             priorityCorrection: new PriorityCorrection(
                 errorCategory: 'safety.fallback',
                 correctionEn: 'Please try one short, clear English sentence.',
-                explanationKn: 'ದಯವಿಟ್ಟು ಒಂದು ಸಣ್ಣ, ಸ್ಪಷ್ಟ ಇಂಗ್ಲಿಷ್ ವಾಕ್ಯ ಹೇಳಿ.',
+                explanationL1: SyntheticL1Explanations::for(
+                    SyntheticL1Explanations::safetyFallback(),
+                    'kn-IN',
+                ),
+                explanationLocale: 'kn-IN',
                 retryRecommended: true,
             ),
             safetyState: 'fallback',

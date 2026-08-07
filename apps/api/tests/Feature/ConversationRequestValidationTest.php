@@ -24,6 +24,7 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
             ],
         );
         $this->assertFalse($this->validator($valid)->fails());
@@ -35,6 +36,7 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'tutor',
+                'ui_locale' => 'kn-IN',
             ],
         );
         $this->assertFalse($this->validator($tutor)->fails());
@@ -46,6 +48,7 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
                 'organization_id' => (string) Str::ulid(),
             ],
         );
@@ -58,6 +61,7 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
                 'provider' => 'external-model',
             ],
         );

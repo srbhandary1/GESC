@@ -15,6 +15,7 @@ final readonly class ConversationModelRequest
         public string $personaStyleCode,
         public string $scenarioResponseCode,
         public string $coachingMode,
+        public string $uiLocale,
         public string $promptVersionId,
         public string $promptBodySha256,
         public array $memoryFacts = [],

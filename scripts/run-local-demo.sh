@@ -49,4 +49,23 @@ else
   echo "info: Azure demo TTS credentials detected for /demo/tts." >&2
 fi
 
+# Demo-only OpenRouter free LLM (D-0094). Never print secret values.
+llm_env="${GE_DEMO_LLM_ROOT:-$HOME/ge-demo-llm}/env/demo-llm.env"
+if [ -z "${OPENROUTER_API_KEY:-}" ] && [ -z "${OPENROUTER_API_KEY_FILE:-}" ] && [ -f "$llm_env" ]; then
+  # shellcheck disable=SC1090
+  set -a
+  . "$llm_env"
+  set +a
+  echo "info: loaded OpenRouter demo chat settings from $llm_env" >&2
+fi
+
+if [ -z "${OPENROUTER_API_KEY:-}" ] && [ -z "${OPENROUTER_API_KEY_FILE:-}" ]; then
+  echo "warning: OpenRouter demo chat is not configured." >&2
+  echo "  Set OPENROUTER_API_KEY (or OPENROUTER_API_KEY_FILE)," >&2
+  echo "  or run scripts/setup-demo-llm-workspace.sh and edit \$HOME/ge-demo-llm/env/demo-llm.env." >&2
+  echo "  See docs/DEMO_OPENROUTER.md. Friend falls back to scripted replies." >&2
+else
+  echo "info: OpenRouter demo chat credentials detected for /demo/chat." >&2
+fi
+
 exec env VITE_LOCAL_DEMO=true pnpm --filter @global-english/web dev --host 127.0.0.1 --port 5173

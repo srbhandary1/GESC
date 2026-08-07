@@ -94,6 +94,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )
@@ -131,6 +132,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )
@@ -161,6 +163,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )

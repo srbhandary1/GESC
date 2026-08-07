@@ -2116,3 +2116,122 @@ implementation remains unauthorized until a separate APP.
 - Speech half of `make ai-eval` remains PR-009-gated and was not run.
 - PR-011 is accepted under APP-0020 at
   `220628f4d4c69284af0b1f2534e8902f3b272088`; PR-012 remains unauthorized.
+
+## APP-0021 — Confidence Conversation enterprise slice authorization
+
+### Evidence reviewed
+
+- Exact APO statement authorizing only
+  [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A1–A7;
+- Prior PR-011 acceptance under APP-0020;
+- Learning-flow design
+  [STUDENT_AI_CONVERSATION_LEARNING_FLOW.md](STUDENT_AI_CONVERSATION_LEARNING_FLOW.md);
+- Explicit non-authorization of PR-012, production, Play, and nested A4/A5
+  spend until separate gates;
+- Explicit statement that demo D-0092/D-0094 paths are not enterprise evidence.
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact APO authorize sentence recorded | Pass | [APP-0021](APPROVALS.md#app-0021) |
+| Begin-implementation only (not A7 accept) | Pass | APP-0021 conditions |
+| PR-012 / production / Play still unauthorized | Pass | APP-0021; STATUS next gate |
+| Demo paths non-evidence | Pass | D-0095; APP-0021; plan §0 |
+| Nested A4/A5 still gated | Pass | APP-0021 authorized scope |
+
+### Outcome
+
+A0 is complete. Implementation may proceed through A1 (spec + verification
+scope) under APP-0021 without treating demo adapters as production evidence.
+
+## Confidence Conversation — Step A1 (spec + verification scope)
+
+### Evidence reviewed
+
+- [CONFIDENCE_CONVERSATION_SPEC.md](CONFIDENCE_CONVERSATION_SPEC.md)
+- [CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md)
+- Existing PR-010 `PriorityCorrection` still uses `explanation_kn` only —
+  A2 must generalize to `explanation_l1` for all UI locales
+- OpenAPI draft deltas listed in verification scope (not yet generated)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Spec committed under APP-0021 | Pass | SPEC file |
+| Verification scope committed | Pass | VERIFICATION_SCOPE file |
+| Demo excluded as evidence | Pass | verification §10 |
+| Nested A4/A5 still gated | Pass | SPEC §8; APP-0021 |
+| Plan Active step → A2 | Pass | ENTERPRISE_STUDENT_PATH_PLAN |
+
+### Outcome
+
+A1 complete. Next: A2 structured turn contract on fakes (no real LLM).
+## Confidence Conversation — Step A2 (structured turn contract)
+
+### Evidence reviewed
+
+- `PriorityCorrection` now emits `needed`, `explanation_l1`, `explanation_locale`;
+  deprecated `explanation_kn` dual-write only for `kn-IN`
+- Session start requires `ui_locale`; persisted on `conversation_sessions`
+- Fake provider fixtures for all six UI locales; shame-fixture → curated fallback
+- OpenAPI 0.9.0 + regenerated contracts
+- Migration `2026_08_07_000040_confidence_conversation_explanation_l1.php`
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| CC-03 empty L1 rejected when needed | Pass | ConversationOutputValidatorTest |
+| CC-04 six UI locale fixtures | Pass | ConversationOutputValidatorTest::test_fake_provider_covers_all_ui_locales |
+| Shame-language fail-closed | Pass | Validator + shame-fixture fake |
+| OpenAPI / contracts | Pass | `pnpm run openapi:check` |
+| PHPStan changed paths | Pass | 0 errors |
+| PostgreSQL integration filter | Pass | Docker PHP 8.4.24: 19 tests / 281 assertions |
+| Host unit/feature conversation | Pass | 6 tests / 55 assertions |
+| Web conversation + demo fixtures | Pass | ConversationJourney / Web API / localDemo vitest |
+| Real LLM / A4–A5 / PR-012 / production | Not authorized | APP-0021; D-0096 |
+
+### Known limitations
+
+- Prompt catalogue text still mentions “Kannada explanation” (eval suite hash
+  unchanged); A6 may revise prompts with locked suite update.
+- Host PHP lacks `pdo_pgsql`; PostgreSQL evidence used Docker PHP 8.4.24.
+- Full host `make verify` / remote CI not claimed in this step.
+- A3 UI stages (warm-up / listen / reflect) not yet implemented.
+
+### Outcome
+
+A2 complete. Next: A3 product UI vertical slice on fakes.
+
+## Confidence Conversation — Step A3 (product UI vertical slice)
+
+### Evidence reviewed
+
+- Practice `ConversationJourney` stages: Warm-up → Listen → Talk → Reflect
+- Confidence controls: retry, type instead, skip, hint; silence nudge after 8s
+- Correction card uses `explanation_l1` / `explanation_locale`
+- UI catalogues revision `ui-*-2026-08-07.9` with confidence copy
+- Product Listen path discloses text-only fake TTS (A5 still gated)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Stage journey unit coverage | Pass | ConversationJourney vitest 3 passed |
+| Confidence controls present | Pass | Say that again / Type / Skip / Hint |
+| Locale governance | Pass | validate-locales: 6 catalogues, 5 pending-review warnings |
+| Demo excluded as enterprise evidence | Pass | D-0097; demoMode TTS optional only |
+| Real LLM / A4–A5 / PR-012 / production | Not authorized | APP-0021 |
+
+### Known limitations
+
+- Listen model lines are synthetic client constants (not published curriculum).
+- Product-path model/reply audio remains text-only until A5.
+- Reflect summary is advisory client copy; does not write mastery.
+- Full `make e2e` / host `make verify` not claimed in this step.
+
+### Outcome
+
+A3 complete. Next: A4 conversation-model provider ADR (no live DI without nested APP).

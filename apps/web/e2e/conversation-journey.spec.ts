@@ -46,11 +46,15 @@ test('completes the disclosed deterministic fake-provider conversation journey',
   ).toBeVisible()
 
   await page
-    .getByRole('button', { name: 'Start AI Friend prototype' })
+    .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
   await expect(
     page.getByText('I am a deterministic AI prototype, not a human.'),
   ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue to listen' }).click()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue to talk' }).click()
 
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })
@@ -108,8 +112,10 @@ test('shows separate optional voice purposes before microphone capture', async (
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
   await page
-    .getByRole('button', { name: 'Start AI Friend prototype' })
+    .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
+  await page.getByRole('button', { name: 'Continue to listen' }).click()
+  await page.getByRole('button', { name: 'Continue to talk' }).click()
   await page
     .getByRole('button', { name: 'Set up optional voice practice' })
     .click()
@@ -259,6 +265,7 @@ function session() {
       version_id: ids.scenarioVersion,
     },
     status: 'active',
+    ui_locale: 'kn-IN',
   }
 }
 
@@ -273,8 +280,12 @@ function turn() {
       correction_en:
         'A clearer sentence is: "I enjoy learning English after work."',
       error_category: 'grammar.article',
+      explanation_l1:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      explanation_locale: 'kn-IN',
       explanation_kn:
         'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      needed: true,
       retry_recommended: false,
     },
     replayed: false,

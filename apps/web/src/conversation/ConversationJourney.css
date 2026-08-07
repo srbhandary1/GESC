@@ -11,9 +11,28 @@
 .conversation-journey__start,
 .conversation-journey__voice,
 .conversation-journey__memory,
-.conversation-journey form {
+.conversation-journey__stage,
+.conversation-journey__controls,
+.conversation-journey__form {
   display: grid;
   gap: var(--ge-space-3);
+}
+
+.conversation-journey__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__model-lines {
+  display: grid;
+  gap: var(--ge-space-2);
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.conversation-journey__progress {
+  font-weight: 600;
 }
 
 .conversation-journey__memory {

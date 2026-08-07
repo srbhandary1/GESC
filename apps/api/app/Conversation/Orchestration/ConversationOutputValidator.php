@@ -5,15 +5,33 @@ declare(strict_types=1);
 namespace App\Conversation\Orchestration;
 
 use App\Conversation\Providers\ConversationModelResult;
+use App\Conversation\Support\ConversationUiLocales;
 
 final class ConversationOutputValidator
 {
+    /**
+     * Case-insensitive shame / humiliation phrases (non-exhaustive).
+     *
+     * @var list<string>
+     */
+    private const SHAME_PHRASES = [
+        'stupid',
+        'bad english',
+        'thick accent',
+        'you will never',
+        'worse than other',
+        'dummy',
+        'idiot',
+    ];
+
     public function validate(ConversationModelResult $result): bool
     {
         if (
             ! $this->safeText($result->understoodIntent, 100)
             || ! $this->safeText($result->assistantReply, 1000)
             || ! in_array($result->safetyState, ['ok', 'fallback'], true)
+            || $this->containsShame($result->assistantReply)
+            || $this->containsShame($result->understoodIntent)
         ) {
             return false;
         }
@@ -23,9 +41,42 @@ final class ConversationOutputValidator
             return true;
         }
 
+        if ($correction->needed === false) {
+            return true;
+        }
+
         return $this->safeToken($correction->errorCategory, 64)
             && $this->safeText($correction->correctionEn, 500)
-            && $this->safeText($correction->explanationKn, 500);
+            && $this->safeText($correction->explanationL1, 500)
+            && ConversationUiLocales::isSupported($correction->explanationLocale)
+            && ! $this->containsShame($correction->correctionEn)
+            && ! $this->containsShame($correction->explanationL1)
+            && (
+                $correction->encouragementL1 === null
+                || $correction->encouragementL1 === ''
+                || (
+                    $this->safeText($correction->encouragementL1, 500)
+                    && ! $this->containsShame($correction->encouragementL1)
+                )
+            )
+            && (
+                $correction->learnerSpan === null
+                || $correction->learnerSpan === ''
+                || $this->safeText($correction->learnerSpan, 200)
+            );
+    }
+
+    private function containsShame(string $value): bool
+    {
+        $haystack = mb_strtolower($value);
+
+        foreach (self::SHAME_PHRASES as $phrase) {
+            if (str_contains($haystack, $phrase)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function safeText(string $value, int $maximum): bool
