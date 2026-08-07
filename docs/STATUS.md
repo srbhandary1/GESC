@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-015 bounded ops hardening accepted; next plan step F0 (Phase 1 DoD) consideration |
-| Status | PR-015 bounded slice **accepted** ([APP-0033](APPROVALS.md#app-0033) / D-0113) at `5eca7515291ea571a7f697dcdc2da6197535f839`; Active step **F0** (unauthorized until separate APP / release board) |
+| Checkpoint | F0 Phase 1 Definition of Done — gap assessment ready |
+| Status | PR-015 bounded slice accepted ([APP-0033](APPROVALS.md#app-0033)); Active step **F0**; DoD **not** ready to sign ([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-015 bounded ops hardening accepted; Play public release / F0 unauthorized |
-| Next checkpoint | Separate APP / release-board gate for F0 Phase 1 Definition of Done only. Play public release / remaining PR-013 remain unauthorized |
+| Product code | PR-008 through PR-015 bounded ops hardening accepted; F0 / Play unauthorized |
+| Next checkpoint | APO authorize pre-F0 evidence-closure under F0 gap assessment, or defer F0. Android sideload smoke test is operationally separate and does not equal F0 |
 | Professional client path | APP-0016–0033; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization

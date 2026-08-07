@@ -18,7 +18,7 @@ describe('operator console', () => {
           program_internal_name: 'Synthetic Foundation Preview',
           curriculum_version_id: '01J00000000000000000000002',
           version_key: 'draft-1',
-          publication_status: 'unpublished',
+          publication_status: 'unpublished' as const,
           head_version: 0,
           head_publication_id: null,
           head_manifest_hash: null,
@@ -66,7 +66,8 @@ describe('operator console', () => {
           mastery_by_knowledge_state: { mastered: 2, emerging: 3 },
           review_schedule_count: 1,
         },
-        distinction_note: 'usage_counts_are_not_demonstrated_learning',
+        distinction_note:
+          'usage_counts_are_not_demonstrated_learning' as const,
       })),
     }
 

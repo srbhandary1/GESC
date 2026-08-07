@@ -22,29 +22,32 @@ describe('AI memory panel', () => {
         updated_at: '2026-08-06T01:00:00Z',
       },
     ]
+    const createdFact = {
+      ...facts[0]!,
+      deleted_at: null as null,
+      replayed: false,
+    }
+    const updatedFact = {
+      ...facts[0]!,
+      fact_text: 'I practise English before meetings.',
+      updated_at: '2026-08-06T01:04:00Z',
+      deleted_at: null as null,
+      replayed: false,
+    }
+    const deletedFact = {
+      ...facts[0]!,
+      status: 'deleted' as const,
+      deleted_at: '2026-08-06T01:05:00Z',
+      replayed: false,
+    }
     const api: ConversationJourneyApi = {
       startSession: vi.fn(),
       createTurn: vi.fn(),
       events: vi.fn(),
       listAiMemory: vi.fn(async () => ({ facts })),
-      createAiMemoryFact: vi.fn(async () => ({
-        ...facts[0],
-        deleted_at: null,
-        replayed: false,
-      })),
-      updateAiMemoryFact: vi.fn(async () => ({
-        ...facts[0],
-        fact_text: 'I practise English before meetings.',
-        updated_at: '2026-08-06T01:04:00Z',
-        deleted_at: null,
-        replayed: false,
-      })),
-      deleteAiMemoryFact: vi.fn(async () => ({
-        ...facts[0],
-        status: 'deleted' as const,
-        deleted_at: '2026-08-06T01:05:00Z',
-        replayed: false,
-      })),
+      createAiMemoryFact: vi.fn(async () => createdFact),
+      updateAiMemoryFact: vi.fn(async () => updatedFact),
+      deleteAiMemoryFact: vi.fn(async () => deletedFact),
     }
     const user = userEvent.setup()
 
@@ -73,9 +76,9 @@ describe('AI memory panel', () => {
           created_at: '2026-08-06T01:02:00Z',
           fact_text: 'I want clearer articles.',
           id: '01J00000000000000000000022',
-          purpose: 'conversation_context',
-          source: 'learner_explicit',
-          status: 'active',
+          purpose: 'conversation_context' as const,
+          source: 'learner_explicit' as const,
+          status: 'active' as const,
           updated_at: '2026-08-06T01:02:00Z',
         },
       ],

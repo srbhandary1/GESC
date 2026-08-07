@@ -93,9 +93,9 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | **E0** | PR-015 bounded operations hardening authorization | `done` | [APP-0032](APPROVALS.md#app-0032) / D-0112 |
 | **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `done` | [APP-0033](APPROVALS.md#app-0033) at `5eca7515291ea571a7f697dcdc2da6197535f839` |
-| **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board; separate APP required |
+| **F0** | Phase 1 Definition of Done sign-off | `awaiting_authorize` | Gap assessment ready; DoD sign-off blocked until evidence APP |
 
-**Active step:** `F0` — Phase 1 Definition of Done consideration only (unauthorized until separate APP / release board). PR-015 bounded ops hardening accepted under [APP-0033](APPROVALS.md#app-0033). Play public release and remaining PR-013 items unauthorized. Physical matrix / `make verify` / live load-soak and backup-drill execution remain unclaimed follow-ups.
+**Active step:** `F0` — awaiting APO decision on [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). Phase 1 DoD is **not** ready to sign. Recommended next APP is pre-F0 evidence closure (Android matrix/assemble, drills, remaining PR-013/content blockers). Play public release unauthorized.
 
 ---
 
@@ -310,7 +310,11 @@ pilot analytics skeleton. Full §27 DoD stays **F0**.
 
 ### F0 — Phase 1 Definition of Done
 
-Use master plan §27 checklist. Sign only when every item is evidenced — including real speaking mission online + offline, Friend + role-play, L1 correction, reviewed pathway content, tenant/security gates.
+Use master plan §27 checklist. Sign only when every item is evidenced.
+Current blockers and Android mobile-test readiness are recorded in
+[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). Do **not**
+treat F0 as an implementation sprint that invents missing curriculum, privacy
+ops, or Play public release.
 
 ---
 
@@ -336,11 +340,12 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** Consider a separate APP / release-board gate for
-plan Step **F0** (Phase 1 Definition of Done under master plan §27). Do not
-claim Play public release or remaining PR-013 sampled review / privacy ops.
-Unclaimed APP-0033 evidence gaps (physical matrix, verify, live drills) stay
-follow-ups.
+**Immediate next action:** Review
+[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). Prefer APO
+authorize of the **pre-F0 evidence-closure** APP (not F0 DoD sign-off). For
+mobile smoke testing, build `com.globalenglish.app` via
+[PR-014_ANDROID_CLOSED_BETA_BUILD.md](PR-014_ANDROID_CLOSED_BETA_BUILD.md) with a
+reachable `VITE_MOBILE_API_ORIGIN` — do not treat that as F0 or Play readiness.
 
 ---
 
@@ -391,3 +396,4 @@ follow-ups.
 | 2026-08-07 | E0 done ([APP-0032](APPROVALS.md#app-0032) / D-0112); Active step = E1 (bounded PR-015 implementation) |
 | 2026-08-07 | E1 Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839`; acceptance package drafted; awaiting APO accept |
 | 2026-08-07 | E1 done ([APP-0033](APPROVALS.md#app-0033) / D-0113); Active step = F0 (Phase 1 DoD APP / release-board consideration only) |
+| 2026-08-07 | F0: §27 gap assessment drafted ([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)); DoD not ready; awaiting APO pre-F0 authorize or deferral |

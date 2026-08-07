@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { configDefaults, defineConfig } from 'vitest/config'
-import { demoAzureTtsPlugin } from './vite-plugins/demoAzureTts'
-import { demoOpenRouterChatPlugin } from './vite-plugins/demoOpenRouterChat'
+import { demoAzureTtsPlugin } from './vite-plugins/demoAzureTts.ts'
+import { demoOpenRouterChatPlugin } from './vite-plugins/demoOpenRouterChat.ts'
 
 // https://vite.dev/config/
 // The explicit `demo` mode produces the disclosed synthetic demo

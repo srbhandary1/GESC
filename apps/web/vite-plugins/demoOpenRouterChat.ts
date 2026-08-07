@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import type { ServerResponse } from 'node:http'
 import type { Connect, Plugin } from 'vite'
 
 /**
@@ -65,7 +66,7 @@ function resolveModel(): string {
 }
 
 function sendJson(
-  res: Connect.ServerResponse,
+  res: ServerResponse,
   status: number,
   body: Record<string, unknown>,
 ): void {

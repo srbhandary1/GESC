@@ -2848,6 +2848,31 @@ PR-015 bounded operations hardening and closed-beta evidence closure
 `5eca7515291ea571a7f697dcdc2da6197535f839`. Next: separate APP / release board
 for F0 only.
 
+## F0 — Phase 1 Definition of Done (gap assessment ready)
+
+### Evidence reviewed
+
+- [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)
+- Master plan §27 checklist mapped to current APP posture
+- APP-0033 limitations (physical matrix / verify / live drills unclaimed)
+- Remaining blockers: DR-0007 reviewed content; PR-013 privacy/support;
+  specialist reviews; production-like OTP/pilot environment
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| §27 gap assessment drafted | Pass | F0_PHASE1_DOD_GAP_ASSESSMENT.md |
+| F0 DoD ready to sign | Fail / blocked | Multiple §27 rows Partial/Blocked |
+| Pre-F0 evidence APP statement | Pending | Exact line in gap assessment |
+| Android sideload smoke vs F0 | Separated | Closed-beta build doc; not F0 evidence alone |
+| Play public release | Not authorized | APP-0033 |
+
+### Outcome
+
+F0 consideration package ready. Do **not** claim Phase 1 DoD. Recommended
+APO path: authorize pre-F0 evidence-closure APP, or defer F0.
+
 
 
 
