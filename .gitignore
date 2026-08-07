@@ -16,6 +16,7 @@ node_modules/
 /apps/web/coverage/
 /apps/web/playwright-report/
 /apps/web/test-results/
+/apps/web/.playwright-output/
 
 *.log
 /artifacts/

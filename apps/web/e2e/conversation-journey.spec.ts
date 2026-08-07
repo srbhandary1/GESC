@@ -179,7 +179,9 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
-  await expect(page.getByText('Advisory feedback')).toBeVisible()
+  await expect(
+    page.getByText('Advisory feedback', { exact: true }),
+  ).toBeVisible()
 
   expect(
     requests.some(

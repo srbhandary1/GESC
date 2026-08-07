@@ -30,12 +30,25 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   await page.getByRole('link', { name: 'AI Teacher' }).click()
   await expect(
-    page.getByText('Scripted demo replies only. No cloud AI call is made.'),
+    page.getByText(
+      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
+    ),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'English' }).click()
+  await page.getByRole('button', { name: 'English' }).first().click()
   await expect(
     page.getByText('Welcome. You are on Level 1.', { exact: false }),
   ).toBeVisible()
+  for (const prompt of [
+    'Welcome me',
+    'Explain the course',
+    'Explain my level',
+    'Attendance status',
+    'Daily score',
+    'Motivate me',
+  ]) {
+    await page.getByRole('button', { name: prompt }).click()
+  }
+  await page.getByRole('button', { name: 'Listen' }).click()
 
   await page.getByRole('link', { name: 'Daily Activity' }).click()
   await expect(page.getByText("Today's 5-mark check")).toBeVisible()
@@ -56,6 +69,15 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await page.getByRole('link', { name: 'Notice Board' }).click()
   await expect(
     page.getByText('Welcome to the Phase 1 demo pathway'),
+  ).toBeVisible()
+
+  // Primary shell destinations also available to a student in the demo.
+  await page.getByRole('link', { name: 'Learn' }).click()
+  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Progress' }).click()
+  await page.getByRole('link', { name: 'Home' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])

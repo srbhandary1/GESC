@@ -207,15 +207,26 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
 
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
+  #roleplaySession: FriendSession | null = null
 
   async startSession(
-    _input: StartFriendSessionInput,
+    input: StartFriendSessionInput,
     _commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendSession> {
     abortIfNeeded(signal)
+
+    const isRoleplay =
+      input.persona_key === 'clinic-reception-roleplay-prototype' ||
+      input.scenario_key === 'clinic-reception-roleplay-scenario'
+
+    if (isRoleplay) {
+      this.#roleplaySession = demoRoleplaySession('observe', input.ui_locale)
+      return this.#roleplaySession
+    }
+
     return {
-      coaching_mode: 'gentle',
+      coaching_mode: input.coaching_mode ?? 'gentle',
       id: ids.session,
       mode: 'friend',
       stage: null,
@@ -241,8 +252,28 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         version_id: ids.scenarioVersion,
       },
       status: 'active',
-      ui_locale: _input.ui_locale,
+      ui_locale: input.ui_locale,
     }
+  }
+
+  async advanceStage(
+    _sessionId: string,
+    input: { readonly to_stage: string },
+    _commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession> {
+    abortIfNeeded(signal)
+    const stage = input.to_stage as
+      | 'observe'
+      | 'rehearse'
+      | 'perform'
+      | 'reflect'
+    this.#roleplaySession = demoRoleplaySession(
+      stage,
+      this.#roleplaySession?.ui_locale ?? 'en-IN',
+      stage === 'reflect',
+    )
+    return this.#roleplaySession
   }
 
   async createTurn(
@@ -318,6 +349,72 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         state,
       }),
     )
+  }
+}
+
+function demoRoleplaySession(
+  stage: 'observe' | 'rehearse' | 'perform' | 'reflect',
+  uiLocale: FriendSession['ui_locale'],
+  withFeedback = false,
+): FriendSession {
+  return {
+    coaching_mode: 'gentle',
+    id: ids.session,
+    mode: 'roleplay',
+    stage,
+    persona: {
+      definition_hash: 'a'.repeat(64),
+      disclosure:
+        'I am a deterministic AI role-play prototype, not a human.',
+      display_name: 'Clinic Reception Role-play Prototype',
+      id: ids.persona,
+      key: 'clinic-reception-roleplay-prototype',
+      review_status: 'synthetic_unreviewed',
+      version: 1,
+      version_id: ids.personaVersion,
+    },
+    replayed: false,
+    scenario: {
+      definition_hash: 'b'.repeat(64),
+      id: ids.scenario,
+      key: 'clinic-reception-roleplay-scenario',
+      review_status: 'synthetic_unreviewed',
+      topic_code: 'clinic-reception',
+      version: 1,
+      version_id: ids.scenarioVersion,
+    },
+    objectives: [
+      {
+        completion_criteria_code: 'synthetic.greet-receptionist.v1',
+        id: `${ids.session}-obj-1`,
+        key: 'greet-receptionist',
+        title: 'Greet the receptionist',
+      },
+      {
+        completion_criteria_code: 'synthetic.state-appointment-reason.v1',
+        id: `${ids.session}-obj-2`,
+        key: 'state-appointment-reason',
+        title: 'State the appointment reason',
+      },
+    ],
+    feedback: withFeedback
+      ? [
+          {
+            completion_state: 'met',
+            evidence_digest: 'c'.repeat(64),
+            id: `${ids.session}-fb-1`,
+            scenario_objective_id: `${ids.session}-obj-1`,
+          },
+          {
+            completion_state: 'unmet',
+            evidence_digest: 'd'.repeat(64),
+            id: `${ids.session}-fb-2`,
+            scenario_objective_id: `${ids.session}-obj-2`,
+          },
+        ]
+      : [],
+    status: 'active',
+    ui_locale: uiLocale,
   }
 }
 
