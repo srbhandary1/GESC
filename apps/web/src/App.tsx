@@ -19,9 +19,11 @@ import {
 import './App.css'
 import './demo/demoExperience.css'
 import type {
+  AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
+import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
@@ -190,6 +192,42 @@ function App({
       active = false
     }
   }, [authentication, offlineStore])
+
+  useEffect(() => {
+    if (authentication.transport !== 'passport-pkce') {
+      return
+    }
+
+    const androidAuth = authentication as AndroidPkceAuthentication
+    let remove: (() => void) | undefined
+    let cancelled = false
+
+    void bindAndroidPkceDeepLink(
+      androidAuth,
+      (snapshot) => {
+        if (!cancelled) {
+          setOfflineResume(null)
+          setSession(snapshot)
+        }
+      },
+      () => {
+        if (!cancelled) {
+          setSession({ status: 'unavailable' })
+        }
+      },
+    ).then((dispose) => {
+      if (cancelled) {
+        dispose()
+      } else {
+        remove = dispose
+      }
+    })
+
+    return () => {
+      cancelled = true
+      remove?.()
+    }
+  }, [authentication])
 
   useEffect(() => {
     const previousLocale = document.documentElement.lang
@@ -543,7 +581,9 @@ function App({
 
         {demoMode ? null : (
           <SessionSummary
+            authentication={authentication}
             message={message}
+            onSessionChange={setSession}
             session={session}
           />
         )}
@@ -554,16 +594,27 @@ function App({
 }
 
 interface SessionSummaryProps {
+  authentication: AuthenticationAdapter
   message: (key: MessageKey) => InterfaceMessageResolution
+  onSessionChange: (session: SessionState) => void
   session: SessionState
 }
 
-function SessionSummary({ message, session }: SessionSummaryProps) {
+function SessionSummary({
+  authentication,
+  message,
+  onSessionChange,
+  session,
+}: SessionSummaryProps) {
   const statusMessage = sessionMessageKey(session)
   const organization =
     session.status === 'authenticated'
       ? session.identity.current_membership?.organization.name
       : undefined
+  const isAndroidPkce = authentication.transport === 'passport-pkce'
+  const androidAuth = isAndroidPkce
+    ? (authentication as AndroidPkceAuthentication)
+    : null
 
   return (
     <section
@@ -597,6 +648,38 @@ function SessionSummary({ message, session }: SessionSummaryProps) {
           </span>
         )}
       </div>
+      {androidAuth === null ? null : (
+        <div className="shell-session__actions">
+          {session.status === 'anonymous' || session.status === 'unavailable' ? (
+            <button
+              type="button"
+              onClick={() => {
+                void androidAuth.beginAuthorization().catch(() => {
+                  onSessionChange({ status: 'unavailable' })
+                })
+              }}
+            >
+              <LocalizedMessage
+                resolution={message('session.android_sign_in')}
+              />
+            </button>
+          ) : null}
+          {session.status === 'authenticated' ? (
+            <button
+              type="button"
+              onClick={() => {
+                void androidAuth.logout().then(() => {
+                  onSessionChange({ status: 'anonymous' })
+                })
+              }}
+            >
+              <LocalizedMessage
+                resolution={message('session.android_sign_out')}
+              />
+            </button>
+          ) : null}
+        </div>
+      )}
     </section>
   )
 }

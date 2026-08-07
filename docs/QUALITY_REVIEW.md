@@ -2622,6 +2622,90 @@ PR-013 bounded operator content-workflow + audit **accepted** under APP-0029 at
 `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`. Next: separate APP for PR-014
 and/or remaining PR-013 items only.
 
+## PR-014 — Step D0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md)
+- [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0029; Passport PKCE server; Android adapter interface;
+  demo Capacitor APK remains D-0078 presentation-only
+- First APP scope: production-path closed-beta foundations (separate package,
+  system-browser PKCE, reviewed native secure storage, device matrix,
+  reproducible signed closed-beta artifact)
+- Deferred: Play public release, PR-015, remaining PR-013 sampled review /
+  privacy ops, production OTP cutover
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0029 | Pass | PR-014_ANDROID_AUTHORIZATION_REQUEST.md |
+| Verification scope AN-01–AN-10 | Pass | PR-014_ANDROID_VERIFICATION_SCOPE.md |
+| Demo APK kept non-production | Pass | D-0078; auth request non-goals |
+| APO begin-implementation statement | Pass | [APP-0030](APPROVALS.md#app-0030) |
+| PR-014 code | Authorized (begin) | APP-0030; Active = D1 |
+
+### Outcome
+
+D0 complete under APP-0030. Active step D1 implements closed-beta foundations.
+
+## PR-014 — Step D1 (closed-beta foundations in progress)
+
+### Evidence reviewed
+
+- Separate production Capacitor tree `apps/web/android-app`, package
+  `com.globalenglish.app` (demo `apps/web/android` / `com.globalenglish.demo`
+  unchanged)
+- Dual `capacitor.config.ts` via `CAPACITOR_APP=production`
+- `AndroidPkceAuthenticationAdapter` wired from `defaultAuthentication` on
+  native Android when `VITE_MOBILE_API_ORIGIN` is set
+- Reviewed secure store: project-owned EncryptedSharedPreferences plugin
+  ([ADR-0012](adr/0012-android-native-secure-credential-store.md) / D-0110)
+- System browser Custom Tabs plugin + deep-link
+  `com.globalenglish.app:/oauth/callback`
+- [PR-014_ANDROID_DEVICE_MATRIX.md](PR-014_ANDROID_DEVICE_MATRIX.md)
+- [PR-014_ANDROID_CLOSED_BETA_BUILD.md](PR-014_ANDROID_CLOSED_BETA_BUILD.md)
+- `make android-closed-beta` (demo target retained)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| AN-01 separate package ID | Pass (static) | android-app applicationId / ADR docs |
+| AN-02 ordinary product `dist` | Pass (static) | CAPACITOR_APP production webDir `dist` |
+| AN-03 PKCE + deep link wiring | Pass (unit) | adapter + bindAndroidPkceDeepLink tests |
+| AN-04 reviewed secure store | Pass (unit + ADR) | KeystoreSecureCredentialStore; ADR-0012 |
+| AN-05 logout clears + revoke path | Pass (existing adapter tests) | AndroidPkceAuthenticationAdapter.test |
+| AN-06 no WebView/Preferences creds | Partial | unit proves secure-plugin-only writes; on-device matrix pending |
+| AN-07 device matrix doc | Pass (doc) | PR-014_ANDROID_DEVICE_MATRIX.md; physical runs pending |
+| AN-08 permission/lifecycle notes | Pass (doc) | matrix journeys; on-device pending |
+| AN-09 reproducible signed artifact steps | Pass (doc) | closed-beta build doc; debug keystore limitation |
+| AN-10 make verify / Android build evidence | Pending | focused vitest only; full verify / Gradle APK not claimed |
+| Play public release | Not authorized | APP-0030 |
+
+### Focused tests run (this D1 slice)
+
+```text
+vitest run src/auth/AndroidPkceAuthenticationAdapter.test.ts
+  src/auth/KeystoreSecureCredentialStore.test.ts
+  src/auth/defaultAuthentication.test.ts
+  src/auth/createInstallationUlid.test.ts
+  src/auth/bindAndroidPkceDeepLink.test.ts
+  src/auth/androidPkceEnvironment.test.ts
+  src/auth/capacitorAndroidConfig.test.ts
+→ 7 files / 15 tests passed
+```
+
+`make verify`, `make android-closed-beta` Gradle assemble, physical device matrix
+and Play upload were **not** run/claimed in this session.
+
+### Outcome
+
+D1 foundations landed for APO review after focused tests and documented
+remaining on-device gaps. Play public release and PR-015 remain unauthorized.
+
+
 
 
 

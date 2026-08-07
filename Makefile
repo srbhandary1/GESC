@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build
 
 help:
 	@printf '%s\n' \
@@ -24,6 +24,7 @@ help:
 		'make demo-client   Serve the synthetic demo on 0.0.0.0:8080 for static-IP client testing' \
 		'make demo-client-tunnel  Temporary HTTPS Cloudflare tunnel for remote client testing' \
 		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
+		'make android-closed-beta  Build the PR-014 production-path closed-beta Android APK' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
 		'make test          Run deterministic backend and frontend tests' \
 		'make e2e           Run the critical web browser journeys' \
@@ -94,9 +95,19 @@ demo-client-tunnel-stop:
 
 # Requires JAVA_HOME pointing to JDK 21 and ANDROID_HOME pointing to an
 # Android SDK with platform 36. See README "Android demo APK".
+# Explicitly clears CAPACITOR_APP so the demo tree/identity is never overwritten.
 demo-android: demo-build
-	cd $(WEB_DIR) && $(PNPM) exec cap sync android
+	cd $(WEB_DIR) && env -u CAPACITOR_APP $(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android && ./gradlew assembleDebug
+
+# PR-014 production-path closed beta (com.globalenglish.app). Requires
+# VITE_MOBILE_API_ORIGIN. See docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md.
+# Does not build or modify the demo APK identity (D-0078).
+android-closed-beta:
+	@test -n "$${VITE_MOBILE_API_ORIGIN}" || (printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the absolute API origin reachable from the device (see docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md).' && exit 1)
+	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
+	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
+	cd $(WEB_DIR)/android-app && ./gradlew assembleDebug
 
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish

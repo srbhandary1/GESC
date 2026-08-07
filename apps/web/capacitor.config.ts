@@ -1,15 +1,41 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
-// Demo-only Android wrapper configuration. It packages the disclosed
-// synthetic `dist-demo` bundle for presentation installs. The identifier is
-// a placeholder demo identity, not the client-owned production package
-// identity, and this wrapper carries no credentials, providers or learner
-// data. PR-014 (production Android with Passport PKCE and native secure
-// storage) remains a separately authorized checkpoint.
-const config: CapacitorConfig = {
+/**
+ * Dual Capacitor configuration.
+ *
+ * Default (`make demo-android`): presentation demo at `android/`,
+ * `com.globalenglish.demo`, packaging `dist-demo` only (D-0078).
+ *
+ * Production closed beta (`CAPACITOR_APP=production` / `make android-closed-beta`):
+ * separate tree at `android-app/`, `com.globalenglish.app`, packaging the
+ * ordinary product `dist/` build. Never overwrites the demo identity.
+ */
+const isProductionAndroid = process.env.CAPACITOR_APP === 'production'
+
+const demoConfig: CapacitorConfig = {
   appId: 'com.globalenglish.demo',
   appName: 'Global English Speaking Course',
   webDir: 'dist-demo',
+  android: {
+    path: 'android',
+  },
 }
+
+const productionConfig: CapacitorConfig = {
+  appId: 'com.globalenglish.app',
+  appName: 'Global English',
+  webDir: 'dist',
+  android: {
+    path: 'android-app',
+  },
+  plugins: {
+    // Production package uses project-owned secure-credential and system-browser
+    // plugins; ordinary Preferences must never hold auth credentials (ADR-0012).
+  },
+}
+
+const config: CapacitorConfig = isProductionAndroid
+  ? productionConfig
+  : demoConfig
 
 export default config

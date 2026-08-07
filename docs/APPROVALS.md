@@ -1968,3 +1968,90 @@ Interpretation:
 - Demo Vite `/demo/*` paths remain non-evidence.
 - No master-plan amendment is made.
 
+<a id="app-0030"></a>
+
+## APP-0030 — PR-014 Capacitor Android closed-beta foundations begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0029](APPROVALS.md#app-0029) (PR-013 bounded operator at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`) |
+| Governing authorization request | [PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md) |
+| Governing verification scope | [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) D0→D1 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only PR-014 Capacitor Android closed-beta foundations under
+PR-014_ANDROID_AUTHORIZATION_REQUEST.md and
+PR-014_ANDROID_VERIFICATION_SCOPE.md.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-013 bounded operator content-workflow + audit was accepted under
+   APP-0029 with recorded limitations;
+2. plan Active step was D0 with PR-014 authorization and verification drafts
+   ready (closed-beta foundations; Play public release deferred);
+3. no PR-014 code was authorized yet;
+4. the Accountable Product Owner supplied the begin-implementation statement
+   exactly as drafted (recorded under this APP while implementation proceeds).
+
+Interpretation: authorize **beginning implementation** of master-plan §26
+PR-014 only as **closed-beta foundations** for the production-path Capacitor
+Android application. This is not acceptance of completed PR-014 work, Google
+Play public release, PR-015, remaining PR-013 sampled review/privacy ops, or
+real learner production data. The demo APK (`com.globalenglish.demo`, D-0078)
+remains presentation-only.
+
+### Authorized scope
+
+1. Separate Android application identity `com.globalenglish.app` — do **not**
+   convert `com.globalenglish.demo`.
+2. Capacitor 8 production project packaging the ordinary product web build
+   (not `dist-demo`), API 36 target / minimum API 24.
+3. System-browser Passport PKCE + deep-link return + shared authentication
+   adapter wiring on Android.
+4. Select, document and implement a reviewed native secure store for
+   installation ULID + refresh credential only; access token remains
+   in-memory (ADR-0002).
+5. Logout / security reset revokes the active token family; prove credentials
+   are absent from WebView storage, `localStorage`, IndexedDB, Cache Storage
+   and ordinary Capacitor Preferences.
+6. Microphone / audio / connectivity / lifecycle handling for already-accepted
+   learner journeys on the production package.
+7. Written closed-beta device matrix + critical-journey verification notes.
+8. Reproducible signed closed-beta AAB/APK steps documented; STATUS /
+   DECISIONS / QUALITY_REVIEW / plan updates (D0 done; Active = D1).
+
+### Explicit non-authorization
+
+- Acceptance of completed PR-014 (requires later exact-commit APO accept)
+- Google Play public listing / open production release
+- Full Play compliance / store-listing pack beyond closed-beta needs
+- PR-015 production hardening
+- Remaining PR-013 items (sampled speaking review under ADR-0007, privacy ops,
+  full §8.2 console)
+- Production OTP provider cutover / real learner production data
+- Expanding live Azure OpenAI / multi-locale TTS spend beyond existing APPs
+- Embedding secrets or provider credentials in the Android package or
+  `dist-demo`
+- Using the demo APK (`com.globalenglish.demo`) as the production identity
+- Waiver of independent specialist reviews before production
+
+### Conditions and limitations
+
+- Demo Capacitor project at `apps/web/android` remains D-0078 presentation-only.
+- No master-plan amendment is made.
+

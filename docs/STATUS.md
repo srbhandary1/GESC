@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-013 Operator console — bounded content-workflow + audit |
-| Status | **Accepted** under [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with recorded limitations |
+| Checkpoint | PR-014 Capacitor Android closed beta (plan D1) — foundations implementation |
+| Status | PR-014 begin-implementation authorized ([APP-0030](APPROVALS.md#app-0030)); Active step **D1** |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-013 bounded operator accepted ([APP-0029](APPROVALS.md#app-0029)); remaining PR-013 items / PR-014+, production/Play unauthorized |
-| Next checkpoint | Separate APP for remaining PR-013 (sampled review/privacy) and/or PR-014 Capacitor Android (plan D0). Production/Play remain unauthorized |
-| Professional client path | APP-0016–0029; PR-013 bounded operator closed; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-013 bounded operator accepted; PR-014 closed-beta foundations in progress under APP-0030; Play public release unauthorized |
+| Next checkpoint | Complete PR-014 closed-beta foundations (AN-01–AN-10), then APO exact-commit acceptance. Play public release / PR-015 remain unauthorized |
+| Professional client path | APP-0016–0030; PR-014 D1 implementation; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -140,6 +140,16 @@ Owner acceptance of PR-013 bounded operator content-workflow and audit at
 `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with every recorded limitation. It
 does not authorize sampled speaking review, privacy ops, PR-014, production or
 Google Play release.
+
+[APP-0030](APPROVALS.md#app-0030) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-014 Capacitor Android closed-beta
+foundations under
+[PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md)
+and [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-014 work and does not authorize Google
+Play public release, PR-015, remaining PR-013 sampled review/privacy ops or
+real learner production data. Demo APK `com.globalenglish.demo` remains
+presentation-only (D-0078).
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -751,20 +761,26 @@ remain unauthorized. Live Azure OpenAI calls remain operator-gated
 Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
 and do not count as enterprise verification evidence.
 
-Active work is plan Step **D0** consideration only: a separate APP is required
-before PR-014 Capacitor Android / remaining PR-013 items (sampled review,
-privacy ops).
+Active work is plan Step **D1**: PR-014 Capacitor Android closed-beta
+foundations under [APP-0030](APPROVALS.md#app-0030)
+([PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md),
+[PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md)).
+Production package identity is `com.globalenglish.app` at
+`apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
+presentation-only.
 [APP-0029](APPROVALS.md#app-0029) accepted PR-013 bounded operator
 content-workflow + audit at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with
 recorded limitations
 ([PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)).
 Sampled speaking review, privacy ops, learner PII CSV export, full content
-studio, PR-014/015, production and Google Play remain unauthorized.
+studio, PR-015, Google Play public release and real learner production data
+remain unauthorized until distinct APPs.
 Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
 remain unauthorized. Live Azure OpenAI calls remain operator-gated
 (outside-repo evidence + ₹500 cap); production DI stays `disabled`.
-Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
-and do not count as enterprise verification evidence.
+Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) and the demo APK
+(`com.globalenglish.demo`, D-0078) are presentation-only and do not count as
+enterprise verification evidence.
 
 Production additionally requires qualified legal review and independent
 security, privacy, tenancy, accessibility, language/content and release

@@ -170,6 +170,12 @@
   font-weight: 700;
 }
 
+.shell-session__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
 .shell-session__organization-name {
   min-width: 0;
   color: var(--ge-color-text);

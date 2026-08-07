@@ -89,11 +89,12 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **B2** | Pilot content path (synthetic → reviewed modules) | `done` | D-0105 — synthetic retained for this APP; commissioned content still DR-0007 |
 | **C0** | PR-013 Operator console authorization | `done` | [APP-0028](APPROVALS.md#app-0028) begin-implementation for content-workflow + audit |
 | **C1** | PR-013 bounded operator content-workflow + audit | `done` | [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
-| **D0** | PR-014 Capacitor Android closed beta (production path, not demo APK) | `pending` | Separate APP required; remaining PR-013 items also separately gated |
+| **D0** | PR-014 Capacitor Android closed beta authorization | `done` | [APP-0030](APPROVALS.md#app-0030) |
+| **D1** | PR-014 closed-beta foundations implementation | `in_progress` | Production path `com.globalenglish.app`; demo APK non-production |
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `D0` — Consider separate APP for PR-014 Capacitor Android and/or remaining PR-013 items; bounded PR-013 operator accepted under [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`.
+**Active step:** `D1` — PR-014 closed-beta foundations under [APP-0030](APPROVALS.md#app-0030). Demo APK (`com.globalenglish.demo`) remains non-production. Play public release unauthorized.
 
 ---
 
@@ -279,9 +280,16 @@ No DB access for authorized operator actions. No learner audio/transcripts.
 
 ---
 
-### D0 — Production Android (PR-014)
+### D0 — Authorize PR-014 closed-beta foundations
 
-Capacitor production app: Passport PKCE, native secure storage, device matrix — **not** the demo APK (`com.globalenglish.demo`).
+Exact APO begin-implementation under
+[PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md).
+
+### D1 — Implement PR-014 closed-beta foundations
+
+Capacitor production app (`com.globalenglish.app` at `apps/web/android-app`):
+Passport PKCE, reviewed native secure storage, device matrix, reproducible
+signed closed-beta artifact — **not** the demo APK (`com.globalenglish.demo`).
 
 ---
 
@@ -319,9 +327,11 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** Draft/consider a separate APP for PR-014 Capacitor
-Android closed beta and/or remaining PR-013 items (sampled review under
-ADR-0007 amendment, privacy ops). Do not start that code without a distinct APP.
+**Immediate next action:** Complete D1 PR-014 closed-beta foundations
+(AN-01–AN-10 evidence), then draft APO exact-commit acceptance. Do not promote
+`com.globalenglish.demo` to production. Do not claim Play public release.
+Remaining PR-013 sampled review / privacy ops stay separately gated
+(ADR-0007).
 
 ---
 
@@ -364,3 +374,5 @@ ADR-0007 amendment, privacy ops). Do not start that code without a distinct APP.
 | 2026-08-07 | C0 done ([APP-0028](APPROVALS.md#app-0028)); Active step = C1 (bounded operator content-workflow + audit implementation) |
 | 2026-08-07 | C1 landed at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`; PR-013 APO acceptance package drafted; awaiting APO accept |
 | 2026-08-07 | PR-013 bounded operator accepted ([APP-0029](APPROVALS.md#app-0029) / D-0108); Active step = D0 (PR-014 / remaining PR-013 APP consideration only) |
+| 2026-08-07 | D0: PR-014 authorization + verification drafts ready (closed-beta foundations; demo APK non-production; Play public release deferred); awaiting APO authorize |
+| 2026-08-07 | D0 done ([APP-0030](APPROVALS.md#app-0030) / D-0109); Active step = D1 (PR-014 closed-beta foundations implementation) |

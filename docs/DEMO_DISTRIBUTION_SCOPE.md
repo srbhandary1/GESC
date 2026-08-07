@@ -57,10 +57,11 @@ provider path or authorize production deployment.
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the
   existing local-only practice capture; recordings stay in browser memory
   for playback/retry and are never uploaded or persisted.
-- `com.globalenglish.demo` is a placeholder demo identity. The client-owned
-  production package identity, Passport PKCE authentication, native secure
-  storage, device-matrix testing and Play release engineering remain PR-014
-  scope and are not implemented here.
+- `com.globalenglish.demo` is a placeholder demo identity. The production-path
+  Capacitor tree is separate at `apps/web/android-app`
+  (`com.globalenglish.app`) under [APP-0030](APPROVALS.md#app-0030) /
+  [PR-014 closed-beta build](PR-014_ANDROID_CLOSED_BETA_BUILD.md). Do not
+  promote this demo APK to production. Play public release remains unauthorized.
 
 ## Commands
 
