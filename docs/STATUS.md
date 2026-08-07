@@ -5,12 +5,12 @@
 | Field | Value |
 |---|---|
 | Checkpoint | PR-012 Role-play synthetic slice — awaiting APO exact-commit accept |
-| Status | B0–B2 done under [APP-0026](APPROVALS.md#app-0026); acceptance package drafted ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)); Exact commit pending |
+| Status | B0–B2 done under [APP-0026](APPROVALS.md#app-0026); acceptance package ready at `0fb6f2953580ed6154e4d895e128c46167c6f5d4` ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-011 + Confidence Conversation accepted; PR-012 synthetic implemented pending APO accept; PR-013+, production/Play unauthorized |
-| Next checkpoint | Commit PR-012 workspace + APO exact-commit accept; then separate APP for PR-013. Production/Play remain unauthorized |
+| Product code | PR-008 through PR-011 + Confidence Conversation accepted; PR-012 synthetic at `0fb6f2953580ed6154e4d895e128c46167c6f5d4` pending APO accept; PR-013+, production/Play unauthorized |
+| Next checkpoint | APO exact-commit accept PR-012 at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`; then separate APP for PR-013. Production/Play remain unauthorized |
 | Professional client path | APP-0016–0026; PR-012 B0–B2 done pending accept; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
@@ -732,14 +732,14 @@ Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
 and do not count as enterprise verification evidence.
 
 Active work is APO exact-commit acceptance of the PR-012 synthetic Role-play
-slice ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)).
-B0–B2 are done under [APP-0026](APPROVALS.md#app-0026) (D-0105 synthetic
-content path). Exact commit SHA is pending an authorized commit of the
-uncommitted workspace. Live multi-locale Azure TTS spend and ordinary Azure
-Speech DI expansion remain unauthorized. Live Azure OpenAI calls remain
-operator-gated (outside-repo evidence + ₹500 cap); production DI stays
-`disabled`. Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are
-presentation-only and do not count as enterprise verification evidence.
+slice ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md))
+for Exact commit `0fb6f2953580ed6154e4d895e128c46167c6f5d4`. B0–B2 are done
+under [APP-0026](APPROVALS.md#app-0026) (D-0105 synthetic content path). Live
+multi-locale Azure TTS spend and ordinary Azure Speech DI expansion remain
+unauthorized. Live Azure OpenAI calls remain operator-gated (outside-repo
+evidence + ₹500 cap); production DI stays `disabled`. Demo-local Azure TTS /
+OpenRouter (D-0092 / D-0094) are presentation-only and do not count as
+enterprise verification evidence.
 
 PR-013+, production, Google Play release and every later master-plan checkpoint
 remain unauthorized until a distinct APP. Production additionally requires

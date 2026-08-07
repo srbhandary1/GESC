@@ -2500,7 +2500,7 @@ and Play stay unauthorized.
 | RP-07 UI journey | Pass (unit) | RoleplayJourney vitest; Chromium not claimed |
 | RP-08 make verify | Not claimed | host/CI limitations |
 | B2 synthetic content path | Pass | D-0105 |
-| Exact commit / APO accept | Pending | acceptance package |
+| Exact commit / APO accept | Pending | accept `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
 
 #### Outcome
 

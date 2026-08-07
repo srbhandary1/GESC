@@ -3,8 +3,8 @@
 This package prepares exact-artifact Accountable Product Owner acceptance of
 master-plan §26 **PR-012 — Role-play framework and pilot content integration**
 for the bounded **synthetic** slice authorized under
-[APP-0026](APPROVALS.md#app-0026). **Not yet accepted** — requires an exact
-implementation commit and the APO statement below.
+[APP-0026](APPROVALS.md#app-0026). **Not yet accepted** — Exact commit is
+filled; reply with the APO statement below to close PR-012 synthetic acceptance.
 
 ## Artifact to accept
 
@@ -16,7 +16,7 @@ implementation commit and the APO statement below.
 | Authorization request | [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md) |
 | Verification scope | [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md) |
 | Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (PR-012 B0/B1 sections) |
-| Exact commit | **Pending** — authorize a commit of the uncommitted PR-012 workspace, then fill SHA |
+| Exact commit | `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
 
 ## Delivered behaviour
 
@@ -69,10 +69,10 @@ Demo Vite `/demo/*` remains non-evidence.
 8. This acceptance does **not** authorize PR-013+, production, Google Play,
    real learner production data, or waiver of independent specialist reviews.
 
-## APO statement (reply exactly after Exact commit SHA is filled)
+## APO statement (reply exactly)
 
 ```text
-APO accept PR-012 synthetic role-play at <EXACT_COMMIT_SHA> with its recorded limitations
+APO accept PR-012 synthetic role-play at 0fb6f2953580ed6154e4d895e128c46167c6f5d4 with its recorded limitations
 ```
 
 Interpretation for the recorder (Codex is never an approver):
