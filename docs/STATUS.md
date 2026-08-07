@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Checkpoint | Pre-F0; PR-013 privacy/support ops implemented under APP-0035 |
-| Status | APP-0036 accepts privacy/support ops at ; F0 DoD / Play still unauthorized |
+| Status | APP-0036 accepts privacy/support ops at `1357eb161d3754da3b8d6b888bd1e3b0a8698ff9`; F0 DoD / Play still unauthorized |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |

@@ -1,6 +1,6 @@
 # PR-013 remaining privacy and support ops — APO acceptance package
 
-**Status:** Accepted under [APP-0036](APPROVALS.md#app-0036) at .  
+**Status:** Accepted under [APP-0036](APPROVALS.md#app-0036) at `1357eb161d3754da3b8d6b888bd1e3b0a8698ff9`.  
 **Governing begin:** [APP-0035](APPROVALS.md#app-0035)  
 **Governing request:** [PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md)  
 **Policy:** [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md)
