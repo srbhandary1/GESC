@@ -2972,3 +2972,13 @@ matrix, specialist reviews.
 
 - Postgres Integration suite / host `make verify` not claimed in this slice.
 - Physical Android matrix and reviewed pathway content remain open F0 blockers.
+
+## PR-013 — Privacy/support Exact accept (APP-0036)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact commit accepted | Pass | APP-0036 at 1357eb161d3754da3b8d6b888bd1e3b0a8698ff9 |
+| F0 DoD | Not authorized | APP-0036 non-goals |
+| Play public release | Not authorized | APP-0036 |
+| Sampled speaking review | Not authorized | APP-0036 |
+

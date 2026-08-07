@@ -1,6 +1,6 @@
 # PR-013 remaining privacy and support ops — APO acceptance package
 
-**Status:** Ready for Exact-commit APO accept under APP-0035 begin.  
+**Status:** Accepted under [APP-0036](APPROVALS.md#app-0036) at .  
 **Governing begin:** [APP-0035](APPROVALS.md#app-0035)  
 **Governing request:** [PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md)  
 **Policy:** [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md)
@@ -44,7 +44,7 @@
 ## Proposed Exact APO accept statement
 
 ```text
-APO accept PR-013 remaining privacy and support ops at <EXACT_SHA> with its
+APO accept PR-013 remaining privacy and support ops at 1357eb161d3754da3b8d6b888bd1e3b0a8698ff9 with its
 recorded limitations; sampled speaking review, F0 DoD, and Play public release
 remain unauthorized.
 ```

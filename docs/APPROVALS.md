@@ -2459,3 +2459,57 @@ accept or Play public release.
   commercial decision before a reviewed-pathway Pass claim.
 - No master-plan amendment is made.
 
+
+<a id="app-0036"></a>
+
+## APP-0036 — PR-013 remaining privacy and support ops Exact-commit acceptance
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation (blanket authorization to continue) |
+| Exact implementation commit accepted | `1357eb161d3754da3b8d6b888bd1e3b0a8698ff9` |
+| Governing begin-implementation | [APP-0035](APPROVALS.md#app-0035) |
+| Acceptance package | [PR-013_PRIVACY_SUPPORT_ACCEPTANCE_PACKAGE.md](PR-013_PRIVACY_SUPPORT_ACCEPTANCE_PACKAGE.md) |
+| Related decision | [D-0117](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-013 remaining privacy and support ops at 1357eb161d3754da3b8d6b888bd1e3b0a8698ff9 with its
+recorded limitations; sampled speaking review, F0 DoD, and Play public release
+remain unauthorized.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. APP-0035 authorized begin-implementation of remaining privacy/support ops;
+2. the vertical slice was implemented and verified in
+   [PR-013_PRIVACY_SUPPORT_ACCEPTANCE_PACKAGE.md](PR-013_PRIVACY_SUPPORT_ACCEPTANCE_PACKAGE.md)
+   at exact commit `1357eb161d3754da3b8d6b888bd1e3b0a8698ff9`;
+3. the Accountable Product Owner supplied blanket authorization to continue
+   and do the needful, which includes Exact-commit acceptance of that slice.
+
+Interpretation: accept only the remaining PR-013 support diagnostics and
+privacy/account-ops vertical slice at that exact commit, with every recorded
+limitation. This does **not** authorize sampled speaking review, F0 Definition
+of Done, Google Play public release, or waiver of independent specialist
+reviews.
+
+### Conditions and limitations
+
+- Digests and identifier summaries only; never raw conversation bodies,
+  transcripts, or audio in operator responses.
+- Host `make verify` / postgres Integration suite were not claimed green by
+  this acceptance and are not waived.
+- No master-plan amendment is made.
+
