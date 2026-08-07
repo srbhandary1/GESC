@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "మాట్లాడటానికి కొనసాగండి",
   "conversation.confidence.listen_lead": "ఈ ఇంగ్లీష్ నమూనా వాక్యాలు వినండి. ధ్వని లేకపోతే చదవవచ్చు.",
   "conversation.confidence.listen_play": "నమూనా ఇంగ్లీష్ ప్లే చేయండి",
+  "conversation.confidence.listen_playback_failed": "ప్లేబ్యాక్ విఫలమైంది. ఇంగ్లీష్ పంక్తులు చదివి కొనసాగండి.",
+  "conversation.confidence.listen_text_first": "పైన ఉన్న ఇంగ్లీష్ టెక్స్ట్ సరిపోతుంది. ప్లేబ్యాక్ ఐచ్ఛికం.",
   "conversation.confidence.listen_title": "వినండి",
   "conversation.confidence.progress": "దశ",
   "conversation.confidence.reflect_continue": "మళ్లీ ప్రారంభించండి",

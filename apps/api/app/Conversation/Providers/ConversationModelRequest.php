@@ -18,6 +18,7 @@ final readonly class ConversationModelRequest
         public string $uiLocale,
         public string $promptVersionId,
         public string $promptBodySha256,
+        public string $promptBody = '',
         public array $memoryFacts = [],
     ) {}
 }

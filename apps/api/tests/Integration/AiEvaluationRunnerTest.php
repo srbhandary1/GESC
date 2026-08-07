@@ -27,7 +27,13 @@ final class AiEvaluationRunnerTest extends TenancyIntegrationTestCase
 
         $this->assertSame('completed', $report['status']);
         $this->assertSame(0, $report['failed_count']);
+        $this->assertSame(15, $report['case_count']);
+        $this->assertSame(15, $report['passed_count']);
         $this->assertSame(0, $report['estimated_cost_microunits']);
+        $this->assertSame(0, $report['metrics']['false_correction_count']);
+        $this->assertSame(0, $report['metrics']['missing_l1_count']);
+        $this->assertSame(6, $report['metrics']['shame_language_hits']);
+        $this->assertTrue($report['metrics']['cost_ceiling_ok']);
         $this->assertNotEmpty($report['prompt_comparison']);
         $this->assertTrue(File::isFile($reportPath));
         $this->assertTrue(File::isFile($exportPath));
@@ -35,6 +41,10 @@ final class AiEvaluationRunnerTest extends TenancyIntegrationTestCase
         $this->assertSame(
             'completed',
             DB::table('evaluation_runs')->value('status'),
+        );
+        $this->assertSame(
+            'friend.l1.locale.v1',
+            DB::table('evaluation_runs')->value('suite_key'),
         );
     }
 

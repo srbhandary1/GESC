@@ -130,5 +130,16 @@ live-complete auth → `make ai-eval`).
 - Approved cloud speech: Azure AI Speech `centralindia` only.
 - Do not buy alternate STT/TTS vendors for this checkpoint; they are outside
   ADR-0008.
-- Do not buy an LLM API for the current demo; real AI is PR-010 and remains
-  unauthorized.
+- Demo OpenRouter remains presentation-only (D-0094).
+- Confidence Conversation Azure OpenAI (ADR-0010 / APP-0022): use a **separate**
+  outside-repo workspace — never reuse speech secrets:
+
+```bash
+sh scripts/setup-conversation-model-workspace.sh
+# default: $HOME/ge-conversation-model
+sh scripts/run-conversation-model-live-prepare.sh
+```
+
+Live phrase (exact): `Authorize live Confidence Conversation Azure OpenAI up to ₹500`.
+Hard development ceiling: ₹500 INR. Production DI stays `disabled` until a
+later promote APP.

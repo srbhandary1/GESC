@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "സംസാരിക്കാൻ തുടരുക",
   "conversation.confidence.listen_lead": "ഈ ഇംഗ്ലീഷ് മാതൃക വാക്യങ്ങൾ കേൾക്കുക. ശബ്ദം ലഭ്യമല്ലെങ്കിൽ വായിക്കാം.",
   "conversation.confidence.listen_play": "മാതൃക ഇംഗ്ലീഷ് പ്ലേ ചെയ്യുക",
+  "conversation.confidence.listen_playback_failed": "പ്ലേബാക്ക് പരാജയപ്പെട്ടു. ഇംഗ്ലീഷ് വരികൾ വായിച്ച് തുടരുക.",
+  "conversation.confidence.listen_text_first": "മുകളിലെ ഇംഗ്ലീഷ് ടെക്സ്റ്റ് മതി. പ്ലേബാക്ക് ഓപ്ഷണലാണ്.",
   "conversation.confidence.listen_title": "കേൾക്കുക",
   "conversation.confidence.progress": "ഘട്ടം",
   "conversation.confidence.reflect_continue": "വീണ്ടും ആരംഭിക്കുക",

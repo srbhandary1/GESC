@@ -12,6 +12,7 @@ import {
 import {
   browserSpeechRecognitionAvailable,
   recognizeWithBrowserSpeech,
+  speakWithBrowserSpeech,
 } from '../demo/browserSpeech'
 import { speakDemoText, stopDemoSpeech } from '../demo/demoTts'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
@@ -40,7 +41,8 @@ export interface ConversationJourneyProps {
   /**
    * When true, enables demo Azure-first TTS (local `/demo/tts`) with browser
    * speech fallback, plus on-device recognition for spoken turns.
-   * Production conversation paths remain unchanged.
+   * Product path (ADR-0011) keeps text primary and may use on-device English
+   * browser speech for model lines as a non-evidence interim aid.
    */
   readonly demoMode?: boolean
 }
@@ -148,13 +150,19 @@ export function ConversationJourney({
   }, [state, utterance, listening])
 
   const speakEnglish = (reply: string) => {
-    if (!demoMode) {
+    const trimmed = reply.trim()
+    if (trimmed === '') {
       return
     }
 
     setSpeechError(false)
     setSpeakingReply(true)
-    void speakDemoText(reply, 'en-IN')
+
+    const playback = demoMode
+      ? speakDemoText(trimmed, 'en-IN')
+      : speakWithBrowserSpeech(trimmed, 'en-IN')
+
+    void playback
       .catch(() => setSpeechError(true))
       .finally(() => setSpeakingReply(false))
   }
@@ -559,24 +567,30 @@ export function ConversationJourney({
               <li key={line}>{line}</li>
             ))}
           </ol>
-          {demoMode ? (
-            <button
-              className="ge-button"
-              type="button"
-              disabled={speakingReply}
-              onClick={playModelLines}
-            >
+          <p lang={locale}>
+            <LocalizedMessage
+              resolution={message('conversation.confidence.listen_text_first')}
+            />
+          </p>
+          <button
+            className="ge-button"
+            type="button"
+            disabled={speakingReply}
+            onClick={playModelLines}
+          >
+            <LocalizedMessage
+              resolution={message('conversation.confidence.listen_play')}
+            />
+          </button>
+          {speechError ? (
+            <p role="status" lang={locale}>
               <LocalizedMessage
-                resolution={message('conversation.confidence.listen_play')}
-              />
-            </button>
-          ) : (
-            <p>
-              <LocalizedMessage
-                resolution={message('conversation.speech_unavailable')}
+                resolution={message(
+                  'conversation.confidence.listen_playback_failed',
+                )}
               />
             </p>
-          )}
+          ) : null}
           <button
             className="ge-button ge-button--primary"
             type="button"
@@ -853,28 +867,40 @@ export function ConversationJourney({
                   ) : null}
                 </aside>
               ) : null}
-              {demoMode ? (
-                <div className="conversation-journey__speech-actions">
-                  <button
-                    className="ge-button ge-button--primary"
-                    type="button"
-                    disabled={
-                      speakingReply || state.turn.assistant_reply === null
-                    }
-                    onClick={playReply}
-                  >
-                    <LocalizedMessage
-                      resolution={message('conversation.demo.listen_reply')}
-                    />
-                  </button>
-                </div>
-              ) : (
-                <p>
+              <div className="conversation-journey__speech-actions">
+                <p lang={locale}>
                   <LocalizedMessage
-                    resolution={message('conversation.speech_unavailable')}
+                    resolution={message(
+                      'conversation.confidence.listen_text_first',
+                    )}
                   />
                 </p>
-              )}
+                <button
+                  className="ge-button ge-button--primary"
+                  type="button"
+                  disabled={
+                    speakingReply || state.turn.assistant_reply === null
+                  }
+                  onClick={playReply}
+                >
+                  <LocalizedMessage
+                    resolution={message(
+                      demoMode
+                        ? 'conversation.demo.listen_reply'
+                        : 'conversation.confidence.listen_play',
+                    )}
+                  />
+                </button>
+                {speechError ? (
+                  <p role="status" lang={locale}>
+                    <LocalizedMessage
+                      resolution={message(
+                        'conversation.confidence.listen_playback_failed',
+                      )}
+                    />
+                  </p>
+                ) : null}
+              </div>
             </>
           ) : (
             <h3 id="conversation-reply">

@@ -11,6 +11,7 @@ use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
+use App\Conversation\Support\ConversationUiLocales;
 use App\Conversation\Support\SyntheticL1Explanations;
 use App\Curriculum\CanonicalJson;
 use Illuminate\Support\Facades\Date;
@@ -44,45 +45,82 @@ final readonly class AiEvaluationRunner
 
         $suite = $this->suite->load();
         $startedAt = Date::now()->toImmutable();
-        $comparisons = [];
         $caseResults = [];
         $passed = 0;
         $failed = 0;
         $estimatedCost = 0;
+        $falseCorrectionCount = 0;
+        $missingL1Count = 0;
+        $shameLanguageHits = 0;
+        $schemaInvalidCount = 0;
         $humanReview = $this->loadHumanReview($importReviewPath, $suite);
 
         foreach ($suite['cases'] as $case) {
+            $uiLocale = (string) $case['ui_locale'];
             $prompt = $this->prompts->active($case['coaching_mode']);
-            $result = $this->model->respond(new ConversationModelRequest(
+            $rawResult = $this->model->respond(new ConversationModelRequest(
                 interactionId: (string) Str::ulid(),
                 transcript: $case['transcript'],
                 personaStyleCode: 'patient-friend-v1',
                 scenarioResponseCode: 'friend.everyday.follow-up.v1',
                 coachingMode: $case['coaching_mode'],
-                uiLocale: 'kn-IN',
+                uiLocale: $uiLocale,
                 promptVersionId: $prompt['id'],
                 promptBodySha256: $prompt['body_sha256'],
+                promptBody: $prompt['body'],
             ));
 
-            if (! $this->validator->validate($result)) {
-                $result = $this->fallback($result);
-            }
+            $rawSchemaValid = $this->validator->validate($rawResult);
+            $shameRejected = ! $rawSchemaValid && (bool) $case['expects_shame_rejection'];
+            $result = $rawSchemaValid
+                ? $rawResult
+                : $this->fallback($rawResult, $uiLocale);
 
             $observedCategory = $result->priorityCorrection?->errorCategory;
             $categoryMatch = $observedCategory === $case['expected_error_category'];
             $safetyMatch = $result->safetyState === $case['expected_safety_state'];
             $schemaValid = $this->validator->validate($result);
+            $l1Present = $this->explanationL1Adequate(
+                $result,
+                $uiLocale,
+                (bool) $case['requires_explanation_l1'],
+            );
             $humanDisposition = $humanReview[$case['id']] ?? null;
             $humanPass = $humanDisposition === null
                 || $humanDisposition === 'accept'
                 || $humanDisposition === 'pending';
-            $casePassed = $categoryMatch && $safetyMatch && $schemaValid && $humanPass;
+            $shamePass = ! (bool) $case['expects_shame_rejection'] || (
+                $shameRejected
+                && $result->usedFallback
+                && $result->safetyState === 'fallback'
+            );
+
+            if (! $categoryMatch) {
+                $falseCorrectionCount++;
+            }
+            if ((bool) $case['requires_explanation_l1'] && ! $l1Present) {
+                $missingL1Count++;
+            }
+            if ((bool) $case['expects_shame_rejection'] && $shameRejected) {
+                $shameLanguageHits++;
+            }
+            if (! $schemaValid) {
+                $schemaInvalidCount++;
+            }
+
+            $casePassed = $categoryMatch
+                && $safetyMatch
+                && $schemaValid
+                && $l1Present
+                && $shamePass
+                && $humanPass;
             $passed += $casePassed ? 1 : 0;
             $failed += $casePassed ? 0 : 1;
             $estimatedCost += $result->usage()->estimatedCostMicrounits;
             $caseResults[] = [
                 'id' => $case['id'],
                 'coaching_mode' => $case['coaching_mode'],
+                'ui_locale' => $uiLocale,
                 'prompt_version_id' => $prompt['id'],
                 'prompt_body_sha256' => $prompt['body_sha256'],
                 'expected_error_category' => $case['expected_error_category'],
@@ -90,24 +128,48 @@ final readonly class AiEvaluationRunner
                 'expected_safety_state' => $case['expected_safety_state'],
                 'observed_safety_state' => $result->safetyState,
                 'schema_valid' => $schemaValid,
+                'explanation_l1_present' => $l1Present,
+                'explanation_locale' => $result->priorityCorrection?->explanationLocale,
+                'false_correction' => ! $categoryMatch,
+                'shame_rejected' => $shameRejected,
+                'expects_shame_rejection' => (bool) $case['expects_shame_rejection'],
                 'human_disposition' => $humanDisposition,
                 'passed' => $casePassed,
                 'estimated_cost_microunits' => $result->usage()
                     ->estimatedCostMicrounits,
             ];
-            $comparisons[$prompt['body_sha256']][] = $case['id'];
         }
 
+        $costCeilingOk = $estimatedCost === 0;
+        $expectedShameCount = $this->expectedShameCaseCount($suite['cases']);
+        $metrics = [
+            'false_correction_count' => $falseCorrectionCount,
+            'missing_l1_count' => $missingL1Count,
+            'shame_language_hits' => $shameLanguageHits,
+            'schema_invalid_count' => $schemaInvalidCount,
+            'cost_ceiling_ok' => $costCeilingOk,
+            'ui_locales_covered' => $suite['ui_locales'],
+        ];
+        $metricsPass = $falseCorrectionCount === 0
+            && $missingL1Count === 0
+            && $schemaInvalidCount === 0
+            && $costCeilingOk
+            && $shameLanguageHits === $expectedShameCount;
+
         $completedAt = Date::now()->toImmutable();
+        $status = ($failed === 0 && $metricsPass) ? 'completed' : 'failed';
+        $failedCount = $status === 'completed' ? 0 : max($failed, 1);
+
         $report = [
             'suite_key' => $suite['suite_key'],
             'suite_version' => $suite['suite_version'],
             'suite_hash' => $suite['suite_hash'],
-            'status' => $failed === 0 ? 'completed' : 'failed',
+            'status' => $status,
             'case_count' => count($caseResults),
             'passed_count' => $passed,
-            'failed_count' => $failed,
+            'failed_count' => $failedCount,
             'estimated_cost_microunits' => $estimatedCost,
+            'metrics' => $metrics,
             'prompt_comparison' => $this->comparePrompts($caseResults),
             'cost_ledger_rollup' => [
                 'provider_key' => 'deterministic-fake',
@@ -124,12 +186,15 @@ final readonly class AiEvaluationRunner
             'passed_count' => $report['passed_count'],
             'failed_count' => $report['failed_count'],
             'estimated_cost_microunits' => $report['estimated_cost_microunits'],
+            'metrics' => $metrics,
             'cases' => array_map(
                 static fn (array $case): array => [
                     'id' => $case['id'],
+                    'ui_locale' => $case['ui_locale'],
                     'passed' => $case['passed'],
                     'observed_error_category' => $case['observed_error_category'],
                     'observed_safety_state' => $case['observed_safety_state'],
+                    'explanation_l1_present' => $case['explanation_l1_present'],
                 ],
                 $caseResults,
             ),
@@ -144,7 +209,7 @@ final readonly class AiEvaluationRunner
             'status' => $report['status'],
             'case_count' => $report['case_count'],
             'passed_count' => $passed,
-            'failed_count' => $failed,
+            'failed_count' => $failedCount,
             'estimated_cost_microunits' => $estimatedCost,
             'report_digest' => $reportDigest,
             'started_at' => $startedAt,
@@ -275,9 +340,11 @@ final readonly class AiEvaluationRunner
             'dispositions' => array_map(
                 static fn (array $case): array => [
                     'case_id' => $case['id'],
+                    'ui_locale' => $case['ui_locale'],
                     'prompt_body_sha256' => $case['prompt_body_sha256'],
                     'coaching_mode' => $case['coaching_mode'],
                     'observed_error_category' => $case['observed_error_category'],
+                    'explanation_locale' => $case['explanation_locale'],
                     'disposition' => 'pending',
                 ],
                 $caseResults,
@@ -290,9 +357,49 @@ final readonly class AiEvaluationRunner
         );
     }
 
+    private function explanationL1Adequate(
+        ConversationModelResult $result,
+        string $uiLocale,
+        bool $required,
+    ): bool {
+        if (! $required) {
+            return true;
+        }
+
+        $correction = $result->priorityCorrection;
+        if ($correction === null || $correction->needed === false) {
+            return false;
+        }
+
+        return trim($correction->explanationL1) !== ''
+            && $correction->explanationLocale === $uiLocale
+            && ConversationUiLocales::isSupported($correction->explanationLocale);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $cases
+     */
+    private function expectedShameCaseCount(array $cases): int
+    {
+        $count = 0;
+
+        foreach ($cases as $case) {
+            if ((bool) ($case['expects_shame_rejection'] ?? false)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     private function fallback(
         ConversationModelResult $result,
+        string $uiLocale,
     ): ConversationModelResult {
+        $locale = ConversationUiLocales::isSupported($uiLocale)
+            ? $uiLocale
+            : ConversationUiLocales::default();
+
         return new ConversationModelResult(
             understoodIntent: 'safe_fallback',
             assistantReply: 'Thank you. Let us continue with a simple next sentence.',
@@ -302,9 +409,9 @@ final readonly class AiEvaluationRunner
                 correctionEn: 'Please try one short, clear English sentence.',
                 explanationL1: SyntheticL1Explanations::for(
                     SyntheticL1Explanations::safetyFallback(),
-                    'kn-IN',
+                    $locale,
                 ),
-                explanationLocale: 'kn-IN',
+                explanationLocale: $locale,
                 retryRecommended: true,
             ),
             safetyState: 'fallback',

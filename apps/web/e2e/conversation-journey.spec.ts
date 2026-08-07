@@ -67,7 +67,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     ),
   ).toBeVisible()
   await expect(
-    page.getByText('Fake TTS is text-only. No audio was created or stored.'),
+    page.getByText('The English text above is enough. Playback is optional.'),
   ).toBeVisible()
   await expect(page.getByText('Turn completed')).toBeVisible()
 

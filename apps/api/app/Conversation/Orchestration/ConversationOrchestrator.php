@@ -67,6 +67,7 @@ final readonly class ConversationOrchestrator
                 uiLocale: $context['ui_locale'],
                 promptVersionId: $prompt['id'],
                 promptBodySha256: $prompt['body_sha256'],
+                promptBody: $prompt['body'],
                 memoryFacts: $context['memory_facts'],
             ),
         );

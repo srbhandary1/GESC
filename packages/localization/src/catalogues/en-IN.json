@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "Continue to talk",
   "conversation.confidence.listen_lead": "Listen to these English model lines. You can read them if speech is unavailable.",
   "conversation.confidence.listen_play": "Play model English",
+  "conversation.confidence.listen_playback_failed": "Playback failed. Continue by reading the English lines.",
+  "conversation.confidence.listen_text_first": "The English text above is enough. Playback is optional.",
   "conversation.confidence.listen_title": "Listen",
   "conversation.confidence.progress": "Stage",
   "conversation.confidence.reflect_continue": "Start again",

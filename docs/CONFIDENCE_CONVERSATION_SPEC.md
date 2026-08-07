@@ -149,15 +149,17 @@ Silence after ~8s → soft L1 prompt; never a timeout scold.
 
 ## 8. Voice and providers (policy bounds)
 
-| Concern | A1–A3 (this APP) | Later nested gate |
+| Concern | A1–A5 (this APP + nested) | Later nested gate |
 |---|---|---|
-| Model replies | Deterministic fake ConversationModel | A4 ADR+APP |
-| English TTS for listen/reply | Existing speech ports / fakes | A5 if expanding ordinary DI |
-| L1 explanation playback | Text-first acceptable | A5 optional TTS |
+| Model replies | Deterministic fake; Azure OpenAI under APP-0022 | Production promote APP |
+| English TTS for listen/reply | Text primary; optional on-device / future Azure `model_en` | Live multi-locale Azure DI APP |
+| L1 explanation playback | Text-first required; optional `guidance_l1` voices later | Live multi-locale Azure DI APP |
 | Demo Vite `/demo/tts` `/demo/chat` | Not evidence | Never |
 
-No human-recorded lesson assets in the Confidence Conversation content model.
-Curriculum (when present) supplies text and objectives only for spoken lines.
+No human-recorded lesson assets in the Confidence Conversation content model
+([ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md);
+`GuidanceTtsPolicy`). Curriculum (when present) supplies text and objectives
+only for spoken lines.
 
 ---
 

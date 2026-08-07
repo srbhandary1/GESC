@@ -37,8 +37,8 @@ organization isolation.
 | A2 | Schema, validator, fake fixtures for six UI locales, OpenAPI/types |
 | A3 | Product UI stages + API wiring on fakes; a11y smoke |
 | A4 | Nested — only after ADR+APP; HTTP fakes mandatory; live smoke only if APP allows |
-| A5 | Nested — ADR vs ADR-0008; text-first L1 allowed |
-| A6 | Hash-locked eval fixtures; shame ban; L1 explanation adequacy hooks |
+| A5 | Done — ADR-0011 / APP-0024; text-first L1; no live multi-locale TTS spend |
+| A6 | Done — `friend.l1.locale.v1` hash-locked; shame / L1 / false-correction gates |
 | A7 | Exact-commit APO acceptance package |
 
 ---
@@ -109,11 +109,11 @@ Idempotency keys remain mandatory on turn mutations. Responses stay
 
 | ID | Check |
 |---|---|
-| CC-E1 | Locked suite hash; fake providers only unless A4 live APP |
-| CC-E2 | False-correction / missing-L1 cases fail the suite |
-| CC-E3 | Shame-language cases fail closed |
-| CC-E4 | Cost rollup aggregate-only; zero on fakes |
-| CC-E5 | `make ai-eval` fails on regression |
+| CC-E1 | Locked suite hash; fake providers only unless A4 live APP | Pass — `friend.l1.locale.v1` |
+| CC-E2 | False-correction / missing-L1 cases fail the suite | Pass — A6 metrics/gates |
+| CC-E3 | Shame-language cases fail closed | Pass — per-locale shame fixtures |
+| CC-E4 | Cost rollup aggregate-only; zero on fakes | Pass |
+| CC-E5 | `make ai-eval` fails on regression | Pass |
 
 ---
 

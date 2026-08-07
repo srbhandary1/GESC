@@ -104,7 +104,7 @@ describe('deterministic Friend prototype', () => {
     ).toHaveAttribute('lang', 'kn-IN')
     expect(
       screen.getByText(
-        'Fake TTS is text-only. No audio was created or stored.',
+        'The English text above is enough. Playback is optional.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Turn completed')).toBeInTheDocument()

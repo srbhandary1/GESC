@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "बात करने के लिए आगे बढ़ें",
   "conversation.confidence.listen_lead": "ये अंग्रेज़ी मॉडल वाक्य सुनें। अगर आवाज़ उपलब्ध नहीं है तो पढ़ सकते हैं।",
   "conversation.confidence.listen_play": "मॉडल अंग्रेज़ी चलाएँ",
+  "conversation.confidence.listen_playback_failed": "प्लेबैक विफल रहा। अंग्रेज़ी पंक्तियाँ पढ़कर आगे बढ़ें।",
+  "conversation.confidence.listen_text_first": "ऊपर का अंग्रेज़ी पाठ काफ़ी है। प्लेबैक वैकल्पिक है।",
   "conversation.confidence.listen_title": "सुनें",
   "conversation.confidence.progress": "चरण",
   "conversation.confidence.reflect_continue": "फिर से शुरू करें",

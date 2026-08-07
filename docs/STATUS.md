@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | Checkpoint | Confidence Conversation enterprise slice (plan Steps A1–A7) |
-| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A3 done; A4 ADR-0010 proposed (awaiting acceptance) |
+| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A6 done; Active step A7 |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A7 authorized; real LLM DI nested under A4; PR-012+, production/Play unauthorized |
-| Next checkpoint | Complete plan Steps A1–A7 under APP-0021; then separate APP for PR-012. Production/Play remain unauthorized |
-| Professional client path | APP-0016–0021; PR-009 through PR-011 closed; Confidence Conversation authorized; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A6 done; A7 acceptance package drafted ([CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)); PR-012+, production/Play unauthorized |
+| Next checkpoint | Commit slice + APO exact-commit accept A7; then separate APP for PR-012. Production/Play remain unauthorized |
+| Professional client path | APP-0016–0024; PR-009 through PR-011 closed; A4–A6 enterprise Confidence Conversation path; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -706,10 +706,20 @@ PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
 
 [APP-0021](APPROVALS.md#app-0021) authorizes only the Confidence Conversation
 enterprise slice ([ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
-Steps A1–A7) before PR-012. Steps A0–A3 are done (structured turn contract + Confidence Conversation
-product UI stages). Active work is Step A4 (ADR only until nested APP).
-Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only and
-do not count as enterprise verification evidence.
+Steps A1–A7) before PR-012. Steps A0–A4 are done (structured turn contract +
+Confidence Conversation product UI + accepted ADR-0010 Azure conversation-model
+adapter under [APP-0022](APPROVALS.md#app-0022)). Steps A0–A6 are done
+([ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md) /
+[APP-0024](APPROVALS.md#app-0024); A6 hash-locked suite `friend.l1.locale.v1`
+with per-UI-locale L1 / shame / false-correction / cost gates). Active work is
+Step A7 — APO acceptance package drafted in
+[CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md);
+Exact commit SHA is pending an authorized commit of the uncommitted A1–A6
+workspace, then the APO accept statement. Live multi-locale Azure TTS spend
+and ordinary Azure Speech DI expansion remain unauthorized. Live Azure OpenAI
+calls remain operator-gated (outside-repo evidence + ₹500 cap); production DI
+stays `disabled`. Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are
+presentation-only and do not count as enterprise verification evidence.
 
 PR-012 implementation, production, Google Play release and every later
 master-plan checkpoint remain unauthorized until a distinct APP. A proposed

@@ -2258,3 +2258,142 @@ A3 complete. Next: A4 conversation-model provider ADR (no live DI without nested
 
 A4 ADR proposed. Adapter implementation blocked until ADR acceptance and nested
 APO authorize statement are recorded.
+
+## Confidence Conversation — Step A4 (accepted + adapter)
+
+### Evidence reviewed
+
+- Exact ADR acceptance: `Accept ADR-0010 conversation-model provider policy as proposed.`
+- APO live-spend intent: production closeness with live spends
+- [APP-0022](APPROVALS.md#app-0022) (₹500 INR hard development ceiling)
+- Azure OpenAI adapter behind `ConversationModelProvider` with HTTP-fake tests
+- Outside-repo workspace scripts under `scripts/setup-conversation-model-workspace.sh`
+- Production / non-allowlisted env remain fail-closed
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0010 accepted | Pass | APP-0022 |
+| Adapter uses project-owned port only | Pass | `AzureOpenAiConversationModelProvider` |
+| HTTP fakes map to `explanation_l1` | Pass | `AzureOpenAiConversationAdapterTest` |
+| Production cannot authorize live | Pass | `environment_not_allowlisted` |
+| Spend capped; unlimited unauthorized | Pass | APP-0022; config `maximum_spend_inr=500` |
+| Demo OpenRouter not DI | Pass | D-0094; driver allowlist |
+| Production promote / Play | Not authorized | APP-0022 non-goals |
+| Operator live smoke | Pending evidence | Outside-repo workspace |
+
+### Outcome
+
+A4 complete for code + governance. Next: A5 multi-locale guidance TTS policy
+(nested ADR/APP; no TTS spend under APP-0022).
+
+## Confidence Conversation — Step A5 (in progress)
+
+### Evidence reviewed
+
+- Proposed [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md)
+- [APP-0023](APPROVALS.md#app-0023) begin-implementation (fakes / text-first)
+- [A5_GUIDANCE_TTS_AUTHORIZATION_REQUEST.md](A5_GUIDANCE_TTS_AUTHORIZATION_REQUEST.md)
+- `GuidanceTtsPolicy` + web `guidanceTtsPolicy` voice map
+- Product Listen/reply text-first with optional on-device English browser speech
+- Locale catalogues bumped to `ui-*-2026-08-07.10`
+- APP-0022 spend ceiling amended to ₹500
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0011 drafted | Pass | proposed |
+| APO begin A5 (fakes/text-first) | Pass | APP-0023 |
+| Human lesson recordings forbidden | Pass | GuidanceTtsPolicy |
+| Text-first fallback required | Pass | policy + UI copy |
+| PR-009 en-IN benchmark unchanged | Pass | ADR-0011 decision table |
+| Live multi-locale TTS spend | Not authorized | APP-0023 / ADR-0011 |
+| ADR-0011 accepted | Pending | needs exact Accept statement |
+
+### Outcome
+
+A5 scaffolding in progress. Close A5 only after exact ADR-0011 acceptance.
+
+## Confidence Conversation — Step A5 (accepted)
+
+### Evidence reviewed
+
+- Exact ADR acceptance: `Accept ADR-0011 Confidence Conversation guidance TTS policy as proposed.`
+- Exact APO authorize: fakes and text-first fallback; live multi-locale TTS spend unauthorized
+- [APP-0024](APPROVALS.md#app-0024)
+- Prior scaffolding under [APP-0023](APPROVALS.md#app-0023)
+- `GuidanceTtsPolicy` + fake TTS contract + product text-first UI
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0011 accepted | Pass | APP-0024 |
+| AI-only / no human lesson recordings | Pass | GuidanceTtsPolicy; ADR-0011 |
+| Text-first fallback | Pass | UI + policy |
+| Fakes only for multi-locale guidance | Pass | APP-0024 |
+| PR-009 en-IN benchmark unchanged | Pass | ADR-0011 |
+| Live multi-locale TTS spend | Not authorized | APP-0024 non-goals |
+| Production / Play | Not authorized | APP-0024 |
+
+### Outcome
+
+A5 complete. Next: A6 locale eval fixtures + `make ai-eval` gates for L1
+explanations.
+
+## Confidence Conversation — Step A6 (accepted)
+
+### Evidence reviewed
+
+- Suite `friend.l1.locale.v1` / version `1`
+- Locked `suite_hash` `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270`
+- 15 cases: gentle × 6 UI locales, tutor/fluency/unsafe, shame × 6 locales
+- Metrics: false_correction_count, missing_l1_count, shame_language_hits,
+  schema_invalid_count, cost_ceiling_ok
+- Human-review export includes `ui_locale` + `explanation_locale`
+- Docker PHP 8.4.24 `AiEvaluationRunnerTest` 6/6; `ai:evaluate` completed
+  15/0, report_digest `355b4d0424fab059209d97fdd863e738a703e9a1bd6437069981fdadc42b84ca`
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| CC-E1 locked suite hash; fake-only | Pass | suite_hash; APP_ENV/driver gate |
+| CC-E2 false-correction / missing-L1 fail suite | Pass | metrics + case gates |
+| CC-E3 shame-language fail closed | Pass | 6 shame cases → fallback |
+| CC-E4 cost zero on fakes | Pass | estimated_cost_microunits 0 |
+| CC-E5 make ai-eval fails on regression | Pass | status failed if any gate fails |
+| All Phase 1 UI locales covered | Pass | ui_locales === ConversationUiLocales::all() |
+| Live multi-locale TTS spend | Not authorized | APP-0024 |
+| Live model eval | APP-0022 only | spend/evidence gates |
+
+### Outcome
+
+A6 complete. Next: A7 APO exact-commit acceptance of the Confidence Conversation
+slice.
+
+## Confidence Conversation — Step A7 (acceptance package drafted)
+
+### Evidence reviewed
+
+- [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)
+- A1–A6 QUALITY_REVIEW sections; APP-0021 / APP-0022 / APP-0024; ADR-0010 / ADR-0011
+- Recorded limitations include fake-default DI, ₹500 live model cap,
+  unauthorized multi-locale TTS spend, locale review pending, host verify not claimed
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md |
+| Limitations explicit | Pass | package § Recorded limitations |
+| Exact commit SHA | Pending | workspace uncommitted; needs authorized commit |
+| APO accept statement | Pending | exact-commit accept after SHA filled |
+| PR-012 / production / Play | Not authorized | package non-goals |
+
+### Outcome
+
+A7 package ready. Close A7 only after Exact commit SHA is filled and APO
+accepts with recorded limitations.

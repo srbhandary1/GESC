@@ -1,28 +1,36 @@
 ---
-status: proposed
+status: accepted
 date: 2026-08-07
-deciders: []
+deciders:
+  - S R Bhandary (Technical Decision Owner, Security Reviewer, Privacy Reviewer, Tenancy Reviewer — development consolidation)
 consulted:
   - Codex as author and evidence recorder, not approver
 informed: []
 amends_master_plan: false
-approval_evidence: []
-approval_reference: null
+approval_evidence:
+  - APP-0022
+approval_reference: APP-0022
 ---
 
 # ADR-0010: Conversation-model provider for Confidence Conversation
 
 ## Status
 
-**Proposed** under Confidence Conversation plan Step A4
+**Accepted** under Confidence Conversation plan Step A4
 ([ENTERPRISE_STUDENT_PATH_PLAN.md](../ENTERPRISE_STUDENT_PATH_PLAN.md),
-[APP-0021](../APPROVALS.md#app-0021)).
+[APP-0021](../APPROVALS.md#app-0021), [APP-0022](../APPROVALS.md#app-0022)).
 
-This ADR is **not** accepted and authorizes **no** adapter binding, credential,
-live request, spend, production promote or Play release until:
+Accepted on 2026-08-07 (Asia/Kolkata) by `S R Bhandary` exercising consolidated
+development roles (Technical Decision Owner, Security Reviewer, Privacy
+Reviewer, Tenancy Reviewer) with exact statement:
 
-1. the roles below accept this exact ADR artifact; and
-2. a nested APP authorizes bounded implementation and (separately) any spend.
+```text
+Accept ADR-0010 conversation-model provider policy as proposed.
+```
+
+Accountable Product Owner authorized adapter implementation **and** capped live
+development spend under APP-0022. This ADR alone still does **not** authorize
+production promote, Play release or unlimited spend.
 
 Required acceptance roles (development consolidation allowed; independent
 specialist reviews remain mandatory before production):
@@ -31,9 +39,6 @@ specialist reviews remain mandatory before production):
 - Security Reviewer
 - Privacy Reviewer
 - Tenancy Reviewer
-
-Accountable Product Owner must separately authorize begin-implementation and
-any provider spend.
 
 ## Context
 
@@ -184,41 +189,26 @@ conversation-model provider under existing provider-port principles (§§10, 14,
 
 ## Approval evidence
 
-When accepted, record APP entry with:
+Recorded under [APP-0022](../APPROVALS.md#app-0022):
 
-- exact ADR file hash/commit;
-- roles exercised;
-- exact human statement;
-- explicit non-authorization of unlimited spend, production promote and Play.
+- exact ADR acceptance statement;
+- APO live-spend intent;
+- hard development ceiling ₹500 INR (APO amendment: `Amount will be Rs.500`);
+  unlimited spend remains unauthorized;
+- explicit non-authorization of production promote and Play.
 
 ## Verification
 
 - Unit/integration tests with recorded HTTP fakes for the Azure adapter.
 - Production config test: real driver cannot activate without allowlisted env.
 - `make ai-eval` on fakes remains green.
-- Live smoke only after nested spend APP.
+- Live smoke only after workspace evidence + LIVE_AUTHORIZATION phrase.
 
 ## Follow-up
 
-1. Nested APP: accept this ADR + authorize adapter implementation (HTTP fakes
-   first).
-2. Nested APP: credential workspace + capped spend + optional one live smoke.
-3. Step A5: multi-locale guidance TTS policy vs ADR-0008.
-4. Step A6: locale explanation eval fixtures against live or recorded outputs.
-5. Later: open-weight/on-prem benchmark without domain changes.
-
-## Proposed APO / role acceptance statements
-
-Technical/Security/Privacy/Tenancy (consolidated development roles):
-
-```text
-Accept ADR-0010 conversation-model provider policy as proposed.
-```
-
-Accountable Product Owner (begin adapter implementation only, after ADR
-acceptance):
-
-```text
-APO authorize only ADR-0010 adapter implementation with HTTP fakes and
-fail-closed production; live spend remains unauthorized until a separate APP.
-```
+1. Operator fills `$HOME/ge-conversation-model` evidence and runs live smoke
+   under APP-0022 cap.
+2. Step A5: multi-locale guidance TTS policy vs ADR-0008.
+3. Step A6: locale explanation eval fixtures against live or recorded outputs.
+4. Later: open-weight/on-prem benchmark without domain changes.
+5. Separate APP before production promote.

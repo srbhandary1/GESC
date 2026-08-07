@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "ಮಾತನಾಡಲು ಮುಂದುವರಿಸಿ",
   "conversation.confidence.listen_lead": "ಈ ಇಂಗ್ಲಿಷ್ ಮಾದರಿ ವಾಕ್ಯಗಳನ್ನು ಕೇಳಿ. ಧ್ವನಿ ಲಭ್ಯವಿಲ್ಲದಿದ್ದರೆ ಓದಬಹುದು.",
   "conversation.confidence.listen_play": "ಮಾದರಿ ಇಂಗ್ಲಿಷ್ ಪ್ಲೇ ಮಾಡಿ",
+  "conversation.confidence.listen_playback_failed": "ಪ್ಲೇಬ್ಯಾಕ್ ವಿಫಲವಾಯಿತು. ಇಂಗ್ಲಿಷ್ ಸಾಲುಗಳನ್ನು ಓದಿ ಮುಂದುವರಿಸಿ.",
+  "conversation.confidence.listen_text_first": "ಮೇಲಿನ ಇಂಗ್ಲಿಷ್ ಪಠ್ಯ ಸಾಕು. ಪ್ಲೇಬ್ಯಾಕ್ ಐಚ್ಛಿಕ.",
   "conversation.confidence.listen_title": "ಕೇಳಿ",
   "conversation.confidence.progress": "ಹಂತ",
   "conversation.confidence.reflect_continue": "ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಿ",

@@ -80,10 +80,10 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **A1** | Spec + verification scope for Confidence Conversation | `done` | APP-0021 |
 | **A2** | Structured turn contract (EN reply + L1 explanation) for all UI locales | `done` | APP-0021 / D-0096 |
 | **A3** | Product UI vertical slice (not demo): warm-up → listen → talk → correct → reflect | `done` | Bound by APP-0021 |
-| **A4** | Conversation-model provider ADR + secure binding (fail-closed) | `in_progress` | ADR-0010 proposed; nested APP required |
-| **A5** | Multi-locale guidance TTS policy (AI-only lesson audio) | `pending` | ADR amendment vs ADR-0008 |
-| **A6** | Locale eval fixtures + `make ai-eval` gates for L1 explanations | `pending` | Bound by APP-0021 / A4 |
-| **A7** | APO acceptance of Confidence Conversation slice | `pending` | APO accept APP |
+| **A4** | Conversation-model provider ADR + secure binding (fail-closed) | `done` | [APP-0022](APPROVALS.md#app-0022); ADR-0010 accepted |
+| **A5** | Multi-locale guidance TTS policy (AI-only lesson audio) | `done` | [APP-0024](APPROVALS.md#app-0024); ADR-0011 accepted |
+| **A6** | Locale eval fixtures + `make ai-eval` gates for L1 explanations | `done` | `friend.l1.locale.v1` hash-locked; APP-0021 |
+| **A7** | APO acceptance of Confidence Conversation slice | `in_progress` | [Acceptance package](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md); Exact commit pending |
 | **B0** | Authorize PR-012 Role-play (synthetic first) | `pending` | APP (draft exists) |
 | **B1** | Implement PR-012 verification scope | `pending` | After B0 |
 | **B2** | Pilot content path (synthetic → reviewed modules) | `pending` | Content DR / reviewers |
@@ -92,7 +92,7 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `A4` — ADR-0010 proposed; awaiting role acceptance + nested APP before adapter code.
+**Active step:** `A7` — APO exact-commit acceptance; package drafted in [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md) (Exact commit SHA pending authorized commit).
 
 ---
 
@@ -310,7 +310,9 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO/roles accept [ADR-0010](adr/0010-conversation-model-provider-policy.md) using the statements in [A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md](A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md). Do not implement the live Azure adapter until that nested APP exists.
+**Immediate next action:** Authorize a commit of the Confidence Conversation
+A1–A6 workspace, fill Exact commit SHA in the acceptance package, then APO
+accept with recorded limitations. Do not start PR-012 without a separate APP.
 
 ---
 
@@ -336,3 +338,8 @@ When the user says “continue the plan” or “next step”:
 | 2026-08-07 | A2 done (`explanation_l1` + `ui_locale`, OpenAPI 0.9.0); Active step = A3 |
 | 2026-08-07 | A3 done (Confidence Conversation stages + controls on product Practice UI); Active step = A4 |
 | 2026-08-07 | A4 ADR-0010 proposed (Azure conversation-model policy); awaiting acceptance |
+| 2026-08-07 | A4 done ([APP-0022](APPROVALS.md#app-0022); ADR-0010 accepted; Azure OpenAI adapter + ₹500 live-dev cap); Active step = A5 |
+| 2026-08-07 | A5 in progress: ADR-0011 proposed; APP-0023 begin (fakes/text-first); awaiting Accept ADR-0011 |
+| 2026-08-07 | A5 done ([APP-0024](APPROVALS.md#app-0024); ADR-0011 accepted; fakes/text-first); Active step = A6 |
+| 2026-08-07 | A6 done (`friend.l1.locale.v1` hash-locked L1/shame/false-correction gates; ai-eval green on fakes); Active step = A7 |
+| 2026-08-07 | A7 acceptance package drafted; Exact commit SHA pending authorized commit of uncommitted A1–A6 workspace |

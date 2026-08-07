@@ -35,6 +35,11 @@ credential or live synthetic request is permitted until the exact
 subscription/DPA/subprocessor evidence and separate provider-spend approval
 required by this ADR are recorded.
 
+**Product-policy amendment:** [ADR-0011](0011-confidence-conversation-guidance-tts-policy.md)
+(accepted under APP-0024) amends Confidence Conversation guidance TTS and
+AI-only lesson-audio policy only. The locked PR-009 synthetic benchmark
+allowlist in this ADR remains unchanged.
+
 ## Context
 
 The provider-neutral PR-009 vertical slice is implemented and verified. A

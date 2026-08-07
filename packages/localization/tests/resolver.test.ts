@@ -63,7 +63,7 @@ describe('message resolution', () => {
       usedFallback: true,
       reason: 'unapproved-translation',
       reviewStatus: 'source',
-      revision: 'ui-en-IN-2026-08-06.8',
+      revision: 'ui-en-IN-2026-08-07.10',
       isPreview: false,
     })
     expect(onFallback).toHaveBeenCalledOnce()

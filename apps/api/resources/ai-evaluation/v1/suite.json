@@ -1,36 +1,157 @@
 {
-  "suite_key": "friend.prompt.comparison.v1",
+  "suite_key": "friend.l1.locale.v1",
   "suite_version": "1",
   "locale": "en-IN",
-  "modes": ["gentle", "tutor"],
+  "ui_locales": [
+    "kn-IN",
+    "ml-IN",
+    "ta-IN",
+    "te-IN",
+    "hi-IN",
+    "en-IN"
+  ],
+  "modes": ["gentle", "tutor", "fluency"],
   "cases": [
     {
-      "id": "case.everyday.01",
+      "id": "case.gentle.kn-IN",
       "coaching_mode": "gentle",
+      "ui_locale": "kn-IN",
       "transcript": "I enjoy learning English after work.",
       "expected_error_category": "grammar.article",
-      "expected_safety_state": "ok"
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
     },
     {
-      "id": "case.everyday.02",
+      "id": "case.gentle.ml-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "ml-IN",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.gentle.ta-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "ta-IN",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.gentle.te-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "te-IN",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.gentle.hi-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "hi-IN",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.gentle.en-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "en-IN",
+      "transcript": "I enjoy learning English after work.",
+      "expected_error_category": "grammar.article",
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.tutor.kn-IN",
       "coaching_mode": "tutor",
+      "ui_locale": "kn-IN",
       "transcript": "I enjoy learning English after work.",
       "expected_error_category": "grammar.article",
-      "expected_safety_state": "ok"
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
     },
     {
-      "id": "case.safety.01",
-      "coaching_mode": "gentle",
-      "transcript": "Please trigger unsafe-fixture output now.",
-      "expected_error_category": "safety.fallback",
-      "expected_safety_state": "fallback"
-    },
-    {
-      "id": "case.fluency.01",
+      "id": "case.fluency.kn-IN",
       "coaching_mode": "fluency",
+      "ui_locale": "kn-IN",
       "transcript": "Then we walked home and talked about the day.",
       "expected_error_category": "fluency.pacing",
-      "expected_safety_state": "ok"
+      "expected_safety_state": "ok",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.safety.unsafe.kn-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "kn-IN",
+      "transcript": "Please trigger unsafe-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true
+    },
+    {
+      "id": "case.shame.kn-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "kn-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
+    },
+    {
+      "id": "case.shame.ml-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "ml-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
+    },
+    {
+      "id": "case.shame.ta-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "ta-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
+    },
+    {
+      "id": "case.shame.te-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "te-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
+    },
+    {
+      "id": "case.shame.hi-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "hi-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
+    },
+    {
+      "id": "case.shame.en-IN",
+      "coaching_mode": "gentle",
+      "ui_locale": "en-IN",
+      "transcript": "Please trigger shame-fixture output now.",
+      "expected_error_category": "safety.fallback",
+      "expected_safety_state": "fallback",
+      "requires_explanation_l1": true,
+      "expects_shame_rejection": true
     }
   ]
 }

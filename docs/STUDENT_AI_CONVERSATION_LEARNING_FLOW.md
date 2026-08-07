@@ -2,7 +2,7 @@
 
 **Status:** Product design accepted as the UX spine for APP-0021 Confidence Conversation (enterprise path). Not a substitute for the [spec](CONFIDENCE_CONVERSATION_SPEC.md) or [verification scope](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md).  
 **Date:** 2026-08-07  
-**Enterprise delivery plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) — Active step **A4**.  
+**Enterprise delivery plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) — Active step **A7**.  
 **Aligns with:** master plan §§4–7, 14 (Tutor + Friend + correction object); extends L1 guidance from Kannada-first to all Phase 1 UI locales (`kn`, `hi`, `ml`, `ta`, `te`, `en`).  
 **Hard product rules:**
 

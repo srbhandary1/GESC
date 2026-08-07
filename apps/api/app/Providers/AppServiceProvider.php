@@ -15,6 +15,7 @@ use App\Authentication\Otp\SecureOtpCodeGenerator;
 use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\MembershipRolePrivilegeClassifier;
 use App\Authentication\Sessions\PrivilegeClassifier;
+use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledSpeechToTextProvider;
@@ -76,10 +77,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PrivilegeClassifier::class, MembershipRolePrivilegeClassifier::class);
         $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
         $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
-        $fakeConversationEnabled = (
-            $this->app->environment('local')
+        $conversationDriver = (string) config('conversation.provider_driver');
+        $nonProductionConversationEnv = $this->app->environment('local')
             || $this->app->environment('testing')
-        ) && config('conversation.provider_driver') === 'fake';
+            || $this->app->environment('conversation-model-dev');
+        $fakeConversationEnabled = $nonProductionConversationEnv
+            && $conversationDriver === 'fake';
+        $azureConversationEnabled = $nonProductionConversationEnv
+            && $conversationDriver === 'azure-openai-dev';
         $this->app->bind(
             SpeechToTextProvider::class,
             $fakeConversationEnabled
@@ -88,9 +93,11 @@ class AppServiceProvider extends ServiceProvider
         );
         $this->app->bind(
             ConversationModelProvider::class,
-            $fakeConversationEnabled
-                ? DeterministicFakeConversationModelProvider::class
-                : DisabledConversationModelProvider::class,
+            match (true) {
+                $fakeConversationEnabled => DeterministicFakeConversationModelProvider::class,
+                $azureConversationEnabled => AzureOpenAiConversationModelProvider::class,
+                default => DisabledConversationModelProvider::class,
+            },
         );
         $this->app->bind(
             TextToSpeechProvider::class,

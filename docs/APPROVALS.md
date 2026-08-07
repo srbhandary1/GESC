@@ -1358,3 +1358,225 @@ Working rules for A1–A7:
   production.
 - Unlimited provider spend is not authorized.
 - No waiver of `make verify` / CI evidence for implementation steps.
+
+<a id="app-0022"></a>
+
+## APP-0022 — ADR-0010 acceptance + Azure conversation-model adapter with capped live spend
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation + capped live development spend) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer; Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Governing plan | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Step A4 |
+| Governing ADR | [ADR-0010](adr/0010-conversation-model-provider-policy.md) |
+| Prior slice authorization | [APP-0021](APPROVALS.md#app-0021) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statements
+
+```text
+Accept ADR-0010 conversation-model provider policy as proposed.
+```
+
+```text
+We can go with live spends as i want to be as close as possible to production.
+```
+
+```text
+Amount will be Rs.500
+```
+
+### Context and interpretation
+
+Immediately before these statements:
+
+1. ADR-0010 was proposed under plan Step A4 with a draft APO line that deferred
+   live spend;
+2. APP-0021 authorized A1–A7 but required nested A4 ADR/APP for vendor,
+   credential and spend;
+3. the Accountable Product Owner accepted the ADR as proposed and directed that
+   live spends proceed to stay as close as possible to production.
+
+Interpretation:
+
+1. Accept ADR-0010 exactly as proposed (Azure OpenAI / Azure AI chat behind
+   `ConversationModelProvider`, fail-closed production, not demo OpenRouter).
+2. Authorize adapter implementation with recorded HTTP fakes **and** capped
+   live development spend for non-production Confidence Conversation smoke/eval.
+3. The Accountable Product Owner later set the live-spend ceiling explicitly:
+
+```text
+Amount will be Rs.500
+```
+
+Interpretation of that amendment: replace the provisional ₹5,000 recorder
+ceiling with a hard development ceiling of **₹500 INR**. Unlimited spend
+remains unauthorized. Live phrase and spend evidence must use `cap_inr` ≤ 500
+and:
+
+`Authorize live Confidence Conversation Azure OpenAI up to ₹500`.
+
+4. “As close as possible to production” means real Azure chat-completions
+   behaviour under outside-repo credentials and evidence gates — **not**
+   production APP_ENV promote, Play release or ordinary production DI.
+
+### Authorized scope
+
+1. Mark ADR-0010 accepted with this APP as evidence.
+2. Implement Azure OpenAI conversation-model adapter behind
+   `ConversationModelProvider` (project-owned types only).
+3. Allowlisted non-production driver `azure-openai-dev` for
+   `local` / `testing` / `conversation-model-dev` only.
+4. Outside-repo workspace `$HOME/ge-conversation-model` (or
+   `GE_CONVERSATION_MODEL_ROOT`) with `0600` secrets and vendor/spend evidence.
+5. Live calls only when evidence preflight passes and
+   `LIVE_AUTHORIZATION.txt` contains exactly:
+   `Authorize live Confidence Conversation Azure OpenAI up to ₹500`.
+6. Spend evidence `approval_id` must be `APP-0022` with `cap_inr` ≤ 500.
+7. STATUS / DECISIONS / QUALITY_REVIEW / plan Active-step updates.
+
+### Explicit non-authorization
+
+- Production promote / ordinary production DI for Azure conversation-model
+- Google Play release
+- Unlimited or uncapped provider spend
+- Demo OpenRouter (D-0094) as enterprise DI
+- A5 multi-locale TTS spend (separate nested gate)
+- PR-012 Role-play and later checkpoints
+- Waiver of vendor DPA/subprocessor evidence files before live calls
+- Waiver of independent specialist reviews before production
+
+### Conditions and limitations
+
+- Operator must supply real Azure deployment region, endpoint, deployment name
+  and DPA evidence outside the repository before the first live call.
+- Prefer India-region residency; any non-India region requires the
+  `region_acceptance` evidence id to reflect explicit acceptance.
+- CI and default local paths remain on deterministic fakes.
+- AI remains advisory and must not mutate authoritative learning records.
+
+<a id="app-0023"></a>
+
+## APP-0023 — Confidence Conversation A5 begin-implementation (fakes / text-first)
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation; superseded for A5 exit by [APP-0024](APPROVALS.md#app-0024)) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Governing plan | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Step A5 |
+| Governing ADR | [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md) (proposed) |
+| Prior slice authorization | [APP-0021](APPROVALS.md#app-0021) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Then lets go with A5
+```
+
+### Context and interpretation
+
+Immediately before this statement, the Accountable Product Owner amended
+APP-0022 live spend to Rs.500 and directed continuation into plan Step A5.
+
+Interpretation: authorize **begin-implementation** of A5 guidance TTS policy
+work with deterministic fakes, text-first product UI, and AI-only lesson-audio
+content rules. This does **not** accept ADR-0011 (exact Accept statement still
+required for A5 exit), does **not** authorize live multi-locale Azure TTS spend
+or ordinary-app Azure DI expansion, and does **not** authorize production or
+Play.
+
+### Authorized scope
+
+1. Propose ADR-0011 amending ADR-0008 for Confidence Conversation product TTS.
+2. Ship `GuidanceTtsPolicy` voice map + purpose codes.
+3. Product Listen/model playback text-first; optional on-device English browser
+   speech as non-evidence interim.
+4. Fake TTS contract for allowlisted voices.
+5. Localization + STATUS/DECISIONS/QUALITY_REVIEW/plan updates for in-progress A5.
+
+### Explicit non-authorization
+
+- Acceptance of ADR-0011 (requires exact Accept statement)
+- Live multi-locale Azure TTS spend / ordinary DI expansion
+- Demo Vite `/demo/tts` promotion into Laravel DI
+- Changes to locked PR-009 en-IN benchmark allowlist
+- Production / Play / PR-012+
+
+<a id="app-0024"></a>
+
+## APP-0024 — ADR-0011 acceptance + A5 guidance TTS policy (fakes / text-first)
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer; Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Governing plan | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Step A5 |
+| Governing ADR | [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md) |
+| Prior begin-implementation | [APP-0023](APPROVALS.md#app-0023) |
+| Prior slice authorization | [APP-0021](APPROVALS.md#app-0021) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None (ADR-0011 amends ADR-0008 product policy for Confidence Conversation only) |
+
+### Exact human statements
+
+```text
+Accept ADR-0011 Confidence Conversation guidance TTS policy as proposed.
+```
+
+```text
+APO authorize only A5 guidance TTS policy with fakes and text-first fallback;
+live multi-locale TTS spend remains unauthorized until a separate APP.
+```
+
+### Context and interpretation
+
+Immediately before these statements:
+
+1. ADR-0011 was proposed and A5 scaffolding shipped under APP-0023;
+2. STATUS recorded that exact ADR acceptance was still required to close A5;
+3. the Accountable Product Owner / consolidated development roles supplied both
+   the ADR accept and APO authorize statements exactly as drafted.
+
+Interpretation:
+
+1. Accept ADR-0011 exactly as proposed (AI-only lesson audio; en-IN model TTS;
+   optional L1 guidance voices; text-first fallback; PR-009 en-IN benchmark
+   unchanged; demo D-0092 non-evidence).
+2. Authorize completion of A5 under fakes and text-first product behaviour.
+3. Live multi-locale Azure TTS spend and ordinary-app Azure Speech DI expansion
+   remain unauthorized until a separate APP.
+
+### Authorized scope
+
+1. Mark ADR-0011 accepted with this APP as evidence.
+2. Close plan Step A5 (policy + fakes + text-first UI already present under
+   APP-0023).
+3. Update STATUS / DECISIONS / QUALITY_REVIEW / plan Active step to A6.
+4. Retain fail-closed ordinary multi-locale Azure TTS DI.
+
+### Explicit non-authorization
+
+- Live multi-locale Azure TTS spend
+- Ordinary production Azure Speech DI expansion beyond ADR-0008 gates
+- Demo Vite `/demo/tts` promotion into Laravel DI
+- Changes to locked PR-009 en-IN benchmark allowlist
+- Production / Play / PR-012+
+- Waiver of A6 locale eval gates

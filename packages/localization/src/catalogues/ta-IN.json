@@ -13,6 +13,8 @@
   "conversation.confidence.listen_continue": "பேசத் தொடரவும்",
   "conversation.confidence.listen_lead": "இந்த ஆங்கில மாதிரி வாக்கியங்களைக் கேளுங்கள். குரல் இல்லையெனில் படிக்கலாம்.",
   "conversation.confidence.listen_play": "மாதிரி ஆங்கிலம் இயக்கவும்",
+  "conversation.confidence.listen_playback_failed": "பிளேபேக் தோல்வி. ஆங்கில வரிகளைப் படித்துத் தொடரவும்.",
+  "conversation.confidence.listen_text_first": "மேலுள்ள ஆங்கில உரை போதும். பிளேபேக் விருப்பமானது.",
   "conversation.confidence.listen_title": "கேளுங்கள்",
   "conversation.confidence.progress": "நிலை",
   "conversation.confidence.reflect_continue": "மீண்டும் தொடங்கவும்",
