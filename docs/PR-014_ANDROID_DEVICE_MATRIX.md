@@ -58,10 +58,20 @@ in-memory access token inside the JS adapter.
 
 | Device ID | Build SHA / versionName | Journeys 1–8 | Storage negative | Tester | Date |
 |---|---|---|---|---|---|
-| DM-01 | | | | | |
+| DM-01 (emulator substitute) | `d97e66bd…` / `1.0` | Install + cold launch only (not 1–8) | Not run | Codex terminal setup | 2026-08-07 |
 | DM-02 | | | | | |
 | DM-03 | | | | | |
 | DM-04 | | | | | |
+
+### Emulator substitute note (2026-08-07)
+
+| Field | Value |
+|---|---|
+| AVD | `DM01_API34_Pixel7` (API 34 Google APIs x86_64) |
+| Acceleration | Software (`-accel off`) — user not in `kvm` group; `/dev/kvm` present but ACL denied |
+| Package | `com.globalenglish.app` installed successfully |
+| Launch | Process/activity started; first screenshot showed System UI ANR under software accel (`artifacts/android/dm01-emulator-launch-20260807.png`) |
+| Limitation | Emulator substitute for **install smoke only**. UI journeys 1–8 **not claimed** (software accel too slow without KVM group membership). Physical DM-01/DM-02 still preferred. Grant KVM via `bash scripts/setup-android-emulator-kvm.sh` (interactive sudo once), then `bash scripts/run-android-emulator-matrix.sh`. |
 
 ## Workstation assemble note (APP-0034)
 
