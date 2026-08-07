@@ -2823,6 +2823,29 @@ E1 delivery landed for APO exact-commit review with recorded limitations
 (physical matrix, Gradle assemble, full `make verify`, live load-soak against
 API, Play/F0).
 
+## PR-015 — Step E1 acceptance package (awaiting APO)
+
+### Evidence reviewed
+
+- Exact implementation commit `5eca7515291ea571a7f697dcdc2da6197535f839`
+- [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)
+- QUALITY_REVIEW E1 gate table
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-015_APO_ACCEPTANCE_PACKAGE.md |
+| Exact commit SHA filled | Pass | `5eca7515291ea571a7f697dcdc2da6197535f839` |
+| Limitations recorded | Pass | acceptance package |
+| APO accept statement | Pending | Exact line in acceptance package |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0032 |
+
+### Outcome
+
+Ready for Accountable Product Owner Exact-commit acceptance. Codex records
+only; does not approve.
+
 
 
 

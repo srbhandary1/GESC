@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-015 bounded operations hardening (plan E1) — implementation under APP-0032 |
-| Status | PR-015 begin-implementation authorized ([APP-0032](APPROVALS.md#app-0032) / D-0112); Active step **E1** (delivery in progress toward Exact-commit accept) |
+| Checkpoint | PR-015 bounded operations hardening (plan E1) — awaiting APO exact-commit acceptance |
+| Status | PR-015 bounded slice implemented under [APP-0032](APPROVALS.md#app-0032); Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839`; Active step **E1** (acceptance pending) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-014 accepted; PR-015 bounded slice implementing under APP-0032; Play / F0 unauthorized |
-| Next checkpoint | Finish remaining PH evidence (matrix/assemble/verify as feasible), then APO exact-commit acceptance. Play / F0 / remaining PR-013 unauthorized |
+| Product code | PR-008 through PR-014 accepted; PR-015 Exact commit pending APO accept; Play / F0 unauthorized |
+| Next checkpoint | APO accept Exact commit in [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md). Play / F0 / remaining PR-013 / physical matrix remain unauthorized or unclaimed |
 | Professional client path | APP-0016–0032; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
