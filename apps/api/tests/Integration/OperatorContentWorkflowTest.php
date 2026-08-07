@@ -309,6 +309,9 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
                 'curriculum.publish',
                 'curriculum.share.manage',
                 'enrollments.curriculum.assign',
+                'privacy.erasure.request',
+                'privacy.export.request',
+                'support.diagnostics.read',
             ],
             $permissionKeys,
         );

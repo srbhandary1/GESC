@@ -30,8 +30,8 @@ FAQ) and is not the production free-flow path.
 | Prioritized correction + Kannada explanation | Partial | Enterprise slice accepted; live multi-locale TTS spend gated; human L1 review pending |
 | Attempts/turns survive retry/duplicate/reconnect/deploy | Partial | Domain tests exist; full deploy/reconnect UAT not claimed |
 | Can-do progress, review due, recent improvement | Partial | Learner progress APIs/UI exist; pilot UAT incomplete |
-| One complete pathway: reviewed content, remediation, delayed review, unlock | **Blocked** | [DR-0007](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md) open |
-| Operators: enroll, publish, review, support, export, privacy requests (no DB) | **Blocked** / **APP-deferred** | Content-workflow + audit accepted; support/privacy ops deferred to [PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md) |
+| One complete pathway: reviewed content, remediation, delayed review, unlock | **Blocked** (limitation) | DR-0007 resolved to retain synthetic with explicit F0 pathway incompleteness until commissioned reviewed content lands |
+| Operators: enroll, publish, review, support, export, privacy requests (no DB) | Partial / Pass (ops slice) | Content-workflow + audit (APP-0029); support diagnostics + privacy export/erasure under [APP-0035](APPROVALS.md#app-0035); sampled speaking review still unauthorized |
 | Kannada content reviewed, versioned, publishable, rollback-safe | Partial | Publish/rollback machinery exists; independent content review incomplete |
 | AI bounded, evaluated, cost-controlled, private, non-authoritative | Partial | Eval harness + fake/default bindings; live-dev capped under APP-0022 |
 | Learner memory visible and controllable | Partial | Memory APIs accepted; pilot UAT incomplete |
@@ -41,8 +41,10 @@ FAQ) and is not the production free-flow path.
 
 ## Critical blockers before any F0 accept statement
 
-1. **Reviewed pathway content** (DR-0007).
-2. **Remaining PR-013** privacy/support — authorize via drafted request (not begun).
+1. **Reviewed pathway content** — synthetic retained with recorded F0 limitation;
+   commissioning budget/owner still required before pathway Pass.
+2. **Remaining PR-013** privacy/support ops — implemented under APP-0035
+   (sampled speaking review still unauthorized).
 3. **Android physical device matrix** DM-01/DM-02 (+ credential negatives).
 4. **Independent specialist reviews**.
 5. **Production-like environment** — OTP cutover, consented pilots, monitoring beyond harnesses.
@@ -68,6 +70,7 @@ FAQ) and is not the production free-flow path.
 
 ## APP-0034 completion posture
 
-Evidence-closure deliverables under APP-0034 are **recorded**. F0 Exact-commit
-accept remains **unauthorized**. Next engineering/APO gates: privacy/support
-APP, DR-0007, device matrix, specialist reviews, then F0 consideration package.
+Evidence-closure deliverables under APP-0034 are **recorded**. Privacy/support
+ops advanced under APP-0035. F0 Exact-commit accept remains **unauthorized**.
+Next gates: Exact accept of APP-0035 slice, physical device matrix, specialist
+reviews, commissioned pathway content, then F0 consideration with limitations.

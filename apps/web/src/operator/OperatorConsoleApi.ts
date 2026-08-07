@@ -64,6 +64,25 @@ export interface OperatorPilotAnalyticsSummary {
   readonly distinction_note: 'usage_counts_are_not_demonstrated_learning'
 }
 
+export interface OperatorSupportDiagnosticItem {
+  readonly kind:
+    | 'stuck_in_progress'
+    | 'provider_failed_recoverable'
+    | 'open_deletion'
+  readonly subject_type:
+    | 'learner_attempt'
+    | 'voice_recording'
+    | 'voice_deletion_request'
+  readonly subject_id: string
+  readonly status: string
+  readonly observed_at: string
+}
+
+export interface OperatorSupportDiagnostics {
+  readonly generated_at: string
+  readonly items: readonly OperatorSupportDiagnosticItem[]
+}
+
 export interface OperatorConsoleApi {
   listDrafts(signal?: AbortSignal): Promise<readonly OperatorContentDraft[]>
   listPublications(
@@ -75,6 +94,9 @@ export interface OperatorConsoleApi {
   getPilotAnalytics(
     signal?: AbortSignal,
   ): Promise<OperatorPilotAnalyticsSummary>
+  listSupportDiagnostics(
+    signal?: AbortSignal,
+  ): Promise<OperatorSupportDiagnostics>
 }
 
 export class OperatorConsoleUnavailableError extends Error {
@@ -138,6 +160,15 @@ export class WebOperatorConsoleApi implements OperatorConsoleApi {
   ): Promise<OperatorPilotAnalyticsSummary> {
     return this.#get<OperatorPilotAnalyticsSummary>(
       '/operator/pilot-analytics',
+      signal,
+    )
+  }
+
+  async listSupportDiagnostics(
+    signal?: AbortSignal,
+  ): Promise<OperatorSupportDiagnostics> {
+    return this.#get<OperatorSupportDiagnostics>(
+      '/operator/support/diagnostics?limit=50',
       signal,
     )
   }

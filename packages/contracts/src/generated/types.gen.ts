@@ -731,6 +731,48 @@ export type OperatorPilotAnalyticsSummary = {
     distinction_note: 'usage_counts_are_not_demonstrated_learning';
 };
 
+export type OperatorSupportDiagnostics = {
+    generated_at: string;
+    items: Array<OperatorSupportDiagnosticItem>;
+};
+
+export type OperatorSupportDiagnosticItem = {
+    kind: 'stuck_in_progress' | 'provider_failed_recoverable' | 'open_deletion';
+    subject_type: 'learner_attempt' | 'voice_recording' | 'voice_deletion_request';
+    subject_id: Ulid;
+    status: string;
+    observed_at: string;
+};
+
+export type OperatorPrivacyExport = {
+    export_request_id: Ulid;
+    target_membership_id: Ulid;
+    status: 'pending' | 'completed' | 'failed';
+    summary: {
+        membership_id: Ulid;
+        membership_type: string;
+        membership_status: string;
+        consent_event_ids: Array<Ulid>;
+        voice_recording_ids: Array<Ulid>;
+        voice_deletion_receipt_ids: Array<Ulid>;
+        conversation_session_ids: Array<Ulid>;
+        learner_attempt_ids: Array<Ulid>;
+        content_note: 'identifier_digests_only_no_audio_or_transcripts';
+    };
+    requested_at: string;
+    completed_at: string | null;
+};
+
+export type OperatorPrivacyErasure = {
+    erasure_request_id: Ulid;
+    target_membership_id: Ulid;
+    status: 'pending' | 'completed' | 'partially_completed' | 'restricted';
+    voice_recording_count: number;
+    voice_deletion_completed_count: number;
+    requested_at: string;
+    completed_at: string | null;
+};
+
 export type ProblemDetails = {
     type: string;
     title: string;
@@ -3196,3 +3238,234 @@ export type GetOperatorPilotAnalyticsResponses = {
 };
 
 export type GetOperatorPilotAnalyticsResponse = GetOperatorPilotAnalyticsResponses[keyof GetOperatorPilotAnalyticsResponses];
+
+export type ListOperatorSupportDiagnosticsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/operator/support/diagnostics';
+};
+
+export type ListOperatorSupportDiagnosticsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorSupportDiagnosticsError = ListOperatorSupportDiagnosticsErrors[keyof ListOperatorSupportDiagnosticsErrors];
+
+export type ListOperatorSupportDiagnosticsResponses = {
+    /**
+     * Support diagnostics digests.
+     */
+    200: OperatorSupportDiagnostics;
+};
+
+export type ListOperatorSupportDiagnosticsResponse = ListOperatorSupportDiagnosticsResponses[keyof ListOperatorSupportDiagnosticsResponses];
+
+export type CreateOperatorPrivacyExportData = {
+    body: {
+        target_membership_id: Ulid;
+    };
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/privacy/exports';
+};
+
+export type CreateOperatorPrivacyExportErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateOperatorPrivacyExportError = CreateOperatorPrivacyExportErrors[keyof CreateOperatorPrivacyExportErrors];
+
+export type CreateOperatorPrivacyExportResponses = {
+    /**
+     * Privacy export created or replayed.
+     */
+    201: OperatorPrivacyExport;
+};
+
+export type CreateOperatorPrivacyExportResponse = CreateOperatorPrivacyExportResponses[keyof CreateOperatorPrivacyExportResponses];
+
+export type GetOperatorPrivacyExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        export_request_id: Ulid;
+    };
+    query?: never;
+    url: '/operator/privacy/exports/{export_request_id}';
+};
+
+export type GetOperatorPrivacyExportErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorPrivacyExportError = GetOperatorPrivacyExportErrors[keyof GetOperatorPrivacyExportErrors];
+
+export type GetOperatorPrivacyExportResponses = {
+    /**
+     * Privacy export status and identifier summary.
+     */
+    200: OperatorPrivacyExport;
+};
+
+export type GetOperatorPrivacyExportResponse = GetOperatorPrivacyExportResponses[keyof GetOperatorPrivacyExportResponses];
+
+export type CreateOperatorPrivacyErasureData = {
+    body: {
+        target_membership_id: Ulid;
+    };
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/privacy/erasures';
+};
+
+export type CreateOperatorPrivacyErasureErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateOperatorPrivacyErasureError = CreateOperatorPrivacyErasureErrors[keyof CreateOperatorPrivacyErasureErrors];
+
+export type CreateOperatorPrivacyErasureResponses = {
+    /**
+     * Privacy erasure created or replayed.
+     */
+    201: OperatorPrivacyErasure;
+};
+
+export type CreateOperatorPrivacyErasureResponse = CreateOperatorPrivacyErasureResponses[keyof CreateOperatorPrivacyErasureResponses];
+
+export type GetOperatorPrivacyErasureData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        erasure_request_id: Ulid;
+    };
+    query?: never;
+    url: '/operator/privacy/erasures/{erasure_request_id}';
+};
+
+export type GetOperatorPrivacyErasureErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorPrivacyErasureError = GetOperatorPrivacyErasureErrors[keyof GetOperatorPrivacyErasureErrors];
+
+export type GetOperatorPrivacyErasureResponses = {
+    /**
+     * Privacy erasure status.
+     */
+    200: OperatorPrivacyErasure;
+};
+
+export type GetOperatorPrivacyErasureResponse = GetOperatorPrivacyErasureResponses[keyof GetOperatorPrivacyErasureResponses];

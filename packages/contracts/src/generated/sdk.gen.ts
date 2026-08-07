@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, AdvanceConversationSessionStageData, AdvanceConversationSessionStageErrors, AdvanceConversationSessionStageResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, CreateLearnerAiMemoryFactData, CreateLearnerAiMemoryFactErrors, CreateLearnerAiMemoryFactResponses, DeleteLearnerAiMemoryFactData, DeleteLearnerAiMemoryFactErrors, DeleteLearnerAiMemoryFactResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetOperatorPilotAnalyticsData, GetOperatorPilotAnalyticsErrors, GetOperatorPilotAnalyticsResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, ListLearnerAiMemoryData, ListLearnerAiMemoryErrors, ListLearnerAiMemoryResponses, ListOperatorAuditEventsData, ListOperatorAuditEventsErrors, ListOperatorAuditEventsResponses, ListOperatorContentDraftsData, ListOperatorContentDraftsErrors, ListOperatorContentDraftsResponses, ListOperatorContentPublicationsData, ListOperatorContentPublicationsErrors, ListOperatorContentPublicationsResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, PublishOperatorCurriculumData, PublishOperatorCurriculumErrors, PublishOperatorCurriculumResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RecordOperatorEnglishContentReviewData, RecordOperatorEnglishContentReviewErrors, RecordOperatorEnglishContentReviewResponses, RecordOperatorKannadaContentReviewData, RecordOperatorKannadaContentReviewErrors, RecordOperatorKannadaContentReviewResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, RollbackOperatorCurriculumData, RollbackOperatorCurriculumErrors, RollbackOperatorCurriculumResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, UpdateLearnerAiMemoryFactData, UpdateLearnerAiMemoryFactErrors, UpdateLearnerAiMemoryFactResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
+import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, AdvanceConversationSessionStageData, AdvanceConversationSessionStageErrors, AdvanceConversationSessionStageResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, CreateLearnerAiMemoryFactData, CreateLearnerAiMemoryFactErrors, CreateLearnerAiMemoryFactResponses, CreateOperatorPrivacyErasureData, CreateOperatorPrivacyErasureErrors, CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyExportData, CreateOperatorPrivacyExportErrors, CreateOperatorPrivacyExportResponses, DeleteLearnerAiMemoryFactData, DeleteLearnerAiMemoryFactErrors, DeleteLearnerAiMemoryFactResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetOperatorPilotAnalyticsData, GetOperatorPilotAnalyticsErrors, GetOperatorPilotAnalyticsResponses, GetOperatorPrivacyErasureData, GetOperatorPrivacyErasureErrors, GetOperatorPrivacyErasureResponses, GetOperatorPrivacyExportData, GetOperatorPrivacyExportErrors, GetOperatorPrivacyExportResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, ListLearnerAiMemoryData, ListLearnerAiMemoryErrors, ListLearnerAiMemoryResponses, ListOperatorAuditEventsData, ListOperatorAuditEventsErrors, ListOperatorAuditEventsResponses, ListOperatorContentDraftsData, ListOperatorContentDraftsErrors, ListOperatorContentDraftsResponses, ListOperatorContentPublicationsData, ListOperatorContentPublicationsErrors, ListOperatorContentPublicationsResponses, ListOperatorSupportDiagnosticsData, ListOperatorSupportDiagnosticsErrors, ListOperatorSupportDiagnosticsResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, PublishOperatorCurriculumData, PublishOperatorCurriculumErrors, PublishOperatorCurriculumResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RecordOperatorEnglishContentReviewData, RecordOperatorEnglishContentReviewErrors, RecordOperatorEnglishContentReviewResponses, RecordOperatorKannadaContentReviewData, RecordOperatorKannadaContentReviewErrors, RecordOperatorKannadaContentReviewResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, RollbackOperatorCurriculumData, RollbackOperatorCurriculumErrors, RollbackOperatorCurriculumResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, UpdateLearnerAiMemoryFactData, UpdateLearnerAiMemoryFactErrors, UpdateLearnerAiMemoryFactResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -871,5 +871,92 @@ export const getOperatorPilotAnalytics = <ThrowOnError extends boolean = false>(
             type: 'apiKey'
         }, { scheme: 'bearer', type: 'http' }],
     url: '/operator/pilot-analytics',
+    ...options
+});
+
+/**
+ * List org-scoped support diagnostics digests
+ *
+ * Returns digests for stuck attempts, recoverable voice failures, and open
+ * deletion requests. Never returns transcripts, audio, or conversation
+ * bodies. Requires support.diagnostics.read.
+ *
+ */
+export const listOperatorSupportDiagnostics = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorSupportDiagnosticsData, ThrowOnError>): RequestResult<ListOperatorSupportDiagnosticsResponses, ListOperatorSupportDiagnosticsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorSupportDiagnosticsResponses, ListOperatorSupportDiagnosticsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/support/diagnostics',
+    ...options
+});
+
+/**
+ * Create an org-scoped learner identifier export
+ *
+ * Creates a JSON summary of membership, consent, recording, deletion,
+ * session, and attempt identifiers for one learner membership. Never
+ * includes audio or transcripts. Requires privacy.export.request.
+ *
+ */
+export const createOperatorPrivacyExport = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyExportData, ThrowOnError>): RequestResult<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/privacy/exports',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an org-scoped privacy export request
+ */
+export const getOperatorPrivacyExport = <ThrowOnError extends boolean = false>(options: Options<GetOperatorPrivacyExportData, ThrowOnError>): RequestResult<GetOperatorPrivacyExportResponses, GetOperatorPrivacyExportErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorPrivacyExportResponses, GetOperatorPrivacyExportErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/privacy/exports/{export_request_id}',
+    ...options
+});
+
+/**
+ * Create an org-scoped account-erasure request
+ *
+ * Starts an ADR-0007-aligned erasure workflow for one learner membership,
+ * including voice deletion receipts. Requires privacy.erasure.request.
+ *
+ */
+export const createOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyErasureData, ThrowOnError>): RequestResult<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/privacy/erasures',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an org-scoped privacy erasure request
+ */
+export const getOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(options: Options<GetOperatorPrivacyErasureData, ThrowOnError>): RequestResult<GetOperatorPrivacyErasureResponses, GetOperatorPrivacyErasureErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorPrivacyErasureResponses, GetOperatorPrivacyErasureErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/privacy/erasures/{erasure_request_id}',
     ...options
 });

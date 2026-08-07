@@ -15,6 +15,7 @@ import type {
   OperatorContentDraft,
   OperatorPilotAnalyticsSummary,
   OperatorPublicationStatus,
+  OperatorSupportDiagnosticItem,
 } from './OperatorConsoleApi'
 
 export interface OperatorConsoleProps {
@@ -54,6 +55,9 @@ export function OperatorConsole({
   >([])
   const [pilotAnalytics, setPilotAnalytics] =
     useState<OperatorPilotAnalyticsSummary | null>(null)
+  const [diagnostics, setDiagnostics] = useState<
+    readonly OperatorSupportDiagnosticItem[]
+  >([])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -64,9 +68,16 @@ export function OperatorConsole({
       api.listPublications(controller.signal),
       api.listAuditEvents(controller.signal),
       api.getPilotAnalytics(controller.signal),
+      api.listSupportDiagnostics(controller.signal),
     ])
       .then(
-        ([nextDrafts, nextPublications, nextAudit, nextAnalytics]) => {
+        ([
+          nextDrafts,
+          nextPublications,
+          nextAudit,
+          nextAnalytics,
+          nextDiagnostics,
+        ]) => {
           if (!active) {
             return
           }
@@ -75,6 +86,7 @@ export function OperatorConsole({
           setPublications(nextPublications)
           setAuditEvents(nextAudit)
           setPilotAnalytics(nextAnalytics)
+          setDiagnostics(nextDiagnostics.items)
           setState('ready')
         },
       )
@@ -242,6 +254,43 @@ export function OperatorConsole({
                       {' '}
                       · #{publication.publication_number}
                       {publication.is_head ? ' · head' : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section
+            aria-labelledby="operator-support-diagnostics-title"
+            className="operator-console__panel"
+          >
+            <h3 id="operator-support-diagnostics-title">
+              <LocalizedMessage
+                resolution={message('operator.support_diagnostics.title')}
+              />
+            </h3>
+            <p>
+              <LocalizedMessage
+                resolution={message('operator.support_diagnostics.lead')}
+              />
+            </p>
+            {diagnostics.length === 0 ? (
+              <p>
+                <LocalizedMessage
+                  resolution={message('operator.support_diagnostics.empty')}
+                />
+              </p>
+            ) : (
+              <ul className="operator-console__list">
+                {diagnostics.map((item) => (
+                  <li key={`${item.subject_type}:${item.subject_id}`}>
+                    <strong>{item.kind}</strong>
+                    <span>
+                      {' '}
+                      · {item.subject_type}:{item.subject_id}
+                      {' · '}
+                      {item.status}
                     </span>
                   </li>
                 ))}

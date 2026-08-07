@@ -3086,6 +3086,219 @@ export const OperatorPilotAnalyticsSummarySchema = {
     }
 } as const;
 
+export const OperatorSupportDiagnosticsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'items'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorSupportDiagnosticItem'
+            }
+        }
+    }
+} as const;
+
+export const OperatorSupportDiagnosticItemSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'kind',
+        'subject_type',
+        'subject_id',
+        'status',
+        'observed_at'
+    ],
+    properties: {
+        kind: {
+            type: 'string',
+            enum: [
+                'stuck_in_progress',
+                'provider_failed_recoverable',
+                'open_deletion'
+            ]
+        },
+        subject_type: {
+            type: 'string',
+            enum: [
+                'learner_attempt',
+                'voice_recording',
+                'voice_deletion_request'
+            ]
+        },
+        subject_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        observed_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorPrivacyExportSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'export_request_id',
+        'target_membership_id',
+        'status',
+        'summary',
+        'requested_at',
+        'completed_at'
+    ],
+    properties: {
+        export_request_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        target_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'completed',
+                'failed'
+            ]
+        },
+        summary: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'membership_id',
+                'membership_type',
+                'membership_status',
+                'consent_event_ids',
+                'voice_recording_ids',
+                'voice_deletion_receipt_ids',
+                'conversation_session_ids',
+                'learner_attempt_ids',
+                'content_note'
+            ],
+            properties: {
+                membership_id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                membership_type: {
+                    type: 'string'
+                },
+                membership_status: {
+                    type: 'string'
+                },
+                consent_event_ids: {
+                    type: 'array',
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                },
+                voice_recording_ids: {
+                    type: 'array',
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                },
+                voice_deletion_receipt_ids: {
+                    type: 'array',
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                },
+                conversation_session_ids: {
+                    type: 'array',
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                },
+                learner_attempt_ids: {
+                    type: 'array',
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                },
+                content_note: {
+                    type: 'string',
+                    const: 'identifier_digests_only_no_audio_or_transcripts'
+                }
+            }
+        },
+        requested_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        completed_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorPrivacyErasureSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'erasure_request_id',
+        'target_membership_id',
+        'status',
+        'voice_recording_count',
+        'voice_deletion_completed_count',
+        'requested_at',
+        'completed_at'
+    ],
+    properties: {
+        erasure_request_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        target_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'completed',
+                'partially_completed',
+                'restricted'
+            ]
+        },
+        voice_recording_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        voice_deletion_completed_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        requested_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        completed_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
 export const ProblemDetailsSchema = {
     type: 'object',
     additionalProperties: true,

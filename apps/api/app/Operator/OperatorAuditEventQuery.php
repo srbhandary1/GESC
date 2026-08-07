@@ -25,6 +25,8 @@ final readonly class OperatorAuditEventQuery
         'curriculum.publication.rollback_activated',
         'curriculum.content_revision.appended',
         'curriculum.localized_variant.appended',
+        'privacy.export.requested',
+        'privacy.erasure.requested',
     ];
 
     public function __construct(

@@ -120,6 +120,8 @@ to the master plan.
 | D-0112 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, authorizes beginning only PR-015 bounded operations hardening and closed-beta evidence closure under [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md) and [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md). This is not acceptance of completed PR-015, F0 Phase 1 DoD, Play public release, remaining PR-013 sampled review/privacy ops, or real learner production data. | [APP-0032](APPROVALS.md#app-0032); D-0111 |
 | D-0113 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, accepts PR-015 bounded operations hardening and closed-beta evidence closure at exact commit `5eca7515291ea571a7f697dcdc2da6197535f839` with its recorded limitations. This does not authorize F0 Phase 1 DoD, Play public release, remaining PR-013 sampled review/privacy ops, or real learner production data. Physical matrix, Gradle assemble, `make verify`, and live load-soak/backup execution remain unclaimed. | [APP-0033](APPROVALS.md#app-0033); D-0112 |
 | D-0114 | Accepted | `S R Bhandary`, acting as Accountable Product Owner, authorizes beginning only pre-F0 Phase 1 evidence-closure under [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). This is not F0 Definition of Done sign-off and does not authorize Play public release, specialist-review waiver, remaining PR-013 sampled review/privacy ops, or real learner production data. | [APP-0034](APPROVALS.md#app-0034); D-0113 |
+| D-0115 | Accepted | `S R Bhandary`, acting as Accountable Product Owner under blanket continuation authorization, authorizes beginning only remaining PR-013 support diagnostics and privacy/account ops under [PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md). Sampled speaking review, F0 DoD, and Play public release remain unauthorized. | [APP-0035](APPROVALS.md#app-0035); D-0114 |
+| D-0116 | Accepted | `S R Bhandary`, acting as Accountable Product Owner under blanket continuation authorization, resolves DR-0007 by retaining disclosed synthetic pathway/Role-play with an explicit F0 limitation that the Phase 1 reviewed-pathway row remains incomplete until specialist-commissioned content lands; commissioning budget and named owner remain a separate commercial decision. | [DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md); APP-0037; D-0115 |
 
 ## Resolved decision requests
 
@@ -130,6 +132,7 @@ to the master plan.
 | DR-0003 | Resolved by [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md) under APP-0004. |
 | DR-0004 | Resolved by [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md) under APP-0008. |
 | DR-0005 | Resolved by [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) under APP-0011. PR-009 implementation and production remain separately gated. |
+| DR-0007 | Resolved under D-0116 / APP-0037: synthetic pathway/Role-play retained with explicit F0 incompleteness; commissioning budget and named owner remain a separate commercial follow-up. |
 | DR-0011 | Resolved by [ADR-0008](adr/0008-azure-speech-development-provider-and-benchmark-policy.md) and the [locked benchmark plan](PR-009_SPEECH_PROVIDER_BENCHMARK_PLAN.md) under APP-0013. Live requests remain blocked on exact vendor evidence, credentials and separate spend approval. |
 | DR-0012 | Resolved by [ADR-0009](adr/0009-synthetic-tts-listener-fixture-review-workflow.md) under APP-0014. Only the bounded listener-fixture workflow implementation is authorized; credentials, spend, live requests and benchmark success remain separately blocked. |
 | DR-0008 | Resolved by [ADR-0001](adr/0001-approval-authority-and-evidence.md) under APP-0001. |
@@ -143,5 +146,4 @@ indicated implementation becomes authoritative.
 | ID | Needed by | Decision required |
 |---|---|---|
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
-| DR-0007 | Commercial authorization | Responsibility and total budget when specialist content production is commissioned — commissioning request drafted in [DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md) |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

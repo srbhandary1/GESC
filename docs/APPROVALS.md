@@ -2345,3 +2345,117 @@ of specialist reviews, or real learner production data.
 - Demo APK remains presentation-only (D-0078).
 - No master-plan amendment is made.
 
+
+<a id="app-0035"></a>
+
+## APP-0035 — PR-013 remaining privacy and support ops begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation (blanket authorization to continue) |
+| Prior acceptance | [APP-0029](APPROVALS.md#app-0029) (bounded content-workflow + audit); [APP-0034](APPROVALS.md#app-0034) deferred remaining privacy/support |
+| Governing request | [PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) PR-013 remaining ops / pre-F0 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only remaining PR-013 support diagnostics and privacy/account
+ops under PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md; sampled speaking
+review, F0 DoD, and Play public release remain unauthorized.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. APP-0034 evidence package and staging Friend path were recorded;
+2. remaining PR-013 privacy/support ops were still APP-deferred;
+3. the Accountable Product Owner supplied blanket authorization to continue
+   and do the needful, which includes accepting the Exact begin-implementation
+   statement drafted in the governing request.
+
+Interpretation: authorize **beginning** only the remaining PR-013 support
+diagnostics and privacy/account-ops vertical slice. This is **not**
+acceptance of sampled speaking review, F0 Definition of Done, Google Play
+public release, or waiver of independent specialist reviews.
+
+### Authorized scope
+
+1. Org-scoped support diagnostics listing (digests/safe metadata only).
+2. Operator account-erasure / retention workflows aligned with ADR-0007.
+3. Bounded org-scoped PII export (JSON summary of membership/consent/deletion
+   receipt identifiers — no audio/transcripts).
+4. OpenAPI + generated clients, cross-tenant tests, STATUS / DECISIONS /
+   QUALITY_REVIEW updates.
+
+### Explicit non-authorization
+
+- Consent-gated sampled speaking / transcript / audio review
+- F0 Phase 1 Definition of Done sign-off
+- Google Play public listing / open production release
+- Waiver of independent specialist reviews
+- Production OTP cutover / real learner production data
+
+### Conditions and limitations
+
+- Digests and identifier summaries only; never raw conversation bodies,
+  transcripts, or audio in operator responses.
+- No master-plan amendment is made.
+
+
+<a id="app-0037"></a>
+
+## APP-0037 — DR-0007 synthetic pathway limitation resolution
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation (blanket authorization to continue) |
+| Governing request | [DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md](DR-0007_CURRICULUM_COMMISSIONING_REQUEST.md) |
+| Related decision | [D-0116](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO resolve DR-0007: retain disclosed synthetic pathway and Role-play with
+explicit F0 limitation that Phase 1 pathway DoD remains incomplete until
+specialist-commissioned reviewed content lands; commissioning budget and
+owner remain a separate commercial decision.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. DR-0007 remained open as a commercial commissioning blocker;
+2. F0 pathway DoD could not claim a complete reviewed pathway;
+3. the Accountable Product Owner authorized continuation and resolution of
+   outstanding pre-F0 gates without inventing a commissioning budget.
+
+Interpretation: close DR-0007 by **retaining synthetic content with an
+explicit F0 limitation**. This does **not** commission specialist content,
+does not mark the §27 pathway row Pass, and does not authorize F0 Exact
+accept or Play public release.
+
+### Conditions and limitations
+
+- Commissioning budget, named owner, and review SLAs remain a separate
+  commercial decision before a reviewed-pathway Pass claim.
+- No master-plan amendment is made.
+

@@ -1,6 +1,6 @@
 # PR-013 remaining privacy and support ops — authorization request
 
-**Status:** Draft awaiting APO begin-implementation (not authorized).  
+**Status:** Authorized begin-implementation under [APP-0035](APPROVALS.md#app-0035).  
 **Prior acceptance:** Bounded content-workflow + audit [APP-0029](APPROVALS.md#app-0029)
 at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`.  
 **Deferred under:** [APP-0034](APPROVALS.md#app-0034) evidence closure.  

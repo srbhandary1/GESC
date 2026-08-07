@@ -1,6 +1,6 @@
 # DR-0007 — Reviewed pathway content commissioning request
 
-**Status:** Open decision request (blocks commercial/Phase 1 pathway DoD).  
+**Status:** Resolved under APP-0037 / D-0116 — synthetic retained with explicit F0 pathway limitation; commissioning budget/owner remain open commercial follow-up.  
 **Needed by:** Phase 1 complete pathway / F0 §27 “one complete pathway”.  
 **Related:** [DECISIONS.md](DECISIONS.md) open DR-0007; Role-play synthetic
 retained under D-0105.

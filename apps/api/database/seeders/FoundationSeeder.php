@@ -43,6 +43,9 @@ final class FoundationSeeder extends Seeder
         'curriculum.suspend' => 'Suspend or resume organization curriculum delivery.',
         'learning.participate' => 'Use assigned learner missions and record self-owned learning evidence.',
         'audit.read' => 'List organization-scoped audit digests for privileged operator actions.',
+        'support.diagnostics.read' => 'List organization-scoped support diagnostics digests without learner content bodies.',
+        'privacy.export.request' => 'Request organization-scoped learner identifier exports without audio or transcripts.',
+        'privacy.erasure.request' => 'Request organization-scoped learner account-erasure and retention workflows.',
     ];
 
     /**
@@ -66,6 +69,9 @@ final class FoundationSeeder extends Seeder
                 'curriculum.share.manage',
                 'enrollments.curriculum.assign',
                 'audit.read',
+                'support.diagnostics.read',
+                'privacy.export.request',
+                'privacy.erasure.request',
             ],
         ],
         Role::DIRECT_CONTENT_REVIEWER_KEY => [

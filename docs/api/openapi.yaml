@@ -2065,6 +2065,215 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /operator/support/diagnostics:
+    get:
+      operationId: listOperatorSupportDiagnostics
+      summary: List org-scoped support diagnostics digests
+      description: |
+        Returns digests for stuck attempts, recoverable voice failures, and open
+        deletion requests. Never returns transcripts, audio, or conversation
+        bodies. Requires support.diagnostics.read.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Support diagnostics digests.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorSupportDiagnostics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/exports:
+    post:
+      operationId: createOperatorPrivacyExport
+      summary: Create an org-scoped learner identifier export
+      description: |
+        Creates a JSON summary of membership, consent, recording, deletion,
+        session, and attempt identifiers for one learner membership. Never
+        includes audio or transcripts. Requires privacy.export.request.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - target_membership_id
+              properties:
+                target_membership_id:
+                  $ref: "#/components/schemas/Ulid"
+      responses:
+        "201":
+          description: Privacy export created or replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyExport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/exports/{export_request_id}:
+    get:
+      operationId: getOperatorPrivacyExport
+      summary: Get an org-scoped privacy export request
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: export_request_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Privacy export status and identifier summary.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyExport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/erasures:
+    post:
+      operationId: createOperatorPrivacyErasure
+      summary: Create an org-scoped account-erasure request
+      description: |
+        Starts an ADR-0007-aligned erasure workflow for one learner membership,
+        including voice deletion receipts. Requires privacy.erasure.request.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - target_membership_id
+              properties:
+                target_membership_id:
+                  $ref: "#/components/schemas/Ulid"
+      responses:
+        "201":
+          description: Privacy erasure created or replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyErasure"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/erasures/{erasure_request_id}:
+    get:
+      operationId: getOperatorPrivacyErasure
+      summary: Get an org-scoped privacy erasure request
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: erasure_request_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Privacy erasure status.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyErasure"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   parameters:
     CorrelationId:
@@ -4386,6 +4595,160 @@ components:
         distinction_note:
           type: string
           const: usage_counts_are_not_demonstrated_learning
+    OperatorSupportDiagnostics:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - items
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorSupportDiagnosticItem"
+    OperatorSupportDiagnosticItem:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - subject_type
+        - subject_id
+        - status
+        - observed_at
+      properties:
+        kind:
+          type: string
+          enum:
+            - stuck_in_progress
+            - provider_failed_recoverable
+            - open_deletion
+        subject_type:
+          type: string
+          enum:
+            - learner_attempt
+            - voice_recording
+            - voice_deletion_request
+        subject_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          minLength: 1
+          maxLength: 64
+        observed_at:
+          type: string
+          format: date-time
+    OperatorPrivacyExport:
+      type: object
+      additionalProperties: false
+      required:
+        - export_request_id
+        - target_membership_id
+        - status
+        - summary
+        - requested_at
+        - completed_at
+      properties:
+        export_request_id:
+          $ref: "#/components/schemas/Ulid"
+        target_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+        summary:
+          type: object
+          additionalProperties: false
+          required:
+            - membership_id
+            - membership_type
+            - membership_status
+            - consent_event_ids
+            - voice_recording_ids
+            - voice_deletion_receipt_ids
+            - conversation_session_ids
+            - learner_attempt_ids
+            - content_note
+          properties:
+            membership_id:
+              $ref: "#/components/schemas/Ulid"
+            membership_type:
+              type: string
+            membership_status:
+              type: string
+            consent_event_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ulid"
+            voice_recording_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ulid"
+            voice_deletion_receipt_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ulid"
+            conversation_session_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ulid"
+            learner_attempt_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ulid"
+            content_note:
+              type: string
+              const: identifier_digests_only_no_audio_or_transcripts
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorPrivacyErasure:
+      type: object
+      additionalProperties: false
+      required:
+        - erasure_request_id
+        - target_membership_id
+        - status
+        - voice_recording_count
+        - voice_deletion_completed_count
+        - requested_at
+        - completed_at
+      properties:
+        erasure_request_id:
+          $ref: "#/components/schemas/Ulid"
+        target_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - partially_completed
+            - restricted
+        voice_recording_count:
+          type: integer
+          minimum: 0
+        voice_deletion_completed_count:
+          type: integer
+          minimum: 0
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
     ProblemDetails:
       type: object
       additionalProperties: true

@@ -4,13 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Pre-F0 evidence recorded; enterprise Friend productionization in progress |
-| Status | APP-0034 evidence package recorded ([F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md)); F0 DoD / Play still unauthorized |
+| Checkpoint | Pre-F0; PR-013 privacy/support ops implemented under APP-0035 |
+| Status | APP-0035 begin recorded; privacy/support vertical slice delivered; F0 DoD / Play still unauthorized |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | Free-flow AI = Practice Confidence Conversation; dashboard AI Teacher remains non-generative |
-| Next checkpoint | APO authorize remaining PR-013 privacy/support; close DR-0007; physical Android matrix; specialist reviews; then F0 Exact-commit consideration |
+| Next checkpoint | Exact-commit accept APP-0035; physical Android matrix; specialist reviews; commissioned pathway content; then F0 consideration with limitations |
 | Professional client path | Staging Friend runbook [STAGING_CONFIDENCE_CONVERSATION.md](STAGING_CONFIDENCE_CONVERSATION.md); closed-beta [CLOSED_BETA_PILOT_RUNBOOK.md](CLOSED_BETA_PILOT_RUNBOOK.md) |
 
 ## Checkpoint authorization

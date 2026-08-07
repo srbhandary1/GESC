@@ -69,6 +69,18 @@ describe('operator console', () => {
         distinction_note:
           'usage_counts_are_not_demonstrated_learning' as const,
       })),
+      listSupportDiagnostics: vi.fn(async () => ({
+        generated_at: '2026-08-07T10:00:00+00:00',
+        items: [
+          {
+            kind: 'stuck_in_progress' as const,
+            subject_type: 'learner_attempt' as const,
+            subject_id: '01J00000000000000000000006',
+            status: 'in_progress',
+            observed_at: '2026-08-07T09:00:00+00:00',
+          },
+        ],
+      })),
     }
 
     render(
@@ -107,5 +119,10 @@ describe('operator console', () => {
     expect(api.listPublications).toHaveBeenCalledTimes(1)
     expect(api.listAuditEvents).toHaveBeenCalledTimes(1)
     expect(api.getPilotAnalytics).toHaveBeenCalledTimes(1)
+    expect(api.listSupportDiagnostics).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('heading', { name: 'Support diagnostics' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('stuck_in_progress')).toBeInTheDocument()
   })
 })

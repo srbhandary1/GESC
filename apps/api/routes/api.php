@@ -16,6 +16,7 @@ use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
+use App\Http\Controllers\OperatorPrivacyController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -222,5 +223,27 @@ Route::prefix('v1')->group(function (): void {
             '/operator/pilot-analytics',
             [OperatorContentController::class, 'pilotAnalytics'],
         )->name('api.v1.operator.pilot-analytics.show');
+        Route::get(
+            '/operator/support/diagnostics',
+            [OperatorPrivacyController::class, 'diagnostics'],
+        )->name('api.v1.operator.support.diagnostics.index');
+        Route::post(
+            '/operator/privacy/exports',
+            [OperatorPrivacyController::class, 'createExport'],
+        )->name('api.v1.operator.privacy.exports.store');
+        Route::get(
+            '/operator/privacy/exports/{exportRequest}',
+            [OperatorPrivacyController::class, 'showExport'],
+        )->whereUlid('exportRequest')
+            ->name('api.v1.operator.privacy.exports.show');
+        Route::post(
+            '/operator/privacy/erasures',
+            [OperatorPrivacyController::class, 'createErasure'],
+        )->name('api.v1.operator.privacy.erasures.store');
+        Route::get(
+            '/operator/privacy/erasures/{erasureRequest}',
+            [OperatorPrivacyController::class, 'showErasure'],
+        )->whereUlid('erasureRequest')
+            ->name('api.v1.operator.privacy.erasures.show');
     });
 });

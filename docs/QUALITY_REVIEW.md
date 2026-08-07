@@ -2940,3 +2940,35 @@ matrix, specialist reviews.
 
 
 
+
+## PR-013 — Remaining privacy and support ops (APP-0035)
+
+### Scope reviewed
+
+- Org-scoped support diagnostics digests
+- Bounded privacy export (identifier summary only)
+- Account-erasure workflow with ADR-0007 status machine and voice deletion receipts
+- Permissions, OpenAPI/contracts, operator console diagnostics panel, cross-tenant tests
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| APP-0035 begin recorded | Pass | APPROVALS.md APP-0035 |
+| Diagnostics omit content bodies | Pass | SupportDiagnosticsQuery + OpenAPI description |
+| Export omits audio/transcripts | Pass | PrivacyExportService content_note |
+| Erasure creates deletion receipts | Pass | PrivacyErasureService |
+| Cross-tenant isolation | Pass | OperatorPrivacySupportTest |
+| Sampled speaking review | Not authorized | APP-0035 non-goals |
+| F0 DoD / Play | Not authorized | APP-0035 non-goals |
+
+### Security, privacy and tenancy review
+
+- Operator responses remain digests/identifier summaries only.
+- Independent specialist reviews remain required before production.
+- No waiver of ADR-0007 audio/transcript access prohibition.
+
+### Known limitations
+
+- Postgres Integration suite / host `make verify` not claimed in this slice.
+- Physical Android matrix and reviewed pathway content remain open F0 blockers.
