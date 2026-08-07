@@ -1,7 +1,9 @@
 # PR-012 role-play verification scope
 
-**Status:** Authorized under [APP-0026](APPROVALS.md#app-0026). Bound to
-[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).  
+**Status:** Accepted under [APP-0027](APPROVALS.md#app-0027) at
+`0fb6f2953580ed6154e4d895e128c46167c6f5d4`. Bound to
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+and begin-implementation [APP-0026](APPROVALS.md#app-0026).  
 **Prior slice:** Confidence Conversation accepted under
 [APP-0025](APPROVALS.md#app-0025).
 

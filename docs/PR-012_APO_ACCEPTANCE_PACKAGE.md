@@ -1,21 +1,24 @@
 # PR-012 APO acceptance package
 
-This package prepares exact-artifact Accountable Product Owner acceptance of
+This package prepared exact-artifact Accountable Product Owner acceptance of
 master-plan §26 **PR-012 — Role-play framework and pilot content integration**
 for the bounded **synthetic** slice authorized under
-[APP-0026](APPROVALS.md#app-0026). **Not yet accepted** — Exact commit is
-filled; reply with the APO statement below to close PR-012 synthetic acceptance.
+[APP-0026](APPROVALS.md#app-0026). **Accepted** under
+[APP-0027](APPROVALS.md#app-0027) / D-0106 at
+`0fb6f2953580ed6154e4d895e128c46167c6f5d4` with the recorded limitations
+below.
 
-## Artifact to accept
+## Artifact accepted
 
 | Field | Value |
 |---|---|
 | Checkpoint | PR-012 bounded synthetic Role-play (plan B0–B2) |
 | Branch | `codex/confidence-conversation` |
 | Governing begin-implementation | [APP-0026](APPROVALS.md#app-0026) |
+| Acceptance record | [APP-0027](APPROVALS.md#app-0027) |
 | Authorization request | [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md) |
 | Verification scope | [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md) |
-| Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (PR-012 B0/B1 sections) |
+| Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (PR-012 B0/B1/B2 sections) |
 | Exact commit | `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
 
 ## Delivered behaviour
@@ -32,9 +35,9 @@ filled; reply with the APO statement below to close PR-012 synthetic acceptance.
    **0.10.0** + regenerated clients.
 6. Practice UI **Role-play (synthetic)** entry → `RoleplayJourney`.
 7. **B2** — Content path for this APP remains disclosed synthetic; commissioned
-   specialist modules stay gated by DR-0007 / separate review.
+   specialist modules stay gated by DR-0007 / separate review (D-0105).
 
-## Verification evidence (this session)
+## Verification evidence (recorded this slice)
 
 | Area | Result |
 |---|---|
@@ -69,7 +72,7 @@ Demo Vite `/demo/*` remains non-evidence.
 8. This acceptance does **not** authorize PR-013+, production, Google Play,
    real learner production data, or waiver of independent specialist reviews.
 
-## APO statement (reply exactly)
+## APO statement (recorded)
 
 ```text
 APO accept PR-012 synthetic role-play at 0fb6f2953580ed6154e4d895e128c46167c6f5d4 with its recorded limitations
@@ -78,7 +81,7 @@ APO accept PR-012 synthetic role-play at 0fb6f2953580ed6154e4d895e128c46167c6f5d
 Interpretation for the recorder (Codex is never an approver):
 
 - Accept the exact commit only, with every recorded limitation above.
-- Close plan Steps B1–B2 for the synthetic APP scope.
+- Close plan Steps B0–B2 for the synthetic APP scope.
 - Do **not** treat this as approved curriculum, expanded live providers,
   production or Play authorization.
 - Next checkpoint consideration is a separate APP for PR-013 (or content DR
@@ -86,10 +89,11 @@ Interpretation for the recorder (Codex is never an approver):
 
 ## Recorder checklist after APO statement
 
-1. Fill Exact commit SHA in this package.
-2. Append next APP to [APPROVALS.md](APPROVALS.md).
-3. Append acceptance decision to [DECISIONS.md](DECISIONS.md).
-4. Update [STATUS.md](STATUS.md) and
-   [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md).
-5. Append acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+1. Exact commit SHA filled (`0fb6f2953580ed6154e4d895e128c46167c6f5d4`).
+2. Appended [APP-0027](APPROVALS.md#app-0027) to [APPROVALS.md](APPROVALS.md).
+3. Appended D-0106 to [DECISIONS.md](DECISIONS.md).
+4. Updated [STATUS.md](STATUS.md) and
+   [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
+   (PR-012 synthetic accepted; Active step = C0 consideration).
+5. Appended acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
 6. Do **not** start PR-013 code until a distinct APP authorizes it.

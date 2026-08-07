@@ -87,12 +87,12 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **B0** | Authorize PR-012 Role-play (synthetic first) | `done` | [APP-0026](APPROVALS.md#app-0026) |
 | **B1** | Implement PR-012 verification scope | `done` | Synthetic stage machine + UI + OpenAPI 0.10.0 under APP-0026 |
 | **B2** | Pilot content path (synthetic → reviewed modules) | `done` | D-0105 — synthetic retained for this APP; commissioned content still DR-0007 |
-| **C0** | PR-013 Operator console + privacy ops | `pending` | APP |
+| **C0** | PR-013 Operator console + privacy ops | `pending` | Separate APP required; PR-012 accepted under [APP-0027](APPROVALS.md#app-0027) |
 | **D0** | PR-014 Capacitor Android closed beta (production path, not demo APK) | `pending` | APP |
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** APO exact-commit acceptance of PR-012 synthetic slice — package ready at [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md) for `0fb6f2953580ed6154e4d895e128c46167c6f5d4`.
+**Active step:** `C0` — Consider separate APP for PR-013 Operator console; PR-012 synthetic accepted under [APP-0027](APPROVALS.md#app-0027) at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`.
 
 ---
 
@@ -310,9 +310,8 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO accept PR-012 synthetic role-play at
-`0fb6f2953580ed6154e4d895e128c46167c6f5d4` with recorded limitations. Do not
-start PR-013 without a separate APP.
+**Immediate next action:** Draft/consider a separate APP for PR-013 Operator
+console. Do not start PR-013 code without that APP.
 
 ---
 
@@ -350,3 +349,4 @@ start PR-013 without a separate APP.
 | 2026-08-07 | B1 implementation landed (stage machine, objectives, advisory feedback, OpenAPI 0.10.0, RoleplayJourney); focused tests green; full verify / APO accept pending |
 | 2026-08-07 | B1 verification re-run (PHP unit + Docker Postgres + Node 24 vitest/locale/contracts); B2 synthetic content path recorded (D-0105); PR-012 APO acceptance package drafted |
 | 2026-08-07 | PR-012 synthetic slice committed at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`; awaiting APO accept |
+| 2026-08-07 | PR-012 synthetic accepted ([APP-0027](APPROVALS.md#app-0027) / D-0106); Active step = C0 (PR-013 APP consideration only) |

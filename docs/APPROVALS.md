@@ -1740,3 +1740,78 @@ live providers, production or Play.
   remains gated by DR-0007 / separate review.
 - No master-plan amendment is made.
 
+<a id="app-0027"></a>
+
+## APP-0027 — PR-012 synthetic role-play acceptance with recorded limitations
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
+| Governing begin-implementation | [APP-0026](APPROVALS.md#app-0026) |
+| Acceptance package | [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md) |
+| Prior Confidence Conversation acceptance | [APP-0025](APPROVALS.md#app-0025) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-012 synthetic role-play at 0fb6f2953580ed6154e4d895e128c46167c6f5d4 with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-012 bounded synthetic Role-play was implemented under APP-0026 and closed
+   on exact commit `0fb6f2953580ed6154e4d895e128c46167c6f5d4`;
+2. B0–B2 completed with D-0105 synthetic content path;
+3. the acceptance package recorded delivered behaviour, verification evidence
+   and limitations;
+4. the Accountable Product Owner supplied the accept statement exactly as
+   drafted with that Exact commit SHA.
+
+Interpretation:
+
+- Accept the PR-012 **synthetic** Role-play slice at that exact commit only,
+  with every recorded limitation in the acceptance package.
+- Close plan Steps B0–B2 for the synthetic APP scope.
+- Do **not** authorize approved curriculum, expanded live providers,
+  production, Play, or PR-013 implementation.
+
+### Accepted scope
+
+- Accept PR-012 bounded synthetic Role-play at exact implementation commit
+  `0fb6f2953580ed6154e4d895e128c46167c6f5d4`, with every recorded limitation in
+  [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, and D-0104–D-0105.
+
+### Conditions and limitations
+
+- This acceptance does **not** authorize PR-013 implementation. It only
+  permits consideration of a separate PR-013 APP.
+- Disclosed synthetic content only; human-approved curriculum remains
+  unauthorized (DR-0007 / D-0105).
+- Default CI/local conversation-model binding remains `fake` / `disabled`;
+  live Azure OpenAI remains under APP-0022 gates only (₹500 INR ceiling).
+- Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
+  beyond ADR-0008 / ADR-0011 remain unauthorized.
+- Host `make verify`, full Chromium e2e and remote CI were not claimed green
+  by this acceptance and are not waived.
+- AI / Role-play feedback remains advisory and must not mutate authoritative
+  learning records.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- Demo Vite `/demo/*` paths remain non-evidence.
+- No master-plan amendment is made.
+

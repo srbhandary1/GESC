@@ -2500,12 +2500,33 @@ and Play stay unauthorized.
 | RP-07 UI journey | Pass (unit) | RoleplayJourney vitest; Chromium not claimed |
 | RP-08 make verify | Not claimed | host/CI limitations |
 | B2 synthetic content path | Pass | D-0105 |
-| Exact commit / APO accept | Pending | accept `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
+| Exact commit / APO accept | Pass | [APP-0027](APPROVALS.md#app-0027) at `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
 
 #### Outcome
 
 B1–B2 synthetic scope ready for Exact-commit APO acceptance after an authorized
 commit. PR-013 remains unauthorized.
+
+## PR-012 — Accepted (APP-0027)
+
+### Evidence reviewed
+
+- Exact APO statement accepting `0fb6f2953580ed6154e4d895e128c46167c6f5d4`
+- [APP-0027](APPROVALS.md#app-0027) / D-0106
+- [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact-commit APO accept | Pass | APP-0027 |
+| Recorded limitations retained | Pass | acceptance package |
+| Approved curriculum / live TTS expansion | Not authorized | APP-0027 non-goals |
+| PR-013 / production / Play | Not authorized | APP-0027 |
+
+### Outcome
+
+PR-012 synthetic Role-play accepted. Next: separate APP for PR-013 (C0) only.
 
 
 
