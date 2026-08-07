@@ -42,6 +42,40 @@ final class FoundationSeeder extends Seeder
         'media.rights.approve' => 'Confirm media-rights evidence under an appointment.',
         'curriculum.suspend' => 'Suspend or resume organization curriculum delivery.',
         'learning.participate' => 'Use assigned learner missions and record self-owned learning evidence.',
+        'audit.read' => 'List organization-scoped audit digests for privileged operator actions.',
+    ];
+
+    /**
+     * Synthetic pilot operator role packs for the Direct organization.
+     *
+     * @var array<string, array{name: string, permissions: list<string>}>
+     */
+    private const array OPERATOR_ROLE_PACKS = [
+        Role::DIRECT_TRAINER_KEY => [
+            'name' => 'Trainer',
+            'permissions' => [
+                'curriculum.author',
+                'curriculum.translate.kn',
+            ],
+        ],
+        Role::DIRECT_ORGANIZATION_ADMIN_KEY => [
+            'name' => 'Organization admin',
+            'permissions' => [
+                'curriculum.publish',
+                'curriculum.authority.manage',
+                'curriculum.share.manage',
+                'enrollments.curriculum.assign',
+                'audit.read',
+            ],
+        ],
+        Role::DIRECT_CONTENT_REVIEWER_KEY => [
+            'name' => 'Content reviewer',
+            'permissions' => [
+                'curriculum.review.en',
+                'curriculum.review.kn',
+                'audit.read',
+            ],
+        ],
     ];
 
     public function run(): void
@@ -144,6 +178,8 @@ final class FoundationSeeder extends Seeder
                 ],
             );
 
+            $this->seedOperatorRolePacks($organizationId, $now);
+
             $this->seedSyntheticDraft($organizationId, $now);
             $this->seedSyntheticConversationPrototype(
                 $organizationId,
@@ -154,6 +190,66 @@ final class FoundationSeeder extends Seeder
                 $now,
             );
         });
+    }
+
+    private function seedOperatorRolePacks(
+        string $organizationId,
+        CarbonInterface $now,
+    ): void {
+        foreach (self::OPERATOR_ROLE_PACKS as $roleKey => $pack) {
+            DB::table('roles')->insertOrIgnore([
+                'id' => (string) Str::ulid(),
+                'organization_id' => $organizationId,
+                'key' => $roleKey,
+                'name' => $pack['name'],
+                'is_system' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $this->assertCanonicalRecord(
+                'roles',
+                [
+                    'organization_id' => $organizationId,
+                    'key' => $roleKey,
+                ],
+                [
+                    'organization_id' => $organizationId,
+                    'key' => $roleKey,
+                    'name' => $pack['name'],
+                    'is_system' => true,
+                ],
+            );
+            $roleId = $this->requiredId('roles', [
+                'organization_id' => $organizationId,
+                'key' => $roleKey,
+            ]);
+
+            foreach ($pack['permissions'] as $permissionKey) {
+                $permissionId = $this->requiredId('permissions', [
+                    'key' => $permissionKey,
+                ]);
+                DB::table('role_permissions')->insertOrIgnore([
+                    'organization_id' => $organizationId,
+                    'role_id' => $roleId,
+                    'permission_id' => $permissionId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $this->assertCanonicalRecord(
+                    'role_permissions',
+                    [
+                        'organization_id' => $organizationId,
+                        'role_id' => $roleId,
+                        'permission_id' => $permissionId,
+                    ],
+                    [
+                        'organization_id' => $organizationId,
+                        'role_id' => $roleId,
+                        'permission_id' => $permissionId,
+                    ],
+                );
+            }
+        }
     }
 
     private function seedSyntheticDraft(

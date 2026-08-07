@@ -15,6 +15,7 @@ use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
+use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -188,5 +189,34 @@ Route::prefix('v1')->group(function (): void {
             [VoiceController::class, 'deletion'],
         )->whereUlid('recording')
             ->name('api.v1.voice-recordings.deletion.show');
+
+        Route::get(
+            '/operator/content/drafts',
+            [OperatorContentController::class, 'drafts'],
+        )->name('api.v1.operator.content.drafts.index');
+        Route::get(
+            '/operator/content/publications',
+            [OperatorContentController::class, 'publicationStatus'],
+        )->name('api.v1.operator.content.publications.index');
+        Route::post(
+            '/operator/content/reviews/english',
+            [OperatorContentController::class, 'reviewEnglish'],
+        )->name('api.v1.operator.content.reviews.english.store');
+        Route::post(
+            '/operator/content/reviews/kannada',
+            [OperatorContentController::class, 'reviewKannada'],
+        )->name('api.v1.operator.content.reviews.kannada.store');
+        Route::post(
+            '/operator/content/publications',
+            [OperatorContentController::class, 'publish'],
+        )->name('api.v1.operator.content.publications.store');
+        Route::post(
+            '/operator/content/rollbacks',
+            [OperatorContentController::class, 'rollback'],
+        )->name('api.v1.operator.content.rollbacks.store');
+        Route::get(
+            '/operator/audit-events',
+            [OperatorContentController::class, 'auditEvents'],
+        )->name('api.v1.operator.audit-events.index');
     });
 });

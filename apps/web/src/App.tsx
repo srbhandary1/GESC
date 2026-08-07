@@ -46,6 +46,9 @@ import type {
   OfflinePersonalDeviceResume,
   OfflineProfileBinding,
 } from './offline/OfflineLearningStore'
+import { OperatorConsole } from './operator/OperatorConsole'
+import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
+import { defaultOperatorConsoleApi } from './operator/OperatorConsoleApi'
 
 type SessionState =
   | AuthenticationSnapshot
@@ -61,7 +64,14 @@ interface AppProps {
   learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
+  operatorConsoleApi?: OperatorConsoleApi
 }
+
+const OPERATOR_ROLE_KEYS = new Set([
+  'trainer',
+  'organization_admin',
+  'content_reviewer',
+])
 
 const destinationMessages: Readonly<
   Record<
@@ -129,6 +139,7 @@ function App({
   learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
+  operatorConsoleApi = defaultOperatorConsoleApi,
 }: AppProps) {
   const [session, setSession] = useState<SessionState>({
     status: 'checking',
@@ -289,6 +300,13 @@ function App({
   const isLearnerSession =
     session.status === 'authenticated' &&
     session.identity.current_membership?.membership_type === 'learner'
+  const isOperatorSession =
+    !demoMode &&
+    session.status === 'authenticated' &&
+    (session.identity.current_membership?.role_keys.some((roleKey) =>
+      OPERATOR_ROLE_KEYS.has(roleKey),
+    ) ??
+      false)
   const canLearn =
     destination === 'learn' &&
     (isLearnerSession || offlineResume !== null)
@@ -296,6 +314,9 @@ function App({
     destination === 'practice' && isLearnerSession
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
+  const canShowOperatorConsole =
+    isOperatorSession &&
+    (destination === 'home' || destination === 'learn')
   const showDemoPhase1 = demoMode && destination === 'home'
 
   useInterfaceFallbackReporting([navigationLabel])
@@ -503,6 +524,12 @@ function App({
         ) : canShowDemoProgress ? (
           <DemoLearnerProgress
             api={learnerJourneyApi}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canShowOperatorConsole ? (
+          <OperatorConsole
+            api={operatorConsoleApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />

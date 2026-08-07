@@ -20,7 +20,7 @@ return [
             trim(...),
             explode(',', (string) env(
                 'AUTH_PRIVILEGED_ROLE_KEYS',
-                'organization_owner,organization_admin,trainer,content_editor,support'
+                'organization_owner,organization_admin,trainer,content_reviewer,content_editor,support'
             )),
         ))),
     ],

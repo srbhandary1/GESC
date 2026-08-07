@@ -1815,3 +1815,83 @@ Interpretation:
 - Demo Vite `/demo/*` paths remain non-evidence.
 - No master-plan amendment is made.
 
+<a id="app-0028"></a>
+
+## APP-0028 — PR-013 bounded operator content-workflow and audit begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0027](APPROVALS.md#app-0027) (PR-012 synthetic at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`) |
+| Governing authorization request | [PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md) |
+| Governing verification scope | [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) C0→C1 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only PR-013 bounded operator content-workflow and audit slice under
+PR-013_OPERATOR_AUTHORIZATION_REQUEST.md and
+PR-013_OPERATOR_VERIFICATION_SCOPE.md.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-012 synthetic Role-play was accepted under APP-0027 with recorded limitations;
+2. plan Active step was C0 with PR-013 authorization and verification drafts
+   ready (content-workflow + audit first);
+3. no PR-013 code was authorized yet;
+4. the Accountable Product Owner supplied the begin-implementation statement
+   exactly as drafted.
+
+Interpretation: authorize **beginning implementation** of master-plan §26
+PR-013 only as the bounded **content-workflow + audit** operator slice. This
+is not acceptance of completed PR-013 work, sampled speaking review, privacy
+ops, production or Play.
+
+### Authorized scope
+
+1. Seeded synthetic pilot organization role packs for trainer /
+   organization_admin / content-reviewer using existing curriculum permission
+   keys (extend catalogue only if required for audit read).
+2. Thin org-scoped operator HTTP APIs wrapping existing content commands:
+   draft/status list, EN/KN review decision, publish/rollback status.
+3. Authorized, org-scoped audit event list for those privileged actions
+   (digests / safe metadata only — no raw learner conversation content).
+4. Minimal ordinary-product operator web shell (not Vite `/demo/*`): review
+   queue, publish status, audit trail.
+5. Cross-tenant isolation tests, OpenAPI/generated clients, and STATUS /
+   DECISIONS / QUALITY_REVIEW / plan updates (C0 done; Active = C1).
+
+### Explicit non-authorization
+
+- Acceptance of completed PR-013 (requires later exact-commit APO accept)
+- Consent-gated sampled speaking / transcript / audio review (ADR-0007)
+- Learner support diagnostics dashboard
+- CSV export of learner PII
+- Operator-side recording deletion, AI memory ops, or account-erasure workflows
+- Full content studio / institution-operations pack (§8.3)
+- Expanding live Azure OpenAI / multi-locale TTS spend beyond existing APPs
+- PR-014 / PR-015
+- Production / Play / real learner production data
+- Waiver of independent specialist reviews before production
+
+### Conditions and limitations
+
+- Privileged actions must be authorized, auditable and fail closed across
+  tenants.
+- Demo Vite `/demo/*` paths remain non-evidence.
+- ADR-0007 continues to forbid trainer/operator/admin access to learner audio
+  and transcripts until a separate amendment + APP.
+- No master-plan amendment is made.
+

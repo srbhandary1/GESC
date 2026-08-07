@@ -87,12 +87,13 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **B0** | Authorize PR-012 Role-play (synthetic first) | `done` | [APP-0026](APPROVALS.md#app-0026) |
 | **B1** | Implement PR-012 verification scope | `done` | Synthetic stage machine + UI + OpenAPI 0.10.0 under APP-0026 |
 | **B2** | Pilot content path (synthetic → reviewed modules) | `done` | D-0105 — synthetic retained for this APP; commissioned content still DR-0007 |
-| **C0** | PR-013 Operator console + privacy ops | `pending` | Separate APP required; PR-012 accepted under [APP-0027](APPROVALS.md#app-0027) |
+| **C0** | PR-013 Operator console authorization | `done` | [APP-0028](APPROVALS.md#app-0028) begin-implementation for content-workflow + audit |
+| **C1** | PR-013 bounded operator content-workflow + audit | `in_progress` | Role packs, operator HTTP APIs, audit list, ordinary-product shell; OC-01–OC-08 |
 | **D0** | PR-014 Capacitor Android closed beta (production path, not demo APK) | `pending` | APP |
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `C0` — Consider separate APP for PR-013 Operator console; PR-012 synthetic accepted under [APP-0027](APPROVALS.md#app-0027) at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`.
+**Active step:** `C1` — PR-013 bounded operator content-workflow + audit under [APP-0028](APPROVALS.md#app-0028). Sampled speaking review / privacy ops remain deferred.
 
 ---
 
@@ -264,9 +265,17 @@ Order: authorize → implement synthetic stage machine → decide content path (
 
 ---
 
-### C0 — Operator console (PR-013)
+### C0 — Operator console authorization (PR-013)
 
-Pilot dashboard, sampled review, support diagnostics, content workflow, export/audit, recording/memory/deletion ops — no DB access for operators.
+Authorize the first bounded APP for content-workflow + audit only. Full
+master-plan §8.2 items (sampled review, privacy ops, support diagnostics)
+stay deferred.
+
+### C1 — Operator content-workflow + audit (PR-013)
+
+Seeded role packs, thin org-scoped operator HTTP APIs wrapping existing
+curriculum commands, audit digest list, and ordinary-product operator shell.
+No DB access for authorized operator actions. No learner audio/transcripts.
 
 ---
 
@@ -310,8 +319,10 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** Draft/consider a separate APP for PR-013 Operator
-console. Do not start PR-013 code without that APP.
+**Immediate next action:** Finish C1 verification (OC-01–OC-08) under
+[APP-0028](APPROVALS.md#app-0028) and prepare APO exact-commit acceptance.
+Sampled speaking review remains blocked by ADR-0007 until a separate
+amendment. Privacy ops, production and Play remain unauthorized.
 
 ---
 
@@ -350,3 +361,5 @@ console. Do not start PR-013 code without that APP.
 | 2026-08-07 | B1 verification re-run (PHP unit + Docker Postgres + Node 24 vitest/locale/contracts); B2 synthetic content path recorded (D-0105); PR-012 APO acceptance package drafted |
 | 2026-08-07 | PR-012 synthetic slice committed at `0fb6f2953580ed6154e4d895e128c46167c6f5d4`; awaiting APO accept |
 | 2026-08-07 | PR-012 synthetic accepted ([APP-0027](APPROVALS.md#app-0027) / D-0106); Active step = C0 (PR-013 APP consideration only) |
+| 2026-08-07 | C0: PR-013 authorization + verification drafts ready (content-workflow + audit first; sampled review/privacy ops deferred); awaiting APO authorize |
+| 2026-08-07 | C0 done ([APP-0028](APPROVALS.md#app-0028)); Active step = C1 (bounded operator content-workflow + audit implementation) |

@@ -616,6 +616,98 @@ export type ReadinessResponse = {
     correlation_id: string;
 };
 
+export type OperatorContentDraft = {
+    program_id: Ulid;
+    program_key: string;
+    program_internal_name: string;
+    curriculum_version_id: Ulid;
+    version_key: string;
+    publication_status: 'unpublished' | 'published_head' | 'superseded_or_other_head';
+    head_version: number;
+    head_publication_id: Ulid | null;
+    head_manifest_hash: Sha256 | null;
+    head_publication_number: number | null;
+    latest_english_decision: 'approved' | 'rejected' | 'withdrawn' | null;
+    latest_kannada_decision: 'approved' | 'rejected' | 'withdrawn' | null;
+};
+
+export type OperatorContentDraftListing = {
+    items: Array<OperatorContentDraft>;
+};
+
+export type OperatorPublicationStatus = {
+    publication_id: Ulid;
+    program_id: Ulid;
+    program_key: string;
+    curriculum_version_id: Ulid;
+    version_key: string;
+    publication_number: number;
+    manifest_hash: Sha256;
+    is_head: boolean;
+    head_version: number | null;
+    created_at: string;
+};
+
+export type OperatorPublicationListing = {
+    items: Array<OperatorPublicationStatus>;
+};
+
+export type RecordEnglishContentReviewRequest = {
+    source_revision_id: Ulid;
+    source_content_hash: Sha256;
+    authority_appointment_id: Ulid;
+    decision: 'approved' | 'rejected';
+    rationale_key?: string | null;
+};
+
+export type RecordKannadaContentReviewRequest = {
+    source_revision_id: Ulid;
+    source_content_hash: Sha256;
+    localized_variant_id: Ulid;
+    localized_content_hash: Sha256;
+    authority_appointment_id: Ulid;
+    decision: 'approved' | 'rejected';
+    rationale_key?: string | null;
+};
+
+export type PublishOperatorCurriculumRequest = {
+    curriculum_version_id: Ulid;
+    expected_head_version: number;
+};
+
+export type RollbackOperatorCurriculumRequest = {
+    program_id: Ulid;
+    target_publication_id: Ulid;
+    expected_head_version: number;
+    reason_key: string;
+};
+
+export type OperatorContentReviewResult = {
+    content_review_id: Ulid;
+};
+
+export type OperatorPublicationResult = {
+    publication_id: Ulid;
+    curriculum_version_id: Ulid;
+    manifest_hash: Sha256;
+    head_version: number;
+    replayed: boolean;
+};
+
+export type OperatorAuditEvent = {
+    id: Ulid;
+    action: string;
+    subject_type: string;
+    subject_id: Ulid;
+    actor_membership_id: Ulid | null;
+    correlation_id: string | null;
+    occurred_at: string;
+};
+
+export type OperatorAuditEventListing = {
+    items: Array<OperatorAuditEvent>;
+};
+
 export type ProblemDetails = {
     type: string;
     title: string;
@@ -2691,3 +2783,352 @@ export type AcceptInstitutionInviteResponses = {
 };
 
 export type AcceptInstitutionInviteResponse = AcceptInstitutionInviteResponses[keyof AcceptInstitutionInviteResponses];
+
+export type ListOperatorContentDraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/drafts';
+};
+
+export type ListOperatorContentDraftsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorContentDraftsError = ListOperatorContentDraftsErrors[keyof ListOperatorContentDraftsErrors];
+
+export type ListOperatorContentDraftsResponses = {
+    /**
+     * Organization curriculum draft status listing.
+     */
+    200: OperatorContentDraftListing;
+};
+
+export type ListOperatorContentDraftsResponse = ListOperatorContentDraftsResponses[keyof ListOperatorContentDraftsResponses];
+
+export type ListOperatorContentPublicationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publications';
+};
+
+export type ListOperatorContentPublicationsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorContentPublicationsError = ListOperatorContentPublicationsErrors[keyof ListOperatorContentPublicationsErrors];
+
+export type ListOperatorContentPublicationsResponses = {
+    /**
+     * Organization publication status listing.
+     */
+    200: OperatorPublicationListing;
+};
+
+export type ListOperatorContentPublicationsResponse = ListOperatorContentPublicationsResponses[keyof ListOperatorContentPublicationsResponses];
+
+export type PublishOperatorCurriculumData = {
+    body: PublishOperatorCurriculumRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publications';
+};
+
+export type PublishOperatorCurriculumErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type PublishOperatorCurriculumError = PublishOperatorCurriculumErrors[keyof PublishOperatorCurriculumErrors];
+
+export type PublishOperatorCurriculumResponses = {
+    /**
+     * Exact command replay returned the original publication.
+     */
+    200: OperatorPublicationResult;
+    /**
+     * Curriculum version published and activated.
+     */
+    201: OperatorPublicationResult;
+};
+
+export type PublishOperatorCurriculumResponse = PublishOperatorCurriculumResponses[keyof PublishOperatorCurriculumResponses];
+
+export type RecordOperatorEnglishContentReviewData = {
+    body: RecordEnglishContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/reviews/english';
+};
+
+export type RecordOperatorEnglishContentReviewErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordOperatorEnglishContentReviewError = RecordOperatorEnglishContentReviewErrors[keyof RecordOperatorEnglishContentReviewErrors];
+
+export type RecordOperatorEnglishContentReviewResponses = {
+    /**
+     * English content review recorded.
+     */
+    201: OperatorContentReviewResult;
+};
+
+export type RecordOperatorEnglishContentReviewResponse = RecordOperatorEnglishContentReviewResponses[keyof RecordOperatorEnglishContentReviewResponses];
+
+export type RecordOperatorKannadaContentReviewData = {
+    body: RecordKannadaContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/reviews/kannada';
+};
+
+export type RecordOperatorKannadaContentReviewErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordOperatorKannadaContentReviewError = RecordOperatorKannadaContentReviewErrors[keyof RecordOperatorKannadaContentReviewErrors];
+
+export type RecordOperatorKannadaContentReviewResponses = {
+    /**
+     * Kannada content review recorded.
+     */
+    201: OperatorContentReviewResult;
+};
+
+export type RecordOperatorKannadaContentReviewResponse = RecordOperatorKannadaContentReviewResponses[keyof RecordOperatorKannadaContentReviewResponses];
+
+export type RollbackOperatorCurriculumData = {
+    body: RollbackOperatorCurriculumRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/rollbacks';
+};
+
+export type RollbackOperatorCurriculumErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RollbackOperatorCurriculumError = RollbackOperatorCurriculumErrors[keyof RollbackOperatorCurriculumErrors];
+
+export type RollbackOperatorCurriculumResponses = {
+    /**
+     * Exact command replay returned the original rollback.
+     */
+    200: OperatorPublicationResult;
+    /**
+     * Publication head rolled back.
+     */
+    201: OperatorPublicationResult;
+};
+
+export type RollbackOperatorCurriculumResponse = RollbackOperatorCurriculumResponses[keyof RollbackOperatorCurriculumResponses];
+
+export type ListOperatorAuditEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/operator/audit-events';
+};
+
+export type ListOperatorAuditEventsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorAuditEventsError = ListOperatorAuditEventsErrors[keyof ListOperatorAuditEventsErrors];
+
+export type ListOperatorAuditEventsResponses = {
+    /**
+     * Organization audit digest listing.
+     */
+    200: OperatorAuditEventListing;
+};
+
+export type ListOperatorAuditEventsResponse = ListOperatorAuditEventsResponses[keyof ListOperatorAuditEventsResponses];

@@ -2543,6 +2543,463 @@ export const ReadinessResponseSchema = {
     }
 } as const;
 
+export const OperatorContentDraftSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'program_key',
+        'program_internal_name',
+        'curriculum_version_id',
+        'version_key',
+        'publication_status',
+        'head_version',
+        'head_publication_id',
+        'head_manifest_hash',
+        'head_publication_number',
+        'latest_english_decision',
+        'latest_kannada_decision'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        program_internal_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        publication_status: {
+            type: 'string',
+            enum: [
+                'unpublished',
+                'published_head',
+                'superseded_or_other_head'
+            ]
+        },
+        head_version: {
+            type: 'integer',
+            minimum: 0
+        },
+        head_publication_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        head_manifest_hash: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Sha256'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        head_publication_number: {
+            oneOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        latest_english_decision: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'approved',
+                        'rejected',
+                        'withdrawn'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        latest_kannada_decision: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'approved',
+                        'rejected',
+                        'withdrawn'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorContentDraftListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorContentDraft'
+            }
+        }
+    }
+} as const;
+
+export const OperatorPublicationStatusSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'program_id',
+        'program_key',
+        'curriculum_version_id',
+        'version_key',
+        'publication_number',
+        'manifest_hash',
+        'is_head',
+        'head_version',
+        'created_at'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        publication_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        is_head: {
+            type: 'boolean'
+        },
+        head_version: {
+            oneOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorPublicationListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorPublicationStatus'
+            }
+        }
+    }
+} as const;
+
+export const RecordEnglishContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source_revision_id',
+        'source_content_hash',
+        'authority_appointment_id',
+        'decision'
+    ],
+    properties: {
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        decision: {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected'
+            ]
+        },
+        rationale_key: {
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const RecordKannadaContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source_revision_id',
+        'source_content_hash',
+        'localized_variant_id',
+        'localized_content_hash',
+        'authority_appointment_id',
+        'decision'
+    ],
+    properties: {
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        localized_variant_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        localized_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        decision: {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected'
+            ]
+        },
+        rationale_key: {
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const PublishOperatorCurriculumRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'curriculum_version_id',
+        'expected_head_version'
+    ],
+    properties: {
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const RollbackOperatorCurriculumRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'target_publication_id',
+        'expected_head_version',
+        'reason_key'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        target_publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        reason_key: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_]{0,119}$'
+        }
+    }
+} as const;
+
+export const OperatorContentReviewResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'content_review_id'
+    ],
+    properties: {
+        content_review_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OperatorPublicationResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'curriculum_version_id',
+        'manifest_hash',
+        'head_version',
+        'replayed'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        head_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorAuditEventSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'action',
+        'subject_type',
+        'subject_id',
+        'actor_membership_id',
+        'correlation_id',
+        'occurred_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        action: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_.-]{0,119}$'
+        },
+        subject_type: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_.-]{0,119}$'
+        },
+        subject_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        actor_membership_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        correlation_id: {
+            oneOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        occurred_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorAuditEventListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorAuditEvent'
+            }
+        }
+    }
+} as const;
+
 export const ProblemDetailsSchema = {
     type: 'object',
     additionalProperties: true,

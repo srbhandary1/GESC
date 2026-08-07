@@ -2528,5 +2528,75 @@ commit. PR-013 remains unauthorized.
 
 PR-012 synthetic Role-play accepted. Next: separate APP for PR-013 (C0) only.
 
+## PR-013 — Step C0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md)
+- [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0027 (PR-012); existing curriculum commands + audit write path
+- First APP scope: content review→publish + audit list; no DB access for operators
+- Deferred: sampled speaking review (ADR-0007), privacy ops, CSV PII export,
+  full studio, production/Play
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0027 | Pass | PR-013_OPERATOR_AUTHORIZATION_REQUEST.md |
+| Verification scope OC-01–OC-08 | Pass | PR-013_OPERATOR_VERIFICATION_SCOPE.md |
+| ADR-0007 sampled review deferred | Pass | auth request non-goals |
+| APO begin-implementation statement | Pass | APP-0028 |
+| PR-013 code | Authorized bounded slice | APP-0028 |
+
+### Outcome
+
+C0 closed by APP-0028. Proceed to C1 implementation.
+
+## PR-013 — Step C1 (content-workflow + audit in progress)
+
+### Evidence reviewed
+
+- APP-0028 bounded operator content-workflow + audit authorization
+- Seeded Direct org role packs: `trainer`, `organization_admin`, `content_reviewer`
+- New permission `audit.read` for org-scoped audit digests
+- Operator HTTP APIs wrapping ContentReviewCommands / CurriculumPublisher /
+  CurriculumRollbackService plus draft/publication/audit list queries
+- Ordinary-product `OperatorConsole` (not Vite `/demo/*`)
+- OpenAPI bumped to **0.11.0**
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| OC-01 review→publish without DB access | Pass (focused) | OperatorContentWorkflowTest HTTP review→publish→rollback |
+| OC-02 privileged actions write audit events | Pass (focused) | content_review.recorded + publication.activated present |
+| OC-03 org-scoped audit list (digests only) | Pass (focused) | GET /operator/audit-events; no payload/transcript fields |
+| OC-04 cross-tenant denial | Pass (focused) | foreign revision/version IDs → 404 |
+| OC-05 missing permission fail-closed | Pass (focused) | membership without grants → 404 |
+| OC-06 OpenAPI/client drift | Pass (focused) | OpenAPI 0.11.0; `pnpm run openapi:check` |
+| OC-07 operator UI unit smoke | Pass (focused) | OperatorConsole.test.tsx; Chromium e2e not claimed |
+| OC-08 make verify | Not claimed | focused Docker PHPUnit / Node 24 only |
+| ADR-0007 no audio/transcript operator access | Pass | audit digests + console notice; no voice routes |
+
+### Focused verification recorded this slice
+
+| Area | Result |
+|---|---|
+| PHPUnit feature (host) | `OperatorRequestValidationTest` — 2 passed |
+| PHPUnit integration (Docker PHP 8.4.24 + pdo_pgsql) | `OperatorContentWorkflowTest` + `FoundationSeederIntegrityTest` — 5 passed / 104 assertions |
+| Vitest (Node 24 Docker) | `OperatorConsole.test.tsx` — 1 passed |
+| Locale validation (Node 24) | Pass — 6 catalogues, 5 pending-review warnings |
+| OpenAPI contract generate `--check` (Node 24) | Pass — contracts match OpenAPI 0.11.0 |
+| Host `make verify` / Chromium e2e / remote CI | **Not claimed** |
+
+### Outcome
+
+C1 bounded operator content-workflow + audit slice implemented under APP-0028
+with focused verification green. Sampled speaking review, privacy ops,
+production and Play remain unauthorized. APO exact-commit acceptance still
+requires OC-08 / recorded limitations package when ready.
+
+
 
 
