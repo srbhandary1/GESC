@@ -13,6 +13,7 @@ import type {
   OperatorAuditEvent,
   OperatorConsoleApi,
   OperatorContentDraft,
+  OperatorPilotAnalyticsSummary,
   OperatorPublicationStatus,
 } from './OperatorConsoleApi'
 
@@ -23,6 +24,18 @@ export interface OperatorConsoleProps {
 }
 
 type LoadState = 'loading' | 'ready' | 'error'
+
+function formatGroupedCounts(
+  counts: Readonly<Record<string, number>>,
+): string {
+  const entries = Object.entries(counts)
+
+  if (entries.length === 0) {
+    return 'none'
+  }
+
+  return entries.map(([key, value]) => `${key}=${String(value)}`).join(', ')
+}
 
 export function OperatorConsole({
   api,
@@ -39,6 +52,8 @@ export function OperatorConsole({
   const [auditEvents, setAuditEvents] = useState<
     readonly OperatorAuditEvent[]
   >([])
+  const [pilotAnalytics, setPilotAnalytics] =
+    useState<OperatorPilotAnalyticsSummary | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -48,17 +63,21 @@ export function OperatorConsole({
       api.listDrafts(controller.signal),
       api.listPublications(controller.signal),
       api.listAuditEvents(controller.signal),
+      api.getPilotAnalytics(controller.signal),
     ])
-      .then(([nextDrafts, nextPublications, nextAudit]) => {
-        if (!active) {
-          return
-        }
+      .then(
+        ([nextDrafts, nextPublications, nextAudit, nextAnalytics]) => {
+          if (!active) {
+            return
+          }
 
-        setDrafts(nextDrafts)
-        setPublications(nextPublications)
-        setAuditEvents(nextAudit)
-        setState('ready')
-      })
+          setDrafts(nextDrafts)
+          setPublications(nextPublications)
+          setAuditEvents(nextAudit)
+          setPilotAnalytics(nextAnalytics)
+          setState('ready')
+        },
+      )
       .catch(() => {
         if (active) {
           setState('error')
@@ -103,6 +122,64 @@ export function OperatorConsole({
 
       {state === 'ready' ? (
         <>
+          <section
+            aria-labelledby="operator-pilot-analytics-title"
+            className="operator-console__panel"
+          >
+            <h3 id="operator-pilot-analytics-title">
+              <LocalizedMessage
+                resolution={message('operator.pilot_analytics.title')}
+              />
+            </h3>
+            <p>
+              <LocalizedMessage
+                resolution={message('operator.pilot_analytics.lead')}
+              />
+            </p>
+            {pilotAnalytics === null ? (
+              <p>
+                <LocalizedMessage
+                  resolution={message('operator.pilot_analytics.empty')}
+                />
+              </p>
+            ) : (
+              <ul className="operator-console__list">
+                <li>
+                  <LocalizedMessage
+                    resolution={message('operator.pilot_analytics.usage')}
+                  />
+                  {': '}
+                  learners=
+                  {String(pilotAnalytics.usage.learner_membership_count)}
+                  {'; sessions='}
+                  {String(pilotAnalytics.usage.conversation_session_count)}
+                  {'; attempts='}
+                  {String(pilotAnalytics.usage.formative_attempt_count)}
+                </li>
+                <li>
+                  <LocalizedMessage
+                    resolution={message(
+                      'operator.pilot_analytics.learning',
+                    )}
+                  />
+                  {': '}
+                  mastery=
+                  {String(
+                    pilotAnalytics.demonstrated_learning.mastery_state_count,
+                  )}
+                  {'; reviews='}
+                  {String(
+                    pilotAnalytics.demonstrated_learning.review_schedule_count,
+                  )}
+                  {' · '}
+                  {formatGroupedCounts(
+                    pilotAnalytics.demonstrated_learning
+                      .mastery_by_knowledge_state,
+                  )}
+                </li>
+              </ul>
+            )}
+          </section>
           <section
             aria-labelledby="operator-review-queue-title"
             className="operator-console__panel"

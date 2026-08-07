@@ -2779,6 +2779,50 @@ hardening and closed-beta evidence closure.
 
 E1 implementation authorized and underway.
 
+## PR-015 — Step E1 (bounded ops hardening delivery)
+
+### Evidence reviewed
+
+- Aggregate pilot analytics API/UI (`GET /operator/pilot-analytics`, OpenAPI
+  **0.12.0**)
+- Ops runbooks: backup/restore, incident/support, alerts skeleton, staged
+  deploy dry-run
+- Makefile targets: `load-soak`, `backup-restore-drill`, `staged-deploy-dry-run`
+- Accessibility evidence package draft
+- Device matrix authority updated for APP-0032 evidence closure
+
+### Focused tests run
+
+| Area | Result |
+|---|---|
+| PHPUnit integration (Docker PHP 8.4.24 + pdo_pgsql) | `OperatorContentWorkflowTest` — **2 passed / 94 assertions** |
+| Vitest (Docker Node 24.18.1) | `OperatorConsole.test.tsx` — **1 passed** |
+| Locale validation (Docker Node 24) | Pass — 6 catalogues, 5 pending-review warnings |
+| OpenAPI contracts generate | Pass — regenerated for 0.12.0 |
+| Backup/restore drill | Run when claimed in commit notes |
+| Load/soak / staged-deploy dry-run / physical matrix / `make verify` | **Not claimed** unless separately recorded |
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| PH-01–PH-04 device matrix / assemble | Partial | docs + matrix template; physical/Gradle not claimed |
+| PH-05 `make verify` | Not claimed | host/env limitations |
+| PH-06 load/soak harness | Pass (harness) | `make load-soak` / scripts/run-load-soak.sh — needs live API to execute |
+| PH-07 backup/restore | Pass (script+doc) | docs/ops + make backup-restore-drill |
+| PH-08 monitoring/runbooks | Pass (docs) | ALERTS + INCIDENT runbooks |
+| PH-09 staged deploy dry-run | Pass (script+doc) | make staged-deploy-dry-run |
+| PH-10 a11y package | Pass (doc) | PR-015_ACCESSIBILITY_EVIDENCE_PACKAGE.md; manual rows open |
+| PH-11 pilot analytics | Pass (code+tests) | OpenAPI 0.12.0 + OperatorConsole |
+| PH-12 fail-closed regression | Pass (focused) | OperatorContentWorkflowTest |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0032 |
+
+### Outcome
+
+E1 delivery landed for APO exact-commit review with recorded limitations
+(physical matrix, Gradle assemble, full `make verify`, live load-soak against
+API, Play/F0).
+
 
 
 

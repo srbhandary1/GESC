@@ -18,6 +18,7 @@ use App\Http\Requests\Operator\RecordKannadaContentReviewRequest;
 use App\Http\Requests\Operator\RollbackOperatorCurriculumRequest;
 use App\Operator\OperatorAuditEventQuery;
 use App\Operator\OperatorCurriculumDraftQuery;
+use App\Operator\OperatorPilotAnalyticsQuery;
 use App\Operator\OperatorPublicationStatusQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ final class OperatorContentController extends Controller
         private readonly OperatorCurriculumDraftQuery $drafts,
         private readonly OperatorPublicationStatusQuery $publications,
         private readonly OperatorAuditEventQuery $auditEvents,
+        private readonly OperatorPilotAnalyticsQuery $pilotAnalytics,
         private readonly ContentReviewCommands $reviews,
         private readonly CurriculumPublisher $publisher,
         private readonly CurriculumRollbackService $rollbacks,
@@ -70,6 +72,20 @@ final class OperatorContentController extends Controller
 
         try {
             $result = $this->auditEvents->list($principal->user, $limit);
+        } catch (CurriculumOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json($result)
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function pilotAnalytics(Request $request): JsonResponse
+    {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+
+        try {
+            $result = $this->pilotAnalytics->summarize($principal->user);
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }

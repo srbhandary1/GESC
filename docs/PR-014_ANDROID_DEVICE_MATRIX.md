@@ -1,6 +1,7 @@
 # PR-014 closed-beta Android device matrix
 
-**Authority:** [APP-0030](APPROVALS.md#app-0030)  
+**Authority:** [APP-0030](APPROVALS.md#app-0030); evidence closure under
+[APP-0032](APPROVALS.md#app-0032) (PH-01–PH-04)  
 **Package:** `com.globalenglish.app` (`apps/web/android-app`)  
 **Non-evidence:** `com.globalenglish.demo` / `make demo-android` (D-0078)
 

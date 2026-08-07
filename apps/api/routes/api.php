@@ -10,9 +10,9 @@ use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
 use App\Http\Controllers\LearnerMediaController;
+use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
-use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
@@ -218,5 +218,9 @@ Route::prefix('v1')->group(function (): void {
             '/operator/audit-events',
             [OperatorContentController::class, 'auditEvents'],
         )->name('api.v1.operator.audit-events.index');
+        Route::get(
+            '/operator/pilot-analytics',
+            [OperatorContentController::class, 'pilotAnalytics'],
+        )->name('api.v1.operator.pilot-analytics.show');
     });
 });

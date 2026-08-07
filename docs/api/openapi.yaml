@@ -2,14 +2,16 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.11.0
+  version: 0.12.0
   description: |
-    Canonical API contract for the Global English platform. PR-013 adds a
-    bounded org-scoped operator content-workflow and audit list (review →
-    publish/rollback status and digests only). Conversation/speech paths stay on
-    deterministic local adapters unless separately configured. Authoritative
-    learning records remain deterministic and are never mutated by AI output.
-    Operators never receive learner audio or transcripts under ADR-0007.
+    Canonical API contract for the Global English platform. PR-015 adds an
+    aggregate-only org-scoped pilot analytics summary on the operator surface
+    (usage counts versus demonstrated-learning rollups; no PII CSV). PR-013
+    bounded org-scoped operator content-workflow and audit list remain.
+    Conversation/speech paths stay on deterministic local adapters unless
+    separately configured. Authoritative learning records remain deterministic
+    and are never mutated by AI output. Operators never receive learner audio or
+    transcripts under ADR-0007.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -2025,6 +2027,41 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/pilot-analytics:
+    get:
+      operationId: getOperatorPilotAnalytics
+      summary: Aggregate-only pilot analytics for the active organization
+      description: |
+        Returns org-scoped usage counts and demonstrated-learning rollups only.
+        Distinguishes usage from demonstrated learning. Never returns learner
+        PII, audio, transcripts, or conversation bodies. Requires audit.read or
+        a content-workflow operator permission.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Aggregate pilot analytics summary.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPilotAnalyticsSummary"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -4286,6 +4323,69 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OperatorAuditEvent"
+    OperatorPilotAnalyticsSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - usage
+        - demonstrated_learning
+        - distinction_note
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        usage:
+          type: object
+          additionalProperties: false
+          required:
+            - learner_membership_count
+            - conversation_session_count
+            - conversation_sessions_by_status
+            - formative_attempt_count
+            - formative_attempts_by_status
+          properties:
+            learner_membership_count:
+              type: integer
+              minimum: 0
+            conversation_session_count:
+              type: integer
+              minimum: 0
+            conversation_sessions_by_status:
+              type: object
+              additionalProperties:
+                type: integer
+                minimum: 0
+            formative_attempt_count:
+              type: integer
+              minimum: 0
+            formative_attempts_by_status:
+              type: object
+              additionalProperties:
+                type: integer
+                minimum: 0
+        demonstrated_learning:
+          type: object
+          additionalProperties: false
+          required:
+            - mastery_state_count
+            - mastery_by_knowledge_state
+            - review_schedule_count
+          properties:
+            mastery_state_count:
+              type: integer
+              minimum: 0
+            mastery_by_knowledge_state:
+              type: object
+              additionalProperties:
+                type: integer
+                minimum: 0
+            review_schedule_count:
+              type: integer
+              minimum: 0
+        distinction_note:
+          type: string
+          const: usage_counts_are_not_demonstrated_learning
     ProblemDetails:
       type: object
       additionalProperties: true

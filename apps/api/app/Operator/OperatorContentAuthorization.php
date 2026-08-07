@@ -47,4 +47,16 @@ final readonly class OperatorContentAuthorization
             throw new CurriculumOperationRejected;
         }
     }
+
+    public function assertCanReadPilotAnalytics(User $actor): void
+    {
+        if ($this->authorization->allows(
+            $actor,
+            self::AUDIT_READ_PERMISSION,
+        )) {
+            return;
+        }
+
+        $this->assertCanReadContent($actor);
+    }
 }

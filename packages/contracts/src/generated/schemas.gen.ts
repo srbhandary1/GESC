@@ -3000,6 +3000,92 @@ export const OperatorAuditEventListingSchema = {
     }
 } as const;
 
+export const OperatorPilotAnalyticsSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'usage',
+        'demonstrated_learning',
+        'distinction_note'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        usage: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'learner_membership_count',
+                'conversation_session_count',
+                'conversation_sessions_by_status',
+                'formative_attempt_count',
+                'formative_attempts_by_status'
+            ],
+            properties: {
+                learner_membership_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                conversation_session_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                conversation_sessions_by_status: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                },
+                formative_attempt_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                formative_attempts_by_status: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                }
+            }
+        },
+        demonstrated_learning: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'mastery_state_count',
+                'mastery_by_knowledge_state',
+                'review_schedule_count'
+            ],
+            properties: {
+                mastery_state_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                mastery_by_knowledge_state: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                },
+                review_schedule_count: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        },
+        distinction_note: {
+            type: 'string',
+            const: 'usage_counts_are_not_demonstrated_learning'
+        }
+    }
+} as const;
+
 export const ProblemDetailsSchema = {
     type: 'object',
     additionalProperties: true,

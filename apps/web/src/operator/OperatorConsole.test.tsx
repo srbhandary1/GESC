@@ -52,6 +52,22 @@ describe('operator console', () => {
           occurred_at: '2026-08-07T10:00:00+00:00',
         },
       ]),
+      getPilotAnalytics: vi.fn(async () => ({
+        generated_at: '2026-08-07T10:00:00+00:00',
+        usage: {
+          learner_membership_count: 2,
+          conversation_session_count: 3,
+          conversation_sessions_by_status: { active: 1, ended: 2 },
+          formative_attempt_count: 4,
+          formative_attempts_by_status: { submitted: 4 },
+        },
+        demonstrated_learning: {
+          mastery_state_count: 5,
+          mastery_by_knowledge_state: { mastered: 2, emerging: 3 },
+          review_schedule_count: 1,
+        },
+        distinction_note: 'usage_counts_are_not_demonstrated_learning',
+      })),
     }
 
     render(
@@ -67,6 +83,10 @@ describe('operator console', () => {
         name: 'Operator content workflow',
       }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Pilot analytics' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/learners=2/)).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Review queue' }),
     ).toBeInTheDocument()
@@ -85,5 +105,6 @@ describe('operator console', () => {
     expect(api.listDrafts).toHaveBeenCalledTimes(1)
     expect(api.listPublications).toHaveBeenCalledTimes(1)
     expect(api.listAuditEvents).toHaveBeenCalledTimes(1)
+    expect(api.getPilotAnalytics).toHaveBeenCalledTimes(1)
   })
 })

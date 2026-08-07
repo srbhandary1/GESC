@@ -47,6 +47,23 @@ export interface OperatorAuditEvent {
   readonly occurred_at: string
 }
 
+export interface OperatorPilotAnalyticsSummary {
+  readonly generated_at: string
+  readonly usage: {
+    readonly learner_membership_count: number
+    readonly conversation_session_count: number
+    readonly conversation_sessions_by_status: Readonly<Record<string, number>>
+    readonly formative_attempt_count: number
+    readonly formative_attempts_by_status: Readonly<Record<string, number>>
+  }
+  readonly demonstrated_learning: {
+    readonly mastery_state_count: number
+    readonly mastery_by_knowledge_state: Readonly<Record<string, number>>
+    readonly review_schedule_count: number
+  }
+  readonly distinction_note: 'usage_counts_are_not_demonstrated_learning'
+}
+
 export interface OperatorConsoleApi {
   listDrafts(signal?: AbortSignal): Promise<readonly OperatorContentDraft[]>
   listPublications(
@@ -55,6 +72,9 @@ export interface OperatorConsoleApi {
   listAuditEvents(
     signal?: AbortSignal,
   ): Promise<readonly OperatorAuditEvent[]>
+  getPilotAnalytics(
+    signal?: AbortSignal,
+  ): Promise<OperatorPilotAnalyticsSummary>
 }
 
 export class OperatorConsoleUnavailableError extends Error {
@@ -111,6 +131,15 @@ export class WebOperatorConsoleApi implements OperatorConsoleApi {
       signal,
     )
     return payload.items
+  }
+
+  async getPilotAnalytics(
+    signal?: AbortSignal,
+  ): Promise<OperatorPilotAnalyticsSummary> {
+    return this.#get<OperatorPilotAnalyticsSummary>(
+      '/operator/pilot-analytics',
+      signal,
+    )
   }
 
   async #get<T>(path: string, signal?: AbortSignal): Promise<T> {

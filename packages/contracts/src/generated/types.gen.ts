@@ -708,6 +708,29 @@ export type OperatorAuditEventListing = {
     items: Array<OperatorAuditEvent>;
 };
 
+export type OperatorPilotAnalyticsSummary = {
+    generated_at: string;
+    usage: {
+        learner_membership_count: number;
+        conversation_session_count: number;
+        conversation_sessions_by_status: {
+            [key: string]: number;
+        };
+        formative_attempt_count: number;
+        formative_attempts_by_status: {
+            [key: string]: number;
+        };
+    };
+    demonstrated_learning: {
+        mastery_state_count: number;
+        mastery_by_knowledge_state: {
+            [key: string]: number;
+        };
+        review_schedule_count: number;
+    };
+    distinction_note: 'usage_counts_are_not_demonstrated_learning';
+};
+
 export type ProblemDetails = {
     type: string;
     title: string;
@@ -3132,3 +3155,44 @@ export type ListOperatorAuditEventsResponses = {
 };
 
 export type ListOperatorAuditEventsResponse = ListOperatorAuditEventsResponses[keyof ListOperatorAuditEventsResponses];
+
+export type GetOperatorPilotAnalyticsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/pilot-analytics';
+};
+
+export type GetOperatorPilotAnalyticsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorPilotAnalyticsError = GetOperatorPilotAnalyticsErrors[keyof GetOperatorPilotAnalyticsErrors];
+
+export type GetOperatorPilotAnalyticsResponses = {
+    /**
+     * Aggregate pilot analytics summary.
+     */
+    200: OperatorPilotAnalyticsSummary;
+};
+
+export type GetOperatorPilotAnalyticsResponse = GetOperatorPilotAnalyticsResponses[keyof GetOperatorPilotAnalyticsResponses];

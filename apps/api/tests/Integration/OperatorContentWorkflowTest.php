@@ -78,6 +78,33 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             ->assertJsonPath('items.0.publication_status', 'unpublished');
         $this->assertNoStore($drafts);
 
+        $analytics = $this->getJson('/api/v1/operator/pilot-analytics')
+            ->assertOk()
+            ->assertJsonPath(
+                'distinction_note',
+                'usage_counts_are_not_demonstrated_learning',
+            )
+            ->assertJsonStructure([
+                'generated_at',
+                'usage' => [
+                    'learner_membership_count',
+                    'conversation_session_count',
+                    'conversation_sessions_by_status',
+                    'formative_attempt_count',
+                    'formative_attempts_by_status',
+                ],
+                'demonstrated_learning' => [
+                    'mastery_state_count',
+                    'mastery_by_knowledge_state',
+                    'review_schedule_count',
+                ],
+                'distinction_note',
+            ]);
+        $this->assertNoStore($analytics);
+        self::assertIsInt(
+            $analytics->json('usage.learner_membership_count'),
+        );
+
         $english = $this->withHeaders([
             'Origin' => 'https://localhost',
             'Idempotency-Key' => (string) Str::uuid(),
@@ -230,6 +257,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             ->assertOk();
         $this->getJson('/api/v1/operator/content/drafts')->assertNotFound();
         $this->getJson('/api/v1/operator/audit-events')->assertNotFound();
+        $this->getJson('/api/v1/operator/pilot-analytics')->assertNotFound();
         $this->withHeaders([
             'Origin' => 'https://localhost',
             'Idempotency-Key' => (string) Str::uuid(),
