@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Checkpoint | Confidence Conversation enterprise slice (plan Steps A1–A7) |
-| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A3 done; Active step A4 (conversation-model ADR — nested gate) |
+| Status | Authorized under [APP-0021](APPROVALS.md#app-0021); A0–A3 done; A4 ADR-0010 proposed (awaiting acceptance) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |

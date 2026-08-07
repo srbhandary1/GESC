@@ -80,7 +80,7 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **A1** | Spec + verification scope for Confidence Conversation | `done` | APP-0021 |
 | **A2** | Structured turn contract (EN reply + L1 explanation) for all UI locales | `done` | APP-0021 / D-0096 |
 | **A3** | Product UI vertical slice (not demo): warm-up → listen → talk → correct → reflect | `done` | Bound by APP-0021 |
-| **A4** | Conversation-model provider ADR + secure binding (fail-closed) | `pending` | ADR + APP; spend/DPA |
+| **A4** | Conversation-model provider ADR + secure binding (fail-closed) | `in_progress` | ADR-0010 proposed; nested APP required |
 | **A5** | Multi-locale guidance TTS policy (AI-only lesson audio) | `pending` | ADR amendment vs ADR-0008 |
 | **A6** | Locale eval fixtures + `make ai-eval` gates for L1 explanations | `pending` | Bound by APP-0021 / A4 |
 | **A7** | APO acceptance of Confidence Conversation slice | `pending` | APO accept APP |
@@ -92,7 +92,7 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `A4` — conversation-model provider ADR (nested gate; do not implement live DI without APP).
+**Active step:** `A4` — ADR-0010 proposed; awaiting role acceptance + nested APP before adapter code.
 
 ---
 
@@ -310,7 +310,7 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** prepare **A4** ADR for a real conversation-model provider (fail-closed). Do not bind live spend until nested APP + DPA/spend gates pass. A5–A6 remain later.
+**Immediate next action:** APO/roles accept [ADR-0010](adr/0010-conversation-model-provider-policy.md) using the statements in [A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md](A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md). Do not implement the live Azure adapter until that nested APP exists.
 
 ---
 
@@ -335,3 +335,4 @@ When the user says “continue the plan” or “next step”:
 | 2026-08-07 | A0 done ([APP-0021](APPROVALS.md#app-0021)); A1 done (spec + verification scope); Active step = A2 |
 | 2026-08-07 | A2 done (`explanation_l1` + `ui_locale`, OpenAPI 0.9.0); Active step = A3 |
 | 2026-08-07 | A3 done (Confidence Conversation stages + controls on product Practice UI); Active step = A4 |
+| 2026-08-07 | A4 ADR-0010 proposed (Azure conversation-model policy); awaiting acceptance |

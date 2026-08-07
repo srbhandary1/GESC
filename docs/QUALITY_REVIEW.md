@@ -2235,3 +2235,26 @@ A2 complete. Next: A3 product UI vertical slice on fakes.
 ### Outcome
 
 A3 complete. Next: A4 conversation-model provider ADR (no live DI without nested APP).
+
+## Confidence Conversation — Step A4 (ADR proposed)
+
+### Evidence reviewed
+
+- Proposed [ADR-0010](adr/0010-conversation-model-provider-policy.md)
+- Authorization draft [A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md](A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md)
+- Explicit separation from demo OpenRouter (D-0094) and Speech ADR-0008
+- Fail-closed production default retained
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR drafted for provider choice + gates | Pass | ADR-0010 proposed |
+| Nested APP required before adapter code | Pass | A4 auth request |
+| Live spend unauthorized | Pass | ADR + A4 request non-goals |
+| Demo path non-evidence | Pass | D-0094; ADR alternatives |
+
+### Outcome
+
+A4 ADR proposed. Adapter implementation blocked until ADR acceptance and nested
+APO authorize statement are recorded.
