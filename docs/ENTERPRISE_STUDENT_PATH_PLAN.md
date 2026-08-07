@@ -90,11 +90,11 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **C0** | PR-013 Operator console authorization | `done` | [APP-0028](APPROVALS.md#app-0028) begin-implementation for content-workflow + audit |
 | **C1** | PR-013 bounded operator content-workflow + audit | `done` | [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
 | **D0** | PR-014 Capacitor Android closed beta authorization | `done` | [APP-0030](APPROVALS.md#app-0030) |
-| **D1** | PR-014 closed-beta foundations implementation | `awaiting_accept` | Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e`; [acceptance package](PR-014_APO_ACCEPTANCE_PACKAGE.md) |
+| **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `D1` — awaiting APO exact-commit acceptance of PR-014 closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` ([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)). Demo APK (`com.globalenglish.demo`) remains non-production. Play public release unauthorized. Physical device matrix / Gradle assemble not claimed.
+**Active step:** `E0` — PR-015 consideration only (unauthorized until separate APP). PR-014 closed-beta foundations accepted under [APP-0031](APPROVALS.md#app-0031). Demo APK remains non-production. Play public release unauthorized. Physical device matrix / Gradle assemble / `make verify` remain unclaimed follow-ups from APP-0031 limitations.
 
 ---
 
@@ -327,13 +327,11 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO accept Exact commit
-`44b0e672e004cf3846cddabc456c21153fa4607e` under
-[PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md) with
-recorded limitations. Do not promote `com.globalenglish.demo` to production.
-Do not claim Play public release, physical matrix pass, or PR-015.
-Remaining PR-013 sampled review / privacy ops stay separately gated
-(ADR-0007).
+**Immediate next action:** Consider a separate APP for plan Step **E0**
+(PR-015 production hardening) and/or on-device matrix completion under
+APP-0031 limitations. Do not promote `com.globalenglish.demo` to production.
+Do not claim Play public release. Remaining PR-013 sampled review / privacy
+ops stay separately gated (ADR-0007).
 
 ---
 
@@ -379,3 +377,4 @@ Remaining PR-013 sampled review / privacy ops stay separately gated
 | 2026-08-07 | D0: PR-014 authorization + verification drafts ready (closed-beta foundations; demo APK non-production; Play public release deferred); awaiting APO authorize |
 | 2026-08-07 | D0 done ([APP-0030](APPROVALS.md#app-0030) / D-0109); Active step = D1 (PR-014 closed-beta foundations implementation) |
 | 2026-08-07 | D1 foundations Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e`; acceptance package drafted; awaiting APO accept |
+| 2026-08-07 | D1 done ([APP-0031](APPROVALS.md#app-0031) / D-0111); Active step = E0 (PR-015 APP consideration only) |

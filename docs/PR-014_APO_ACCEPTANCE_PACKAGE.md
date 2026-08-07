@@ -1,19 +1,21 @@
 # PR-014 APO acceptance package
 
-This package prepares exact-artifact Accountable Product Owner acceptance of
+This package prepared exact-artifact Accountable Product Owner acceptance of
 master-plan §26 **PR-014 — Capacitor Android and closed beta** for the
 **closed-beta foundations** slice authorized under
-[APP-0030](APPROVALS.md#app-0030). Acceptance is **pending** a new APP record
-after the Exact human accept statement below.
+[APP-0030](APPROVALS.md#app-0030). **Accepted** under
+[APP-0031](APPROVALS.md#app-0031) / D-0111 at
+`44b0e672e004cf3846cddabc456c21153fa4607e` with the recorded limitations
+below.
 
-## Artifact proposed for acceptance
+## Artifact accepted
 
 | Field | Value |
 |---|---|
 | Checkpoint | PR-014 Capacitor Android closed-beta foundations (plan D0–D1) |
 | Branch | `codex/confidence-conversation` |
 | Governing begin-implementation | [APP-0030](APPROVALS.md#app-0030) |
-| Acceptance record | Pending (next APP after Exact APO accept) |
+| Acceptance record | [APP-0031](APPROVALS.md#app-0031) |
 | Authorization request | [PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md) |
 | Verification scope | [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md) |
 | Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (PR-014 D0/D1 sections) |
@@ -80,9 +82,7 @@ Demo Vite `/demo/*` and demo APK remain non-evidence.
 9. This acceptance does **not** waive independent specialist reviews before
    production.
 
-## Proposed APO statement
-
-Reply exactly:
+## APO statement (recorded)
 
 ```text
 APO accept PR-014 Capacitor Android closed-beta foundations at 44b0e672e004cf3846cddabc456c21153fa4607e with its recorded limitations
@@ -99,14 +99,13 @@ Interpretation for the recorder (Codex is never an approver):
 
 ## Recorder checklist after APO statement
 
-1. Exact commit SHA already filled (`44b0e672e004cf3846cddabc456c21153fa4607e`).
-2. Append next APP to [APPROVALS.md](APPROVALS.md).
-3. Append decision row to [DECISIONS.md](DECISIONS.md).
-4. Update [STATUS.md](STATUS.md) and
+1. Exact commit SHA filled (`44b0e672e004cf3846cddabc456c21153fa4607e`).
+2. Appended [APP-0031](APPROVALS.md#app-0031) to [APPROVALS.md](APPROVALS.md).
+3. Appended D-0111 to [DECISIONS.md](DECISIONS.md).
+4. Updated [STATUS.md](STATUS.md) and
    [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
-   (D1 closed-beta foundations accepted; Active step = E0 consideration or
-   remaining on-device evidence APP only).
-5. Append acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
-6. Mark this package Accepted with the new APP id.
+   (D1 closed-beta foundations accepted; Active step = E0 consideration).
+5. Appended acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+6. Marked this package Accepted under APP-0031.
 7. Do **not** start Play public release, PR-015, or remaining PR-013 sampled
    review/privacy ops until a distinct APP authorizes that scope.

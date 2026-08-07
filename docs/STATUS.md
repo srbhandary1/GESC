@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-014 Capacitor Android closed beta (plan D1) — awaiting APO exact-commit acceptance |
-| Status | PR-014 closed-beta foundations implemented under [APP-0030](APPROVALS.md#app-0030); Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e`; Active step **D1** (acceptance pending) |
+| Checkpoint | PR-014 Capacitor Android closed-beta foundations accepted; next plan step E0 (PR-015) consideration |
+| Status | PR-014 closed-beta foundations **accepted** ([APP-0031](APPROVALS.md#app-0031) / D-0111) at `44b0e672e004cf3846cddabc456c21153fa4607e`; Active step **E0** (unauthorized until separate APP) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-013 bounded operator accepted; PR-014 foundations at Exact commit pending APO accept; Play public release unauthorized |
-| Next checkpoint | APO accept Exact commit in [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md). Play public release / PR-015 / physical matrix pass remain unauthorized or unclaimed |
-| Professional client path | APP-0016–0030; PR-014 Exact commit pending accept; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-014 closed-beta foundations accepted; Play public release / PR-015 unauthorized |
+| Next checkpoint | Separate APP for PR-015 (E0) and/or on-device matrix / remaining PR-013 items only. Play public release unauthorized |
+| Professional client path | APP-0016–0031; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -150,6 +150,13 @@ It is not acceptance of completed PR-014 work and does not authorize Google
 Play public release, PR-015, remaining PR-013 sampled review/privacy ops or
 real learner production data. Demo APK `com.globalenglish.demo` remains
 presentation-only (D-0078).
+
+[APP-0031](APPROVALS.md#app-0031) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-014 Capacitor Android closed-beta foundations at
+`44b0e672e004cf3846cddabc456c21153fa4607e` with every recorded limitation. It
+does not authorize Google Play public release, PR-015, remaining PR-013
+sampled review/privacy ops or real learner production data. Physical device
+matrix, Gradle assemble and `make verify` remain unclaimed.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -761,13 +768,16 @@ remain unauthorized. Live Azure OpenAI calls remain operator-gated
 Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
 and do not count as enterprise verification evidence.
 
-Active work is plan Step **D1**: PR-014 Capacitor Android closed-beta
-foundations under [APP-0030](APPROVALS.md#app-0030)
-([PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md),
-[PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md)).
+[APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
+closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
+recorded limitations
+([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)).
 Production package identity is `com.globalenglish.app` at
 `apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
 presentation-only.
+Active plan consideration is Step **E0** (PR-015) only after a separate APP;
+physical device matrix / Gradle assemble / `make verify` remain unclaimed
+follow-ups from APP-0031 limitations.
 [APP-0029](APPROVALS.md#app-0029) accepted PR-013 bounded operator
 content-workflow + audit at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with
 recorded limitations

@@ -2055,3 +2055,73 @@ remains presentation-only.
 - Demo Capacitor project at `apps/web/android` remains D-0078 presentation-only.
 - No master-plan amendment is made.
 
+<a id="app-0031"></a>
+
+## APP-0031 — PR-014 Capacitor Android closed-beta foundations acceptance
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `44b0e672e004cf3846cddabc456c21153fa4607e` |
+| Governing begin-implementation | [APP-0030](APPROVALS.md#app-0030) |
+| Acceptance package | [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md) |
+| Prior PR-013 acceptance | [APP-0029](APPROVALS.md#app-0029) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-014 Capacitor Android closed-beta foundations at 44b0e672e004cf3846cddabc456c21153fa4607e with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-014 closed-beta foundations were implemented under APP-0030;
+2. the Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e` was recorded in
+   [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md) with
+   every limitation (Play public release, physical matrix, Gradle assemble,
+   `make verify` unclaimed);
+3. QUALITY_REVIEW D0/D1 evidence was recorded;
+4. the Accountable Product Owner supplied the accept statement exactly as
+   drafted with that Exact commit SHA.
+
+Interpretation:
+
+- Accept the PR-014 **closed-beta foundations** slice at that exact commit
+  only, with every recorded limitation in the acceptance package.
+- Close plan Steps D0–D1 for this APP scope.
+- Do **not** authorize Google Play public release, PR-015, remaining PR-013
+  sampled speaking review/privacy ops, or real learner production data.
+
+### Accepted scope
+
+- Accept PR-014 Capacitor Android closed-beta foundations at exact
+  implementation commit `44b0e672e004cf3846cddabc456c21153fa4607e`, with every
+  recorded limitation in
+  [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, and D-0109–D-0110.
+
+### Conditions and limitations
+
+- Physical device-matrix execution, Gradle APK/AAB assemble and host
+  `make verify` remain unclaimed follow-up evidence obligations; they are not
+  waived by this acceptance.
+- Google Play public listing / open production release remain unauthorized.
+- Remaining PR-013 items (sampled speaking review under ADR-0007, privacy ops,
+  full §8.2 console) remain unauthorized.
+- PR-015 production hardening, production OTP cutover and real learner
+  production data remain unauthorized.
+- Demo APK (`com.globalenglish.demo`) remains presentation-only (D-0078).
+- Live Azure OpenAI / multi-locale TTS spend remain under existing APP gates
+  only.
+- No master-plan amendment is made.
+

@@ -2721,13 +2721,14 @@ remaining on-device gaps. Play public release and PR-015 remain unauthorized.
 | Acceptance package drafted | Pass | PR-014_APO_ACCEPTANCE_PACKAGE.md |
 | Exact commit SHA filled | Pass | `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | Limitations recorded (Play / matrix / verify) | Pass | acceptance package |
-| APO accept statement | Pending | Exact line in acceptance package |
-| Play public release / PR-015 | Not authorized | APP-0030 non-goals |
+| APO accept statement | Pass | [APP-0031](APPROVALS.md#app-0031) |
+| Play public release / PR-015 | Not authorized | APP-0031 non-goals |
 
 ### Outcome
 
-Ready for Accountable Product Owner Exact-commit acceptance. Codex records
-only; does not approve.
+PR-014 closed-beta foundations **accepted** under APP-0031 / D-0111 at
+`44b0e672e004cf3846cddabc456c21153fa4607e`. Next: separate APP for E0
+(PR-015) and/or on-device matrix / remaining PR-013 only.
 
 
 
