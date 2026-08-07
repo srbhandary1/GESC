@@ -2838,13 +2838,15 @@ API, Play/F0).
 | Acceptance package drafted | Pass | PR-015_APO_ACCEPTANCE_PACKAGE.md |
 | Exact commit SHA filled | Pass | `5eca7515291ea571a7f697dcdc2da6197535f839` |
 | Limitations recorded | Pass | acceptance package |
-| APO accept statement | Pending | Exact line in acceptance package |
-| Play / F0 / remaining PR-013 | Not authorized | APP-0032 |
+| APO accept statement | Pass | [APP-0033](APPROVALS.md#app-0033) |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0033 non-goals |
 
 ### Outcome
 
-Ready for Accountable Product Owner Exact-commit acceptance. Codex records
-only; does not approve.
+PR-015 bounded operations hardening and closed-beta evidence closure
+**accepted** under APP-0033 / D-0113 at
+`5eca7515291ea571a7f697dcdc2da6197535f839`. Next: separate APP / release board
+for F0 only.
 
 
 

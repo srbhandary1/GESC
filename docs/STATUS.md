@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-015 bounded operations hardening (plan E1) — awaiting APO exact-commit acceptance |
-| Status | PR-015 bounded slice implemented under [APP-0032](APPROVALS.md#app-0032); Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839`; Active step **E1** (acceptance pending) |
+| Checkpoint | PR-015 bounded ops hardening accepted; next plan step F0 (Phase 1 DoD) consideration |
+| Status | PR-015 bounded slice **accepted** ([APP-0033](APPROVALS.md#app-0033) / D-0113) at `5eca7515291ea571a7f697dcdc2da6197535f839`; Active step **F0** (unauthorized until separate APP / release board) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-014 accepted; PR-015 Exact commit pending APO accept; Play / F0 unauthorized |
-| Next checkpoint | APO accept Exact commit in [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md). Play / F0 / remaining PR-013 / physical matrix remain unauthorized or unclaimed |
-| Professional client path | APP-0016–0032; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-015 bounded ops hardening accepted; Play public release / F0 unauthorized |
+| Next checkpoint | Separate APP / release-board gate for F0 Phase 1 Definition of Done only. Play public release / remaining PR-013 remain unauthorized |
+| Professional client path | APP-0016–0033; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -167,6 +167,14 @@ and
 It is not acceptance of completed PR-015 work and does not authorize F0 Phase 1
 DoD, Google Play public release, remaining PR-013 sampled review/privacy ops or
 real learner production data.
+
+[APP-0033](APPROVALS.md#app-0033) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-015 bounded operations hardening and closed-beta
+evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839` with every
+recorded limitation. It does not authorize F0 Phase 1 DoD, Google Play public
+release, remaining PR-013 sampled review/privacy ops or real learner production
+data. Physical device matrix, Gradle assemble, `make verify`, and live
+load-soak/backup execution remain unclaimed.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -785,10 +793,14 @@ recorded limitations
 Production package identity is `com.globalenglish.app` at
 `apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
 presentation-only.
-Active plan step is **E1**: PR-015 bounded operations hardening and
-closed-beta evidence closure under [APP-0032](APPROVALS.md#app-0032)
-([PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md),
-[PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md)).
+[APP-0033](APPROVALS.md#app-0033) accepted PR-015 bounded operations hardening
+and closed-beta evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839`
+with recorded limitations
+([PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)).
+Active plan consideration is Step **F0** (Phase 1 Definition of Done) only
+after a separate APP / release-board gate; physical device matrix / Gradle
+assemble / `make verify` / live load-soak and backup-drill execution remain
+unclaimed follow-ups from APP-0033 limitations.
 [APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
 closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
 recorded limitations

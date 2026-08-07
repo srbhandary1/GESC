@@ -1,19 +1,21 @@
 # PR-015 APO acceptance package
 
-This package prepares exact-artifact Accountable Product Owner acceptance of
+This package prepared exact-artifact Accountable Product Owner acceptance of
 master-plan §26 **PR-015 — Production hardening and pilot release** for the
 **bounded operations hardening + closed-beta evidence closure** slice
-authorized under [APP-0032](APPROVALS.md#app-0032). Acceptance is **pending** a
-new APP record after the Exact human accept statement below.
+authorized under [APP-0032](APPROVALS.md#app-0032). **Accepted** under
+[APP-0033](APPROVALS.md#app-0033) / D-0113 at
+`5eca7515291ea571a7f697dcdc2da6197535f839` with the recorded limitations
+below.
 
-## Artifact proposed for acceptance
+## Artifact accepted
 
 | Field | Value |
 |---|---|
 | Checkpoint | PR-015 bounded ops hardening + closed-beta evidence closure (plan E0–E1) |
 | Branch | `codex/confidence-conversation` |
 | Governing begin-implementation | [APP-0032](APPROVALS.md#app-0032) |
-| Acceptance record | Pending (next APP after Exact APO accept) |
+| Acceptance record | [APP-0033](APPROVALS.md#app-0033) |
 | Authorization request | [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md) |
 | Verification scope | [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md) |
 | Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (PR-015 E0/E1 sections) |
@@ -67,9 +69,7 @@ new APP record after the Exact human accept statement below.
 8. Live Azure spend remains under existing APP gates only.
 9. Demo APK remains presentation-only (D-0078).
 
-## Proposed APO statement
-
-Reply exactly:
+## APO statement (recorded)
 
 ```text
 APO accept PR-015 bounded operations hardening and closed-beta evidence closure at 5eca7515291ea571a7f697dcdc2da6197535f839 with its recorded limitations
@@ -87,12 +87,12 @@ Interpretation for the recorder (Codex is never an approver):
 ## Recorder checklist after APO statement
 
 1. Exact commit SHA filled (`5eca7515291ea571a7f697dcdc2da6197535f839`).
-2. Append next APP to [APPROVALS.md](APPROVALS.md).
-3. Append decision row to [DECISIONS.md](DECISIONS.md).
-4. Update [STATUS.md](STATUS.md) and
+2. Appended [APP-0033](APPROVALS.md#app-0033) to [APPROVALS.md](APPROVALS.md).
+3. Appended D-0113 to [DECISIONS.md](DECISIONS.md).
+4. Updated [STATUS.md](STATUS.md) and
    [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
    (E1 accepted; Active = F0 consideration).
-5. Append acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
-6. Mark this package Accepted with the new APP id.
+5. Appended acceptance note to [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+6. Marked this package Accepted under APP-0033.
 7. Do **not** start F0 sign-off, Play public release, or remaining PR-013
    sampled review/privacy ops until a distinct APP authorizes that scope.

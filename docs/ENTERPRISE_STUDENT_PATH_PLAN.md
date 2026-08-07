@@ -92,13 +92,10 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **D0** | PR-014 Capacitor Android closed beta authorization | `done` | [APP-0030](APPROVALS.md#app-0030) |
 | **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | **E0** | PR-015 bounded operations hardening authorization | `done` | [APP-0032](APPROVALS.md#app-0032) / D-0112 |
-| **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `awaiting_accept` | Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839`; [acceptance package](PR-015_APO_ACCEPTANCE_PACKAGE.md) |
-| **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
+| **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `done` | [APP-0033](APPROVALS.md#app-0033) at `5eca7515291ea571a7f697dcdc2da6197535f839` |
+| **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board; separate APP required |
 
-**Active step:** `E1` — awaiting APO exact-commit acceptance of bounded PR-015 at
-`5eca7515291ea571a7f697dcdc2da6197535f839`
-([PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)).
-Play public release, F0 DoD and remaining PR-013 items unauthorized.
+**Active step:** `F0` — Phase 1 Definition of Done consideration only (unauthorized until separate APP / release board). PR-015 bounded ops hardening accepted under [APP-0033](APPROVALS.md#app-0033). Play public release and remaining PR-013 items unauthorized. Physical matrix / `make verify` / live load-soak and backup-drill execution remain unclaimed follow-ups.
 
 ---
 
@@ -339,11 +336,11 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO accept Exact commit
-`5eca7515291ea571a7f697dcdc2da6197535f839` under
-[PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md) with
-recorded limitations. Do not claim Play public release, F0 DoD, or remaining
-PR-013 sampled review / privacy ops.
+**Immediate next action:** Consider a separate APP / release-board gate for
+plan Step **F0** (Phase 1 Definition of Done under master plan §27). Do not
+claim Play public release or remaining PR-013 sampled review / privacy ops.
+Unclaimed APP-0033 evidence gaps (physical matrix, verify, live drills) stay
+follow-ups.
 
 ---
 
@@ -393,3 +390,4 @@ PR-013 sampled review / privacy ops.
 | 2026-08-07 | E0: PR-015 bounded ops-hardening + closed-beta evidence-closure auth/verification drafts ready; awaiting APO authorize |
 | 2026-08-07 | E0 done ([APP-0032](APPROVALS.md#app-0032) / D-0112); Active step = E1 (bounded PR-015 implementation) |
 | 2026-08-07 | E1 Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839`; acceptance package drafted; awaiting APO accept |
+| 2026-08-07 | E1 done ([APP-0033](APPROVALS.md#app-0033) / D-0113); Active step = F0 (Phase 1 DoD APP / release-board consideration only) |

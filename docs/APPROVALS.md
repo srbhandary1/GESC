@@ -2201,3 +2201,76 @@ review/privacy ops, or real learner production data.
 - Demo Capacitor project at `apps/web/android` remains D-0078 presentation-only.
 - No master-plan amendment is made.
 
+<a id="app-0033"></a>
+
+## APP-0033 — PR-015 bounded operations hardening and closed-beta evidence closure acceptance
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `5eca7515291ea571a7f697dcdc2da6197535f839` |
+| Governing begin-implementation | [APP-0032](APPROVALS.md#app-0032) |
+| Acceptance package | [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md) |
+| Prior PR-014 acceptance | [APP-0031](APPROVALS.md#app-0031) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-015 bounded operations hardening and closed-beta evidence closure at 5eca7515291ea571a7f697dcdc2da6197535f839 with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-015 bounded operations hardening and closed-beta evidence closure were
+   implemented under APP-0032;
+2. the Exact commit `5eca7515291ea571a7f697dcdc2da6197535f839` was recorded in
+   [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md) with
+   every limitation (F0, Play public release, physical matrix, `make verify`,
+   live load-soak/backup execution unclaimed);
+3. QUALITY_REVIEW E0/E1 evidence was recorded;
+4. the Accountable Product Owner supplied the accept statement exactly as
+   drafted with that Exact commit SHA.
+
+Interpretation:
+
+- Accept the PR-015 **bounded ops hardening + closed-beta evidence closure**
+  slice at that exact commit only, with every recorded limitation in the
+  acceptance package.
+- Close plan Steps E0–E1 for this APP scope.
+- Do **not** authorize F0 Phase 1 DoD, Google Play public release, remaining
+  PR-013 sampled speaking review/privacy ops, or real learner production data.
+
+### Accepted scope
+
+- Accept PR-015 bounded operations hardening and closed-beta evidence closure
+  at exact implementation commit `5eca7515291ea571a7f697dcdc2da6197535f839`,
+  with every recorded limitation in
+  [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, and D-0112.
+
+### Conditions and limitations
+
+- Physical device-matrix execution, Gradle assemble, host `make verify`, live
+  load-soak against a running API, and executed backup/restore drill evidence
+  remain unclaimed follow-up obligations; they are not waived by this
+  acceptance.
+- Phase 1 Definition of Done (F0 / master plan §27) remains unauthorized.
+- Google Play public listing / open production release remain unauthorized.
+- Remaining PR-013 items (sampled speaking review under ADR-0007, privacy ops,
+  full §8.2 console) remain unauthorized.
+- Production OTP cutover and real learner production data remain unauthorized.
+- Demo APK (`com.globalenglish.demo`) remains presentation-only (D-0078).
+- Live Azure OpenAI / multi-locale TTS spend remain under existing APP gates
+  only.
+- No master-plan amendment is made.
+
