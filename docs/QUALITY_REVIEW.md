@@ -2705,6 +2705,30 @@ and Play upload were **not** run/claimed in this session.
 D1 foundations landed for APO review after focused tests and documented
 remaining on-device gaps. Play public release and PR-015 remain unauthorized.
 
+## PR-014 — Step D1 acceptance package (awaiting APO)
+
+### Evidence reviewed
+
+- Exact implementation commit `44b0e672e004cf3846cddabc456c21153fa4607e`
+- [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)
+- QUALITY_REVIEW D0/D1 gate tables (AN-06 partial; AN-10 / physical matrix /
+  Gradle assemble / `make verify` not claimed)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-014_APO_ACCEPTANCE_PACKAGE.md |
+| Exact commit SHA filled | Pass | `44b0e672e004cf3846cddabc456c21153fa4607e` |
+| Limitations recorded (Play / matrix / verify) | Pass | acceptance package |
+| APO accept statement | Pending | Exact line in acceptance package |
+| Play public release / PR-015 | Not authorized | APP-0030 non-goals |
+
+### Outcome
+
+Ready for Accountable Product Owner Exact-commit acceptance. Codex records
+only; does not approve.
+
 
 
 

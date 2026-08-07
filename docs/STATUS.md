@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-014 Capacitor Android closed beta (plan D1) — foundations implementation |
-| Status | PR-014 begin-implementation authorized ([APP-0030](APPROVALS.md#app-0030)); Active step **D1** |
+| Checkpoint | PR-014 Capacitor Android closed beta (plan D1) — awaiting APO exact-commit acceptance |
+| Status | PR-014 closed-beta foundations implemented under [APP-0030](APPROVALS.md#app-0030); Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e`; Active step **D1** (acceptance pending) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-013 bounded operator accepted; PR-014 closed-beta foundations in progress under APP-0030; Play public release unauthorized |
-| Next checkpoint | Complete PR-014 closed-beta foundations (AN-01–AN-10), then APO exact-commit acceptance. Play public release / PR-015 remain unauthorized |
-| Professional client path | APP-0016–0030; PR-014 D1 implementation; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-013 bounded operator accepted; PR-014 foundations at Exact commit pending APO accept; Play public release unauthorized |
+| Next checkpoint | APO accept Exact commit in [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md). Play public release / PR-015 / physical matrix pass remain unauthorized or unclaimed |
+| Professional client path | APP-0016–0030; PR-014 Exact commit pending accept; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 

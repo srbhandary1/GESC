@@ -1,6 +1,8 @@
 # PR-014 Capacitor Android authorization request
 
-**Status:** Begin-implementation authorized under [APP-0030](APPROVALS.md#app-0030).  
+**Status:** Begin-implementation authorized under [APP-0030](APPROVALS.md#app-0030);
+Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e` awaiting APO accept
+([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)).  
 **Plan step:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) D0→D1  
 **Master plan:** §26 PR-014 — Capacitor Android and closed beta; §11.2 auth  
 **Verification:** [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md)  
