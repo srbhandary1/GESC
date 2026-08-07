@@ -2873,6 +2873,39 @@ for F0 only.
 F0 consideration package ready. Do **not** claim Phase 1 DoD. Recommended
 APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 
+## F0 — Pre-F0 evidence-closure (APP-0034 begin)
+
+### Evidence reviewed
+
+- Exact APO begin statement recorded as [APP-0034](APPROVALS.md#app-0034) /
+  D-0114
+- [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)
+- Local closed-beta Android `assembleDebug` (2026-08-07):
+  - JDK: Temurin 21 at `~/.local/jdk/jdk-21.0.12+8`
+  - SDK: `$ANDROID_HOME` API 36
+  - Dependency fix: `androidx.security:security-crypto:1.1.0-alpha06`
+    (required for `MasterKey` used by secure-credentials plugin)
+  - Output: `apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk`
+    (~5.8 MB); package `com.globalenglish.app`; minSdk 24; targetSdk 36
+  - Web assets baked with `VITE_MOBILE_API_ORIGIN=http://192.168.1.3:8000`
+  - Physical device matrix / on-device credential negatives: **not claimed**
+  - No device attached via `adb` at assemble time
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Begin-implementation recorded | Pass | APP-0034 |
+| F0 DoD sign-off | Not authorized | APP-0034 non-goals |
+| Play public release | Not authorized | APP-0034 |
+| Local Gradle `assembleDebug` | Pass (local) | APK path above; not Exact-commit claim yet |
+| Physical device matrix / drills | Open | APP-0034 remaining scope |
+
+### Outcome
+
+APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
+accept and Play public release remain unauthorized.
+
 
 
 

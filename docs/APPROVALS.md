@@ -2274,3 +2274,74 @@ Interpretation:
   only.
 - No master-plan amendment is made.
 
+<a id="app-0034"></a>
+
+## APP-0034 — Pre-F0 Phase 1 evidence-closure begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0033](APPROVALS.md#app-0033) (PR-015 bounded ops hardening at `5eca7515291ea571a7f697dcdc2da6197535f839`) |
+| Governing gap assessment | [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) F0 (pre-DoD evidence) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only pre-F0 Phase 1 evidence-closure under
+F0_PHASE1_DOD_GAP_ASSESSMENT.md; F0 Definition of Done sign-off and Play
+public release remain unauthorized.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-015 bounded ops hardening was accepted under APP-0033 with recorded
+   limitations;
+2. plan Active step was F0 with a drafted §27 gap assessment;
+3. F0 Definition of Done was not ready to sign;
+4. the Accountable Product Owner supplied the begin-implementation statement
+   exactly as drafted.
+
+Interpretation: authorize **beginning** pre-F0 evidence-closure work only
+(Android closed-beta assemble/matrix gaps, load-soak and backup/restore drill
+execution, §27 evidence matrix fill, and APP-deferred handling of remaining
+PR-013/content blockers as listed in the gap assessment). This is **not**
+acceptance of Phase 1 Definition of Done, Google Play public release, waiver
+of specialist reviews, or real learner production data.
+
+### Authorized scope
+
+1. Close Android closed-beta evidence gaps (assemble, device matrix, on-device
+   credential negatives where feasible).
+2. Execute load-soak and backup/restore drills against local/staging-like
+   stack; record evidence.
+3. Fill a §27 evidence matrix (pass / fail / deferred per row).
+4. Document remaining PR-013 / DR-0007 / specialist-review blockers without
+   expanding unauthorized product scope unless separately APP-gated.
+5. STATUS / DECISIONS / QUALITY_REVIEW / plan updates.
+
+### Explicit non-authorization
+
+- F0 Phase 1 Definition of Done sign-off
+- Google Play public listing / open production release
+- Waiver of independent specialist reviews
+- Remaining PR-013 sampled speaking review / privacy ops (unless a distinct
+  APP later authorizes them)
+- Production OTP cutover / real learner production data
+- Expanding live Azure spend beyond existing APPs
+
+### Conditions and limitations
+
+- Demo APK remains presentation-only (D-0078).
+- No master-plan amendment is made.
+

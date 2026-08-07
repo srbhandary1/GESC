@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | F0 Phase 1 Definition of Done — gap assessment ready |
-| Status | PR-015 bounded slice accepted ([APP-0033](APPROVALS.md#app-0033)); Active step **F0**; DoD **not** ready to sign ([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)) |
+| Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
+| Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-015 bounded ops hardening accepted; F0 / Play unauthorized |
-| Next checkpoint | APO authorize pre-F0 evidence-closure under F0 gap assessment, or defer F0. Android sideload smoke test is operationally separate and does not equal F0 |
-| Professional client path | APP-0016–0033; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
+| Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
+| Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -175,6 +175,13 @@ recorded limitation. It does not authorize F0 Phase 1 DoD, Google Play public
 release, remaining PR-013 sampled review/privacy ops or real learner production
 data. Physical device matrix, Gradle assemble, `make verify`, and live
 load-soak/backup execution remain unclaimed.
+
+[APP-0034](APPROVALS.md#app-0034) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only pre-F0 Phase 1 evidence-closure under
+[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). It is not
+acceptance of Phase 1 Definition of Done and does not authorize Google Play
+public release, specialist-review waiver, remaining PR-013 sampled
+review/privacy ops or real learner production data.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -797,10 +804,11 @@ presentation-only.
 and closed-beta evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839`
 with recorded limitations
 ([PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)).
-Active plan consideration is Step **F0** (Phase 1 Definition of Done) only
-after a separate APP / release-board gate; physical device matrix / Gradle
-assemble / `make verify` / live load-soak and backup-drill execution remain
-unclaimed follow-ups from APP-0033 limitations.
+Active plan step is **F0** pre-F0 evidence-closure under
+[APP-0034](APPROVALS.md#app-0034)
+([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)).
+F0 Definition of Done sign-off and Google Play public release remain
+unauthorized.
 [APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
 closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
 recorded limitations

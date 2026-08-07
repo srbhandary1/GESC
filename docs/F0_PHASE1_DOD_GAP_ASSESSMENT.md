@@ -1,14 +1,15 @@
 # F0 Phase 1 Definition of Done — gap assessment
 
-**Status:** Draft for APO / release-board consideration only.  
+**Status:** Pre-F0 evidence-closure begin-implementation authorized under
+[APP-0034](APPROVALS.md#app-0034) / D-0114. F0 Definition of Done sign-off and
+Play public release remain unauthorized.  
 **Plan step:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) F0  
 **Master plan:** §27 Phase 1 definition of done  
 **Prior acceptance:** PR-015 bounded ops hardening [APP-0033](APPROVALS.md#app-0033) at
 `5eca7515291ea571a7f697dcdc2da6197535f839`
 
-This document is **not** F0 sign-off and **not** implementation authorization.
-F0 is a release-board evidence gate: every §27 item must already be evidenced
-(or explicitly deferred by a new APP). Codex records only; never claims DoD.
+This document governs APP-0034. It is **begin-implementation of evidence
+closure only** — not F0 DoD sign-off.
 
 ## Purpose
 
@@ -59,10 +60,10 @@ Owner can choose:
 |---|---|
 | Production package identity `com.globalenglish.app` | Yes (code) |
 | System-browser PKCE + EncryptedSharedPreferences | Yes (code; APP-0031) |
-| Verified APK assemble claimed in governance | **No** (unclaimed) |
+| Verified APK assemble claimed in governance | **Partial** — local `assembleDebug` succeeded 2026-08-07 (JDK 21 Temurin, `security-crypto:1.1.0-alpha06`, package `com.globalenglish.app`, APK ~5.8 MB). Not yet an Exact-commit governance claim; physical matrix still open |
 | Physical device matrix pass claimed | **No** |
 | Play public listing | **No** (unauthorized) |
-| Sideload smoke test possible after local `make android-closed-beta` | **Conditional** — needs JDK/SDK, `VITE_MOBILE_API_ORIGIN` reachable from phone, Passport public Android client, debug APK install |
+| Sideload smoke test possible after local assemble | **Conditional** — debug APK at `apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk`; baked `VITE_MOBILE_API_ORIGIN=http://192.168.1.3:8000`; needs API reachable from phone + Passport public Android client |
 
 See [PR-014_ANDROID_CLOSED_BETA_BUILD.md](PR-014_ANDROID_CLOSED_BETA_BUILD.md).
 
@@ -88,10 +89,5 @@ F0_PHASE1_DOD_GAP_ASSESSMENT.md; F0 Definition of Done sign-off and Play
 public release remain unauthorized.
 ```
 
-Interpretation for the recorder (Codex is never an approver):
-
-- Authorize work to close evidence gaps listed above.
-- Do **not** accept Phase 1 DoD, Play public release, or waive specialist
-  reviews.
-- Create a new APP, update STATUS/DECISIONS/QUALITY/plan, then execute only
-  that evidence-closure scope.
+Recorded as [APP-0034](APPROVALS.md#app-0034) / D-0114. Active work = evidence
+closure only; Exact-commit F0 DoD acceptance remains a later APO gate.
