@@ -2730,6 +2730,35 @@ PR-014 closed-beta foundations **accepted** under APP-0031 / D-0111 at
 `44b0e672e004cf3846cddabc456c21153fa4607e`. Next: separate APP for E0
 (PR-015) and/or on-device matrix / remaining PR-013 only.
 
+## PR-015 — Step E0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
+- [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0031 (PR-014 foundations + unclaimed matrix/`make verify`);
+  APP-0029 bounded operator; prior learner slices
+- First APP scope: close APP-0031 Android evidence gaps; load/soak harness;
+  backup/restore drill; monitoring/runbooks; staged deploy rehearsal; a11y
+  evidence package; aggregate pilot analytics skeleton
+- Deferred: Play public release; F0 §27 DoD; remaining PR-013 sampled review /
+  privacy ops; specialist review waiver; real learner production data
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0031 | Pass | PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md |
+| Verification scope PH-01–PH-12 | Pass | PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md |
+| Bounded vs full PR-015 / F0 | Pass | auth request non-goals |
+| APO begin-implementation statement | Pending | Exact line in auth request |
+| PR-015 code | Not authorized | awaiting APP |
+
+### Outcome
+
+E0 authorization package ready. Codex records only; does not approve. No
+PR-015 implementation until Exact APO begin-implementation.
+
 
 
 
