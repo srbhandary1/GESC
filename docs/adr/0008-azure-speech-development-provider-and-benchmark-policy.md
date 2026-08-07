@@ -35,6 +35,11 @@ credential or live synthetic request is permitted until the exact
 subscription/DPA/subprocessor evidence and separate provider-spend approval
 required by this ADR are recorded.
 
+**Product-policy amendment:** [ADR-0011](0011-confidence-conversation-guidance-tts-policy.md)
+(accepted under APP-0024) amends Confidence Conversation guidance TTS and
+AI-only lesson-audio policy only. The locked PR-009 synthetic benchmark
+allowlist in this ADR remains unchanged.
+
 ## Context
 
 The provider-neutral PR-009 vertical slice is implemented and verified. A
@@ -80,7 +85,7 @@ benchmark the following single managed stack:
 | STT model | Azure provider-managed default transcription Speech model exposed by API `2025-10-15` for `en-IN` |
 | STT options | Inline validated WAV only; `profanityFilterMode=None`; no URL input, batch job, diarization, custom model, phrase list, pronunciation assessment or endpoint logging |
 | TTS operation | Synchronous real-time Text to Speech REST API |
-| TTS API route | `/cognitiveservices/v1` on the exact resource endpoint |
+| TTS API route | Locked TTS operation on the exact resource endpoint: `/tts/cognitiveservices/v1` for `*.cognitiveservices.azure.com` custom-domain Speech resources (D-0083; Azure returns 404 for bare `/cognitiveservices/v1` on that host) |
 | TTS locale and voice | `en-IN`, standard prebuilt `en-IN-NeerjaNeural` |
 | TTS format | `riff-24khz-16bit-mono-pcm` |
 | TTS options | Escaped project-created SSML with only `speak` and `voice`; no custom/personal voice, avatar, HD preview, long-audio or batch synthesis |

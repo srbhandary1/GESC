@@ -1375,20 +1375,53 @@ export const StartConversationSessionRequestSchema = {
     required: [
         'persona_key',
         'scenario_key',
-        'coaching_mode'
+        'coaching_mode',
+        'ui_locale'
     ],
     properties: {
         persona_key: {
             type: 'string',
-            const: 'patient-friend-prototype'
+            enum: [
+                'patient-friend-prototype',
+                'clinic-reception-roleplay-prototype'
+            ]
         },
         scenario_key: {
             type: 'string',
-            const: 'everyday-friend-prototype'
+            enum: [
+                'everyday-friend-prototype',
+                'clinic-reception-roleplay-scenario'
+            ]
         },
         coaching_mode: {
             type: 'string',
-            const: 'gentle'
+            enum: [
+                'gentle',
+                'tutor',
+                'fluency'
+            ]
+        },
+        ui_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        }
+    }
+} as const;
+
+export const AdvanceConversationSessionStageRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'to_stage'
+    ],
+    properties: {
+        to_stage: {
+            type: 'string',
+            enum: [
+                'observe',
+                'rehearse',
+                'perform',
+                'reflect'
+            ]
         }
     }
 } as const;
@@ -1412,7 +1445,10 @@ export const ConversationPersonaSnapshotSchema = {
         },
         key: {
             type: 'string',
-            const: 'patient-friend-prototype'
+            enum: [
+                'patient-friend-prototype',
+                'clinic-reception-roleplay-prototype'
+            ]
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -1459,7 +1495,10 @@ export const ConversationScenarioSnapshotSchema = {
         },
         key: {
             type: 'string',
-            const: 'everyday-friend-prototype'
+            enum: [
+                'everyday-friend-prototype',
+                'clinic-reception-roleplay-scenario'
+            ]
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -1470,7 +1509,10 @@ export const ConversationScenarioSnapshotSchema = {
         },
         topic_code: {
             type: 'string',
-            const: 'everyday-conversation'
+            enum: [
+                'everyday-conversation',
+                'clinic-reception'
+            ]
         },
         definition_hash: {
             $ref: '#/components/schemas/Sha256'
@@ -1478,6 +1520,67 @@ export const ConversationScenarioSnapshotSchema = {
         review_status: {
             type: 'string',
             const: 'synthetic_unreviewed'
+        }
+    }
+} as const;
+
+export const ConversationScenarioObjectiveSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'title',
+        'completion_criteria_code'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        title: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        completion_criteria_code: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        }
+    }
+} as const;
+
+export const ConversationRoleplayFeedbackEvidenceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'scenario_objective_id',
+        'evidence_digest',
+        'completion_state'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        scenario_objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        evidence_digest: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        completion_state: {
+            type: 'string',
+            enum: [
+                'met',
+                'unmet',
+                'skipped'
+            ]
         }
     }
 } as const;
@@ -1490,6 +1593,8 @@ export const ConversationSessionSchema = {
         'status',
         'mode',
         'coaching_mode',
+        'ui_locale',
+        'stage',
         'persona',
         'scenario',
         'replayed'
@@ -1504,17 +1609,52 @@ export const ConversationSessionSchema = {
         },
         mode: {
             type: 'string',
-            const: 'friend'
+            enum: [
+                'friend',
+                'roleplay'
+            ]
         },
         coaching_mode: {
             type: 'string',
-            const: 'gentle'
+            enum: [
+                'gentle',
+                'tutor',
+                'fluency'
+            ]
+        },
+        ui_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        stage: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'observe',
+                'rehearse',
+                'perform',
+                'reflect',
+                null
+            ]
         },
         persona: {
             $ref: '#/components/schemas/ConversationPersonaSnapshot'
         },
         scenario: {
             $ref: '#/components/schemas/ConversationScenarioSnapshot'
+        },
+        objectives: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ConversationScenarioObjective'
+            }
+        },
+        feedback: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ConversationRoleplayFeedbackEvidence'
+            }
         },
         replayed: {
             type: 'boolean'
@@ -1580,6 +1720,213 @@ export const ConversationUsageSummarySchema = {
     }
 } as const;
 
+export const CreateLearnerAiMemoryFactRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'fact_text'
+    ],
+    properties: {
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        }
+    }
+} as const;
+
+export const UpdateLearnerAiMemoryFactRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'fact_text'
+    ],
+    properties: {
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryFactSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'purpose',
+        'source',
+        'status',
+        'fact_text',
+        'created_at',
+        'updated_at',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        purpose: {
+            type: 'string',
+            const: 'conversation_context'
+        },
+        source: {
+            type: 'string',
+            const: 'learner_explicit'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'deleted'
+            ]
+        },
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        deleted_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'facts'
+    ],
+    properties: {
+        facts: {
+            type: 'array',
+            maxItems: 5,
+            items: {
+                $ref: '#/components/schemas/LearnerAiMemoryFactListingItem'
+            }
+        }
+    }
+} as const;
+
+export const LearnerAiMemoryFactListingItemSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'purpose',
+        'source',
+        'status',
+        'fact_text',
+        'created_at',
+        'updated_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        purpose: {
+            type: 'string',
+            const: 'conversation_context'
+        },
+        source: {
+            type: 'string',
+            const: 'learner_explicit'
+        },
+        status: {
+            type: 'string',
+            const: 'active'
+        },
+        fact_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const PriorityCorrectionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    description: 'One logically separate priority correction. Never merged into the\nFriend conversational reply text. explanation_l1 is the active UI\nlocale explanation. explanation_kn is a deprecated dual-write alias\npresent only when explanation_locale is kn-IN.\n',
+    required: [
+        'needed',
+        'error_category',
+        'correction_en',
+        'explanation_l1',
+        'explanation_locale',
+        'retry_recommended'
+    ],
+    properties: {
+        needed: {
+            type: 'boolean'
+        },
+        error_category: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64,
+            pattern: '^[a-z0-9][a-z0-9._-]{0,63}$'
+        },
+        correction_en: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        explanation_l1: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        explanation_locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        explanation_kn: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500,
+            deprecated: true,
+            description: 'Deprecated dual-write alias when explanation_locale is kn-IN.'
+        },
+        learner_span: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 200
+        },
+        encouragement_l1: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 500
+        },
+        retry_recommended: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
 export const ConversationTurnSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1591,6 +1938,8 @@ export const ConversationTurnSchema = {
         'transcript',
         'understood_intent',
         'assistant_reply',
+        'priority_correction',
+        'safety_state',
         'speech',
         'usage',
         'events_url',
@@ -1636,6 +1985,30 @@ export const ConversationTurnSchema = {
             ],
             minLength: 1,
             maxLength: 1000
+        },
+        priority_correction: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/PriorityCorrection'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        safety_state: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'ok',
+                        'fallback'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         speech: {
             oneOf: [
@@ -2166,6 +2539,549 @@ export const ReadinessResponseSchema = {
         correlation_id: {
             type: 'string',
             format: 'uuid'
+        }
+    }
+} as const;
+
+export const OperatorContentDraftSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'program_key',
+        'program_internal_name',
+        'curriculum_version_id',
+        'version_key',
+        'publication_status',
+        'head_version',
+        'head_publication_id',
+        'head_manifest_hash',
+        'head_publication_number',
+        'latest_english_decision',
+        'latest_kannada_decision'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        program_internal_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        publication_status: {
+            type: 'string',
+            enum: [
+                'unpublished',
+                'published_head',
+                'superseded_or_other_head'
+            ]
+        },
+        head_version: {
+            type: 'integer',
+            minimum: 0
+        },
+        head_publication_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        head_manifest_hash: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Sha256'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        head_publication_number: {
+            oneOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        latest_english_decision: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'approved',
+                        'rejected',
+                        'withdrawn'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        latest_kannada_decision: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'approved',
+                        'rejected',
+                        'withdrawn'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorContentDraftListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorContentDraft'
+            }
+        }
+    }
+} as const;
+
+export const OperatorPublicationStatusSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'program_id',
+        'program_key',
+        'curriculum_version_id',
+        'version_key',
+        'publication_number',
+        'manifest_hash',
+        'is_head',
+        'head_version',
+        'created_at'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        publication_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        is_head: {
+            type: 'boolean'
+        },
+        head_version: {
+            oneOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorPublicationListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorPublicationStatus'
+            }
+        }
+    }
+} as const;
+
+export const RecordEnglishContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source_revision_id',
+        'source_content_hash',
+        'authority_appointment_id',
+        'decision'
+    ],
+    properties: {
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        decision: {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected'
+            ]
+        },
+        rationale_key: {
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const RecordKannadaContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source_revision_id',
+        'source_content_hash',
+        'localized_variant_id',
+        'localized_content_hash',
+        'authority_appointment_id',
+        'decision'
+    ],
+    properties: {
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        localized_variant_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        localized_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        decision: {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected'
+            ]
+        },
+        rationale_key: {
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const PublishOperatorCurriculumRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'curriculum_version_id',
+        'expected_head_version'
+    ],
+    properties: {
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const RollbackOperatorCurriculumRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'target_publication_id',
+        'expected_head_version',
+        'reason_key'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        target_publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        reason_key: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_]{0,119}$'
+        }
+    }
+} as const;
+
+export const OperatorContentReviewResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'content_review_id'
+    ],
+    properties: {
+        content_review_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OperatorPublicationResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'curriculum_version_id',
+        'manifest_hash',
+        'head_version',
+        'replayed'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        head_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorAuditEventSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'action',
+        'subject_type',
+        'subject_id',
+        'actor_membership_id',
+        'correlation_id',
+        'occurred_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        action: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_.-]{0,119}$'
+        },
+        subject_type: {
+            type: 'string',
+            pattern: '^[a-z][a-z0-9_.-]{0,119}$'
+        },
+        subject_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        actor_membership_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        correlation_id: {
+            oneOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        occurred_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorAuditEventListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'items'
+    ],
+    properties: {
+        items: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorAuditEvent'
+            }
+        }
+    }
+} as const;
+
+export const OperatorPilotAnalyticsSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'usage',
+        'demonstrated_learning',
+        'distinction_note'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        usage: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'learner_membership_count',
+                'conversation_session_count',
+                'conversation_sessions_by_status',
+                'formative_attempt_count',
+                'formative_attempts_by_status'
+            ],
+            properties: {
+                learner_membership_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                conversation_session_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                conversation_sessions_by_status: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                },
+                formative_attempt_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                formative_attempts_by_status: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                }
+            }
+        },
+        demonstrated_learning: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'mastery_state_count',
+                'mastery_by_knowledge_state',
+                'review_schedule_count'
+            ],
+            properties: {
+                mastery_state_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                mastery_by_knowledge_state: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                },
+                review_schedule_count: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        },
+        distinction_note: {
+            type: 'string',
+            const: 'usage_counts_are_not_demonstrated_learning'
         }
     }
 } as const;

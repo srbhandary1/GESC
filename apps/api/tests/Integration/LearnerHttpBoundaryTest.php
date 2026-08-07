@@ -114,6 +114,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
             ]),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
@@ -127,6 +128,29 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             fn (): TestResponse => $this->get(sprintf(
                 '/api/v1/conversation-turns/%s/events',
                 $conversationTurnId,
+            )),
+            fn (): TestResponse => $this->getJson('/api/v1/me/ai-memory'),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson('/api/v1/me/ai-memory', [
+                'fact_text' => 'Synthetic unauthenticated memory.',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->patchJson(sprintf(
+                '/api/v1/me/ai-memory/%s',
+                (string) Str::ulid(),
+            ), [
+                'fact_text' => 'Synthetic unauthenticated memory update.',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->deleteJson(sprintf(
+                '/api/v1/me/ai-memory/%s',
+                (string) Str::ulid(),
             )),
         ];
 
@@ -160,6 +184,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             'persona_key' => 'patient-friend-prototype',
             'scenario_key' => 'everyday-friend-prototype',
             'coaching_mode' => 'gentle',
+            'ui_locale' => 'kn-IN',
         ])
             ->assertCreated()
             ->assertJsonPath('mode', 'friend')
@@ -180,6 +205,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             'persona_key' => 'patient-friend-prototype',
             'scenario_key' => 'everyday-friend-prototype',
             'coaching_mode' => 'gentle',
+            'ui_locale' => 'kn-IN',
         ])
             ->assertOk()
             ->assertJsonPath('id', $sessionId)

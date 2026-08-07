@@ -18,6 +18,8 @@ import type {
   MissionResult,
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
+import { encodeDemoSpeechUrl } from './browserSpeech'
+import { requestDemoChatReply } from './demoChat'
 
 const ids = {
   asset: '01J30000000000000000000001',
@@ -205,20 +207,33 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
 
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
+  #roleplaySession: FriendSession | null = null
 
   async startSession(
-    _input: StartFriendSessionInput,
+    input: StartFriendSessionInput,
     _commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendSession> {
     abortIfNeeded(signal)
+
+    const isRoleplay =
+      input.persona_key === 'clinic-reception-roleplay-prototype' ||
+      input.scenario_key === 'clinic-reception-roleplay-scenario'
+
+    if (isRoleplay) {
+      this.#roleplaySession = demoRoleplaySession('observe', input.ui_locale)
+      return this.#roleplaySession
+    }
+
     return {
-      coaching_mode: 'gentle',
+      coaching_mode: input.coaching_mode ?? 'gentle',
       id: ids.session,
       mode: 'friend',
+      stage: null,
       persona: {
         definition_hash: 'b'.repeat(64),
-        disclosure: 'I am a deterministic local demo, not a human.',
+        disclosure:
+          'I am a demo practice Friend. When OpenRouter is configured I use a free model; otherwise I use scripted replies. I am not a human.',
         display_name: 'Patient Friend Demo',
         id: ids.persona,
         key: 'patient-friend-prototype',
@@ -237,7 +252,28 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         version_id: ids.scenarioVersion,
       },
       status: 'active',
+      ui_locale: input.ui_locale,
     }
+  }
+
+  async advanceStage(
+    _sessionId: string,
+    input: { readonly to_stage: string },
+    _commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession> {
+    abortIfNeeded(signal)
+    const stage = input.to_stage as
+      | 'observe'
+      | 'rehearse'
+      | 'perform'
+      | 'reflect'
+    this.#roleplaySession = demoRoleplaySession(
+      stage,
+      this.#roleplaySession?.ui_locale ?? 'en-IN',
+      stage === 'reflect',
+    )
+    return this.#roleplaySession
   }
 
   async createTurn(
@@ -249,15 +285,31 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     abortIfNeeded(signal)
     this.#turnNumber += 1
 
+    const openRouter = await requestDemoChatReply(input.prototype_utterance)
+    abortIfNeeded(signal)
+    const assistantReply =
+      openRouter?.reply ??
+      demoFriendReply(input.prototype_utterance, this.#turnNumber)
+
     return {
-      assistant_reply: demoFriendReply(
-        input.prototype_utterance,
-        this.#turnNumber,
-      ),
+      assistant_reply: assistantReply,
       conversation_session_id: ids.session,
       events_url: `local-demo://turn/${this.#turnNumber}`,
       id: ids.turn,
+      priority_correction: {
+        correction_en:
+          'A clearer sentence is: "I enjoy learning English after work."',
+        error_category: 'grammar.article',
+        explanation_l1:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        explanation_locale: 'kn-IN',
+        explanation_kn:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        needed: true,
+        retry_recommended: false,
+      },
       replayed: false,
+      safety_state: 'ok',
       speech: {
         playback_available: false,
         rendering_mode: 'deterministic-fake-text-only',
@@ -268,8 +320,8 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       understood_intent: 'prototype_utterance_received',
       usage: {
         estimated_cost_microunits: 0,
-        provider_attempts: 3,
-        total_latency_ms: 14,
+        provider_attempts: openRouter === null ? 3 : 1,
+        total_latency_ms: openRouter === null ? 14 : 0,
       },
     }
   }
@@ -297,6 +349,72 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         state,
       }),
     )
+  }
+}
+
+function demoRoleplaySession(
+  stage: 'observe' | 'rehearse' | 'perform' | 'reflect',
+  uiLocale: FriendSession['ui_locale'],
+  withFeedback = false,
+): FriendSession {
+  return {
+    coaching_mode: 'gentle',
+    id: ids.session,
+    mode: 'roleplay',
+    stage,
+    persona: {
+      definition_hash: 'a'.repeat(64),
+      disclosure:
+        'I am a deterministic AI role-play prototype, not a human.',
+      display_name: 'Clinic Reception Role-play Prototype',
+      id: ids.persona,
+      key: 'clinic-reception-roleplay-prototype',
+      review_status: 'synthetic_unreviewed',
+      version: 1,
+      version_id: ids.personaVersion,
+    },
+    replayed: false,
+    scenario: {
+      definition_hash: 'b'.repeat(64),
+      id: ids.scenario,
+      key: 'clinic-reception-roleplay-scenario',
+      review_status: 'synthetic_unreviewed',
+      topic_code: 'clinic-reception',
+      version: 1,
+      version_id: ids.scenarioVersion,
+    },
+    objectives: [
+      {
+        completion_criteria_code: 'synthetic.greet-receptionist.v1',
+        id: `${ids.session}-obj-1`,
+        key: 'greet-receptionist',
+        title: 'Greet the receptionist',
+      },
+      {
+        completion_criteria_code: 'synthetic.state-appointment-reason.v1',
+        id: `${ids.session}-obj-2`,
+        key: 'state-appointment-reason',
+        title: 'State the appointment reason',
+      },
+    ],
+    feedback: withFeedback
+      ? [
+          {
+            completion_state: 'met',
+            evidence_digest: 'c'.repeat(64),
+            id: `${ids.session}-fb-1`,
+            scenario_objective_id: `${ids.session}-obj-1`,
+          },
+          {
+            completion_state: 'unmet',
+            evidence_digest: 'd'.repeat(64),
+            id: `${ids.session}-fb-2`,
+            scenario_objective_id: `${ids.session}-obj-2`,
+          },
+        ]
+      : [],
+    status: 'active',
+    ui_locale: uiLocale,
   }
 }
 
@@ -395,9 +513,14 @@ function demoMission(): LearnerMission {
     kannada_guidance: content('kn-IN', 'ನಿಮ್ಮ ಹೆಸರನ್ನು ಹೇಳಿ.'),
     model_audio: {
       asset_id: ids.asset,
-      duration_ms: 500,
+      duration_ms: 2_400,
+      // Contract mime remains a media type; playback is browser TTS via the
+      // demo-speech: stream URL, not a WAV byte stream.
       mime_type: 'audio/wav',
-      stream_url: demoWaveDataUrl(),
+      stream_url: encodeDemoSpeechUrl(
+        'en-IN',
+        'Hello, my name is Ravi.',
+      ),
     },
     model_text: content('en-IN', 'Hello, my name is Ravi.'),
     objective_id: ids.objective,
@@ -451,52 +574,5 @@ function content(
 function abortIfNeeded(signal?: AbortSignal): void {
   if (signal?.aborted === true) {
     throw new DOMException('The local demo operation was aborted.', 'AbortError')
-  }
-}
-
-let cachedWaveDataUrl: string | null = null
-
-function demoWaveDataUrl(): string {
-  if (cachedWaveDataUrl !== null) {
-    return cachedWaveDataUrl
-  }
-
-  const sampleRate = 8_000
-  const sampleCount = sampleRate / 2
-  const buffer = new ArrayBuffer(44 + sampleCount * 2)
-  const view = new DataView(buffer)
-  writeAscii(view, 0, 'RIFF')
-  view.setUint32(4, buffer.byteLength - 8, true)
-  writeAscii(view, 8, 'WAVEfmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeAscii(view, 36, 'data')
-  view.setUint32(40, sampleCount * 2, true)
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const sample = Math.round(
-      Math.sin((2 * Math.PI * 440 * index) / sampleRate) * 3_200,
-    )
-    view.setInt16(44 + index * 2, sample, true)
-  }
-
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte)
-  }
-
-  cachedWaveDataUrl = `data:audio/wav;base64,${btoa(binary)}`
-  return cachedWaveDataUrl
-}
-
-function writeAscii(view: DataView, offset: number, value: string): void {
-  for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index))
   }
 }

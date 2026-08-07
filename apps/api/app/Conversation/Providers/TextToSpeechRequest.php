@@ -10,5 +10,7 @@ final readonly class TextToSpeechRequest
         public string $interactionId,
         public string $text,
         public string $voice = 'en-IN-NeerjaNeural',
+        public string $purpose = 'model_en',
+        public string $uiLocale = 'en-IN',
     ) {}
 }

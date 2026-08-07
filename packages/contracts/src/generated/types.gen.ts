@@ -351,14 +351,19 @@ export type LearnerProgress = {
 };
 
 export type StartConversationSessionRequest = {
-    persona_key: 'patient-friend-prototype';
-    scenario_key: 'everyday-friend-prototype';
-    coaching_mode: 'gentle';
+    persona_key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
+    scenario_key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
+    coaching_mode: 'gentle' | 'tutor' | 'fluency';
+    ui_locale: SupportedLocale;
+};
+
+export type AdvanceConversationSessionStageRequest = {
+    to_stage: 'observe' | 'rehearse' | 'perform' | 'reflect';
 };
 
 export type ConversationPersonaSnapshot = {
     id: Ulid;
-    key: 'patient-friend-prototype';
+    key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
     version_id: Ulid;
     version: number;
     display_name: string;
@@ -369,21 +374,39 @@ export type ConversationPersonaSnapshot = {
 
 export type ConversationScenarioSnapshot = {
     id: Ulid;
-    key: 'everyday-friend-prototype';
+    key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
     version_id: Ulid;
     version: number;
-    topic_code: 'everyday-conversation';
+    topic_code: 'everyday-conversation' | 'clinic-reception';
     definition_hash: Sha256;
     review_status: 'synthetic_unreviewed';
+};
+
+export type ConversationScenarioObjective = {
+    id: Ulid;
+    key: string;
+    title: string;
+    completion_criteria_code: string;
+};
+
+export type ConversationRoleplayFeedbackEvidence = {
+    id: Ulid;
+    scenario_objective_id: Ulid;
+    evidence_digest: Sha256;
+    completion_state: 'met' | 'unmet' | 'skipped';
 };
 
 export type ConversationSession = {
     id: Ulid;
     status: 'active';
-    mode: 'friend';
-    coaching_mode: 'gentle';
+    mode: 'friend' | 'roleplay';
+    coaching_mode: 'gentle' | 'tutor' | 'fluency';
+    ui_locale: SupportedLocale;
+    stage: 'observe' | 'rehearse' | 'perform' | 'reflect' | null;
     persona: ConversationPersonaSnapshot;
     scenario: ConversationScenarioSnapshot;
+    objectives?: Array<ConversationScenarioObjective>;
+    feedback?: Array<ConversationRoleplayFeedbackEvidence>;
     replayed: boolean;
 };
 
@@ -402,6 +425,64 @@ export type ConversationUsageSummary = {
     estimated_cost_microunits: 0;
 };
 
+export type CreateLearnerAiMemoryFactRequest = {
+    fact_text: string;
+};
+
+export type UpdateLearnerAiMemoryFactRequest = {
+    fact_text: string;
+};
+
+export type LearnerAiMemoryFact = {
+    id: Ulid;
+    purpose: 'conversation_context';
+    source: 'learner_explicit';
+    status: 'active' | 'deleted';
+    fact_text: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
+    replayed: boolean;
+};
+
+export type LearnerAiMemoryListing = {
+    facts: Array<LearnerAiMemoryFactListingItem>;
+};
+
+export type LearnerAiMemoryFactListingItem = {
+    id: Ulid;
+    purpose: 'conversation_context';
+    source: 'learner_explicit';
+    status: 'active';
+    fact_text: string;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * One logically separate priority correction. Never merged into the
+ * Friend conversational reply text. explanation_l1 is the active UI
+ * locale explanation. explanation_kn is a deprecated dual-write alias
+ * present only when explanation_locale is kn-IN.
+ *
+ */
+export type PriorityCorrection = {
+    needed: boolean;
+    error_category: string;
+    correction_en: string;
+    explanation_l1: string;
+    explanation_locale: SupportedLocale;
+    /**
+     * Deprecated dual-write alias when explanation_locale is kn-IN.
+     *
+     * @deprecated
+     */
+    explanation_kn?: string;
+    learner_span?: string;
+    encouragement_l1?: string;
+    retry_recommended: boolean;
+};
+
 export type ConversationTurn = {
     id: Ulid;
     conversation_session_id: Ulid;
@@ -410,6 +491,8 @@ export type ConversationTurn = {
     transcript: string | null;
     understood_intent: string | null;
     assistant_reply: string | null;
+    priority_correction: PriorityCorrection | null;
+    safety_state: 'ok' | 'fallback' | null;
     speech: ConversationSpeechResult | null;
     usage: ConversationUsageSummary;
     events_url: string;
@@ -531,6 +614,121 @@ export type ReadinessResponse = {
     service: 'global-english-api';
     checked_at: string;
     correlation_id: string;
+};
+
+export type OperatorContentDraft = {
+    program_id: Ulid;
+    program_key: string;
+    program_internal_name: string;
+    curriculum_version_id: Ulid;
+    version_key: string;
+    publication_status: 'unpublished' | 'published_head' | 'superseded_or_other_head';
+    head_version: number;
+    head_publication_id: Ulid | null;
+    head_manifest_hash: Sha256 | null;
+    head_publication_number: number | null;
+    latest_english_decision: 'approved' | 'rejected' | 'withdrawn' | null;
+    latest_kannada_decision: 'approved' | 'rejected' | 'withdrawn' | null;
+};
+
+export type OperatorContentDraftListing = {
+    items: Array<OperatorContentDraft>;
+};
+
+export type OperatorPublicationStatus = {
+    publication_id: Ulid;
+    program_id: Ulid;
+    program_key: string;
+    curriculum_version_id: Ulid;
+    version_key: string;
+    publication_number: number;
+    manifest_hash: Sha256;
+    is_head: boolean;
+    head_version: number | null;
+    created_at: string;
+};
+
+export type OperatorPublicationListing = {
+    items: Array<OperatorPublicationStatus>;
+};
+
+export type RecordEnglishContentReviewRequest = {
+    source_revision_id: Ulid;
+    source_content_hash: Sha256;
+    authority_appointment_id: Ulid;
+    decision: 'approved' | 'rejected';
+    rationale_key?: string | null;
+};
+
+export type RecordKannadaContentReviewRequest = {
+    source_revision_id: Ulid;
+    source_content_hash: Sha256;
+    localized_variant_id: Ulid;
+    localized_content_hash: Sha256;
+    authority_appointment_id: Ulid;
+    decision: 'approved' | 'rejected';
+    rationale_key?: string | null;
+};
+
+export type PublishOperatorCurriculumRequest = {
+    curriculum_version_id: Ulid;
+    expected_head_version: number;
+};
+
+export type RollbackOperatorCurriculumRequest = {
+    program_id: Ulid;
+    target_publication_id: Ulid;
+    expected_head_version: number;
+    reason_key: string;
+};
+
+export type OperatorContentReviewResult = {
+    content_review_id: Ulid;
+};
+
+export type OperatorPublicationResult = {
+    publication_id: Ulid;
+    curriculum_version_id: Ulid;
+    manifest_hash: Sha256;
+    head_version: number;
+    replayed: boolean;
+};
+
+export type OperatorAuditEvent = {
+    id: Ulid;
+    action: string;
+    subject_type: string;
+    subject_id: Ulid;
+    actor_membership_id: Ulid | null;
+    correlation_id: string | null;
+    occurred_at: string;
+};
+
+export type OperatorAuditEventListing = {
+    items: Array<OperatorAuditEvent>;
+};
+
+export type OperatorPilotAnalyticsSummary = {
+    generated_at: string;
+    usage: {
+        learner_membership_count: number;
+        conversation_session_count: number;
+        conversation_sessions_by_status: {
+            [key: string]: number;
+        };
+        formative_attempt_count: number;
+        formative_attempts_by_status: {
+            [key: string]: number;
+        };
+    };
+    demonstrated_learning: {
+        mastery_state_count: number;
+        mastery_by_knowledge_state: {
+            [key: string]: number;
+        };
+        review_schedule_count: number;
+    };
+    distinction_note: 'usage_counts_are_not_demonstrated_learning';
 };
 
 export type ProblemDetails = {
@@ -1610,12 +1808,82 @@ export type StartConversationSessionResponses = {
      */
     200: ConversationSession;
     /**
-     * A deterministic fake-provider Friend session was started.
+     * A deterministic fake-provider conversation session was started.
      */
     201: ConversationSession;
 };
 
 export type StartConversationSessionResponse = StartConversationSessionResponses[keyof StartConversationSessionResponses];
+
+export type AdvanceConversationSessionStageData = {
+    body: AdvanceConversationSessionStageRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/stages';
+};
+
+export type AdvanceConversationSessionStageErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type AdvanceConversationSessionStageError = AdvanceConversationSessionStageErrors[keyof AdvanceConversationSessionStageErrors];
+
+export type AdvanceConversationSessionStageResponses = {
+    /**
+     * Exact command replay returned the original session.
+     */
+    200: ConversationSession;
+    /**
+     * The Role-play session advanced to the requested stage.
+     */
+    201: ConversationSession;
+};
+
+export type AdvanceConversationSessionStageResponse = AdvanceConversationSessionStageResponses[keyof AdvanceConversationSessionStageResponses];
 
 export type CreateConversationTurnData = {
     body: CreateConversationTurnRequest;
@@ -1736,6 +2004,202 @@ export type StreamConversationTurnEventsResponses = {
 };
 
 export type StreamConversationTurnEventsResponse = StreamConversationTurnEventsResponses[keyof StreamConversationTurnEventsResponses];
+
+export type ListLearnerAiMemoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/ai-memory';
+};
+
+export type ListLearnerAiMemoryErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListLearnerAiMemoryError = ListLearnerAiMemoryErrors[keyof ListLearnerAiMemoryErrors];
+
+export type ListLearnerAiMemoryResponses = {
+    /**
+     * Active AI memory facts.
+     */
+    200: LearnerAiMemoryListing;
+};
+
+export type ListLearnerAiMemoryResponse = ListLearnerAiMemoryResponses[keyof ListLearnerAiMemoryResponses];
+
+export type CreateLearnerAiMemoryFactData = {
+    body: CreateLearnerAiMemoryFactRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/ai-memory';
+};
+
+export type CreateLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateLearnerAiMemoryFactError = CreateLearnerAiMemoryFactErrors[keyof CreateLearnerAiMemoryFactErrors];
+
+export type CreateLearnerAiMemoryFactResponses = {
+    /**
+     * Idempotent replay of the same create command.
+     */
+    200: LearnerAiMemoryFact;
+    /**
+     * Memory fact created.
+     */
+    201: LearnerAiMemoryFact;
+};
+
+export type CreateLearnerAiMemoryFactResponse = CreateLearnerAiMemoryFactResponses[keyof CreateLearnerAiMemoryFactResponses];
+
+export type DeleteLearnerAiMemoryFactData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        fact: Ulid;
+    };
+    query?: never;
+    url: '/me/ai-memory/{fact}';
+};
+
+export type DeleteLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteLearnerAiMemoryFactError = DeleteLearnerAiMemoryFactErrors[keyof DeleteLearnerAiMemoryFactErrors];
+
+export type DeleteLearnerAiMemoryFactResponses = {
+    /**
+     * Memory fact deleted or idempotently replayed.
+     */
+    200: LearnerAiMemoryFact;
+};
+
+export type DeleteLearnerAiMemoryFactResponse = DeleteLearnerAiMemoryFactResponses[keyof DeleteLearnerAiMemoryFactResponses];
+
+export type UpdateLearnerAiMemoryFactData = {
+    body: UpdateLearnerAiMemoryFactRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        fact: Ulid;
+    };
+    query?: never;
+    url: '/me/ai-memory/{fact}';
+};
+
+export type UpdateLearnerAiMemoryFactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateLearnerAiMemoryFactError = UpdateLearnerAiMemoryFactErrors[keyof UpdateLearnerAiMemoryFactErrors];
+
+export type UpdateLearnerAiMemoryFactResponses = {
+    /**
+     * Memory fact updated or idempotently replayed.
+     */
+    200: LearnerAiMemoryFact;
+};
+
+export type UpdateLearnerAiMemoryFactResponse = UpdateLearnerAiMemoryFactResponses[keyof UpdateLearnerAiMemoryFactResponses];
 
 export type ListVoiceConsentsData = {
     body?: never;
@@ -2342,3 +2806,393 @@ export type AcceptInstitutionInviteResponses = {
 };
 
 export type AcceptInstitutionInviteResponse = AcceptInstitutionInviteResponses[keyof AcceptInstitutionInviteResponses];
+
+export type ListOperatorContentDraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/drafts';
+};
+
+export type ListOperatorContentDraftsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorContentDraftsError = ListOperatorContentDraftsErrors[keyof ListOperatorContentDraftsErrors];
+
+export type ListOperatorContentDraftsResponses = {
+    /**
+     * Organization curriculum draft status listing.
+     */
+    200: OperatorContentDraftListing;
+};
+
+export type ListOperatorContentDraftsResponse = ListOperatorContentDraftsResponses[keyof ListOperatorContentDraftsResponses];
+
+export type ListOperatorContentPublicationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publications';
+};
+
+export type ListOperatorContentPublicationsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorContentPublicationsError = ListOperatorContentPublicationsErrors[keyof ListOperatorContentPublicationsErrors];
+
+export type ListOperatorContentPublicationsResponses = {
+    /**
+     * Organization publication status listing.
+     */
+    200: OperatorPublicationListing;
+};
+
+export type ListOperatorContentPublicationsResponse = ListOperatorContentPublicationsResponses[keyof ListOperatorContentPublicationsResponses];
+
+export type PublishOperatorCurriculumData = {
+    body: PublishOperatorCurriculumRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publications';
+};
+
+export type PublishOperatorCurriculumErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type PublishOperatorCurriculumError = PublishOperatorCurriculumErrors[keyof PublishOperatorCurriculumErrors];
+
+export type PublishOperatorCurriculumResponses = {
+    /**
+     * Exact command replay returned the original publication.
+     */
+    200: OperatorPublicationResult;
+    /**
+     * Curriculum version published and activated.
+     */
+    201: OperatorPublicationResult;
+};
+
+export type PublishOperatorCurriculumResponse = PublishOperatorCurriculumResponses[keyof PublishOperatorCurriculumResponses];
+
+export type RecordOperatorEnglishContentReviewData = {
+    body: RecordEnglishContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/reviews/english';
+};
+
+export type RecordOperatorEnglishContentReviewErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordOperatorEnglishContentReviewError = RecordOperatorEnglishContentReviewErrors[keyof RecordOperatorEnglishContentReviewErrors];
+
+export type RecordOperatorEnglishContentReviewResponses = {
+    /**
+     * English content review recorded.
+     */
+    201: OperatorContentReviewResult;
+};
+
+export type RecordOperatorEnglishContentReviewResponse = RecordOperatorEnglishContentReviewResponses[keyof RecordOperatorEnglishContentReviewResponses];
+
+export type RecordOperatorKannadaContentReviewData = {
+    body: RecordKannadaContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/reviews/kannada';
+};
+
+export type RecordOperatorKannadaContentReviewErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordOperatorKannadaContentReviewError = RecordOperatorKannadaContentReviewErrors[keyof RecordOperatorKannadaContentReviewErrors];
+
+export type RecordOperatorKannadaContentReviewResponses = {
+    /**
+     * Kannada content review recorded.
+     */
+    201: OperatorContentReviewResult;
+};
+
+export type RecordOperatorKannadaContentReviewResponse = RecordOperatorKannadaContentReviewResponses[keyof RecordOperatorKannadaContentReviewResponses];
+
+export type RollbackOperatorCurriculumData = {
+    body: RollbackOperatorCurriculumRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/rollbacks';
+};
+
+export type RollbackOperatorCurriculumErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RollbackOperatorCurriculumError = RollbackOperatorCurriculumErrors[keyof RollbackOperatorCurriculumErrors];
+
+export type RollbackOperatorCurriculumResponses = {
+    /**
+     * Exact command replay returned the original rollback.
+     */
+    200: OperatorPublicationResult;
+    /**
+     * Publication head rolled back.
+     */
+    201: OperatorPublicationResult;
+};
+
+export type RollbackOperatorCurriculumResponse = RollbackOperatorCurriculumResponses[keyof RollbackOperatorCurriculumResponses];
+
+export type ListOperatorAuditEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/operator/audit-events';
+};
+
+export type ListOperatorAuditEventsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListOperatorAuditEventsError = ListOperatorAuditEventsErrors[keyof ListOperatorAuditEventsErrors];
+
+export type ListOperatorAuditEventsResponses = {
+    /**
+     * Organization audit digest listing.
+     */
+    200: OperatorAuditEventListing;
+};
+
+export type ListOperatorAuditEventsResponse = ListOperatorAuditEventsResponses[keyof ListOperatorAuditEventsResponses];
+
+export type GetOperatorPilotAnalyticsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/pilot-analytics';
+};
+
+export type GetOperatorPilotAnalyticsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorPilotAnalyticsError = GetOperatorPilotAnalyticsErrors[keyof GetOperatorPilotAnalyticsErrors];
+
+export type GetOperatorPilotAnalyticsResponses = {
+    /**
+     * Aggregate pilot analytics summary.
+     */
+    200: OperatorPilotAnalyticsSummary;
+};
+
+export type GetOperatorPilotAnalyticsResponse = GetOperatorPilotAnalyticsResponses[keyof GetOperatorPilotAnalyticsResponses];

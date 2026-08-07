@@ -74,7 +74,10 @@ describe('local demo boundary', () => {
     expect(session.status).toBe('authenticated')
     expect(home.next_mission?.title.text).toBe('Introduce yourself')
     expect(mission.model_audio.stream_url).toMatch(
-      /^data:audio\/wav;base64,/u,
+      /^demo-speech:en-IN:/u,
+    )
+    expect(mission.model_audio.stream_url).toContain(
+      encodeURIComponent('Hello, my name is Ravi.'),
     )
     expect(result).toMatchObject({
       check_state: 'correct',
@@ -91,6 +94,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )
@@ -128,6 +132,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )
@@ -158,6 +163,7 @@ describe('local demo boundary', () => {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
       },
       'demo-session-command',
     )

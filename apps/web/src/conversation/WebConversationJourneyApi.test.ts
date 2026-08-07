@@ -7,6 +7,7 @@ describe('web deterministic conversation API', () => {
       coaching_mode: 'gentle',
       id: '01J00000000000000000000001',
       mode: 'friend',
+      stage: null,
       persona: {
         definition_hash: 'a'.repeat(64),
         disclosure: 'I am a deterministic AI prototype, not a human.',
@@ -28,6 +29,7 @@ describe('web deterministic conversation API', () => {
         version_id: '01J00000000000000000000005',
       },
       status: 'active',
+      ui_locale: 'kn-IN',
     } as const
     const turn = {
       assistant_reply: 'Deterministic reply',
@@ -35,7 +37,20 @@ describe('web deterministic conversation API', () => {
       events_url:
         '/api/v1/conversation-turns/01J00000000000000000000006/events',
       id: '01J00000000000000000000006',
+      priority_correction: {
+        correction_en:
+          'A clearer sentence is: "I enjoy learning English after work."',
+        error_category: 'grammar.article',
+        explanation_l1:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        explanation_locale: 'kn-IN',
+        explanation_kn:
+          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+        needed: true,
+        retry_recommended: false,
+      },
       replayed: false,
+      safety_state: 'ok',
       speech: {
         playback_available: false,
         rendering_mode: 'deterministic-fake-text-only',
@@ -76,6 +91,7 @@ describe('web deterministic conversation API', () => {
           coaching_mode: 'gentle',
           persona_key: 'patient-friend-prototype',
           scenario_key: 'everyday-friend-prototype',
+          ui_locale: 'kn-IN',
         },
         'session-command',
       ),

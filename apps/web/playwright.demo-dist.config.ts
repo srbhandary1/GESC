@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test'
 // without a development server or any API.
 export default defineConfig({
   testDir: './e2e-demo',
+  // Avoid default ./test-results when that directory is root-owned (EACCES).
+  outputDir: './.playwright-output',
   fullyParallel: false,
   forbidOnly: true,
   retries: 0,

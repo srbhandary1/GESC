@@ -177,11 +177,11 @@ final readonly class AzureRecordedSpeechToTextProvider implements RecordedSpeech
             );
         }
 
+        // Azure endpointing reports active speech, which is routinely shorter
+        // than the full WAV (leading/trailing silence or noise padding). Fail
+        // closed only when the provider claims speech beyond the local media.
         $durationTolerance = max(1000.0, $metadata->durationMs * 0.1);
-        if (
-            abs($providerDuration - $metadata->durationMs)
-                > $durationTolerance
-        ) {
+        if ($providerDuration > $metadata->durationMs + $durationTolerance) {
             throw $this->http->failure('provider_duration_mismatch', $latency);
         }
 

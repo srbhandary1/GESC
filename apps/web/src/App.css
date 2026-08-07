@@ -170,6 +170,12 @@
   font-weight: 700;
 }
 
+.shell-session__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
 .shell-session__organization-name {
   min-width: 0;
   color: var(--ge-color-text);
@@ -188,6 +194,40 @@
   clip-path: inset(50%);
   overflow: hidden;
   white-space: nowrap;
+}
+
+.operator-console {
+  display: grid;
+  gap: 1.25rem;
+  margin-block: 1.5rem;
+}
+
+.operator-console__title {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.operator-console__lead,
+.operator-console__notice {
+  margin: 0;
+  max-width: 40rem;
+}
+
+.operator-console__panel {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.operator-console__panel h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.operator-console__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
 }
 
 @media (max-width: 30rem) {

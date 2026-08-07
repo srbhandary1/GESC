@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Conversation\Evaluation\AiEvaluationRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
@@ -213,6 +214,37 @@ Artisan::command(
 
         return $report['passed'] === true ? 0 : 1;
     })->purpose('Prepare, review, complete or purge the PR-009 speech benchmark');
+
+Artisan::command(
+    'ai:evaluate {--export-review=} {--import-review=} {--report=}',
+    function (): int {
+        $export = $this->option('export-review');
+        $import = $this->option('import-review');
+        $reportPath = $this->option('report');
+        $runner = app(AiEvaluationRunner::class);
+        $report = $runner->run(
+            exportReviewPath: is_string($export) && $export !== ''
+                ? $export
+                : null,
+            importReviewPath: is_string($import) && $import !== ''
+                ? $import
+                : null,
+            reportPath: is_string($reportPath) && $reportPath !== ''
+                ? $reportPath
+                : storage_path('app/ai-evaluation/latest-report.json'),
+        );
+        $this->info(json_encode([
+            'status' => $report['status'],
+            'suite_hash' => $report['suite_hash'],
+            'report_digest' => $report['report_digest'],
+            'passed_count' => $report['passed_count'],
+            'failed_count' => $report['failed_count'],
+            'estimated_cost_microunits' => $report['estimated_cost_microunits'],
+        ], JSON_THROW_ON_ERROR));
+
+        return $report['status'] === 'completed' ? 0 : 1;
+    },
+)->purpose('Run the locked deterministic AI prompt evaluation suite');
 
 Schedule::command('voice:purge-expired')
     ->everyFiveMinutes()

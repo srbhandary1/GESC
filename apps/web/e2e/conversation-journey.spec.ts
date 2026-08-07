@@ -46,11 +46,15 @@ test('completes the disclosed deterministic fake-provider conversation journey',
   ).toBeVisible()
 
   await page
-    .getByRole('button', { name: 'Start AI Friend prototype' })
+    .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
   await expect(
     page.getByText('I am a deterministic AI prototype, not a human.'),
   ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue to listen' }).click()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue to talk' }).click()
 
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })
@@ -63,7 +67,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     ),
   ).toBeVisible()
   await expect(
-    page.getByText('Fake TTS is text-only. No audio was created or stored.'),
+    page.getByText('The English text above is enough. Playback is optional.'),
   ).toBeVisible()
   await expect(page.getByText('Turn completed')).toBeVisible()
 
@@ -108,8 +112,10 @@ test('shows separate optional voice purposes before microphone capture', async (
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
   await page
-    .getByRole('button', { name: 'Start AI Friend prototype' })
+    .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
+  await page.getByRole('button', { name: 'Continue to listen' }).click()
+  await page.getByRole('button', { name: 'Continue to talk' }).click()
   await page
     .getByRole('button', { name: 'Set up optional voice practice' })
     .click()
@@ -135,6 +141,61 @@ test('shows separate optional voice purposes before microphone capture', async (
         method === 'GET' && path === '/api/v1/voice-consents',
     ),
   ).toBe(true)
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
+test('completes the disclosed synthetic Role-play stage journey', async ({
+  page,
+}) => {
+  const requests: Array<{
+    contentType: string | undefined
+    method: string
+    path: string
+    postData: string | null
+    url: string
+  }> = []
+  await mockConversationApi(page, requests)
+
+  await page.goto('/#practice')
+  await page
+    .getByRole('combobox', { name: message('shell.locale_label') })
+    .selectOption('en-IN')
+  await page
+    .getByRole('button', { name: 'Role-play (synthetic)' })
+    .click()
+
+  await expect(
+    page.getByText(
+      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
+    ),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Start Role-play' }).click()
+  await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
+  await expect(
+    page.getByText('Advisory feedback', { exact: true }),
+  ).toBeVisible()
+
+  expect(
+    requests.some(
+      ({ method, path }) =>
+        method === 'POST' && path === '/api/v1/conversation-sessions',
+    ),
+  ).toBe(true)
+  expect(
+    requests.filter(
+      ({ method, path }) =>
+        method === 'POST' &&
+        path === `/api/v1/conversation-sessions/${ids.session}/stages`,
+    ),
+  ).toHaveLength(3)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
@@ -194,7 +255,34 @@ async function mockConversationApi(
       path === '/api/v1/conversation-sessions' &&
       request.method() === 'POST'
     ) {
-      await json(route, session(), 201)
+      const body = JSON.parse(request.postData() ?? '{}') as {
+        persona_key?: string
+      }
+      await json(
+        route,
+        body.persona_key === 'clinic-reception-roleplay-prototype'
+          ? roleplaySession('observe')
+          : session(),
+        201,
+      )
+      return
+    }
+
+    if (
+      path === `/api/v1/conversation-sessions/${ids.session}/stages` &&
+      request.method() === 'POST'
+    ) {
+      const body = JSON.parse(request.postData() ?? '{}') as {
+        to_stage?: string
+      }
+      const toStage = body.to_stage ?? 'observe'
+      await json(
+        route,
+        roleplaySession(
+          toStage as 'observe' | 'rehearse' | 'perform' | 'reflect',
+        ),
+        200,
+      )
       return
     }
 
@@ -233,11 +321,76 @@ async function mockConversationApi(
   })
 }
 
+function roleplaySession(
+  stage: 'observe' | 'rehearse' | 'perform' | 'reflect',
+) {
+  return {
+    coaching_mode: 'gentle',
+    feedback:
+      stage === 'reflect'
+        ? [
+            {
+              completion_state: 'met',
+              evidence_digest: 'c'.repeat(64),
+              id: '01J2000000000000000000000A',
+              scenario_objective_id: '01J2000000000000000000000C',
+            },
+            {
+              completion_state: 'unmet',
+              evidence_digest: 'd'.repeat(64),
+              id: '01J2000000000000000000000B',
+              scenario_objective_id: '01J2000000000000000000000D',
+            },
+          ]
+        : [],
+    id: ids.session,
+    mode: 'roleplay',
+    objectives: [
+      {
+        completion_criteria_code: 'utterance.contains.hello',
+        id: '01J2000000000000000000000A',
+        key: 'greet-receptionist',
+        title: 'Greet the receptionist',
+      },
+      {
+        completion_criteria_code: 'utterance.contains.appointment',
+        id: '01J2000000000000000000000B',
+        key: 'state-appointment-reason',
+        title: 'State the appointment reason',
+      },
+    ],
+    persona: {
+      definition_hash: 'a'.repeat(64),
+      disclosure: 'I am a deterministic AI prototype, not a human.',
+      display_name: 'Clinic Reception Role-play Prototype',
+      id: ids.persona,
+      key: 'clinic-reception-roleplay-prototype',
+      review_status: 'synthetic_unreviewed',
+      version: 1,
+      version_id: ids.personaVersion,
+    },
+    replayed: false,
+    scenario: {
+      definition_hash: 'b'.repeat(64),
+      id: ids.scenario,
+      key: 'clinic-reception-roleplay-scenario',
+      review_status: 'synthetic_unreviewed',
+      topic_code: 'clinic-reception',
+      version: 1,
+      version_id: ids.scenarioVersion,
+    },
+    stage,
+    status: 'active',
+    ui_locale: 'en-IN',
+  }
+}
+
 function session() {
   return {
     coaching_mode: 'gentle',
     id: ids.session,
     mode: 'friend',
+    stage: null,
     persona: {
       definition_hash: 'a'.repeat(64),
       disclosure: 'I am a deterministic AI prototype, not a human.',
@@ -259,6 +412,7 @@ function session() {
       version_id: ids.scenarioVersion,
     },
     status: 'active',
+    ui_locale: 'kn-IN',
   }
 }
 
@@ -269,7 +423,20 @@ function turn() {
     conversation_session_id: ids.session,
     events_url: `/api/v1/conversation-turns/${ids.turn}/events`,
     id: ids.turn,
+    priority_correction: {
+      correction_en:
+        'A clearer sentence is: "I enjoy learning English after work."',
+      error_category: 'grammar.article',
+      explanation_l1:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      explanation_locale: 'kn-IN',
+      explanation_kn:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      needed: true,
+      retry_recommended: false,
+    },
     replayed: false,
+    safety_state: 'ok',
     speech: {
       playback_available: false,
       rendering_mode: 'deterministic-fake-text-only',

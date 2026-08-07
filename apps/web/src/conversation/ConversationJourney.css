@@ -7,10 +7,77 @@
 .conversation-journey__heading,
 .conversation-journey__notice,
 .conversation-journey__result,
+.conversation-journey__correction,
+.conversation-journey__start,
 .conversation-journey__voice,
-.conversation-journey form {
+.conversation-journey__memory,
+.conversation-journey__stage,
+.conversation-journey__controls,
+.conversation-journey__form {
   display: grid;
   gap: var(--ge-space-3);
+}
+
+.conversation-journey__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__model-lines {
+  display: grid;
+  gap: var(--ge-space-2);
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.conversation-journey__progress {
+  font-weight: 600;
+}
+
+.conversation-journey__memory {
+  background: var(--ge-color-surface);
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-4);
+}
+
+.conversation-journey__memory-list {
+  display: grid;
+  gap: var(--ge-space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.conversation-journey__memory-list li,
+.conversation-journey__memory-form,
+.conversation-journey__memory-edit {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__correction {
+  border-inline-start: 0.25rem solid var(--ge-color-border);
+  margin-block-start: var(--ge-space-3);
+  padding-inline-start: var(--ge-space-3);
+}
+
+.conversation-journey__start select {
+  background: var(--ge-color-surface);
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  color: var(--ge-color-text);
+  font: inherit;
+  max-width: 16rem;
+  min-height: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-3);
 }
 
 .conversation-journey__voice {

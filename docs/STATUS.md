@@ -4,13 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-009 — Real speech adapters and transcript recovery |
-| Status | DR-0012 encrypted listener workflow implemented and repository-verified; live benchmark blocked |
+| Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
+| Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 3 August 2026 |
-| Git branch | `main` |
-| Product code | PR-008 accepted; PR-009 provider-neutral recording/recovery, disabled Azure adapters, encrypted benchmark phases and loopback review utility implemented; the disclosed synthetic demo now additionally ships as an explicit demo-distribution web bundle and a Capacitor 8 Android demo APK under D-0077/D-0078 without provider/data authority; no live request made |
-| Next checkpoint | Record external vendor/privacy/spend evidence and obtain separate live-request authorization before any synthetic preparation; PR-010 remains unauthorized |
+| Updated date | 7 August 2026 |
+| Git branch | `codex/confidence-conversation` |
+| Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
+| Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
+| Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -74,6 +75,113 @@ Tenancy Reviewer roles. DR-0012 is resolved and only its bounded
 prepare/review/complete/purge implementation within PR-009 is authorized. No
 credential, provider spend, live request, benchmark success, PR-009
 acceptance, learner data, PR-010 or production is authorized.
+
+[APP-0017](APPROVALS.md#app-0017) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-009 with its recorded limitations and live synthetic
+benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`, and authorizes only
+PR-010 — AI orchestration, correction and Tutor beta. It does not authorize
+PR-011, production or Google Play release.
+
+[APP-0018](APPROVALS.md#app-0018) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-010 at
+`13eb5ac56f04402a2571346e9fd8e24f1a05ea80` with every recorded limitation. It
+does not authorize PR-011, real model providers, production or Google Play
+release.
+
+[APP-0019](APPROVALS.md#app-0019) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-011 — Evaluation harness and memory
+controls. It is not acceptance of completed PR-011 work and does not authorize
+PR-012, production or Google Play release.
+
+[APP-0020](APPROVALS.md#app-0020) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-011 at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with every recorded limitation. It
+does not authorize PR-012 implementation, real model providers, production or
+Google Play release.
+
+[APP-0021](APPROVALS.md#app-0021) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only the Confidence Conversation enterprise
+slice under
+[ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A1–A7
+(before PR-012). It is not acceptance of completed A1–A7 work. Nested A4/A5
+ADR+APP gates are still required before real conversation-model DI or
+ordinary multi-locale TTS spend. Demo D-0092/D-0094 paths are not enterprise
+evidence. PR-012, production and Play remain unauthorized.
+
+[APP-0025](APPROVALS.md#app-0025) records `S R Bhandary`'s Accountable Product
+Owner acceptance of the Confidence Conversation enterprise slice at
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with every recorded limitation. It
+does not authorize PR-012 implementation, live multi-locale TTS spend,
+production or Google Play release.
+
+[APP-0026](APPROVALS.md#app-0026) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-012 bounded synthetic role-play under
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+and [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-012 work and does not authorize approved
+curriculum, expanded live providers, production or Google Play release.
+
+[APP-0027](APPROVALS.md#app-0027) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-012 bounded synthetic role-play at
+`0fb6f2953580ed6154e4d895e128c46167c6f5d4` with every recorded limitation. It
+does not authorize approved curriculum, PR-013, production or Google Play
+release.
+
+[APP-0028](APPROVALS.md#app-0028) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-013 bounded operator content-workflow and
+audit under
+[PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md)
+and [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-013 work and does not authorize sampled
+speaking review, privacy ops, production or Google Play release.
+
+[APP-0029](APPROVALS.md#app-0029) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-013 bounded operator content-workflow and audit at
+`9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with every recorded limitation. It
+does not authorize sampled speaking review, privacy ops, PR-014, production or
+Google Play release.
+
+[APP-0030](APPROVALS.md#app-0030) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-014 Capacitor Android closed-beta
+foundations under
+[PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md)
+and [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-014 work and does not authorize Google
+Play public release, PR-015, remaining PR-013 sampled review/privacy ops or
+real learner production data. Demo APK `com.globalenglish.demo` remains
+presentation-only (D-0078).
+
+[APP-0031](APPROVALS.md#app-0031) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-014 Capacitor Android closed-beta foundations at
+`44b0e672e004cf3846cddabc456c21153fa4607e` with every recorded limitation. It
+does not authorize Google Play public release, PR-015, remaining PR-013
+sampled review/privacy ops or real learner production data. Physical device
+matrix, Gradle assemble and `make verify` remain unclaimed.
+
+[APP-0032](APPROVALS.md#app-0032) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-015 bounded operations hardening and
+closed-beta evidence closure under
+[PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
+and
+[PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-015 work and does not authorize F0 Phase 1
+DoD, Google Play public release, remaining PR-013 sampled review/privacy ops or
+real learner production data.
+
+[APP-0033](APPROVALS.md#app-0033) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-015 bounded operations hardening and closed-beta
+evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839` with every
+recorded limitation. It does not authorize F0 Phase 1 DoD, Google Play public
+release, remaining PR-013 sampled review/privacy ops or real learner production
+data. Physical device matrix, Gradle assemble, `make verify`, and live
+load-soak/backup execution remain unclaimed.
+
+[APP-0034](APPROVALS.md#app-0034) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only pre-F0 Phase 1 evidence-closure under
+[F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md). It is not
+acceptance of Phase 1 Definition of Done and does not authorize Google Play
+public release, specialist-review waiver, remaining PR-013 sampled
+review/privacy ops or real learner production data.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -395,10 +503,24 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-07-30.7`.
+  `ui-en-IN-2026-08-06.8`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.7` for
-  Kannada and `.3` for each newly added locale.
+  attributed Codex implementation drafts at revisions ending in `.8`.
+- Visible product name is **Global English Speaking Course**.
+- Interface language picker options use native endonyms (ಕನ್ನಡ, English,
+  हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
+- Demo Phase 1 chrome, notices, rooms, attendance status and AI Teacher
+  replies resolve from the selected interface locale (`en`/`kn`/`hi`/`ml`/
+  `ta`/`te`); the AI toggle is that locale’s endonym vs English. English quiz
+  stems remain English learning content.
+- Under D-0092, local `make demo` may synthesize Azure neural TTS for AI
+  Teacher, Daily audio, Friend Listen and model audio via `/demo/tts`, with
+  voice selected from the UI language map; browser speech is fallback. See
+  [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Under D-0094, local `make demo` Practice Friend may call OpenRouter free
+  models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
+  scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
+  Ordinary app LLM bindings stay unauthorized.
 - All five translated catalogues remain `pending-independent-review`: no
   reviewer, approval time or independent-review claim is recorded.
 - Ordinary production builds use `approved-only`, set the document language to
@@ -613,14 +735,101 @@ PR-006 verification results:
 - PR-006 is accepted at its exact implementation commit under APP-0007; every
   recorded limitation remains in force.
 
+## PR-010 implemented boundary
+
+- Context allowlist, versioned prompts (`prompt_versions`), structured output
+  validation, curated safety fallback, advisory correction digests and
+  learner error-pattern counters are implemented behind the existing
+  conversation turn pipeline.
+- Gentle / Tutor / Fluency coaching modes are accepted for Friend sessions.
+- Priority correction is returned as a separate API field and rendered as a
+  separate correction card; it is never merged into the Friend reply text.
+- Deterministic fake model adapters remain the only local/testing path.
+  Production remains fail-closed for conversation providers.
+- Authoritative learning records (`learner_attempts`, `mastery_states`, and
+  related tables) are not written by the AI orchestration path.
+- OpenAPI and generated contracts include `priority_correction` and
+  `safety_state`.
+
+## PR-011 implemented boundary
+
+- The active boundary is
+  [the PR-011 evaluation and memory verification scope](PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md).
+- Learner-visible AI memory facts are purpose-bound plaintext (`conversation_context`
+  / `learner_explicit`), listed completely when active, and soft-deleted with
+  immutable `memory_events` audit digests. Clearing memory does not delete
+  learning or account records.
+- `/api/v1/me/ai-memory` supports GET/POST/PATCH/DELETE with membership ownership
+  and idempotent writes. Active facts are allowlisted into conversation context
+  with hard caps (5 × 200 characters).
+- The Practice UI exposes list, create, edit and delete for learner-visible
+  facts.
+- Locked deterministic AI evaluation suite lives under
+  `apps/api/resources/ai-evaluation/v1/` and runs via `php artisan ai:evaluate`
+  / `make ai-eval` (speech half runs only when `SPEECH_BENCHMARK_RUN_ID` is set).
+- Human-review export/import packages bind the exact suite key and hash,
+  accept `pending`/`accept`/`reject` dispositions, fail closed on mismatch or
+  unknown cases, and keep prompt/cost rollups aggregate-only and
+  synthetic-fixture based.
+- Real LLM providers, PR-012, production and Play remain unauthorized.
+
 ## Next checkpoint gate
 
-PR-008 is accepted at `11f7b597ad2db3b8cf65a1394c1171a8280045d1`
-under APP-0012, which authorizes only PR-009 implementation within accepted
-ADR-0007. PR-009 implementation is repository-verified but remains incomplete
-and unaccepted pending exact vendor/privacy evidence, separate provider-spend
-and live-request approvals, two accountable listener reviews and the locked
-live Azure result. PR-010, production and every later implementation
-checkpoint remain unauthorized. Production additionally requires qualified
-legal review and independent security, privacy, tenancy, accessibility,
-language/content and release review.
+PR-011 is accepted under [APP-0020](APPROVALS.md#app-0020) at
+`220628f4d4c69284af0b1f2534e8902f3b272088` with its recorded limitations
+([PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md)).
+
+[APP-0021](APPROVALS.md#app-0021) authorized beginning the Confidence Conversation
+enterprise slice. [APP-0025](APPROVALS.md#app-0025) records Accountable Product
+Owner acceptance of that slice at
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with every recorded limitation
+([CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)).
+Nested A4/A5 gates remain as accepted under
+[APP-0022](APPROVALS.md#app-0022) / [ADR-0010](adr/0010-conversation-model-provider-policy.md)
+and [APP-0024](APPROVALS.md#app-0024) / [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md).
+Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
+remain unauthorized. Live Azure OpenAI calls remain operator-gated
+(outside-repo evidence + ₹500 cap); production DI stays `disabled`.
+Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
+and do not count as enterprise verification evidence.
+
+[APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
+closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
+recorded limitations
+([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)).
+Production package identity is `com.globalenglish.app` at
+`apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
+presentation-only.
+[APP-0033](APPROVALS.md#app-0033) accepted PR-015 bounded operations hardening
+and closed-beta evidence closure at `5eca7515291ea571a7f697dcdc2da6197535f839`
+with recorded limitations
+([PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)).
+Active plan step is **F0** pre-F0 evidence-closure under
+[APP-0034](APPROVALS.md#app-0034)
+([F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)).
+F0 Definition of Done sign-off and Google Play public release remain
+unauthorized.
+[APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
+closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
+recorded limitations
+([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)).
+Production package identity is `com.globalenglish.app` at
+`apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
+presentation-only.
+[APP-0029](APPROVALS.md#app-0029) accepted PR-013 bounded operator
+content-workflow + audit at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with
+recorded limitations
+([PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)).
+Sampled speaking review, privacy ops, learner PII CSV export, full content
+studio, F0 Phase 1 DoD, Google Play public release and real learner production
+data remain unauthorized until distinct APPs.
+Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
+remain unauthorized. Live Azure OpenAI calls remain operator-gated
+(outside-repo evidence + ₹500 cap); production DI stays `disabled`.
+Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) and the demo APK
+(`com.globalenglish.demo`, D-0078) are presentation-only and do not count as
+enterprise verification evidence.
+
+Production additionally requires qualified legal review and independent
+security, privacy, tenancy, accessibility, language/content and release
+review.

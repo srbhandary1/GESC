@@ -17,6 +17,12 @@ final class Role extends Model implements OrganizationOwned
 
     public const string DIRECT_LEARNER_KEY = 'learner';
 
+    public const string DIRECT_TRAINER_KEY = 'trainer';
+
+    public const string DIRECT_ORGANIZATION_ADMIN_KEY = 'organization_admin';
+
+    public const string DIRECT_CONTENT_REVIEWER_KEY = 'content_reviewer';
+
     /**
      * @var list<string>
      */

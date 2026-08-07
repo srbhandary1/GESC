@@ -25,8 +25,11 @@ provider path or authorize production deployment.
   the boundary.
 - Demo fixtures remain in-memory, synthetic and reset on reload. The demo
   registers no service worker, writes no `localStorage`, IndexedDB,
-  service-worker cache or other device storage, and makes no API or provider
-  request.
+  service-worker cache or other device storage. Ordinary product API routes
+  are unused. Under D-0092, the **local Vite demo process only** may call
+  Azure Speech TTS through `POST /demo/tts` when credentials are present in
+  process env; the browser never receives the key. Static `dist-demo` and
+  the Android APK still ship without secrets.
 - The visible synthetic-demo notice remains part of every demo surface. All
   five translated notices remain implementation drafts pending independent
   review; English is the reviewed source.
@@ -35,20 +38,30 @@ provider path or authorize production deployment.
   other draft locales render with the existing visible preview notice
   (ADR-0005 review mechanism). Ordinary production builds remain
   `approved-only` and fall back visibly to English.
-- The demo journey covers Home (recommended mission), Learn (Kannada-guided
-  mission with model audio, local-only recording practice, deterministic
-  check and result evidence), Progress (synthetic objective progress) and
-  Practice (deterministic text-only Friend prototype with rotating follow-up
-  replies and a tiny curated set of gentle pattern tips). Pattern tips are
-  scripted demo content, not grammar analysis, and remain advisory.
+- Under D-0081 / D-0092 the demo journey presents a Phase 1 learner dashboard
+  shell on **Home**, with primary shell navigation also visible for **Learn**,
+  **Practice** (AI Friend), and **Progress**. Phase 1 modules: Dashboard,
+  Attendance, AI Teacher (scripted replies + Azure/browser voice), Daily
+  Activity, My Levels and Notice Board. Generative AI and approved curriculum
+  remain deferred; Friend replies stay deterministic pattern scripting.
+- Speech preference order (D-0092 / D-0079): Azure neural TTS via local
+  `/demo/tts` when configured, else on-device `speechSynthesis`. Optional
+  spoken turns still use browser `SpeechRecognition`. Production STT/TTS
+  remains behind the project-owned provider ports (PR-009+) and is unchanged
+  by this presentation exception. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Friend chat preference order (D-0094): OpenRouter free model via local
+  `/demo/chat` when configured, else deterministic pattern replies. No
+  ordinary Laravel LLM binding. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
+- Visible product name: **Global English Speaking Course**.
 - The Android wrapper packages the bundle with Capacitor 8.5.0 (minimum API
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the
   existing local-only practice capture; recordings stay in browser memory
   for playback/retry and are never uploaded or persisted.
-- `com.globalenglish.demo` is a placeholder demo identity. The client-owned
-  production package identity, Passport PKCE authentication, native secure
-  storage, device-matrix testing and Play release engineering remain PR-014
-  scope and are not implemented here.
+- `com.globalenglish.demo` is a placeholder demo identity. The production-path
+  Capacitor tree is separate at `apps/web/android-app`
+  (`com.globalenglish.app`) under [APP-0030](APPROVALS.md#app-0030) /
+  [PR-014 closed-beta build](PR-014_ANDROID_CLOSED_BETA_BUILD.md). Do not
+  promote this demo APK to production. Play public release remains unauthorized.
 
 ## Commands
 
@@ -58,9 +71,15 @@ provider path or authorize production deployment.
 | `make demo-build` | Build the distribution bundle into `apps/web/dist-demo` |
 | `make demo-serve` | Serve the built bundle on `127.0.0.1:4175` |
 | `make demo-client` | Opt-in static-IP client serve on `0.0.0.0:8080` (see [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md)) |
+| `make demo-client-tunnel` | Temporary HTTPS Cloudflare tunnel for mic-capable remote review |
 | `make demo-e2e` | Chromium journey against the development-server demo |
 | `make demo-dist-e2e` | Chromium journey against the built bundle |
 | `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` |
+
+Client presentation disclosure/walkthrough:
+[CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md). Path from presentation to
+Azure Speech evidence workspace:
+[PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md).
 
 `make demo-android` requires JDK 21 (`JAVA_HOME`) and an Android SDK with
 platform 36 (`ANDROID_HOME`). On an IPv6-limited network pass

@@ -1691,28 +1691,107 @@ PR-010 and production remain unauthorized.
 
 ---
 
+## Demo Phase 1 dashboard shell (D-0081)
+
+### Scope reviewed
+
+- demo-only Phase 1 module navigation and synthetic fixtures for Attendance,
+  AI Teacher, Daily Activity, My Levels and Notice Board;
+- ordinary product shell unchanged when `demoMode` is false;
+- no cloud AI/speech calls; scripted AI Teacher replies only;
+- locale parity for new demo.phase1.* keys.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Five modules reachable from dashboard | Pass | DemoPhase1Shell unit + demo e2e |
+| Levels list Pre-1/Pre-2/1–17 with rooms | Pass | fixtures + UI |
+| Daily quiz 5×1 mark | Pass | in-memory scoring |
+| Non-demo shell unchanged | Pass | `hidePrimaryNavigation` only when demoMode |
+| No API/provider calls | Pass | demo e2e zero `/api/` |
+
+---
+
+## Professional client setup path (Phase A + Phase B scaffold)
+
+### Scope reviewed
+
+- Phase A client runbook: HTTPS tunnel preference, APK share, disclosure script
+  and walkthrough ([CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md));
+- Phase B outside-repo evidence workspace and env path map
+  ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md));
+- fail-closed `speech:benchmark --phase=preflight` with incomplete evidence;
+- live-prepare script refusal without APO authorization file / secret.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Presentation path documented | Pass | HTTPS-first runbook + disclosure + 8-minute walkthrough |
+| Secrets stay outside Git | Pass | `$HOME/ge-speech-benchmark` mode 0700/0600; empty secret file |
+| Ordinary app remains fail-closed | Pass | docs require `VOICE_PROVIDER_DRIVER=disabled` and live flags false in app `.env` |
+| Preflight blocks without evidence | Pass | `scripts/run-speech-benchmark-preflight.sh` → `"status":"blocked"` exit 2 |
+| Live prepare blocked without APO text | Pass | `scripts/run-speech-benchmark-live-prepare.sh` exit 2; missing `LIVE_AUTHORIZATION.txt` |
+| No Azure network call made | Pass | preflight/live-prepare gates only; no prepare/complete executed |
+
+### Known limitation
+
+Live Azure prepare/complete/`make ai-eval` remain unauthorized until the
+operator supplies centralindia endpoint, secret, real evidence JSON and the
+exact APO authorization sentence.
+
+---
+
+## APP-0015 / D-0082 — Blanket demo approval and ₹1,000 spend cap
+
+### Scope reviewed
+
+- APO exact statement recorded as [APP-0015](APPROVALS.md#app-0015);
+- outside-repo `LIVE_AUTHORIZATION.txt` and `spend-approval.json` (`cap_inr` 1000);
+- decision ledger D-0082; STATUS professional-client row updated.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Spend authorization text present | Pass | `$HOME/ge-speech-benchmark/LIVE_AUTHORIZATION.txt` |
+| Spend cap file written | Pass | `evidence/spend-approval.json` approved, cap 1000 |
+| Production not claimed | Pass | APP-0015 conditions; D-0082 limitations |
+| No live Azure call made | Pass | secret file still empty; vendor evidence still templates only |
+
+### Known limitation
+
+Credential, vendor/DPA evidence and filled `speech-benchmark.env` remain
+operator-supplied. This approval does not fabricate those artifacts.
+
+---
+
 ## Local synthetic presentation demo
 
 ### Scope reviewed
 
-- development-only activation and production refusal;
+- development/distribution-only activation and production refusal;
 - in-memory learner identity, lesson, deterministic result/progress and Friend
   adapters;
 - explicit synthetic-data and no-real-provider disclosure;
-- model-audio generation, microphone-denial fallback and text practice;
-- localization parity/governance for the demo notice; and
+- on-device browser Web Speech as fallback; local Vite demo may use Azure
+  neural TTS via `/demo/tts` when credentials are configured (D-0092);
+- professional demo-scoped presentation surface;
+- microphone-denial fallback and typed practice;
+- localization parity/governance for demo speech/UI copy; and
 - network, persistence, accessibility and existing-test regression.
 
 ### Review result
 
 | Check | Result | Evidence |
 |---|---|---|
-| Normal runtime remains unchanged | Pass | demo adapters are selected only when the explicit flag and Vite `DEV` are both true |
-| Production cannot activate the demo | Pass | runtime-policy unit test denies an explicit request when `development=false` |
-| Useful lesson is visible immediately | Pass | demo defaults to Learn with a populated introduction mission, model text, local tone, recording fallback, check and result |
-| Conversation is clearly fake | Pass | deterministic text-only Friend disclosure, fixed response, five status events and zero cost |
+| Normal runtime remains unchanged | Pass | demo adapters are selected only when the explicit flag and Vite `DEV`/demo mode are true |
+| Production cannot activate the demo | Pass | runtime-policy unit test denies an explicit request when `development=false` and `distribution=false` |
+| Useful lesson is visible immediately | Pass | demo defaults to Home with a populated introduction mission, model text, browser TTS model speech, recording fallback, check and result |
+| Conversation is clearly synthetic | Pass | deterministic Friend disclosure, rotating replies, browser TTS/STT presentation helpers, five status events and zero cost |
 | No authoritative data is created | Pass | adapters are browser-memory objects; no database, API mutation, publication, enrollment or mastery authority path exists |
-| No provider or application API call occurs | Pass | Chromium journey observes zero `/api/` requests |
+| No ordinary application API call occurs | Pass | Chromium journey observes zero `/api/` requests; Azure TTS (when configured) uses only local `POST /demo/tts` middleware, never ordinary Laravel routes |
 | Browser persistence remains bounded | Pass | Chromium journey observes zero `localStorage` entries; demo state resets on reload |
 | Accessibility | Pass | complete demo lesson/result/Friend journey has zero automated axe violations |
 | Language governance | Pass with expected warnings | six catalogues have exact parity/hashes; Kannada, Malayalam, Tamil, Telugu and Hindi notices remain pending independent review |
@@ -1721,10 +1800,10 @@ PR-010 and production remain unauthorized.
 
 | Command or check | Result |
 |---|---|
-| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 63 web tests |
-| `make build` with the pinned Linux-native toolchain | Pass: Laravel production optimize/cleanup and Vite production build, 77 modules |
-| `make e2e` | Pass: 10 existing Chromium journeys; temporary loopback server stopped |
-| `make demo-e2e` | Pass: one synthetic journey on temporary `127.0.0.1:4174`; server stopped |
+| `make verify` with the pinned Linux-native toolchain | Pass: Composer/pnpm audits, formatting, PHPStan, 70 SQLite tests/701 assertions, 173 PostgreSQL tests/2,016 assertions, locale/OpenAPI/generated-client checks, lint, TypeScript, 31 localization tests, 9 design-system tests and 72 web tests |
+| `make demo-e2e` | Pass: one synthetic journey on temporary `127.0.0.1:4174` including browser TTS playback controls; server stopped |
+| `make demo-dist-e2e` | Pass: dist-demo rebuild and Chromium journey on `127.0.0.1:4175` |
+| `make demo-android` | Pass: debug APK rebuilt with the updated demo bundle |
 | API/provider requests during browser journey | Zero |
 
 ### Security, privacy and limitations
@@ -1733,8 +1812,9 @@ PR-010 and production remain unauthorized.
   provider configuration, transcript persistence or tenant data.
 - Microphone capture, when a presenter chooses it, stays under the existing
   local browser-memory practice controls and is not uploaded by the demo.
-- The generated WAV is a short synthetic tone, not model speech and not
-  licensed or approved learning media.
+- Model speech and Friend replies use the browser Web Speech APIs when
+  available. This is device speech for presentation only, not Azure/cloud
+  STT/TTS, not licensed media and not PR-009 acceptance evidence.
 - The demo is not evidence that the backend, database, OTP, offline sync,
   secure upload or Azure provider paths are operating. Their existing
   verification and authorization gates remain unchanged.
@@ -1796,3 +1876,1038 @@ PR-010 and production remain unauthorized.
 - The demo distribution is not curriculum approval, benchmark evidence,
   checkpoint acceptance or production authorization; every existing PR-009
   and later gate is unchanged.
+
+
+---
+
+## Live Azure complete (APP-0015 / 2026-08-05)
+
+### Scope reviewed
+
+- APO instruction to mark all listener dispositions good;
+- two development listener slots recorded 96/96 acceptances;
+- `make ai-eval` complete phase executed against centralindia Speech;
+- safe aggregate report written outside Git.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Listener all-pass recorded | Pass | aggregate 96/96/0 critical |
+| Live complete executed | Pass (ran) | safe-report.json; ~₹13.22 estimated |
+| Quality gate | Fail | clean/snr WER above locked thresholds; numbers category ~0.37–0.42 |
+| Completeness gate | Fail | snr20/snr10 clip_count 94 (duration mismatch failures: 4) |
+| Cost / listener / performance / reliability | Pass | report gates |
+| PR-009 acceptance / production | Not authorized | limitations in report |
+
+### Known limitation
+
+Development listeners under APO instruction are not independent language review.
+Failing WER does not authorize relaxing locked thresholds without a new decision.
+
+
+---
+
+## APP-0016 / D-0084 / D-0085 — Production-path authority and PR-009 remediation
+
+### Scope reviewed
+
+- APP-0016 blanket production-path authorization recorded with limitations;
+- WER scoring normalization for spoken/digit/currency equivalence (D-0085);
+- STT duration over-claim-only check;
+- live prepare/review/complete re-run under ₹1,000 cap.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Number-form WER unit cases | Pass | SpeechBenchmarkPolicyTest number equivalence cases |
+| Targeted PHPUnit speech suite | Pass | 22 tests |
+| Live complete remediation | Pass | `make ai-eval` status passed; run `e1dc9d3c8daff9e33c20bdd00d2dd4d0` |
+| All conjunctive gates | Pass | safe-report gates all true; clean WER ~2.6% |
+| Cost under cap | Pass | ~₹13.21 estimated; cap ₹1,000 |
+| Production/Play claimed | No | STATUS limitations; APP-0016 conditions |
+
+### Known limitation
+
+Formal APO PR-009 checkpoint acceptance and PR-010 authorization remain separate
+human steps. Independent specialist reviews remain mandatory before production.
+
+
+---
+
+## APP-0017 — PR-009 acceptance and PR-010 authorization
+
+### Scope reviewed
+
+- APO exact statement accepting PR-009 and authorizing PR-010;
+- prior live synthetic benchmark pass `e1dc9d3c8daff9e33c20bdd00d2dd4d0`;
+- STATUS/DECISIONS updated to open only PR-010.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0017](APPROVALS.md#app-0017) |
+| PR-009 closed with limitations | Pass | APP-0017 conditions; D-0086 |
+| Only PR-010 authorized | Pass | STATUS next checkpoint; no PR-011/production |
+| Production/Play claimed | No | APP-0017 limitations |
+
+### Known limitation
+
+PR-009 remediation and related demo-path files may still be uncommitted at
+record authoring; the evidence repository revision is the commit that contains
+this APP-0017 record.
+
+
+---
+
+## PR-010 — AI orchestration, correction and Tutor beta
+
+### Scope reviewed
+
+- context allowlist, versioned prompts, structured validators, curated fallback;
+- Gentle/Tutor/Fluency modes;
+- separate priority correction API field and UI card with Kannada explanation;
+- advisory correction digests and error-pattern counters;
+- learning-record isolation tests;
+- OpenAPI/contract regeneration and localization catalogue updates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Output validator unit tests | Pass | ConversationOutputValidatorTest |
+| Request validation accepts tutor mode | Pass | ConversationRequestValidationTest |
+| PostgreSQL conversation + orchestration suite | Pass | 6 tests / 70 assertions via Docker PHP 8.4 + pdo_pgsql |
+| SQLite unit/feature conversation filter | Pass | 5 tests / 17 assertions |
+| OpenAPI lint + contract drift check | Pass | `pnpm run openapi:check` |
+| PHPStan on PR-010 conversation paths | Pass | 0 errors |
+| Web conversation/demo tests | Pass | 76 web tests in targeted vitest run |
+| Locale governance | Pass | `pnpm run locale:check` (5 pending-review warnings) |
+| Learning records unchanged by AI path | Pass | orchestration + fake-provider isolation assertions |
+| Correction separate from Friend reply | Pass | API field + UI card test |
+| Real model provider / production / Play | Not authorized | APP-0017; STATUS |
+
+### Security, privacy and tenancy
+
+- Persistent correction records store digests, not reply/correction text.
+- Allowlisted model context excludes personal identifiers and learning authority.
+- Organization scoping of correction/error-pattern rows follows conversation turn ownership.
+- Fake adapters remain local/testing-only; production conversation providers stay fail-closed.
+
+### Known limitations
+
+- Host PHP lacks `pdo_pgsql`; PostgreSQL integration evidence used a Docker
+  `php:8.4-cli` container against the local Compose Postgres service.
+- Full `make verify` / remote CI was not completed in this session.
+- No real LLM provider is wired; Tutor beta uses deterministic fake outputs.
+- Kannada and preview-locale UI copy remain pending independent review.
+
+
+---
+
+## APP-0018 — PR-010 acceptance
+
+### Scope reviewed
+
+- APO statement accepting PR-010 with recorded limitations;
+- exact implementation commit `13eb5ac56f04402a2571346e9fd8e24f1a05ea80`;
+- STATUS/DECISIONS updated without authorizing PR-011.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0018](APPROVALS.md#app-0018) |
+| Exact commit cited | Pass | `13eb5ac56f04402a2571346e9fd8e24f1a05ea80` |
+| PR-010 closed with limitations | Pass | APP-0018 conditions; D-0088 |
+| PR-011 authorized | No | APP-0018 limitations; STATUS next checkpoint |
+| Production/Play claimed | No | APP-0018 limitations |
+
+### Known limitation
+
+This acceptance does not waive independent specialist reviews or full
+CI/`make verify` follow-up.
+
+
+---
+
+## APP-0019 — PR-011 implementation authorization
+
+### Scope reviewed
+
+- APO statement `APO accept PR-011.`;
+- interpretation as authorization to begin unimplemented PR-011 only;
+- STATUS/DECISIONS updated without accepting completed PR-011 work.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact statement recorded | Pass | [APP-0019](APPROVALS.md#app-0019) |
+| Interpreted as begin-implementation only | Pass | APP-0019 context; no PR-011 artifact exists |
+| Only PR-011 authorized | Pass | STATUS next checkpoint; D-0089 |
+| PR-012 / production / Play claimed | No | APP-0019 limitations |
+
+### Known limitation
+
+PR-011 deliverables remain unimplemented until a bounded checkpoint
+implementation is completed and separately accepted.
+
+
+---
+
+## PR-011 — Evaluation harness and memory controls
+
+### Scope reviewed
+
+- learner-visible AI memory list/create/edit/delete + audit;
+- allowlisted memory in conversation orchestration;
+- locked deterministic AI evaluation suite, human-review export/import with
+  fail-closed suite binding, prompt comparison and cost rollup;
+- OpenAPI 0.8.0 memory routes and Practice UI panel;
+- [PR-011 verification scope](PR-011_EVALUATION_MEMORY_VERIFICATION_SCOPE.md).
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Memory isolation / learning freeze | Pass | LearnerMemoryTest (PostgreSQL via Docker PHP 8.4.24 + pdo_pgsql) |
+| AI evaluation suite pass | Pass | AiEvaluationRunnerTest |
+| Human-review import accept/pending/reject + fail-closed mismatch | Pass | AiEvaluationRunnerTest import cases |
+| Suite hash stability | Pass | AiEvaluationSuiteTest (host `php artisan test`) |
+| HTTP auth + orchestration + memory/eval filter | Pass | 13 PostgreSQL tests / 204 assertions via Docker PHP 8.4.24 (`AiEvaluationRunnerTest\|LearnerMemoryTest\|ConversationOrchestrationTest\|LearnerHttpBoundaryTest`) |
+| OpenAPI / contracts | Pass | `pnpm run openapi:check` on host Node v22.22.1 / pnpm 11.18.0 |
+| PHPStan PR-011 paths | Pass | 0 errors (`app/Conversation/Evaluation`, `Memory`, `LearnerMemoryController`) |
+| Web memory panel list/create/edit/delete | Pass | AiMemoryPanel vitest 1 passed |
+| Locale governance | Pass | `node scripts/validate-locales.mjs` in `node:24.18.1-bookworm-slim` — 6 catalogues, 5 pending-review warnings |
+| `php artisan ai:evaluate` | Pass | Docker PHP 8.4.24 against `global_english_test` after migrate/seed: status `completed`, 4 passed / 0 failed, suite_hash `9d1f8d6069af09abbc9c20dd5048af6c640a4c77c927f0f43eed3364c13dc5e6`, report_digest `407d67cc39091c5703a291c042da3ba7bb14b1f1f67f236b70a305ab883cd318`, estimated_cost_microunits 0; speech half skipped (no `SPEECH_BENCHMARK_RUN_ID`) |
+| Full host `make verify` / remote CI | Not claimed | Host PHP 8.5.4 lacks `pdo_pgsql`; Node 22 cannot load locale `.ts` imports without pinned Node 24 |
+| Real LLM / PR-012 / production / Play | Not authorized | APP-0019; STATUS |
+
+### Subsequent checkpoint acceptance
+
+[APP-0020](APPROVALS.md#app-0020) records Accountable Product Owner acceptance
+of PR-011 at exact commit `220628f4d4c69284af0b1f2534e8902f3b272088` with
+every recorded limitation in this section and
+[PR-011_APO_ACCEPTANCE_PACKAGE.md](PR-011_APO_ACCEPTANCE_PACKAGE.md). PR-012
+implementation remains unauthorized until a separate APP.
+
+### Security, privacy and tenancy
+
+- Memory list returns all active facts for the owning membership; no hidden active facts.
+- Practice UI edit uses the existing PATCH contract; no hidden active facts.
+- Audit events store digests, not fact plaintext after delete/update trails.
+- Eval fixtures are synthetic; reports are aggregate digests with zero fake cost.
+- Import packages must match the exact suite key and hash; unknown cases,
+  missing files and malformed dispositions fail closed.
+- Organization + membership FKs and same-tenant denial mirror conversation patterns.
+
+### Known limitations
+
+- Host PHP 8.5.4 lacks `pdo_pgsql`; PostgreSQL evidence used Docker PHP 8.4.24
+  against local Compose Postgres.
+- Host Node v22.22.1 cannot load locale `.ts` imports; locale governance was
+  verified in `node:24.18.1-bookworm-slim`.
+- Full host `make verify` / remote CI were not claimed green in this session.
+- Preview-locale memory strings may reuse English pending independent review.
+- Eval cost rollup remains zero on deterministic fakes and is not live spend.
+- Speech half of `make ai-eval` remains PR-009-gated and was not run.
+- PR-011 is accepted under APP-0020 at
+  `220628f4d4c69284af0b1f2534e8902f3b272088`; PR-012 remains unauthorized.
+
+## APP-0021 — Confidence Conversation enterprise slice authorization
+
+### Evidence reviewed
+
+- Exact APO statement authorizing only
+  [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) Steps A1–A7;
+- Prior PR-011 acceptance under APP-0020;
+- Learning-flow design
+  [STUDENT_AI_CONVERSATION_LEARNING_FLOW.md](STUDENT_AI_CONVERSATION_LEARNING_FLOW.md);
+- Explicit non-authorization of PR-012, production, Play, and nested A4/A5
+  spend until separate gates;
+- Explicit statement that demo D-0092/D-0094 paths are not enterprise evidence.
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact APO authorize sentence recorded | Pass | [APP-0021](APPROVALS.md#app-0021) |
+| Begin-implementation only (not A7 accept) | Pass | APP-0021 conditions |
+| PR-012 / production / Play still unauthorized | Pass | APP-0021; STATUS next gate |
+| Demo paths non-evidence | Pass | D-0095; APP-0021; plan §0 |
+| Nested A4/A5 still gated | Pass | APP-0021 authorized scope |
+
+### Outcome
+
+A0 is complete. Implementation may proceed through A1 (spec + verification
+scope) under APP-0021 without treating demo adapters as production evidence.
+
+## Confidence Conversation — Step A1 (spec + verification scope)
+
+### Evidence reviewed
+
+- [CONFIDENCE_CONVERSATION_SPEC.md](CONFIDENCE_CONVERSATION_SPEC.md)
+- [CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md)
+- Existing PR-010 `PriorityCorrection` still uses `explanation_kn` only —
+  A2 must generalize to `explanation_l1` for all UI locales
+- OpenAPI draft deltas listed in verification scope (not yet generated)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Spec committed under APP-0021 | Pass | SPEC file |
+| Verification scope committed | Pass | VERIFICATION_SCOPE file |
+| Demo excluded as evidence | Pass | verification §10 |
+| Nested A4/A5 still gated | Pass | SPEC §8; APP-0021 |
+| Plan Active step → A2 | Pass | ENTERPRISE_STUDENT_PATH_PLAN |
+
+### Outcome
+
+A1 complete. Next: A2 structured turn contract on fakes (no real LLM).
+## Confidence Conversation — Step A2 (structured turn contract)
+
+### Evidence reviewed
+
+- `PriorityCorrection` now emits `needed`, `explanation_l1`, `explanation_locale`;
+  deprecated `explanation_kn` dual-write only for `kn-IN`
+- Session start requires `ui_locale`; persisted on `conversation_sessions`
+- Fake provider fixtures for all six UI locales; shame-fixture → curated fallback
+- OpenAPI 0.9.0 + regenerated contracts
+- Migration `2026_08_07_000040_confidence_conversation_explanation_l1.php`
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| CC-03 empty L1 rejected when needed | Pass | ConversationOutputValidatorTest |
+| CC-04 six UI locale fixtures | Pass | ConversationOutputValidatorTest::test_fake_provider_covers_all_ui_locales |
+| Shame-language fail-closed | Pass | Validator + shame-fixture fake |
+| OpenAPI / contracts | Pass | `pnpm run openapi:check` |
+| PHPStan changed paths | Pass | 0 errors |
+| PostgreSQL integration filter | Pass | Docker PHP 8.4.24: 19 tests / 281 assertions |
+| Host unit/feature conversation | Pass | 6 tests / 55 assertions |
+| Web conversation + demo fixtures | Pass | ConversationJourney / Web API / localDemo vitest |
+| Real LLM / A4–A5 / PR-012 / production | Not authorized | APP-0021; D-0096 |
+
+### Known limitations
+
+- Prompt catalogue text still mentions “Kannada explanation” (eval suite hash
+  unchanged); A6 may revise prompts with locked suite update.
+- Host PHP lacks `pdo_pgsql`; PostgreSQL evidence used Docker PHP 8.4.24.
+- Full host `make verify` / remote CI not claimed in this step.
+- A3 UI stages (warm-up / listen / reflect) not yet implemented.
+
+### Outcome
+
+A2 complete. Next: A3 product UI vertical slice on fakes.
+
+## Confidence Conversation — Step A3 (product UI vertical slice)
+
+### Evidence reviewed
+
+- Practice `ConversationJourney` stages: Warm-up → Listen → Talk → Reflect
+- Confidence controls: retry, type instead, skip, hint; silence nudge after 8s
+- Correction card uses `explanation_l1` / `explanation_locale`
+- UI catalogues revision `ui-*-2026-08-07.9` with confidence copy
+- Product Listen path discloses text-only fake TTS (A5 still gated)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Stage journey unit coverage | Pass | ConversationJourney vitest 3 passed |
+| Confidence controls present | Pass | Say that again / Type / Skip / Hint |
+| Locale governance | Pass | validate-locales: 6 catalogues, 5 pending-review warnings |
+| Demo excluded as enterprise evidence | Pass | D-0097; demoMode TTS optional only |
+| Real LLM / A4–A5 / PR-012 / production | Not authorized | APP-0021 |
+
+### Known limitations
+
+- Listen model lines are synthetic client constants (not published curriculum).
+- Product-path model/reply audio remains text-only until A5.
+- Reflect summary is advisory client copy; does not write mastery.
+- Full `make e2e` / host `make verify` not claimed in this step.
+
+### Outcome
+
+A3 complete. Next: A4 conversation-model provider ADR (no live DI without nested APP).
+
+## Confidence Conversation — Step A4 (ADR proposed)
+
+### Evidence reviewed
+
+- Proposed [ADR-0010](adr/0010-conversation-model-provider-policy.md)
+- Authorization draft [A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md](A4_CONVERSATION_MODEL_AUTHORIZATION_REQUEST.md)
+- Explicit separation from demo OpenRouter (D-0094) and Speech ADR-0008
+- Fail-closed production default retained
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR drafted for provider choice + gates | Pass | ADR-0010 proposed |
+| Nested APP required before adapter code | Pass | A4 auth request |
+| Live spend unauthorized | Pass | ADR + A4 request non-goals |
+| Demo path non-evidence | Pass | D-0094; ADR alternatives |
+
+### Outcome
+
+A4 ADR proposed. Adapter implementation blocked until ADR acceptance and nested
+APO authorize statement are recorded.
+
+## Confidence Conversation — Step A4 (accepted + adapter)
+
+### Evidence reviewed
+
+- Exact ADR acceptance: `Accept ADR-0010 conversation-model provider policy as proposed.`
+- APO live-spend intent: production closeness with live spends
+- [APP-0022](APPROVALS.md#app-0022) (₹500 INR hard development ceiling)
+- Azure OpenAI adapter behind `ConversationModelProvider` with HTTP-fake tests
+- Outside-repo workspace scripts under `scripts/setup-conversation-model-workspace.sh`
+- Production / non-allowlisted env remain fail-closed
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0010 accepted | Pass | APP-0022 |
+| Adapter uses project-owned port only | Pass | `AzureOpenAiConversationModelProvider` |
+| HTTP fakes map to `explanation_l1` | Pass | `AzureOpenAiConversationAdapterTest` |
+| Production cannot authorize live | Pass | `environment_not_allowlisted` |
+| Spend capped; unlimited unauthorized | Pass | APP-0022; config `maximum_spend_inr=500` |
+| Demo OpenRouter not DI | Pass | D-0094; driver allowlist |
+| Production promote / Play | Not authorized | APP-0022 non-goals |
+| Operator live smoke | Pending evidence | Outside-repo workspace |
+
+### Outcome
+
+A4 complete for code + governance. Next: A5 multi-locale guidance TTS policy
+(nested ADR/APP; no TTS spend under APP-0022).
+
+## Confidence Conversation — Step A5 (in progress)
+
+### Evidence reviewed
+
+- Proposed [ADR-0011](adr/0011-confidence-conversation-guidance-tts-policy.md)
+- [APP-0023](APPROVALS.md#app-0023) begin-implementation (fakes / text-first)
+- [A5_GUIDANCE_TTS_AUTHORIZATION_REQUEST.md](A5_GUIDANCE_TTS_AUTHORIZATION_REQUEST.md)
+- `GuidanceTtsPolicy` + web `guidanceTtsPolicy` voice map
+- Product Listen/reply text-first with optional on-device English browser speech
+- Locale catalogues bumped to `ui-*-2026-08-07.10`
+- APP-0022 spend ceiling amended to ₹500
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0011 drafted | Pass | proposed |
+| APO begin A5 (fakes/text-first) | Pass | APP-0023 |
+| Human lesson recordings forbidden | Pass | GuidanceTtsPolicy |
+| Text-first fallback required | Pass | policy + UI copy |
+| PR-009 en-IN benchmark unchanged | Pass | ADR-0011 decision table |
+| Live multi-locale TTS spend | Not authorized | APP-0023 / ADR-0011 |
+| ADR-0011 accepted | Pending | needs exact Accept statement |
+
+### Outcome
+
+A5 scaffolding in progress. Close A5 only after exact ADR-0011 acceptance.
+
+## Confidence Conversation — Step A5 (accepted)
+
+### Evidence reviewed
+
+- Exact ADR acceptance: `Accept ADR-0011 Confidence Conversation guidance TTS policy as proposed.`
+- Exact APO authorize: fakes and text-first fallback; live multi-locale TTS spend unauthorized
+- [APP-0024](APPROVALS.md#app-0024)
+- Prior scaffolding under [APP-0023](APPROVALS.md#app-0023)
+- `GuidanceTtsPolicy` + fake TTS contract + product text-first UI
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| ADR-0011 accepted | Pass | APP-0024 |
+| AI-only / no human lesson recordings | Pass | GuidanceTtsPolicy; ADR-0011 |
+| Text-first fallback | Pass | UI + policy |
+| Fakes only for multi-locale guidance | Pass | APP-0024 |
+| PR-009 en-IN benchmark unchanged | Pass | ADR-0011 |
+| Live multi-locale TTS spend | Not authorized | APP-0024 non-goals |
+| Production / Play | Not authorized | APP-0024 |
+
+### Outcome
+
+A5 complete. Next: A6 locale eval fixtures + `make ai-eval` gates for L1
+explanations.
+
+## Confidence Conversation — Step A6 (accepted)
+
+### Evidence reviewed
+
+- Suite `friend.l1.locale.v1` / version `1`
+- Locked `suite_hash` `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270`
+- 15 cases: gentle × 6 UI locales, tutor/fluency/unsafe, shame × 6 locales
+- Metrics: false_correction_count, missing_l1_count, shame_language_hits,
+  schema_invalid_count, cost_ceiling_ok
+- Human-review export includes `ui_locale` + `explanation_locale`
+- Docker PHP 8.4.24 `AiEvaluationRunnerTest` 6/6; `ai:evaluate` completed
+  15/0, report_digest `355b4d0424fab059209d97fdd863e738a703e9a1bd6437069981fdadc42b84ca`
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| CC-E1 locked suite hash; fake-only | Pass | suite_hash; APP_ENV/driver gate |
+| CC-E2 false-correction / missing-L1 fail suite | Pass | metrics + case gates |
+| CC-E3 shame-language fail closed | Pass | 6 shame cases → fallback |
+| CC-E4 cost zero on fakes | Pass | estimated_cost_microunits 0 |
+| CC-E5 make ai-eval fails on regression | Pass | status failed if any gate fails |
+| All Phase 1 UI locales covered | Pass | ui_locales === ConversationUiLocales::all() |
+| Live multi-locale TTS spend | Not authorized | APP-0024 |
+| Live model eval | APP-0022 only | spend/evidence gates |
+
+### Outcome
+
+A6 complete. Next: A7 APO exact-commit acceptance of the Confidence Conversation
+slice.
+
+## Confidence Conversation — Step A7 (accepted)
+
+### Evidence reviewed
+
+- Exact APO statement: `APO accept Confidence Conversation slice at 5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b with its recorded limitations`
+- [APP-0025](APPROVALS.md#app-0025) / D-0103
+- [CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md](CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md)
+- A1–A6 QUALITY_REVIEW sections; APP-0021 / APP-0022 / APP-0024; ADR-0010 / ADR-0011
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package | Pass | CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md |
+| Limitations explicit | Pass | package § Recorded limitations |
+| Exact commit SHA | Pass | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
+| APO accept statement | Pass | APP-0025 |
+| PR-012 / production / Play | Not authorized | APP-0025 non-goals |
+| Live multi-locale TTS spend | Not authorized | APP-0024 / APP-0025 |
+
+### Outcome
+
+A7 complete. Confidence Conversation enterprise slice accepted. Next: separate
+APP for PR-012 Role-play (plan B0) only — do not start PR-012 code without it.
+
+## PR-012 — Step B0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+- [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0020 (PR-011) + APP-0025 (Confidence Conversation)
+- Scope: synthetic Observe→Rehearse→Perform→Reflect; advisory objectives;
+  fake providers default; no live TTS spend expansion
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request refreshed post–APP-0025 | Pass | PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md |
+| Verification scope RP-01–RP-08 | Pass | PR-012_ROLEPLAY_VERIFICATION_SCOPE.md |
+| APO begin-implementation statement | Pending | exact authorize text in auth request |
+| PR-012 code | Not authorized | awaiting APP |
+
+### Outcome
+
+B0 package ready. Record a new APP only after the exact APO authorize
+statement; then advance Active step to B1 and begin synthetic implementation.
+
+## PR-012 — Step B0 (accepted) / B1 (in progress)
+
+### Evidence reviewed
+
+- Exact APO statement authorizing PR-012 bounded synthetic role-play
+- [APP-0026](APPROVALS.md#app-0026) / D-0104
+- [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+- [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| APO begin-implementation | Pass | APP-0026 |
+| Synthetic-only scope | Pass | APP-0026 authorized scope |
+| Approved curriculum / live TTS expansion | Not authorized | APP-0026 non-goals |
+| B1 implementation | In progress | plan Active step B1 |
+
+### Outcome
+
+B0 closed. Implement B1 synthetic Observe→Rehearse→Perform→Reflect slice;
+exact-commit acceptance remains a later APO gate.
+
+### B1 progress note (implementation landed; verification pending)
+
+Landed under APP-0026 authorized synthetic scope:
+
+- Migration `2026_08_07_000050_pr012_synthetic_roleplay.php` widens friend/roleplay
+  CHECKs and adds `scenario_objectives`, append-only
+  `conversation_session_stage_events`, and advisory `roleplay_feedback_evidence`.
+- `RoleplayStages` + `RoleplayStageService` linear Observe→Rehearse→Perform→Reflect;
+  Reflect writes digests only (no mastery).
+- `ConversationSessionService` resolves friend/roleplay prototype pairs; roleplay
+  starts at Observe with objectives/feedback payload fields.
+- HTTP `POST /conversation-sessions/{session}/stages`, OpenAPI 0.10.0 + regenerated
+  clients, FoundationSeeder clinic-reception synthetic prototype (2 objectives).
+- Practice UI `RoleplayJourney` entry ("Role-play (synthetic)") beside Confidence.
+
+Focused verification passed for this slice:
+
+- PHPUnit unit/feature (sqlite): `RoleplayStagesTest`,
+  `ConversationRequestValidationTest` stage cases — pass
+- PHPUnit integration (postgres via php:8.4-cli + pdo_pgsql):
+  `RoleplaySessionTest`, `FoundationSeederIntegrityTest` — pass
+- Vitest (Node 24): `RoleplayJourney.test.tsx` — pass
+- `pnpm run openapi:check` and `pnpm run locale:check` — pass
+
+B1 remains open for full `make verify` / APO exact-commit acceptance; production
+and Play stay unauthorized.
+
+### B1 verification re-run + B2 + acceptance package
+
+#### Evidence reviewed
+
+- Host PHPUnit: `RoleplayStagesTest` + stage validation — 5 passed
+- Docker PHP 8.4.24 + pdo_pgsql: `RoleplaySessionTest` +
+  `FoundationSeederIntegrityTest` — 6 passed / 42 assertions
+- Node 24 Docker: locale check pass; OpenAPI generate `--check` pass;
+  Vitest RoleplayJourney + ConversationJourney — 4 passed
+- Chromium Role-play e2e: spec added; webServer `tsc -b` blocked by
+  pre-existing unrelated typecheck errors — **not claimed**
+- B2 content path: D-0105 synthetic retained for APP-0026
+- [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)
+
+#### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| RP-01 stage transitions | Pass | RoleplaySessionTest |
+| RP-02 persona/scenario snapshot | Pass | session start assertions |
+| RP-03 no mastery writes | Pass | learningCounts unchanged |
+| RP-04 advisory feedback evidence | Pass | roleplay_feedback_evidence digests |
+| RP-05 cross-tenant denial | Pass | RoleplaySessionTest |
+| RP-06 OpenAPI/clients | Pass | 0.10.0 + generate --check |
+| RP-07 UI journey | Pass (unit) | RoleplayJourney vitest; Chromium not claimed |
+| RP-08 make verify | Not claimed | host/CI limitations |
+| B2 synthetic content path | Pass | D-0105 |
+| Exact commit / APO accept | Pass | [APP-0027](APPROVALS.md#app-0027) at `0fb6f2953580ed6154e4d895e128c46167c6f5d4` |
+
+#### Outcome
+
+B1–B2 synthetic scope ready for Exact-commit APO acceptance after an authorized
+commit. PR-013 remains unauthorized.
+
+## PR-012 — Accepted (APP-0027)
+
+### Evidence reviewed
+
+- Exact APO statement accepting `0fb6f2953580ed6154e4d895e128c46167c6f5d4`
+- [APP-0027](APPROVALS.md#app-0027) / D-0106
+- [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact-commit APO accept | Pass | APP-0027 |
+| Recorded limitations retained | Pass | acceptance package |
+| Approved curriculum / live TTS expansion | Not authorized | APP-0027 non-goals |
+| PR-013 / production / Play | Not authorized | APP-0027 |
+
+### Outcome
+
+PR-012 synthetic Role-play accepted. Next: separate APP for PR-013 (C0) only.
+
+## PR-013 — Step C0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md)
+- [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0027 (PR-012); existing curriculum commands + audit write path
+- First APP scope: content review→publish + audit list; no DB access for operators
+- Deferred: sampled speaking review (ADR-0007), privacy ops, CSV PII export,
+  full studio, production/Play
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0027 | Pass | PR-013_OPERATOR_AUTHORIZATION_REQUEST.md |
+| Verification scope OC-01–OC-08 | Pass | PR-013_OPERATOR_VERIFICATION_SCOPE.md |
+| ADR-0007 sampled review deferred | Pass | auth request non-goals |
+| APO begin-implementation statement | Pass | APP-0028 |
+| PR-013 code | Authorized bounded slice | APP-0028 |
+
+### Outcome
+
+C0 closed by APP-0028. Proceed to C1 implementation.
+
+## PR-013 — Step C1 (content-workflow + audit in progress)
+
+### Evidence reviewed
+
+- APP-0028 bounded operator content-workflow + audit authorization
+- Seeded Direct org role packs: `trainer`, `organization_admin`, `content_reviewer`
+- New permission `audit.read` for org-scoped audit digests
+- Operator HTTP APIs wrapping ContentReviewCommands / CurriculumPublisher /
+  CurriculumRollbackService plus draft/publication/audit list queries
+- Ordinary-product `OperatorConsole` (not Vite `/demo/*`)
+- OpenAPI bumped to **0.11.0**
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| OC-01 review→publish without DB access | Pass (focused) | OperatorContentWorkflowTest HTTP review→publish→rollback |
+| OC-02 privileged actions write audit events | Pass (focused) | content_review.recorded + publication.activated present |
+| OC-03 org-scoped audit list (digests only) | Pass (focused) | GET /operator/audit-events; no payload/transcript fields |
+| OC-04 cross-tenant denial | Pass (focused) | foreign revision/version IDs → 404 |
+| OC-05 missing permission fail-closed | Pass (focused) | membership without grants → 404 |
+| OC-06 OpenAPI/client drift | Pass (focused) | OpenAPI 0.11.0; `pnpm run openapi:check` |
+| OC-07 operator UI unit smoke | Pass (focused) | OperatorConsole.test.tsx; Chromium e2e not claimed |
+| OC-08 make verify | Not claimed | focused Docker PHPUnit / Node 24 only |
+| ADR-0007 no audio/transcript operator access | Pass | audit digests + console notice; no voice routes |
+
+### Focused verification recorded this slice
+
+| Area | Result |
+|---|---|
+| PHPUnit feature (host) | `OperatorRequestValidationTest` — 2 passed |
+| PHPUnit integration (Docker PHP 8.4.24 + pdo_pgsql) | `OperatorContentWorkflowTest` + `FoundationSeederIntegrityTest` — 5 passed / 104 assertions |
+| Vitest (Node 24 Docker) | `OperatorConsole.test.tsx` — 1 passed |
+| Locale validation (Node 24) | Pass — 6 catalogues, 5 pending-review warnings |
+| OpenAPI contract generate `--check` (Node 24) | Pass — contracts match OpenAPI 0.11.0 |
+| Host `make verify` / Chromium e2e / remote CI | **Not claimed** |
+
+### Outcome
+
+C1 bounded operator content-workflow + audit slice implemented under APP-0028
+with focused verification green. Sampled speaking review, privacy ops,
+production and Play remain unauthorized. APO exact-commit acceptance package
+drafted for Exact commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`
+([PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)).
+
+## PR-013 — Acceptance package drafted
+
+### Evidence reviewed
+
+- [PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)
+- Exact commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`
+- C1 QUALITY_REVIEW focused evidence; OC-01–OC-07 pass; OC-08 not claimed
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-013_APO_ACCEPTANCE_PACKAGE.md |
+| Limitations explicit | Pass | package § Recorded limitations |
+| Exact commit SHA | Pass | `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
+| APO accept statement | Pass | [APP-0029](APPROVALS.md#app-0029) |
+| Sampled review / privacy ops / PR-014+ | Not authorized | APP-0029 non-goals |
+
+### Outcome
+
+PR-013 bounded operator content-workflow + audit **accepted** under APP-0029 at
+`9220ab27baa6dc29d82caf8e9e97e94f7df7219d`. Next: separate APP for PR-014
+and/or remaining PR-013 items only.
+
+## PR-014 — Step D0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-014_ANDROID_AUTHORIZATION_REQUEST.md](PR-014_ANDROID_AUTHORIZATION_REQUEST.md)
+- [PR-014_ANDROID_VERIFICATION_SCOPE.md](PR-014_ANDROID_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0029; Passport PKCE server; Android adapter interface;
+  demo Capacitor APK remains D-0078 presentation-only
+- First APP scope: production-path closed-beta foundations (separate package,
+  system-browser PKCE, reviewed native secure storage, device matrix,
+  reproducible signed closed-beta artifact)
+- Deferred: Play public release, PR-015, remaining PR-013 sampled review /
+  privacy ops, production OTP cutover
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0029 | Pass | PR-014_ANDROID_AUTHORIZATION_REQUEST.md |
+| Verification scope AN-01–AN-10 | Pass | PR-014_ANDROID_VERIFICATION_SCOPE.md |
+| Demo APK kept non-production | Pass | D-0078; auth request non-goals |
+| APO begin-implementation statement | Pass | [APP-0030](APPROVALS.md#app-0030) |
+| PR-014 code | Authorized (begin) | APP-0030; Active = D1 |
+
+### Outcome
+
+D0 complete under APP-0030. Active step D1 implements closed-beta foundations.
+
+## PR-014 — Step D1 (closed-beta foundations in progress)
+
+### Evidence reviewed
+
+- Separate production Capacitor tree `apps/web/android-app`, package
+  `com.globalenglish.app` (demo `apps/web/android` / `com.globalenglish.demo`
+  unchanged)
+- Dual `capacitor.config.ts` via `CAPACITOR_APP=production`
+- `AndroidPkceAuthenticationAdapter` wired from `defaultAuthentication` on
+  native Android when `VITE_MOBILE_API_ORIGIN` is set
+- Reviewed secure store: project-owned EncryptedSharedPreferences plugin
+  ([ADR-0012](adr/0012-android-native-secure-credential-store.md) / D-0110)
+- System browser Custom Tabs plugin + deep-link
+  `com.globalenglish.app:/oauth/callback`
+- [PR-014_ANDROID_DEVICE_MATRIX.md](PR-014_ANDROID_DEVICE_MATRIX.md)
+- [PR-014_ANDROID_CLOSED_BETA_BUILD.md](PR-014_ANDROID_CLOSED_BETA_BUILD.md)
+- `make android-closed-beta` (demo target retained)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| AN-01 separate package ID | Pass (static) | android-app applicationId / ADR docs |
+| AN-02 ordinary product `dist` | Pass (static) | CAPACITOR_APP production webDir `dist` |
+| AN-03 PKCE + deep link wiring | Pass (unit) | adapter + bindAndroidPkceDeepLink tests |
+| AN-04 reviewed secure store | Pass (unit + ADR) | KeystoreSecureCredentialStore; ADR-0012 |
+| AN-05 logout clears + revoke path | Pass (existing adapter tests) | AndroidPkceAuthenticationAdapter.test |
+| AN-06 no WebView/Preferences creds | Partial | unit proves secure-plugin-only writes; on-device matrix pending |
+| AN-07 device matrix doc | Pass (doc) | PR-014_ANDROID_DEVICE_MATRIX.md; physical runs pending |
+| AN-08 permission/lifecycle notes | Pass (doc) | matrix journeys; on-device pending |
+| AN-09 reproducible signed artifact steps | Pass (doc) | closed-beta build doc; debug keystore limitation |
+| AN-10 make verify / Android build evidence | Pending | focused vitest only; full verify / Gradle APK not claimed |
+| Play public release | Not authorized | APP-0030 |
+
+### Focused tests run (this D1 slice)
+
+```text
+vitest run src/auth/AndroidPkceAuthenticationAdapter.test.ts
+  src/auth/KeystoreSecureCredentialStore.test.ts
+  src/auth/defaultAuthentication.test.ts
+  src/auth/createInstallationUlid.test.ts
+  src/auth/bindAndroidPkceDeepLink.test.ts
+  src/auth/androidPkceEnvironment.test.ts
+  src/auth/capacitorAndroidConfig.test.ts
+→ 7 files / 15 tests passed
+```
+
+`make verify`, `make android-closed-beta` Gradle assemble, physical device matrix
+and Play upload were **not** run/claimed in this session.
+
+### Outcome
+
+D1 foundations landed for APO review after focused tests and documented
+remaining on-device gaps. Play public release and PR-015 remain unauthorized.
+
+## PR-014 — Step D1 acceptance package (awaiting APO)
+
+### Evidence reviewed
+
+- Exact implementation commit `44b0e672e004cf3846cddabc456c21153fa4607e`
+- [PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)
+- QUALITY_REVIEW D0/D1 gate tables (AN-06 partial; AN-10 / physical matrix /
+  Gradle assemble / `make verify` not claimed)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-014_APO_ACCEPTANCE_PACKAGE.md |
+| Exact commit SHA filled | Pass | `44b0e672e004cf3846cddabc456c21153fa4607e` |
+| Limitations recorded (Play / matrix / verify) | Pass | acceptance package |
+| APO accept statement | Pass | [APP-0031](APPROVALS.md#app-0031) |
+| Play public release / PR-015 | Not authorized | APP-0031 non-goals |
+
+### Outcome
+
+PR-014 closed-beta foundations **accepted** under APP-0031 / D-0111 at
+`44b0e672e004cf3846cddabc456c21153fa4607e`. Next: separate APP for E0
+(PR-015) and/or on-device matrix / remaining PR-013 only.
+
+## PR-015 — Step E0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
+- [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0031 (PR-014 foundations + unclaimed matrix/`make verify`);
+  APP-0029 bounded operator; prior learner slices
+- First APP scope: close APP-0031 Android evidence gaps; load/soak harness;
+  backup/restore drill; monitoring/runbooks; staged deploy rehearsal; a11y
+  evidence package; aggregate pilot analytics skeleton
+- Deferred: Play public release; F0 §27 DoD; remaining PR-013 sampled review /
+  privacy ops; specialist review waiver; real learner production data
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request drafted post–APP-0031 | Pass | PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md |
+| Verification scope PH-01–PH-12 | Pass | PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md |
+| Bounded vs full PR-015 / F0 | Pass | auth request non-goals |
+| APO begin-implementation statement | Pass | [APP-0032](APPROVALS.md#app-0032) |
+| PR-015 code | Authorized (begin) | APP-0032; Active = E1 |
+
+### Outcome
+
+E0 complete under APP-0032. Active step E1 implements bounded operations
+hardening and closed-beta evidence closure.
+
+## PR-015 — Step E1 (implementation in progress)
+
+### Evidence reviewed
+
+- APP-0032 / D-0112 begin-implementation
+- Verification scope PH-01–PH-12
+- Implementation starting on checkpoint branch
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Begin-implementation recorded | Pass | APP-0032 |
+| PH-01–PH-12 delivery | In progress | E1 |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0032 non-goals |
+
+### Outcome
+
+E1 implementation authorized and underway.
+
+## PR-015 — Step E1 (bounded ops hardening delivery)
+
+### Evidence reviewed
+
+- Aggregate pilot analytics API/UI (`GET /operator/pilot-analytics`, OpenAPI
+  **0.12.0**)
+- Ops runbooks: backup/restore, incident/support, alerts skeleton, staged
+  deploy dry-run
+- Makefile targets: `load-soak`, `backup-restore-drill`, `staged-deploy-dry-run`
+- Accessibility evidence package draft
+- Device matrix authority updated for APP-0032 evidence closure
+
+### Focused tests run
+
+| Area | Result |
+|---|---|
+| PHPUnit integration (Docker PHP 8.4.24 + pdo_pgsql) | `OperatorContentWorkflowTest` — **2 passed / 94 assertions** |
+| Vitest (Docker Node 24.18.1) | `OperatorConsole.test.tsx` — **1 passed** |
+| Locale validation (Docker Node 24) | Pass — 6 catalogues, 5 pending-review warnings |
+| OpenAPI contracts generate | Pass — regenerated for 0.12.0 |
+| Backup/restore drill | Run when claimed in commit notes |
+| Load/soak / staged-deploy dry-run / physical matrix / `make verify` | **Not claimed** unless separately recorded |
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| PH-01–PH-04 device matrix / assemble | Partial | docs + matrix template; physical/Gradle not claimed |
+| PH-05 `make verify` | Not claimed | host/env limitations |
+| PH-06 load/soak harness | Pass (harness) | `make load-soak` / scripts/run-load-soak.sh — needs live API to execute |
+| PH-07 backup/restore | Pass (script+doc) | docs/ops + make backup-restore-drill |
+| PH-08 monitoring/runbooks | Pass (docs) | ALERTS + INCIDENT runbooks |
+| PH-09 staged deploy dry-run | Pass (script+doc) | make staged-deploy-dry-run |
+| PH-10 a11y package | Pass (doc) | PR-015_ACCESSIBILITY_EVIDENCE_PACKAGE.md; manual rows open |
+| PH-11 pilot analytics | Pass (code+tests) | OpenAPI 0.12.0 + OperatorConsole |
+| PH-12 fail-closed regression | Pass (focused) | OperatorContentWorkflowTest |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0032 |
+
+### Outcome
+
+E1 delivery landed for APO exact-commit review with recorded limitations
+(physical matrix, Gradle assemble, full `make verify`, live load-soak against
+API, Play/F0).
+
+## PR-015 — Step E1 acceptance package (awaiting APO)
+
+### Evidence reviewed
+
+- Exact implementation commit `5eca7515291ea571a7f697dcdc2da6197535f839`
+- [PR-015_APO_ACCEPTANCE_PACKAGE.md](PR-015_APO_ACCEPTANCE_PACKAGE.md)
+- QUALITY_REVIEW E1 gate table
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-015_APO_ACCEPTANCE_PACKAGE.md |
+| Exact commit SHA filled | Pass | `5eca7515291ea571a7f697dcdc2da6197535f839` |
+| Limitations recorded | Pass | acceptance package |
+| APO accept statement | Pass | [APP-0033](APPROVALS.md#app-0033) |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0033 non-goals |
+
+### Outcome
+
+PR-015 bounded operations hardening and closed-beta evidence closure
+**accepted** under APP-0033 / D-0113 at
+`5eca7515291ea571a7f697dcdc2da6197535f839`. Next: separate APP / release board
+for F0 only.
+
+## F0 — Phase 1 Definition of Done (gap assessment ready)
+
+### Evidence reviewed
+
+- [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)
+- Master plan §27 checklist mapped to current APP posture
+- APP-0033 limitations (physical matrix / verify / live drills unclaimed)
+- Remaining blockers: DR-0007 reviewed content; PR-013 privacy/support;
+  specialist reviews; production-like OTP/pilot environment
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| §27 gap assessment drafted | Pass | F0_PHASE1_DOD_GAP_ASSESSMENT.md |
+| F0 DoD ready to sign | Fail / blocked | Multiple §27 rows Partial/Blocked |
+| Pre-F0 evidence APP statement | Pending | Exact line in gap assessment |
+| Android sideload smoke vs F0 | Separated | Closed-beta build doc; not F0 evidence alone |
+| Play public release | Not authorized | APP-0033 |
+
+### Outcome
+
+F0 consideration package ready. Do **not** claim Phase 1 DoD. Recommended
+APO path: authorize pre-F0 evidence-closure APP, or defer F0.
+
+## F0 — Pre-F0 evidence-closure (APP-0034 begin)
+
+### Evidence reviewed
+
+- Exact APO begin statement recorded as [APP-0034](APPROVALS.md#app-0034) /
+  D-0114
+- [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)
+- Local closed-beta Android `assembleDebug` (2026-08-07):
+  - JDK: Temurin 21 at `~/.local/jdk/jdk-21.0.12+8`
+  - SDK: `$ANDROID_HOME` API 36
+  - Dependency fix: `androidx.security:security-crypto:1.1.0-alpha06`
+    (required for `MasterKey` used by secure-credentials plugin)
+  - Output: `apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk`
+    (~5.8 MB); package `com.globalenglish.app`; minSdk 24; targetSdk 36
+  - Web assets baked with `VITE_MOBILE_API_ORIGIN=http://192.168.1.3:8000`
+  - Physical device matrix / on-device credential negatives: **not claimed**
+  - No device attached via `adb` at assemble time
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Begin-implementation recorded | Pass | APP-0034 |
+| F0 DoD sign-off | Not authorized | APP-0034 non-goals |
+| Play public release | Not authorized | APP-0034 |
+| Local Gradle `assembleDebug` | Pass (local) | APK path above; not Exact-commit claim yet |
+| Physical device matrix / drills | Open | APP-0034 remaining scope |
+
+### Outcome
+
+APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
+accept and Play public release remain unauthorized.
+
+
+
+
+
+

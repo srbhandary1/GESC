@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e-demo',
+  // Avoid default ./test-results when that directory is root-owned (EACCES).
+  outputDir: './.playwright-output',
   fullyParallel: false,
   forbidOnly: true,
   retries: 0,

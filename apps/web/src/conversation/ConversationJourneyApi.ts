@@ -1,12 +1,18 @@
 import type {
+  AdvanceConversationSessionStageRequest,
   ConversationSession,
   ConversationTurn,
   ConversationTurnEvent,
   CreateConversationTurnRequest,
+  CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
+  LearnerAiMemoryFact,
+  LearnerAiMemoryFactListingItem,
+  LearnerAiMemoryListing,
   ReviewVoiceTranscriptRequest,
   StartConversationSessionRequest,
   SupportedLocale as ApiSupportedLocale,
+  UpdateLearnerAiMemoryFactRequest,
   VoiceConsentEvent,
   VoiceConsentListing,
   VoiceDeletion,
@@ -20,14 +26,25 @@ export type FriendTurn = ConversationTurn
 export type FriendTurnEvent = ConversationTurnEvent
 export type StartFriendSessionInput = StartConversationSessionRequest
 export type CreateFriendTurnInput = CreateConversationTurnRequest
+export type AdvanceRoleplayStageInput = AdvanceConversationSessionStageRequest
 export type VoiceConsents = VoiceConsentListing
 export type VoiceConsent = VoiceConsentEvent
 export type SecureVoiceRecording = VoiceRecording
 export type SecureVoiceDeletion = VoiceDeletion
+export type LearnerMemoryFact = LearnerAiMemoryFactListingItem
+export type LearnerMemoryFactResult = LearnerAiMemoryFact
+export type LearnerMemoryListing = LearnerAiMemoryListing
 
 export interface ConversationJourneyApi {
   startSession(
     input: StartFriendSessionInput,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession>
+
+  advanceStage?(
+    sessionId: string,
+    input: AdvanceRoleplayStageInput,
     commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendSession>
@@ -80,6 +97,27 @@ export interface ConversationJourneyApi {
     recordingId: string,
     signal?: AbortSignal,
   ): Promise<SecureVoiceDeletion>
+
+  listAiMemory?(signal?: AbortSignal): Promise<LearnerMemoryListing>
+
+  createAiMemoryFact?(
+    input: CreateLearnerAiMemoryFactRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerMemoryFactResult>
+
+  updateAiMemoryFact?(
+    factId: string,
+    input: UpdateLearnerAiMemoryFactRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerMemoryFactResult>
+
+  deleteAiMemoryFact?(
+    factId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerMemoryFactResult>
 }
 
 export class ConversationJourneyUnavailableError extends Error {

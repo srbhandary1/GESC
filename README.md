@@ -162,20 +162,28 @@ The Capacitor 8 wrapper in `apps/web/android` packages the same synthetic
 demo bundle as an installable Android demo app (`Global English Demo`,
 placeholder identifier `com.globalenglish.demo`, minimum API 24, target API
 36). It is presentation packaging only: it contains no credentials, no
-provider access and no learner data, and it is not the separately authorized
-PR-014 production Android application (Passport PKCE, native secure storage,
-Play release engineering).
+provider access and no learner data, and it is not the PR-014 production
+Android application.
+
+The production-path closed-beta app lives in a **separate** tree
+`apps/web/android-app` (`com.globalenglish.app`) under APP-0030. See
+[docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md](docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md)
+and [docs/PR-014_ANDROID_DEVICE_MATRIX.md](docs/PR-014_ANDROID_DEVICE_MATRIX.md).
+Google Play public release remains unauthorized.
 
 Requirements: JDK 21 (`JAVA_HOME`) and an Android SDK with platform 36
 (`ANDROID_HOME`). Then:
 
 ```text
 make demo-android
+# production-path closed beta (separate package identity):
+VITE_MOBILE_API_ORIGIN=https://your-api.example make android-closed-beta
 ```
 
-The debug APK is written to
-`apps/web/android/app/build/outputs/apk/debug/app-debug.apk` and can be
-installed on a device with `adb install` or by copying the file. Recording
+The demo debug APK is written to
+`apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. The closed-beta
+production-path debug APK is written to
+`apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk`. Recording
 in the demo mission uses the device microphone only for local playback and
 retry; nothing is uploaded. On an IPv6-limited network, pass
 `GRADLE_OPTS=-Djava.net.preferIPv4Stack=true` so Gradle can download its
@@ -232,6 +240,7 @@ isolated environments.
 | `make demo-serve` | Serve the built synthetic demo bundle on `127.0.0.1:4175` |
 | `make demo-client` | Serve the synthetic demo on `0.0.0.0:8080` for static-IP client testing |
 | `make demo-android` | Build the Android demo APK from the synthetic demo bundle |
+| `make android-closed-beta` | Build the PR-014 production-path closed-beta APK (`com.globalenglish.app`; requires `VITE_MOBILE_API_ORIGIN`) |
 | `make verify` | Run formatting, linting, static analysis, tests and contract checks |
 | `make test` | Run all deterministic automated tests |
 | `make e2e` | Run critical browser journeys |

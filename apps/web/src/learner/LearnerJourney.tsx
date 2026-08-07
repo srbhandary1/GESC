@@ -41,6 +41,9 @@ import {
   LEARNER_GOALS,
   LearnerJourneyUnavailableError,
 } from './LearnerJourneyApi'
+import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
+import { isDemoSpeechUrl } from '../demo/browserSpeech'
+import { createClientId as createRandomClientId } from '../shared/createClientId'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
 import './LearnerJourney.css'
@@ -96,8 +99,6 @@ type OfflineStatus =
   | 'synced'
   | 'syncing'
   | 'unavailable'
-
-const createRandomClientId = () => crypto.randomUUID()
 
 export function LearnerJourney({
   api,
@@ -1133,29 +1134,54 @@ function MissionExperience({
           <blockquote className="learner-model-text">
             <GovernedText content={mission.model_text} />
           </blockquote>
-          <ModelAudioPlayer
-            labels={{
-              region: text('learner.audio.region'),
-              play: text('learner.audio.play'),
-              pause: text('learner.audio.pause'),
-              resume: text('learner.audio.resume'),
-              replay: text('learner.audio.replay'),
-              loading: text('learner.audio.loading'),
-              unavailable: text('learner.audio.unavailable'),
-              error: text('learner.audio.error'),
-              readyStatus: text('learner.audio.ready_status'),
-              loadingStatus: text('learner.audio.loading_status'),
-              playingStatus: text('learner.audio.playing_status'),
-              pausedStatus: text('learner.audio.paused_status'),
-              endedStatus: text('learner.audio.ended_status'),
-              unavailableStatus: text(
-                'learner.audio.unavailable_status',
-              ),
-              errorStatus: text('learner.audio.error_status'),
-            }}
-            mimeType={mission.model_audio.mime_type}
-            source={mission.model_audio.stream_url}
-          />
+          {isDemoSpeechUrl(mission.model_audio.stream_url) ? (
+            <DemoSpeechPlayer
+              labels={{
+                region: text('learner.audio.region'),
+                play: text('learner.audio.play'),
+                pause: text('learner.audio.pause'),
+                resume: text('learner.audio.resume'),
+                replay: text('learner.audio.replay'),
+                loading: text('learner.audio.loading'),
+                unavailable: text('learner.audio.unavailable'),
+                error: text('learner.audio.error'),
+                readyStatus: text('learner.audio.ready_status'),
+                loadingStatus: text('learner.audio.loading_status'),
+                playingStatus: text('learner.audio.playing_status'),
+                pausedStatus: text('learner.audio.paused_status'),
+                endedStatus: text('learner.audio.ended_status'),
+                unavailableStatus: text(
+                  'learner.audio.unavailable_status',
+                ),
+                errorStatus: text('learner.audio.error_status'),
+              }}
+              source={mission.model_audio.stream_url}
+            />
+          ) : (
+            <ModelAudioPlayer
+              labels={{
+                region: text('learner.audio.region'),
+                play: text('learner.audio.play'),
+                pause: text('learner.audio.pause'),
+                resume: text('learner.audio.resume'),
+                replay: text('learner.audio.replay'),
+                loading: text('learner.audio.loading'),
+                unavailable: text('learner.audio.unavailable'),
+                error: text('learner.audio.error'),
+                readyStatus: text('learner.audio.ready_status'),
+                loadingStatus: text('learner.audio.loading_status'),
+                playingStatus: text('learner.audio.playing_status'),
+                pausedStatus: text('learner.audio.paused_status'),
+                endedStatus: text('learner.audio.ended_status'),
+                unavailableStatus: text(
+                  'learner.audio.unavailable_status',
+                ),
+                errorStatus: text('learner.audio.error_status'),
+              }}
+              mimeType={mission.model_audio.mime_type}
+              source={mission.model_audio.stream_url}
+            />
+          )}
           <section
             aria-labelledby="mission-transcript-title"
             className="learner-transcript"

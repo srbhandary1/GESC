@@ -17,14 +17,19 @@ import {
   type ChangeEvent,
 } from 'react'
 import './App.css'
+import './demo/demoExperience.css'
 import type {
+  AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
+import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
+import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
+import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
@@ -43,6 +48,9 @@ import type {
   OfflinePersonalDeviceResume,
   OfflineProfileBinding,
 } from './offline/OfflineLearningStore'
+import { OperatorConsole } from './operator/OperatorConsole'
+import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
+import { defaultOperatorConsoleApi } from './operator/OperatorConsoleApi'
 
 type SessionState =
   | AuthenticationSnapshot
@@ -58,7 +66,14 @@ interface AppProps {
   learnerJourneyApi?: LearnerJourneyApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
+  operatorConsoleApi?: OperatorConsoleApi
 }
+
+const OPERATOR_ROLE_KEYS = new Set([
+  'trainer',
+  'organization_admin',
+  'content_reviewer',
+])
 
 const destinationMessages: Readonly<
   Record<
@@ -84,6 +99,30 @@ const destinationMessages: Readonly<
   },
 }
 
+const demoDestinationMessages: Readonly<
+  Record<
+    PrimaryDestination,
+    Readonly<{ description: MessageKey; title: MessageKey }>
+  >
+> = {
+  home: {
+    description: 'demo.page.home.description',
+    title: 'demo.page.home.title',
+  },
+  learn: {
+    description: 'demo.page.learn.description',
+    title: 'demo.page.learn.title',
+  },
+  practice: {
+    description: 'demo.page.practice.description',
+    title: 'demo.page.practice.title',
+  },
+  progress: {
+    description: 'demo.page.progress.description',
+    title: 'demo.page.progress.title',
+  },
+}
+
 const localeMessageKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
   'en-IN': 'locale.en_IN',
   'hi-IN': 'locale.hi_IN',
@@ -102,6 +141,7 @@ function App({
   learnerJourneyApi = defaultLearnerJourneyApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
+  operatorConsoleApi = defaultOperatorConsoleApi,
 }: AppProps) {
   const [session, setSession] = useState<SessionState>({
     status: 'checking',
@@ -111,6 +151,9 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
+  const [practiceSurface, setPracticeSurface] = useState<
+    'confidence' | 'roleplay'
+  >('confidence')
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -149,6 +192,42 @@ function App({
       active = false
     }
   }, [authentication, offlineStore])
+
+  useEffect(() => {
+    if (authentication.transport !== 'passport-pkce') {
+      return
+    }
+
+    const androidAuth = authentication as AndroidPkceAuthentication
+    let remove: (() => void) | undefined
+    let cancelled = false
+
+    void bindAndroidPkceDeepLink(
+      androidAuth,
+      (snapshot) => {
+        if (!cancelled) {
+          setOfflineResume(null)
+          setSession(snapshot)
+        }
+      },
+      () => {
+        if (!cancelled) {
+          setSession({ status: 'unavailable' })
+        }
+      },
+    ).then((dispose) => {
+      if (cancelled) {
+        dispose()
+      } else {
+        remove = dispose
+      }
+    })
+
+    return () => {
+      cancelled = true
+      remove?.()
+    }
+  }, [authentication])
 
   useEffect(() => {
     const previousLocale = document.documentElement.lang
@@ -202,9 +281,18 @@ function App({
   const fallbackNotice = message('localization.fallback_notice')
   const previewLabel = message('localization.preview_label')
   const previewNotice = message('localization.preview_notice')
-  const routeMessages = destinationMessages[destination]
+  const routeMessages = (
+    demoMode ? demoDestinationMessages : destinationMessages
+  )[destination]
   const title = message(routeMessages.title)
   const description = message(routeMessages.description)
+  const shellEyebrow = message(
+    demoMode ? 'demo.shell.eyebrow' : 'shell.eyebrow',
+  )
+  const demoOrganization =
+    demoMode && session.status === 'authenticated'
+      ? session.identity.current_membership?.organization.name
+      : undefined
   const navigationLinks = {
     home: {
       href: '#home',
@@ -250,14 +338,24 @@ function App({
   const isLearnerSession =
     session.status === 'authenticated' &&
     session.identity.current_membership?.membership_type === 'learner'
+  const isOperatorSession =
+    !demoMode &&
+    session.status === 'authenticated' &&
+    (session.identity.current_membership?.role_keys.some((roleKey) =>
+      OPERATOR_ROLE_KEYS.has(roleKey),
+    ) ??
+      false)
   const canLearn =
-    (destination === 'learn' ||
-      (demoMode && destination === 'home')) &&
+    destination === 'learn' &&
     (isLearnerSession || offlineResume !== null)
   const canPractice =
     destination === 'practice' && isLearnerSession
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
+  const canShowOperatorConsole =
+    isOperatorSession &&
+    (destination === 'home' || destination === 'learn')
+  const showDemoPhase1 = demoMode && destination === 'home'
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -273,10 +371,15 @@ function App({
   }
 
   return (
+    <div
+      className={demoMode ? 'demo-experience' : undefined}
+      data-demo-mode={demoMode ? 'synthetic-local' : undefined}
+    >
     <ApplicationFrame
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
+      hidePrimaryNavigation={false}
       headerActions={
         <div className="shell-locale-control">
           <label
@@ -292,6 +395,8 @@ function App({
             onChange={handleLocaleChange}
           >
             {SUPPORTED_LOCALES.map((supported) => {
+              // Language names are endonyms in every catalogue. Tag each
+              // option with that language so assistive tech and fonts match.
               const option = resolveInterfaceMessage(
                 localeMessageKeys[supported],
                 locale,
@@ -299,11 +404,7 @@ function App({
               )
 
               return (
-                <option
-                  key={supported}
-                  lang={option.resolvedLocale}
-                  value={supported}
-                >
+                <option key={supported} lang={supported} value={supported}>
                   {option.text}
                 </option>
               )
@@ -346,6 +447,11 @@ function App({
             <span>
               <LocalizedMessage resolution={message('demo.notice')} />
             </span>
+            {demoOrganization === undefined ? null : (
+              <span className="shell-demo__organization">
+                {demoOrganization}
+              </span>
+            )}
           </aside>
         ) : null}
 
@@ -379,27 +485,34 @@ function App({
           </aside>
         ) : null}
 
-        <section
-          className="shell-introduction"
-          aria-labelledby="destination-title"
-        >
-          <p className="shell-eyebrow">
-            <LocalizedMessage resolution={message('shell.eyebrow')} />
-          </p>
-          <h1
-            className="shell-title"
-            id="destination-title"
-            ref={destinationTitle}
-            tabIndex={-1}
+        {showDemoPhase1 ? null : (
+          <section
+            className="shell-introduction"
+            aria-labelledby="destination-title"
           >
-            <LocalizedMessage resolution={title} />
-          </h1>
-          <p className="shell-description">
-            <LocalizedMessage resolution={description} />
-          </p>
-        </section>
+            <p className="shell-eyebrow">
+              <LocalizedMessage resolution={shellEyebrow} />
+            </p>
+            <h1
+              className="shell-title"
+              id="destination-title"
+              ref={destinationTitle}
+              tabIndex={-1}
+            >
+              <LocalizedMessage resolution={title} />
+            </h1>
+            <p className="shell-description">
+              <LocalizedMessage resolution={description} />
+            </p>
+          </section>
+        )}
 
-        {canLearn ? (
+        {showDemoPhase1 ? (
+          <DemoPhase1Shell
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canLearn ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
@@ -411,15 +524,50 @@ function App({
             resumeBundle={offlineResume?.storedBundle}
           />
         ) : canPractice ? (
-          <ConversationJourney
-            api={conversationApi}
-            createClientId={createClientId}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-          />
+          practiceSurface === 'roleplay' ? (
+            <RoleplayJourney
+              api={conversationApi}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onBack={() => {
+                setPracticeSurface('confidence')
+              }}
+            />
+          ) : (
+            <>
+              <div className="shell-practice-switch">
+                <button
+                  onClick={() => {
+                    setPracticeSurface('roleplay')
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message(
+                      'conversation.roleplay.entry_button',
+                    )}
+                  />
+                </button>
+              </div>
+              <ConversationJourney
+                api={conversationApi}
+                createClientId={createClientId}
+                demoMode={demoMode}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+              />
+            </>
+          )
         ) : canShowDemoProgress ? (
           <DemoLearnerProgress
             api={learnerJourneyApi}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canShowOperatorConsole ? (
+          <OperatorConsole
+            api={operatorConsoleApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />
@@ -431,26 +579,42 @@ function App({
           </p>
         )}
 
-        <SessionSummary
-          message={message}
-          session={session}
-        />
+        {demoMode ? null : (
+          <SessionSummary
+            authentication={authentication}
+            message={message}
+            onSessionChange={setSession}
+            session={session}
+          />
+        )}
       </div>
     </ApplicationFrame>
+    </div>
   )
 }
 
 interface SessionSummaryProps {
+  authentication: AuthenticationAdapter
   message: (key: MessageKey) => InterfaceMessageResolution
+  onSessionChange: (session: SessionState) => void
   session: SessionState
 }
 
-function SessionSummary({ message, session }: SessionSummaryProps) {
+function SessionSummary({
+  authentication,
+  message,
+  onSessionChange,
+  session,
+}: SessionSummaryProps) {
   const statusMessage = sessionMessageKey(session)
   const organization =
     session.status === 'authenticated'
       ? session.identity.current_membership?.organization.name
       : undefined
+  const isAndroidPkce = authentication.transport === 'passport-pkce'
+  const androidAuth = isAndroidPkce
+    ? (authentication as AndroidPkceAuthentication)
+    : null
 
   return (
     <section
@@ -484,6 +648,38 @@ function SessionSummary({ message, session }: SessionSummaryProps) {
           </span>
         )}
       </div>
+      {androidAuth === null ? null : (
+        <div className="shell-session__actions">
+          {session.status === 'anonymous' || session.status === 'unavailable' ? (
+            <button
+              type="button"
+              onClick={() => {
+                void androidAuth.beginAuthorization().catch(() => {
+                  onSessionChange({ status: 'unavailable' })
+                })
+              }}
+            >
+              <LocalizedMessage
+                resolution={message('session.android_sign_in')}
+              />
+            </button>
+          ) : null}
+          {session.status === 'authenticated' ? (
+            <button
+              type="button"
+              onClick={() => {
+                void androidAuth.logout().then(() => {
+                  onSessionChange({ status: 'anonymous' })
+                })
+              }}
+            >
+              <LocalizedMessage
+                resolution={message('session.android_sign_out')}
+              />
+            </button>
+          ) : null}
+        </div>
+      )}
     </section>
   )
 }

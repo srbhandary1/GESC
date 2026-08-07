@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Conversation\ConversationTurnStateMachine;
+use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
@@ -24,9 +25,22 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
             ],
         );
         $this->assertFalse($this->validator($valid)->fails());
+
+        $tutor = StartConversationSessionRequest::create(
+            '/api/v1/conversation-sessions',
+            'POST',
+            [
+                'persona_key' => 'patient-friend-prototype',
+                'scenario_key' => 'everyday-friend-prototype',
+                'coaching_mode' => 'tutor',
+                'ui_locale' => 'kn-IN',
+            ],
+        );
+        $this->assertFalse($this->validator($tutor)->fails());
 
         $unsupported = StartConversationSessionRequest::create(
             '/api/v1/conversation-sessions',
@@ -35,6 +49,7 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
                 'organization_id' => (string) Str::ulid(),
             ],
         );
@@ -47,10 +62,38 @@ final class ConversationRequestValidationTest extends TestCase
                 'persona_key' => 'patient-friend-prototype',
                 'scenario_key' => 'everyday-friend-prototype',
                 'coaching_mode' => 'gentle',
+                'ui_locale' => 'kn-IN',
                 'provider' => 'external-model',
             ],
         );
         $this->assertTrue($this->validator($realProviderField)->fails());
+    }
+
+    public function test_stage_advance_request_accepts_only_linear_stages(): void
+    {
+        $valid = AdvanceConversationSessionStageRequest::create(
+            '/api/v1/conversation-sessions/example/stages',
+            'POST',
+            ['to_stage' => 'rehearse'],
+        );
+        $this->assertFalse($this->validator($valid)->fails());
+
+        $invalid = AdvanceConversationSessionStageRequest::create(
+            '/api/v1/conversation-sessions/example/stages',
+            'POST',
+            ['to_stage' => 'warmup'],
+        );
+        $this->assertTrue($this->validator($invalid)->fails());
+
+        $extra = AdvanceConversationSessionStageRequest::create(
+            '/api/v1/conversation-sessions/example/stages',
+            'POST',
+            [
+                'to_stage' => 'perform',
+                'mastery_score' => 1,
+            ],
+        );
+        $this->assertTrue($this->validator($extra)->fails());
     }
 
     public function test_turn_request_accepts_only_bounded_text(): void
@@ -113,7 +156,7 @@ final class ConversationRequestValidationTest extends TestCase
     }
 
     private function validator(
-        StartConversationSessionRequest|CreateConversationTurnRequest $request,
+        StartConversationSessionRequest|CreateConversationTurnRequest|AdvanceConversationSessionStageRequest $request,
     ): ValidatorContract {
         $request->headers->set(
             'Idempotency-Key',

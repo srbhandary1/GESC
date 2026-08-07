@@ -10,10 +10,12 @@ use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
 use App\Http\Controllers\LearnerMediaController;
+use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
+use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -68,6 +70,24 @@ Route::prefix('v1')->group(function (): void {
             [LearnerOnboardingController::class, 'update'],
         )->name('api.v1.me.onboarding.update');
         Route::get(
+            '/me/ai-memory',
+            [LearnerMemoryController::class, 'index'],
+        )->name('api.v1.me.ai-memory.index');
+        Route::post(
+            '/me/ai-memory',
+            [LearnerMemoryController::class, 'store'],
+        )->name('api.v1.me.ai-memory.store');
+        Route::patch(
+            '/me/ai-memory/{fact}',
+            [LearnerMemoryController::class, 'update'],
+        )->whereUlid('fact')
+            ->name('api.v1.me.ai-memory.update');
+        Route::delete(
+            '/me/ai-memory/{fact}',
+            [LearnerMemoryController::class, 'destroy'],
+        )->whereUlid('fact')
+            ->name('api.v1.me.ai-memory.destroy');
+        Route::get(
             '/missions/{mission}',
             [LearnerMissionController::class, 'show'],
         )->whereUlid('mission')
@@ -110,6 +130,12 @@ Route::prefix('v1')->group(function (): void {
             [ConversationController::class, 'start'],
         )->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.store');
+        Route::post(
+            '/conversation-sessions/{session}/stages',
+            [ConversationController::class, 'advanceStage'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.stages.store');
         Route::post(
             '/conversation-sessions/{session}/turns',
             [ConversationController::class, 'turn'],
@@ -163,5 +189,38 @@ Route::prefix('v1')->group(function (): void {
             [VoiceController::class, 'deletion'],
         )->whereUlid('recording')
             ->name('api.v1.voice-recordings.deletion.show');
+
+        Route::get(
+            '/operator/content/drafts',
+            [OperatorContentController::class, 'drafts'],
+        )->name('api.v1.operator.content.drafts.index');
+        Route::get(
+            '/operator/content/publications',
+            [OperatorContentController::class, 'publicationStatus'],
+        )->name('api.v1.operator.content.publications.index');
+        Route::post(
+            '/operator/content/reviews/english',
+            [OperatorContentController::class, 'reviewEnglish'],
+        )->name('api.v1.operator.content.reviews.english.store');
+        Route::post(
+            '/operator/content/reviews/kannada',
+            [OperatorContentController::class, 'reviewKannada'],
+        )->name('api.v1.operator.content.reviews.kannada.store');
+        Route::post(
+            '/operator/content/publications',
+            [OperatorContentController::class, 'publish'],
+        )->name('api.v1.operator.content.publications.store');
+        Route::post(
+            '/operator/content/rollbacks',
+            [OperatorContentController::class, 'rollback'],
+        )->name('api.v1.operator.content.rollbacks.store');
+        Route::get(
+            '/operator/audit-events',
+            [OperatorContentController::class, 'auditEvents'],
+        )->name('api.v1.operator.audit-events.index');
+        Route::get(
+            '/operator/pilot-analytics',
+            [OperatorContentController::class, 'pilotAnalytics'],
+        )->name('api.v1.operator.pilot-analytics.show');
     });
 });

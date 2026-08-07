@@ -96,6 +96,52 @@ final class SpeechBenchmarkPolicyTest extends TestCase
         $this->assertTrue($metrics['material_hallucination']);
     }
 
+    public function test_transcript_metrics_equate_spoken_and_digit_number_forms(): void
+    {
+        $cases = [
+            [
+                'The practice code is A B seven nine.',
+                'the practice code is a b79.',
+            ],
+            [
+                'My appointment is at nine thirty tomorrow.',
+                'my appointment is at 9 thirty tomorrow.',
+            ],
+            [
+                'Please write zero zero four two on the sample form.',
+                'please write 0042 on the sample form.',
+            ],
+            [
+                'Room twelve is on the second floor.',
+                'room 12 is on the second floor.',
+            ],
+            [
+                'The mock order number is five eight three one.',
+                'The mock order number is 5831.',
+            ],
+            [
+                'The bus arrives at six forty-five.',
+                'the bus arrives at six forty five.',
+            ],
+            [
+                'Spell the word train as T R A I N.',
+                'Spell the word train as t-r-a-i-n.',
+            ],
+            [
+                'The sample price is two hundred and fifty rupees.',
+                'the sample price is ₹250.',
+            ],
+        ];
+
+        foreach ($cases as [$reference, $hypothesis]) {
+            $metrics = (new TranscriptMetrics)->compare($reference, $hypothesis);
+            $this->assertTrue(
+                $metrics['exact'],
+                'Expected exact match for '.$reference.' vs '.$hypothesis,
+            );
+        }
+    }
+
     public function test_command_fails_preflight_without_any_provider_request(): void
     {
         Http::preventStrayRequests();
@@ -141,7 +187,7 @@ final class SpeechBenchmarkPolicyTest extends TestCase
             $expectedSttTexts,
         ) {
             $requestCount++;
-            if (str_ends_with($request->url(), '/cognitiveservices/v1')) {
+            if (str_ends_with($request->url(), '/tts/cognitiveservices/v1')) {
                 preg_match(
                     '/<voice name="[^"]+">(.*)<\/voice>/s',
                     $request->body(),

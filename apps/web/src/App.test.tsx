@@ -25,7 +25,7 @@ afterEach(() => {
 })
 
 describe('localized application shell', () => {
-  it('opens the explicit synthetic demo on a populated lesson', async () => {
+  it('opens the explicit synthetic Phase 1 dashboard shell', async () => {
     const demo = createLocalDemoRuntime()
 
     render(
@@ -44,20 +44,66 @@ describe('localized application shell', () => {
     ).toHaveAttribute('data-demo-mode', 'synthetic-local')
     expect(
       await screen.findByRole('heading', {
-        name: text('learner.home.title'),
+        name: text('demo.phase1.nav.dashboard'),
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Introduce yourself')).toHaveAttribute(
-      'lang',
-      'en-IN',
-    )
+    expect(
+      screen.getByRole('navigation', {
+        name: text('demo.phase1.nav_label'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', {
+        name: text('shell.navigation_label'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: text('nav.practice') }),
+    ).toHaveAttribute('href', '#practice')
+    expect(
+      screen.getByRole('link', { name: text('nav.learn') }),
+    ).toHaveAttribute('href', '#learn')
+    expect(
+      screen.getByRole('link', { name: text('nav.progress') }),
+    ).toHaveAttribute('href', '#progress')
     expect(
       screen.getByText('Global English Local Demo'),
     ).toBeInTheDocument()
   })
 
-  it('shows the synthetic objective progress on the demo progress destination', async () => {
-    window.history.replaceState(null, '', '/#progress')
+  it('opens Friend speaking practice from the demo primary navigation', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('link', { name: text('nav.practice') }),
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('demo.page.practice.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: text('conversation.demo.title'),
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens My Levels from the demo Phase 1 module hash', async () => {
+    window.history.replaceState(null, '', '/#levels')
     const demo = createLocalDemoRuntime()
 
     render(
@@ -71,15 +117,20 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: text('learner.progress.title'),
+        name: text('demo.phase1.nav.levels'),
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Introduce myself')).toHaveAttribute(
-      'lang',
-      'en-IN',
-    )
     expect(
-      screen.getByText('Greet a colleague at work'),
+      screen.getByText(
+        resolveMessage('demo.phase1.levels.pre_level_title', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { number: 1 },
+        }).text,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(text('demo.phase1.rooms.content.title')),
     ).toBeInTheDocument()
   })
 
@@ -244,7 +295,7 @@ describe('localized application shell', () => {
           'approved-only',
         ),
       }),
-    ).toHaveAttribute('lang', 'en-IN')
+    ).toHaveAttribute('lang', 'kn-IN')
     expect(
       await screen.findByText(
         text(

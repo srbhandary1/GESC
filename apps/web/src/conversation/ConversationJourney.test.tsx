@@ -53,7 +53,7 @@ describe('deterministic Friend prototype', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start AI Friend prototype',
+        name: 'Start Confidence Conversation',
       }),
     )
     expect(
@@ -61,6 +61,17 @@ describe('deterministic Friend prototype', () => {
         'I am a deterministic AI prototype, not a human.',
       ),
     ).toHaveAttribute('lang', 'en-IN')
+    expect(screen.getByRole('heading', { name: 'Warm-up' })).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to listen' }),
+    )
+    expect(screen.getByRole('heading', { name: 'Listen' })).toBeInTheDocument()
+    expect(
+      screen.getByText('I went to the market this morning.'),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to talk' }),
+    )
 
     await user.type(
       screen.getByRole('textbox', {
@@ -80,17 +91,35 @@ describe('deterministic Friend prototype', () => {
     expect(
       screen.getByText('I practise English after work.'),
     ).toHaveAttribute('lang', 'en-IN')
+    expect(screen.getByText('Priority correction')).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Fake TTS is text-only. No audio was created or stored.',
+        'A clearer sentence is: "I enjoy learning English after work."',
+      ),
+    ).toHaveAttribute('lang', 'en-IN')
+    expect(
+      screen.getByText(
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      ),
+    ).toHaveAttribute('lang', 'kn-IN')
+    expect(
+      screen.getByText(
+        'The English text above is enough. Playback is optional.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Say that again' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Hint in my language' }),
+    ).toBeInTheDocument()
     expect(api.startSession).toHaveBeenCalledWith(
       {
         coaching_mode: 'gentle',
         persona_key: 'patient-friend-prototype',
         scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'en-IN',
       },
       'session-command',
     )
@@ -100,6 +129,99 @@ describe('deterministic Friend prototype', () => {
       'turn-command',
     )
     expect(api.events).toHaveBeenCalledWith(turn.events_url)
+  })
+
+  it('exposes browser speech actions in the disclosed demo mode', async () => {
+    class FakeUtterance {
+      lang = ''
+      text = ''
+      rate = 1
+      pitch = 1
+      voice: SpeechSynthesisVoice | null = null
+      onend: ((event: Event) => void) | null = null
+      onerror: ((event: Event) => void) | null = null
+
+      constructor(text: string) {
+        this.text = text
+      }
+    }
+
+    const speak = vi.fn((utterance: FakeUtterance) => {
+      utterance.onend?.(new Event('end'))
+    })
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance)
+    vi.stubGlobal('speechSynthesis', {
+      addEventListener: vi.fn(),
+      cancel: vi.fn(),
+      getVoices: () => [],
+      paused: false,
+      removeEventListener: vi.fn(),
+      resume: vi.fn(),
+      speak,
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ configured: false }),
+      })),
+    )
+    const { resetDemoAzureTtsStatusCache } = await import('../demo/demoTts')
+    resetDemoAzureTtsStatusCache()
+
+    const session = fakeSession()
+    const turn = fakeTurn(session.id)
+    const events = fakeEvents()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(async () => turn),
+      events: vi.fn(async () => events),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'demo-command'}
+        demoMode
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      screen.getByRole('region', { name: 'Practice with your Friend' }),
+    ).toHaveAttribute('data-demo-speech', 'browser')
+    expect(
+      screen.queryByRole('button', { name: 'Set up optional voice practice' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Start speaking practice' }),
+    )
+    await user.click(
+      await screen.findByRole('button', { name: 'Continue to listen' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to talk' }),
+    )
+    await user.type(
+      await screen.findByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+      'I practise English after work.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Play Friend reply' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Speak your turn' }),
+    ).toBeInTheDocument()
+    await vi.waitFor(() => {
+      expect(speak).toHaveBeenCalled()
+    })
   })
 
   it('shows a visible error when the fake provider is disabled', async () => {
@@ -121,7 +243,7 @@ describe('deterministic Friend prototype', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start AI Friend prototype',
+        name: 'Start Confidence Conversation',
       }),
     )
 
@@ -138,6 +260,7 @@ function fakeSession(): FriendSession {
     coaching_mode: 'gentle',
     id: '01J00000000000000000000001',
     mode: 'friend',
+    stage: null,
     persona: {
       definition_hash: 'a'.repeat(64),
       disclosure: 'I am a deterministic AI prototype, not a human.',
@@ -159,6 +282,7 @@ function fakeSession(): FriendSession {
       version_id: '01J00000000000000000000005',
     },
     status: 'active',
+    ui_locale: 'kn-IN',
   }
 }
 
@@ -170,7 +294,20 @@ function fakeTurn(sessionId: string): FriendTurn {
     events_url:
       '/api/v1/conversation-turns/01J00000000000000000000006/events',
     id: '01J00000000000000000000006',
+    priority_correction: {
+      correction_en:
+        'A clearer sentence is: "I enjoy learning English after work."',
+      error_category: 'grammar.article',
+      explanation_l1:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      explanation_locale: 'kn-IN',
+      explanation_kn:
+        'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      needed: true,
+      retry_recommended: false,
+    },
     replayed: false,
+    safety_state: 'ok',
     speech: {
       playback_available: false,
       rendering_mode: 'deterministic-fake-text-only',

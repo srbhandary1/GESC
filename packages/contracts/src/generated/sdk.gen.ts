@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
+import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, AdvanceConversationSessionStageData, AdvanceConversationSessionStageErrors, AdvanceConversationSessionStageResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, CreateLearnerAiMemoryFactData, CreateLearnerAiMemoryFactErrors, CreateLearnerAiMemoryFactResponses, DeleteLearnerAiMemoryFactData, DeleteLearnerAiMemoryFactErrors, DeleteLearnerAiMemoryFactResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetOperatorPilotAnalyticsData, GetOperatorPilotAnalyticsErrors, GetOperatorPilotAnalyticsResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, ListLearnerAiMemoryData, ListLearnerAiMemoryErrors, ListLearnerAiMemoryResponses, ListOperatorAuditEventsData, ListOperatorAuditEventsErrors, ListOperatorAuditEventsResponses, ListOperatorContentDraftsData, ListOperatorContentDraftsErrors, ListOperatorContentDraftsResponses, ListOperatorContentPublicationsData, ListOperatorContentPublicationsErrors, ListOperatorContentPublicationsResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, PublishOperatorCurriculumData, PublishOperatorCurriculumErrors, PublishOperatorCurriculumResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RecordOperatorEnglishContentReviewData, RecordOperatorEnglishContentReviewErrors, RecordOperatorEnglishContentReviewResponses, RecordOperatorKannadaContentReviewData, RecordOperatorKannadaContentReviewErrors, RecordOperatorKannadaContentReviewResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, RollbackOperatorCurriculumData, RollbackOperatorCurriculumErrors, RollbackOperatorCurriculumResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, UpdateLearnerAiMemoryFactData, UpdateLearnerAiMemoryFactErrors, UpdateLearnerAiMemoryFactResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -373,11 +373,12 @@ export const completeLearnerOfflineMission = <ThrowOnError extends boolean = fal
 });
 
 /**
- * Start one deterministic fake-provider Friend session
+ * Start one deterministic fake-provider conversation session
  *
  * Resolves only the current organization's synthetic development persona
- * and scenario, snapshots their immutable versions and starts a
- * learner-owned Friend session. The route fails closed unless the
+ * and scenario pair (Friend or Role-play prototypes), snapshots their
+ * immutable versions and starts a learner-owned session. Role-play
+ * sessions begin at Observe. The route fails closed unless the
  * deterministic fake driver is enabled in a local or testing environment.
  *
  */
@@ -388,6 +389,30 @@ export const startConversationSession = <ThrowOnError extends boolean = false>(o
             type: 'apiKey'
         }, { scheme: 'bearer', type: 'http' }],
     url: '/conversation-sessions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Advance one synthetic Role-play session stage
+ *
+ * Advances a learner-owned Role-play session along the linear stage path
+ * Observe → Rehearse → Perform → Reflect. Friend sessions are rejected.
+ * Transition into Reflect writes advisory objective feedback evidence
+ * digests only and never mutates mastery or learning attempts. Exact
+ * replay returns the original session payload without adding records.
+ *
+ */
+export const advanceConversationSessionStage = <ThrowOnError extends boolean = false>(options: Options<AdvanceConversationSessionStageData, ThrowOnError>): RequestResult<AdvanceConversationSessionStageResponses, AdvanceConversationSessionStageErrors, ThrowOnError> => (options.client ?? client).post<AdvanceConversationSessionStageResponses, AdvanceConversationSessionStageErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/conversation-sessions/{conversation_session_id}/stages',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -435,6 +460,74 @@ export const streamConversationTurnEvents = <ThrowOnError extends boolean = fals
         }, { scheme: 'bearer', type: 'http' }],
     url: '/conversation-turns/{conversation_turn_id}/events',
     ...options
+});
+
+/**
+ * List all active learner-visible AI memory facts
+ *
+ * Returns every active AI memory fact for the authenticated learner
+ * membership. No active fact is omitted.
+ *
+ */
+export const listLearnerAiMemory = <ThrowOnError extends boolean = false>(options?: Options<ListLearnerAiMemoryData, ThrowOnError>): RequestResult<ListLearnerAiMemoryResponses, ListLearnerAiMemoryErrors, ThrowOnError> => (options?.client ?? client).get<ListLearnerAiMemoryResponses, ListLearnerAiMemoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/ai-memory',
+    ...options
+});
+
+/**
+ * Create one explicit learner-visible AI memory fact
+ */
+export const createLearnerAiMemoryFact = <ThrowOnError extends boolean = false>(options: Options<CreateLearnerAiMemoryFactData, ThrowOnError>): RequestResult<CreateLearnerAiMemoryFactResponses, CreateLearnerAiMemoryFactErrors, ThrowOnError> => (options.client ?? client).post<CreateLearnerAiMemoryFactResponses, CreateLearnerAiMemoryFactErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/ai-memory',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Soft-delete one learner-visible AI memory fact
+ *
+ * Marks the fact deleted for conversation use and appends an immutable
+ * audit event. Legal and authoritative learning records are unchanged.
+ *
+ */
+export const deleteLearnerAiMemoryFact = <ThrowOnError extends boolean = false>(options: Options<DeleteLearnerAiMemoryFactData, ThrowOnError>): RequestResult<DeleteLearnerAiMemoryFactResponses, DeleteLearnerAiMemoryFactErrors, ThrowOnError> => (options.client ?? client).delete<DeleteLearnerAiMemoryFactResponses, DeleteLearnerAiMemoryFactErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/ai-memory/{fact}',
+    ...options
+});
+
+/**
+ * Update one active learner-visible AI memory fact
+ */
+export const updateLearnerAiMemoryFact = <ThrowOnError extends boolean = false>(options: Options<UpdateLearnerAiMemoryFactData, ThrowOnError>): RequestResult<UpdateLearnerAiMemoryFactResponses, UpdateLearnerAiMemoryFactErrors, ThrowOnError> => (options.client ?? client).patch<UpdateLearnerAiMemoryFactResponses, UpdateLearnerAiMemoryFactErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/ai-memory/{fact}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -622,4 +715,161 @@ export const acceptInstitutionInvite = <ThrowOnError extends boolean = false>(op
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * List org-scoped curriculum draft and publication status
+ *
+ * Returns curriculum versions for the active organization with safe
+ * publication and latest EN/KN review decision metadata. Requires one of
+ * the seeded curriculum operator permissions. Fail closed across tenants.
+ *
+ */
+export const listOperatorContentDrafts = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorContentDraftsData, ThrowOnError>): RequestResult<ListOperatorContentDraftsResponses, ListOperatorContentDraftsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorContentDraftsResponses, ListOperatorContentDraftsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/drafts',
+    ...options
+});
+
+/**
+ * List org-scoped curriculum publication status
+ *
+ * Returns publication rows and head markers for the active organization.
+ * Requires a curriculum operator read permission. Fail closed across tenants.
+ *
+ */
+export const listOperatorContentPublications = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorContentPublicationsData, ThrowOnError>): RequestResult<ListOperatorContentPublicationsResponses, ListOperatorContentPublicationsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorContentPublicationsResponses, ListOperatorContentPublicationsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/publications',
+    ...options
+});
+
+/**
+ * Publish one reviewed curriculum version
+ *
+ * Wraps CurriculumPublisher for the active organization. Requires
+ * curriculum.publish. Exact replay returns the original publication.
+ *
+ */
+export const publishOperatorCurriculum = <ThrowOnError extends boolean = false>(options: Options<PublishOperatorCurriculumData, ThrowOnError>): RequestResult<PublishOperatorCurriculumResponses, PublishOperatorCurriculumErrors, ThrowOnError> => (options.client ?? client).post<PublishOperatorCurriculumResponses, PublishOperatorCurriculumErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/publications',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record an English academic content review decision
+ *
+ * Wraps ContentReviewCommands::reviewEnglish for the active organization.
+ * Requires curriculum.review.en and an accepted English appointment.
+ *
+ */
+export const recordOperatorEnglishContentReview = <ThrowOnError extends boolean = false>(options: Options<RecordOperatorEnglishContentReviewData, ThrowOnError>): RequestResult<RecordOperatorEnglishContentReviewResponses, RecordOperatorEnglishContentReviewErrors, ThrowOnError> => (options.client ?? client).post<RecordOperatorEnglishContentReviewResponses, RecordOperatorEnglishContentReviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/reviews/english',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record a Kannada content review decision
+ *
+ * Wraps ContentReviewCommands::reviewKannada for the active organization.
+ * Requires curriculum.review.kn and an accepted Kannada appointment.
+ *
+ */
+export const recordOperatorKannadaContentReview = <ThrowOnError extends boolean = false>(options: Options<RecordOperatorKannadaContentReviewData, ThrowOnError>): RequestResult<RecordOperatorKannadaContentReviewResponses, RecordOperatorKannadaContentReviewErrors, ThrowOnError> => (options.client ?? client).post<RecordOperatorKannadaContentReviewResponses, RecordOperatorKannadaContentReviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/reviews/kannada',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Roll back curriculum publication head to a prior publication
+ *
+ * Wraps CurriculumRollbackService for the active organization. Requires
+ * curriculum.publish.
+ *
+ */
+export const rollbackOperatorCurriculum = <ThrowOnError extends boolean = false>(options: Options<RollbackOperatorCurriculumData, ThrowOnError>): RequestResult<RollbackOperatorCurriculumResponses, RollbackOperatorCurriculumErrors, ThrowOnError> => (options.client ?? client).post<RollbackOperatorCurriculumResponses, RollbackOperatorCurriculumErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/content/rollbacks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List org-scoped privileged content-workflow audit digests
+ *
+ * Returns append-only audit descriptors for authorized curriculum operator
+ * actions in the active organization. Digests and safe metadata only —
+ * never raw learner conversation, audio, or transcripts. Requires
+ * audit.read.
+ *
+ */
+export const listOperatorAuditEvents = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorAuditEventsData, ThrowOnError>): RequestResult<ListOperatorAuditEventsResponses, ListOperatorAuditEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorAuditEventsResponses, ListOperatorAuditEventsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/audit-events',
+    ...options
+});
+
+/**
+ * Aggregate-only pilot analytics for the active organization
+ *
+ * Returns org-scoped usage counts and demonstrated-learning rollups only.
+ * Distinguishes usage from demonstrated learning. Never returns learner
+ * PII, audio, transcripts, or conversation bodies. Requires audit.read or
+ * a content-workflow operator permission.
+ *
+ */
+export const getOperatorPilotAnalytics = <ThrowOnError extends boolean = false>(options?: Options<GetOperatorPilotAnalyticsData, ThrowOnError>): RequestResult<GetOperatorPilotAnalyticsResponses, GetOperatorPilotAnalyticsErrors, ThrowOnError> => (options?.client ?? client).get<GetOperatorPilotAnalyticsResponses, GetOperatorPilotAnalyticsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/operator/pilot-analytics',
+    ...options
 });

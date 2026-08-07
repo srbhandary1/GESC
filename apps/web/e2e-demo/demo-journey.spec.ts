@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-test('runs the disclosed synthetic lesson and Friend demo without API calls', async ({
+test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   page,
 }) => {
   const apiRequests: string[] = []
@@ -10,25 +10,6 @@ test('runs the disclosed synthetic lesson and Friend demo without API calls', as
       apiRequests.push(request.url())
     }
   })
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: {
-        getUserMedia: async () => {
-          throw new DOMException('Denied for local demo test', 'NotAllowedError')
-        },
-      },
-    })
-    class SupportedMediaRecorder {
-      static isTypeSupported(): boolean {
-        return true
-      }
-    }
-    Object.defineProperty(window, 'MediaRecorder', {
-      configurable: true,
-      value: SupportedMediaRecorder,
-    })
-  })
 
   await page.goto('/')
   await page.getByRole('combobox').selectOption('en-IN')
@@ -36,65 +17,67 @@ test('runs the disclosed synthetic lesson and Friend demo without API calls', as
   await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
   ).toContainText('does not use learner data')
+  await expect(page.locator('.demo-experience')).toBeVisible()
   await expect(
-    page.getByRole('link', { name: 'Home' }),
-  ).toHaveAttribute('aria-current', 'page')
-  await expect(page.getByText('Introduce yourself')).toBeVisible()
-
-  await page.getByRole('button', { name: 'Start mission' }).click()
-  await expect(page.getByText('Hello, my name is Ravi.').first()).toBeVisible()
-  await page
-    .getByRole('button', { name: 'Continue to speaking practice' })
-    .click()
-  await page.getByRole('button', { name: 'Start recording' }).click()
-  await page
-    .getByRole('button', { name: 'Continue without recording' })
-    .click()
-  await page
-    .getByRole('radio', { name: 'Hello, my name is Ravi.' })
-    .check()
-  await page.getByRole('button', { name: 'Submit check' }).click()
-  await expect(page.getByText('Mastered')).toBeVisible()
-  await expect(page.getByText('Unassessed').first()).toBeVisible()
-
-  await page.getByRole('link', { name: 'Progress' }).click()
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Progress' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('heading', { level: 2, name: 'Objective progress' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('heading', { level: 3, name: 'Introduce myself' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('heading', {
-      level: 3,
-      name: 'Greet a colleague at work',
-    }),
+    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
   ).toBeVisible()
 
-  await page.getByRole('link', { name: 'Practice' }).click()
-  await page
-    .getByRole('button', { name: 'Start AI Friend prototype' })
-    .click()
-  const utterance = page.getByRole('textbox', {
-    name: 'Type one English practice turn',
-  })
-  await utterance.fill('I practise English after work.')
-  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('link', { name: 'Attendance' }).click()
   await expect(
-    page.getByText('That sounds interesting. What happened next?'),
+    page.getByRole('heading', { level: 1, name: 'Attendance' }),
   ).toBeVisible()
-  await expect(page.getByText('Turn completed')).toBeVisible()
+  await expect(page.getByText('75%')).toBeVisible()
 
-  await utterance.fill('Yesterday I go to the market.')
-  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('link', { name: 'AI Teacher' }).click()
   await expect(
     page.getByText(
-      'One gentle tip: with "yesterday", use the past form',
-      { exact: false },
+      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
     ),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'English' }).first().click()
+  await expect(
+    page.getByText('Welcome. You are on Level 1.', { exact: false }),
+  ).toBeVisible()
+  for (const prompt of [
+    'Welcome me',
+    'Explain the course',
+    'Explain my level',
+    'Attendance status',
+    'Daily score',
+    'Motivate me',
+  ]) {
+    await page.getByRole('button', { name: prompt }).click()
+  }
+  await page.getByRole('button', { name: 'Listen' }).click()
+
+  await page.getByRole('link', { name: 'Daily Activity' }).click()
+  await expect(page.getByText("Today's 5-mark check")).toBeVisible()
+  await page.getByRole('button', { name: 'Play model audio (demo)' }).click()
+  const radios = page.getByRole('radio')
+  for (let index = 0; index < 5; index += 1) {
+    await radios.nth(index * 3).check()
+  }
+  await page.getByRole('button', { name: 'Submit daily quiz' }).click()
+  await expect(page.getByText("Today's score")).toBeVisible()
+  await expect(page.getByText('5/5')).toBeVisible()
+
+  await page.getByRole('link', { name: 'My Levels' }).click()
+  await expect(page.getByText('Pre-Level 1')).toBeVisible()
+  await expect(page.getByText('Level 17')).toBeVisible()
+  await expect(page.getByText('Conversation Room')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Notice Board' }).click()
+  await expect(
+    page.getByText('Welcome to the Phase 1 demo pathway'),
+  ).toBeVisible()
+
+  // Primary shell destinations also available to a student in the demo.
+  await page.getByRole('link', { name: 'Learn' }).click()
+  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Progress' }).click()
+  await page.getByRole('link', { name: 'Home' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])

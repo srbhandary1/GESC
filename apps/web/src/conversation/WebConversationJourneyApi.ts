@@ -1,8 +1,12 @@
 import type { ConversationTurnEvent } from '@global-english/contracts'
 import type {
+  CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
+  LearnerAiMemoryFact,
+  LearnerAiMemoryListing,
   ReviewVoiceTranscriptRequest,
   SupportedLocale,
+  UpdateLearnerAiMemoryFactRequest,
   VoiceConsentEvent,
   VoiceConsentListing,
   VoiceConsentPurpose,
@@ -12,6 +16,7 @@ import type {
 } from '@global-english/contracts'
 import {
   ConversationJourneyUnavailableError,
+  type AdvanceRoleplayStageInput,
   type ConversationJourneyApi,
   type CreateFriendTurnInput,
   type FriendSession,
@@ -51,6 +56,23 @@ export class WebConversationJourneyApi
       method: 'POST',
       signal,
     })
+  }
+
+  advanceStage(
+    sessionId: string,
+    input: AdvanceRoleplayStageInput,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession> {
+    return this.#mutation<FriendSession>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/stages`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
   }
 
   createTurn(
@@ -177,6 +199,58 @@ export class WebConversationJourneyApi
     return this.#mutation<VoiceDeletion>(
       `/voice-recordings/${encodeURIComponent(recordingId)}`,
       { method: 'DELETE', signal },
+    )
+  }
+
+  listAiMemory(signal?: AbortSignal): Promise<LearnerAiMemoryListing> {
+    return this.#json<LearnerAiMemoryListing>('/me/ai-memory', {
+      method: 'GET',
+      signal,
+    })
+  }
+
+  createAiMemoryFact(
+    input: CreateLearnerAiMemoryFactRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAiMemoryFact> {
+    return this.#mutation<LearnerAiMemoryFact>('/me/ai-memory', {
+      body: JSON.stringify(input),
+      headers: { 'Idempotency-Key': commandId },
+      method: 'POST',
+      signal,
+    })
+  }
+
+  updateAiMemoryFact(
+    factId: string,
+    input: UpdateLearnerAiMemoryFactRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAiMemoryFact> {
+    return this.#mutation<LearnerAiMemoryFact>(
+      `/me/ai-memory/${encodeURIComponent(factId)}`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'PATCH',
+        signal,
+      },
+    )
+  }
+
+  deleteAiMemoryFact(
+    factId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerAiMemoryFact> {
+    return this.#mutation<LearnerAiMemoryFact>(
+      `/me/ai-memory/${encodeURIComponent(factId)}`,
+      {
+        headers: { 'Idempotency-Key': commandId },
+        method: 'DELETE',
+        signal,
+      },
     )
   }
 
