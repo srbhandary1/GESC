@@ -2125,3 +2125,79 @@ Interpretation:
   only.
 - No master-plan amendment is made.
 
+<a id="app-0032"></a>
+
+## APP-0032 — PR-015 bounded operations hardening and closed-beta evidence closure begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0031](APPROVALS.md#app-0031) (PR-014 closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e`) |
+| Governing authorization request | [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md) |
+| Governing verification scope | [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) E0→E1 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only PR-015 bounded operations hardening and closed-beta evidence
+closure under PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md and
+PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-014 closed-beta foundations were accepted under APP-0031 with recorded
+   limitations (physical matrix / Gradle assemble / `make verify` unclaimed);
+2. plan Active step was E0 with PR-015 bounded authorization and verification
+   drafts ready;
+3. no PR-015 code was authorized yet;
+4. the Accountable Product Owner supplied the begin-implementation statement
+   exactly as drafted.
+
+Interpretation: authorize **beginning implementation** of master-plan §26
+PR-015 only as the **bounded** operations-hardening + closed-beta evidence
+closure slice. This is not acceptance of completed PR-015 work, Phase 1
+Definition of Done (F0), Google Play public release, remaining PR-013 sampled
+review/privacy ops, or real learner production data.
+
+### Authorized scope
+
+1. Close APP-0031 Android closed-beta evidence gaps (device matrix, signed
+   assemble, `make verify` evidence where feasible).
+2. Load/soak harness against synthetic stack at 2× pilot planning peak.
+3. Backup/restore drill runbook + one non-production restore rehearsal.
+4. Monitoring/alerts skeleton + incident/support runbooks.
+5. Staged deploy + rollback dry-run evidence for API/web.
+6. Accessibility evidence package for already-accepted critical paths.
+7. Aggregate-only pilot analytics skeleton (no PII CSV).
+8. STATUS / DECISIONS / QUALITY_REVIEW / plan updates (E0 done; Active = E1).
+
+### Explicit non-authorization
+
+- Acceptance of completed PR-015 (requires later exact-commit APO accept)
+- Google Play public listing / open production release
+- Phase 1 Definition of Done sign-off (F0 / master plan §27)
+- Remaining PR-013 items (sampled speaking review under ADR-0007, privacy ops,
+  full §8.2 console)
+- Production OTP provider cutover / real learner production data
+- Expanding live Azure OpenAI / multi-locale TTS spend beyond existing APPs
+- Waiver of independent specialist reviews
+- Claiming production availability / latency SLOs as contractually met
+- Promoting demo APK (`com.globalenglish.demo`) to production identity
+
+### Conditions and limitations
+
+- Demo Capacitor project at `apps/web/android` remains D-0078 presentation-only.
+- No master-plan amendment is made.
+

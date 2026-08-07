@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-015 bounded operations hardening (plan E0) — authorization request ready |
-| Status | PR-014 accepted ([APP-0031](APPROVALS.md#app-0031)); Active step **E0** awaiting APO authorize for bounded PR-015 |
+| Checkpoint | PR-015 bounded operations hardening (plan E1) — implementation under APP-0032 |
+| Status | PR-015 begin-implementation authorized ([APP-0032](APPROVALS.md#app-0032) / D-0112); Active step **E1** |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-014 closed-beta foundations accepted; PR-015 / Play / F0 unauthorized |
-| Next checkpoint | APO authorize Exact begin-implementation under [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md). Play public release / F0 / remaining PR-013 remain unauthorized |
-| Professional client path | APP-0016–0031; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-014 accepted; PR-015 bounded slice in progress under APP-0032; Play / F0 unauthorized |
+| Next checkpoint | Implement PH-01–PH-12 under APP-0032, then APO exact-commit acceptance. Play public release / F0 / remaining PR-013 remain unauthorized |
+| Professional client path | APP-0016–0032; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -157,6 +157,16 @@ Owner acceptance of PR-014 Capacitor Android closed-beta foundations at
 does not authorize Google Play public release, PR-015, remaining PR-013
 sampled review/privacy ops or real learner production data. Physical device
 matrix, Gradle assemble and `make verify` remain unclaimed.
+
+[APP-0032](APPROVALS.md#app-0032) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-015 bounded operations hardening and
+closed-beta evidence closure under
+[PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
+and
+[PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-015 work and does not authorize F0 Phase 1
+DoD, Google Play public release, remaining PR-013 sampled review/privacy ops or
+real learner production data.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -775,13 +785,17 @@ recorded limitations
 Production package identity is `com.globalenglish.app` at
 `apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
 presentation-only.
-Active plan step is **E0**: bounded PR-015 authorization drafts ready
+Active plan step is **E1**: PR-015 bounded operations hardening and
+closed-beta evidence closure under [APP-0032](APPROVALS.md#app-0032)
 ([PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md),
 [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md)).
-No PR-015 code is authorized until Exact APO begin-implementation.
-Physical device matrix / Gradle assemble / `make verify` remain unclaimed
-follow-ups from APP-0031 limitations (proposed in-scope for the first PR-015
-APP).
+[APP-0031](APPROVALS.md#app-0031) accepted PR-014 Capacitor Android
+closed-beta foundations at `44b0e672e004cf3846cddabc456c21153fa4607e` with
+recorded limitations
+([PR-014_APO_ACCEPTANCE_PACKAGE.md](PR-014_APO_ACCEPTANCE_PACKAGE.md)).
+Production package identity is `com.globalenglish.app` at
+`apps/web/android-app`; the demo APK (`com.globalenglish.demo`, D-0078) stays
+presentation-only.
 [APP-0029](APPROVALS.md#app-0029) accepted PR-013 bounded operator
 content-workflow + audit at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with
 recorded limitations

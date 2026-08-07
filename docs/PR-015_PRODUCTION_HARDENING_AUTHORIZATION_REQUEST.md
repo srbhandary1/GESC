@@ -1,16 +1,17 @@
 # PR-015 production hardening authorization request
 
-**Status:** Draft — awaiting APO begin-implementation.  
-**Plan step:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) E0  
+**Status:** Begin-implementation authorized under [APP-0032](APPROVALS.md#app-0032)
+/ D-0112. Prior acceptance: PR-014 [APP-0031](APPROVALS.md#app-0031) at
+`44b0e672e004cf3846cddabc456c21153fa4607e`.  
+**Plan step:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) E0→E1  
 **Master plan:** §26 PR-015 — Production hardening and pilot release; §20 ops;
 §19 accessibility (evidence package only)  
 **Verification:** [PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md)  
 **Prior acceptance:** PR-014 closed-beta foundations [APP-0031](APPROVALS.md#app-0031) at
 `44b0e672e004cf3846cddabc456c21153fa4607e`
 
-This document is **not** implementation authorization until the Accountable
-Product Owner issues the exact begin-implementation statement below and a new
-APP entry is recorded.
+This document is the governing authorization request for APP-0032. It is
+**begin-implementation only** — not acceptance of completed PR-015 work.
 
 ## Purpose
 
@@ -82,23 +83,6 @@ closure under PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md and
 PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md.
 ```
 
-Interpretation for the recorder (Codex is never an approver):
-
-- Authorize **begin-implementation** of this bounded PR-015 slice only.
-- Do **not** accept completed PR-015, F0 Phase 1 DoD, Google Play public
-  release, remaining PR-013 sampled review/privacy ops, or real learner
-  production data.
-- Create a new APP entry, update STATUS/DECISIONS/QUALITY_REVIEW/plan Active
-  step, then begin authorized work on the checkpoint branch.
-
-## Recorder notes after APO statement
-
-1. Append next APP to [APPROVALS.md](APPROVALS.md).
-2. Append decision row to [DECISIONS.md](DECISIONS.md).
-3. Update [STATUS.md](STATUS.md) and
-   [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md)
-   (E0 authorization done; Active = E1 implementation if plan adds it, or
-   keep E0 as authorized implementation until Exact-commit accept).
-4. Append QUALITY_REVIEW note.
-5. Only then implement the bounded operations-hardening + evidence-closure
-   work.
+Recorded as [APP-0032](APPROVALS.md#app-0032) / D-0112. Active plan step = E1.
+Bounded PR-015 implementation is authorized under this APP; exact-commit
+acceptance remains a later APO gate.

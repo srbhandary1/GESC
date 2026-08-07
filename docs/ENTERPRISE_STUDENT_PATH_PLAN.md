@@ -91,12 +91,11 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **C1** | PR-013 bounded operator content-workflow + audit | `done` | [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
 | **D0** | PR-014 Capacitor Android closed beta authorization | `done` | [APP-0030](APPROVALS.md#app-0030) |
 | **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
-| **E0** | PR-015 bounded operations hardening authorization | `awaiting_authorize` | Auth + verification drafts ready; Play/F0/remaining PR-013 deferred |
+| **E0** | PR-015 bounded operations hardening authorization | `done` | [APP-0032](APPROVALS.md#app-0032) / D-0112 |
+| **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `in_progress` | PH-01–PH-12 under APP-0032 |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `E0` — awaiting APO begin-implementation for bounded PR-015 under
-[PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md).
-PR-014 closed-beta foundations accepted under [APP-0031](APPROVALS.md#app-0031).
+**Active step:** `E1` — implement bounded PR-015 under [APP-0032](APPROVALS.md#app-0032).
 Play public release, F0 DoD and remaining PR-013 items unauthorized.
 
 ---
@@ -296,13 +295,15 @@ signed closed-beta artifact — **not** the demo APK (`com.globalenglish.demo`).
 
 ---
 
-### E0 — Production hardening (PR-015)
+### E0 — Authorize PR-015 bounded operations hardening
 
-Draft and APO-authorize a **bounded** first APP under
+Exact APO begin-implementation under
 [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
-and
-[PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md):
-close APP-0031 Android evidence gaps; load/soak harness; backup/restore drill;
+([APP-0032](APPROVALS.md#app-0032) / D-0112).
+
+### E1 — Implement PR-015 bounded ops hardening + closed-beta evidence closure
+
+Close APP-0031 Android evidence gaps; load/soak harness; backup/restore drill;
 monitoring/runbooks; staged deploy rehearsal; a11y evidence package; aggregate
 pilot analytics skeleton. Full §27 DoD stays **F0**.
 
@@ -336,12 +337,9 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** APO authorize bounded PR-015 under
-[PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md)
-and
-[PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md](PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md).
-Do not implement PR-015, claim Play public release, F0 DoD, or remaining
-PR-013 sampled review / privacy ops until that APP exists.
+**Immediate next action:** Implement E1 bounded PR-015 under APP-0032
+(PH-01–PH-12). Do not claim Play public release, F0 DoD, or remaining PR-013
+sampled review / privacy ops.
 
 ---
 
@@ -389,3 +387,4 @@ PR-013 sampled review / privacy ops until that APP exists.
 | 2026-08-07 | D1 foundations Exact commit `44b0e672e004cf3846cddabc456c21153fa4607e`; acceptance package drafted; awaiting APO accept |
 | 2026-08-07 | D1 done ([APP-0031](APPROVALS.md#app-0031) / D-0111); Active step = E0 (PR-015 APP consideration only) |
 | 2026-08-07 | E0: PR-015 bounded ops-hardening + closed-beta evidence-closure auth/verification drafts ready; awaiting APO authorize |
+| 2026-08-07 | E0 done ([APP-0032](APPROVALS.md#app-0032) / D-0112); Active step = E1 (bounded PR-015 implementation) |

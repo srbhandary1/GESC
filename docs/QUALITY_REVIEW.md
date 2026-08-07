@@ -2751,13 +2751,33 @@ PR-014 closed-beta foundations **accepted** under APP-0031 / D-0111 at
 | Auth request drafted post–APP-0031 | Pass | PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md |
 | Verification scope PH-01–PH-12 | Pass | PR-015_PRODUCTION_HARDENING_VERIFICATION_SCOPE.md |
 | Bounded vs full PR-015 / F0 | Pass | auth request non-goals |
-| APO begin-implementation statement | Pending | Exact line in auth request |
-| PR-015 code | Not authorized | awaiting APP |
+| APO begin-implementation statement | Pass | [APP-0032](APPROVALS.md#app-0032) |
+| PR-015 code | Authorized (begin) | APP-0032; Active = E1 |
 
 ### Outcome
 
-E0 authorization package ready. Codex records only; does not approve. No
-PR-015 implementation until Exact APO begin-implementation.
+E0 complete under APP-0032. Active step E1 implements bounded operations
+hardening and closed-beta evidence closure.
+
+## PR-015 — Step E1 (implementation in progress)
+
+### Evidence reviewed
+
+- APP-0032 / D-0112 begin-implementation
+- Verification scope PH-01–PH-12
+- Implementation starting on checkpoint branch
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Begin-implementation recorded | Pass | APP-0032 |
+| PH-01–PH-12 delivery | In progress | E1 |
+| Play / F0 / remaining PR-013 | Not authorized | APP-0032 non-goals |
+
+### Outcome
+
+E1 implementation authorized and underway.
 
 
 

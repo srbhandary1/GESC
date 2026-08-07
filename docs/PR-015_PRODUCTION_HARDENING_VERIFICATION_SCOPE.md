@@ -2,7 +2,8 @@
 
 **Status:** Bound to
 [PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md](PR-015_PRODUCTION_HARDENING_AUTHORIZATION_REQUEST.md).
-Awaiting APO begin-implementation (plan step E0).  
+Begin-implementation authorized under [APP-0032](APPROVALS.md#app-0032)
+(plan step E1).  
 **Prior slice:** PR-014 closed-beta foundations accepted under
 [APP-0031](APPROVALS.md#app-0031) at
 `44b0e672e004cf3846cddabc456c21153fa4607e`.
