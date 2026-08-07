@@ -1,7 +1,9 @@
 # PR-013 operator verification scope
 
-**Status:** Authorized under [APP-0028](APPROVALS.md#app-0028). Bound to
-[PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md).  
+**Status:** Accepted under [APP-0029](APPROVALS.md#app-0029) at
+`9220ab27baa6dc29d82caf8e9e97e94f7df7219d`. Bound to
+[PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md)
+and begin-implementation [APP-0028](APPROVALS.md#app-0028).  
 **Prior slice:** PR-012 synthetic accepted under
 [APP-0027](APPROVALS.md#app-0027).
 

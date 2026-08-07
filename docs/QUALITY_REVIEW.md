@@ -2594,8 +2594,34 @@ C0 closed by APP-0028. Proceed to C1 implementation.
 
 C1 bounded operator content-workflow + audit slice implemented under APP-0028
 with focused verification green. Sampled speaking review, privacy ops,
-production and Play remain unauthorized. APO exact-commit acceptance still
-requires OC-08 / recorded limitations package when ready.
+production and Play remain unauthorized. APO exact-commit acceptance package
+drafted for Exact commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`
+([PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)).
+
+## PR-013 — Acceptance package drafted
+
+### Evidence reviewed
+
+- [PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)
+- Exact commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`
+- C1 QUALITY_REVIEW focused evidence; OC-01–OC-07 pass; OC-08 not claimed
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Acceptance package drafted | Pass | PR-013_APO_ACCEPTANCE_PACKAGE.md |
+| Limitations explicit | Pass | package § Recorded limitations |
+| Exact commit SHA | Pass | `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
+| APO accept statement | Pass | [APP-0029](APPROVALS.md#app-0029) |
+| Sampled review / privacy ops / PR-014+ | Not authorized | APP-0029 non-goals |
+
+### Outcome
+
+PR-013 bounded operator content-workflow + audit **accepted** under APP-0029 at
+`9220ab27baa6dc29d82caf8e9e97e94f7df7219d`. Next: separate APP for PR-014
+and/or remaining PR-013 items only.
+
 
 
 

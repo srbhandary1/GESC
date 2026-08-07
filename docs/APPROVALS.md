@@ -1895,3 +1895,76 @@ ops, production or Play.
   and transcripts until a separate amendment + APP.
 - No master-plan amendment is made.
 
+<a id="app-0029"></a>
+
+## APP-0029 — PR-013 bounded operator content-workflow and audit acceptance
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Exact implementation commit accepted | `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` |
+| Governing begin-implementation | [APP-0028](APPROVALS.md#app-0028) |
+| Acceptance package | [PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md) |
+| Prior PR-012 acceptance | [APP-0027](APPROVALS.md#app-0027) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO accept PR-013 bounded operator content-workflow and audit at 9220ab27baa6dc29d82caf8e9e97e94f7df7219d with its recorded limitations
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. PR-013 bounded operator content-workflow + audit was implemented under
+   APP-0028 and closed on exact commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`;
+2. C0–C1 completed with focused OC-01–OC-07 verification;
+3. the acceptance package recorded delivered behaviour, verification evidence
+   and limitations;
+4. the Accountable Product Owner supplied the accept statement exactly as
+   drafted with that Exact commit SHA.
+
+Interpretation:
+
+- Accept the PR-013 **bounded content-workflow + audit** slice at that exact
+  commit only, with every recorded limitation in the acceptance package.
+- Close plan Steps C0–C1 for this bounded APP scope.
+- Do **not** authorize sampled speaking review, privacy ops, full §8.2 console,
+  production, Play, or PR-014 implementation.
+
+### Accepted scope
+
+- Accept PR-013 bounded operator content-workflow and audit at exact
+  implementation commit `9220ab27baa6dc29d82caf8e9e97e94f7df7219d`, with every
+  recorded limitation in
+  [PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md),
+  STATUS, QUALITY_REVIEW, and D-0107.
+
+### Conditions and limitations
+
+- This acceptance does **not** authorize remaining PR-013 items (sampled
+  speaking review, support diagnostics, privacy ops, full content studio) or
+  PR-014 implementation.
+- ADR-0007 continues to forbid trainer/operator/admin access to learner audio
+  and transcripts until a separate amendment + APP.
+- Learner PII CSV export and institution-operations pack (§8.3) remain
+  unauthorized.
+- Host `make verify`, full Chromium e2e and remote CI were not claimed green
+  by this acceptance and are not waived.
+- Production deployment, Google Play release and real learner production data
+  remain unauthorized.
+- Independent legal, security, privacy, tenancy, accessibility,
+  language/content, vendor and release reviews remain mandatory before
+  production.
+- Demo Vite `/demo/*` paths remain non-evidence.
+- No master-plan amendment is made.
+

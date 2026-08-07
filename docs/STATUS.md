@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | PR-013 Operator console (plan C1) — content-workflow + audit in progress |
-| Status | PR-012 synthetic accepted ([APP-0027](APPROVALS.md#app-0027)); Active step **C1** — bounded operator content-workflow + audit under [APP-0028](APPROVALS.md#app-0028) |
+| Checkpoint | PR-013 Operator console — bounded content-workflow + audit |
+| Status | **Accepted** under [APP-0029](APPROVALS.md#app-0029) at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with recorded limitations |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-012 synthetic accepted; PR-013 C1 in progress (APP-0028); production/Play unauthorized |
-| Next checkpoint | Complete PR-013 C1 verification (OC-01–OC-08) for APO exact-commit acceptance. Sampled speaking review, privacy ops, production/Play remain unauthorized |
-| Professional client path | APP-0016–0028; PR-013 C1 in progress; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-013 bounded operator accepted ([APP-0029](APPROVALS.md#app-0029)); remaining PR-013 items / PR-014+, production/Play unauthorized |
+| Next checkpoint | Separate APP for remaining PR-013 (sampled review/privacy) and/or PR-014 Capacitor Android (plan D0). Production/Play remain unauthorized |
+| Professional client path | APP-0016–0029; PR-013 bounded operator closed; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -134,6 +134,12 @@ audit under
 and [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md).
 It is not acceptance of completed PR-013 work and does not authorize sampled
 speaking review, privacy ops, production or Google Play release.
+
+[APP-0029](APPROVALS.md#app-0029) records `S R Bhandary`'s Accountable Product
+Owner acceptance of PR-013 bounded operator content-workflow and audit at
+`9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with every recorded limitation. It
+does not authorize sampled speaking review, privacy ops, PR-014, production or
+Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -745,13 +751,13 @@ remain unauthorized. Live Azure OpenAI calls remain operator-gated
 Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
 and do not count as enterprise verification evidence.
 
-Active work is plan Step **C1**: bounded PR-013 operator content-workflow +
-audit under [APP-0028](APPROVALS.md#app-0028) /
-[PR-013_OPERATOR_AUTHORIZATION_REQUEST.md](PR-013_OPERATOR_AUTHORIZATION_REQUEST.md)
-and [PR-013_OPERATOR_VERIFICATION_SCOPE.md](PR-013_OPERATOR_VERIFICATION_SCOPE.md).
-[APP-0027](APPROVALS.md#app-0027) accepted PR-012 synthetic Role-play at
-`0fb6f2953580ed6154e4d895e128c46167c6f5d4` with recorded limitations
-([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)).
+Active work is plan Step **D0** consideration only: a separate APP is required
+before PR-014 Capacitor Android / remaining PR-013 items (sampled review,
+privacy ops).
+[APP-0029](APPROVALS.md#app-0029) accepted PR-013 bounded operator
+content-workflow + audit at `9220ab27baa6dc29d82caf8e9e97e94f7df7219d` with
+recorded limitations
+([PR-013_APO_ACCEPTANCE_PACKAGE.md](PR-013_APO_ACCEPTANCE_PACKAGE.md)).
 Sampled speaking review, privacy ops, learner PII CSV export, full content
 studio, PR-014/015, production and Google Play remain unauthorized.
 Live multi-locale Azure TTS spend and ordinary Azure Speech DI expansion
