@@ -93,9 +93,9 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **D1** | PR-014 closed-beta foundations implementation | `done` | [APP-0031](APPROVALS.md#app-0031) at `44b0e672e004cf3846cddabc456c21153fa4607e` |
 | **E0** | PR-015 bounded operations hardening authorization | `done` | [APP-0032](APPROVALS.md#app-0032) / D-0112 |
 | **E1** | PR-015 bounded ops hardening + closed-beta evidence closure | `done` | [APP-0033](APPROVALS.md#app-0033) at `5eca7515291ea571a7f697dcdc2da6197535f839` |
-| **F0** | Phase 1 Definition of Done sign-off | `evidence_recorded` | [APP-0034](APPROVALS.md#app-0034) evidence package recorded; Exact-commit DoD still unauthorized |
+| **F0** | Phase 1 Definition of Done sign-off | `evidence_recorded` | [APP-0034](APPROVALS.md#app-0034) evidence + [APP-0036](APPROVALS.md#app-0036) privacy/support + [APP-0037](APPROVALS.md#app-0037) DR-0007 limitation; Exact-commit DoD still unauthorized |
 
-**Active step:** `F0` — evidence recorded ([F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md)); awaiting APO gates for privacy/support, DR-0007, device matrix, specialist reviews, then Exact-commit DoD consideration. Play public release remains unauthorized. Free-flow AI spine = Practice Confidence Conversation (not dashboard AI Teacher).
+**Active step:** `F0` — privacy/support and DR-0007 limitation closed; awaiting physical Android DM-01/DM-02, independent specialist reviews ([F0_SPECIALIST_REVIEW_PACKET.md](F0_SPECIALIST_REVIEW_PACKET.md)), then Exact-commit DoD consideration ([F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md)). Play public release remains unauthorized. Free-flow AI spine = Practice Confidence Conversation (not dashboard AI Teacher).
 
 ---
 

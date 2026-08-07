@@ -71,6 +71,8 @@ FAQ) and is not the production free-flow path.
 ## APP-0034 completion posture
 
 Evidence-closure deliverables under APP-0034 are **recorded**. Privacy/support
-ops advanced under APP-0035. F0 Exact-commit accept remains **unauthorized**.
-Next gates: Exact accept of APP-0035 slice, physical device matrix, specialist
-reviews, commissioned pathway content, then F0 consideration with limitations.
+ops accepted under APP-0036; DR-0007 synthetic limitation under APP-0037.
+`assembleDebug` re-verified at `22815bd…`. F0 Exact-commit accept remains
+**unauthorized**. Next gates: physical DM-01/DM-02, specialist reviews
+([F0_SPECIALIST_REVIEW_PACKET.md](F0_SPECIALIST_REVIEW_PACKET.md)), then
+Option A/B in [F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md).

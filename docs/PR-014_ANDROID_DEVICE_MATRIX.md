@@ -72,3 +72,14 @@ in-memory access token inside the JS adapter.
 | Result | `assembleDebug` Pass locally (~5.8 MB `app-debug.apk`) |
 | Physical DM-01/DM-02 | **Not run** — no device attached; matrix remains open |
 | Limitation | Recorded under [F0_APP0034_EVIDENCE_PACKAGE.md](F0_APP0034_EVIDENCE_PACKAGE.md) |
+
+## Workstation assemble re-verify (post APP-0036)
+
+| Field | Value |
+|---|---|
+| Commit | `22815bdfea835acfdd8eb4968743dd2b7ec52a7d` |
+| Date | 2026-08-07 |
+| Result | `clean assembleDebug` Pass locally (~5.8 MB `app-debug.apk`) |
+| APK SHA-256 | `3ac150b5777298e416f494de682cf3c7dbbec98052fe2ca366fd216f3289cae7` |
+| Emulator substitute | **Failed** — AVD `eeshani_api_36` missing system image; `/dev/kvm` absent |
+| Physical DM-01/DM-02 | **Still open** — attach a physical phone to run journeys 1–8 |

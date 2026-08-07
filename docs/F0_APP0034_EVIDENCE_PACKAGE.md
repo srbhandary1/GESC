@@ -54,17 +54,18 @@ limitation).
 
 ## 4. Remaining PR-013 privacy/support
 
-**APP-deferred** under APP-0034 scope item 4. Sampled speaking review, support
-diagnostics, PII export, and account-erasure ops remain unauthorized until a
-distinct APP under
-[PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md](PR-013_PRIVACY_SUPPORT_AUTHORIZATION_REQUEST.md).
+**Closed after APP-0034** under [APP-0036](APPROVALS.md#app-0036) at
+`1357eb161d3754da3b8d6b888bd1e3b0a8698ff9` (support diagnostics, identifier
+export, account erasure). Sampled speaking / transcript / audio review remains
+unauthorized.
 
 ## 5. §27 matrix
 
 Filled in [F0_PHASE1_DOD_GAP_ASSESSMENT.md](F0_PHASE1_DOD_GAP_ASSESSMENT.md)
-(pass / partial / blocked / deferred). Critical blockers remain: DR-0007
-content, PR-013 privacy/support, physical Android matrix, specialist reviews,
-production-like OTP/pilot cutover.
+(pass / partial / blocked / deferred). Remaining critical blockers: physical
+Android matrix, independent specialist reviews, production-like OTP/pilot
+cutover, and reviewed pathway commissioning (synthetic retained under
+APP-0037 / D-0116).
 
 ## 6. Explicit non-claims
 
@@ -76,6 +77,10 @@ production-like OTP/pilot cutover.
 
 ## Recommended next APO statements
 
-1. Authorize remaining PR-013 privacy/support (exact statement in that request).
-2. After blockers clear: Exact-commit F0 DoD accept (separate statement).
-3. Play public release remains a later separate APP.
+1. Run physical DM-01/DM-02 (or authorize a documented emulator substitute
+   limitation) and record in [PR-014_ANDROID_DEVICE_MATRIX.md](PR-014_ANDROID_DEVICE_MATRIX.md).
+2. Commission independent specialist reviews via
+   [F0_SPECIALIST_REVIEW_PACKET.md](F0_SPECIALIST_REVIEW_PACKET.md).
+3. Exact-commit F0 DoD accept — Option A or limited Option B in
+   [F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md).
+4. Play public release remains a later separate APP.

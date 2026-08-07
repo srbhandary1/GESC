@@ -2982,3 +2982,27 @@ matrix, specialist reviews.
 | Play public release | Not authorized | APP-0036 |
 | Sampled speaking review | Not authorized | APP-0036 |
 
+
+## F0 — Pre-DoD readiness refresh (post APP-0036/0037)
+
+### Scope reviewed
+
+- Updated F0 consideration package with closed privacy/support and DR-0007 limitation
+- Specialist review packet for external reviewers
+- Android `clean assembleDebug` re-verify at `22815bdfea835acfdd8eb4968743dd2b7ec52a7d`
+- Emulator substitute probe (failed: missing AVD system image / no KVM)
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| assembleDebug re-verify | Pass | ~5.8 MB APK; SHA-256 in device matrix |
+| Physical DM-01/DM-02 | Open | No device attached |
+| Emulator substitute | Failed | AVD system path missing |
+| Specialist reviews | Not claimed | F0_SPECIALIST_REVIEW_PACKET.md |
+| F0 DoD Exact accept | Not authorized | Consideration package Option A/B only |
+
+### Known limitations
+
+- Docker/`make verify` not re-run in this refresh (daemon not started).
+- F0 Exact accept still requires an Exact APO statement.
