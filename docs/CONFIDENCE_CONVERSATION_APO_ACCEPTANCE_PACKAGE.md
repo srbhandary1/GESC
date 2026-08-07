@@ -2,8 +2,8 @@
 
 This package prepares exact-artifact Accountable Product Owner acceptance of
 the Confidence Conversation enterprise slice (plan Steps A1–A7 under
-[APP-0021](APPROVALS.md#app-0021)). **Not yet accepted** — requires an exact
-implementation commit and the APO statement below.
+[APP-0021](APPROVALS.md#app-0021)). **Not yet accepted** — Exact commit is
+filled; reply with the APO statement below to close A7.
 
 ## Artifact to accept
 
@@ -17,7 +17,7 @@ implementation commit and the APO statement below.
 | Spec | [CONFIDENCE_CONVERSATION_SPEC.md](CONFIDENCE_CONVERSATION_SPEC.md) |
 | Verification scope | [CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md) |
 | Quality evidence | [QUALITY_REVIEW.md](QUALITY_REVIEW.md) (A1–A6 sections) |
-| Exact commit | **Pending** — workspace A1–A6 implementation is uncommitted; recorder will fill SHA after an authorized commit of this slice |
+| Exact commit | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
 
 ## Delivered behaviour (A1–A6)
 
@@ -85,10 +85,10 @@ evidence.
    or waiver of independent legal / security / privacy / tenancy /
    accessibility / language / vendor / release review.
 
-## APO statement (reply exactly after Exact commit SHA is filled)
+## APO statement (reply exactly)
 
 ```text
-APO accept Confidence Conversation slice at <EXACT_COMMIT_SHA> with its recorded limitations
+APO accept Confidence Conversation slice at 5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b with its recorded limitations
 ```
 
 Interpretation for the recorder (Codex is never an approver):

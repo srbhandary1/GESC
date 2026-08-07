@@ -2389,11 +2389,12 @@ slice.
 |---|---|---|
 | Acceptance package drafted | Pass | CONFIDENCE_CONVERSATION_APO_ACCEPTANCE_PACKAGE.md |
 | Limitations explicit | Pass | package § Recorded limitations |
-| Exact commit SHA | Pending | workspace uncommitted; needs authorized commit |
-| APO accept statement | Pending | exact-commit accept after SHA filled |
+| Exact commit SHA | Pass | `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
+| APO accept statement | Pending | exact-commit accept with recorded limitations |
 | PR-012 / production / Play | Not authorized | package non-goals |
 
 ### Outcome
 
-A7 package ready. Close A7 only after Exact commit SHA is filled and APO
-accepts with recorded limitations.
+A7 package ready with Exact commit
+`5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`. Close A7 only after APO accepts
+with recorded limitations.
