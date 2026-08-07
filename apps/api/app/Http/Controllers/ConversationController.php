@@ -38,6 +38,7 @@ final class ConversationController extends Controller
                 personaKey: (string) $request->validated('persona_key'),
                 scenarioKey: (string) $request->validated('scenario_key'),
                 coachingMode: (string) $request->validated('coaching_mode'),
+                uiLocale: (string) $request->validated('ui_locale'),
                 idempotencyKey: (string) $request->validated(
                     'idempotency_key',
                 ),

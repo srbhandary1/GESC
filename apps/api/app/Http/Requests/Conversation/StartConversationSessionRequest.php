@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Conversation;
 
+use App\Conversation\Support\ConversationUiLocales;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,6 +34,11 @@ final class StartConversationSessionRequest extends FormRequest
                 'string',
                 Rule::in(['gentle', 'tutor', 'fluency']),
             ],
+            'ui_locale' => [
+                'required',
+                'string',
+                Rule::in(ConversationUiLocales::all()),
+            ],
             'idempotency_key' => [
                 'required',
                 'string',
@@ -58,7 +64,12 @@ final class StartConversationSessionRequest extends FormRequest
             if (
                 array_diff(
                     array_keys($this->all()),
-                    ['persona_key', 'scenario_key', 'coaching_mode'],
+                    [
+                        'persona_key',
+                        'scenario_key',
+                        'coaching_mode',
+                        'ui_locale',
+                    ],
                 ) !== []
             ) {
                 $validator->errors()->add(
