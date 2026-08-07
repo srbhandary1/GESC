@@ -351,15 +351,19 @@ export type LearnerProgress = {
 };
 
 export type StartConversationSessionRequest = {
-    persona_key: 'patient-friend-prototype';
-    scenario_key: 'everyday-friend-prototype';
+    persona_key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
+    scenario_key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
     ui_locale: SupportedLocale;
 };
 
+export type AdvanceConversationSessionStageRequest = {
+    to_stage: 'observe' | 'rehearse' | 'perform' | 'reflect';
+};
+
 export type ConversationPersonaSnapshot = {
     id: Ulid;
-    key: 'patient-friend-prototype';
+    key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
     version_id: Ulid;
     version: number;
     display_name: string;
@@ -370,22 +374,39 @@ export type ConversationPersonaSnapshot = {
 
 export type ConversationScenarioSnapshot = {
     id: Ulid;
-    key: 'everyday-friend-prototype';
+    key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
     version_id: Ulid;
     version: number;
-    topic_code: 'everyday-conversation';
+    topic_code: 'everyday-conversation' | 'clinic-reception';
     definition_hash: Sha256;
     review_status: 'synthetic_unreviewed';
+};
+
+export type ConversationScenarioObjective = {
+    id: Ulid;
+    key: string;
+    title: string;
+    completion_criteria_code: string;
+};
+
+export type ConversationRoleplayFeedbackEvidence = {
+    id: Ulid;
+    scenario_objective_id: Ulid;
+    evidence_digest: Sha256;
+    completion_state: 'met' | 'unmet' | 'skipped';
 };
 
 export type ConversationSession = {
     id: Ulid;
     status: 'active';
-    mode: 'friend';
+    mode: 'friend' | 'roleplay';
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
     ui_locale: SupportedLocale;
+    stage: 'observe' | 'rehearse' | 'perform' | 'reflect' | null;
     persona: ConversationPersonaSnapshot;
     scenario: ConversationScenarioSnapshot;
+    objectives?: Array<ConversationScenarioObjective>;
+    feedback?: Array<ConversationRoleplayFeedbackEvidence>;
     replayed: boolean;
 };
 
@@ -1672,12 +1693,82 @@ export type StartConversationSessionResponses = {
      */
     200: ConversationSession;
     /**
-     * A deterministic fake-provider Friend session was started.
+     * A deterministic fake-provider conversation session was started.
      */
     201: ConversationSession;
 };
 
 export type StartConversationSessionResponse = StartConversationSessionResponses[keyof StartConversationSessionResponses];
+
+export type AdvanceConversationSessionStageData = {
+    body: AdvanceConversationSessionStageRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/stages';
+};
+
+export type AdvanceConversationSessionStageErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type AdvanceConversationSessionStageError = AdvanceConversationSessionStageErrors[keyof AdvanceConversationSessionStageErrors];
+
+export type AdvanceConversationSessionStageResponses = {
+    /**
+     * Exact command replay returned the original session.
+     */
+    200: ConversationSession;
+    /**
+     * The Role-play session advanced to the requested stage.
+     */
+    201: ConversationSession;
+};
+
+export type AdvanceConversationSessionStageResponse = AdvanceConversationSessionStageResponses[keyof AdvanceConversationSessionStageResponses];
 
 export type CreateConversationTurnData = {
     body: CreateConversationTurnRequest;

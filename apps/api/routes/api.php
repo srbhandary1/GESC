@@ -130,6 +130,12 @@ Route::prefix('v1')->group(function (): void {
         )->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.store');
         Route::post(
+            '/conversation-sessions/{session}/stages',
+            [ConversationController::class, 'advanceStage'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.stages.store');
+        Route::post(
             '/conversation-sessions/{session}/turns',
             [ConversationController::class, 'turn'],
         )->whereUlid('session')

@@ -260,6 +260,7 @@ function fakeSession(): FriendSession {
     coaching_mode: 'gentle',
     id: '01J00000000000000000000001',
     mode: 'friend',
+    stage: null,
     persona: {
       definition_hash: 'a'.repeat(64),
       disclosure: 'I am a deterministic AI prototype, not a human.',

@@ -2,11 +2,11 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.9.0
+  version: 0.10.0
   description: |
-    Canonical API contract for the Global English platform. Confidence
-    Conversation Step A2 generalizes priority corrections to explanation_l1
-    for all Phase 1 UI locales while keeping conversation/speech paths on
+    Canonical API contract for the Global English platform. PR-012 adds a
+    bounded synthetic Role-play stage machine (Observe→Rehearse→Perform→Reflect)
+    with advisory objective feedback evidence. Conversation/speech paths stay on
     deterministic local adapters unless separately configured. Authoritative
     learning records remain deterministic and are never mutated by AI output.
   license:
@@ -865,11 +865,12 @@ paths:
   /conversation-sessions:
     post:
       operationId: startConversationSession
-      summary: Start one deterministic fake-provider Friend session
+      summary: Start one deterministic fake-provider conversation session
       description: |
         Resolves only the current organization's synthetic development persona
-        and scenario, snapshots their immutable versions and starts a
-        learner-owned Friend session. The route fails closed unless the
+        and scenario pair (Friend or Role-play prototypes), snapshots their
+        immutable versions and starts a learner-owned session. Role-play
+        sessions begin at Observe. The route fails closed unless the
         deterministic fake driver is enabled in a local or testing environment.
       tags:
         - Conversation
@@ -899,7 +900,70 @@ paths:
               schema:
                 $ref: "#/components/schemas/ConversationSession"
         "201":
-          description: A deterministic fake-provider Friend session was started.
+          description: A deterministic fake-provider conversation session was started.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/stages:
+    post:
+      operationId: advanceConversationSessionStage
+      summary: Advance one synthetic Role-play session stage
+      description: |
+        Advances a learner-owned Role-play session along the linear stage path
+        Observe → Rehearse → Perform → Reflect. Friend sessions are rejected.
+        Transition into Reflect writes advisory objective feedback evidence
+        digests only and never mutates mastery or learning attempts. Exact
+        replay returns the original session payload without adding records.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvanceConversationSessionStageRequest"
+      responses:
+        "200":
+          description: Exact command replay returned the original session.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "201":
+          description: The Role-play session advanced to the requested stage.
           headers:
             X-Correlation-ID:
               $ref: "#/components/headers/CorrelationId"
@@ -2771,10 +2835,14 @@ components:
       properties:
         persona_key:
           type: string
-          const: patient-friend-prototype
+          enum:
+            - patient-friend-prototype
+            - clinic-reception-roleplay-prototype
         scenario_key:
           type: string
-          const: everyday-friend-prototype
+          enum:
+            - everyday-friend-prototype
+            - clinic-reception-roleplay-scenario
         coaching_mode:
           type: string
           enum:
@@ -2783,6 +2851,19 @@ components:
             - fluency
         ui_locale:
           $ref: "#/components/schemas/SupportedLocale"
+    AdvanceConversationSessionStageRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - to_stage
+      properties:
+        to_stage:
+          type: string
+          enum:
+            - observe
+            - rehearse
+            - perform
+            - reflect
     ConversationPersonaSnapshot:
       type: object
       additionalProperties: false
@@ -2800,7 +2881,9 @@ components:
           $ref: "#/components/schemas/Ulid"
         key:
           type: string
-          const: patient-friend-prototype
+          enum:
+            - patient-friend-prototype
+            - clinic-reception-roleplay-prototype
         version_id:
           $ref: "#/components/schemas/Ulid"
         version:
@@ -2835,7 +2918,9 @@ components:
           $ref: "#/components/schemas/Ulid"
         key:
           type: string
-          const: everyday-friend-prototype
+          enum:
+            - everyday-friend-prototype
+            - clinic-reception-roleplay-scenario
         version_id:
           $ref: "#/components/schemas/Ulid"
         version:
@@ -2843,12 +2928,58 @@ components:
           minimum: 1
         topic_code:
           type: string
-          const: everyday-conversation
+          enum:
+            - everyday-conversation
+            - clinic-reception
         definition_hash:
           $ref: "#/components/schemas/Sha256"
         review_status:
           type: string
           const: synthetic_unreviewed
+    ConversationScenarioObjective:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - title
+        - completion_criteria_code
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        key:
+          type: string
+          minLength: 1
+          maxLength: 100
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        completion_criteria_code:
+          type: string
+          minLength: 1
+          maxLength: 100
+    ConversationRoleplayFeedbackEvidence:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - scenario_objective_id
+        - evidence_digest
+        - completion_state
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        scenario_objective_id:
+          $ref: "#/components/schemas/Ulid"
+        evidence_digest:
+          $ref: "#/components/schemas/Sha256"
+        completion_state:
+          type: string
+          enum:
+            - met
+            - unmet
+            - skipped
     ConversationSession:
       type: object
       additionalProperties: false
@@ -2858,6 +2989,7 @@ components:
         - mode
         - coaching_mode
         - ui_locale
+        - stage
         - persona
         - scenario
         - replayed
@@ -2869,7 +3001,9 @@ components:
           const: active
         mode:
           type: string
-          const: friend
+          enum:
+            - friend
+            - roleplay
         coaching_mode:
           type: string
           enum:
@@ -2878,10 +3012,26 @@ components:
             - fluency
         ui_locale:
           $ref: "#/components/schemas/SupportedLocale"
+        stage:
+          type: ["string", "null"]
+          enum:
+            - observe
+            - rehearse
+            - perform
+            - reflect
+            - null
         persona:
           $ref: "#/components/schemas/ConversationPersonaSnapshot"
         scenario:
           $ref: "#/components/schemas/ConversationScenarioSnapshot"
+        objectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationScenarioObjective"
+        feedback:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationRoleplayFeedbackEvidence"
         replayed:
           type: boolean
     CreateConversationTurnRequest:

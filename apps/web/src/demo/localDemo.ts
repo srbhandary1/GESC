@@ -218,6 +218,7 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       coaching_mode: 'gentle',
       id: ids.session,
       mode: 'friend',
+      stage: null,
       persona: {
         definition_hash: 'b'.repeat(64),
         disclosure:

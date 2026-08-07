@@ -146,6 +146,59 @@ test('shows separate optional voice purposes before microphone capture', async (
   expect(accessibility.violations).toEqual([])
 })
 
+test('completes the disclosed synthetic Role-play stage journey', async ({
+  page,
+}) => {
+  const requests: Array<{
+    contentType: string | undefined
+    method: string
+    path: string
+    postData: string | null
+    url: string
+  }> = []
+  await mockConversationApi(page, requests)
+
+  await page.goto('/#practice')
+  await page
+    .getByRole('combobox', { name: message('shell.locale_label') })
+    .selectOption('en-IN')
+  await page
+    .getByRole('button', { name: 'Role-play (synthetic)' })
+    .click()
+
+  await expect(
+    page.getByText(
+      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
+    ),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Start Role-play' }).click()
+  await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
+  await expect(page.getByText('Advisory feedback')).toBeVisible()
+
+  expect(
+    requests.some(
+      ({ method, path }) =>
+        method === 'POST' && path === '/api/v1/conversation-sessions',
+    ),
+  ).toBe(true)
+  expect(
+    requests.filter(
+      ({ method, path }) =>
+        method === 'POST' &&
+        path === `/api/v1/conversation-sessions/${ids.session}/stages`,
+    ),
+  ).toHaveLength(3)
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
 async function mockConversationApi(
   page: Page,
   requests: Array<{
@@ -200,7 +253,34 @@ async function mockConversationApi(
       path === '/api/v1/conversation-sessions' &&
       request.method() === 'POST'
     ) {
-      await json(route, session(), 201)
+      const body = JSON.parse(request.postData() ?? '{}') as {
+        persona_key?: string
+      }
+      await json(
+        route,
+        body.persona_key === 'clinic-reception-roleplay-prototype'
+          ? roleplaySession('observe')
+          : session(),
+        201,
+      )
+      return
+    }
+
+    if (
+      path === `/api/v1/conversation-sessions/${ids.session}/stages` &&
+      request.method() === 'POST'
+    ) {
+      const body = JSON.parse(request.postData() ?? '{}') as {
+        to_stage?: string
+      }
+      const toStage = body.to_stage ?? 'observe'
+      await json(
+        route,
+        roleplaySession(
+          toStage as 'observe' | 'rehearse' | 'perform' | 'reflect',
+        ),
+        200,
+      )
       return
     }
 
@@ -239,11 +319,76 @@ async function mockConversationApi(
   })
 }
 
+function roleplaySession(
+  stage: 'observe' | 'rehearse' | 'perform' | 'reflect',
+) {
+  return {
+    coaching_mode: 'gentle',
+    feedback:
+      stage === 'reflect'
+        ? [
+            {
+              completion_state: 'met',
+              evidence_digest: 'c'.repeat(64),
+              id: '01J2000000000000000000000A',
+              scenario_objective_id: '01J2000000000000000000000C',
+            },
+            {
+              completion_state: 'unmet',
+              evidence_digest: 'd'.repeat(64),
+              id: '01J2000000000000000000000B',
+              scenario_objective_id: '01J2000000000000000000000D',
+            },
+          ]
+        : [],
+    id: ids.session,
+    mode: 'roleplay',
+    objectives: [
+      {
+        completion_criteria_code: 'utterance.contains.hello',
+        id: '01J2000000000000000000000A',
+        key: 'greet-receptionist',
+        title: 'Greet the receptionist',
+      },
+      {
+        completion_criteria_code: 'utterance.contains.appointment',
+        id: '01J2000000000000000000000B',
+        key: 'state-appointment-reason',
+        title: 'State the appointment reason',
+      },
+    ],
+    persona: {
+      definition_hash: 'a'.repeat(64),
+      disclosure: 'I am a deterministic AI prototype, not a human.',
+      display_name: 'Clinic Reception Role-play Prototype',
+      id: ids.persona,
+      key: 'clinic-reception-roleplay-prototype',
+      review_status: 'synthetic_unreviewed',
+      version: 1,
+      version_id: ids.personaVersion,
+    },
+    replayed: false,
+    scenario: {
+      definition_hash: 'b'.repeat(64),
+      id: ids.scenario,
+      key: 'clinic-reception-roleplay-scenario',
+      review_status: 'synthetic_unreviewed',
+      topic_code: 'clinic-reception',
+      version: 1,
+      version_id: ids.scenarioVersion,
+    },
+    stage,
+    status: 'active',
+    ui_locale: 'en-IN',
+  }
+}
+
 function session() {
   return {
     coaching_mode: 'gentle',
     id: ids.session,
     mode: 'friend',
+    stage: null,
     persona: {
       definition_hash: 'a'.repeat(64),
       disclosure: 'I am a deterministic AI prototype, not a human.',

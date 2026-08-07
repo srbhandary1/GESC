@@ -1662,3 +1662,81 @@ Interpretation:
   and are not enterprise acceptance evidence.
 - No master-plan amendment is made.
 
+<a id="app-0026"></a>
+
+## APP-0026 — PR-012 bounded synthetic role-play begin-implementation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted (begin-implementation) |
+| Decision date | 2026-08-07 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Human instruction in the active Cursor conversation |
+| Prior acceptance | [APP-0025](APPROVALS.md#app-0025) (Confidence Conversation at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`) |
+| Governing authorization request | [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md) |
+| Governing verification scope | [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md) |
+| Plan step | [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) B0→B1 |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+APO authorize only PR-012 bounded synthetic role-play under
+PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md and
+PR-012_ROLEPLAY_VERIFICATION_SCOPE.md.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. Confidence Conversation was accepted under APP-0025 with recorded limitations;
+2. plan Active step was B0 with refreshed PR-012 authorization and verification
+   drafts;
+3. no PR-012 code was authorized yet;
+4. the Accountable Product Owner supplied the begin-implementation statement
+   exactly as drafted.
+
+Interpretation: authorize **beginning implementation** of master-plan §26
+PR-012 only as the bounded **synthetic** Role-play slice. This is not
+acceptance of completed PR-012 work, approved curriculum modules, expanded
+live providers, production or Play.
+
+### Authorized scope
+
+1. Server stage state machine: Observe → Rehearse → Perform → Reflect.
+2. Synthetic `scenario_objectives` and completion criteria fixtures
+   (`development_only` / `synthetic_unreviewed` disclosed).
+3. Session snapshotting of persona and scenario versions for role-play mode.
+4. Advisory learner feedback evidence linked to objective and scenario IDs —
+   must not mutate mastery, attempts, review schedules or publications.
+5. Learner Practice UI for the four stages on the ordinary product path.
+6. Reuse Confidence Conversation `explanation_l1` / `explanation_locale` on
+   Reflect when a priority correction is needed; fake providers by default.
+7. OpenAPI/generated clients, organization scoping, cross-tenant tests, and
+   STATUS / DECISIONS / QUALITY_REVIEW / plan updates (B0 done; Active = B1).
+
+### Explicit non-authorization
+
+- Acceptance of completed PR-012 (requires later exact-commit APO accept)
+- Expanding live Azure OpenAI DI/spend beyond APP-0022 gates
+- Live multi-locale Azure TTS spend / ordinary Azure Speech DI expansion
+  beyond ADR-0008 / ADR-0011
+- Human-approved curriculum, transcript or audio modules
+- Full content-studio product surface
+- PR-013 / PR-014 / PR-015
+- Production / Play / real learner production data
+- Waiver of independent specialist reviews before production
+
+### Conditions and limitations
+
+- AI remains advisory and must not mutate authoritative learning records.
+- Demo Vite `/demo/*` paths remain non-evidence.
+- Content path for this APP is disclosed synthetic only; commissioned content
+  remains gated by DR-0007 / separate review.
+- No master-plan amendment is made.
+

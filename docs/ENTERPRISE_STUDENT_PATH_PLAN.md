@@ -84,15 +84,15 @@ Status legend: `pending` · `in_progress` · `blocked` · `done`
 | **A5** | Multi-locale guidance TTS policy (AI-only lesson audio) | `done` | [APP-0024](APPROVALS.md#app-0024); ADR-0011 accepted |
 | **A6** | Locale eval fixtures + `make ai-eval` gates for L1 explanations | `done` | `friend.l1.locale.v1` hash-locked; APP-0021 |
 | **A7** | APO acceptance of Confidence Conversation slice | `done` | [APP-0025](APPROVALS.md#app-0025) at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` |
-| **B0** | Authorize PR-012 Role-play (synthetic first) | `pending` | APP (draft exists) |
-| **B1** | Implement PR-012 verification scope | `pending` | After B0 |
-| **B2** | Pilot content path (synthetic → reviewed modules) | `pending` | Content DR / reviewers |
+| **B0** | Authorize PR-012 Role-play (synthetic first) | `done` | [APP-0026](APPROVALS.md#app-0026) |
+| **B1** | Implement PR-012 verification scope | `done` | Synthetic stage machine + UI + OpenAPI 0.10.0 under APP-0026 |
+| **B2** | Pilot content path (synthetic → reviewed modules) | `done` | D-0105 — synthetic retained for this APP; commissioned content still DR-0007 |
 | **C0** | PR-013 Operator console + privacy ops | `pending` | APP |
 | **D0** | PR-014 Capacitor Android closed beta (production path, not demo APK) | `pending` | APP |
 | **E0** | PR-015 Production hardening + pilot release gates | `pending` | APP + specialist reviews |
 | **F0** | Phase 1 Definition of Done sign-off | `pending` | APO + release board |
 
-**Active step:** `B0` — Authorize PR-012 Role-play (synthetic first) via separate APP; Confidence Conversation A1–A7 accepted under [APP-0025](APPROVALS.md#app-0025).
+**Active step:** APO exact-commit acceptance of PR-012 synthetic slice — package at [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md) (Exact commit SHA pending authorized commit).
 
 ---
 
@@ -310,9 +310,10 @@ When the user says “continue the plan” or “next step”:
 4. Advance **Active step** exactly one notch.
 5. Do not opportunistically implement later steps.
 
-**Immediate next action:** Consider a separate APP for PR-012 Role-play using
-[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
-Do not start PR-012 code without that APP.
+**Immediate next action:** Authorize a commit of the PR-012 synthetic workspace,
+fill Exact commit SHA in
+[PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md), then APO
+accept with recorded limitations. Do not start PR-013 without a separate APP.
 
 ---
 
@@ -345,3 +346,7 @@ Do not start PR-012 code without that APP.
 | 2026-08-07 | A7 acceptance package drafted; Exact commit SHA pending authorized commit of uncommitted A1–A6 workspace |
 | 2026-08-07 | Slice committed at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b`; A7 awaiting APO accept statement |
 | 2026-08-07 | A7 done ([APP-0025](APPROVALS.md#app-0025) / D-0103); Active step = B0 (PR-012 APP consideration only) |
+| 2026-08-07 | B0: PR-012 authorization + verification drafts refreshed post–APP-0025; awaiting APO authorize statement |
+| 2026-08-07 | B0 done ([APP-0026](APPROVALS.md#app-0026) / D-0104); Active step = B1 |
+| 2026-08-07 | B1 implementation landed (stage machine, objectives, advisory feedback, OpenAPI 0.10.0, RoleplayJourney); focused tests green; full verify / APO accept pending |
+| 2026-08-07 | B1 verification re-run (PHP unit + Docker Postgres + Node 24 vitest/locale/contracts); B2 synthetic content path recorded (D-0105); PR-012 APO acceptance package drafted |

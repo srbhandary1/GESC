@@ -11,6 +11,8 @@ use App\Conversation\ConversationTurnService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Providers\ConversationProviderException;
+use App\Conversation\RoleplayStageService;
+use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\ConversationTurnEventsRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
@@ -25,6 +27,7 @@ final class ConversationController extends Controller
         private readonly ConversationSessionService $sessions,
         private readonly ConversationTurnService $turns,
         private readonly ConversationEventService $events,
+        private readonly RoleplayStageService $stages,
     ) {}
 
     public function start(
@@ -39,6 +42,37 @@ final class ConversationController extends Controller
                 scenarioKey: (string) $request->validated('scenario_key'),
                 coachingMode: (string) $request->validated('coaching_mode'),
                 uiLocale: (string) $request->validated('ui_locale'),
+                idempotencyKey: (string) $request->validated(
+                    'idempotency_key',
+                ),
+            );
+        } catch (ConversationIdempotencyConflict) {
+            abort(Response::HTTP_CONFLICT);
+        } catch (ConversationOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        } catch (ConversationProviderException) {
+            abort(Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        return response()->json(
+            $result,
+            $result['replayed'] === true
+                ? Response::HTTP_OK
+                : Response::HTTP_CREATED,
+        )->header('Cache-Control', 'private, no-store');
+    }
+
+    public function advanceStage(
+        AdvanceConversationSessionStageRequest $request,
+        string $session,
+    ): JsonResponse {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+
+        try {
+            $result = $this->stages->advance(
+                learner: $principal->user,
+                sessionId: $session,
+                toStage: (string) $request->validated('to_stage'),
                 idempotencyKey: (string) $request->validated(
                     'idempotency_key',
                 ),

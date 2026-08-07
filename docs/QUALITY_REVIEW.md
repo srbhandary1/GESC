@@ -2399,3 +2399,113 @@ slice.
 A7 complete. Confidence Conversation enterprise slice accepted. Next: separate
 APP for PR-012 Role-play (plan B0) only — do not start PR-012 code without it.
 
+## PR-012 — Step B0 (authorization request ready)
+
+### Evidence reviewed
+
+- [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+- [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md)
+- Preconditions: APP-0020 (PR-011) + APP-0025 (Confidence Conversation)
+- Scope: synthetic Observe→Rehearse→Perform→Reflect; advisory objectives;
+  fake providers default; no live TTS spend expansion
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auth request refreshed post–APP-0025 | Pass | PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md |
+| Verification scope RP-01–RP-08 | Pass | PR-012_ROLEPLAY_VERIFICATION_SCOPE.md |
+| APO begin-implementation statement | Pending | exact authorize text in auth request |
+| PR-012 code | Not authorized | awaiting APP |
+
+### Outcome
+
+B0 package ready. Record a new APP only after the exact APO authorize
+statement; then advance Active step to B1 and begin synthetic implementation.
+
+## PR-012 — Step B0 (accepted) / B1 (in progress)
+
+### Evidence reviewed
+
+- Exact APO statement authorizing PR-012 bounded synthetic role-play
+- [APP-0026](APPROVALS.md#app-0026) / D-0104
+- [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+- [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md)
+
+### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| APO begin-implementation | Pass | APP-0026 |
+| Synthetic-only scope | Pass | APP-0026 authorized scope |
+| Approved curriculum / live TTS expansion | Not authorized | APP-0026 non-goals |
+| B1 implementation | In progress | plan Active step B1 |
+
+### Outcome
+
+B0 closed. Implement B1 synthetic Observe→Rehearse→Perform→Reflect slice;
+exact-commit acceptance remains a later APO gate.
+
+### B1 progress note (implementation landed; verification pending)
+
+Landed under APP-0026 authorized synthetic scope:
+
+- Migration `2026_08_07_000050_pr012_synthetic_roleplay.php` widens friend/roleplay
+  CHECKs and adds `scenario_objectives`, append-only
+  `conversation_session_stage_events`, and advisory `roleplay_feedback_evidence`.
+- `RoleplayStages` + `RoleplayStageService` linear Observe→Rehearse→Perform→Reflect;
+  Reflect writes digests only (no mastery).
+- `ConversationSessionService` resolves friend/roleplay prototype pairs; roleplay
+  starts at Observe with objectives/feedback payload fields.
+- HTTP `POST /conversation-sessions/{session}/stages`, OpenAPI 0.10.0 + regenerated
+  clients, FoundationSeeder clinic-reception synthetic prototype (2 objectives).
+- Practice UI `RoleplayJourney` entry ("Role-play (synthetic)") beside Confidence.
+
+Focused verification passed for this slice:
+
+- PHPUnit unit/feature (sqlite): `RoleplayStagesTest`,
+  `ConversationRequestValidationTest` stage cases — pass
+- PHPUnit integration (postgres via php:8.4-cli + pdo_pgsql):
+  `RoleplaySessionTest`, `FoundationSeederIntegrityTest` — pass
+- Vitest (Node 24): `RoleplayJourney.test.tsx` — pass
+- `pnpm run openapi:check` and `pnpm run locale:check` — pass
+
+B1 remains open for full `make verify` / APO exact-commit acceptance; production
+and Play stay unauthorized.
+
+### B1 verification re-run + B2 + acceptance package
+
+#### Evidence reviewed
+
+- Host PHPUnit: `RoleplayStagesTest` + stage validation — 5 passed
+- Docker PHP 8.4.24 + pdo_pgsql: `RoleplaySessionTest` +
+  `FoundationSeederIntegrityTest` — 6 passed / 42 assertions
+- Node 24 Docker: locale check pass; OpenAPI generate `--check` pass;
+  Vitest RoleplayJourney + ConversationJourney — 4 passed
+- Chromium Role-play e2e: spec added; webServer `tsc -b` blocked by
+  pre-existing unrelated typecheck errors — **not claimed**
+- B2 content path: D-0105 synthetic retained for APP-0026
+- [PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)
+
+#### Gate checklist
+
+| Check | Result | Evidence |
+|---|---|---|
+| RP-01 stage transitions | Pass | RoleplaySessionTest |
+| RP-02 persona/scenario snapshot | Pass | session start assertions |
+| RP-03 no mastery writes | Pass | learningCounts unchanged |
+| RP-04 advisory feedback evidence | Pass | roleplay_feedback_evidence digests |
+| RP-05 cross-tenant denial | Pass | RoleplaySessionTest |
+| RP-06 OpenAPI/clients | Pass | 0.10.0 + generate --check |
+| RP-07 UI journey | Pass (unit) | RoleplayJourney vitest; Chromium not claimed |
+| RP-08 make verify | Not claimed | host/CI limitations |
+| B2 synthetic content path | Pass | D-0105 |
+| Exact commit / APO accept | Pending | acceptance package |
+
+#### Outcome
+
+B1–B2 synthetic scope ready for Exact-commit APO acceptance after an authorized
+commit. PR-013 remains unauthorized.
+
+
+

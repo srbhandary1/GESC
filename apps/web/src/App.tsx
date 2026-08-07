@@ -27,6 +27,7 @@ import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
+import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
@@ -137,6 +138,9 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
+  const [practiceSurface, setPracticeSurface] = useState<
+    'confidence' | 'roleplay'
+  >('confidence')
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -461,13 +465,41 @@ function App({
             resumeBundle={offlineResume?.storedBundle}
           />
         ) : canPractice ? (
-          <ConversationJourney
-            api={conversationApi}
-            createClientId={createClientId}
-            demoMode={demoMode}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-          />
+          practiceSurface === 'roleplay' ? (
+            <RoleplayJourney
+              api={conversationApi}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onBack={() => {
+                setPracticeSurface('confidence')
+              }}
+            />
+          ) : (
+            <>
+              <div className="shell-practice-switch">
+                <button
+                  onClick={() => {
+                    setPracticeSurface('roleplay')
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message(
+                      'conversation.roleplay.entry_button',
+                    )}
+                  />
+                </button>
+              </div>
+              <ConversationJourney
+                api={conversationApi}
+                createClientId={createClientId}
+                demoMode={demoMode}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+              />
+            </>
+          )
         ) : canShowDemoProgress ? (
           <DemoLearnerProgress
             api={learnerJourneyApi}

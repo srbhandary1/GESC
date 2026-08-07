@@ -1,4 +1,5 @@
 import type {
+  AdvanceConversationSessionStageRequest,
   ConversationSession,
   ConversationTurn,
   ConversationTurnEvent,
@@ -25,6 +26,7 @@ export type FriendTurn = ConversationTurn
 export type FriendTurnEvent = ConversationTurnEvent
 export type StartFriendSessionInput = StartConversationSessionRequest
 export type CreateFriendTurnInput = CreateConversationTurnRequest
+export type AdvanceRoleplayStageInput = AdvanceConversationSessionStageRequest
 export type VoiceConsents = VoiceConsentListing
 export type VoiceConsent = VoiceConsentEvent
 export type SecureVoiceRecording = VoiceRecording
@@ -36,6 +38,13 @@ export type LearnerMemoryListing = LearnerAiMemoryListing
 export interface ConversationJourneyApi {
   startSession(
     input: StartFriendSessionInput,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession>
+
+  advanceStage?(
+    sessionId: string,
+    input: AdvanceRoleplayStageInput,
     commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendSession>

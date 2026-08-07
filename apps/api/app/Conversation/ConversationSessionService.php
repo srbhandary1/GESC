@@ -6,6 +6,7 @@ namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\RoleplayStages;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -45,9 +46,10 @@ final readonly class ConversationSessionService
         ): array {
             $context = $this->authority->require($learner);
             $membershipId = (string) $context->membershipId;
+            $mode = $this->resolveMode($personaKey, $scenarioKey);
             $fingerprint = $this->commands->fingerprint([
                 'coaching_mode' => $coachingMode,
-                'mode' => 'friend',
+                'mode' => $mode,
                 'persona_key' => $personaKey,
                 'scenario_key' => $scenarioKey,
                 'ui_locale' => $uiLocale,
@@ -76,6 +78,7 @@ final readonly class ConversationSessionService
                 scenarioKey: $scenarioKey,
                 coachingMode: $coachingMode,
                 uiLocale: $uiLocale,
+                mode: $mode,
             );
             $now = Date::now()->toImmutable();
             $sessionId = (string) Str::ulid();
@@ -90,7 +93,7 @@ final readonly class ConversationSessionService
                 'scenario_id' => $prototype->scenario_id,
                 'scenario_version_id' => $prototype->scenario_version_id,
                 'scenario_definition_hash' => $prototype->scenario_definition_hash,
-                'mode' => 'friend',
+                'mode' => $mode,
                 'coaching_mode' => $coachingMode,
                 'ui_locale' => $uiLocale,
                 'status' => 'active',
@@ -99,6 +102,20 @@ final readonly class ConversationSessionService
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+
+            if ($mode === 'roleplay') {
+                DB::table('conversation_session_stage_events')->insert([
+                    'id' => (string) Str::ulid(),
+                    'organization_id' => $context->organizationId,
+                    'conversation_session_id' => $sessionId,
+                    'learner_membership_id' => $membershipId,
+                    'from_stage' => null,
+                    'to_stage' => RoleplayStages::OBSERVE,
+                    'sequence' => 1,
+                    'created_at' => $now,
+                ]);
+            }
+
             $this->commands->record(
                 actor: $learner,
                 operation: 'conversation.session.start',
@@ -120,12 +137,69 @@ final readonly class ConversationSessionService
         }, 3);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function existingFor(
+        string $organizationId,
+        string $membershipId,
+        string $sessionId,
+        bool $replayed,
+    ): array {
+        return $this->existing(
+            organizationId: $organizationId,
+            membershipId: $membershipId,
+            sessionId: $sessionId,
+            replayed: $replayed,
+        );
+    }
+
+    private function resolveMode(string $personaKey, string $scenarioKey): string
+    {
+        $prototypes = config('conversation.prototypes', []);
+
+        if (is_array($prototypes)) {
+            foreach ($prototypes as $prototype) {
+                if (
+                    ! is_array($prototype)
+                    || ! is_string($prototype['persona_key'] ?? null)
+                    || ! is_string($prototype['scenario_key'] ?? null)
+                    || ! is_string($prototype['mode'] ?? null)
+                ) {
+                    continue;
+                }
+
+                if (
+                    $personaKey === $prototype['persona_key']
+                    && $scenarioKey === $prototype['scenario_key']
+                ) {
+                    return $prototype['mode'];
+                }
+            }
+        }
+
+        $legacy = config('conversation.prototype', []);
+
+        if (
+            is_array($legacy)
+            && ($legacy['persona_key'] ?? null) === $personaKey
+            && ($legacy['scenario_key'] ?? null) === $scenarioKey
+        ) {
+            return is_string($legacy['mode'] ?? null)
+                ? $legacy['mode']
+                : 'friend';
+        }
+
+        throw new ConversationOperationRejected;
+    }
+
     private function prototype(
         string $organizationId,
         string $personaKey,
         string $scenarioKey,
         string $coachingMode,
         string $uiLocale,
+        string $mode,
     ): stdClass {
         $allowedModes = config('conversation.coaching_modes', ['gentle']);
         $allowedLocales = config(
@@ -134,13 +208,11 @@ final readonly class ConversationSessionService
         );
 
         if (
-            $personaKey !== config('conversation.prototype.persona_key')
-            || $scenarioKey
-                !== config('conversation.prototype.scenario_key')
-            || ! is_array($allowedModes)
+            ! is_array($allowedModes)
             || ! in_array($coachingMode, $allowedModes, true)
             || ! is_array($allowedLocales)
             || ! in_array($uiLocale, $allowedLocales, true)
+            || ! in_array($mode, ['friend', 'roleplay'], true)
         ) {
             throw new ConversationOperationRejected;
         }
@@ -184,7 +256,7 @@ final readonly class ConversationSessionService
             ->where('persona.status', 'development_only')
             ->where('persona_version.review_status', 'synthetic_unreviewed')
             ->where('scenario.key', $scenarioKey)
-            ->where('scenario.mode', 'friend')
+            ->where('scenario.mode', $mode)
             ->where('scenario.status', 'development_only')
             ->where('scenario_version.review_status', 'synthetic_unreviewed')
             ->orderByDesc('persona_version.version')
@@ -289,6 +361,8 @@ final readonly class ConversationSessionService
                 'session.mode',
                 'session.coaching_mode',
                 'session.ui_locale',
+                'session.scenario_id',
+                'session.scenario_version_id',
                 'persona.id as persona_id',
                 'persona.key as persona_key',
                 'persona_version.id as persona_version_id',
@@ -310,12 +384,16 @@ final readonly class ConversationSessionService
             throw new ConversationOperationRejected;
         }
 
-        return [
+        $mode = $this->string($row, 'mode');
+        $payload = [
             'id' => $this->string($row, 'id'),
             'status' => $this->string($row, 'status'),
-            'mode' => $this->string($row, 'mode'),
+            'mode' => $mode,
             'coaching_mode' => $this->string($row, 'coaching_mode'),
             'ui_locale' => $this->string($row, 'ui_locale'),
+            'stage' => $mode === 'roleplay'
+                ? $this->currentStage($organizationId, $sessionId)
+                : null,
             'persona' => [
                 'id' => $this->string($row, 'persona_id'),
                 'key' => $this->string($row, 'persona_key'),
@@ -364,6 +442,96 @@ final readonly class ConversationSessionService
             ],
             'replayed' => $replayed,
         ];
+
+        if ($mode === 'roleplay') {
+            $payload['objectives'] = $this->objectives(
+                organizationId: $organizationId,
+                scenarioVersionId: $this->string($row, 'scenario_version_id'),
+            );
+            $payload['feedback'] = $this->feedback(
+                organizationId: $organizationId,
+                sessionId: $sessionId,
+            );
+        }
+
+        return $payload;
+    }
+
+    private function currentStage(
+        string $organizationId,
+        string $sessionId,
+    ): string {
+        $toStage = DB::table('conversation_session_stage_events')
+            ->where('organization_id', $organizationId)
+            ->where('conversation_session_id', $sessionId)
+            ->orderByDesc('sequence')
+            ->value('to_stage');
+
+        if (! is_string($toStage) || ! RoleplayStages::isValid($toStage)) {
+            throw new ConversationOperationRejected;
+        }
+
+        return $toStage;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function objectives(
+        string $organizationId,
+        string $scenarioVersionId,
+    ): array {
+        return DB::table('scenario_objectives')
+            ->where('organization_id', $organizationId)
+            ->where('scenario_version_id', $scenarioVersionId)
+            ->orderBy('sort_order')
+            ->get([
+                'id',
+                'objective_key',
+                'title',
+                'completion_criteria_code',
+            ])
+            ->map(fn (stdClass $objective): array => [
+                'id' => $this->string($objective, 'id'),
+                'key' => $this->string($objective, 'objective_key'),
+                'title' => $this->string($objective, 'title'),
+                'completion_criteria_code' => $this->string(
+                    $objective,
+                    'completion_criteria_code',
+                ),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function feedback(
+        string $organizationId,
+        string $sessionId,
+    ): array {
+        return DB::table('roleplay_feedback_evidence')
+            ->where('organization_id', $organizationId)
+            ->where('conversation_session_id', $sessionId)
+            ->orderBy('created_at')
+            ->get([
+                'id',
+                'scenario_objective_id',
+                'evidence_digest',
+                'completion_state',
+            ])
+            ->map(fn (stdClass $row): array => [
+                'id' => $this->string($row, 'id'),
+                'scenario_objective_id' => $this->string(
+                    $row,
+                    'scenario_objective_id',
+                ),
+                'evidence_digest' => $this->string($row, 'evidence_digest'),
+                'completion_state' => $this->string($row, 'completion_state'),
+            ])
+            ->values()
+            ->all();
     }
 
     private function string(stdClass $row, string $field): string

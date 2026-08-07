@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Confidence Conversation enterprise slice (plan Steps A1–A7) |
-| Status | **Accepted** under [APP-0025](APPROVALS.md#app-0025) at `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with recorded limitations |
+| Checkpoint | PR-012 Role-play synthetic slice — awaiting APO exact-commit accept |
+| Status | B0–B2 done under [APP-0026](APPROVALS.md#app-0026); acceptance package drafted ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)); Exact commit pending |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 7 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | PR-008 through PR-011 accepted; Confidence Conversation A1–A7 accepted ([APP-0025](APPROVALS.md#app-0025)); PR-012+, production/Play unauthorized |
-| Next checkpoint | Separate APP for PR-012 Role-play (plan B0 / [PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)). Production/Play remain unauthorized |
-| Professional client path | APP-0016–0025; PR-009 through PR-011 and Confidence Conversation closed; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
+| Product code | PR-008 through PR-011 + Confidence Conversation accepted; PR-012 synthetic implemented pending APO accept; PR-013+, production/Play unauthorized |
+| Next checkpoint | Commit PR-012 workspace + APO exact-commit accept; then separate APP for PR-013. Production/Play remain unauthorized |
+| Professional client path | APP-0016–0026; PR-012 B0–B2 done pending accept; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization
 
@@ -113,6 +113,13 @@ Owner acceptance of the Confidence Conversation enterprise slice at
 `5582c9ab69d6c6b4409ffade6f0f5b9d94fc4b7b` with every recorded limitation. It
 does not authorize PR-012 implementation, live multi-locale TTS spend,
 production or Google Play release.
+
+[APP-0026](APPROVALS.md#app-0026) records `S R Bhandary`'s Accountable Product
+Owner authorization to begin only PR-012 bounded synthetic role-play under
+[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md)
+and [PR-012_ROLEPLAY_VERIFICATION_SCOPE.md](PR-012_ROLEPLAY_VERIFICATION_SCOPE.md).
+It is not acceptance of completed PR-012 work and does not authorize approved
+curriculum, expanded live providers, production or Google Play release.
 
 [APP-0006](APPROVALS.md#app-0006) separately authorizes the bounded Phase 1
 UI-only expansion in
@@ -724,10 +731,17 @@ remain unauthorized. Live Azure OpenAI calls remain operator-gated
 Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are presentation-only
 and do not count as enterprise verification evidence.
 
-PR-012 implementation, production, Google Play release and every later
-master-plan checkpoint remain unauthorized until a distinct APP. A proposed
-PR-012 authorization boundary remains drafted only in
-[PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md](PR-012_ROLEPLAY_AUTHORIZATION_REQUEST.md).
-Production additionally requires qualified legal review and independent
-security, privacy, tenancy, accessibility, language/content and release
-review.
+Active work is APO exact-commit acceptance of the PR-012 synthetic Role-play
+slice ([PR-012_APO_ACCEPTANCE_PACKAGE.md](PR-012_APO_ACCEPTANCE_PACKAGE.md)).
+B0–B2 are done under [APP-0026](APPROVALS.md#app-0026) (D-0105 synthetic
+content path). Exact commit SHA is pending an authorized commit of the
+uncommitted workspace. Live multi-locale Azure TTS spend and ordinary Azure
+Speech DI expansion remain unauthorized. Live Azure OpenAI calls remain
+operator-gated (outside-repo evidence + ₹500 cap); production DI stays
+`disabled`. Demo-local Azure TTS / OpenRouter (D-0092 / D-0094) are
+presentation-only and do not count as enterprise verification evidence.
+
+PR-013+, production, Google Play release and every later master-plan checkpoint
+remain unauthorized until a distinct APP. Production additionally requires
+qualified legal review and independent security, privacy, tenancy,
+accessibility, language/content and release review.

@@ -1381,11 +1381,17 @@ export const StartConversationSessionRequestSchema = {
     properties: {
         persona_key: {
             type: 'string',
-            const: 'patient-friend-prototype'
+            enum: [
+                'patient-friend-prototype',
+                'clinic-reception-roleplay-prototype'
+            ]
         },
         scenario_key: {
             type: 'string',
-            const: 'everyday-friend-prototype'
+            enum: [
+                'everyday-friend-prototype',
+                'clinic-reception-roleplay-scenario'
+            ]
         },
         coaching_mode: {
             type: 'string',
@@ -1397,6 +1403,25 @@ export const StartConversationSessionRequestSchema = {
         },
         ui_locale: {
             $ref: '#/components/schemas/SupportedLocale'
+        }
+    }
+} as const;
+
+export const AdvanceConversationSessionStageRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'to_stage'
+    ],
+    properties: {
+        to_stage: {
+            type: 'string',
+            enum: [
+                'observe',
+                'rehearse',
+                'perform',
+                'reflect'
+            ]
         }
     }
 } as const;
@@ -1420,7 +1445,10 @@ export const ConversationPersonaSnapshotSchema = {
         },
         key: {
             type: 'string',
-            const: 'patient-friend-prototype'
+            enum: [
+                'patient-friend-prototype',
+                'clinic-reception-roleplay-prototype'
+            ]
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -1467,7 +1495,10 @@ export const ConversationScenarioSnapshotSchema = {
         },
         key: {
             type: 'string',
-            const: 'everyday-friend-prototype'
+            enum: [
+                'everyday-friend-prototype',
+                'clinic-reception-roleplay-scenario'
+            ]
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -1478,7 +1509,10 @@ export const ConversationScenarioSnapshotSchema = {
         },
         topic_code: {
             type: 'string',
-            const: 'everyday-conversation'
+            enum: [
+                'everyday-conversation',
+                'clinic-reception'
+            ]
         },
         definition_hash: {
             $ref: '#/components/schemas/Sha256'
@@ -1486,6 +1520,67 @@ export const ConversationScenarioSnapshotSchema = {
         review_status: {
             type: 'string',
             const: 'synthetic_unreviewed'
+        }
+    }
+} as const;
+
+export const ConversationScenarioObjectiveSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'title',
+        'completion_criteria_code'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        title: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        completion_criteria_code: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        }
+    }
+} as const;
+
+export const ConversationRoleplayFeedbackEvidenceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'scenario_objective_id',
+        'evidence_digest',
+        'completion_state'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        scenario_objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        evidence_digest: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        completion_state: {
+            type: 'string',
+            enum: [
+                'met',
+                'unmet',
+                'skipped'
+            ]
         }
     }
 } as const;
@@ -1499,6 +1594,7 @@ export const ConversationSessionSchema = {
         'mode',
         'coaching_mode',
         'ui_locale',
+        'stage',
         'persona',
         'scenario',
         'replayed'
@@ -1513,7 +1609,10 @@ export const ConversationSessionSchema = {
         },
         mode: {
             type: 'string',
-            const: 'friend'
+            enum: [
+                'friend',
+                'roleplay'
+            ]
         },
         coaching_mode: {
             type: 'string',
@@ -1526,11 +1625,36 @@ export const ConversationSessionSchema = {
         ui_locale: {
             $ref: '#/components/schemas/SupportedLocale'
         },
+        stage: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'observe',
+                'rehearse',
+                'perform',
+                'reflect',
+                null
+            ]
+        },
         persona: {
             $ref: '#/components/schemas/ConversationPersonaSnapshot'
         },
         scenario: {
             $ref: '#/components/schemas/ConversationScenarioSnapshot'
+        },
+        objectives: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ConversationScenarioObjective'
+            }
+        },
+        feedback: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ConversationRoleplayFeedbackEvidence'
+            }
         },
         replayed: {
             type: 'boolean'
