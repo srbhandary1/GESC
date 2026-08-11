@@ -91,11 +91,14 @@ Optional text-only static IP after dual-NAT forward:
 http://117.254.108.143:8080
 ```
 
-Port `8080` is the configured Ubuntu listener and router-forward target. Keep
-the HTTPS tunnel as the authenticated/microphone entry because browsers do not
-treat public plain HTTP as a secure context and secure session cookies are not
-sent over it. A later stable HTTPS hostname may point to this Ubuntu service
-without changing the existing `https://www.globalspokenenglish.com` site.
+Port `8080` is the configured Ubuntu listener and router-forward target. When
+an HTTPS soft-launch origin is configured, opening the static-IP URL redirects
+the same path and query to that current HTTPS origin. This makes `:8080` a safe
+entry point without sending usernames, passwords or session cookies over plain
+HTTP. Direct HTTP serving remains only a pre-tunnel diagnostic fallback and
+must not be used to sign in. A later stable HTTPS hostname may point to this
+Ubuntu service without changing the existing
+`https://www.globalspokenenglish.com` site.
 
 ## Enable live Azure tutoring (kill-switched)
 
@@ -275,6 +278,11 @@ not support NAT loopback:
 curl -i http://117.254.108.143:8080/api/v1/health/ready
 curl -I http://117.254.108.143:8080/
 ```
+
+The expected response while the HTTPS tunnel is active is HTTP `307` with a
+`Location` on the current approved HTTPS origin. A timeout from inside the same
+LAN may mean the router lacks NAT loopback; verify using mobile data or an
+external host.
 
 Plain public HTTP is not suitable for sign-in, secure cookies or microphone
 capture. Keep the Cloudflare HTTPS tunnel primary. For a stable address, create

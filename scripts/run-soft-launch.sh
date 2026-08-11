@@ -7,6 +7,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT_LOADER="${ROOT_DIR}/scripts/lib/soft-launch-environment.sh"
+PUBLIC_HTTP_CONFIGURATOR="${ROOT_DIR}/scripts/lib/soft-launch-public-http.sh"
 PHP_BIN="${GE_SOFT_LAUNCH_PHP:-${ROOT_DIR}/tmp/toolchain/php/php}"
 NODE_BIN="${GE_SOFT_LAUNCH_NODE:-${ROOT_DIR}/tmp/toolchain/node/bin/node}"
 PNPM_BIN="${GE_SOFT_LAUNCH_PNPM:-${ROOT_DIR}/tmp/toolchain/node/bin/pnpm}"
@@ -139,38 +140,20 @@ start_proxy() {
 }
 
 start_public_http() {
-  # Optional secondary bind for static-IP text checks (not primary HTTPS).
+  # Static-IP entry redirects authenticated use to the current HTTPS origin.
+  # Direct HTTP serving remains available only before an HTTPS origin exists.
   require_caddy
   stop_pidfile public-http
   ensure_web_dist
-  cat >"${RUNTIME_DIR}/env/Caddyfile.public" <<EOF
-{
-	auto_https off
-}
-:${PUBLIC_HTTP_PORT} {
-	redir * http://127.0.0.1:${PROXY_PORT}{uri} 307
-}
-EOF
-  # Prefer serving the same app on PUBLIC_HTTP_PORT directly for static IP.
-  cat >"${RUNTIME_DIR}/env/Caddyfile.public" <<EOF
-{
-	auto_https off
-}
-:${PUBLIC_HTTP_PORT} {
-	encode gzip
-	handle /api/* {
-		reverse_proxy 127.0.0.1:${API_PORT}
-	}
-	handle /sanctum/* {
-		reverse_proxy 127.0.0.1:${API_PORT}
-	}
-	handle {
-		root * ${WEB_DIST}
-		try_files {path} /index.html
-		file_server
-	}
-}
-EOF
+  source_soft_launch_env
+  # shellcheck disable=SC1090
+  source "${PUBLIC_HTTP_CONFIGURATOR}"
+  write_soft_launch_public_http_config \
+    "${RUNTIME_DIR}/env/Caddyfile.public" \
+    "${PUBLIC_HTTP_PORT}" \
+    "${API_PORT}" \
+    "${WEB_DIST}" \
+    "${APP_URL:-}"
   nohup "${CADDY_BIN}" run --config "${RUNTIME_DIR}/env/Caddyfile.public" --adapter caddyfile \
     >"${LOG_DIR}/public-http.log" 2>&1 &
   echo $! >"${PID_DIR}/public-http.pid"
@@ -240,6 +223,7 @@ path.chmod(0o600)
 PY
   start_api
   start_worker
+  start_public_http
   wait_health
 }
 
@@ -302,8 +286,8 @@ case "${MODE}" in
     wait_health
     status
     printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
-    printf 'Secondary text HTTP: http://127.0.0.1:%s (or static IP:%s after forward)\n' \
-      "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTP_PORT}"
+    printf 'Static-IP entry: http://127.0.0.1:%s (redirects to HTTPS when configured)\n' \
+      "${PUBLIC_HTTP_PORT}"
     ;;
   stop)
     stop_pidfile tunnel

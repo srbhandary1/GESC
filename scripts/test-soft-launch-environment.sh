@@ -80,4 +80,33 @@ grep -Fq '"approved_for_conversation_model": false' \
 grep -Fq 'REPLACE_WITH_CURRENT_SUBSCRIPTION_EVIDENCE_ID' \
   "$fresh_workspace/env/soft-launch-conversation.env"
 
+redirect_config="$test_root/Caddyfile.redirect"
+direct_config="$test_root/Caddyfile.direct"
+bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "https://soft-launch.example.test"
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$redirect_config"
+grep -Fq 'redir * https://soft-launch.example.test{uri} 307' "$redirect_config"
+if grep -Fq 'reverse_proxy' "$redirect_config"; then
+  printf '%s\n' 'HTTPS static-IP entry must not serve authenticated HTTP directly' >&2
+  exit 1
+fi
+
+bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "http://117.254.108.143:8080"
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$direct_config"
+grep -Fq 'reverse_proxy 127.0.0.1:8000' "$direct_config"
+grep -Fq 'root * /srv/web' "$direct_config"
+
+reconciliation_aid="$root_dir/apps/web/public/lpl01-reconciliation.html"
+grep -Fq 'Temporary controlled soft-launch commissioning aid.' "$reconciliation_aid"
+grep -Fq 'fresh-password-confirmed API' "$reconciliation_aid"
+if grep -Eq 'localhost-only|fresh-TOTP' "$reconciliation_aid"; then
+  printf '%s\n' 'reconciliation aid contains a stale access or authentication label' >&2
+  exit 1
+fi
+
 printf '%s\n' 'Soft-launch environment contract passed.'

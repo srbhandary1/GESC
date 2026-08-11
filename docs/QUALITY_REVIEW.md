@@ -6498,3 +6498,23 @@ provider secret was logged or committed. Remote CI is closed for this
 candidate; independent review, production-environment validation, physical
 devices, production signing identity, Play authorization and release approval
 remain explicit gates.
+
+## Static-IP remote-entry verification — 11 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Host listener | Pass | Caddy bound on all interfaces at TCP 8080; API remained loopback-only at TCP 8000 |
+| Router/public reachability | Pass | Independent `portchecker.io` TCP check returned `True` for `117.254.108.143:8080` |
+| Safe transport transition | Pass | Loopback and `192.168.1.3:8080` returned HTTP 307 to the current HTTPS origin with path/query preserved |
+| HTTPS application readiness | Pass | `/api/v1/health/ready` returned `ready` after managed-service restart |
+| Operational readiness | Pass with one declared warning | 17 pass / 1 disabled-live-AI warning / 0 fail |
+| Static contract | Pass | HTTPS configuration contains only the redirect; invalid/non-HTTPS origin retains diagnostic direct-serving fallback |
+| Reconciliation access copy | Pass | Controlled soft-launch and fresh-password-confirmed wording matches the existing API middleware; stale localhost/TOTP labels are rejected by the contract test |
+| Repository verification | Pass | `make verify`: 175 SQLite / 1,919 assertions; 309 PostgreSQL / 4,496 assertions; 282 JavaScript tests; audits, analysis and contracts passed |
+| Production build | Pass with advisory | `make build`; existing Vite chunk-size advisory only |
+
+Security/privacy result: the static public IP is an entry point, not an
+authenticated cleartext origin. Passwords and cookies remain on HTTPS, API and
+data services retain their existing bindings, and no secret, transcript,
+learner data or provider payload was inspected or logged. Router reachability
+does not constitute production authorization or independent review.

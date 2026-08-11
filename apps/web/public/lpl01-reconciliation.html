@@ -39,7 +39,7 @@
     <main>
       <h1>LPL-01 human transcript reconciliation</h1>
       <div class="notice">
-        Temporary localhost-only commissioning aid. It is not a product review UI and stores nothing in browser storage.
+        Temporary controlled soft-launch commissioning aid. It is not a product review UI and stores nothing in browser storage.
         Sign in to the main app as the authorized Direct operator, select the exact membership, open <strong>Username and password security</strong>, and confirm the current password first.
         Do not share OTP, TOTP, recovery codes, audio, or transcript text in chat or logs.
       </div>
@@ -248,7 +248,7 @@
         }
 
         elements.submit.disabled = true
-        setStatus(elements['submit-status'], 'Submitting through the authoritative fresh-TOTP API…')
+        setStatus(elements['submit-status'], 'Submitting through the authoritative fresh-password-confirmed API…')
         try {
           const response = await fetch(`/api/v1/operator/media/transcription-campaigns/${campaignId}/assets/${current.asset.campaignAssetId}/reconciliations`, {
             method: 'POST',

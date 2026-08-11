@@ -858,3 +858,32 @@ The immediately preceding REL-01 final evidence remains:
   physical-device DM-01/DM-02 evidence; a production-bound AAB; Play App
   Signing/upload authority; and LPL-01 human content reconciliation remain
   open.
+
+## Static-IP port-8080 secure entry — 11 August 2026
+
+- The persistent soft-launch service remains enabled and healthy on the Ubuntu
+  host. Caddy listens on `0.0.0.0:8080`, the LAN address remains
+  `192.168.1.3`, and an independent internet-side TCP check confirmed that
+  `117.254.108.143:8080` is reachable through the router forward.
+- When an approved HTTPS origin exists, the port-8080 listener now returns HTTP
+  `307` to the same path and query on that origin. This preserves the requested
+  static-IP entry while preventing usernames, passwords and Secure session
+  cookies from being transported over public plain HTTP. It does not expose or
+  weaken localhost-only recovery controls.
+- The existing LPL-01 reconciliation aid already uses the authenticated
+  operator API with fresh same-password confirmation. Its stale
+  `localhost-only` / `fresh-TOTP` labels now describe the controlled HTTPS
+  soft-launch and password-confirmed contract accurately; no API,
+  authorization, candidate handling or browser-storage behavior changed.
+- The managed service was restarted against the changed runtime. Loopback and
+  LAN requests both returned the expected redirect, the HTTPS readiness
+  endpoint returned `ready`, and soft-launch readiness reported 17 passes, one
+  intentional disabled-live-AI warning and zero failures.
+- `make verify` passed Pint, PHPStan, 175 SQLite tests / 1,919 assertions, 309
+  PostgreSQL tests / 4,496 assertions, audits, contracts, ESLint, TypeScript
+  and 282 JavaScript tests. `make build` passed with only the existing Vite
+  chunk-size advisory.
+- This is invite-only remote commissioning access, not production/public
+  release authorization. The HTTPS tunnel hostname is ephemeral and remains
+  authoritative from the protected runtime state; a stable named HTTPS tunnel
+  and the outstanding human/release gates remain separate.
