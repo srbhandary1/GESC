@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use RuntimeException;
@@ -18,7 +19,19 @@ abstract class TestCase extends BaseTestCase
     {
         $this->ensureIsolatedStorageTreeExists();
 
-        return parent::createApplication();
+        $application = parent::createApplication();
+        $config = $application->make(Repository::class);
+
+        if ($config->get('database.default') === 'pgsql') {
+            // PostgreSQL HTTP integration tests always exercise the HTTPS
+            // session contract, independently of developer-machine settings.
+            $config->set([
+                'session.cookie' => '__Host-global_english_session',
+                'session.secure' => true,
+            ]);
+        }
+
+        return $application;
     }
 
     private function ensureIsolatedStorageTreeExists(): void
