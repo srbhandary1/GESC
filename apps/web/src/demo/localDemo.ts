@@ -13,6 +13,7 @@ import type {
   LearnerAttempt,
   LearnerHome,
   LearnerJourneyApi,
+  LearnerLevelVideoCatalog,
   LearnerMission,
   LearnerProgress,
   MissionResult,
@@ -110,6 +111,14 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
   ): Promise<LearnerHome> {
     abortIfNeeded(signal)
     return demoHome()
+  }
+
+  async listLevelVideos(
+    enrollmentId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerLevelVideoCatalog> {
+    abortIfNeeded(signal)
+    return { enrollment_id: enrollmentId, videos: [] }
   }
 
   async mission(

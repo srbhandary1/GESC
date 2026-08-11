@@ -185,4 +185,36 @@ describe('web deterministic conversation API', () => {
       'voice-csrf',
     )
   })
+
+  it('does not request a Sanctum cookie for Android bearer mutations', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ id: 'android-session' }, { status: 201 }),
+    )
+    const api = new WebConversationJourneyApi({
+      baseUrl: 'https://api.global-english.test/api/v1',
+      csrfProtection: 'none',
+      fetch,
+    })
+
+    await api.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'android-session-command',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.global-english.test/api/v1/conversation-sessions',
+      expect.objectContaining({
+        headers: expect.not.objectContaining({
+          'X-XSRF-TOKEN': expect.anything(),
+        }),
+        method: 'POST',
+      }),
+    )
+  })
 })

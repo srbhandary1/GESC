@@ -23,9 +23,14 @@ import {
   type FriendTurn,
   type StartFriendSessionInput,
 } from './ConversationJourneyApi'
+import {
+  defaultAuthenticationRuntime,
+  type ApiCsrfProtection,
+} from '../auth/defaultAuthentication'
 
 export interface WebConversationJourneyApiOptions {
   readonly baseUrl?: string
+  readonly csrfProtection?: ApiCsrfProtection
   readonly fetch?: typeof fetch
   readonly readCookie?: () => string
 }
@@ -34,11 +39,14 @@ export class WebConversationJourneyApi
   implements ConversationJourneyApi
 {
   readonly #baseUrl: string
+  readonly #csrfProtection: ApiCsrfProtection
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
 
   constructor(options: WebConversationJourneyApiOptions = {}) {
     this.#baseUrl = options.baseUrl ?? '/api/v1'
+    this.#csrfProtection =
+      options.csrfProtection ?? 'sanctum-cookie'
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
     this.#readCookie =
       options.readCookie ??
@@ -258,6 +266,10 @@ export class WebConversationJourneyApi
     path: string,
     init: RequestInit,
   ): Promise<T> {
+    if (this.#csrfProtection === 'none') {
+      return this.#json<T>(path, init)
+    }
+
     const csrfHeaders = await this.#csrfHeaders(init.signal)
 
     return this.#json<T>(path, {
@@ -346,7 +358,11 @@ export class WebConversationJourneyApi
 }
 
 export const defaultConversationJourneyApi =
-  new WebConversationJourneyApi()
+  new WebConversationJourneyApi({
+    baseUrl: defaultAuthenticationRuntime.apiBaseUrl,
+    csrfProtection: defaultAuthenticationRuntime.csrfProtection,
+    fetch: defaultAuthenticationRuntime.apiFetch,
+  })
 
 function parseEventStream(
   stream: string,

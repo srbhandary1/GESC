@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 @CapacitorPlugin(name = "GlobalEnglishSecureCredentials")
 public class GlobalEnglishSecureCredentialsPlugin extends Plugin {
     private static final String PREFS_NAME = "ge_secure_credentials";
+    private static final String INSTALLATION_ID_KEY = "installation_ulid";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String PENDING_AUTHORIZATION_KEY = "pending_authorization";
 
@@ -43,7 +44,7 @@ public class GlobalEnglishSecureCredentialsPlugin extends Plugin {
     @PluginMethod
     public void get(PluginCall call) {
         String key = call.getString("key");
-        if (key == null || key.isEmpty()) {
+        if (!isAllowedKey(key)) {
             call.reject("key is required");
             return;
         }
@@ -61,35 +62,74 @@ public class GlobalEnglishSecureCredentialsPlugin extends Plugin {
     public void set(PluginCall call) {
         String key = call.getString("key");
         String value = call.getString("value");
-        if (key == null || key.isEmpty() || value == null) {
+        if (!isAllowedKey(key) || value == null) {
             call.reject("key and value are required");
             return;
         }
 
-        securePreferences.edit().putString(key, value).apply();
+        if (!securePreferences.edit().putString(key, value).commit()) {
+            call.reject("secure credential write failed");
+            return;
+        }
+
         call.resolve();
     }
 
     @PluginMethod
     public void remove(PluginCall call) {
         String key = call.getString("key");
-        if (key == null || key.isEmpty()) {
+        if (!isAllowedKey(key)) {
             call.reject("key is required");
             return;
         }
 
-        securePreferences.edit().remove(key).apply();
+        if (!securePreferences.edit().remove(key).commit()) {
+            call.reject("secure credential removal failed");
+            return;
+        }
+
         call.resolve();
+    }
+
+    /** Atomically reads and removes single-consumption PKCE pending state. */
+    @PluginMethod
+    public synchronized void take(PluginCall call) {
+        String key = call.getString("key");
+        if (!PENDING_AUTHORIZATION_KEY.equals(key)) {
+            call.reject("pending authorization key is required");
+            return;
+        }
+
+        String value = securePreferences.getString(key, null);
+        if (!securePreferences.edit().remove(key).commit()) {
+            call.reject("secure credential consumption failed");
+            return;
+        }
+
+        JSObject result = new JSObject();
+        result.put("value", value == null ? JSONObject.NULL : value);
+        call.resolve(result);
     }
 
     @PluginMethod
     public void clearAuthentication(PluginCall call) {
         // Retain installation ULID for installation binding across local logout.
-        securePreferences.edit()
+        boolean cleared = securePreferences.edit()
             .remove(REFRESH_TOKEN_KEY)
             .remove(PENDING_AUTHORIZATION_KEY)
-            .apply();
+            .commit();
+        if (!cleared) {
+            call.reject("secure authentication clear failed");
+            return;
+        }
+
         call.resolve();
+    }
+
+    private static boolean isAllowedKey(String key) {
+        return INSTALLATION_ID_KEY.equals(key)
+            || REFRESH_TOKEN_KEY.equals(key)
+            || PENDING_AUTHORIZATION_KEY.equals(key);
     }
 
     @NonNull

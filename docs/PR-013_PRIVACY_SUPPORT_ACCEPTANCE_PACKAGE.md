@@ -22,6 +22,28 @@
 5. OpenAPI + generated contracts; operator console diagnostics panel;
    cross-tenant 404 integration coverage.
 
+## Subsequent PRIV-DSR-01 hardening
+
+The identifier-only export and voice-only erasure described above are the
+historical PR-013 acceptance boundary. PRIV-DSR-01 subsequently upgrades those
+same endpoints to `learner-privacy-v1`:
+
+- [the complete learner-linked inventory](PRIVACY_DATA_INVENTORY.md) replaces
+  the five-class identifier summary and removes its silent 500-row caps;
+- safe structured personal data is exported while credentials, digests, raw
+  audio, transcripts, object keys and provider secrets remain excluded;
+- erasure ends the tenant membership, removes authorization and
+  derived-personalization state, retains append-only onboarding evidence,
+  redacts learner memory and prior export
+  payloads, revokes credentials and records every retained-authority outcome;
+- ADR-0007 voice deletion remains receipt-backed, after-commit and retryable;
+  and
+- OpenAPI 0.16.0 and generated clients expose the versioned inventory and
+  persisted per-record-class outcome matrix.
+
+This note does not retroactively change APP-0036's exact-commit acceptance or
+authorize production.
+
 ## Verification evidence
 
 | Check | Result |

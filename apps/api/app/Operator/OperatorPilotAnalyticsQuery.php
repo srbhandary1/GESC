@@ -7,7 +7,6 @@ namespace App\Operator;
 use App\Models\User;
 use App\Tenancy\OrganizationContextManager;
 use Illuminate\Support\Facades\DB;
-use stdClass;
 
 /**
  * Aggregate-only pilot analytics for the active organization.
@@ -122,10 +121,6 @@ final readonly class OperatorPilotAnalyticsQuery
         $grouped = [];
 
         foreach ($rows as $row) {
-            if (! $row instanceof stdClass) {
-                continue;
-            }
-
             $key = $row->{$column} ?? null;
 
             if (! is_string($key) || $key === '') {

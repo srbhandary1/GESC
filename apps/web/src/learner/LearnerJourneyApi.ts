@@ -6,6 +6,8 @@ import type {
   LearnerAttempt as ContractLearnerAttempt,
   LearnerGoal as ContractLearnerGoal,
   LearnerHome as ContractLearnerHome,
+  LearnerLevelVideoCatalog as ContractLearnerLevelVideoCatalog,
+  LearnerLevelVideo as ContractLearnerLevelVideo,
   LearnerMission as ContractLearnerMission,
   LearnerMissionResult as ContractLearnerMissionResult,
   LearnerProgress as ContractLearnerProgress,
@@ -35,6 +37,8 @@ export type MissionResult = ContractLearnerMissionResult
 export type LearnerProgress = ContractLearnerProgress
 export type OfflineBundle = OfflineMissionBundle
 export type OfflineCompletionInput = CompleteOfflineMissionRequest
+export type LearnerLevelVideo = ContractLearnerLevelVideo
+export type LearnerLevelVideoCatalog = ContractLearnerLevelVideoCatalog
 
 export interface LearnerJourneyApi {
   home(signal?: AbortSignal): Promise<LearnerHome>
@@ -44,6 +48,11 @@ export interface LearnerJourneyApi {
     commandId: string,
     signal?: AbortSignal,
   ): Promise<LearnerHome>
+
+  listLevelVideos(
+    enrollmentId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerLevelVideoCatalog>
 
   mission(
     missionId: string,
@@ -86,6 +95,19 @@ export interface LearnerJourneyApi {
     url: string,
     signal?: AbortSignal,
   ): Promise<Uint8Array<ArrayBuffer>>
+
+  /** Android-only private audio delivery through the bearer fetch adapter. */
+  downloadModelAudio?(
+    url: string,
+    signal?: AbortSignal,
+  ): Promise<Blob>
+
+  /** Android-only private video delivery through the bearer fetch adapter. */
+  downloadLessonVideo?(
+    url: string,
+    expectedBytes: number,
+    signal?: AbortSignal,
+  ): Promise<Blob>
 
   completeOffline?(
     input: OfflineCompletionInput,

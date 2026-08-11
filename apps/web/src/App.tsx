@@ -22,9 +22,11 @@ import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
@@ -49,8 +51,13 @@ import type {
   OfflineProfileBinding,
 } from './offline/OfflineLearningStore'
 import { OperatorConsole } from './operator/OperatorConsole'
+import { PasswordAccountSecurityPanel } from './operator/PasswordAccountSecurityPanel'
 import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
 import { defaultOperatorConsoleApi } from './operator/OperatorConsoleApi'
+import {
+  defaultOperatorOrganizationApi,
+  type OperatorOrganizationApi,
+} from './operator/OperatorOrganizationApi'
 
 type SessionState =
   | AuthenticationSnapshot
@@ -67,13 +74,8 @@ interface AppProps {
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
   operatorConsoleApi?: OperatorConsoleApi
+  operatorOrganizationApi?: OperatorOrganizationApi
 }
-
-const OPERATOR_ROLE_KEYS = new Set([
-  'trainer',
-  'organization_admin',
-  'content_reviewer',
-])
 
 const destinationMessages: Readonly<
   Record<
@@ -142,6 +144,7 @@ function App({
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
   operatorConsoleApi = defaultOperatorConsoleApi,
+  operatorOrganizationApi = defaultOperatorOrganizationApi,
 }: AppProps) {
   const [session, setSession] = useState<SessionState>({
     status: 'checking',
@@ -201,6 +204,12 @@ function App({
     const androidAuth = authentication as AndroidPkceAuthentication
     let remove: (() => void) | undefined
     let cancelled = false
+    const removeInvalidation = androidAuth.onAuthenticationInvalidated(() => {
+      if (!cancelled) {
+        setOfflineResume(null)
+        setSession({ status: 'anonymous' })
+      }
+    })
 
     void bindAndroidPkceDeepLink(
       androidAuth,
@@ -225,6 +234,7 @@ function App({
 
     return () => {
       cancelled = true
+      removeInvalidation()
       remove?.()
     }
   }, [authentication])
@@ -284,11 +294,6 @@ function App({
   const routeMessages = (
     demoMode ? demoDestinationMessages : destinationMessages
   )[destination]
-  const title = message(routeMessages.title)
-  const description = message(routeMessages.description)
-  const shellEyebrow = message(
-    demoMode ? 'demo.shell.eyebrow' : 'shell.eyebrow',
-  )
   const demoOrganization =
     demoMode && session.status === 'authenticated'
       ? session.identity.current_membership?.organization.name
@@ -311,10 +316,6 @@ function App({
       label: <LocalizedMessage resolution={message('nav.progress')} />,
     },
   } as const
-  const isFallbackActive =
-    navigationLabel.usedFallback ||
-    title.usedFallback ||
-    description.usedFallback
   const authenticatedOfflineBinding = useMemo<OfflineProfileBinding | null>(
     () => {
       if (session.status !== 'authenticated') {
@@ -341,10 +342,28 @@ function App({
   const isOperatorSession =
     !demoMode &&
     session.status === 'authenticated' &&
-    (session.identity.current_membership?.role_keys.some((roleKey) =>
-      OPERATOR_ROLE_KEYS.has(roleKey),
-    ) ??
-      false)
+    authentication.transport === 'sanctum-cookie' &&
+    session.identity.current_membership !== null &&
+    session.identity.current_membership.membership_type !== 'learner'
+  const title = message(
+    isOperatorSession ? 'operator.shell.title' : routeMessages.title,
+  )
+  const description = message(
+    isOperatorSession
+      ? 'operator.shell.description'
+      : routeMessages.description,
+  )
+  const shellEyebrow = message(
+    isOperatorSession
+      ? 'operator.shell.eyebrow'
+      : demoMode
+        ? 'demo.shell.eyebrow'
+        : 'shell.eyebrow',
+  )
+  const isFallbackActive =
+    navigationLabel.usedFallback ||
+    title.usedFallback ||
+    description.usedFallback
   const canLearn =
     destination === 'learn' &&
     (isLearnerSession || offlineResume !== null)
@@ -352,9 +371,10 @@ function App({
     destination === 'practice' && isLearnerSession
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
-  const canShowOperatorConsole =
-    isOperatorSession &&
-    (destination === 'home' || destination === 'learn')
+  const canShowOperatorConsole = isOperatorSession
+  const mfaAuthentication = isWebSessionAuthentication(authentication)
+    ? authentication
+    : undefined
   const showDemoPhase1 = demoMode && destination === 'home'
 
   useInterfaceFallbackReporting([navigationLabel])
@@ -379,7 +399,7 @@ function App({
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
-      hidePrimaryNavigation={false}
+      hidePrimaryNavigation={isOperatorSession}
       headerActions={
         <div className="shell-locale-control">
           <label
@@ -568,8 +588,20 @@ function App({
         ) : canShowOperatorConsole ? (
           <OperatorConsole
             api={operatorConsoleApi}
+            createCommandId={createClientId}
+            currentMembershipId={
+              session.status === 'authenticated'
+                ? (session.identity.current_membership?.id ?? '')
+                : ''
+            }
             locale={locale}
             localizationPolicy={localizationPolicy}
+            mfaAuthentication={mfaAuthentication}
+            onCredentialsRevoked={() => {
+              setOfflineResume(null)
+              setSession({ status: 'anonymous' })
+            }}
+            organizationApi={operatorOrganizationApi}
           />
         ) : (
           <p className="shell-checkpoint-notice">
@@ -582,6 +614,8 @@ function App({
         {demoMode ? null : (
           <SessionSummary
             authentication={authentication}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
             message={message}
             onSessionChange={setSession}
             session={session}
@@ -595,6 +629,8 @@ function App({
 
 interface SessionSummaryProps {
   authentication: AuthenticationAdapter
+  locale: SupportedLocale
+  localizationPolicy: ResolutionPolicy
   message: (key: MessageKey) => InterfaceMessageResolution
   onSessionChange: (session: SessionState) => void
   session: SessionState
@@ -602,10 +638,39 @@ interface SessionSummaryProps {
 
 function SessionSummary({
   authentication,
+  locale,
+  localizationPolicy,
   message,
   onSessionChange,
   session,
 }: SessionSummaryProps) {
+  const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
+
+  useEffect(() => {
+    const openAccountSecurityFromHash = () => {
+      if (window.location.hash === '#operator-account-security-title') {
+        setAccountSecurityOpen(true)
+      }
+    }
+
+    openAccountSecurityFromHash()
+    window.addEventListener('hashchange', openAccountSecurityFromHash)
+
+    return () => {
+      window.removeEventListener('hashchange', openAccountSecurityFromHash)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      accountSecurityOpen &&
+      window.location.hash === '#operator-account-security-title'
+    ) {
+      document
+        .getElementById('operator-account-security-title')
+        ?.scrollIntoView({ block: 'start' })
+    }
+  }, [accountSecurityOpen])
   const statusMessage = sessionMessageKey(session)
   const organization =
     session.status === 'authenticated'
@@ -614,6 +679,9 @@ function SessionSummary({
   const isAndroidPkce = authentication.transport === 'passport-pkce'
   const androidAuth = isAndroidPkce
     ? (authentication as AndroidPkceAuthentication)
+    : null
+  const webAuth = isWebSessionAuthentication(authentication)
+    ? authentication
     : null
 
   return (
@@ -680,6 +748,62 @@ function SessionSummary({
           ) : null}
         </div>
       )}
+      {webAuth !== null && session.status === 'authenticated' ? (
+        <div className="shell-session__actions">
+          <button
+            aria-controls="session-account-security"
+            aria-expanded={accountSecurityOpen}
+            onClick={() => setAccountSecurityOpen((current) => !current)}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message('operator.password.title')}
+            />
+          </button>
+          <button
+            onClick={() => {
+              void webAuth
+                .logout()
+                .then(() => {
+                  setAccountSecurityOpen(false)
+                  onSessionChange({ status: 'anonymous' })
+                })
+                .catch(() => {
+                  setAccountSecurityOpen(false)
+                  onSessionChange({ status: 'unavailable' })
+                })
+            }}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message('session.android_sign_out')}
+            />
+          </button>
+        </div>
+      ) : null}
+      {webAuth !== null &&
+      (session.status === 'anonymous' || session.status === 'unavailable') ? (
+        <WebPasswordSignInPanel
+          authentication={webAuth}
+          message={message}
+          onAuthenticated={onSessionChange}
+        />
+      ) : null}
+      {webAuth !== null &&
+      session.status === 'authenticated' &&
+      accountSecurityOpen ? (
+        <div id="session-account-security">
+          <PasswordAccountSecurityPanel
+            authentication={webAuth}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onCredentialsRevoked={() => {
+              setAccountSecurityOpen(false)
+              onSessionChange({ status: 'anonymous' })
+            }}
+          />
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -687,6 +811,36 @@ function SessionSummary({
 function supportedLocale(value: string): SupportedLocale | null {
   return (
     SUPPORTED_LOCALES.find((locale) => locale === value) ?? null
+  )
+}
+
+function isWebSessionAuthentication(
+  authentication: AuthenticationAdapter,
+): authentication is WebSessionAuthentication {
+  const candidate = authentication as Partial<WebSessionAuthentication>
+
+  return (
+    authentication.transport === 'sanctum-cookie' &&
+    typeof candidate.signIn === 'function' &&
+    typeof candidate.authenticationMode === 'function' &&
+    typeof candidate.requestPasswordRecovery === 'function' &&
+    typeof candidate.passwordStatus === 'function' &&
+    typeof candidate.establishPassword === 'function' &&
+    typeof candidate.confirmPassword === 'function' &&
+    typeof candidate.changePassword === 'function' &&
+    typeof candidate.changeUsername === 'function' &&
+    typeof candidate.privilegedMfaStatus === 'function' &&
+    typeof candidate.beginPrivilegedMfaEnrollment === 'function' &&
+    typeof candidate.confirmPrivilegedMfaEnrollment === 'function' &&
+    typeof candidate.createPrivilegedMfaChallenge === 'function' &&
+    typeof candidate.verifyPrivilegedMfaChallenge === 'function' &&
+    typeof candidate.regeneratePrivilegedMfaRecoveryCodes === 'function' &&
+    typeof candidate.revokePrivilegedMfaFactor === 'function' &&
+    typeof candidate.requestOtp === 'function' &&
+    typeof candidate.verifyOtp === 'function' &&
+    typeof candidate.sessions === 'function' &&
+    typeof candidate.revokeSession === 'function' &&
+    typeof candidate.revokeAllSessions === 'function'
   )
 }
 

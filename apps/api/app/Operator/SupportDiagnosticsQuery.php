@@ -6,6 +6,7 @@ namespace App\Operator;
 
 use App\Models\User;
 use App\Tenancy\OrganizationContextManager;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -121,7 +122,7 @@ final readonly class SupportDiagnosticsQuery
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, stdClass>  $rows
+     * @param  Collection<int, stdClass>  $rows
      * @return list<array<string, mixed>>
      */
     private function mapRows($rows, string $subjectType, string $kind): array
@@ -129,10 +130,6 @@ final readonly class SupportDiagnosticsQuery
         $items = [];
 
         foreach ($rows as $row) {
-            if (! $row instanceof stdClass) {
-                continue;
-            }
-
             $items[] = [
                 'kind' => $kind,
                 'subject_type' => $subjectType,

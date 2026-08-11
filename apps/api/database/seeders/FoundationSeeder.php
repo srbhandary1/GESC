@@ -8,6 +8,7 @@ use App\Curriculum\CanonicalJson;
 use App\Curriculum\CurriculumGraphProjector;
 use App\Models\Organization;
 use App\Models\Role;
+use App\Tenancy\PermissionCatalogue;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -17,37 +18,6 @@ use RuntimeException;
 
 final class FoundationSeeder extends Seeder
 {
-    /**
-     * @var array<string, string>
-     */
-    private const array PERMISSIONS = [
-        'cohorts.manage' => 'Create and manage organization cohorts.',
-        'cohorts.read' => 'View organization cohorts.',
-        'enrollments.manage' => 'Create and manage organization enrollments.',
-        'enrollments.read' => 'View organization enrollments.',
-        'institution_invites.manage' => 'Issue and revoke institution invitations.',
-        'memberships.manage' => 'Manage organization memberships.',
-        'memberships.read' => 'View organization memberships.',
-        'roles.manage' => 'Manage organization roles and permission grants.',
-        'curriculum.author' => 'Create organization-owned curriculum drafts and revisions.',
-        'curriculum.translate.kn' => 'Create Kannada variants for organization curriculum.',
-        'curriculum.review.en' => 'Record appointed English academic review evidence.',
-        'curriculum.review.kn' => 'Record appointed Kannada review evidence.',
-        'curriculum.publish' => 'Publish and roll back reviewed curriculum releases.',
-        'curriculum.share.manage' => 'Issue and withdraw curriculum share grants.',
-        'curriculum.shared.read' => 'Preview explicitly shared curriculum releases.',
-        'curriculum.shared.clone' => 'Clone an explicitly shared release into an organization draft.',
-        'enrollments.curriculum.assign' => 'Pin organization enrollments to an authorized publication.',
-        'curriculum.authority.manage' => 'Manage scoped curriculum authority appointments.',
-        'media.rights.approve' => 'Confirm media-rights evidence under an appointment.',
-        'curriculum.suspend' => 'Suspend or resume organization curriculum delivery.',
-        'learning.participate' => 'Use assigned learner missions and record self-owned learning evidence.',
-        'audit.read' => 'List organization-scoped audit digests for privileged operator actions.',
-        'support.diagnostics.read' => 'List organization-scoped support diagnostics digests without learner content bodies.',
-        'privacy.export.request' => 'Request organization-scoped learner identifier exports without audio or transcripts.',
-        'privacy.erasure.request' => 'Request organization-scoped learner account-erasure and retention workflows.',
-    ];
-
     /**
      * Synthetic pilot operator role packs for the Direct organization.
      *
@@ -59,15 +29,41 @@ final class FoundationSeeder extends Seeder
             'permissions' => [
                 'curriculum.author',
                 'curriculum.translate.kn',
+                'media.library.read',
+                'media.upload',
+                'media.metadata.manage',
             ],
         ],
         Role::DIRECT_ORGANIZATION_ADMIN_KEY => [
             'name' => 'Organization admin',
             'permissions' => [
+                'organization.settings.read',
+                'branches.read',
+                'branches.manage',
+                'cohorts.read',
+                'cohorts.manage',
+                'enrollments.read',
+                'enrollments.manage',
+                'institution_invites.manage',
+                'learners.read',
+                'learners.profile.correct',
+                'learners.lifecycle.manage',
+                'memberships.read',
+                'memberships.manage',
+                'roles.manage',
+                'trainer_profiles.read',
+                'trainer_profiles.manage',
+                'membership_sessions.revoke',
                 'curriculum.publish',
                 'curriculum.authority.manage',
                 'curriculum.share.manage',
                 'enrollments.curriculum.assign',
+                'media.library.read',
+                'media.upload',
+                'media.quarantine.review',
+                'media.metadata.manage',
+                'media.replace',
+                'media.retire',
                 'audit.read',
                 'support.diagnostics.read',
                 'privacy.export.request',
@@ -79,6 +75,8 @@ final class FoundationSeeder extends Seeder
             'permissions' => [
                 'curriculum.review.en',
                 'curriculum.review.kn',
+                'media.library.read',
+                'media.quarantine.review',
                 'audit.read',
             ],
         ],
@@ -115,7 +113,7 @@ final class FoundationSeeder extends Seeder
                 ],
             );
 
-            foreach (self::PERMISSIONS as $key => $description) {
+            foreach (PermissionCatalogue::DEFINITIONS as $key => $description) {
                 DB::table('permissions')->insertOrIgnore([
                     'id' => (string) Str::ulid(),
                     'key' => $key,
@@ -788,6 +786,93 @@ final class FoundationSeeder extends Seeder
             'version' => 1,
             'topic_code' => $scenarioDefinition['topic_code'],
             'response_code' => $scenarioDefinition['response_code'],
+            'definition_hash' => $scenarioHash,
+            'review_status' => 'synthetic_unreviewed',
+            'created_at' => $now,
+        ]);
+        $scenarioVersionId = $this->requiredId('scenario_versions', [
+            'organization_id' => $organizationId,
+            'scenario_id' => $scenarioId,
+            'version' => 1,
+        ]);
+        $this->assertCanonicalRecord(
+            'scenario_versions',
+            ['id' => $scenarioVersionId],
+            [
+                'organization_id' => $organizationId,
+                'scenario_id' => $scenarioId,
+                'version' => 1,
+                ...$scenarioDefinition,
+                'definition_hash' => $scenarioHash,
+                'review_status' => 'synthetic_unreviewed',
+            ],
+        );
+
+        $this->seedSyntheticFriendScenario(
+            organizationId: $organizationId,
+            now: $now,
+            attribution: $attribution,
+            scenarioKey: 'past-tense-skill-focus-prototype',
+            topicCode: 'grammar-past-simple',
+            responseCode: 'friend.skill-focus.past-simple.v1',
+        );
+        $this->seedSyntheticFriendScenario(
+            organizationId: $organizationId,
+            now: $now,
+            attribution: $attribution,
+            scenarioKey: 'carry-sentence-review-prototype',
+            topicCode: 'carry-sentence-review',
+            responseCode: 'friend.review.carry-sentence.v1',
+        );
+    }
+
+    private function seedSyntheticFriendScenario(
+        string $organizationId,
+        CarbonInterface $now,
+        string $attribution,
+        string $scenarioKey,
+        string $topicCode,
+        string $responseCode,
+    ): void {
+        $scenarioDefinition = [
+            'topic_code' => $topicCode,
+            'response_code' => $responseCode,
+        ];
+        $scenarioHash = CanonicalJson::sha256($scenarioDefinition);
+
+        DB::table('roleplay_scenarios')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'key' => $scenarioKey,
+            'mode' => 'friend',
+            'status' => 'development_only',
+            'created_by_attribution' => $attribution,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $scenarioId = $this->requiredId('roleplay_scenarios', [
+            'organization_id' => $organizationId,
+            'key' => $scenarioKey,
+        ]);
+        $this->assertCanonicalRecord(
+            'roleplay_scenarios',
+            ['id' => $scenarioId],
+            [
+                'organization_id' => $organizationId,
+                'key' => $scenarioKey,
+                'mode' => 'friend',
+                'status' => 'development_only',
+                'created_by_attribution' => $attribution,
+            ],
+        );
+
+        DB::table('scenario_versions')->insertOrIgnore([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'scenario_id' => $scenarioId,
+            'version' => 1,
+            'topic_code' => $topicCode,
+            'response_code' => $responseCode,
             'definition_hash' => $scenarioHash,
             'review_status' => 'synthetic_unreviewed',
             'created_at' => $now,

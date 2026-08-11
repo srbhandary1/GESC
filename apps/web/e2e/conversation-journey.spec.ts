@@ -17,7 +17,7 @@ const ids = {
   user: '01J20000000000000000000009',
 } as const
 
-test('completes the disclosed deterministic fake-provider conversation journey', async ({
+test('completes the disclosed text-first AI conversation journey', async ({
   page,
 }) => {
   const requests: Array<{
@@ -36,12 +36,12 @@ test('completes the disclosed deterministic fake-provider conversation journey',
 
   await expect(
     page.getByText(
-      'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+      'This is an AI practice partner, not a human. Feedback is advisory and never changes marks, mastery, or progress.',
     ),
   ).toBeVisible()
   await expect(
     page.getByText(
-      'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+      'Typed or approved transcript text is used for the current turn; only content-free digests are retained. Voice recording and transcript retention follow your consent choices.',
     ),
   ).toBeVisible()
 
@@ -49,7 +49,9 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
   await expect(
-    page.getByText('I am a deterministic AI prototype, not a human.'),
+    page.getByText(
+      'I am an AI practice partner, not a human. My feedback is advisory.',
+    ),
   ).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue to listen' }).click()
@@ -232,6 +234,10 @@ async function mockConversationApi(
       url: request.url(),
     })
 
+    if (await fulfillPasswordSecurity(route, path)) {
+      return
+    }
+
     if (path === '/api/v1/me') {
       await json(route, {
         current_membership: {
@@ -319,6 +325,26 @@ async function mockConversationApi(
 
     await route.abort('failed')
   })
+}
+
+async function fulfillPasswordSecurity(
+  route: Route,
+  path: string,
+): Promise<boolean> {
+  if (path === '/api/v1/auth/password/status') {
+    await json(route, {
+      credential_ready: true,
+      mode: 'password_only',
+      password_confirmed_at: null,
+      username: 'learner.one',
+    })
+    return true
+  }
+  if (path === '/api/v1/auth/sessions') {
+    await json(route, { data: [] })
+    return true
+  }
+  return false
 }
 
 function roleplaySession(

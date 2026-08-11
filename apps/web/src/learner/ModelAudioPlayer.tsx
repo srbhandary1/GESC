@@ -7,17 +7,71 @@ import { useEffect, useRef, useState } from 'react'
 
 interface ModelAudioPlayerProps {
   readonly labels: AudioControlLabels
+  readonly loadSource?: (
+    source: string,
+    signal?: AbortSignal,
+  ) => Promise<Blob>
   readonly mimeType: string
   readonly source: string
 }
 
 export function ModelAudioPlayer({
   labels,
+  loadSource,
   mimeType,
   source,
 }: ModelAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [state, setState] = useState<AudioControlState>('ready')
+  const [loadedSource, setLoadedSource] = useState<{
+    readonly loader: NonNullable<ModelAudioPlayerProps['loadSource']>
+    readonly objectUrl: string
+    readonly source: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (loadSource === undefined) {
+      return
+    }
+
+    const controller = new AbortController()
+    let objectUrl: string | null = null
+
+    void loadSource(source, controller.signal)
+      .then((audio) => {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        objectUrl = URL.createObjectURL(audio)
+        setLoadedSource({
+          loader: loadSource,
+          objectUrl,
+          source,
+        })
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setState('error')
+        }
+      })
+
+    return () => {
+      controller.abort()
+
+      if (objectUrl !== null) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [loadSource, source])
+
+  const playableSource =
+    loadSource === undefined
+      ? source
+      : loadedSource?.loader === loadSource &&
+          loadedSource.source === source
+        ? loadedSource.objectUrl
+        : null
 
   useEffect(() => {
     const audio = audioRef.current
@@ -59,7 +113,7 @@ export function ModelAudioPlayer({
       }
       audio.load()
     }
-  }, [source])
+  }, [playableSource])
 
   const play = async () => {
     const audio = audioRef.current
@@ -92,18 +146,20 @@ export function ModelAudioPlayer({
 
   return (
     <>
-      <audio
-        aria-hidden="true"
-        data-testid="model-audio-element"
-        key={source}
-        preload="metadata"
-        ref={audioRef}
-      >
-        <source
-          src={source}
-          type={mimeType}
-        />
-      </audio>
+      {playableSource === null ? null : (
+        <audio
+          aria-hidden="true"
+          data-testid="model-audio-element"
+          key={playableSource}
+          preload="metadata"
+          ref={audioRef}
+        >
+          <source
+            src={playableSource}
+            type={mimeType}
+          />
+        </audio>
+      )}
       <AudioControls
         labels={labels}
         onRequestPause={() => audioRef.current?.pause()}

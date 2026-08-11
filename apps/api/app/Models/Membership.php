@@ -39,6 +39,7 @@ final class Membership extends Model implements OrganizationOwned
         'status',
         'joined_at',
         'ended_at',
+        'version',
     ];
 
     /**
@@ -83,6 +84,7 @@ final class Membership extends Model implements OrganizationOwned
         return [
             'joined_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
+            'version' => 'integer',
         ];
     }
 }

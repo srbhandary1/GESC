@@ -6,16 +6,23 @@ namespace App\Providers;
 
 use App\Authentication\AuthenticationSecretDigester;
 use App\Authentication\Mfa\PrivilegedMfaVerifier;
-use App\Authentication\Mfa\UnavailablePrivilegedMfaVerifier;
+use App\Authentication\Mfa\Rfc6238PrivilegedMfaVerifier;
 use App\Authentication\Otp\LocalFixedOtpCodeGenerator;
 use App\Authentication\Otp\LocalOtpDeliveryAdapter;
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
 use App\Authentication\Otp\SecureOtpCodeGenerator;
+use App\Authentication\Password\ConfiguredPasswordBlocklist;
+use App\Authentication\Password\PasswordBlocklist;
+use App\Authentication\Password\PasswordRecoveryDeliveryAdapter;
+use App\Authentication\Password\ProtectedLocalPasswordRecoveryDeliveryAdapter;
+use App\Authentication\Password\UnavailablePasswordRecoveryDeliveryAdapter;
 use App\Authentication\PhoneNumberNormalizer;
-use App\Authentication\Sessions\MembershipRolePrivilegeClassifier;
+use App\Authentication\Sessions\AuthenticationSessionService;
+use App\Authentication\Sessions\PlatformOrMembershipPrivilegeClassifier;
 use App\Authentication\Sessions\PrivilegeClassifier;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
+use App\Conversation\Providers\ConfirmedTextSpeechToTextProvider;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledSpeechToTextProvider;
@@ -24,16 +31,34 @@ use App\Conversation\Providers\Fake\DeterministicFakeConversationModelProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
+use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
-use App\Conversation\Voice\Providers\Azure\AzureTextToSpeechProvider;
+use App\Conversation\Voice\LaravelVoiceSourceObjectStore;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
+use App\Conversation\Voice\VoiceSourceObjectStore;
+use App\Curriculum\Commissioning\MediaTranscription\CurriculumMediaSourceReader;
+use App\Curriculum\Commissioning\MediaTranscription\LaravelCurriculumMediaSourceReader;
+use App\Curriculum\Commissioning\MediaTranscription\LaravelMediaTranscriptionCandidateStore;
+use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionCandidateStore;
 use App\Health\DatabaseReadinessProbe;
 use App\Health\ReadinessChecker;
 use App\Health\RedisReadinessProbe;
+use App\Learning\Media\LaravelLessonVideoObjectStore;
+use App\Learning\Media\LessonVideoObjectStore;
 use App\Learning\Missions\DailyMissionReader;
 use App\Learning\Missions\PinnedDailyMissionReader;
+use App\Media\Inspection\DeterministicTestingMediaInspector;
+use App\Media\Inspection\FfprobeMediaInspector;
+use App\Media\Inspection\UnavailableMediaInspector;
+use App\Media\LaravelMediaObjectStore;
+use App\Media\MediaInspector;
+use App\Media\MediaMalwareScanner;
+use App\Media\MediaObjectStore;
+use App\Media\Scanning\ClamAvMediaMalwareScanner;
+use App\Media\Scanning\DeterministicTestingMediaMalwareScanner;
+use App\Media\Scanning\UnavailableMediaMalwareScanner;
 use App\Observability\HttpRequestLogger;
 use App\Tenancy\OrganizationContextManager;
 use DateInterval;
@@ -75,9 +100,61 @@ class AppServiceProvider extends ServiceProvider
 
             return $this->app->make(SecureOtpCodeGenerator::class);
         });
-        $this->app->bind(PrivilegeClassifier::class, MembershipRolePrivilegeClassifier::class);
+        $this->app->bind(PrivilegeClassifier::class, PlatformOrMembershipPrivilegeClassifier::class);
+        $this->app->bind(PasswordBlocklist::class, ConfiguredPasswordBlocklist::class);
+        $this->app->bind(PasswordRecoveryDeliveryAdapter::class, function (): PasswordRecoveryDeliveryAdapter {
+            if ($this->app->environment('local')
+                && config('authentication.password.recovery_delivery_driver') === 'protected-local') {
+                return $this->app->make(ProtectedLocalPasswordRecoveryDeliveryAdapter::class);
+            }
+
+            return $this->app->make(UnavailablePasswordRecoveryDeliveryAdapter::class);
+        });
         $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
-        $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
+        $this->app->bind(
+            LessonVideoObjectStore::class,
+            LaravelLessonVideoObjectStore::class,
+        );
+        $this->app->bind(MediaObjectStore::class, LaravelMediaObjectStore::class);
+        $this->app->bind(
+            MediaTranscriptionCandidateStore::class,
+            LaravelMediaTranscriptionCandidateStore::class,
+        );
+        $this->app->bind(
+            CurriculumMediaSourceReader::class,
+            LaravelCurriculumMediaSourceReader::class,
+        );
+        $this->app->bind(MediaInspector::class, function (): MediaInspector {
+            if ($this->app->environment('testing')) {
+                return $this->app->make(
+                    DeterministicTestingMediaInspector::class,
+                );
+            }
+
+            return config('media.inspector_driver') === 'ffprobe'
+                ? $this->app->make(FfprobeMediaInspector::class)
+                : $this->app->make(UnavailableMediaInspector::class);
+        });
+        $this->app->bind(
+            MediaMalwareScanner::class,
+            function (): MediaMalwareScanner {
+                if ($this->app->environment('testing')) {
+                    return $this->app->make(
+                        DeterministicTestingMediaMalwareScanner::class,
+                    );
+                }
+
+                return config('media.scanner_driver') === 'clamav'
+                    ? $this->app->make(ClamAvMediaMalwareScanner::class)
+                    : $this->app->make(
+                        UnavailableMediaMalwareScanner::class,
+                    );
+            },
+        );
+        $this->app->bind(
+            PrivilegedMfaVerifier::class,
+            Rfc6238PrivilegedMfaVerifier::class,
+        );
         $conversationDriver = (string) config('conversation.provider_driver');
         // Non-production only: production must keep CONVERSATION_PROVIDER_DRIVER=disabled.
         $nonProductionConversationEnv = $this->app->environment(
@@ -89,9 +166,11 @@ class AppServiceProvider extends ServiceProvider
             && $conversationDriver === 'azure-openai-dev';
         $this->app->bind(
             SpeechToTextProvider::class,
-            $fakeConversationEnabled
-                ? DeterministicFakeSpeechToTextProvider::class
-                : DisabledSpeechToTextProvider::class,
+            match (true) {
+                $fakeConversationEnabled => DeterministicFakeSpeechToTextProvider::class,
+                $azureConversationEnabled => ConfirmedTextSpeechToTextProvider::class,
+                default => DisabledSpeechToTextProvider::class,
+            },
         );
         $this->app->bind(
             ConversationModelProvider::class,
@@ -101,13 +180,14 @@ class AppServiceProvider extends ServiceProvider
                 default => DisabledConversationModelProvider::class,
             },
         );
-        // Typed turns remain primary. Azure TTS binds for Friend/model lines when
-        // azure-openai-dev is active; fail-closed speech config still blocks spend.
+        // Typed or learner-confirmed transcripts remain primary. Live Azure
+        // Speech DI retains its separate ADR/evidence gate, so the ordinary
+        // product reports an explicit text-first/on-device playback fallback.
         $this->app->bind(
             TextToSpeechProvider::class,
             match (true) {
                 $fakeConversationEnabled => DeterministicFakeTextToSpeechProvider::class,
-                $azureConversationEnabled => AzureTextToSpeechProvider::class,
+                $azureConversationEnabled => TextFirstTextToSpeechProvider::class,
                 default => DisabledTextToSpeechProvider::class,
             },
         );
@@ -120,6 +200,10 @@ class AppServiceProvider extends ServiceProvider
             $testingVoiceEnabled
                 ? DeterministicTestingSpeechToTextProvider::class
                 : DisabledRecordedSpeechToTextProvider::class,
+        );
+        $this->app->bind(
+            VoiceSourceObjectStore::class,
+            LaravelVoiceSourceObjectStore::class,
         );
         $this->app->bind(OtpDeliveryAdapter::class, function (): OtpDeliveryAdapter {
             if (config('authentication.otp.driver') !== 'local') {
@@ -200,6 +284,88 @@ class AppServiceProvider extends ServiceProvider
             )->by($digester->digest('otp-verification', $challenge."\0".$ip));
         });
 
+        RateLimiter::for('password-sign-ins', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $account = strtolower(trim((string) $request->input('username', '')));
+            $ip = (string) ($request->ip() ?? 'unknown');
+
+            return [
+                Limit::perMinutes(15, 5)->by(
+                    $digester->digest('password-sign-in-account', $account),
+                ),
+                Limit::perMinutes(15, 20)->by(
+                    $digester->digest('password-sign-in-ip', $ip),
+                ),
+                Limit::perMinute(100)->by('password-sign-in-global'),
+            ];
+        });
+
+        RateLimiter::for('password-confirmations', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $actor = (string) ($request->user('web')?->getAuthIdentifier() ?? 'anonymous');
+            $session = $request->hasSession()
+                ? (string) $request->session()->get(
+                    AuthenticationSessionService::SESSION_KEY,
+                    'unknown',
+                )
+                : 'unknown';
+
+            return [
+                Limit::perMinutes(15, 5)->by(
+                    $digester->digest('password-confirmation-account', $actor),
+                ),
+                Limit::perMinutes(15, 5)->by(
+                    $digester->digest('password-confirmation-session', $session),
+                ),
+            ];
+        });
+
+        RateLimiter::for('password-recovery-requests', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $lookup = strtolower(trim((string) $request->input('username', '')));
+            $ip = (string) ($request->ip() ?? 'unknown');
+
+            return [
+                Limit::perHour(3)->by($digester->digest('password-recovery-lookup', $lookup)),
+                Limit::perHour(10)->by($digester->digest('password-recovery-ip', $ip)),
+            ];
+        });
+
+        RateLimiter::for('password-recoveries', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $challenge = (string) $request->input('challenge_id', 'unknown');
+            $ip = (string) ($request->ip() ?? 'unknown');
+
+            return [
+                Limit::perHour(5)->by($digester->digest('password-recovery-challenge', $challenge)),
+                Limit::perHour(10)->by($digester->digest('password-recovery-consume-ip', $ip)),
+            ];
+        });
+
+        RateLimiter::for('mfa-enrollment', function (Request $request): array {
+            return $this->mfaLimits($request, 'enrollment', 3, 10);
+        });
+        RateLimiter::for('mfa-challenge', function (Request $request): array {
+            return $this->mfaLimits($request, 'challenge', 5, 5);
+        });
+        RateLimiter::for('mfa-verification', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $challenge = (string) (
+                $request->route('challengeId')
+                ?? $request->input('challenge_id', 'unknown')
+            );
+
+            return [
+                Limit::perMinutes(5, 5)->by(
+                    $digester->digest('mfa-verification-challenge', $challenge),
+                ),
+                ...$this->mfaLimits($request, 'verification', 10, 5),
+            ];
+        });
+        RateLimiter::for('mfa-management', function (Request $request): array {
+            return $this->mfaLimits($request, 'management', 3, 60);
+        });
+
         RateLimiter::for('oauth-token', function (Request $request): Limit {
             $digester = $this->app->make(AuthenticationSecretDigester::class);
             $client = (string) $request->input('client_id', '');
@@ -272,6 +438,42 @@ class AppServiceProvider extends ServiceProvider
             'testing',
             'conversation-model-dev',
             'staging',
+            'soft-launch',
+        ];
+    }
+
+    /**
+     * @return list<Limit>
+     */
+    private function mfaLimits(
+        Request $request,
+        string $operation,
+        int $attempts,
+        int $minutes,
+    ): array {
+        $digester = $this->app->make(AuthenticationSecretDigester::class);
+        $actor = (string) (
+            $request->user('web')?->getAuthIdentifier()
+            ?? 'anonymous'
+        );
+        $session = $request->hasSession()
+            ? (string) $request->session()->get(
+                AuthenticationSessionService::SESSION_KEY,
+                'unknown',
+            )
+            : 'unknown';
+        $ip = (string) ($request->ip() ?? 'unknown');
+
+        return [
+            Limit::perMinutes($minutes, $attempts)->by(
+                $digester->digest('mfa-'.$operation.'-user', $actor),
+            ),
+            Limit::perMinutes($minutes, $attempts)->by(
+                $digester->digest('mfa-'.$operation.'-session', $session),
+            ),
+            Limit::perMinutes($minutes, $attempts)->by(
+                $digester->digest('mfa-'.$operation.'-ip', $ip),
+            ),
         ];
     }
 }

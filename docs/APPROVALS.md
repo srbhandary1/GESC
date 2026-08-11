@@ -2513,3 +2513,1320 @@ reviews.
   this acceptance and are not waived.
 - No master-plan amendment is made.
 
+<a id="app-0038"></a>
+
+## APP-0038 — DR-0013 Option A privileged MFA policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-08 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0013_PRIVILEGED_MFA_FACTOR_AND_RECOVERY_REQUEST.md](DR-0013_PRIVILEGED_MFA_FACTOR_AND_RECOVERY_REQUEST.md) |
+| Approved proposal SHA-256 | `78697cffea182a9aafde9eea84742883ffb4e71f616a0789b5f0f9021601013f` (before its resolution note) |
+| Related decision | [D-0123](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0013 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. MFA-01 inspection had established that the repository contained a
+   fail-closed freshness extension point but no enrollable independent factor,
+   challenge, recovery or revocation lifecycle;
+2. the existing operator routes accepted web sessions and Passport bearers,
+   while MFA freshness existed only on web authentication sessions;
+3. DR-0013 presented three concrete factor/platform/recovery profiles and
+   recommended Option A, including eight exact policy rules and their schema,
+   API and client consequences; and
+4. the repository had stopped before credential schema or security behavior
+   changes pending this explicit decision.
+
+The human supplied the exact approval statement requested by DR-0013. In that
+bounded authentication-security context, it is recorded as consolidated
+development approval by the Accountable Product Owner, Technical Decision
+Owner and Security Reviewer under ADR-0001. The role-based identifier avoids
+inferring a personal identity that was not supplied in this conversation.
+
+### Accepted scope
+
+- Accept Option A exactly as specified in the approved DR-0013 proposal:
+  RFC 6238 authenticator-app TOTP for privileged web sessions, with the stated
+  entropy, step, skew, confirmation, expiry, attempt, rate-limit and replay
+  controls.
+- Accept ten show-once, single-use recovery codes with at least 128 bits of
+  entropy each and domain-separated keyed digests at rest; SMS/primary OTP
+  alone cannot reset privileged MFA.
+- Accept global web-session and Android token-family revocation for factor
+  regeneration, replacement or revocation, and content-free append-only audit
+  evidence for the factor lifecycle.
+- Accept the exact mutable authoritative protected-action set in DR-0013 while
+  retaining logout and user-initiated session revocation as security escape
+  paths without fresh MFA.
+- Accept the Phase 1 web-only privileged boundary: Passport bearer requests to
+  privileged/operator endpoints are denied. Cross-platform privileged MFA
+  requires a separate future decision and device evidence.
+- Resolve DR-0013 and permit MFA-01 to proceed as a separately bounded
+  implementation task under the active remediation plan.
+
+### Conditions and limitations
+
+- TOTP's lack of phishing resistance is an explicitly accepted Phase 1
+  trade-off, not an unrecorded limitation.
+- This approval does not claim or accept any MFA-01 implementation, migration,
+  endpoint, generated client, UI, test result or production deployment.
+- The implementation must preserve ADR-0002 session/token/recovery rules,
+  ADR-0003 membership-derived organization authorization and ADR-0004's
+  authoritative content-governance boundaries.
+- One human exercised consolidated development roles. This is not independent
+  specialist review. Independent security and privacy review remains mandatory
+  before production under ADR-0001.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.
+
+<a id="app-0053"></a>
+
+## APP-0053 — Ubuntu invite-only soft launch
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction to implement the Ubuntu soft-launch plan in the active Cursor conversation |
+| Governing plan | Ubuntu soft launch — full implemented product |
+| Related decisions | [D-0155](DECISIONS.md); [D-0156](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Sequencing only: Ubuntu invite-only soft launch becomes the active delivery checkpoint; LPL-01 transcription ceremony is paused as the critical path |
+
+### Exact human statement
+
+```text
+Approve Ubuntu invite-only soft launch as written: full implemented product, real Azure up to ₹10000, pause LPL-01 as critical path.
+```
+
+The Accountable Product Owner also directed implementation of the attached Ubuntu
+soft-launch plan (full implemented product on the Ubuntu static-IP host).
+
+### Accepted scope
+
+1. Declare Ubuntu invite-only soft launch the active checkpoint for the
+   repository-implemented learner and operator product on host
+   `Real-Studioz` / static IP `117.254.108.143`.
+2. Authorize non-production `APP_ENV=soft-launch` (and retain
+   `conversation-model-dev` / `staging` allowlists) with
+   `CONVERSATION_PROVIDER_DRIVER=azure-openai-dev` for Confidence Conversation
+   and role-play coaching under a hard **₹10,000 INR** spend ceiling,
+   kill switch and outside-repo evidence/secret files.
+3. Allow conversation HTTP entrypoints to use live Azure in those allowlisted
+   non-production environments instead of requiring deterministic fakes.
+4. Treat [APP-0044](#app-0044) owner media attestation as sufficient umbrella
+   evidence for publishing the soft-launch pathway through existing Media
+   Library / Content Studio commands (exact hash/program rights rows still
+   required; no multi-week new DR chain for owner media).
+5. Pause LPL-01 transcription/dispatch ceremony as the critical path while soft
+   launch is active; LPL-01 artifacts remain available but are not blocking.
+6. Prefer Cloudflare HTTPS tunnel as the primary public entry for microphone
+   capability; optional direct static-IP HTTP remains secondary for text checks.
+
+### Explicit non-authorization
+
+- Google Play public listing or store marketing
+- Unlimited or uncapped Azure spend
+- `APP_ENV=production` with live conversation drivers
+- Claiming independent legal/specialist review completion
+- Payments, LMS SSO, notices/groups moderation, or planned LPL Skill Chat /
+  auto quiz-from-audio as soft-launch deliverables
+- Treating synthetic demo Home cards as live product behavior
+
+### Conditions and limitations
+
+- Soft launch is invite-only with real adult pilot learners; it creates real
+  privacy/support obligations even without Play.
+- OTP may start with Mailpit/operator-relayed codes for owner-known invitees
+  for at most seven days; real SMS is required to keep the soft launch open
+  beyond that window.
+- Home/static-IP hosting depends on local power, ISP and dual-NAT forwarding;
+  tunnel mitigates reachability and HTTPS.
+- One human exercised consolidated development roles. This is not independent
+  specialist, legal or production review.
+
+<a id="app-0054"></a>
+
+## APP-0054 — Temporary disclosed Azure Speech credential use
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; consolidated development reviewers |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Related decisions | [D-0160](DECISIONS.md); [D-0161](DECISIONS.md) |
+| Recorder | Codex, acting only as evidence recorder |
+
+### Exact human statement
+
+```text
+place the keys for now. I will rotate it later once we have tested it.
+Approved for the rest of the changes. do it.
+```
+
+### Bounded interpretation
+
+- Retain one active Azure Speech resource credential in the existing
+  outside-repository mode-`0600` secret file for the already-approved
+  non-production synthetic test path. Azure authentication requires one active
+  credential; the second recovery key is not duplicated into application or
+  repository configuration.
+- Complete the high-priority Ubuntu soft-launch changes already bounded by
+  APP-0053 and record truthful test/resource evidence.
+- This approval does not manufacture an independent review, authorize learner
+  audio under the synthetic-benchmark policy, enable `APP_ENV=production`,
+  waive the Azure OpenAI deployment/credential requirement or authorize an
+  uncapped provider call.
+- Because the resource keys appeared in conversation text, both remain due for
+  Azure regeneration after testing and before relying on them for an ongoing
+  learner service.
+
+<a id="app-0055"></a>
+
+## APP-0055 — DR-0026 password-only authentication architecture approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-11 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0026](DR-0026_PASSWORD_ONLY_AUTHENTICATION_REQUEST.md) Option B exactly as written |
+| Approved pre-resolution DR SHA-256 | `847486461ffbf92610427744539bea5a3fd607b2988d8aea8a9ff54fbcd0576d` |
+| Resulting ADR | [ADR-0021](adr/0021-username-password-only-authentication.md) |
+| Related decision | [D-0163](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — authentication becomes username/password-only for every role and privileged MFA is replaced by fresh same-password confirmation |
+
+### Exact human statement
+
+```text
+Approve DR-0026 Option B as written and accept its documented password-only privileged-access risk.
+```
+
+### Accepted scope
+
+- Give every learner, trainer, reviewer, organization administrator and
+  platform administrator one platform-global username and a password as the
+  only routine sign-in factor.
+- Remove OTP from ordinary sign-in and replace fresh TOTP on the exact existing
+  sensitive-command set with a server-side, session-bound fresh confirmation
+  of the same password no more than five minutes old.
+- Apply the exact 15–128 Unicode-code-point, NFC, compromised-password
+  blocklist, Argon2id, rate-limit, enumeration-safe, recovery, revocation and
+  migration controls in the approved request.
+- Preserve Sanctum cookie sessions for web/PWA, Passport Authorization Code
+  with S256 PKCE in the Android system browser, native secure credential
+  storage, current membership selection and command-time tenant authorization.
+
+### Conditions and limitations
+
+- APP-0055 authorizes ADR-0021, the master-plan amendment and preparation of
+  the bounded AUTH-PASSWORD-01 specification. DR-0026 explicitly states that
+  it does not directly authorize runtime implementation.
+- A password re-entry is one-factor freshness evidence and must never be
+  represented as MFA. The approver explicitly accepts the resulting privileged
+  credential-stuffing, phishing, reuse, spraying and offline-guessing risk.
+- Existing OTP/TOTP enforcement remains fail closed until a separately
+  authorized, verified cutover completes. No bypass, shared/default password
+  or direct credential mutation is authorized.
+- One human exercised consolidated development roles. Independent security,
+  privacy, tenancy, accessibility and language/content review, production and
+  Google Play authorization remain outstanding.
+
+<a id="app-0056"></a>
+
+## APP-0056 — AUTH-PASSWORD-01 implementation authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-11 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated development reviewers |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved specification | [AUTH-PASSWORD-01](AUTH-PASSWORD-01_SPEC.md) exactly as written |
+| Approved pre-resolution specification SHA-256 | `7b5d3260c619c33fd4df5cff06364860ab67536f02399ed61c5fe086519193c4` |
+| Related decision | [D-0164](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+
+### Exact human statement
+
+```text
+Approve AUTH-PASSWORD-01 implementation as written.
+```
+
+### Bounded interpretation
+
+- Implement only the schema, password services, web/Android system-browser
+  flows, fresh-password command protection, ordinary and dual-authorized
+  privileged recovery, migration/cutover, OTP/TOTP retirement, contracts,
+  tests and documentation fixed by AUTH-PASSWORD-01.
+- Preserve current OTP/TOTP enforcement until the specification's verified
+  cutover, and never manufacture, log, display or share a user password.
+- Production, Google Play release, LPL-02 and independent-review waivers remain
+  unauthorized.
+
+<a id="app-0057"></a>
+
+## APP-0057 — DR-0027 excluded privileged-account recovery approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-11 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0027](DR-0027_EXCLUDED_PRIVILEGED_ACCOUNT_RECOVERY_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `84cb3405210f689df1895d48bb7a7c6d4638dc10e0c32e34db1ba2e96782a623` |
+| Related decision | [D-0169](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None — this closes the already accepted excluded-user recoverability contract without changing password-only policy |
+
+### Exact human statement
+
+```text
+Approve DR-0027 Option A as written.
+```
+
+### Accepted scope
+
+- Preserve the completed password-only cutover and reconcile the exact reviewed
+  local exclusion manifest into append-only marker-linked evidence.
+- Extend the two-distinct-actor privileged recovery lifecycle to one listed,
+  active, credential-unready excluded user with an already verified recovery
+  identity, retaining exact evidence binding and the full 24-hour delay.
+- Deliver one 256-bit, 15-minute, single-use establishment token through a
+  reviewed protected local surface. The target chooses their own unique
+  username and policy-compliant password; no recovery actor sees or sets it.
+- Update contracts, privacy/runbooks, UI/commissioning aid and required
+  SQLite/PostgreSQL/browser/security coverage, then execute only after a fresh
+  backup and dry run against the local non-production database.
+
+### Conditions and limitations
+
+- No shorter delay, direct credential mutation, learner promotion, missing-
+  contact exception, retired OTP/TOTP restore or recovery-actor access to the
+  target secret is authorized.
+- The implementation cannot add an unlisted exclusion or mutate organization
+  membership, role, permission, curriculum or publication authority.
+- Production recovery delivery, production cutover/deployment, Google Play and
+  independent security/privacy/tenancy/accessibility/language-review waivers
+  remain unauthorized.
+
+<a id="app-0052"></a>
+
+## APP-0052 — LPL-01 governed transcription commissioning approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0025](DR-0025_LPL01_TRANSCRIPTION_COMMISSIONING_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `cb489ec3f034861d256934aa0fcf5128a997af73ec6da4bd461453ebce02bdf4` |
+| Resulting ADR | [ADR-0020](adr/0020-governed-curriculum-media-transcription-commissioning.md) |
+| Related decision | [D-0153](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0025 Option A as written.
+```
+
+### Accepted scope
+
+- Implement a separate provider-neutral curriculum-media transcription port,
+  dedicated Central India Azure Fast Transcription REST adapter, additive
+  tenant-owned provenance/candidate lifecycle and first-party fresh-TOTP human
+  reconciliation API exactly as fixed by DR-0025.
+- Permit one sequential campaign containing only the four exact APP-0047
+  asset/hash/rights tuples, with at most two attempts per asset and hard caps
+  of eight attempts, 37,520,380 uploaded bytes, 2,345,026 billable input
+  milliseconds and ₹100 estimated Azure service usage.
+- Send only the exact accepted MP3 bytes inline under fixed `en-IN` and API
+  `2025-10-15`; retain ordinary learner bindings unchanged and prohibit URL,
+  batch, custom, diarization, language-ID, translation, LLM/MAI speech,
+  prompting, word timestamps and fallback providers.
+- Store validated provider text only as an application-encrypted seven-day
+  candidate. Require a human to confirm/correct/discard/flag every candidate
+  before any English metadata revision, preserving exact reconciliation
+  lineage and author/reviewer separation.
+
+### Conditions and limitations
+
+- This approval records authority but does not itself implement schema/API,
+  supply a credential, satisfy current vendor/configuration/price evidence or
+  make a provider request.
+- Every attempt still requires the accepted DR hash, exact manifest/run,
+  current no-training/no-storage/logging-disabled/contract/subprocessor/
+  Central India/price/FX evidence, external mode-`0600` secret reference and
+  removable campaign permit. Drift fails closed.
+- No LLM drafting, automatic metadata, English academic or Kannada approval,
+  answer/quiz authority, attachment, publication, learner delivery, LPL-02,
+  sharing or production/public release is authorized.
+- One human exercised consolidated development roles. This is not independent
+  specialist, academic/Kannada, legal or production review.
+
+<a id="app-0051"></a>
+
+## APP-0051 — LPL-01 pilot program and rights-authority approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0024](DR-0024_LPL01_PILOT_PROGRAM_AND_RIGHTS_AUTHORITY_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `2b52f1c3c09206a33de7b940e2184c473d3095b89388d30fc9830386f9266538` |
+| Resulting ADR | [ADR-0019](adr/0019-local-lpl-pilot-and-rights-authority-bootstrap.md) |
+| Related decision | [D-0150](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0024 Option A as written.
+```
+
+### Accepted scope
+
+- Create one standalone private Direct-owned pilot program with key
+  `global-spoken-english-lpl-pilot`, and no curriculum/publication head,
+  enrollment, learner pin, public route or delivery entitlement.
+- Add one non-system Direct role, `lpl-pilot-commissioner`, containing exactly
+  `curriculum.author` and `media.rights.approve`, assigned only to membership
+  `01KZGE9QRTCQE3PQ3RN31AXQSF`.
+- Use one disabled-default local-only APP-0051 bootstrap with exact tenant,
+  actor, membership, APP-0047 asset/hash, transaction, lock, idempotency,
+  audit and outbox checks. Direct SQL, seed assignment and test authentication
+  remain prohibited.
+- Create one pending program-scoped `rights_confirmer` self-appointment through
+  the existing APP-0004 authority service, retaining APP-0047 as its owner/
+  qualification basis. The appointee must accept through ordinary selected-
+  membership and fresh-TOTP web APIs.
+- Confirm only the four exact APP-0047 assets through the existing Media
+  Library HTTP command for later gated web/Android learner delivery in India,
+  derivative commissioning enabled, sharing disabled and no supplied expiry.
+
+### Conditions and limitations
+
+- Disable/remove the persistent bootstrap switch immediately after one
+  successful execution. The role and accepted appointment remain visible and
+  revocable authoritative records.
+- This approval makes no provider call and does not approve attachment,
+  transcript, blueprint, answer, English/Kannada content, publication,
+  enrollment, learner delivery, deployment or production/public release.
+- Provider transcription remains separately gated by a finite ceiling,
+  kill switch, no-training/minimum-retention settings, immutable provenance
+  and human reconciliation.
+- One human exercised consolidated development roles. This is not independent
+  specialist, academic/Kannada, legal or production review.
+
+<a id="app-0050"></a>
+
+## APP-0050 — Local MFA incident recovery approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0023](DR-0023_LOCAL_MFA_INCIDENT_RECOVERY_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `956d6d6e1513412ce662dbc70fb0f642f4f1e763626b158b76f37e70ad79b79e` |
+| Resulting ADR | [ADR-0018](adr/0018-local-mfa-incident-restore-and-replay.md) |
+| Related decision | [D-0148](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0023 Option A as written.
+```
+
+### Accepted scope
+
+- Preserve the current locked local database in a validated incident snapshot,
+  prove the post-baseline delta contains only reviewed LPL-01/runtime records,
+  then restore the exact validated pre-LPL database backup.
+- Rerun reviewed migrations and foundation seed, and extend APP-0049 only to
+  repeat the exact same one-shot identity binding once in restored state.
+- Repeat only the ordinary OTP, exact membership and TOTP HTTP path. Permit one
+  owner-only `0600` system-temporary TOTP/recovery handoff whose contents stay
+  out of Git, arguments, chat, logs, audit and durable evidence.
+- Use explicit project-owned ffprobe and ClamAV selectors for every four-hash
+  Media Library cycle and retain fail-closed hash, scan, human acceptance,
+  permission and tenancy controls.
+
+### Conditions and limitations
+
+- Any unexplained learner, curriculum, review, rights, publication or other
+  business delta stops the restore.
+- Routine cleanup may revoke ordinary sessions but must not revoke the factor.
+  Lost handoff material stops work; it does not authorize SMS reset, SQL
+  mutation or another restore.
+- This approval creates no `media.rights.approve` grant, rights-confirmer
+  appointment, rights revision, transcript approval, publication, learner
+  delivery, production recovery precedent or LPL-02 authority.
+- One human exercised consolidated development roles. This is not independent
+  specialist, legal or production review; all retained gates remain.
+
+<a id="app-0049"></a>
+
+## APP-0049 — Local operator identity bootstrap approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0022](DR-0022_LOCAL_OPERATOR_IDENTITY_BOOTSTRAP_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `0ecc159512ec28e507995eb01fe5f116221e78c8710a03b9de3269e67f3f8cb8` |
+| Resulting ADR | [ADR-0017](adr/0017-local-operator-identity-bootstrap.md) |
+| Related decision | [D-0146](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0022 Option A as written.
+```
+
+### Accepted scope
+
+- Add one disabled-by-default, local-environment/local-OTP-only Artisan
+  command that binds a protected-file phone identity only to the exact
+  existing identity-free active Direct organization administrator.
+- Require exact expected user and membership ULIDs, APP-0049 reference,
+  immutable tenant/role checks, identifier uniqueness, transaction locks and
+  one-shot fail-closed behavior.
+- Create only one normal verified phone identity through a project-owned
+  service; create or change no user, membership, role, permission,
+  appointment, media, rights, review or publication record.
+- After binding, require ordinary OTP sign-in, selected membership and fresh
+  authenticator-app TOTP for every governed media command.
+
+### Conditions and limitations
+
+- Raw phone, digest, OTP, TOTP secret and recovery codes must remain out of
+  Git, process arguments, logs, audits, exceptions and evidence.
+- The kill switch must be removed from the process after the one-shot binding.
+- This local non-production exception does not define production initial-admin,
+  identity reassignment, phone change or recovery behavior.
+- SQL, commissioner, test-authentication and direct-domain media bypasses
+  remain prohibited for LPL-01 evidence.
+- One human exercised consolidated development roles. This is not independent
+  specialist, legal or production review; all retained release gates remain.
+
+<a id="app-0048"></a>
+
+## APP-0048 — Long-form lesson-audio policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0021](DR-0021_LESSON_AUDIO_MEDIA_POLICY_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `c792ea46d2ace3ed3d517d9518fdf075000228b0b877131504cbbd5cf4ee472a` |
+| Resulting ADR | [ADR-0016](adr/0016-long-form-lesson-audio-media.md) |
+| Related decision | [D-0145](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0021 Option A as written.
+```
+
+### Accepted scope
+
+- Add one distinct bounded `lesson_audio` media kind without changing
+  `model_audio` or `lesson_video` semantics.
+- Implement only the Media Library policy, adapters, operator API/UI,
+  contracts, localization and tests required before LPL-01 ingestion.
+- Preserve original accepted bytes and exact hashes; require real inspection,
+  malware scan, human acceptance, metadata/review, rights and immutable
+  publication evidence.
+- Permit later private publication-pinned web/Android delivery in India under
+  APP-0047; keep learner delivery outside the current LPL-01 slice.
+
+### Conditions and limitations
+
+- This approval does not accept unbuilt implementation or any media object,
+  transcript, blueprint, answer, Kannada variant, review or publication.
+- LPL-02 learner runtime, all-level import, Assignment audio, public URLs,
+  sharing, offline download, production/public release and unbounded provider
+  spend remain excluded.
+- One human exercised consolidated development roles. This is not independent
+  specialist, academic/Kannada, legal or production review.
+
+<a id="app-0047"></a>
+
+## APP-0047 — Exact Level 1 teaching-media processing authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Role exercised for development | Accountable Product Owner and retained Rights Confirmer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Selected source artifact | [LPL-01_LEGACY_SOURCE_MAP.md](LPL-01_LEGACY_SOURCE_MAP.md) |
+| Selected source-map SHA-256 | `273796e39523ae762f7d3f6f426179abaf812e7b4f68c5c7fc99772fe56eb7dc` |
+| Rights authorization artifact | [LPL-01_LEVEL1_MEDIA_RIGHTS_AUTHORIZATION.md](LPL-01_LEVEL1_MEDIA_RIGHTS_AUTHORIZATION.md) |
+| Rights authorization SHA-256 | `cc50ca8d13c9753bafffb195e952880014ed39bd08476601ccc428cff5f6b201` |
+| Related decision | [D-0143](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I authorize the four Level 1 teaching MP3 assets identified by exact SHA-256 in docs/LPL-01_LEGACY_SOURCE_MAP.md for non-production ingestion, transcription, and AI-assisted derivative lesson drafting through project-owned adapters. Learner delivery may target web and Android in India; sharing and production/
+  > public release remain prohibited. Existing privacy, no-training, provider-retention, human English/Kannada review, and immutable publication controls remain mandatory.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. authenticated read-only legacy inspection identified one Level 1 `Can`
+   source with four ordered teaching MP3 parts;
+2. each MP3 had been read ephemerally and recorded by exact SHA-256 and byte
+   size in the selected pre-authorization source map;
+3. none of those MP3s was a current governed Media Library asset or had current
+   per-asset processing rights; and
+4. LPL-01 remained blocked before ingestion, transcription and blueprint
+   review.
+
+The split `production/` and `public release` wording is preserved exactly and
+is interpreted only as production/public release remaining prohibited. The
+statement authorizes processing of the four exact selected hashes; it does not
+extend to Assignment audio or other legacy media.
+
+### Accepted scope
+
+- Private non-production ingestion through the current exact-asset quarantine,
+  inspection, malware-scan and acceptance lifecycle.
+- Transcription and AI-assisted derivative lesson drafting through
+  project-owned adapters under existing privacy, no-training,
+  provider-retention, spend-ceiling and kill-switch controls.
+- Program-scoped web/Android learner-delivery rights in India for a later
+  immutable publication, only after exact English academic and Kannada review.
+- Exact source lineage and immutable evidence for the four selected hashes:
+  Introduction, Practice, Conversation and Interaction.
+
+### Conditions and limitations
+
+- Sharing, cloning, public URLs and production/public release are prohibited.
+- This is rights/process authorization, not academic, Kannada, accessibility,
+  answer-key, blueprint, publication or release approval.
+- Provider output cannot write marks, mastery, review completion or unlocks.
+- Unlabeled Assignment audio remains excluded pending provenance/privacy
+  classification and a separate exact authorization.
+- Current tenant, appointment, permission, exact-hash, scan, attachment,
+  publication, privacy and retention controls remain mandatory.
+- No personal identity, specialist qualification, timestamp-of-day or commit
+  SHA is inferred from the approval statement.
+
+<a id="app-0046"></a>
+
+## APP-0046 — DR-0020 Option A Lesson Practice Loop foundation approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-10 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0020_LESSON_PRACTICE_FOUNDATION_REQUEST.md](DR-0020_LESSON_PRACTICE_FOUNDATION_REQUEST.md) |
+| Approved proposal SHA-256 | `698d03917a494c29c58d8d34a02f13a09271c8ac192e1bf73117a04cf0b1cab3` (before its status, resolved date and resolution section) |
+| Accepted specification SHA-256 | `5bda28ff6be15bee37c32d00fb701ce776108a750db7a4ee8dccddecadd53f6e` (before its status and acceptance record) |
+| Locked verification-scope SHA-256 | `a7bf02f70dc5bb602c3f2b4341718bd04d1a218c829c82a3db9998b70d1b9dd4` (before its status and acceptance annotation) |
+| Proposed ADR SHA-256 | `009d8af0f3d50747c04f6c6ab75a8267b00db6e407937f28aada2d036ac51a61` (before acceptance annotations) |
+| Related decision | [D-0140](DECISIONS.md) |
+| Accepted ADR | [ADR-0015](adr/0015-lesson-practice-foundation.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0020 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. the retained ADMIN-MEDIA PostgreSQL, full verification, E2E, build and
+   backup/restore repository gates had passed;
+2. LPL-00's implementation inventory confirmed that daily-speaking v1 has one
+   check and 0/100 scoring, offline v1 contains a plaintext answer key,
+   conversations have no lesson-practice link and no level-unlock authority
+   exists;
+3. DR-0020 recommended extending the existing content/publication, mission
+   attempt, mastery/review, conversation and voice authorities rather than
+   creating a second learning subsystem; and
+4. the proposed specification, ADR and locked verification scope fixed exact
+   multi-item scoring, answer isolation, speaking-evidence and unlock rules.
+
+The human supplied the exact statement requested by DR-0020. In that bounded
+context it is consolidated development approval under ADR-0001. The
+role-based identifier avoids inferring a personal identity not supplied in
+the approval statement.
+
+### Accepted scope
+
+- Accept the typed `global-english.lesson-practice-loop.v1` definition,
+  immutable publication component and exact learner practice-context model.
+- Reuse and generalize the existing deterministic mission attempt, mastery and
+  review authority under `lesson-practice-v1`, with 3–7 weighted reviewed
+  items, an exact 80-point threshold and unchanged daily-v1 evidence.
+- Accept append-only lesson-stage evidence, lesson-scoped `skill-focus`
+  conversation links, separate speaking-evidence lifecycle states and the
+  later `level-unlock-v1` transparent decision rule.
+- Lock pre-submission answer/rationale isolation for new learner, AI,
+  telemetry and offline surfaces while retaining the documented daily-v1
+  compatibility exception.
+- Activate the bounded LPL-00 specification and verification scope and
+  authorize the ordered non-production LPL checkpoints one at a time,
+  beginning with LPL-01 exact inventory/content work.
+- Permit bounded live-AI and repository-media analysis/drafting/evaluation
+  only through project-owned adapters with exact provenance, spend ceilings,
+  kill switches, rights/privacy controls and human publication review.
+
+### Conditions and limitations
+
+- This approval closes LPL-00 and authorizes LPL-01 only as the next ordered
+  checkpoint. It does not accept unbuilt LPL-01 or LPL-02+ results.
+- It does not authorize production/public release, unlimited spend, provider
+  credentials in source control, fabricated missing content, automatic AI
+  publication or AI-controlled scores, mastery, review schedules or unlocks.
+- Existing exact media scanning, accessibility, rights, English/Kannada review,
+  voice consent/retention/deletion and cross-tenant controls remain mandatory.
+- One human exercised consolidated development roles. This is not independent
+  specialist, academic/language, legal or production review; retained
+  pre-production gates remain.
+- No personal identity, specialist qualification, timestamp-of-day or commit
+  SHA is inferred from the approval statement.
+
+<a id="app-0039"></a>
+
+## APP-0039 — DR-0014 Option A secure reference-admin parity approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0014_ADMIN_REFERENCE_SCOPE_AND_POLICY_REQUEST.md](DR-0014_ADMIN_REFERENCE_SCOPE_AND_POLICY_REQUEST.md) |
+| Approved proposal SHA-256 | `7a88bc31444b4e99107c5b4def16c42d0efc18a07bcc587a235737934dbd4d10` (before its status and resolution note) |
+| Approved specification artifact | [ADMIN_REFERENCE_PARITY_PLAN.md](ADMIN_REFERENCE_PARITY_PLAN.md) |
+| Approved specification SHA-256 | `caa24f8dc581c1ed755be8c90af53bc45a6ff8d678eaccbd3b0c6278a941294b` (before its approval and gate-state annotations) |
+| Accepted ADR | [ADR-0014](adr/0014-secure-reference-admin-functional-parity.md) |
+| Related decision | [D-0125](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.2 §§8.3, 9.2, 16.5 and 31 |
+
+### Exact human statement
+
+```text
+Approve DR-0014 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-DISC-01 had inventoried the authenticated reference portal through
+   read-only requests and mapped each visible feature family to the repository;
+2. the inventory showed that literal password, delete, group, personal-data,
+   content and media behavior would conflict with accepted architecture and
+   security/privacy/tenancy decisions;
+3. DR-0014 presented secure governed parity, literal parity and current-core
+   profiles, recommending Option A through fifteen exact policy rules and an
+   exact four-section master-plan amendment; and
+4. the repository had stopped before ADMIN schema or behavior changes pending
+   this explicit product, architecture, security, privacy and tenancy decision.
+
+The human supplied the exact statement requested by DR-0014. In that bounded
+context it is consolidated development approval by the Accountable Product
+Owner, Technical Decision Owner, Security Reviewer, Privacy Reviewer and
+Tenancy Reviewer under ADR-0001. The role-based identifier avoids inferring a
+personal identity that was not supplied in this conversation.
+
+### Accepted scope
+
+- Accept all fifteen rules of DR-0014 Option A exactly as written and approve
+  the complete capability inventory and checkpoint order in
+  `ADMIN_REFERENCE_PARITY_PLAN.md` as the feature specification.
+- Accept safe domain equivalents rather than reference code, design, data,
+  media or unsafe mechanics: invitation-based staff activation,
+  membership-scoped roles, class-specific non-destructive lifecycle commands,
+  immutable/versioned content and authoritative evidence, and typed
+  configuration.
+- Authorize deterministic manual or externally reconciled entitlements,
+  external facilitated-session scheduling, explicitly typed groups,
+  rubric-based human assignment review, moderated communications, in-app posts
+  and public editorial CMS within the retained gates.
+- Preserve deterministic marks, mastery, progression, attendance, permissions,
+  retention and entitlements. AI remains advisory and cannot set those
+  authoritative records.
+- Preserve ADR-0003 organization context and cross-tenant rules, ADR-0004
+  publication/review/rights authority, ADR-0007 audio/private-media controls
+  and D-0123 web-only fresh-TOTP privileged mutations.
+- Amend the canonical master plan to version 3.2 exactly at §§8.3, 9.2, 16.5
+  and 31 through ADR-0014 in the same accepted change.
+- Permit later approved bounded checkpoints to proceed without a generic
+  `Continue`, while retaining their specifications, exit evidence and all
+  explicitly listed later decision gates.
+
+### Conditions and limitations
+
+- Existing work order is unchanged: PRIV-DSR-01, REL-01 and MAINT-01 precede
+  ADMIN-GOV-01, and ADMIN checkpoints then execute one at a time in the
+  approved sequence.
+- This approval records product scope and architecture only. It does not claim
+  or accept any ADMIN feature implementation, schema, migration, endpoint,
+  generated client, UI, test result, reference-data import or production
+  behavior.
+- Open peer-to-peer social chat, in-product conferencing/class recording,
+  consumer checkout/coupons/accounting and broad attendance/LMS semantics
+  remain deferred.
+- Communication purpose/retention/moderation, payment-provider/spend,
+  production-data migration/licensing/reconciliation, deployment and
+  production release remain separate gates exactly as stated in Option A.
+- One human exercised consolidated development roles. This is not independent
+  specialist or production review. Independent security, privacy and tenancy
+  review, qualified legal review where applicable and explicit production
+  authorization remain required.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.
+
+<a id="app-0040"></a>
+
+## APP-0040 — DR-0015 Option A development-continuation boundary
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0015_PRODUCTION_REVIEW_WAIVER_REQUEST.md](DR-0015_PRODUCTION_REVIEW_WAIVER_REQUEST.md) |
+| Approved proposal SHA-256 | `a40c05bc4bd590e83102720b4eb18b1e0f0a7eb12c84c89883faf0cbffc6355d` (before its status, resolved date and resolution section) |
+| Related decision | [D-0127](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0015 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. the human had supplied a blanket legal and independent privacy/security/
+   tenancy review-waiver instruction;
+2. ADR-0001 and the master plan made those reviews mandatory pre-production
+   gates and prohibited representing consolidated development review as
+   independent;
+3. DR-0015 separated development continuation from a material proposal to
+   remove the internal production gates; and
+4. Option A recommended continuing ordered non-production work without repeat
+   review prompts while preserving the production gates and honest evidence.
+
+The human supplied the exact acceptance statement requested by DR-0015. In
+that bounded context, the Accountable Product Owner accepts the
+development-continuation interpretation. No architecture, security, privacy,
+tenancy or master-plan rule is amended.
+
+### Accepted scope
+
+- Continue REL-01, MAINT-01 and later approved bounded implementation, testing
+  and staging work without pausing for legal or independent security, privacy
+  and tenancy review.
+- Do not repeatedly request those reviews during ordinary non-production
+  checkpoints merely because the review evidence remains open.
+- Continue to record implementation evidence, limitations and unresolved
+  production gates honestly at each checkpoint.
+- Preserve ADR-0001, the master plan and every existing security, privacy,
+  tenancy, consent, retention, deletion and authoritative-record rule.
+
+### Conditions and limitations
+
+- Independent security, privacy and tenancy review and qualified legal
+  validation remain mandatory before production.
+- This approval is not a legal opinion, specialist-review finding, production
+  acceptance, deployment authorization, Google Play public-release approval or
+  permission to use real learner data in production.
+- Missing review must never be represented as completed, passed or waived.
+- Option B, any superseding ADR/master-plan amendment and explicit production
+  authorization remain separate exact-artifact decisions.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.
+- No master-plan amendment is made.
+
+<a id="app-0041"></a>
+
+## APP-0041 — DR-0016 Option A organization-administration policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0016_ADMIN_ORG_AUTHORITY_LIFECYCLE_RETENTION_REQUEST.md](DR-0016_ADMIN_ORG_AUTHORITY_LIFECYCLE_RETENTION_REQUEST.md) |
+| Approved proposal SHA-256 | `79d71ab91b1e07d725c2676a42e37c763ea4096e0f3b09dd288f562fffba8541` (before its status, resolved date and resolution section) |
+| Related decision | [D-0132](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0016 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-SHELL-01 was complete and ADMIN-ORG-01 was the only ordered active
+   checkpoint;
+2. read-only backend, frontend and adversarial inventories found unresolved
+   registry, delegation, lifecycle, selected-session, invitation-secret and
+   retention choices affecting foundation schema and tenant authority;
+3. AGENTS.md required the path to stop rather than infer those choices; and
+4. DR-0016 recommended a narrow staff-only policy that adds no writable
+   organization setting or rich trainer personal-data record.
+
+The human supplied the exact statement requested by DR-0016. In that bounded
+context it is consolidated development approval by the Accountable Product
+Owner, Technical Decision Owner, Security Reviewer, Privacy Reviewer and
+Tenancy Reviewer under ADR-0001. The role-based identifier avoids inferring a
+personal identity not supplied in the approval statement.
+
+### Accepted scope
+
+- Keep organization registry metadata read-only and leave
+  `organization.settings.manage` unseeded.
+- Limit ADMIN-ORG membership and invitations to trainers and organization
+  administrators; keep trainer profiles derived and purpose minimized.
+- Apply an actor-held atomic-permission delegation ceiling, immutable system
+  roles, permission-derived privileged-session policy and a concurrency-safe
+  final-manager invariant.
+- Issue code-only staff invitations with bounded expiry, digest-only storage
+  and no secret replay, provider delivery or recipient field.
+- Make deactivation a reversible membership suspension that removes roles,
+  cohort assignments and current appointments and revokes only credentials
+  selected for that membership; reactivation restores no authority.
+- Bind web authentication sessions to the selected organization membership and
+  expose only count-level credential projections.
+- Retain new content-free administration history for 365 days, clear terminal
+  invite digests within one hour and cap encrypted backup lifetime at 30 days,
+  subject to retained immutable-evidence and pre-production legal/review gates.
+
+### Conditions and limitations
+
+- This approval authorizes the bounded non-production specification and
+  implementation work only. It does not accept unbuilt results or authorize
+  deployment, production, real production data or public release.
+- Learner administration, global identity edit/recovery, MFA reset, platform
+  organization lifecycle, generic configuration, rich trainer profile fields,
+  provider-backed invitation delivery and new appointment kinds remain out of
+  scope.
+- Existing ADR-0004 qualification/appointment evidence remains private and
+  immutable where referenced; prior valid approvals are not invalidated by a
+  later staff suspension.
+- One human exercised consolidated development roles. This is not independent
+  specialist or legal review, and the retained pre-production gates remain.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.
+
+<a id="app-0044"></a>
+
+## APP-0044 — Project-owner media-rights attestation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted as owner-level attestation; not a per-asset runtime approval |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; retained Rights Confirmer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Durable evidence artifact | [ADMIN_MEDIA_RIGHTS_ATTESTATION.md](ADMIN_MEDIA_RIGHTS_ATTESTATION.md) |
+| Evidence artifact SHA-256 | `51e8835828cd5d0d31bfcb074db356c76f73e7e28d387f0a7658fdf5a8b668ca` |
+| Related decision/request | D-0138; [DR-0019](DR-0019_ADMIN_MEDIA_LIBRARY_RIGHTS_LIFECYCLE_REQUEST.md) |
+| Recorder | Codex, acting only as evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I have overall rights of all media used here. Proceed with the next steps.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-CONTENT-01 was repository-complete and ADMIN-MEDIA-01 was the only
+   ordered next checkpoint;
+2. missing exact model-audio and rights evidence deliberately blocked new
+   daily-mission publications;
+3. ADR-0004 already retained the Accountable Product Owner as Rights Confirmer
+   but required each runtime approval to be bound to an exact asset hash,
+   program, use, channel, territory, effective period, permission and accepted
+   appointment; and
+4. the repository had no operator upload/quarantine/scan/media-lifecycle
+   specification or implementation.
+
+The statement is therefore recorded as owner-level rights evidence and
+authorization to prepare the next ordered decision/specification. It is not
+expanded into facts about a file, licence term, territory, release channel or
+third-party source that the human did not state.
+
+### Accepted scope
+
+- The statement may be referenced as an umbrella rights-holder and
+  owner-controlled basis document for media the product owner supplies or
+  designates for this project.
+- ADMIN-MEDIA-01 may proceed through repository inspection and its required
+  bounded decision/specification gate.
+- Future appointed per-asset confirmations may reference the durable
+  attestation while still recording exact object and allowed-use scope.
+
+### Conditions and limitations
+
+- This entry does not approve DR-0019, an unbuilt media feature, an uploaded
+  object, legacy/reference-site import, academic/Kannada content, deployment,
+  production delivery or public release.
+- It creates no permission, role grant, authority appointment, rights revision
+  or approved scan result and does not permit Codex or an importer to invent
+  one.
+- Malware scanning, exact byte/hash verification, learner-visible
+  accessibility review and ADR-0004's permission-plus-appointment predicate
+  remain mandatory.
+- No personal name, legal entity, contract language, specialist qualification,
+  timestamp-of-day or commit SHA is inferred from the statement.
+
+<a id="app-0045"></a>
+
+## APP-0045 — DR-0019 Option A governed-media policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer; retained Rights Confirmer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0019_ADMIN_MEDIA_LIBRARY_RIGHTS_LIFECYCLE_REQUEST.md](DR-0019_ADMIN_MEDIA_LIBRARY_RIGHTS_LIFECYCLE_REQUEST.md) |
+| Approved proposal SHA-256 | `5c18ca97be6eded6d6a39882dae0f05a675827451b32aced5f0cb05dacf603b1` (before its status, resolved date and resolution section) |
+| Related decision | [D-0139](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0019 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-CONTENT-01 was repository-complete and ADMIN-MEDIA-01 was the only
+   ordered active checkpoint;
+2. APP-0044/D-0138 preserved the product owner's blanket media-rights
+   attestation without converting it into automatic per-asset approval;
+3. the implementation inventory found no operator upload/quarantine/scan,
+   governed accessibility metadata, replacement/retirement or media UI; and
+4. DR-0019 recommended an exact-asset, scan-gated, appointed-rights and
+   immutable-successor pipeline inside the frozen ADMIN-MEDIA row.
+
+The human supplied the exact statement requested by DR-0019. In that bounded
+context it is consolidated development approval under ADR-0001. The
+role-based identifier avoids inferring a personal identity not supplied in
+the approval statement.
+
+### Accepted scope
+
+- Seed the six frozen media-library permission definitions and only the exact
+  Direct setup grants selected by Option A.
+- Implement resumable private quarantine, exact inspection/hash validation,
+  clean scanner evidence, explicit quarantine acceptance and reconciled
+  object lifecycle for model audio and lesson video.
+- Add append-only technical/accessibility metadata, exact English/Kannada
+  review, program-scoped appointed rights confirmation, allowlisted usage,
+  immutable replacement lineage and retirement.
+- Pin exact clean-scan, accessibility and rights evidence into new
+  publication manifests while preserving prior immutable publications.
+- Deliver the bounded `/operator/media` API, generated client, six governed
+  catalogues and accessible manifest-gated Media Library/Content Studio
+  handoff with full tenant, conflict and failure coverage.
+
+### Conditions and limitations
+
+- This approval authorizes bounded non-production specification and
+  implementation work only. It does not accept unbuilt results or authorize
+  deployment, production, real production data, legacy/reference import or
+  public release.
+- APP-0044 remains reusable umbrella evidence, not automatic rights approval.
+  Each asset still requires exact hash/scope confirmation by a permitted,
+  accepted in-scope `rights_confirmer` appointment.
+- Images, documents, learner recordings, conversation media, cross-owner
+  sharing/cloning, public preview, provider spend and later ADMIN capabilities
+  remain out of scope.
+- One human exercised consolidated development roles. This is not independent
+  specialist or legal review, and all retained pre-production gates remain.
+- No personal identity, specialist qualification, timestamp-of-day or commit
+  SHA is inferred from the approval statement.
+
+<a id="app-0043"></a>
+
+## APP-0043 — DR-0018 Option A content-workspace policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0018_ADMIN_CONTENT_AUTHORING_PUBLICATION_REQUEST.md](DR-0018_ADMIN_CONTENT_AUTHORING_PUBLICATION_REQUEST.md) |
+| Approved proposal SHA-256 | `9774813580bd9522fa9c077bbca0a3cfda9c37d834d82eb2b1ca66b34f8abd72` (before its status, resolved date and resolution section) |
+| Related decision | [D-0136](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0018 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-LEARNER-01 was repository-complete and ADMIN-CONTENT-01 was the only
+   ordered next checkpoint;
+2. authority and implementation inventories found that graph schema v1 has no
+   level, owner draft-workspace or same-owner successor contract;
+3. the operator API could not create a program/version/document/graph or exact
+   graph review, while publication closure also required an omitted core
+   mission and unresolved media/scheduling boundaries; and
+4. DR-0018 recommended a versioned owner-workspace that preserves existing
+   graph-v1/publication evidence and reuses ADR-0004 authority.
+
+The human supplied the exact statement requested by DR-0018. In that bounded
+context it is consolidated development approval by the Accountable Product
+Owner, Technical Decision Owner, Security Reviewer, Privacy Reviewer and
+Tenancy Reviewer under ADR-0001. The role-based identifier avoids inferring a
+personal identity not supplied in the approval statement.
+
+### Accepted scope
+
+- Add an organization-owned, expected-version draft-workspace and append-only
+  history with explicit graph-v2 levels, core delivery-bundle mission edges
+  and same-owner successor lineage; existing graph-v1 publications remain
+  immutable and must be forked before ADMIN editing.
+- Reuse the existing curriculum permission catalogue and role packs, creator/
+  reviewer separation, appointments, source/Kannada append commands, review
+  evidence, rights predicates and immutable publication services.
+- Limit writable payloads to bounded typed governed-text and existing daily-
+  speaking-mission forms, with private non-executable preview and read-only
+  handling for unknown legacy schemas.
+- Expose exact structure/English/Kannada/readiness queues and guarded immediate
+  publish, future schedule, explicit due activation, schedule cancellation,
+  retirement and rollback with content-free audit/outbox evidence.
+- Keep media creation/linking in ADMIN-MEDIA-01; new media-dependent releases
+  remain visibly blocked until their exact required assets and rights exist.
+- Preserve first-party web/fresh-TOTP, tenant constraints, header idempotency,
+  deterministic locks, optimistic conflicts, bounded reads and no-hard-delete
+  retention across the complete API-to-UI slice.
+
+### Conditions and limitations
+
+- This approval authorizes the bounded non-production specification and
+  implementation work only. It does not accept unbuilt results or authorize
+  deployment, production, real production data or public release.
+- Cross-owner sharing/cloning, enrollment assignment, authority management,
+  media upload/quarantine/rights management, public preview, CMS, AI drafting,
+  provider/spend and reference data/media import remain out of scope.
+- Scheduled activation is an explicit human publisher command in this slice;
+  no background identity may invent publication or review authority.
+- One human exercised consolidated development roles. This is not independent
+  specialist or legal review, and ADR-0004's human academic/Kannada/rights and
+  all retained pre-production gates remain.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.
+
+<a id="app-0042"></a>
+
+## APP-0042 — DR-0017 Option A learner-administration policy approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `Codex task accountable product owner` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Exact proposal artifact | [DR-0017_ADMIN_LEARNER_PROFILE_ENROLLMENT_LIFECYCLE_REQUEST.md](DR-0017_ADMIN_LEARNER_PROFILE_ENROLLMENT_LIFECYCLE_REQUEST.md) |
+| Approved proposal SHA-256 | `4e64e897daf66f0476d856baa8f8e0553c474903ef6bca9e952fd2f5c5185e58` (before its status, resolved date and resolution section) |
+| Related decision | [D-0134](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0017 Option A as written.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. ADMIN-ORG-01 was repository-complete and ADMIN-LEARNER-01 was the only
+   ordered next checkpoint;
+2. authority and code/test inventories found unresolved profile-correction,
+   learner-role, enrollment and membership/credential lifecycle choices that
+   affect personal data, tenant authority and immutable learning records;
+3. AGENTS.md required runtime work to pause instead of inferring those
+   foundation choices; and
+4. DR-0017 recommended a minimal relationship-based policy that excludes
+   support notes and global identity/account administration.
+
+The human supplied the exact statement requested by DR-0017. In that bounded
+context it is consolidated development approval by the Accountable Product
+Owner, Technical Decision Owner, Security Reviewer, Privacy Reviewer and
+Tenancy Reviewer under ADR-0001. The role-based identifier avoids inferring a
+personal identity not supplied in the approval statement.
+
+### Accepted scope
+
+- Limit learner administration to current-organization learner memberships
+  and safe summary fields; add no platform-global directory or identity,
+  password/PIN, MFA or recovery control.
+- Add code-only invitations that can grant exactly one active same-tenant role
+  containing only `learning.participate`, with an optional active cohort.
+- Keep adult/onboarding evidence immutable and represent governed goal changes
+  as attributed append-only corrections with a versioned current projection.
+- Enforce one pending/active enrollment, explicit versioned create/cohort/
+  curriculum-pin/withdraw commands, immutable pins and cohort-derived trainer
+  summaries; renewal creates a successor rather than reactivating history.
+- Make learner suspension reversible while retaining learner-safe roles and
+  learning evidence, revoking only selected credentials and restoring no
+  credential; retain ADR-0006's maximum 24-hour disconnected lease.
+- Use exact atomic permissions, fresh TOTP, idempotency, deterministic locking,
+  tenant constraints, bounded reads and the accepted 365-day live-history,
+  one-hour invitation-digest and 30-day backup boundaries.
+- Keep support-note permission keys unseeded and add no note table, route, UI,
+  export field or placeholder behavior.
+
+### Conditions and limitations
+
+- This approval authorizes the bounded non-production specification and
+  implementation work only. It does not accept unbuilt results or authorize
+  deployment, production, real production data or public release.
+- Global user identity correction/reassignment, phone/email/admission lookup,
+  password/PIN/MFA reset, global session revocation, direct learner-trainer
+  assignment, support notes, learner exports and provider invitation delivery
+  remain out of scope.
+- Existing adult/onboarding, enrollment-pin, learning-evidence and privacy
+  authority remains immutable or append-only as specified; ordinary learner
+  administration cannot end a membership or erase evidence.
+- One human exercised consolidated development roles. This is not independent
+  specialist or legal review, and the retained pre-production gates remain.
+- No personal identity, specialist qualification, timestamp-of-day or
+  repository commit SHA is inferred from the approval statement.

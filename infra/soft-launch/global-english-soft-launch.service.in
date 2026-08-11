@@ -1,0 +1,18 @@
+[Unit]
+Description=Global English invite-only soft launch
+Documentation=file://@PROJECT_ROOT@/docs/SOFT_LAUNCH_UBUNTU_RUNBOOK.md
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=/usr/bin/make -C @PROJECT_ROOT@ soft-launch-start
+ExecStart=/usr/bin/make -C @PROJECT_ROOT@ soft-launch-tunnel
+ExecStop=-/usr/bin/make -C @PROJECT_ROOT@ soft-launch-stop
+TimeoutStartSec=240
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

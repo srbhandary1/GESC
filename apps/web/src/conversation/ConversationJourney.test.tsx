@@ -14,8 +14,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('deterministic Friend prototype', () => {
-  it('discloses the fake boundary and completes one typed turn', async () => {
+describe('Friend practice journey', () => {
+  it('discloses the AI boundary and completes one typed turn', async () => {
     const session = fakeSession()
     const turn = fakeTurn(session.id)
     const events = fakeEvents()
@@ -42,12 +42,12 @@ describe('deterministic Friend prototype', () => {
 
     expect(
       screen.getByText(
-        'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+        'This is an AI practice partner, not a human. Feedback is advisory and never changes marks, mastery, or progress.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+        'Typed or approved transcript text is used for the current turn; only content-free digests are retained. Voice recording and transcript retention follow your consent choices.',
       ),
     ).toBeInTheDocument()
 
@@ -58,7 +58,7 @@ describe('deterministic Friend prototype', () => {
     )
     expect(
       await screen.findByText(
-        'I am a deterministic AI prototype, not a human.',
+        'I am an AI practice partner, not a human. My feedback is advisory.',
       ),
     ).toHaveAttribute('lang', 'en-IN')
     expect(screen.getByRole('heading', { name: 'Warm-up' })).toBeInTheDocument()
@@ -130,6 +130,72 @@ describe('deterministic Friend prototype', () => {
     )
     expect(api.events).toHaveBeenCalledWith(turn.events_url)
   })
+
+  it.each([
+    [
+      'Skill focus',
+      'Start Skill Focus',
+      'tutor',
+      'past-tense-skill-focus-prototype',
+      'Yesterday, I went to the market.',
+    ],
+    [
+      'Review',
+      'Start Review',
+      'gentle',
+      'carry-sentence-review-prototype',
+      'Please say the sentence once more in your own way.',
+    ],
+  ] as const)(
+    'starts the %s journey with its bounded scenario and coaching default',
+    async (
+      sessionLabel,
+      startLabel,
+      expectedCoachingMode,
+      expectedScenario,
+      expectedModelLine,
+    ) => {
+      const session = fakeSession()
+      const api: ConversationJourneyApi = {
+        startSession: vi.fn(async () => session),
+        createTurn: vi.fn(),
+        events: vi.fn(),
+      }
+      const user = userEvent.setup()
+
+      render(
+        <ConversationJourney
+          api={api}
+          createClientId={() => 'session-command'}
+          locale="en-IN"
+          localizationPolicy="development-preview"
+        />,
+      )
+
+      await user.selectOptions(
+        screen.getByRole('combobox', { name: 'Practice type' }),
+        sessionLabel,
+      )
+      expect(
+        screen.getByRole('combobox', { name: 'Coaching mode' }),
+      ).toHaveValue(expectedCoachingMode)
+      await user.click(screen.getByRole('button', { name: startLabel }))
+      await user.click(
+        await screen.findByRole('button', { name: 'Continue to listen' }),
+      )
+
+      expect(screen.getByText(expectedModelLine)).toBeInTheDocument()
+      expect(api.startSession).toHaveBeenCalledWith(
+        {
+          coaching_mode: expectedCoachingMode,
+          persona_key: 'patient-friend-prototype',
+          scenario_key: expectedScenario,
+          ui_locale: 'en-IN',
+        },
+        'session-command',
+      )
+    },
+  )
 
   it('exposes browser speech actions in the disclosed demo mode', async () => {
     class FakeUtterance {
@@ -224,7 +290,7 @@ describe('deterministic Friend prototype', () => {
     })
   })
 
-  it('shows a visible error when the fake provider is disabled', async () => {
+  it('shows a visible error when the provider is disabled', async () => {
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => {
         throw new Error('disabled')
@@ -250,7 +316,7 @@ describe('deterministic Friend prototype', () => {
     expect(
       await screen.findByRole('alert'),
     ).toHaveTextContent(
-      'The AI Friend prototype is unavailable. Try again.',
+      'The AI Friend is unavailable. Try again.',
     )
   })
 })

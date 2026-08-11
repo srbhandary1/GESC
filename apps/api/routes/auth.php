@@ -17,6 +17,12 @@ Route::middleware(['web', ProtectAuthenticationPageResponse::class])->group(func
     Route::get('/auth/mobile/sign-in', [MobileAuthorizationLoginController::class, 'show'])
         ->name('auth.mobile.sign-in');
     Route::post(
+        '/auth/mobile/sign-in/password',
+        [MobileAuthorizationLoginController::class, 'submitPassword'],
+    )
+        ->middleware('throttle:password-sign-ins')
+        ->name('auth.mobile.password.store');
+    Route::post(
         '/auth/mobile/sign-in/otp/requests',
         [MobileAuthorizationLoginController::class, 'requestChallenge'],
     )

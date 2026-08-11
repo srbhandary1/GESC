@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'global-english-public-shell-'
-const CACHE_NAME = `${CACHE_PREFIX}v1`
+const CACHE_NAME = `${CACHE_PREFIX}v2`
 const FORBIDDEN_PATH_PREFIXES = ['/api/', '/sanctum/', '/oauth/']
 
 self.addEventListener('install', (event) => {

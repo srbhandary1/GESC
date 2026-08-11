@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Authentication\AuthenticatedPrincipal;
+use App\Curriculum\Exceptions\CurriculumHeadConflict;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Curriculum\Governance\ContentReviewCommands;
@@ -12,16 +13,20 @@ use App\Curriculum\Publication\CurriculumPublisher;
 use App\Curriculum\Publication\CurriculumRollbackService;
 use App\Curriculum\Publication\PublicationResult;
 use App\Http\Requests\Operator\ListOperatorAuditEventsRequest;
+use App\Http\Requests\Operator\ListOperatorContentPublicationsRequest;
 use App\Http\Requests\Operator\PublishOperatorCurriculumRequest;
 use App\Http\Requests\Operator\RecordEnglishContentReviewRequest;
 use App\Http\Requests\Operator\RecordKannadaContentReviewRequest;
 use App\Http\Requests\Operator\RollbackOperatorCurriculumRequest;
+use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceConflict;
+use App\Operator\Exceptions\InvalidOperatorCursor;
 use App\Operator\OperatorAuditEventQuery;
 use App\Operator\OperatorCurriculumDraftQuery;
 use App\Operator\OperatorPilotAnalyticsQuery;
 use App\Operator\OperatorPublicationStatusQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 final class OperatorContentController extends Controller
@@ -50,14 +55,24 @@ final class OperatorContentController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
-    public function publicationStatus(Request $request): JsonResponse
-    {
+    public function publicationStatus(
+        ListOperatorContentPublicationsRequest $request,
+    ): JsonResponse {
         $principal = AuthenticatedPrincipal::fromRequest($request);
+        $cursor = $request->validated('cursor');
 
         try {
-            $result = $this->publications->list($principal->user);
+            $result = $this->publications->list(
+                $principal->user,
+                (int) ($request->validated('limit') ?? 25),
+                is_string($cursor) ? $cursor : null,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
+        } catch (InvalidOperatorCursor) {
+            throw ValidationException::withMessages([
+                'cursor' => ['The cursor is invalid or expired.'],
+            ]);
         }
 
         return response()->json($result)
@@ -69,11 +84,20 @@ final class OperatorContentController extends Controller
     ): JsonResponse {
         $principal = AuthenticatedPrincipal::fromRequest($request);
         $limit = (int) ($request->validated('limit') ?? 50);
+        $cursor = $request->validated('cursor');
 
         try {
-            $result = $this->auditEvents->list($principal->user, $limit);
+            $result = $this->auditEvents->list(
+                $principal->user,
+                $limit,
+                is_string($cursor) ? $cursor : null,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
+        } catch (InvalidOperatorCursor) {
+            throw ValidationException::withMessages([
+                'cursor' => ['The cursor is invalid or expired.'],
+            ]);
         }
 
         return response()->json($result)
@@ -119,8 +143,11 @@ final class OperatorContentController extends Controller
                     $request->validated('rationale_key'),
                 ),
             );
-        } catch (CurriculumIdempotencyConflict) {
-            abort(Response::HTTP_CONFLICT);
+        } catch (CurriculumIdempotencyConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::IDEMPOTENCY,
+                $exception,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }
@@ -162,8 +189,11 @@ final class OperatorContentController extends Controller
                     $request->validated('rationale_key'),
                 ),
             );
-        } catch (CurriculumIdempotencyConflict) {
-            abort(Response::HTTP_CONFLICT);
+        } catch (CurriculumIdempotencyConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::IDEMPOTENCY,
+                $exception,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }
@@ -192,8 +222,16 @@ final class OperatorContentController extends Controller
                     'idempotency_key',
                 ),
             );
-        } catch (CurriculumIdempotencyConflict) {
-            abort(Response::HTTP_CONFLICT);
+        } catch (CurriculumIdempotencyConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::IDEMPOTENCY,
+                $exception,
+            );
+        } catch (CurriculumHeadConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::HEAD,
+                $exception,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }
@@ -226,8 +264,16 @@ final class OperatorContentController extends Controller
                 ),
                 reasonKey: (string) $request->validated('reason_key'),
             );
-        } catch (CurriculumIdempotencyConflict) {
-            abort(Response::HTTP_CONFLICT);
+        } catch (CurriculumIdempotencyConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::IDEMPOTENCY,
+                $exception,
+            );
+        } catch (CurriculumHeadConflict $exception) {
+            throw new ContentWorkspaceConflict(
+                ContentWorkspaceConflict::HEAD,
+                $exception,
+            );
         } catch (CurriculumOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }

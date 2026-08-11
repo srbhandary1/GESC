@@ -1792,20 +1792,13 @@ final class CurriculumGovernanceCommandsTest extends TenancyIntegrationTestCase
         User $user,
         CarbonInterface $mfaVerifiedAt,
     ): AuthenticationSession {
-        return AuthenticationSession::query()->forceCreate([
-            'user_id' => $user->getKey(),
-            'storage_session_digest' => hash(
-                'sha256',
-                'synthetic-session-'.Str::ulid(),
-            ),
-            'storage_session_ciphertext' => 'synthetic-test-ciphertext',
-            'is_privileged' => true,
-            'started_at' => now()->subMinute(),
-            'last_seen_at' => now(),
-            'idle_expires_at' => now()->addHour(),
-            'absolute_expires_at' => now()->addHours(2),
-            'mfa_verified_at' => $mfaVerifiedAt,
-        ]);
+        return $this->createTestPrivilegedAuthenticationSession(
+            $user,
+            $mfaVerifiedAt,
+            [
+                'storage_session_ciphertext' => 'synthetic-test-ciphertext',
+            ],
+        );
     }
 
     private function assertReviewAuthority(

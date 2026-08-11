@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Operator;
 
+use App\Http\Requests\IdempotentRequest;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-final class RecordKannadaContentReviewRequest extends FormRequest
+final class RecordKannadaContentReviewRequest extends IdempotentRequest
 {
     /**
      * @return array<string, list<mixed>>
      */
-    public function rules(): array
+    protected function payloadRules(): array
     {
         return [
             'source_revision_id' => ['required', 'string', 'ulid'],
@@ -35,27 +35,10 @@ final class RecordKannadaContentReviewRequest extends FormRequest
                 Rule::in(['approved', 'rejected']),
             ],
             'rationale_key' => [
-                'sometimes',
-                'nullable',
-                'string',
-                'regex:/\A[a-z][a-z0-9_]{0,119}\z/',
-            ],
-            'idempotency_key' => [
                 'required',
                 'string',
-                'regex:/\A(?:[0-9A-HJKMNP-TV-Z]{26}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z/',
+                Rule::in(['meets_standard', 'language_revision_required']),
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function validationData(): array
-    {
-        return [
-            ...parent::validationData(),
-            'idempotency_key' => $this->header('Idempotency-Key'),
         ];
     }
 
@@ -79,6 +62,20 @@ final class RecordKannadaContentReviewRequest extends FormRequest
                 $validator->errors()->add(
                     'body',
                     'The request contains unsupported fields.',
+                );
+            }
+
+            $decision = $this->input('decision');
+            $rationale = $this->input('rationale_key');
+
+            if (
+                ($decision === 'approved' && $rationale !== 'meets_standard')
+                || ($decision === 'rejected'
+                    && $rationale !== 'language_revision_required')
+            ) {
+                $validator->errors()->add(
+                    'rationale_key',
+                    'The rationale is not valid for this Kannada decision.',
                 );
             }
         });

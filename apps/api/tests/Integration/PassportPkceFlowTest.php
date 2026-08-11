@@ -6,6 +6,7 @@ namespace Tests\Integration;
 
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
+use App\Authentication\Password\PasswordCredentialService;
 use App\Models\AuthenticationSession;
 use App\Models\InstitutionInvite;
 use App\Models\Membership;
@@ -16,6 +17,7 @@ use App\Tenancy\InstitutionInviteCodeDigester;
 use Carbon\CarbonImmutable;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -34,6 +36,7 @@ final class PassportPkceFlowTest extends TestCase
     {
         parent::setUp();
 
+        config(['authentication.mode' => 'legacy_otp']);
         $this->seed(FoundationSeeder::class);
         $this->delivery = new PassportJourneyOtpDeliveryAdapter;
         $this->app->instance(OtpDeliveryAdapter::class, $this->delivery);
@@ -208,6 +211,58 @@ final class PassportPkceFlowTest extends TestCase
             'outbox' => DB::table('outbox_events')->get()->all(),
         ], JSON_THROW_ON_ERROR);
         self::assertStringNotContainsString($rawInviteCode, $recorded);
+    }
+
+    public function test_mobile_system_browser_uses_password_only_without_exposing_legacy_otp_fields(): void
+    {
+        config(['authentication.mode' => 'password_only']);
+        $this->configurePassportKeys();
+
+        $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        $this->app->make(PasswordCredentialService::class)->establish(
+            $user,
+            'learner.one',
+            'correct horse battery staple 2026',
+            Request::create('/test/password-establishment', 'POST'),
+        );
+
+        $client = $this->createPublicClient();
+        $authorization = $this->authorizationParameters();
+        $target = $this->authorizationTarget(
+            $client,
+            $authorization['redirect_uri'],
+            $authorization['state'],
+            $authorization['challenge'],
+        );
+
+        $guest = $this->get($target)
+            ->assertRedirectToRoute('auth.mobile.sign-in');
+        $this->assertAuthenticationPageHeaders($guest);
+        $this->adoptSessionCookie($guest, true);
+
+        $signIn = $this->get('/auth/mobile/sign-in')
+            ->assertOk()
+            ->assertSee('Enter your username and password.')
+            ->assertSee('name="username"', false)
+            ->assertSee('name="password"', false)
+            ->assertDontSee('name="mobile_number"', false)
+            ->assertDontSee('institution_invite_code', false);
+        $this->assertAuthenticationPageHeaders($signIn);
+
+        $signedIn = $this->post('/auth/mobile/sign-in/password', [
+            'username' => 'learner.one',
+            'password' => 'correct horse battery staple 2026',
+        ])->assertRedirect();
+        $this->assertAuthenticationPageHeaders($signedIn);
+        $this->assertSameAuthorizationTarget(
+            $target,
+            $this->relativeLocation((string) $signedIn->headers->get('Location')),
+        );
+        $this->assertDatabaseCount('authentication_sessions', 1);
+
+        $this->post('/auth/mobile/sign-in/otp/requests', [
+            'mobile_number' => '+919876543210',
+        ])->assertGone();
     }
 
     public function test_expired_web_authentication_session_cannot_authorize_a_mobile_client(): void
@@ -525,6 +580,7 @@ final class PassportPkceFlowTest extends TestCase
         $now = now();
         $organizationId = (string) Str::ulid();
         $inviteId = (string) Str::ulid();
+        $roleId = (string) Str::ulid();
 
         DB::table('organizations')->insert([
             'id' => $organizationId,
@@ -536,6 +592,27 @@ final class PassportPkceFlowTest extends TestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+        DB::table('roles')->insert([
+            'id' => $roleId,
+            'organization_id' => $organizationId,
+            'key' => 'learner-safe',
+            'name' => 'Learner',
+            'is_system' => false,
+            'status' => 'active',
+            'version' => 1,
+            'retired_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('role_permissions')->insert([
+            'organization_id' => $organizationId,
+            'role_id' => $roleId,
+            'permission_id' => DB::table('permissions')
+                ->where('key', 'learning.participate')
+                ->value('id'),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
         DB::table('institution_invites')->insert([
             'id' => $inviteId,
             'organization_id' => $organizationId,
@@ -543,6 +620,7 @@ final class PassportPkceFlowTest extends TestCase
                 ->make(InstitutionInviteCodeDigester::class)
                 ->digest($rawCode),
             'membership_type' => Membership::TYPE_LEARNER,
+            'role_id' => $roleId,
             'status' => InstitutionInvite::STATUS_PENDING,
             'expires_at' => $now->copy()->addDay(),
             'created_at' => $now,

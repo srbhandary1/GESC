@@ -2,28 +2,342 @@
 
 declare(strict_types=1);
 
+use App\Authentication\Mfa\ExpiredPrivilegedMfaEnrollmentPurger;
+use App\Authentication\Sessions\AuthenticationSessionCleanupWorker;
 use App\Conversation\Evaluation\AiEvaluationRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
 use App\Conversation\Voice\Providers\Azure\AzureSpeechConfiguration;
+use App\Conversation\Voice\VoiceDeletionOutboxMonitor;
 use App\Conversation\Voice\VoiceRetentionService;
+use App\Curriculum\Commissioning\LocalLplPilotAuthorityBootstrapper;
+use App\Curriculum\Commissioning\MediaTranscription\AzureCurriculumMediaTranscriptionProvider;
+use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionCampaignRunner;
+use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionConfiguration;
+use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionRetentionService;
+use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionSafeReportWriter;
+use App\Identity\LocalOperatorIdentityBootstrapper;
+use App\Learning\LevelVideos\LegacyLevelVideoCommissioner;
+use App\Models\Membership;
+use App\Models\Organization;
+use App\Models\User;
+use App\Operator\MediaLibrary\MediaLibraryMaintenance;
+use App\Operator\OrganizationAdministration\OrganizationAdministrationMaintenance;
+use App\Tenancy\OrganizationAuthorization;
+use App\Tenancy\OrganizationContext;
+use App\Tenancy\OrganizationContextManager;
+use App\Tenancy\OrganizationContextSource;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Str;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Artisan::command(
+    'auth:bootstrap-local-operator-identity
+        {--phone-file= : Absolute owner-readable temporary input file}
+        {--user= : Expected existing user ULID}
+        {--membership= : Expected existing membership ULID}
+        {--approval= : Exact approval evidence reference}',
+    function (): int {
+        $option = function (string $key): string {
+            $value = $this->option($key);
+
+            return is_string($value) ? $value : '';
+        };
+
+        try {
+            $result = app(LocalOperatorIdentityBootstrapper::class)->bootstrap(
+                phoneFile: $option('phone-file'),
+                expectedUserId: $option('user'),
+                expectedMembershipId: $option('membership'),
+                approvalReference: $option('approval'),
+            );
+        } catch (Throwable) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'local_operator_identity_bootstrap_rejected',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'bound',
+            'user_id' => $result->userId,
+            'membership_id' => $result->membershipId,
+            'identity_id' => $result->identityId,
+            'environment' => $result->environment,
+            'approval_reference' => $result->approvalReference,
+            'bound_at' => $result->boundAt->toIso8601String(),
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('Bind the exact approved identity-free local Direct administrator');
+
+Artisan::command(
+    'lpl:bootstrap-local-pilot-authority
+        {--organization= : Expected Direct organization ULID}
+        {--user= : Expected existing user ULID}
+        {--membership= : Expected existing membership ULID}
+        {--approval= : Exact DR-0024 approval reference}
+        {--owner-evidence= : Exact APP-0047 owner-evidence reference}
+        {--idempotency-key= : UUID or ULID request identifier}',
+    function (): int {
+        $option = function (string $key): string {
+            $value = $this->option($key);
+
+            return is_string($value) ? $value : '';
+        };
+
+        try {
+            $result = app(
+                LocalLplPilotAuthorityBootstrapper::class,
+            )->bootstrap(
+                expectedOrganizationId: $option('organization'),
+                expectedUserId: $option('user'),
+                expectedMembershipId: $option('membership'),
+                approvalReference: $option('approval'),
+                ownerEvidenceReference: $option('owner-evidence'),
+                idempotencyKey: $option('idempotency-key'),
+            );
+        } catch (Throwable) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'local_lpl_pilot_authority_bootstrap_rejected',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => $result->replayed ? 'replayed' : 'created',
+            'program_id' => $result->programId,
+            'role_id' => $result->roleId,
+            'membership_id' => $result->membershipId,
+            'appointment_id' => $result->appointmentId,
+            'environment' => $result->environment,
+            'approval_reference' => $result->approvalReference,
+            'owner_evidence_reference' => $result->ownerEvidenceReference,
+            'completed_at' => $result->completedAt->toIso8601String(),
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('Create the exact approved local LPL pilot commissioning authority');
+
+Artisan::command(
+    'lpl:transcribe-media
+        {--phase=preflight : preflight, run or status}
+        {--campaign= : Exact APP-0052 campaign ULID}
+        {--membership= : Exact initiating membership ULID}',
+    function (): int {
+        $campaign = $this->option('campaign');
+        $membership = $this->option('membership');
+        $phase = $this->option('phase');
+        if (
+            ! is_string($campaign)
+            || ! Str::isUlid($campaign)
+            || ! is_string($membership)
+            || ! Str::isUlid($membership)
+            || ! is_string($phase)
+            || ! in_array($phase, ['preflight', 'run', 'status'], true)
+        ) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'media_transcription_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            if ($phase === 'status') {
+                $report = app(MediaTranscriptionCampaignRunner::class)->report(
+                    $campaign,
+                );
+                if (($report['state'] ?? null) === 'completed') {
+                    app(MediaTranscriptionSafeReportWriter::class)->write(
+                        $report,
+                    );
+                }
+                $this->info(json_encode([
+                    ...$report,
+                    'status' => 'reported',
+                ], JSON_THROW_ON_ERROR));
+
+                return ($report['state'] ?? null) === 'completed' ? 0 : 1;
+            }
+
+            $authorization = app(
+                MediaTranscriptionConfiguration::class,
+            )->authorize($campaign);
+            if ($phase === 'preflight') {
+                $this->info(json_encode([
+                    'status' => 'authorized',
+                    'campaign_id' => $campaign,
+                    'manifest_sha256' => $authorization['manifest_sha256'],
+                    'configuration_sha256' => $authorization['configuration_sha256'],
+                    'logical_assets' => 4,
+                ], JSON_THROW_ON_ERROR));
+
+                return 0;
+            }
+
+            $report = app(MediaTranscriptionCampaignRunner::class)->run(
+                $campaign,
+                $membership,
+                static fn (array $current, Factory $http): AzureCurriculumMediaTranscriptionProvider => new AzureCurriculumMediaTranscriptionProvider(
+                    $http,
+                    $current,
+                ),
+            );
+            $terminal = in_array(
+                $report['state'] ?? null,
+                ['provider_complete', 'completed', 'failed'],
+                true,
+            );
+            if ($terminal) {
+                $permit = config('media_transcription.evidence.permit_file');
+                if (is_string($permit) && is_file($permit) && ! unlink($permit)) {
+                    throw new RuntimeException('Campaign permit removal failed.');
+                }
+                config()->set('media_transcription.live_requests_enabled', false);
+                putenv('LPL_MEDIA_TRANSCRIPTION_LIVE_REQUESTS_ENABLED');
+            }
+            $reportPath = $authorization['safe_report_file'] ?? null;
+            app(MediaTranscriptionSafeReportWriter::class)->write(
+                $report,
+                is_string($reportPath) ? $reportPath : null,
+            );
+            $this->info(json_encode([
+                ...$report,
+                'status' => 'finished',
+                'permit_removed' => ! is_file((string) config(
+                    'media_transcription.evidence.permit_file',
+                )),
+                'credential_rotation_required' => true,
+            ], JSON_THROW_ON_ERROR));
+
+            return ($report['state'] ?? null) === 'provider_complete' ? 0 : 1;
+        } catch (Throwable) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'media_transcription_rejected',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+    },
+)->purpose('Run the exact disabled-default APP-0052 media transcription campaign');
+
+Artisan::command('lpl:purge-media-transcription-candidates {--limit=100}', function (): int {
+    $limit = $this->option('limit');
+    if (! is_string($limit) || ! ctype_digit($limit)) {
+        $this->error(json_encode([
+            'status' => 'blocked',
+            'safe_error_code' => 'media_transcription_cleanup_limit_invalid',
+        ], JSON_THROW_ON_ERROR));
+
+        return 2;
+    }
+    $result = app(MediaTranscriptionRetentionService::class)->run((int) $limit);
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return $result['overdue_backlog'] === 0
+        && $result['dead_letter_backlog'] === 0 ? 0 : 1;
+})->purpose('Expire and delete short-lived curriculum transcription candidates');
+
 Artisan::command('voice:purge-expired', function (): int {
     $result = app(
         VoiceRetentionService::class,
     )->purgeDue();
+    $health = app(VoiceDeletionOutboxMonitor::class)->snapshot();
+    $this->info(json_encode([
+        ...$result,
+        'outbox' => $health,
+    ], JSON_THROW_ON_ERROR));
+
+    return $health['status'] === 'healthy' ? 0 : 1;
+})->purpose('Delete due transient voice audio and transcripts');
+
+Artisan::command('voice:deletion-status', function (): int {
+    $health = app(VoiceDeletionOutboxMonitor::class)->snapshot();
+    $this->info(json_encode($health, JSON_THROW_ON_ERROR));
+
+    return $health['status'] === 'healthy' ? 0 : 1;
+})->purpose('Report safe source-deletion outbox health and fail if unhealthy');
+
+Artisan::command('voice:deletion-requeue {event}', function (): int {
+    $event = $this->argument('event');
+
+    if (! is_string($event) || ! Str::isUlid($event)) {
+        $this->error(json_encode([
+            'status' => 'blocked',
+            'safe_error_code' => 'voice_deletion_event_invalid',
+        ], JSON_THROW_ON_ERROR));
+
+        return 2;
+    }
+
+    $requeued = app(VoiceDeletionOutboxMonitor::class)->requeue($event);
+    $this->info(json_encode([
+        'status' => $requeued ? 'requeued' : 'not_requeued',
+    ], JSON_THROW_ON_ERROR));
+
+    return $requeued ? 0 : 1;
+})->purpose('Requeue one dead-lettered source deletion after remediation');
+
+Artisan::command('auth:mfa-expire-pending', function (): int {
+    $expired = app(ExpiredPrivilegedMfaEnrollmentPurger::class)->purge();
+    $this->info(json_encode(['expired' => $expired], JSON_THROW_ON_ERROR));
+
+    return 0;
+})->purpose('Destroy expired pending privileged-MFA enrollment secrets');
+
+Artisan::command('auth:cleanup-revoked-sessions', function (): int {
+    $result = app(AuthenticationSessionCleanupWorker::class)->processDue();
     $this->info(json_encode($result, JSON_THROW_ON_ERROR));
 
     return 0;
-})->purpose('Delete due transient voice audio and transcripts');
+})->purpose('Retry durable cleanup for revoked web-session storage');
+
+Artisan::command('operator:maintain-organization-administration', function (): int {
+    $result = app(OrganizationAdministrationMaintenance::class)->run();
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return $result['session_cleanup_exhausted_backlog'] === 0
+        && $result['overdue_terminal_digest_backlog'] === 0
+            ? 0
+            : 1;
+})->purpose('Expire and minimize bounded organization-administration state');
+
+Artisan::command('media:reconcile {--limit=100}', function (): int {
+    $limit = $this->option('limit');
+
+    if (! is_string($limit) || ! ctype_digit($limit)) {
+        $this->error(json_encode([
+            'status' => 'blocked',
+            'safe_error_code' => 'media_reconcile_limit_invalid',
+        ], JSON_THROW_ON_ERROR));
+
+        return 2;
+    }
+
+    $result = app(MediaLibraryMaintenance::class)->run((int) $limit);
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return $result['overdue_cleanup_backlog'] === 0
+        && $result['dead_letter_backlog'] === 0
+            ? 0
+            : 1;
+})->purpose('Expire media candidates and reconcile quarantine deletion receipts');
 
 Artisan::command(
     'speech:benchmark {--phase=preflight} {--run=} {--listener-slot=} {--expired}',
@@ -246,7 +560,268 @@ Artisan::command(
     },
 )->purpose('Run the locked deterministic AI prompt evaluation suite');
 
+Artisan::command(
+    'learning:import-legacy-level-videos
+        {--inventory= : path to inventory.json, default repo artifacts/legacy-gse-content/inventory.json}
+        {--organization= : organization ULID (required)}
+        {--actor-membership= : author/translator membership ULID (required)}
+        {--idempotency-key= : stable retry key (required)}',
+    function (): int {
+        $repositoryRoot = dirname(dirname(base_path()));
+        $inventoryOption = $this->option('inventory');
+        $inventoryPath = is_string($inventoryOption) && $inventoryOption !== ''
+            ? (
+                Str::startsWith($inventoryOption, DIRECTORY_SEPARATOR)
+                    ? $inventoryOption
+                    : $repositoryRoot.DIRECTORY_SEPARATOR.ltrim(
+                        $inventoryOption,
+                        DIRECTORY_SEPARATOR,
+                    )
+            )
+            : $repositoryRoot
+                .'/artifacts/legacy-gse-content/inventory.json';
+        $organizationId = $this->option('organization');
+        $actorMembershipId = $this->option('actor-membership');
+        $idempotencyKey = $this->option('idempotency-key');
+
+        if (
+            ! is_string($organizationId)
+            || ! Str::isUlid($organizationId)
+            || ! is_string($actorMembershipId)
+            || ! Str::isUlid($actorMembershipId)
+            || ! is_string($idempotencyKey)
+            || preg_match(
+                '/\A[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z/',
+                $idempotencyKey,
+            ) !== 1
+        ) {
+            $this->error(
+                '--organization and --actor-membership ULIDs plus a valid --idempotency-key are required.',
+            );
+
+            return 1;
+        }
+
+        if (! is_file($inventoryPath) || ! is_readable($inventoryPath)) {
+            $this->error(sprintf(
+                'Inventory file is missing or unreadable: %s',
+                $inventoryPath,
+            ));
+
+            return 1;
+        }
+
+        try {
+            $decoded = json_decode(
+                (string) file_get_contents($inventoryPath),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+        } catch (JsonException) {
+            $this->error(sprintf(
+                'Inventory file is not valid JSON: %s',
+                $inventoryPath,
+            ));
+
+            return 1;
+        }
+
+        if (
+            ! is_array($decoded)
+            || ! isset($decoded['lessons'])
+            || ! is_array($decoded['lessons'])
+        ) {
+            $this->error(
+                'Inventory must contain a lessons array.',
+            );
+
+            return 1;
+        }
+
+        $videos = [];
+
+        foreach ($decoded['lessons'] as $index => $lesson) {
+            if (! is_array($lesson)) {
+                continue;
+            }
+
+            if (($lesson['error'] ?? null) !== null) {
+                continue;
+            }
+
+            $download = $lesson['download'] ?? null;
+
+            if (! is_array($download)) {
+                continue;
+            }
+
+            $localPath = $download['local_path'] ?? null;
+            $sha256 = $download['sha256'] ?? null;
+            $bytes = $download['bytes'] ?? null;
+            $levelLabel = $lesson['level_label'] ?? null;
+
+            if (
+                ! is_string($localPath)
+                || $localPath === ''
+                || ! is_string($sha256)
+                || ! is_string($levelLabel)
+                || trim($levelLabel) === ''
+                || (! is_int($bytes) && ! (
+                    is_string($bytes) && ctype_digit($bytes)
+                ))
+            ) {
+                $this->error(sprintf(
+                    'Inventory lesson at index %d is incomplete.',
+                    $index,
+                ));
+
+                return 1;
+            }
+
+            $absolutePath = Str::startsWith($localPath, DIRECTORY_SEPARATOR)
+                ? $localPath
+                : $repositoryRoot.DIRECTORY_SEPARATOR.ltrim(
+                    $localPath,
+                    DIRECTORY_SEPARATOR,
+                );
+
+            if (! is_file($absolutePath)) {
+                $this->warn(sprintf(
+                    'Skipping missing download for %s: %s',
+                    $levelLabel,
+                    $absolutePath,
+                ));
+
+                continue;
+            }
+
+            $videos[] = [
+                'level_label' => trim($levelLabel),
+                'absolute_path' => $absolutePath,
+                'sha256' => $sha256,
+                'bytes' => (int) $bytes,
+            ];
+        }
+
+        if ($videos === []) {
+            $this->error(
+                'No downloaded legacy level videos were available to import.',
+            );
+
+            return 1;
+        }
+
+        $organization = Organization::query()
+            ->whereKey($organizationId)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->first();
+
+        if (! $organization instanceof Organization) {
+            $this->error('Organization was not found or is inactive.');
+
+            return 1;
+        }
+
+        $membership = Membership::withoutGlobalScopes()
+            ->whereKey($actorMembershipId)
+            ->where('organization_id', $organizationId)
+            ->where('status', Membership::STATUS_ACTIVE)
+            ->first();
+
+        if (! $membership instanceof Membership) {
+            $this->error(
+                'Actor membership was not found in the organization.',
+            );
+
+            return 1;
+        }
+
+        $actor = User::query()->whereKey($membership->user_id)->first();
+
+        if (
+            ! $actor instanceof User
+            || $actor->status !== User::STATUS_ACTIVE
+        ) {
+            $this->error('Actor user was not found or is inactive.');
+
+            return 1;
+        }
+
+        $context = new OrganizationContext(
+            organizationId: $organizationId,
+            actorUserId: (string) $actor->getKey(),
+            membershipId: (string) $membership->getKey(),
+            source: OrganizationContextSource::Membership,
+        );
+
+        try {
+            $result = app(OrganizationContextManager::class)->run(
+                $context,
+                function () use (
+                    $actor,
+                    $idempotencyKey,
+                    $videos,
+                ): array {
+                    $authorization = app(
+                        OrganizationAuthorization::class,
+                    );
+
+                    if (
+                        ! $authorization->allows(
+                            $actor,
+                            'curriculum.author',
+                        )
+                        || ! $authorization->allows(
+                            $actor,
+                            'curriculum.translate.kn',
+                        )
+                    ) {
+                        throw new InvalidArgumentException(
+                            'Actor membership lacks curriculum.author or curriculum.translate.kn.',
+                        );
+                    }
+
+                    return app(LegacyLevelVideoCommissioner::class)->commission(
+                        actor: $actor,
+                        videos: $videos,
+                        idempotencyKey: $idempotencyKey,
+                    );
+                },
+            );
+        } catch (Throwable $exception) {
+            $this->error($exception->getMessage() !== ''
+                ? $exception->getMessage()
+                : 'Legacy level video import failed.');
+
+            return 1;
+        }
+
+        $this->info(json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+
+        return 0;
+    },
+)->purpose(
+    'Import inventoried legacy level videos as a review-blocked draft',
+);
+
 Schedule::command('voice:purge-expired')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('auth:mfa-expire-pending')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+Schedule::command('operator:maintain-organization-administration')
+    ->hourly()
+    ->withoutOverlapping();
+
+Schedule::command('media:reconcile')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('lpl:purge-media-transcription-candidates')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 

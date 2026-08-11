@@ -28,8 +28,8 @@ import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
 import { AiMemoryPanel } from './AiMemoryPanel'
 import { VoicePracticePanel } from './VoicePracticePanel'
 import {
-  CONFIDENCE_LISTEN_LINES,
-  CONFIDENCE_MIN_TURNS_BEFORE_REFLECT,
+  FRIEND_SESSION_CONTENT,
+  type FriendSessionType,
 } from './confidenceContent'
 import './ConversationJourney.css'
 
@@ -98,6 +98,47 @@ const stageKeys: Readonly<Record<ConfidenceStage, MessageKey>> = {
   reflect: 'conversation.confidence.stage.reflect',
 }
 
+const sessionTypeKeys: Readonly<Record<FriendSessionType, MessageKey>> = {
+  confidence: 'conversation.session_type.confidence',
+  skill_focus: 'conversation.session_type.skill_focus',
+  review: 'conversation.session_type.review',
+}
+
+const sessionStartKeys: Readonly<Record<FriendSessionType, MessageKey>> = {
+  confidence: 'conversation.start',
+  skill_focus: 'conversation.start.skill_focus',
+  review: 'conversation.start.review',
+}
+
+function DelayedSilenceNudge({
+  locale,
+  localizationPolicy,
+}: Pick<ConversationJourneyProps, 'locale' | 'localizationPolicy'>) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const timer = globalThis.setTimeout(() => setVisible(true), 8_000)
+
+    return () => globalThis.clearTimeout(timer)
+  }, [])
+
+  if (!visible) {
+    return null
+  }
+
+  return (
+    <p lang={locale} role="status">
+      <LocalizedMessage
+        resolution={resolveInterfaceMessage(
+          'conversation.confidence.silence_nudge',
+          locale,
+          localizationPolicy,
+        )}
+      />
+    </p>
+  )
+}
+
 export function ConversationJourney({
   locale,
   localizationPolicy,
@@ -110,11 +151,12 @@ export function ConversationJourney({
   const [coachingMode, setCoachingMode] = useState<
     'gentle' | 'tutor' | 'fluency'
   >('gentle')
+  const [sessionType, setSessionType] =
+    useState<FriendSessionType>('confidence')
   const [listening, setListening] = useState(false)
   const [speakingReply, setSpeakingReply] = useState(false)
   const [speechError, setSpeechError] = useState(false)
   const [showHint, setShowHint] = useState(false)
-  const [showSilenceNudge, setShowSilenceNudge] = useState(false)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('type')
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
@@ -123,6 +165,7 @@ export function ConversationJourney({
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
   const text = (key: MessageKey) => message(key).text
+  const sessionContent = FRIEND_SESSION_CONTENT[sessionType]
 
   useEffect(() => {
     return () => {
@@ -130,24 +173,6 @@ export function ConversationJourney({
       stopDemoSpeech()
     }
   }, [])
-
-  useEffect(() => {
-    if (state.kind !== 'ready' || state.stage !== 'talk') {
-      setShowSilenceNudge(false)
-      return
-    }
-
-    if (utterance.trim() !== '' || listening) {
-      setShowSilenceNudge(false)
-      return
-    }
-
-    const timer = globalThis.setTimeout(() => {
-      setShowSilenceNudge(true)
-    }, 8_000)
-
-    return () => globalThis.clearTimeout(timer)
-  }, [state, utterance, listening])
 
   const speakEnglish = (reply: string) => {
     const trimmed = reply.trim()
@@ -176,7 +201,7 @@ export function ConversationJourney({
         {
           coaching_mode: coachingMode,
           persona_key: 'patient-friend-prototype',
-          scenario_key: 'everyday-friend-prototype',
+          scenario_key: sessionContent.scenarioKey,
           ui_locale: locale,
         },
         sessionCommandId.current,
@@ -289,7 +314,7 @@ export function ConversationJourney({
   }
 
   const playModelLines = () => {
-    speakEnglish(CONFIDENCE_LISTEN_LINES.join(' '))
+    speakEnglish(sessionContent.listenLines.join(' '))
   }
 
   const advanceStage = (stage: ConfidenceStage) => {
@@ -305,7 +330,6 @@ export function ConversationJourney({
       lastTurn: state.kind === 'result' ? state.turn : state.lastTurn,
     })
     setShowHint(false)
-    setShowSilenceNudge(false)
   }
 
   const retryUtterance = () => {
@@ -392,7 +416,7 @@ export function ConversationJourney({
   const carrySentence =
     lastTurn?.priority_correction?.correction_en ??
     lastTurn?.assistant_reply ??
-    CONFIDENCE_LISTEN_LINES[0]
+    sessionContent.listenLines[0]
 
   return (
     <section
@@ -400,6 +424,7 @@ export function ConversationJourney({
       aria-labelledby="conversation-title"
       data-demo-speech={demoMode ? 'browser' : undefined}
       data-confidence-stage={stage}
+      data-session-type={sessionType}
     >
       <div className="conversation-journey__heading">
         <p className="conversation-journey__eyebrow">
@@ -455,6 +480,29 @@ export function ConversationJourney({
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
         <div className="conversation-journey__start">
+          <label htmlFor="friend-session-type">
+            <LocalizedMessage
+              resolution={message('conversation.session_type.label')}
+            />
+          </label>
+          <select
+            id="friend-session-type"
+            value={sessionType}
+            disabled={state.kind === 'starting'}
+            onChange={(event) => {
+              const selected = event.currentTarget.value as FriendSessionType
+              setSessionType(selected)
+              setCoachingMode(FRIEND_SESSION_CONTENT[selected].coachingMode)
+            }}
+          >
+            {(Object.keys(FRIEND_SESSION_CONTENT) as FriendSessionType[]).map(
+              (type) => (
+                <option key={type} value={type}>
+                  {text(sessionTypeKeys[type])}
+                </option>
+              ),
+            )}
+          </select>
           <label htmlFor="coaching-mode">
             <LocalizedMessage
               resolution={message('conversation.coaching_mode.label')}
@@ -492,7 +540,7 @@ export function ConversationJourney({
                   ? 'conversation.starting'
                   : demoMode
                     ? 'conversation.demo.start'
-                    : 'conversation.start',
+                    : sessionStartKeys[sessionType],
               )}
             />
           </button>
@@ -511,7 +559,9 @@ export function ConversationJourney({
 
       {session === undefined ? null : (
         <p className="conversation-journey__identity" lang="en-IN">
-          {session.persona.disclosure}
+          <LocalizedMessage
+            resolution={message('conversation.persona_disclosure')}
+          />
         </p>
       )}
 
@@ -563,7 +613,7 @@ export function ConversationJourney({
             />
           </p>
           <ol className="conversation-journey__model-lines" lang="en-IN">
-            {CONFIDENCE_LISTEN_LINES.map((line) => (
+            {sessionContent.listenLines.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ol>
@@ -698,7 +748,7 @@ export function ConversationJourney({
                 resolution={message('conversation.confidence.hint')}
               />
             </button>
-            {completedTurns >= CONFIDENCE_MIN_TURNS_BEFORE_REFLECT ? (
+            {completedTurns >= sessionContent.minimumTurnsBeforeReflect ? (
               <button
                 className="ge-button ge-button--primary"
                 type="button"
@@ -719,12 +769,13 @@ export function ConversationJourney({
             </p>
           ) : null}
 
-          {showSilenceNudge ? (
-            <p lang={locale} role="status">
-              <LocalizedMessage
-                resolution={message('conversation.confidence.silence_nudge')}
-              />
-            </p>
+          {state.kind === 'ready' &&
+          utterance.trim() === '' &&
+          !listening ? (
+            <DelayedSilenceNudge
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+            />
           ) : null}
 
           <form className="conversation-journey__form" onSubmit={send}>

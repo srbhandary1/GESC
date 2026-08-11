@@ -4,6 +4,7 @@ import {
   type LearnerAttempt,
   type LearnerHome,
   type LearnerJourneyApi,
+  type LearnerLevelVideoCatalog,
   type LearnerMission,
   type LearnerProgress,
   type MissionResult,
@@ -11,24 +12,51 @@ import {
   type OfflineCompletionInput,
   type OnboardingInput,
 } from './LearnerJourneyApi'
+import {
+  defaultAuthenticationRuntime,
+  type ApiCsrfProtection,
+} from '../auth/defaultAuthentication'
 
 export interface WebLearnerJourneyApiOptions {
+  readonly authenticatedPrivateMedia?: boolean
   readonly baseUrl?: string
+  readonly csrfProtection?: ApiCsrfProtection
   readonly fetch?: typeof fetch
   readonly readCookie?: () => string
 }
 
+const LESSON_VIDEO_MAXIMUM_BYTES = 20_000_000
+
 export class WebLearnerJourneyApi implements LearnerJourneyApi {
   readonly #baseUrl: string
+  readonly #csrfProtection: ApiCsrfProtection
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
+  readonly downloadModelAudio?: (
+    url: string,
+    signal?: AbortSignal,
+  ) => Promise<Blob>
+  readonly downloadLessonVideo?: (
+    url: string,
+    expectedBytes: number,
+    signal?: AbortSignal,
+  ) => Promise<Blob>
 
   constructor(options: WebLearnerJourneyApiOptions = {}) {
     this.#baseUrl = options.baseUrl ?? '/api/v1'
+    this.#csrfProtection =
+      options.csrfProtection ?? 'sanctum-cookie'
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
     this.#readCookie =
       options.readCookie ??
       (() => (typeof document === 'undefined' ? '' : document.cookie))
+
+    if (options.authenticatedPrivateMedia === true) {
+      this.downloadModelAudio = (url, signal) =>
+        this.#downloadMediaBlob(url, 'audio/*', signal)
+      this.downloadLessonVideo = (url, expectedBytes, signal) =>
+        this.#downloadLessonVideo(url, expectedBytes, signal)
+    }
   }
 
   home(signal?: AbortSignal): Promise<LearnerHome> {
@@ -48,6 +76,18 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
       method: 'PUT',
       signal,
     })
+  }
+
+  listLevelVideos(
+    enrollmentId: string,
+    signal?: AbortSignal,
+  ): Promise<LearnerLevelVideoCatalog> {
+    const query = new URLSearchParams({ enrollment_id: enrollmentId })
+
+    return this.#json<LearnerLevelVideoCatalog>(
+      `/me/level-videos?${query.toString()}`,
+      { signal },
+    )
   }
 
   mission(
@@ -166,6 +206,86 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     return new Uint8Array(await response.arrayBuffer())
   }
 
+  async #downloadMediaBlob(
+    url: string,
+    accept: string,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(url, {
+        credentials: 'include',
+        headers: { Accept: accept },
+        signal,
+      })
+    } catch {
+      throw new LearnerJourneyUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new LearnerJourneyUnavailableError(response.status)
+    }
+
+    return response.blob()
+  }
+
+  async #downloadLessonVideo(
+    url: string,
+    expectedBytes: number,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    if (
+      !Number.isSafeInteger(expectedBytes) ||
+      expectedBytes < 1 ||
+      expectedBytes > LESSON_VIDEO_MAXIMUM_BYTES
+    ) {
+      throw new LearnerJourneyUnavailableError()
+    }
+
+    let response: Response
+
+    try {
+      response = await this.#fetch(url, {
+        credentials: 'include',
+        headers: { Accept: 'video/mp4' },
+        signal,
+      })
+    } catch {
+      throw new LearnerJourneyUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new LearnerJourneyUnavailableError(response.status)
+    }
+
+    const contentType = response.headers
+      .get('Content-Type')
+      ?.split(';', 1)[0]
+      ?.trim()
+      .toLowerCase()
+    const contentLength = strictPositiveInteger(
+      response.headers.get('Content-Length'),
+    )
+
+    if (
+      contentType !== 'video/mp4' ||
+      contentLength !== expectedBytes
+    ) {
+      throw new LearnerJourneyUnavailableError(response.status)
+    }
+
+    try {
+      return await boundedResponseBlob(
+        response,
+        expectedBytes,
+        contentType,
+      )
+    } catch {
+      throw new LearnerJourneyUnavailableError(response.status)
+    }
+  }
+
   completeOffline(
     input: OfflineCompletionInput,
     commandId: string,
@@ -185,6 +305,10 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     path: string,
     init: RequestInit,
   ): Promise<T> {
+    if (this.#csrfProtection === 'none') {
+      return this.#json<T>(path, init)
+    }
+
     const csrfHeaders = await this.#csrfHeaders(init.signal)
 
     return this.#json<T>(path, {
@@ -263,6 +387,65 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
   }
 }
 
+function strictPositiveInteger(value: string | null): number | undefined {
+  if (value === null || !/^[1-9]\d*$/u.test(value)) {
+    return undefined
+  }
+
+  const parsed = Number(value)
+
+  return Number.isSafeInteger(parsed) ? parsed : undefined
+}
+
+async function boundedResponseBlob(
+  response: Response,
+  expectedBytes: number,
+  contentType: string,
+): Promise<Blob> {
+  if (response.body === null) {
+    const blob = await response.blob()
+
+    if (blob.size !== expectedBytes) {
+      throw new Error('Unexpected lesson-video response length.')
+    }
+
+    return new Blob([blob], { type: contentType })
+  }
+
+  const reader = response.body.getReader()
+  const chunks: BlobPart[] = []
+  let receivedBytes = 0
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        break
+      }
+
+      receivedBytes += value.byteLength
+
+      if (receivedBytes > expectedBytes) {
+        await reader.cancel()
+        throw new Error('Lesson-video response exceeded its declared length.')
+      }
+
+      const copy = new Uint8Array(value.byteLength)
+      copy.set(value)
+      chunks.push(copy)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  if (receivedBytes !== expectedBytes) {
+    throw new Error('Lesson-video response ended before its declared length.')
+  }
+
+  return new Blob(chunks, { type: contentType })
+}
+
 function readCookieValue(
   cookieHeader: string,
   expectedName: string,
@@ -284,4 +467,10 @@ function readCookieValue(
   return undefined
 }
 
-export const defaultLearnerJourneyApi = new WebLearnerJourneyApi()
+export const defaultLearnerJourneyApi = new WebLearnerJourneyApi({
+  authenticatedPrivateMedia:
+    defaultAuthenticationRuntime.privateMediaRequiresFetch,
+  baseUrl: defaultAuthenticationRuntime.apiBaseUrl,
+  csrfProtection: defaultAuthenticationRuntime.csrfProtection,
+  fetch: defaultAuthenticationRuntime.apiFetch,
+})

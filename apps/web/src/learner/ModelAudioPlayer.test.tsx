@@ -68,4 +68,41 @@ describe('ModelAudioPlayer', () => {
     )
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
   })
+
+  it('loads authenticated audio into a revocable object URL', async () => {
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:authenticated-model-audio')
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const loadSource = vi.fn(async () => new Blob(['audio']))
+
+    const view = render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/wav"
+        source="https://api.example.test/api/v1/media/model-audio"
+      />,
+    )
+
+    expect(screen.queryByTestId('model-audio-element')).toBeNull()
+
+    await screen.findByTestId('model-audio-element')
+
+    expect(loadSource).toHaveBeenCalledWith(
+      'https://api.example.test/api/v1/media/model-audio',
+      expect.any(AbortSignal),
+    )
+    expect(createObjectUrl).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByTestId('model-audio-element').querySelector('source'),
+    ).toHaveAttribute('src', 'blob:authenticated-model-audio')
+
+    view.unmount()
+    expect(revokeObjectUrl).toHaveBeenCalledWith(
+      'blob:authenticated-model-audio',
+    )
+  })
 })

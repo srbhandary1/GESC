@@ -33,6 +33,7 @@
         <env name="DB_USERNAME" value="global_english_test" force="true"/>
         <env name="DB_PASSWORD" value="global_english_test" force="true"/>
         <env name="DB_SSLMODE" value="disable" force="true"/>
+        <env name="LARAVEL_STORAGE_PATH" value="/tmp/global-english-postgres-phpunit-storage" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="database" force="true"/>

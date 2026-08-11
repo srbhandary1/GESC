@@ -14,7 +14,7 @@ const isProductionAndroid = process.env.CAPACITOR_APP === 'production'
 
 const demoConfig: CapacitorConfig = {
   appId: 'com.globalenglish.demo',
-  appName: 'Global English Speaking Course',
+  appName: 'Global spoken English Course',
   webDir: 'dist-demo',
   android: {
     path: 'android',
@@ -23,7 +23,7 @@ const demoConfig: CapacitorConfig = {
 
 const productionConfig: CapacitorConfig = {
   appId: 'com.globalenglish.app',
-  appName: 'Global English',
+  appName: 'Global spoken English Course',
   webDir: 'dist',
   android: {
     path: 'android-app',
@@ -31,6 +31,14 @@ const productionConfig: CapacitorConfig = {
   plugins: {
     // Production package uses project-owned secure-credential and system-browser
     // plugins; ordinary Preferences must never hold auth credentials (ADR-0012).
+    //
+    // Capacitor serves the WebView from https://localhost. Browser fetch to a
+    // local HTTP API (emulator 10.0.2.2) is mixed-content blocked even when
+    // Android cleartext is permitted. Native CapacitorHttp patches fetch so
+    // Passport token exchange and /api/v1 calls can reach that origin.
+    CapacitorHttp: {
+      enabled: true,
+    },
   },
 }
 

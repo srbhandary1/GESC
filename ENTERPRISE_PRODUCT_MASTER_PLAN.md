@@ -1,8 +1,8 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.1"
+version: "3.3"
 status: "Canonical implementation baseline"
-prepared: "30 July 2026"
+prepared: "11 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
 supersedes:
   - "Global_English_High_Level_Plan_v2.md"
@@ -93,7 +93,7 @@ The product promise is:
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
-| Authentication | Mobile OTP for direct learners; organization invite/code or admission-ID setup for institutional learners; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android |
+| Authentication | Platform-global username and password for every role; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android; fresh same-password confirmation for sensitive privileged actions |
 | Authoritative records | Deterministic, versioned, explainable and auditable |
 | AI authority | Advisory only; never writes marks, mastery, attendance or unlocks |
 | Offline | Downloaded deterministic mission, recording/playback and queued progress; no offline AI in Phase 1 |
@@ -633,7 +633,7 @@ Home has one dominant action:
 
 | Screen | Required experience |
 |---|---|
-| Sign in | Direct learner: mobile number + six-digit OTP. Institutional learner: organization invite/code + OTP, or admission ID + one-time setup code where a personal phone is unavailable. Kannada-first recovery |
+| Sign in | Every learner and operator uses a platform-global username and password. Institutional invite/code or admission workflows establish enrollment before one-time credential setup; they are not continuing sign-in factors. Kannada-first recovery |
 | First use | Adult confirmation, language/accessibility preferences, audio-led walkthrough, goal selection, short placement, recording and AI consent |
 | Home | One recommended action, sync state, review due and concise progress |
 | Tutor | Kannada concept, model English, audio, guided speaking, correction, retry and next step |
@@ -718,6 +718,32 @@ The following are deliberately outside the voice-product critical path and requi
 
 The core data model must not confuse learning engagement with attendance, even if attendance is introduced later.
 
+#### Approved operator-parity expansion
+
+DR-0014 Option A and ADR-0014 approve a separate, staged operator-parity
+expansion after the ordered PRIV-DSR-01, REL-01 and MAINT-01 remediation
+checkpoints. The approved expansion may add:
+
+- admin-managed plan catalogues and deterministic manual or externally
+  reconciled entitlements with immutable grant, adjustment and revocation
+  evidence;
+- moderated notices and explicitly typed organization groups, subject to
+  purpose, audience, retention, reporting, blocking and deletion policies
+  fixed before the affected implementation;
+- assignment and workshop submissions with rubric-based human review,
+  correction history and learner-visible feedback;
+- timezone-aware facilitated-session scheduling with validated external
+  meeting links, without an in-product conferencing or recording service; and
+- separate in-app post and public editorial-CMS workflows with governed
+  revisions, publication authority, accessibility and media rights.
+
+These capabilities are optional operations, not Phase 1 voice-product
+prerequisites. Their exact functional inventory, checkpoint order and retained
+decision gates are defined by
+[the approved reference-admin parity specification](docs/ADMIN_REFERENCE_PARITY_PLAN.md).
+Approval of the program does not claim implementation, checkpoint acceptance,
+production data migration, deployment or production release.
+
 ---
 
 ## 9. Phase 1 scope
@@ -758,16 +784,23 @@ The core data model must not confuse learning engagement with attendance, even i
   audio or AI explanation support unless separately approved;
 - formal CEFR certification;
 - support for minors;
-- live classes or video conferencing;
-- peer-to-peer chat, social feed or learner marketplace;
-- consumer billing, subscriptions, coupons and accounting;
-- broad attendance, notices and LMS administration unless separately approved;
+- in-product conferencing, class recording or a video-conferencing service;
+- open peer-to-peer chat, an unmoderated social feed or learner marketplace;
+- consumer checkout, payment-provider collection, coupons and accounting;
+- broad attendance and LMS semantics that conflate scheduled operations with
+  canonical learning engagement or mastery;
 - complete authored content for all future levels;
 - CRM, ERP, HRMS, SIS/LMS and external institution integrations;
 - self-service multi-tenant commercial provisioning;
 - predictive dropout or high-stakes automated decisions;
 - 24/7 managed operations;
 - marketing, acquisition, ranking or download guarantees.
+
+Under ADR-0014, these deferrals do not exclude the separately governed safe
+operator-parity subsets in §8.3: external facilitated-session scheduling,
+moderated notices and typed groups, manual/externally reconciled entitlements,
+human assignment review and editorial CMS. They retain the exclusions above
+and require their ordered bounded checkpoints.
 
 ---
 
@@ -808,7 +841,7 @@ Exact patch versions are pinned during repository scaffolding and updated throug
 | Web/PWA authentication | Laravel Sanctum same-origin Secure, HttpOnly cookie sessions |
 | Android authentication | Laravel Passport Authorization Code with PKCE; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
 | Credential-storage rule | No authentication credential in browser `localStorage`, IndexedDB or ordinary Capacitor preferences |
-| Privileged authentication | MFA plus session listing/revocation |
+| Privileged authentication | Fresh confirmation of the same password within five minutes for sensitive actions, plus session listing/revocation; this is explicitly one factor, not MFA |
 | Background processing | Laravel queues and scheduler |
 | Frontend testing | Vitest, React Testing Library and Playwright |
 | Backend testing | Pest/PHPUnit with real PostgreSQL integration tests |
@@ -844,13 +877,13 @@ Authentication verifies the same user identity but uses a platform-appropriate c
 
 - use the system browser, not an embedded credential form, for the OAuth authorization step;
 - use Laravel Passport Authorization Code with PKCE as a public mobile client;
-- complete mobile-number OTP or institutional setup inside the server-controlled authorization journey;
+- complete username/password verification inside the server-controlled authorization journey;
 - issue short-lived access tokens and rotating refresh tokens;
 - store credentials only through a reviewed native secure-storage implementation;
 - keep access tokens in memory while the app is active where practical;
 - revoke the active token family on logout, account closure, security reset or detected refresh-token reuse.
 
-The React client uses one project-owned authentication interface with separate web and Android adapters. OTP proves the user identity; it is not itself the long-lived application credential. Exact lifetimes, rotation and device-binding policy are fixed in the authentication ADR before PR-003 is accepted.
+The React client uses one project-owned authentication interface with separate web and Android adapters. A password is verified only by the server and is never the long-lived application transport credential. Sensitive privileged web actions require a server-side confirmation of the same password no more than five minutes old; this freshness proof is not MFA. Exact password, recovery, lifetime, rotation and device-binding policy is fixed by ADR-0002 as amended by ADR-0021.
 
 ---
 
@@ -1267,13 +1300,27 @@ Choices are normalized rows, not `option_a`, `option_b` columns. Derived percent
 
 AI logs are redacted and retained under policy. A model response is not an authoritative learning record until deterministic validation and application rules create the relevant record.
 
-### 16.5 Optional institution pack
+### 16.5 Optional operations and operator-parity records
 
 - `academic_calendars`, `scheduled_learning_days`
 - `class_attendance_records`, `attendance_corrections`
 - `notices`, `notice_localizations`, `notice_audiences`, `notice_acknowledgements`
+- `entitlement_plans`, `learner_entitlements`, `entitlement_events`
+- `facilitated_sessions`, `external_meeting_links`, `session_reminders`
+- `typed_groups`, `group_memberships`, `group_moderation_events`
+- `assignments`, `assignment_submissions`, `human_review_decisions`,
+  `review_corrections`
+- `message_templates`, `message_deliveries`, `message_moderation_events`
+- `in_app_posts`, `editorial_articles`, `editorial_revisions`,
+  `editorial_publication_events`
 
-These records remain semantically separate from learning engagement and mastery.
+These are target concepts, not an instruction to create every table before its
+approved vertical slice. They remain semantically separate from canonical
+learning engagement, attempt evidence, mastery, progression and attendance.
+An entitlement or human-review outcome may be authoritative for its own
+declared purpose, but it cannot be inferred from AI output or silently rewrite
+canonical learning records. Communication bodies and attachments remain
+private content and require the later policy gates retained by ADR-0014.
 
 ---
 
@@ -1288,7 +1335,7 @@ After a learner downloads a mission, the following work offline:
 - curated lesson help;
 - local progress and submission outbox.
 
-AI conversation, new transcription, generated voice, OTP sign-in and new downloads require connectivity in Phase 1.
+AI conversation, new transcription, generated voice, username/password sign-in and new downloads require connectivity in Phase 1.
 
 Technical behaviour:
 
@@ -1331,7 +1378,7 @@ Use OWASP ASVS 5.0.0 Level 2 as the primary application-security verification ta
 Minimum controls:
 
 - organization-scoped authorization policies and cross-tenant tests;
-- privileged MFA;
+- fresh same-password confirmation for sensitive privileged actions, with the accepted single-factor risk recorded under ADR-0021;
 - session listing and revocation;
 - CSRF, CSP, HSTS, secure cookies and strict CORS policy;
 - rate limits and abuse controls;
@@ -1623,7 +1670,7 @@ Deliver:
 - OpenAPI baseline and generated client package;
 - health/readiness, correlation IDs and structured logging;
 - organization, membership, role, cohort and enrollment foundation;
-- same-origin Sanctum web/PWA authentication skeleton, Passport PKCE mobile-client foundation and fake/local OTP adapter;
+- same-origin Sanctum web/PWA authentication skeleton, Passport PKCE mobile-client foundation and project-owned password credential service;
 - `kn-IN`, `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` and `en-IN` UI localization
   bootstrap with strict English production fallback;
 - accessible application shell;
@@ -1902,7 +1949,7 @@ Deliver:
 - `apps/api` Laravel 13 application;
 - `apps/web` React 19.2 TypeScript Vite application;
 - Node 24/pnpm and PHP 8.4 version declarations;
-- PostgreSQL, Redis, S3-compatible object storage and mail/OTP fake in `compose.yaml`;
+- PostgreSQL, Redis, S3-compatible object storage and local mail/recovery-delivery support in `compose.yaml`;
 - root `Makefile` commands;
 - basic CI;
 - API and web production builds.
@@ -1938,8 +1985,8 @@ Deliver:
 - institution invite/code membership and cohorts/enrollments at minimum viable depth;
 - same-origin Sanctum web/PWA session flow;
 - Laravel Passport Authorization Code with PKCE mobile-client foundation and a shared frontend authentication adapter;
-- fake/local OTP adapter;
-- privileged MFA extension point;
+- project-owned username/password credential and local recovery adapters;
+- privileged fresh-password confirmation extension point;
 - tenant-scoped policies and tests.
 
 Acceptance:
@@ -2241,6 +2288,25 @@ Ongoing provider monitoring, model changes, security updates, dependency upgrade
 
 ## 31. Roadmap after Phase 1
 
+### Approved ordered operator-parity expansion
+
+DR-0014 Option A and ADR-0014 authorize the optional safe functional-parity
+program in
+[ADMIN_REFERENCE_PARITY_PLAN.md](docs/ADMIN_REFERENCE_PARITY_PLAN.md). It
+does not displace current remediation work. After PRIV-DSR-01, REL-01 and
+MAINT-01, execution remains ordered as:
+
+`ADMIN-GOV-01 → ADMIN-SHELL-01 → ADMIN-ORG-01 → ADMIN-LEARNER-01 →
+ADMIN-CONTENT-01 → ADMIN-MEDIA-01 → ADMIN-GROUPS-01 → ADMIN-ACTIVITY-01 →
+ADMIN-REVIEW-01 → ADMIN-COMMS-01 → ADMIN-CONVERSATION-01 → ADMIN-CMS-01 →
+ADMIN-ENT-01 → ADMIN-CONFIG-01 → ADMIN-ACCEPT-01`.
+
+Each checkpoint still requires its bounded specification, implementation,
+tests, contract/document updates and exit evidence. Communication retention,
+moderation, provider-backed payment, legacy-data import and production-release
+decisions remain separately gated. Recording this roadmap does not mark any
+ADMIN implementation complete or production approved.
+
 ### Phase 2 — Commercial and institutional expansion
 
 - subscriptions and entitlements;
@@ -2285,7 +2351,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Architecture | Modular monolith with external inference adapters |
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
-| Authentication | Direct learners use mobile OTP without an organization code; institutional learners use an invite/code or admission-ID setup; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with credentials only in native secure storage; privileged MFA |
+| Authentication | Every role uses one platform-global username and password; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with transport credentials only in native secure storage; sensitive privileged actions require fresh same-password confirmation and have no second factor |
 | Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
@@ -2305,7 +2371,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 The following can remain adapter/configuration choices during scaffolding:
 
 - initial cloud provider;
-- OTP vendor;
+- recovery-delivery provider and compromised-password blocklist source;
 - STT, LLM and TTS providers;
 - production observability vendor;
 - exact audio-retention periods;

@@ -55,6 +55,13 @@ VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build
 - Make;
 - Docker Engine with Docker Compose v2 for local services and `make dev`.
 
+Governed media ingestion additionally uses the opt-in, loopback-only ClamAV
+profile and the signed local ffprobe toolchain. Prepare them with
+`make media-tools media-services-up`; operational configuration remains
+fail-closed until `MEDIA_INSPECTOR_DRIVER=ffprobe` and
+`MEDIA_SCANNER_DRIVER=clamav` are explicitly supplied. See
+[docs/ops/MEDIA_INGESTION_RUNBOOK.md](docs/ops/MEDIA_INGESTION_RUNBOOK.md).
+
 Runtime declarations live in `.php-version`, `.node-version`, `.nvmrc`,
 `package.json` and the CI workflow. Composer and pnpm lockfiles are the exact
 dependency authority.
@@ -101,7 +108,7 @@ provider credential or published curriculum, run:
 make demo
 ```
 
-The demo starts only the Vite development server on `127.0.0.1:5173`, opens
+The demo starts only the Vite development server on `127.0.0.1:5174`, opens
 directly on a populated synthetic lesson and provides the deterministic
 text-only Friend journey. Its authentication, lesson, result and conversation
 fixtures exist only in browser memory and reset on reload. A prominent notice
@@ -116,8 +123,8 @@ Linux-native Node.js/pnpm toolchain under `tmp/toolchain` when it is present.
 It does not depend on copied or system-wide Node modules.
 
 To view it from another computer without exposing the application port, use
-SSH local forwarding to workstation `127.0.0.1:5173` and open
-`http://127.0.0.1:5173` on the viewing computer.
+SSH local forwarding to workstation `127.0.0.1:5174` and open
+`http://127.0.0.1:5174` on the viewing computer.
 
 ### Distributable demo bundle
 
@@ -190,8 +197,9 @@ retry; nothing is uploaded. On an IPv6-limited network, pass
 distribution and dependencies.
 
 Local services bind only to `127.0.0.1`. The API uses port 8000, Vite uses port
-5173, Mailpit's browser interface uses port 8025, S3-compatible storage uses
-port 8333 and the OTP stub uses port 8089 by default.
+5174, Mailpit's browser interface uses port 8025, S3-compatible storage uses
+port 8333 and the OTP stub uses port 8089 by default. The opt-in governed-media
+profile publishes ClamD only on loopback port 3310.
 
 For the PR-008 local/testing prototype, set
 `CONVERSATION_PROVIDER_DRIVER=fake`. Production and every environment other
@@ -302,6 +310,9 @@ only. Do not reuse them outside an isolated development environment.
 - [Master plan](ENTERPRISE_PRODUCT_MASTER_PLAN.md)
 - [Agent instructions](AGENTS.md)
 - [Current status](docs/STATUS.md)
+- [Learner user guide](docs/guides/LEARNER_USER_GUIDE.md)
+- [Administrator and operator user guide](docs/guides/ADMINISTRATOR_USER_GUIDE.md)
+- [Sales feature and solution guide](docs/SALES_FEATURE_GUIDE.md)
 - [Decision ledger](docs/DECISIONS.md)
 - [Quality review](docs/QUALITY_REVIEW.md)
 - [PR-009 benchmark evidence handoff](docs/PR-009_SPEECH_BENCHMARK_EVIDENCE_HANDOFF.md)

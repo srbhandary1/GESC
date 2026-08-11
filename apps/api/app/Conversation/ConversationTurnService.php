@@ -31,6 +31,7 @@ final readonly class ConversationTurnService
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
         private ConversationTurnStateMachine $states,
+        private ConversationProviderUsagePolicy $usagePolicy,
         private SpeechToTextProvider $speechToText,
         private ConversationOrchestrator $orchestrator,
         private TextToSpeechProvider $textToSpeech,
@@ -414,7 +415,7 @@ final readonly class ConversationTurnService
         for ($attempt = 1; $attempt <= $maximumAttempts; $attempt++) {
             try {
                 $result = $operation();
-                $this->assertFakeUsage($result->usage());
+                $this->usagePolicy->assertAllowed($stage, $result->usage());
                 $this->recordUsage(
                     organizationId: $organizationId,
                     membershipId: $membershipId,
@@ -437,7 +438,7 @@ final readonly class ConversationTurnService
                     outputUnits: $exception->outputUnits,
                     estimatedCostMicrounits: 0,
                 );
-                $this->assertFakeUsage($usage);
+                $this->usagePolicy->assertAllowed($stage, $usage);
                 $this->recordUsage(
                     organizationId: $organizationId,
                     membershipId: $membershipId,
@@ -575,20 +576,6 @@ final readonly class ConversationTurnService
             'result_status' => $resultStatus,
             'recorded_at' => Date::now()->toImmutable(),
         ]);
-    }
-
-    private function assertFakeUsage(ProviderUsage $usage): void
-    {
-        if (
-            $usage->providerKey !== 'deterministic-fake'
-            || ! str_starts_with($usage->modelVersion, 'fake-')
-            || $usage->estimatedCostMicrounits !== 0
-            || $usage->latencyMilliseconds < 0
-            || $usage->inputUnits < 0
-            || $usage->outputUnits < 0
-        ) {
-            throw new ConversationOperationRejected;
-        }
     }
 
     private function stageForState(string $state): string

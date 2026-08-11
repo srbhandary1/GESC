@@ -1,5 +1,35 @@
 apply plugin: 'com.android.application'
 
+def releaseSigningValues = [
+    storeFile: System.getenv('GE_ANDROID_UPLOAD_STORE_FILE'),
+    storePassword: System.getenv('GE_ANDROID_UPLOAD_STORE_PASSWORD'),
+    keyAlias: System.getenv('GE_ANDROID_UPLOAD_KEY_ALIAS'),
+    keyPassword: System.getenv('GE_ANDROID_UPLOAD_KEY_PASSWORD'),
+].collectEntries { key, value -> [key, value?.trim()] }
+def releaseSigningPresent = releaseSigningValues.values().every { it }
+def releaseSigningAbsent = releaseSigningValues.values().every { !it }
+
+if (!releaseSigningPresent && !releaseSigningAbsent) {
+    throw new GradleException('Android release signing is incomplete. Set all four GE_ANDROID_UPLOAD_* variables or unset all of them.')
+}
+
+if (releaseSigningPresent) {
+    def configuredUploadStore = new File(releaseSigningValues.storeFile)
+    if (!configuredUploadStore.isAbsolute()) {
+        throw new GradleException('GE_ANDROID_UPLOAD_STORE_FILE must be an absolute path outside the repository.')
+    }
+
+    def uploadStore = configuredUploadStore.canonicalFile
+    def repositoryRoot = rootProject.projectDir.toPath().resolve('../../..').normalize().toFile().canonicalFile
+
+    if (!uploadStore.isFile()) {
+        throw new GradleException('GE_ANDROID_UPLOAD_STORE_FILE does not identify a readable keystore file.')
+    }
+    if (uploadStore.toPath().startsWith(repositoryRoot.toPath())) {
+        throw new GradleException('The Android upload keystore must be stored outside the repository.')
+    }
+}
+
 android {
     namespace = "com.globalenglish.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,11 +46,34 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (releaseSigningPresent) {
+            release {
+                storeFile file(releaseSigningValues.storeFile)
+                storePassword releaseSigningValues.storePassword
+                keyAlias releaseSigningValues.keyAlias
+                keyPassword releaseSigningValues.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (releaseSigningPresent) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def releaseRequested = graph.allTasks.any { task ->
+        task.project == project && task.name.toLowerCase().contains('release')
+    }
+
+    if (releaseRequested && !releaseSigningPresent) {
+        throw new GradleException('Release APK/AAB creation requires the four GE_ANDROID_UPLOAD_* signing variables. Debug builds remain available without them.')
     }
 }
 

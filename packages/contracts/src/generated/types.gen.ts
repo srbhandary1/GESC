@@ -8,8 +8,480 @@ export type Ulid = string;
 
 export type SupportedLocale = 'en-IN' | 'kn-IN' | 'ml-IN' | 'ta-IN' | 'te-IN' | 'hi-IN';
 
+export type OperatorMediaAssetKind = 'model_audio' | 'lesson_audio' | 'lesson_video';
+
+/**
+ * Media usages currently attachable before the LPL-02 lesson-practice source schema exists.
+ */
+export type OperatorMediaAttachableUsageKey = 'model_audio' | 'lesson_video';
+
+export type OperatorMediaAssetState = 'active' | 'retired';
+
+export type OperatorMediaUploadState = 'uploading' | 'finalized' | 'scan_clean' | 'accepted' | 'rejected' | 'expired' | 'inspection_failed' | 'scan_failed' | 'promotion_failed';
+
+export type OperatorMediaAction = 'start_upload' | 'review_quarantine' | 'manage_metadata' | 'record_replacement' | 'retire_asset' | 'record_rights_decision' | 'adopt_asset' | 'translate_metadata' | 'review_metadata_en' | 'review_metadata_kn' | 'attach_asset';
+
+export type OperatorMediaStableKey = string;
+
+export type OperatorMediaManifest = {
+    generated_at: string;
+    organization_id: Ulid;
+    allowed_actions: Array<OperatorMediaAction>;
+    limits: {
+        part_size_bytes: number;
+        model_audio_maximum_bytes: 10000000;
+        lesson_audio_maximum_bytes: 20000000;
+        lesson_video_maximum_bytes: 20000000;
+        upload_expiry_hours: 24;
+        clean_review_expiry_days: 7;
+    };
+    supported_kinds: Array<OperatorMediaAssetKind>;
+    rights_attestation: {
+        approval_reference: string;
+        evidence_sha256: Sha256;
+        creates_asset_approval: false;
+    };
+};
+
+export type OperatorMediaAssetSummary = {
+    media_asset_id: Ulid;
+    asset_kind: OperatorMediaAssetKind;
+    asset_hash: Sha256;
+    mime_type: 'audio/wav' | 'audio/mpeg' | 'audio/ogg' | 'audio/mp4' | 'audio/webm' | 'video/mp4';
+    byte_size: number;
+    state: OperatorMediaAssetState;
+    lifecycle_version: number;
+    selected_scan_id: Ulid;
+    predecessor_media_asset_id: Ulid | null;
+    operator_label: string | null;
+    metadata_revision_id: Ulid | null;
+    metadata_version: number | null;
+    metadata_content_hash: Sha256 | null;
+    uploaded_at: string;
+    updated_at: string;
+};
+
+export type OperatorMediaAssetListing = {
+    data: Array<OperatorMediaAssetSummary>;
+    next_cursor: string | null;
+    allowed_actions: Array<OperatorMediaAction>;
+};
+
+export type OperatorMediaMetadataRevision = {
+    id: Ulid;
+    revision_number: number;
+    operator_label: string;
+    transcript: string;
+    text_alternative: string | null;
+    content_hash: Sha256;
+    authored_at: string;
+    metadata_version: number;
+};
+
+export type OperatorMediaMetadataVariant = {
+    id: Ulid;
+    revision_number: number;
+    locale: 'kn-IN';
+    source_content_hash: Sha256;
+    transcript: string;
+    text_alternative: string | null;
+    content_hash: Sha256;
+    translated_at: string;
+    variant_version: number;
+};
+
+export type OperatorMediaMetadataReview = {
+    id: Ulid;
+    program_id: Ulid;
+    metadata_revision_id: Ulid;
+    review_kind: 'academic_en' | 'kannada';
+    metadata_variant_id: Ulid | null;
+    decision: 'approved' | 'rejected' | 'withdrawn';
+    rationale_key: OperatorMediaStableKey | null;
+    reviewer_membership_id: Ulid;
+    authority_appointment_id: Ulid;
+    reviewed_at: string;
+};
+
+export type OperatorMediaRightsRevision = {
+    id: Ulid;
+    program_id: Ulid;
+    parent_revision_id: Ulid | null;
+    revision_number: number;
+    evidence_status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+    evidence_hash: Sha256;
+    rights_holder_reference: string;
+    provenance_reference: string;
+    rights_basis_key: OperatorMediaStableKey;
+    license_or_contract_reference: string;
+    permitted_release_channels: Array<'android' | 'web'>;
+    permitted_territories: Array<string>;
+    learner_delivery_allowed: boolean;
+    sharing_allowed: boolean;
+    derivative_use_allowed: boolean;
+    effective_at: string;
+    expires_at: string | null;
+    retention_policy_key: OperatorMediaStableKey;
+    deletion_constraint_key: OperatorMediaStableKey;
+    confirmed_at: string | null;
+};
+
+export type OperatorMediaUsage = {
+    curriculum_version_id: Ulid;
+    content_revision_id: Ulid;
+    usage_key: OperatorMediaAttachableUsageKey;
+    sequence: number;
+    created_at: string;
+};
+
+export type OperatorMediaHistoryEvent = {
+    id: Ulid;
+    event_type: OperatorMediaStableKey;
+    lifecycle_version: number;
+    selected_scan_id: Ulid | null;
+    related_media_asset_id: Ulid | null;
+    media_upload_id: Ulid | null;
+    actor_membership_id: Ulid;
+    reason_key: OperatorMediaStableKey | null;
+    occurred_at: string;
+};
+
+export type OperatorMediaAssetDetail = {
+    media_asset_id: Ulid;
+    asset_kind: OperatorMediaAssetKind;
+    mime_type: string;
+    byte_size: number;
+    asset_hash: Sha256;
+    uploaded_at: string;
+    lifecycle: {
+        state: OperatorMediaAssetState;
+        version: number;
+        selected_scan_id: Ulid;
+        predecessor_media_asset_id: Ulid | null;
+        managed_at: string;
+        retired_at: string | null;
+        retirement_reason_key: OperatorMediaStableKey | null;
+    };
+    scan: {
+        [key: string]: unknown;
+    } | null;
+    metadata: OperatorMediaMetadataRevision | null;
+    kannada_variant: OperatorMediaMetadataVariant | null;
+    metadata_reviews: Array<OperatorMediaMetadataReview>;
+    rights_revisions: Array<OperatorMediaRightsRevision>;
+    usages: Array<OperatorMediaUsage>;
+    events: Array<OperatorMediaHistoryEvent>;
+};
+
+export type OperatorMediaAssetResponse = {
+    data: OperatorMediaAssetDetail;
+    allowed_actions: Array<OperatorMediaAction>;
+};
+
+export type OperatorMediaUploadSummary = {
+    id: Ulid;
+    candidate_asset_id: Ulid;
+    asset_kind: OperatorMediaAssetKind;
+    safe_label: string;
+    state: OperatorMediaUploadState;
+    version: number;
+    total_bytes: number;
+    whole_object_hash: Sha256;
+    part_size_bytes: number;
+    expected_part_count: number;
+    received_part_count: number;
+    selected_scan_id: Ulid | null;
+    accepted_asset_id: Ulid | null;
+    expires_at: string;
+    review_expires_at: string | null;
+    decision_reason_key: OperatorMediaStableKey | null;
+    decided_at: string | null;
+    updated_at: string;
+};
+
+export type OperatorMediaUploadListing = {
+    data: Array<OperatorMediaUploadSummary>;
+    next_cursor: string | null;
+    allowed_actions: Array<OperatorMediaAction>;
+};
+
+export type OperatorMediaUploadDetail = OperatorMediaUploadSummary & {
+    created_by_membership_id: Ulid;
+    decided_by_membership_id: Ulid | null;
+    created_at: string;
+    parts: Array<{
+        [key: string]: unknown;
+    }>;
+    scans: Array<{
+        [key: string]: unknown;
+    }>;
+    events: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type OperatorMediaUploadResponse = {
+    data: OperatorMediaUploadDetail;
+    allowed_actions: Array<OperatorMediaAction>;
+};
+
+export type OperatorMediaCommandResult = {
+    result_type: OperatorMediaStableKey;
+    result_id: string;
+    replayed: boolean;
+    [key: string]: unknown;
+};
+
+export type OperatorMediaTranscriptionSegment = {
+    sequence: number;
+    text: string;
+    offset_milliseconds: number;
+    duration_milliseconds: number;
+    confidence_bps: number;
+};
+
+export type OperatorMediaTranscriptionCandidate = {
+    campaign_id: Ulid;
+    campaign_asset_id: Ulid;
+    media_asset_id: Ulid;
+    part_key: OperatorMediaStableKey;
+    sequence: number;
+    state: 'candidate_ready';
+    version: number;
+    candidate_sha256: Sha256;
+    candidate_expires_at: string;
+    source_sha256: Sha256;
+    source_duration_milliseconds: number;
+    locale: 'en-IN';
+    transcript: string;
+    segments: Array<OperatorMediaTranscriptionSegment>;
+};
+
+export type ReconcileOperatorMediaTranscriptionCandidateRequest = {
+    expected_asset_version: number;
+    candidate_sha256: Sha256;
+    outcome: 'confirmed';
+    operator_label: string;
+    expected_head_revision_id?: Ulid | null;
+    expected_metadata_version: number;
+} | {
+    expected_asset_version: number;
+    candidate_sha256: Sha256;
+    outcome: 'corrected';
+    operator_label: string;
+    corrected_transcript: string;
+    expected_head_revision_id?: Ulid | null;
+    expected_metadata_version: number;
+} | {
+    expected_asset_version: number;
+    candidate_sha256: Sha256;
+    outcome: 'discarded' | 'needs_attention';
+    expected_head_revision_id?: Ulid | null;
+    expected_metadata_version: number;
+};
+
+export type OperatorMediaTranscriptionReconciliationResult = {
+    result_type: 'media_transcription_reconciliation';
+    result_id: Ulid;
+    replayed: boolean;
+    campaign_id: Ulid;
+    campaign_asset_id: Ulid;
+    reconciliation_id: Ulid;
+    outcome: 'confirmed' | 'corrected' | 'discarded' | 'needs_attention';
+    asset_version?: number;
+    metadata_revision_id: Ulid | null;
+    metadata_content_hash: Sha256 | null;
+};
+
+export type OperatorMediaRightsDecisionResult = {
+    media_rights_revision_id: Ulid;
+    action: 'confirm' | 'reject' | 'withdraw';
+};
+
+export type StartOperatorMediaUploadRequest = {
+    asset_kind: OperatorMediaAssetKind;
+    safe_label: string;
+    total_bytes: number;
+    whole_object_hash: Sha256;
+};
+
+export type FinalizeOperatorMediaUploadRequest = {
+    expected_upload_version: number;
+};
+
+export type DecideOperatorMediaUploadRequest = {
+    expected_upload_version: number;
+};
+
+export type RejectOperatorMediaUploadRequest = {
+    expected_upload_version: number;
+    reason_key: OperatorMediaStableKey;
+};
+
+export type AdoptOperatorMediaAssetRequest = {
+    selected_asset_hash: Sha256;
+};
+
+export type AppendOperatorMediaMetadataRequest = {
+    expected_head_revision_id: Ulid | null;
+    expected_metadata_version: number;
+    operator_label: string;
+    transcript: string;
+    text_alternative: string | null;
+};
+
+export type AppendOperatorMediaKannadaRequest = {
+    source_content_hash: Sha256;
+    expected_head_variant_id: Ulid | null;
+    expected_variant_version: number;
+    transcript: string;
+    text_alternative: string | null;
+};
+
+export type ReviewOperatorMediaMetadataRequest = {
+    program_id: Ulid;
+    metadata_revision_id: Ulid;
+    source_content_hash: Sha256;
+    review_kind: 'academic_en' | 'kannada';
+    metadata_variant_id: Ulid | null;
+    variant_content_hash: Sha256 | null;
+    decision: 'approved' | 'rejected' | 'withdrawn';
+    rationale_key: OperatorMediaStableKey | null;
+    authority_appointment_id: Ulid;
+};
+
+export type DecideOperatorMediaRightsRequest = {
+    action: 'confirm' | 'reject' | 'withdraw';
+    program_id: Ulid;
+    media_asset_id: Ulid | null;
+    selected_asset_hash: Sha256 | null;
+    parent_revision_id: Ulid | null;
+    evidence_hash: Sha256;
+    rights_holder_reference: string | null;
+    provenance_reference: string | null;
+    rights_basis_key: OperatorMediaStableKey | null;
+    license_or_contract_reference: string;
+    permitted_release_channels: Array<'android' | 'web'> | null;
+    permitted_territories: Array<string> | null;
+    learner_delivery_allowed: boolean | null;
+    sharing_allowed: boolean | null;
+    derivative_use_allowed: boolean | null;
+    effective_at: string | null;
+    expires_at: string | null;
+    retention_policy_key: OperatorMediaStableKey | null;
+    deletion_constraint_key: OperatorMediaStableKey | null;
+    authority_appointment_id: Ulid;
+};
+
+export type AttachOperatorMediaRequest = {
+    program_id: Ulid;
+    curriculum_version_id: Ulid;
+    source_revision_id: Ulid;
+    usage_key: OperatorMediaAttachableUsageKey;
+    expected_workspace_version: number;
+    expected_lifecycle_version: number;
+    metadata_revision_id: Ulid;
+    metadata_content_hash: Sha256;
+    english_review_id: Ulid;
+    metadata_variant_id: Ulid;
+    variant_content_hash: Sha256;
+    kannada_review_id: Ulid;
+    media_rights_revision_id: Ulid;
+};
+
+export type ReplaceOperatorMediaAssetRequest = {
+    successor_media_asset_id: Ulid;
+    expected_predecessor_lifecycle_version: number;
+    expected_successor_lifecycle_version: number;
+};
+
+export type RetireOperatorMediaAssetRequest = {
+    expected_lifecycle_version: number;
+    reason_key: OperatorMediaStableKey;
+};
+
 export type OtpRequest = {
     mobile_number: string;
+};
+
+export type PasswordSignIn = {
+    username: GlobalUsername;
+};
+
+export type PasswordEstablishment = {
+    username: GlobalUsername;
+};
+
+export type PasswordConfirmation = {
+    password: string;
+};
+
+export type PasswordConfirmationResult = {
+    confirmed_at: string;
+    expires_at: string;
+};
+
+export type PasswordChange = {
+    [key: string]: never;
+};
+
+export type UsernameChange = {
+    username: GlobalUsername;
+};
+
+export type PasswordRecoveryRequest = {
+    username: string;
+};
+
+export type PasswordRecoveryCompletion = {
+    challenge_id: Ulid;
+    username: GlobalUsername;
+};
+
+export type ExcludedPasswordEstablishmentCompletion = {
+    challenge_id: Ulid;
+    username: GlobalUsername;
+};
+
+export type GenericRecoveryResponse = {
+    message: 'If the account is eligible, recovery instructions will be sent.';
+};
+
+export type PasswordAuthenticationStatus = {
+    username: GlobalUsername | null;
+    credential_ready: boolean;
+    mode: 'legacy_otp' | 'credential_migration' | 'password_only';
+    password_confirmed_at: string | null;
+};
+
+export type AuthenticationModeResponse = {
+    mode: 'legacy_otp' | 'credential_migration' | 'password_only';
+};
+
+export type GlobalUsername = string;
+
+/**
+ * NFC-normalized 15-128 Unicode code points; server policy is authoritative.
+ */
+export type NewPassword = string;
+
+export type PlatformIdentityRecoveryCaseRequest = {
+    target_user_id: Ulid;
+    reason_key: 'identity_recovery.verified_support_case';
+};
+
+export type PlatformIdentityRecoveryEvidence = {
+    evidence_reference: string;
+};
+
+export type PlatformIdentityRecoveryCase = {
+    id: Ulid;
+    status: 'pending_approval' | 'waiting_delay' | 'completed';
+    recovery_kind: 'password_reset' | 'excluded_credential_establishment';
+    version: number;
+    not_before_at: string;
+    expires_at: string;
+    approval_count: number;
 };
 
 export type OtpChallenge = {
@@ -27,6 +499,69 @@ export type OtpVerification = {
      *
      */
     institution_invite_code?: string;
+};
+
+export type PrivilegedMfaStatus = {
+    factor_status: 'none' | 'pending' | 'active' | 'support_required';
+    factor_id: Ulid | null;
+    pending_expires_at: string | null;
+    recovery_codes_remaining: number;
+    fresh_assertion_scope: 'privileged_actions' | 'factor_replacement' | null;
+    fresh_assertion_expires_at: string | null;
+    can_enroll: boolean;
+    requires_support: boolean;
+};
+
+export type PrivilegedMfaEnrollment = {
+    factor_id: Ulid;
+    challenge_id: Ulid;
+    /**
+     * Shown once; contains the pending TOTP secret.
+     */
+    provisioning_uri: string;
+    expires_at: string;
+};
+
+export type PrivilegedMfaEnrollmentConfirmation = {
+    challenge_id: Ulid;
+    code: string;
+};
+
+export type PrivilegedMfaChallenge = {
+    challenge_id: Ulid;
+    expires_at: string;
+};
+
+export type PrivilegedMfaVerification = {
+    method: 'totp' | 'recovery_code';
+    /**
+     * Six-digit TOTP or one 128-bit recovery code.
+     */
+    code: string;
+};
+
+export type PrivilegedMfaVerificationResult = {
+    verified_at: string;
+    scope: 'privileged_actions' | 'factor_replacement';
+};
+
+export type PrivilegedMfaRecoveryCodeIssuance = {
+    /**
+     * Shown once and never returned by a later status call.
+     */
+    recovery_codes: [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+    ];
+    sessions_revoked: boolean;
 };
 
 export type UserIdentitySummary = {
@@ -49,7 +584,10 @@ export type WebSessionSummary = {
     last_activity_at: string;
     expires_at: string;
     privileged: boolean;
-    mfa_verified_at?: string | null;
+    mfa_verified_at: string | null;
+    mfa_verified_method: 'totp' | 'recovery_code' | null;
+    mfa_verified_scope: 'privileged_actions' | 'factor_replacement' | null;
+    password_confirmed_at: string | null;
 };
 
 export type OrganizationSummary = {
@@ -168,6 +706,30 @@ export type LearnerModelAudio = {
     stream_url: string;
     mime_type: 'audio/mpeg' | 'audio/ogg' | 'audio/webm' | 'audio/mp4' | 'audio/wav';
     duration_ms: number;
+};
+
+export type LearnerLessonVideoMedia = {
+    asset_id: Ulid;
+    stream_url: string;
+    mime_type: 'video/mp4';
+    byte_size: number;
+};
+
+export type LearnerLevelVideo = {
+    lesson_id: Ulid;
+    enrollment_id: Ulid;
+    publication_id: Ulid;
+    level_label: string;
+    title: {
+        locale: 'en-IN';
+        text: string;
+    };
+    video: LearnerLessonVideoMedia;
+};
+
+export type LearnerLevelVideoCatalog = {
+    enrollment_id: Ulid;
+    videos: Array<LearnerLevelVideo>;
 };
 
 export type LearnerMissionCheckOption = {
@@ -352,7 +914,7 @@ export type LearnerProgress = {
 
 export type StartConversationSessionRequest = {
     persona_key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
-    scenario_key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
+    scenario_key: 'everyday-friend-prototype' | 'past-tense-skill-focus-prototype' | 'carry-sentence-review-prototype' | 'clinic-reception-roleplay-scenario';
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
     ui_locale: SupportedLocale;
 };
@@ -374,10 +936,10 @@ export type ConversationPersonaSnapshot = {
 
 export type ConversationScenarioSnapshot = {
     id: Ulid;
-    key: 'everyday-friend-prototype' | 'clinic-reception-roleplay-scenario';
+    key: 'everyday-friend-prototype' | 'past-tense-skill-focus-prototype' | 'carry-sentence-review-prototype' | 'clinic-reception-roleplay-scenario';
     version_id: Ulid;
     version: number;
-    topic_code: 'everyday-conversation' | 'clinic-reception';
+    topic_code: 'everyday-conversation' | 'grammar-past-simple' | 'carry-sentence-review' | 'clinic-reception';
     definition_hash: Sha256;
     review_status: 'synthetic_unreviewed';
 };
@@ -411,18 +973,23 @@ export type ConversationSession = {
 };
 
 export type CreateConversationTurnRequest = {
+    /**
+     * Typed text or a transcript explicitly accepted/corrected by the
+     * learner through the separate voice-recording review lifecycle.
+     *
+     */
     prototype_utterance: string;
 };
 
 export type ConversationSpeechResult = {
     playback_available: false;
-    rendering_mode: 'deterministic-fake-text-only';
+    rendering_mode: 'deterministic-fake-text-only' | 'client-text-to-speech-fallback';
 };
 
 export type ConversationUsageSummary = {
     provider_attempts: number;
     total_latency_ms: number;
-    estimated_cost_microunits: 0;
+    estimated_cost_microunits: number;
 };
 
 export type CreateLearnerAiMemoryFactRequest = {
@@ -616,6 +1183,1000 @@ export type ReadinessResponse = {
     correlation_id: string;
 };
 
+/**
+ * Encrypted opaque position bound to the active organization and read
+ * purpose. Callers must replay it unchanged and cannot inspect its state.
+ *
+ */
+export type OperatorCursor = string;
+
+export type OperatorOverviewOrganization = {
+    id: Ulid;
+    name: string;
+    timezone: string;
+};
+
+export type OperatorOverview = {
+    generated_at: string;
+    organization: OperatorOverviewOrganization;
+    navigation: Array<'overview' | 'learning' | 'learners' | 'people' | 'operations' | 'safety'>;
+    panels: Array<'pilot_analytics' | 'content_studio' | 'review_queue' | 'publish_status' | 'support_diagnostics' | 'audit' | 'organization_settings' | 'branches' | 'cohorts' | 'staff_memberships' | 'institution_invites' | 'roles' | 'trainer_profiles' | 'authority_appointments' | 'membership_sessions' | 'learner_directory' | 'learner_enrollments' | 'learner_invitations'>;
+    /**
+     * Whether at least one existing safe global-search source is authorized.
+     */
+    search_available: boolean;
+};
+
+export type OperatorSearchResult = {
+    kind: 'curriculum_version' | 'curriculum_publication' | 'support_diagnostic' | 'audit_event';
+    id: Ulid;
+    section: 'learning' | 'operations' | 'safety';
+    primary_text: string;
+    secondary_text: string;
+    occurred_at: string | null;
+};
+
+export type OperatorSearchListing = {
+    generated_at: string;
+    items: Array<OperatorSearchResult>;
+    next_cursor: OperatorCursor | null;
+};
+
+export type OperatorAllowedActions = Array<'branch.create' | 'branch.update' | 'branch.archive' | 'cohort.create' | 'cohort.update' | 'cohort.archive' | 'membership.assign_role' | 'membership.revoke_role' | 'membership.deactivate' | 'membership.reactivate' | 'invitation.issue' | 'invitation.revoke' | 'role.create' | 'role.update' | 'role.retire' | 'trainer.assign_cohort' | 'trainer.revoke_cohort' | 'appointment.create' | 'appointment.accept' | 'appointment.surrender' | 'appointment.revoke' | 'membership_session.revoke' | 'learner.goal_correct' | 'learner.suspend' | 'learner.reactivate' | 'learner_enrollment.create' | 'learner_enrollment.change_cohort' | 'learner_enrollment.activate_curriculum' | 'learner_enrollment.withdraw' | 'learner_invitation.issue' | 'learner_invitation.revoke'>;
+
+export type OperatorLearnerGoalKey = 'everyday-conversation' | 'workplace-confidence' | 'travel-confidence';
+
+export type OperatorLearnerChoice = {
+    id: Ulid;
+    key: string;
+    name: string;
+    version: OperatorPositiveVersion;
+};
+
+export type OperatorLearnerProfile = {
+    id: Ulid;
+    adult_confirmed: boolean;
+    onboarding_completed: boolean;
+    current_goal_key: OperatorLearnerGoalKey | null;
+    current_goal_version: OperatorPositiveVersion | null;
+};
+
+export type OperatorLearner = {
+    membership_id: Ulid;
+    display_name: string | null;
+    status: 'active' | 'suspended' | 'ended';
+    joined_at: string;
+    ended_at: string | null;
+    version: OperatorPositiveVersion;
+    profile: OperatorLearnerProfile | null;
+    attempt_count: number;
+    latest_attempt_at: string | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorLearnerCohortChoices = {
+    cohorts: Array<OperatorLearnerChoice>;
+};
+
+export type OperatorLearnerListing = {
+    data: Array<OperatorLearner>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+    choices: OperatorLearnerCohortChoices | null;
+};
+
+export type OperatorLearnerResponse = {
+    data: OperatorLearner;
+};
+
+export type OperatorLearnerEnrollmentCohort = {
+    id: Ulid;
+    key: string | null;
+    name: string | null;
+    status: 'active' | 'archived' | null;
+    version: OperatorPositiveVersion | null;
+};
+
+export type OperatorLearnerTrainerSummary = {
+    membership_id: Ulid;
+    display_name: string | null;
+};
+
+export type OperatorLearnerCurriculumPin = {
+    owner_organization_id: Ulid | null;
+    version_id: Ulid | null;
+    publication_id: Ulid;
+    share_grant_id: Ulid | null;
+};
+
+export type OperatorLearnerEnrollment = {
+    id: Ulid;
+    learner_membership_id: Ulid;
+    status: 'pending_curriculum' | 'active' | 'completed' | 'withdrawn';
+    version: OperatorPositiveVersion;
+    enrolled_at: string;
+    activated_at: string | null;
+    ended_at: string | null;
+    cohort: OperatorLearnerEnrollmentCohort | null;
+    curriculum_pin: OperatorLearnerCurriculumPin | null;
+    trainers: Array<OperatorLearnerTrainerSummary> | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorLearnerEnrollmentListing = {
+    data: Array<OperatorLearnerEnrollment>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorLearnerInvitationRelationship = {
+    id: Ulid;
+    key: string;
+    name: string;
+    version: OperatorPositiveVersion;
+    status: 'active' | 'archived' | 'retired' | null;
+};
+
+export type OperatorLearnerInvitation = {
+    id: Ulid;
+    status: 'pending' | 'accepted' | 'revoked' | 'expired';
+    version: OperatorPositiveVersion;
+    role: OperatorLearnerInvitationRelationship | null;
+    cohort: OperatorLearnerInvitationRelationship | null;
+    expires_at: string;
+    accepted_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+    updated_at: string;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorLearnerInvitationChoices = {
+    roles: Array<OperatorLearnerChoice>;
+    cohorts: Array<OperatorLearnerChoice>;
+};
+
+export type OperatorLearnerInvitationListing = {
+    data: Array<OperatorLearnerInvitation>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+    choices: OperatorLearnerInvitationChoices;
+};
+
+export type CorrectOperatorLearnerGoalRequest = {
+    goal_key: OperatorLearnerGoalKey;
+    expected_version: OperatorPositiveVersion;
+};
+
+export type CreateOperatorLearnerEnrollmentRequest = {
+    expected_membership_version: OperatorPositiveVersion;
+    expected_version: OperatorVersionZero;
+    cohort_id: Ulid | null;
+    expected_cohort_version: OperatorPositiveVersion | null;
+};
+
+export type ChangeOperatorLearnerEnrollmentCohortRequest = {
+    expected_version: OperatorPositiveVersion;
+    cohort_id: Ulid | null;
+    expected_cohort_version: OperatorPositiveVersion | null;
+};
+
+export type ActivateOperatorLearnerEnrollmentRequest = {
+    publication_id: Ulid;
+    share_grant_id: Ulid | null;
+    expected_version: OperatorPositiveVersion;
+};
+
+export type IssueOperatorLearnerInvitationRequest = {
+    role_id: Ulid;
+    expected_role_version: OperatorPositiveVersion;
+    cohort_id: Ulid | null;
+    expected_cohort_version: OperatorPositiveVersion | null;
+    expires_in_hours: 24 | 72 | 168;
+    expected_version: OperatorVersionZero;
+};
+
+export type OperatorLearnerCommandResponse = {
+    data: OperatorLearner;
+    replayed: boolean;
+};
+
+export type OperatorLearnerEnrollmentCommandResponse = {
+    data: OperatorLearnerEnrollment;
+    replayed: boolean;
+};
+
+export type OperatorLearnerInvitationLifecycleCommandResponse = {
+    data: OperatorLearnerInvitation;
+    replayed: boolean;
+};
+
+export type OperatorLearnerInvitationCommandResponse = {
+    data: OperatorLearnerInvitation;
+    activation_code: string | null;
+    replayed: boolean;
+};
+
+export type OperatorOrganizationProfile = {
+    id: Ulid;
+    name: string;
+    kind: 'institution' | 'platform_direct';
+    status: 'active' | 'suspended' | 'closed';
+    timezone: string;
+    allowed_actions: Array<string>;
+};
+
+export type OperatorOrganizationProfileResponse = {
+    data: OperatorOrganizationProfile;
+};
+
+export type OperatorBranchSummary = {
+    id: Ulid;
+    key: string;
+    name: string;
+};
+
+export type OperatorBranch = OperatorBranchSummary & {
+    status: 'active' | 'archived';
+    version: number;
+    created_at: string;
+    updated_at: string;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorBranchListing = {
+    data: Array<OperatorBranch>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorCohortSummary = {
+    id: Ulid;
+    key: string;
+    name: string;
+    status: 'active' | 'archived';
+    version: number;
+};
+
+export type OperatorCohort = OperatorCohortSummary & {
+    status: 'active' | 'archived';
+    branch: OperatorBranchSummary | null;
+    version: number;
+    created_at: string;
+    updated_at: string;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorCohortListing = {
+    data: Array<OperatorCohort>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorRoleSummary = {
+    id: Ulid;
+    key: string;
+    name: string;
+    is_system: boolean;
+};
+
+export type OperatorStaffMembership = {
+    membership_id: Ulid;
+    display_name: string | null;
+    membership_type: 'trainer' | 'organization_admin';
+    status: 'active' | 'suspended' | 'ended';
+    joined_at: string;
+    ended_at: string | null;
+    roles: Array<OperatorRoleSummary>;
+    version: number;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorStaffMembershipListing = {
+    data: Array<OperatorStaffMembership>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorInstitutionInvite = {
+    id: Ulid;
+    membership_type: 'trainer' | 'organization_admin';
+    status: 'pending' | 'accepted' | 'revoked' | 'expired';
+    expires_at: string;
+    created_at: string;
+    updated_at: string;
+    accepted_at: string | null;
+    accepted_membership_id?: Ulid | null;
+    version: number;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorInstitutionInviteListing = {
+    data: Array<OperatorInstitutionInvite>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorDelegablePermission = {
+    key: string;
+    description: string;
+};
+
+export type OperatorRole = OperatorRoleSummary & {
+    status: 'active' | 'retired';
+    version: number;
+    permission_keys: Array<string>;
+    assignment_count: number;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorRoleListing = {
+    data: Array<OperatorRole>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+    delegable_permissions: Array<OperatorDelegablePermission>;
+};
+
+export type OperatorAuthorityAppointmentSummary = {
+    id: Ulid;
+    authority_kind: 'english_academic_reviewer' | 'kannada_reviewer' | 'rights_confirmer';
+    scope_type: 'organization' | 'program';
+    program_id: Ulid | null;
+    valid_from: string;
+    valid_until: string | null;
+    state: 'pending' | 'active' | 'surrendered' | 'revoked' | 'expired';
+    state_fingerprint: string;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorAuthorityAppointmentDetail = OperatorAuthorityAppointmentSummary & {
+    qualification_basis: string;
+    approval_evidence_key: string;
+};
+
+export type OperatorAuthorityAppointmentListing = {
+    data: Array<OperatorAuthorityAppointmentSummary>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorAuthorityAppointmentResponse = {
+    data: OperatorAuthorityAppointmentDetail;
+};
+
+export type OperatorTrainerProfile = OperatorStaffMembership & {
+    membership_type?: 'trainer';
+    cohorts: Array<OperatorCohortSummary>;
+    appointments: Array<OperatorAuthorityAppointmentSummary>;
+};
+
+export type OperatorTrainerProfileListing = {
+    data: Array<OperatorTrainerProfile>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorMembershipSessions = {
+    membership_id: Ulid;
+    active_web_session_count: number;
+    active_android_family_count: number;
+    latest_activity_at: string | null;
+    state_fingerprint: string;
+    allowed_actions: OperatorAllowedActions;
+};
+
+export type OperatorMembershipSessionsResponse = {
+    data: OperatorMembershipSessions;
+};
+
+export type OperatorVersionZero = 0;
+
+export type OperatorPositiveVersion = number;
+
+export type CreateOperatorBranchRequest = {
+    key: string;
+    name: string;
+    expected_version: OperatorVersionZero;
+};
+
+export type UpdateOperatorBranchRequest = {
+    name: string;
+    expected_version: OperatorPositiveVersion;
+};
+
+export type OperatorExpectedVersionRequest = {
+    expected_version: OperatorPositiveVersion;
+};
+
+export type CreateOperatorCohortRequest = {
+    key: string;
+    name: string;
+    branch_id?: Ulid | null;
+    expected_version: OperatorVersionZero;
+};
+
+export type UpdateOperatorCohortRequest = {
+    name: string;
+    branch_id?: Ulid | null;
+    expected_version: OperatorPositiveVersion;
+};
+
+export type IssueOperatorInstitutionInviteRequest = {
+    membership_type: 'trainer' | 'organization_admin';
+    expires_in_hours?: 24 | 72 | 168;
+    expected_version: OperatorVersionZero;
+};
+
+export type CreateOperatorRoleRequest = {
+    key: string;
+    name: string;
+    permission_keys: Array<string>;
+    expected_version: OperatorVersionZero;
+};
+
+export type UpdateOperatorRoleRequest = {
+    name: string;
+    permission_keys: Array<string>;
+    expected_version: OperatorPositiveVersion;
+};
+
+export type OperatorMembershipRoleRequest = {
+    role_id: Ulid;
+    expected_membership_version: OperatorPositiveVersion;
+    expected_role_version: OperatorPositiveVersion;
+};
+
+export type OperatorTrainerCohortRequest = {
+    cohort_id: Ulid;
+    expected_membership_version: OperatorPositiveVersion;
+    expected_cohort_version: OperatorPositiveVersion;
+};
+
+export type CreateOperatorAuthorityAppointmentRequest = {
+    authority_kind: 'english_academic_reviewer' | 'kannada_reviewer' | 'rights_confirmer';
+    scope_type: 'organization' | 'program';
+    program_id?: Ulid | null;
+    valid_from: string;
+    valid_until?: string | null;
+    qualification_basis: string;
+    approval_evidence_key: string;
+    expected_membership_version: OperatorPositiveVersion;
+};
+
+export type OperatorExpectedStateFingerprintRequest = {
+    state_fingerprint: string;
+};
+
+export type RevokeOperatorAuthorityAppointmentRequest = {
+    reason_key: 'operator_revoked';
+    state_fingerprint: string;
+};
+
+export type OperatorBranchCommandResponse = {
+    data: OperatorBranch;
+    replayed: boolean;
+};
+
+export type OperatorCohortCommandResponse = {
+    data: OperatorCohort;
+    replayed: boolean;
+};
+
+export type OperatorStaffMembershipCommandResponse = {
+    data: OperatorStaffMembership;
+    replayed: boolean;
+};
+
+export type OperatorInstitutionInviteCommandResponse = {
+    data: OperatorInstitutionInvite;
+    activation_code: string | null;
+    replayed: boolean;
+};
+
+export type OperatorInstitutionInviteLifecycleCommandResponse = {
+    data: OperatorInstitutionInvite;
+    replayed: boolean;
+};
+
+export type OperatorRoleCommandResponse = {
+    data: OperatorRole;
+    replayed: boolean;
+};
+
+export type OperatorTrainerProfileCommandResponse = {
+    data: OperatorTrainerProfile;
+    replayed: boolean;
+};
+
+export type OperatorAuthorityAppointmentCommandResponse = {
+    data: OperatorAuthorityAppointmentDetail;
+    replayed: boolean;
+};
+
+export type OperatorMembershipSessionRevocationResult = OperatorMembershipSessions & {
+    revoked_web_session_count: number;
+    revoked_android_family_count: number;
+};
+
+export type OperatorMembershipSessionRevocationResponse = {
+    data: OperatorMembershipSessionRevocationResult;
+    replayed: boolean;
+};
+
+export type OperatorContentKey = string;
+
+export type OperatorContentGraphKey = string;
+
+export type OperatorContentAction = 'create_program' | 'correct_descriptor' | 'edit_graph' | 'submit_structure' | 'create_document' | 'abandon' | 'translate' | 'review_structure' | 'review_english' | 'review_kannada' | 'publish_now' | 'schedule' | 'activate' | 'cancel_schedule' | 'retire' | 'rollback' | 'create_successor';
+
+export type OperatorContentBlocker = 'workspace_incomplete' | 'workspace_in_review' | 'workspace_abandoned' | 'workspace_sealed' | 'legacy_level_assignment_required' | 'graph_missing' | 'graph_review_missing' | 'graph_review_rejected' | 'english_review_missing' | 'kannada_variant_missing' | 'kannada_review_missing' | 'media_required_missing' | 'media_rights_missing' | 'evidence_invalid' | 'publication_suspended' | 'schedule_pending' | 'schedule_not_due';
+
+export type OperatorContentWorkspaceIdentity = {
+    program_id: Ulid;
+    program_key: OperatorContentGraphKey;
+    program_internal_name: string;
+    descriptor_version: number;
+    curriculum_version_id: Ulid;
+    version_key: OperatorContentGraphKey;
+    source_curriculum_version_id: Ulid | null;
+    source_curriculum_publication_id: Ulid | null;
+    state: 'draft' | 'in_review' | 'sealed' | 'abandoned';
+    workspace_version: number;
+    current_draft_revision_id: Ulid | null;
+    submitted_graph_revision_id: Ulid | null;
+    publication_head_version: number;
+    active_publication_id: Ulid | null;
+    publication_suspended: boolean;
+};
+
+export type OperatorContentWorkspaceSummary = OperatorContentWorkspaceIdentity & {
+    graph_hash: Sha256 | null;
+    is_complete: boolean;
+    blocker_codes: Array<OperatorContentBlocker>;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentWorkspaceListing = {
+    data: Array<OperatorContentWorkspaceSummary>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentGraphLevelInput = {
+    key: OperatorContentGraphKey;
+    sequence: number;
+};
+
+export type OperatorContentGraphObjectiveInput = {
+    key: OperatorContentGraphKey;
+    outcome_code: string;
+    sequence: number;
+    prerequisite_keys: Array<OperatorContentGraphKey>;
+};
+
+export type OperatorContentGraphModuleInput = {
+    key: OperatorContentGraphKey;
+    level_key: OperatorContentGraphKey;
+    sequence: number;
+    estimated_minutes: number | null;
+};
+
+export type OperatorContentGraphLessonInput = {
+    key: OperatorContentGraphKey;
+    module_key: OperatorContentGraphKey;
+    sequence: number;
+    objective_keys: Array<OperatorContentGraphKey>;
+};
+
+export type OperatorContentGraphItemInput = {
+    key: OperatorContentGraphKey;
+    lesson_key: OperatorContentGraphKey;
+    content_document_key: OperatorContentKey;
+    item_type: string;
+    sequence: number;
+};
+
+export type OperatorContentGraphDeliveryBundleInput = {
+    key: OperatorContentGraphKey;
+    instruction_document_key: OperatorContentKey;
+    sequence: number;
+    item_keys: Array<OperatorContentGraphKey>;
+};
+
+export type OperatorContentDraftGraphInput = {
+    schema: 'global-english.curriculum-draft-graph.v2';
+    levels: Array<OperatorContentGraphLevelInput>;
+    objectives: Array<OperatorContentGraphObjectiveInput>;
+    modules: Array<OperatorContentGraphModuleInput>;
+    lessons: Array<OperatorContentGraphLessonInput>;
+    items: Array<OperatorContentGraphItemInput>;
+    delivery_bundles: Array<OperatorContentGraphDeliveryBundleInput>;
+};
+
+export type OperatorContentCanonicalGraphLevel = OperatorContentGraphLevelInput & {
+    id: Ulid;
+};
+
+export type OperatorContentCanonicalGraphObjective = OperatorContentGraphObjectiveInput & {
+    id: Ulid;
+    prerequisite_objective_ids: Array<Ulid>;
+};
+
+export type OperatorContentCanonicalGraphModule = OperatorContentGraphModuleInput & {
+    id: Ulid;
+    level_id: Ulid;
+};
+
+export type OperatorContentCanonicalGraphLesson = OperatorContentGraphLessonInput & {
+    id: Ulid;
+    module_id: Ulid;
+    objective_ids: Array<Ulid>;
+};
+
+export type OperatorContentCanonicalGraphItem = OperatorContentGraphItemInput & {
+    id: Ulid;
+    lesson_id: Ulid;
+    content_document_id: Ulid;
+};
+
+export type OperatorContentCanonicalGraphDeliveryBundle = OperatorContentGraphDeliveryBundleInput & {
+    id: Ulid;
+    instruction_content_document_id: Ulid;
+    item_ids: Array<Ulid>;
+};
+
+export type OperatorContentCanonicalDraftGraph = {
+    schema: 'global-english.curriculum-draft-graph.v2';
+    organization_id: Ulid;
+    curriculum_version_id: Ulid;
+    levels: Array<OperatorContentCanonicalGraphLevel>;
+    objectives: Array<OperatorContentCanonicalGraphObjective>;
+    modules: Array<OperatorContentCanonicalGraphModule>;
+    lessons: Array<OperatorContentCanonicalGraphLesson>;
+    items: Array<OperatorContentCanonicalGraphItem>;
+    delivery_bundles: Array<OperatorContentCanonicalGraphDeliveryBundle>;
+};
+
+export type OperatorContentDraftGraphRevision = {
+    revision_id: Ulid;
+    revision_number: number;
+    graph_hash: Sha256;
+    is_complete: boolean;
+    blocker_codes: Array<OperatorContentBlocker>;
+    authored_by_membership_id: Ulid;
+    authored_at: string;
+    value: OperatorContentCanonicalDraftGraph;
+};
+
+export type OperatorContentType = 'assessment_rationale' | 'dialogue' | 'explanation' | 'feedback' | 'instruction' | 'learner_action' | 'model_text' | 'safety_note' | 'title' | 'transcript';
+
+export type OperatorContentDocumentSummary = {
+    content_document_id: Ulid;
+    document_key: OperatorContentKey;
+    content_type: OperatorContentType;
+    learner_visible: boolean;
+    localization_requirement: 'kn_required' | 'english_only_pedagogical';
+    payload_schema: string;
+    source_revision_id: Ulid;
+    source_revision_number: number;
+    source_content_hash: Sha256;
+};
+
+export type OperatorContentAppointmentChoice = {
+    id: Ulid;
+    authority_kind: 'english_academic_reviewer' | 'kannada_reviewer';
+};
+
+export type OperatorContentAppointmentChoices = {
+    english: Array<OperatorContentAppointmentChoice>;
+    kannada: Array<OperatorContentAppointmentChoice>;
+};
+
+export type OperatorContentReadiness = {
+    blocker_codes: Array<OperatorContentBlocker>;
+    ready: boolean;
+};
+
+export type OperatorContentWorkspaceDetail = OperatorContentWorkspaceIdentity & {
+    graph: OperatorContentDraftGraphRevision | null;
+    documents: Array<OperatorContentDocumentSummary>;
+    document_count: number;
+    documents_truncated: boolean;
+    readiness: OperatorContentReadiness;
+    appointment_choices: OperatorContentAppointmentChoices;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentWorkspaceResponse = {
+    data: OperatorContentWorkspaceDetail;
+};
+
+export type OperatorGovernedTextPayload = {
+    schema: 'global-english.governed-text.v1';
+    text: string;
+};
+
+export type OperatorDailyMissionCheckOption = {
+    id: OperatorContentGraphKey;
+    label: string;
+};
+
+export type OperatorDailyMissionCheck = {
+    id: OperatorContentGraphKey;
+    prompt: string;
+    options: Array<OperatorDailyMissionCheckOption>;
+    correct_option_id: OperatorContentGraphKey;
+};
+
+export type OperatorDailyMissionSourcePayload = {
+    schema: 'global-english.daily-speaking-mission.v1';
+    goal_key: 'everyday-conversation' | 'workplace-confidence' | 'travel-confidence';
+    estimated_minutes: number;
+    title: string;
+    model_text: string;
+    transcript: string;
+    can_do: string;
+    model_audio_duration_ms: number;
+    check: OperatorDailyMissionCheck;
+};
+
+export type OperatorGovernedSourcePayload = OperatorGovernedTextPayload | OperatorDailyMissionSourcePayload;
+
+export type OperatorDailyMissionKannadaPayload = {
+    schema: 'global-english.daily-speaking-mission.v1';
+    guidance: string;
+};
+
+export type OperatorGovernedKannadaPayload = OperatorGovernedTextPayload | OperatorDailyMissionKannadaPayload;
+
+export type OperatorContentPreviewEnglish = {
+    locale: 'en-IN';
+    revision_id: Ulid;
+    revision_number: number;
+    content_hash: Sha256;
+    /**
+     * Exact inert stored payload; unknown legacy schemas remain read-only.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+};
+
+export type OperatorContentPreviewKannada = {
+    locale: 'kn-IN';
+    variant_id: Ulid;
+    revision_number: number;
+    content_hash: Sha256;
+    /**
+     * Exact inert stored Kannada payload.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+};
+
+export type OperatorContentPreviewMedia = {
+    media_asset_id: Ulid;
+    key: OperatorContentKey;
+    asset_kind: string;
+    usage_key: string;
+    sequence: number;
+    readiness: 'ready' | 'missing_rights' | 'rights_blocked';
+};
+
+export type OperatorContentPreview = {
+    content_document_id: Ulid;
+    document_key: OperatorContentKey;
+    content_type: OperatorContentType;
+    localization_requirement: 'kn_required' | 'english_only_pedagogical';
+    read_only: boolean;
+    english: OperatorContentPreviewEnglish;
+    kannada: OperatorContentPreviewKannada | null;
+    media: Array<OperatorContentPreviewMedia>;
+};
+
+export type OperatorContentPreviewResponse = {
+    data: OperatorContentPreview;
+};
+
+export type OperatorContentReviewDecision = 'approved' | 'rejected' | 'withdrawn' | null;
+
+export type OperatorContentStructureQueueItem = {
+    program_id: Ulid;
+    program_key: OperatorContentGraphKey;
+    curriculum_version_id: Ulid;
+    version_key: OperatorContentGraphKey;
+    graph_revision_id: Ulid;
+    graph_revision_number: number;
+    graph_hash: Sha256;
+    latest_decision: OperatorContentReviewDecision;
+    appointment_choices: Array<OperatorContentAppointmentChoice>;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentSourceQueueItem = {
+    program_id: Ulid;
+    program_key: OperatorContentGraphKey;
+    curriculum_version_id: Ulid;
+    content_document_id: Ulid;
+    document_key: OperatorContentKey;
+    source_revision_id: Ulid;
+    source_revision_number: number;
+    source_content_hash: Sha256;
+    localized_variant_id: Ulid | null;
+    localized_variant_revision_number: number | null;
+    localized_content_hash: Sha256 | null;
+    latest_decision: OperatorContentReviewDecision;
+    appointment_choices: Array<OperatorContentAppointmentChoice>;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentReadinessQueueItem = OperatorContentWorkspaceIdentity & {
+    blocker_codes: Array<OperatorContentBlocker>;
+    ready: boolean;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentReviewQueueListing = {
+    data: Array<OperatorContentStructureQueueItem | OperatorContentSourceQueueItem | OperatorContentReadinessQueueItem>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: Array<OperatorContentAction>;
+};
+
+export type OperatorContentHistoryEvent = {
+    id: Ulid;
+    event_kind: string;
+    actor_membership_id: Ulid | null;
+    occurred_at: string;
+};
+
+export type OperatorContentHistoryListing = {
+    data: Array<OperatorContentHistoryEvent>;
+    next_cursor: OperatorCursor | null;
+};
+
+export type CreateOperatorContentProgramRequest = {
+    program_key: OperatorContentGraphKey;
+    internal_name: string;
+    version_key: OperatorContentGraphKey;
+    expected_version: 0;
+};
+
+export type CorrectOperatorContentProgramDescriptorRequest = {
+    internal_name: string;
+    expected_descriptor_version: number;
+};
+
+export type CreateOperatorContentSuccessorRequest = {
+    successor_version_key: OperatorContentGraphKey;
+    expected_source_version: number;
+};
+
+export type SaveOperatorContentGraphRequest = {
+    expected_workspace_version: number;
+    graph: OperatorContentDraftGraphInput;
+};
+
+export type VersionedOperatorContentWorkspaceRequest = {
+    expected_workspace_version: number;
+};
+
+export type AbandonOperatorContentWorkspaceRequest = {
+    expected_workspace_version: number;
+    reason_key: 'work_discontinued' | 'superseded' | 'created_in_error';
+};
+
+export type CreateOperatorContentDocumentRequest = {
+    document_key: OperatorContentKey;
+    content_type: OperatorContentType;
+    learner_visible: boolean;
+    payload: OperatorGovernedSourcePayload;
+    expected_workspace_version: number;
+};
+
+export type AppendOperatorEnglishContentRequest = {
+    expected_head_revision_id: Ulid | null;
+    expected_revision_number: number;
+    content_type: OperatorContentType;
+    learner_visible: boolean;
+    payload: OperatorGovernedSourcePayload;
+};
+
+export type AppendOperatorKannadaContentRequest = {
+    source_content_hash: Sha256;
+    expected_source_revision_number: number;
+    expected_head_variant_id: Ulid | null;
+    expected_variant_revision_number: number;
+    payload: OperatorGovernedKannadaPayload;
+};
+
+export type RecordOperatorStructureContentReviewRequest = {
+    curriculum_graph_revision_id: Ulid;
+    graph_hash: Sha256;
+    authority_appointment_id: Ulid;
+    decision: 'approved' | 'rejected';
+    /**
+     * Must be meets_standard for approval and structure_revision_required for rejection.
+     */
+    rationale_key: 'meets_standard' | 'structure_revision_required';
+};
+
+export type WithdrawOperatorContentReviewRequest = {
+    review_kind: 'structure' | 'english' | 'kannada';
+    authority_appointment_id: Ulid;
+    rationale_key: 'evidence_withdrawn';
+};
+
+export type ScheduleOperatorContentPublicationRequest = {
+    curriculum_version_id: Ulid;
+    /**
+     * Future activation instant with an explicit UTC offset.
+     */
+    activation_at: string;
+    expected_head_version: number;
+};
+
+export type ActivateOperatorContentPublicationRequest = {
+    publication_id: Ulid;
+    expected_head_version: number;
+};
+
+export type CancelOperatorContentPublicationScheduleRequest = {
+    publication_id: Ulid;
+    expected_head_version: number;
+    reason_key: 'schedule_replaced' | 'release_withdrawn' | 'timing_changed';
+};
+
+export type RetireOperatorContentPublicationRequest = {
+    program_id: Ulid;
+    expected_head_version: number;
+    reason_key: 'verified_release_retirement' | 'release_no_longer_current';
+};
+
+export type OperatorContentWorkspaceCommandResult = {
+    result_type: 'program' | 'curriculum_workspace' | 'curriculum_draft_graph_revision' | 'curriculum_graph_revision' | 'content_document' | 'content_revision' | 'localized_variant';
+    result_id: Ulid;
+    replayed: boolean;
+    program_id?: Ulid;
+    descriptor_version?: number;
+    curriculum_version_id?: Ulid;
+    source_curriculum_version_id?: Ulid;
+    source_curriculum_publication_id?: Ulid | null;
+    workspace_version?: number;
+    state?: 'draft' | 'in_review' | 'sealed' | 'abandoned';
+    draft_revision_id?: Ulid | null;
+    draft_revision_number?: number;
+    graph_revision_id?: Ulid | null;
+    graph_hash?: Sha256 | null;
+    blocker_codes?: Array<OperatorContentBlocker>;
+    is_complete?: boolean;
+    content_document_id?: Ulid;
+    document_key?: OperatorContentKey;
+    source_revision_id?: Ulid;
+    source_revision_number?: number;
+    source_content_hash?: Sha256;
+    localized_variant_id?: Ulid;
+    variant_revision_number?: number;
+    localized_content_hash?: Sha256;
+};
+
+export type OperatorContentGovernanceResult = {
+    curriculum_graph_review_id?: Ulid;
+    withdrawal_review_id?: Ulid;
+};
+
+export type OperatorContentPublicationLifecycleResult = {
+    replayed: boolean;
+    program_id?: Ulid;
+    publication_id?: Ulid;
+    curriculum_version_id?: Ulid;
+    manifest_hash?: Sha256;
+    activation_at?: string;
+    activated_at?: string;
+    cancelled_at?: string;
+    head_version: number;
+};
+
 export type OperatorContentDraft = {
     program_id: Ulid;
     program_key: string;
@@ -645,11 +2206,18 @@ export type OperatorPublicationStatus = {
     manifest_hash: Sha256;
     is_head: boolean;
     head_version: number | null;
+    publication_head_version: number;
+    lifecycle_status: 'scheduled' | 'cancelled' | 'active' | 'superseded' | 'retired' | 'suspended';
+    effective_at: string;
+    publication_suspended: boolean;
+    allowed_actions: Array<OperatorContentAction>;
     created_at: string;
 };
 
 export type OperatorPublicationListing = {
     items: Array<OperatorPublicationStatus>;
+    next_cursor: OperatorCursor | null;
+    allowed_actions: Array<OperatorContentAction>;
 };
 
 export type RecordEnglishContentReviewRequest = {
@@ -657,7 +2225,7 @@ export type RecordEnglishContentReviewRequest = {
     source_content_hash: Sha256;
     authority_appointment_id: Ulid;
     decision: 'approved' | 'rejected';
-    rationale_key?: string | null;
+    rationale_key: 'meets_standard' | 'accuracy_revision_required' | 'english_only_justified';
 };
 
 export type RecordKannadaContentReviewRequest = {
@@ -667,7 +2235,7 @@ export type RecordKannadaContentReviewRequest = {
     localized_content_hash: Sha256;
     authority_appointment_id: Ulid;
     decision: 'approved' | 'rejected';
-    rationale_key?: string | null;
+    rationale_key: 'meets_standard' | 'language_revision_required';
 };
 
 export type PublishOperatorCurriculumRequest = {
@@ -706,6 +2274,7 @@ export type OperatorAuditEvent = {
 
 export type OperatorAuditEventListing = {
     items: Array<OperatorAuditEvent>;
+    next_cursor: OperatorCursor | null;
 };
 
 export type OperatorPilotAnalyticsSummary = {
@@ -744,29 +2313,64 @@ export type OperatorSupportDiagnosticItem = {
     observed_at: string;
 };
 
+export type OperatorPrivacyScope = {
+    kind: 'organization_membership';
+    organization_id: Ulid;
+    membership_id: Ulid;
+};
+
+export type OperatorPrivacyRecord = {
+    record_id: string;
+    attributes: {
+        [key: string]: string | number | number | boolean | null;
+    };
+};
+
+export type OperatorPrivacyRecordGroup = {
+    record_class: string;
+    scope: 'global_identity' | 'global_authentication' | 'organization_membership' | 'organization_actor_link' | 'organization_accountability' | 'external_object' | 'client_device';
+    record_count: number;
+    export_disposition: string;
+    erasure_disposition: string;
+    retention_basis: string;
+    records: Array<OperatorPrivacyRecord>;
+};
+
+export type OperatorPrivacyExportSummary = {
+    inventory_version: 'learner-privacy-v2' | 'learner-privacy-v1' | 'legacy-privacy-v0';
+    scope: OperatorPrivacyScope;
+    excluded_sensitive_values: Array<'authentication_credentials' | 'cryptographic_digests' | 'raw_audio' | 'raw_transcripts' | 'provider_secret_payloads'>;
+    record_groups: Array<OperatorPrivacyRecordGroup>;
+    privacy_erased_at?: string | null;
+};
+
 export type OperatorPrivacyExport = {
     export_request_id: Ulid;
     target_membership_id: Ulid;
     status: 'pending' | 'completed' | 'failed';
-    summary: {
-        membership_id: Ulid;
-        membership_type: string;
-        membership_status: string;
-        consent_event_ids: Array<Ulid>;
-        voice_recording_ids: Array<Ulid>;
-        voice_deletion_receipt_ids: Array<Ulid>;
-        conversation_session_ids: Array<Ulid>;
-        learner_attempt_ids: Array<Ulid>;
-        content_note: 'identifier_digests_only_no_audio_or_transcripts';
-    };
+    summary: OperatorPrivacyExportSummary;
     requested_at: string;
     completed_at: string | null;
+};
+
+export type OperatorPrivacyErasureRecordOutcome = {
+    record_class: string;
+    record_count: number;
+    action: string;
+    retention_basis: string;
+};
+
+export type OperatorPrivacyErasureOutcome = {
+    inventory_version: 'learner-privacy-v2' | 'learner-privacy-v1' | 'legacy-privacy-v0';
+    scope: OperatorPrivacyScope;
+    record_outcomes: Array<OperatorPrivacyErasureRecordOutcome>;
 };
 
 export type OperatorPrivacyErasure = {
     erasure_request_id: Ulid;
     target_membership_id: Ulid;
     status: 'pending' | 'completed' | 'partially_completed' | 'restricted';
+    outcome: OperatorPrivacyErasureOutcome;
     voice_recording_count: number;
     voice_deletion_completed_count: number;
     requested_at: string;
@@ -784,6 +2388,57 @@ export type ProblemDetails = {
     [key: string]: unknown;
 };
 
+export type OrganizationAdministrationProblemDetails = ProblemDetails & {
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.organization_administration.stale_state' | 'problem.organization_administration.idempotency_conflict' | 'problem.organization_administration.last_manager_required' | 'problem.organization_administration.active_dependency' | 'problem.organization_administration.self_target_forbidden';
+};
+
+export type LearnerAdministrationProblemDetails = ProblemDetails & {
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.learner_administration.stale_state' | 'problem.learner_administration.idempotency_conflict' | 'problem.learner_administration.active_dependency' | 'problem.learner_administration.unsafe_role';
+};
+
+export type ContentWorkspaceProblemDetails = ProblemDetails & {
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.content_workspace.not_found' | 'problem.content_workspace.stale_version' | 'problem.content_workspace.idempotency_conflict' | 'problem.content_workspace.state_conflict' | 'problem.content_workspace.head_conflict' | 'problem.content_workspace.concurrent_change';
+};
+
+export type MediaLibraryProblemDetails = ProblemDetails & {
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.media_library.not_found' | 'problem.media_library.stale_upload' | 'problem.media_library.stale_metadata' | 'problem.media_library.stale_lifecycle' | 'problem.media_library.stale_workspace' | 'problem.media_library.idempotency_conflict' | 'problem.media_library.duplicate_use' | 'problem.media_library.storage_failure' | 'problem.media_library.concurrent_change';
+};
+
+export type PasswordSignInWritable = {
+    username: GlobalUsername;
+    password: string;
+};
+
+export type PasswordEstablishmentWritable = {
+    username: GlobalUsername;
+    password: NewPassword;
+};
+
+export type PasswordChangeWritable = {
+    current_password: string;
+    new_password: NewPassword;
+};
+
+export type PasswordRecoveryCompletionWritable = {
+    challenge_id: Ulid;
+    username: GlobalUsername;
+    token: string;
+    new_password: NewPassword;
+};
+
+export type ExcludedPasswordEstablishmentCompletionWritable = {
+    challenge_id: Ulid;
+    username: GlobalUsername;
+    token: string;
+    password: NewPassword;
+};
+
+export type PlatformIdentityRecoveryCaseRequestWritable = {
+    target_user_id: Ulid;
+    reason_key: 'identity_recovery.verified_support_case';
+    evidence_reference: string;
+};
+
 /**
  * Optional caller-provided UUID used to correlate one request. Invalid
  * values are ignored and replaced with a server-generated UUID.
@@ -792,9 +2447,59 @@ export type ProblemDetails = {
 export type CorrelationId = string;
 
 /**
+ * Platform-owned privileged identity-recovery case ULID.
+ */
+export type IdentityRecoveryCaseId = Ulid;
+
+/**
  * Opaque UUID or ULID identifying one replayable command.
  */
 export type IdempotencyKey = string;
+
+/**
+ * Maximum number of tenant-bound rows to return.
+ */
+export type OperatorPageLimit = number;
+
+/**
+ * Encrypted continuation bound to tenant, purpose and filters.
+ */
+export type OperatorCursor2 = OperatorCursor;
+
+/**
+ * Organization-owned curriculum-version ULID.
+ */
+export type CurriculumVersionPath = Ulid;
+
+/**
+ * Active-organization managed media-asset ULID.
+ */
+export type OperatorMediaAssetPath = Ulid;
+
+/**
+ * Active-organization private media-upload ULID.
+ */
+export type OperatorMediaUploadPath = Ulid;
+
+/**
+ * Exact active-organization English media-metadata revision ULID.
+ */
+export type OperatorMediaMetadataRevisionPath = Ulid;
+
+/**
+ * One-based exact sequential upload-part number.
+ */
+export type OperatorMediaPartNumber = number;
+
+/**
+ * Lowercase SHA-256 of the exact binary request body.
+ */
+export type OperatorMediaPartSha256 = Sha256;
+
+/**
+ * Expected optimistic upload version before accepting this part.
+ */
+export type OperatorMediaUploadVersion = number;
 
 /**
  * Project-owned public session ULID, never the Laravel session key.
@@ -848,6 +2553,26 @@ export type EnrollmentId = Ulid;
  * Mission ULID used to authorize the requested model-audio asset.
  */
 export type MissionQueryId = Ulid;
+
+/**
+ * Lesson ULID used to authorize the requested lesson-video asset.
+ */
+export type LessonQueryId = Ulid;
+
+/**
+ * Optional single RFC byte range. Multiple or malformed ranges are
+ * ignored and receive the complete representation.
+ *
+ */
+export type Range = string;
+
+/**
+ * Strong lesson-video ETag returned by an earlier response. The range
+ * is honored only on an exact strong match; weak tags and dates receive
+ * the complete representation.
+ *
+ */
+export type IfRange = string;
 
 export type GetLivenessData = {
     body?: never;
@@ -996,6 +2721,405 @@ export type ExchangeMobileTokenResponses = {
 };
 
 export type ExchangeMobileTokenResponse = ExchangeMobileTokenResponses[keyof ExchangeMobileTokenResponses];
+
+export type SignInWithPasswordData = {
+    body: PasswordSignInWritable;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/password/sign-ins';
+};
+
+export type SignInWithPasswordErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SignInWithPasswordError = SignInWithPasswordErrors[keyof SignInWithPasswordErrors];
+
+export type SignInWithPasswordResponses = {
+    /**
+     * A same-origin web session was created.
+     */
+    200: AuthenticatedSessionResponse;
+};
+
+export type SignInWithPasswordResponse = SignInWithPasswordResponses[keyof SignInWithPasswordResponses];
+
+export type GetPasswordAuthenticationStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/password/status';
+};
+
+export type GetPasswordAuthenticationStatusErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetPasswordAuthenticationStatusError = GetPasswordAuthenticationStatusErrors[keyof GetPasswordAuthenticationStatusErrors];
+
+export type GetPasswordAuthenticationStatusResponses = {
+    /**
+     * Safe current-user password status.
+     */
+    200: PasswordAuthenticationStatus;
+};
+
+export type GetPasswordAuthenticationStatusResponse = GetPasswordAuthenticationStatusResponses[keyof GetPasswordAuthenticationStatusResponses];
+
+export type GetAuthenticationModeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/password/mode';
+};
+
+export type GetAuthenticationModeErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetAuthenticationModeError = GetAuthenticationModeErrors[keyof GetAuthenticationModeErrors];
+
+export type GetAuthenticationModeResponses = {
+    /**
+     * The current global authentication mode.
+     */
+    200: AuthenticationModeResponse;
+};
+
+export type GetAuthenticationModeResponse = GetAuthenticationModeResponses[keyof GetAuthenticationModeResponses];
+
+export type EstablishPasswordCredentialData = {
+    body: PasswordEstablishmentWritable;
+    path?: never;
+    query?: never;
+    url: '/auth/password/establishments';
+};
+
+export type EstablishPasswordCredentialErrors = {
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type EstablishPasswordCredentialError = EstablishPasswordCredentialErrors[keyof EstablishPasswordCredentialErrors];
+
+export type EstablishPasswordCredentialResponses = {
+    /**
+     * The credential was established and all sessions were revoked.
+     */
+    204: void;
+};
+
+export type EstablishPasswordCredentialResponse = EstablishPasswordCredentialResponses[keyof EstablishPasswordCredentialResponses];
+
+export type ConfirmCurrentPasswordData = {
+    body: PasswordConfirmation;
+    path?: never;
+    query?: never;
+    url: '/auth/password/confirmations';
+};
+
+export type ConfirmCurrentPasswordErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmCurrentPasswordError = ConfirmCurrentPasswordErrors[keyof ConfirmCurrentPasswordErrors];
+
+export type ConfirmCurrentPasswordResponses = {
+    /**
+     * The privileged session now has fresh one-factor evidence.
+     */
+    200: PasswordConfirmationResult;
+};
+
+export type ConfirmCurrentPasswordResponse = ConfirmCurrentPasswordResponses[keyof ConfirmCurrentPasswordResponses];
+
+export type ChangeCurrentPasswordData = {
+    body: PasswordChangeWritable;
+    path?: never;
+    query?: never;
+    url: '/auth/password';
+};
+
+export type ChangeCurrentPasswordErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ChangeCurrentPasswordError = ChangeCurrentPasswordErrors[keyof ChangeCurrentPasswordErrors];
+
+export type ChangeCurrentPasswordResponses = {
+    /**
+     * The password changed and all sessions and token families were revoked.
+     */
+    204: void;
+};
+
+export type ChangeCurrentPasswordResponse = ChangeCurrentPasswordResponses[keyof ChangeCurrentPasswordResponses];
+
+export type ChangeCurrentUsernameData = {
+    body: UsernameChange;
+    path?: never;
+    query?: never;
+    url: '/auth/username';
+};
+
+export type ChangeCurrentUsernameErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ChangeCurrentUsernameError = ChangeCurrentUsernameErrors[keyof ChangeCurrentUsernameErrors];
+
+export type ChangeCurrentUsernameResponses = {
+    /**
+     * The username changed and all sessions and token families were revoked.
+     */
+    204: void;
+};
+
+export type ChangeCurrentUsernameResponse = ChangeCurrentUsernameResponses[keyof ChangeCurrentUsernameResponses];
+
+export type RequestPasswordRecoveryData = {
+    body: PasswordRecoveryRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/password/recovery-requests';
+};
+
+export type RequestPasswordRecoveryErrors = {
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RequestPasswordRecoveryError = RequestPasswordRecoveryErrors[keyof RequestPasswordRecoveryErrors];
+
+export type RequestPasswordRecoveryResponses = {
+    /**
+     * The request was accepted regardless of account state.
+     */
+    202: GenericRecoveryResponse;
+};
+
+export type RequestPasswordRecoveryResponse = RequestPasswordRecoveryResponses[keyof RequestPasswordRecoveryResponses];
+
+export type CompletePasswordRecoveryData = {
+    body: PasswordRecoveryCompletionWritable;
+    path?: never;
+    query?: never;
+    url: '/auth/password/recoveries';
+};
+
+export type CompletePasswordRecoveryErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CompletePasswordRecoveryError = CompletePasswordRecoveryErrors[keyof CompletePasswordRecoveryErrors];
+
+export type CompletePasswordRecoveryResponses = {
+    /**
+     * The password changed and all credentials were revoked.
+     */
+    204: void;
+};
+
+export type CompletePasswordRecoveryResponse = CompletePasswordRecoveryResponses[keyof CompletePasswordRecoveryResponses];
+
+export type CompleteExcludedPasswordEstablishmentData = {
+    body: ExcludedPasswordEstablishmentCompletionWritable;
+    path?: never;
+    query?: never;
+    url: '/auth/password/establishment-recoveries';
+};
+
+export type CompleteExcludedPasswordEstablishmentErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CompleteExcludedPasswordEstablishmentError = CompleteExcludedPasswordEstablishmentErrors[keyof CompleteExcludedPasswordEstablishmentErrors];
+
+export type CompleteExcludedPasswordEstablishmentResponses = {
+    /**
+     * The target chose credentials and the one-time challenge was consumed.
+     */
+    204: void;
+};
+
+export type CompleteExcludedPasswordEstablishmentResponse = CompleteExcludedPasswordEstablishmentResponses[keyof CompleteExcludedPasswordEstablishmentResponses];
+
+export type OpenPlatformIdentityRecoveryCaseData = {
+    body: PlatformIdentityRecoveryCaseRequestWritable;
+    path?: never;
+    query?: never;
+    url: '/platform/identity-recovery-cases';
+};
+
+export type OpenPlatformIdentityRecoveryCaseErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type OpenPlatformIdentityRecoveryCaseError = OpenPlatformIdentityRecoveryCaseErrors[keyof OpenPlatformIdentityRecoveryCaseErrors];
+
+export type OpenPlatformIdentityRecoveryCaseResponses = {
+    /**
+     * The recovery case was opened.
+     */
+    201: PlatformIdentityRecoveryCase;
+};
+
+export type OpenPlatformIdentityRecoveryCaseResponse = OpenPlatformIdentityRecoveryCaseResponses[keyof OpenPlatformIdentityRecoveryCaseResponses];
+
+export type ApprovePlatformIdentityRecoveryCaseData = {
+    body: PlatformIdentityRecoveryEvidence;
+    path: {
+        /**
+         * Platform-owned privileged identity-recovery case ULID.
+         */
+        case_id: Ulid;
+    };
+    query?: never;
+    url: '/platform/identity-recovery-cases/{case_id}/approvals';
+};
+
+export type ApprovePlatformIdentityRecoveryCaseErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ApprovePlatformIdentityRecoveryCaseError = ApprovePlatformIdentityRecoveryCaseErrors[keyof ApprovePlatformIdentityRecoveryCaseErrors];
+
+export type ApprovePlatformIdentityRecoveryCaseResponses = {
+    /**
+     * The immutable approval was appended.
+     */
+    200: PlatformIdentityRecoveryCase;
+};
+
+export type ApprovePlatformIdentityRecoveryCaseResponse = ApprovePlatformIdentityRecoveryCaseResponses[keyof ApprovePlatformIdentityRecoveryCaseResponses];
+
+export type CompletePlatformIdentityRecoveryCaseData = {
+    body: PlatformIdentityRecoveryEvidence;
+    path: {
+        /**
+         * Platform-owned privileged identity-recovery case ULID.
+         */
+        case_id: Ulid;
+    };
+    query?: never;
+    url: '/platform/identity-recovery-cases/{case_id}/complete';
+};
+
+export type CompletePlatformIdentityRecoveryCaseErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CompletePlatformIdentityRecoveryCaseError = CompletePlatformIdentityRecoveryCaseErrors[keyof CompletePlatformIdentityRecoveryCaseErrors];
+
+export type CompletePlatformIdentityRecoveryCaseResponses = {
+    /**
+     * A short-lived token was issued to the verified contact.
+     */
+    200: PlatformIdentityRecoveryCase;
+};
+
+export type CompletePlatformIdentityRecoveryCaseResponse = CompletePlatformIdentityRecoveryCaseResponses[keyof CompletePlatformIdentityRecoveryCaseResponses];
 
 export type RequestOtpData = {
     body: OtpRequest;
@@ -1231,6 +3355,317 @@ export type RevokeWebSessionResponses = {
 };
 
 export type RevokeWebSessionResponse = RevokeWebSessionResponses[keyof RevokeWebSessionResponses];
+
+export type GetPrivilegedMfaStatusData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa';
+};
+
+export type GetPrivilegedMfaStatusErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetPrivilegedMfaStatusError = GetPrivilegedMfaStatusErrors[keyof GetPrivilegedMfaStatusErrors];
+
+export type GetPrivilegedMfaStatusResponses = {
+    /**
+     * Current privileged MFA state.
+     */
+    200: PrivilegedMfaStatus;
+};
+
+export type GetPrivilegedMfaStatusResponse = GetPrivilegedMfaStatusResponses[keyof GetPrivilegedMfaStatusResponses];
+
+export type BeginPrivilegedMfaEnrollmentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/enrollments';
+};
+
+export type BeginPrivilegedMfaEnrollmentErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type BeginPrivilegedMfaEnrollmentError = BeginPrivilegedMfaEnrollmentErrors[keyof BeginPrivilegedMfaEnrollmentErrors];
+
+export type BeginPrivilegedMfaEnrollmentResponses = {
+    /**
+     * Pending TOTP enrollment created; the URI is shown once.
+     */
+    201: PrivilegedMfaEnrollment;
+};
+
+export type BeginPrivilegedMfaEnrollmentResponse = BeginPrivilegedMfaEnrollmentResponses[keyof BeginPrivilegedMfaEnrollmentResponses];
+
+export type ConfirmPrivilegedMfaEnrollmentData = {
+    body: PrivilegedMfaEnrollmentConfirmation;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        factor_id: Ulid;
+    };
+    query?: never;
+    url: '/auth/mfa/enrollments/{factor_id}/confirm';
+};
+
+export type ConfirmPrivilegedMfaEnrollmentErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmPrivilegedMfaEnrollmentError = ConfirmPrivilegedMfaEnrollmentErrors[keyof ConfirmPrivilegedMfaEnrollmentErrors];
+
+export type ConfirmPrivilegedMfaEnrollmentResponses = {
+    /**
+     * Factor activated and recovery codes shown once.
+     */
+    200: PrivilegedMfaRecoveryCodeIssuance;
+};
+
+export type ConfirmPrivilegedMfaEnrollmentResponse = ConfirmPrivilegedMfaEnrollmentResponses[keyof ConfirmPrivilegedMfaEnrollmentResponses];
+
+export type CreatePrivilegedMfaChallengeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/challenges';
+};
+
+export type CreatePrivilegedMfaChallengeErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreatePrivilegedMfaChallengeError = CreatePrivilegedMfaChallengeErrors[keyof CreatePrivilegedMfaChallengeErrors];
+
+export type CreatePrivilegedMfaChallengeResponses = {
+    /**
+     * Session-bound MFA challenge created.
+     */
+    201: PrivilegedMfaChallenge;
+};
+
+export type CreatePrivilegedMfaChallengeResponse = CreatePrivilegedMfaChallengeResponses[keyof CreatePrivilegedMfaChallengeResponses];
+
+export type VerifyPrivilegedMfaChallengeData = {
+    body: PrivilegedMfaVerification;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        challenge_id: Ulid;
+    };
+    query?: never;
+    url: '/auth/mfa/challenges/{challenge_id}/verify';
+};
+
+export type VerifyPrivilegedMfaChallengeErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type VerifyPrivilegedMfaChallengeError = VerifyPrivilegedMfaChallengeErrors[keyof VerifyPrivilegedMfaChallengeErrors];
+
+export type VerifyPrivilegedMfaChallengeResponses = {
+    /**
+     * The scoped fresh assertion was established.
+     */
+    200: PrivilegedMfaVerificationResult;
+};
+
+export type VerifyPrivilegedMfaChallengeResponse = VerifyPrivilegedMfaChallengeResponses[keyof VerifyPrivilegedMfaChallengeResponses];
+
+export type RegeneratePrivilegedMfaRecoveryCodesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/recovery-codes/regenerate';
+};
+
+export type RegeneratePrivilegedMfaRecoveryCodesErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RegeneratePrivilegedMfaRecoveryCodesError = RegeneratePrivilegedMfaRecoveryCodesErrors[keyof RegeneratePrivilegedMfaRecoveryCodesErrors];
+
+export type RegeneratePrivilegedMfaRecoveryCodesResponses = {
+    /**
+     * Recovery codes replaced and sessions revoked.
+     */
+    200: PrivilegedMfaRecoveryCodeIssuance;
+};
+
+export type RegeneratePrivilegedMfaRecoveryCodesResponse = RegeneratePrivilegedMfaRecoveryCodesResponses[keyof RegeneratePrivilegedMfaRecoveryCodesResponses];
+
+export type RevokePrivilegedMfaFactorData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/factor';
+};
+
+export type RevokePrivilegedMfaFactorErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RevokePrivilegedMfaFactorError = RevokePrivilegedMfaFactorErrors[keyof RevokePrivilegedMfaFactorErrors];
+
+export type RevokePrivilegedMfaFactorResponses = {
+    /**
+     * Factor and every credential family were revoked.
+     */
+    204: void;
+};
+
+export type RevokePrivilegedMfaFactorResponse = RevokePrivilegedMfaFactorResponses[keyof RevokePrivilegedMfaFactorResponses];
 
 export type RevokeMobileTokenFamilyData = {
     body: MobileTokenRevocation;
@@ -2792,6 +5227,142 @@ export type StreamLearnerModelAudioResponses = {
 
 export type StreamLearnerModelAudioResponse = StreamLearnerModelAudioResponses[keyof StreamLearnerModelAudioResponses];
 
+export type ListLearnerLevelVideosData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+    };
+    url: '/me/level-videos';
+};
+
+export type ListLearnerLevelVideosErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListLearnerLevelVideosError = ListLearnerLevelVideosErrors[keyof ListLearnerLevelVideosErrors];
+
+export type ListLearnerLevelVideosResponses = {
+    /**
+     * Level-video catalog for the exact enrollment pin.
+     */
+    200: LearnerLevelVideoCatalog;
+};
+
+export type ListLearnerLevelVideosResponse = ListLearnerLevelVideosResponses[keyof ListLearnerLevelVideosResponses];
+
+export type StreamLearnerLessonVideoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Optional single RFC byte range. Multiple or malformed ranges are
+         * ignored and receive the complete representation.
+         *
+         */
+        Range?: string;
+        /**
+         * Strong lesson-video ETag returned by an earlier response. The range
+         * is honored only on an exact strong match; weak tags and dates receive
+         * the complete representation.
+         *
+         */
+        'If-Range'?: string;
+    };
+    path: {
+        /**
+         * Governed model-audio asset ULID from the exact mission manifest.
+         */
+        asset_id: Ulid;
+    };
+    query: {
+        /**
+         * Candidate enrollment ULID. The server accepts it only when it belongs
+         * to the authenticated active learner membership and has an exact active
+         * curriculum-publication pin.
+         *
+         */
+        enrollment_id: Ulid;
+        /**
+         * Lesson ULID used to authorize the requested lesson-video asset.
+         */
+        lesson_id: Ulid;
+    };
+    url: '/media-assets/{asset_id}/lesson-video';
+};
+
+export type StreamLearnerLessonVideoErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The single byte range is outside the verified metadata length.
+     */
+    416: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StreamLearnerLessonVideoError = StreamLearnerLessonVideoErrors[keyof StreamLearnerLessonVideoErrors];
+
+export type StreamLearnerLessonVideoResponses = {
+    /**
+     * The verified lesson-video object.
+     */
+    200: Blob | File;
+    /**
+     * One satisfiable range from the verified lesson-video object.
+     */
+    206: Blob | File;
+};
+
+export type StreamLearnerLessonVideoResponse = StreamLearnerLessonVideoResponses[keyof StreamLearnerLessonVideoResponses];
+
 export type AcceptInstitutionInviteData = {
     body: InstitutionInviteAcceptance;
     headers: {
@@ -2849,6 +5420,3875 @@ export type AcceptInstitutionInviteResponses = {
 
 export type AcceptInstitutionInviteResponse = AcceptInstitutionInviteResponses[keyof AcceptInstitutionInviteResponses];
 
+export type GetOperatorOverviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/overview';
+};
+
+export type GetOperatorOverviewErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorOverviewError = GetOperatorOverviewErrors[keyof GetOperatorOverviewErrors];
+
+export type GetOperatorOverviewResponses = {
+    /**
+     * Permission-derived operator workspace manifest.
+     */
+    200: OperatorOverview;
+};
+
+export type GetOperatorOverviewResponse = GetOperatorOverviewResponses[keyof GetOperatorOverviewResponses];
+
+export type SearchOperatorWorkspaceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query: {
+        q: string;
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/search';
+};
+
+export type SearchOperatorWorkspaceErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SearchOperatorWorkspaceError = SearchOperatorWorkspaceErrors[keyof SearchOperatorWorkspaceErrors];
+
+export type SearchOperatorWorkspaceResponses = {
+    /**
+     * One bounded page of permitted safe search results.
+     */
+    200: OperatorSearchListing;
+};
+
+export type SearchOperatorWorkspaceResponse = SearchOperatorWorkspaceResponses[keyof SearchOperatorWorkspaceResponses];
+
+export type GetOperatorOrganizationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/organization';
+};
+
+export type GetOperatorOrganizationErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type GetOperatorOrganizationError = GetOperatorOrganizationErrors[keyof GetOperatorOrganizationErrors];
+
+export type GetOperatorOrganizationResponses = {
+    /**
+     * Safe current-organization profile.
+     */
+    200: OperatorOrganizationProfileResponse;
+};
+
+export type GetOperatorOrganizationResponse = GetOperatorOrganizationResponses[keyof GetOperatorOrganizationResponses];
+
+export type ListOperatorBranchesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'archived';
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/branches';
+};
+
+export type ListOperatorBranchesErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorBranchesError = ListOperatorBranchesErrors[keyof ListOperatorBranchesErrors];
+
+export type ListOperatorBranchesResponses = {
+    /**
+     * Bounded branch page.
+     */
+    200: OperatorBranchListing;
+};
+
+export type ListOperatorBranchesResponse = ListOperatorBranchesResponses[keyof ListOperatorBranchesResponses];
+
+export type CreateOperatorBranchData = {
+    body: CreateOperatorBranchRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/branches';
+};
+
+export type CreateOperatorBranchErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type CreateOperatorBranchError = CreateOperatorBranchErrors[keyof CreateOperatorBranchErrors];
+
+export type CreateOperatorBranchResponses = {
+    /**
+     * Exact replay returned the original branch.
+     */
+    200: OperatorBranchCommandResponse;
+    /**
+     * Branch created.
+     */
+    201: OperatorBranchCommandResponse;
+};
+
+export type CreateOperatorBranchResponse = CreateOperatorBranchResponses[keyof CreateOperatorBranchResponses];
+
+export type UpdateOperatorBranchData = {
+    body: UpdateOperatorBranchRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        branch: Ulid;
+    };
+    query?: never;
+    url: '/operator/branches/{branch}/updates';
+};
+
+export type UpdateOperatorBranchErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type UpdateOperatorBranchError = UpdateOperatorBranchErrors[keyof UpdateOperatorBranchErrors];
+
+export type UpdateOperatorBranchResponses = {
+    /**
+     * Branch updated or exact replay returned.
+     */
+    200: OperatorBranchCommandResponse;
+};
+
+export type UpdateOperatorBranchResponse = UpdateOperatorBranchResponses[keyof UpdateOperatorBranchResponses];
+
+export type ArchiveOperatorBranchData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        branch: Ulid;
+    };
+    query?: never;
+    url: '/operator/branches/{branch}/archivals';
+};
+
+export type ArchiveOperatorBranchErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ArchiveOperatorBranchError = ArchiveOperatorBranchErrors[keyof ArchiveOperatorBranchErrors];
+
+export type ArchiveOperatorBranchResponses = {
+    /**
+     * Branch archived or exact replay returned.
+     */
+    200: OperatorBranchCommandResponse;
+};
+
+export type ArchiveOperatorBranchResponse = ArchiveOperatorBranchResponses[keyof ArchiveOperatorBranchResponses];
+
+export type ListOperatorCohortsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'archived';
+        branch_id?: Ulid;
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/cohorts';
+};
+
+export type ListOperatorCohortsErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorCohortsError = ListOperatorCohortsErrors[keyof ListOperatorCohortsErrors];
+
+export type ListOperatorCohortsResponses = {
+    /**
+     * Bounded cohort page without learner data.
+     */
+    200: OperatorCohortListing;
+};
+
+export type ListOperatorCohortsResponse = ListOperatorCohortsResponses[keyof ListOperatorCohortsResponses];
+
+export type CreateOperatorCohortData = {
+    body: CreateOperatorCohortRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/cohorts';
+};
+
+export type CreateOperatorCohortErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type CreateOperatorCohortError = CreateOperatorCohortErrors[keyof CreateOperatorCohortErrors];
+
+export type CreateOperatorCohortResponses = {
+    /**
+     * Exact replay returned the original cohort.
+     */
+    200: OperatorCohortCommandResponse;
+    /**
+     * Cohort created.
+     */
+    201: OperatorCohortCommandResponse;
+};
+
+export type CreateOperatorCohortResponse = CreateOperatorCohortResponses[keyof CreateOperatorCohortResponses];
+
+export type UpdateOperatorCohortData = {
+    body: UpdateOperatorCohortRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        cohort: Ulid;
+    };
+    query?: never;
+    url: '/operator/cohorts/{cohort}/updates';
+};
+
+export type UpdateOperatorCohortErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type UpdateOperatorCohortError = UpdateOperatorCohortErrors[keyof UpdateOperatorCohortErrors];
+
+export type UpdateOperatorCohortResponses = {
+    /**
+     * Cohort updated or exact replay returned.
+     */
+    200: OperatorCohortCommandResponse;
+};
+
+export type UpdateOperatorCohortResponse = UpdateOperatorCohortResponses[keyof UpdateOperatorCohortResponses];
+
+export type ArchiveOperatorCohortData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        cohort: Ulid;
+    };
+    query?: never;
+    url: '/operator/cohorts/{cohort}/archivals';
+};
+
+export type ArchiveOperatorCohortErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ArchiveOperatorCohortError = ArchiveOperatorCohortErrors[keyof ArchiveOperatorCohortErrors];
+
+export type ArchiveOperatorCohortResponses = {
+    /**
+     * Cohort archived or exact replay returned.
+     */
+    200: OperatorCohortCommandResponse;
+};
+
+export type ArchiveOperatorCohortResponse = ArchiveOperatorCohortResponses[keyof ArchiveOperatorCohortResponses];
+
+export type ListOperatorStaffMembershipsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'suspended' | 'ended';
+        display_name_prefix?: string;
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/memberships';
+};
+
+export type ListOperatorStaffMembershipsErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorStaffMembershipsError = ListOperatorStaffMembershipsErrors[keyof ListOperatorStaffMembershipsErrors];
+
+export type ListOperatorStaffMembershipsResponses = {
+    /**
+     * Bounded staff membership page.
+     */
+    200: OperatorStaffMembershipListing;
+};
+
+export type ListOperatorStaffMembershipsResponse = ListOperatorStaffMembershipsResponses[keyof ListOperatorStaffMembershipsResponses];
+
+export type AssignOperatorMembershipRoleData = {
+    body: OperatorMembershipRoleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/memberships/{membership}/role-assignments';
+};
+
+export type AssignOperatorMembershipRoleErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type AssignOperatorMembershipRoleError = AssignOperatorMembershipRoleErrors[keyof AssignOperatorMembershipRoleErrors];
+
+export type AssignOperatorMembershipRoleResponses = {
+    /**
+     * Role assignment applied or exact replay returned.
+     */
+    200: OperatorStaffMembershipCommandResponse;
+};
+
+export type AssignOperatorMembershipRoleResponse = AssignOperatorMembershipRoleResponses[keyof AssignOperatorMembershipRoleResponses];
+
+export type RevokeOperatorMembershipRoleData = {
+    body: OperatorMembershipRoleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/memberships/{membership}/role-revocations';
+};
+
+export type RevokeOperatorMembershipRoleErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RevokeOperatorMembershipRoleError = RevokeOperatorMembershipRoleErrors[keyof RevokeOperatorMembershipRoleErrors];
+
+export type RevokeOperatorMembershipRoleResponses = {
+    /**
+     * Role revocation applied or exact replay returned.
+     */
+    200: OperatorStaffMembershipCommandResponse;
+};
+
+export type RevokeOperatorMembershipRoleResponse = RevokeOperatorMembershipRoleResponses[keyof RevokeOperatorMembershipRoleResponses];
+
+export type DeactivateOperatorStaffMembershipData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/memberships/{membership}/deactivations';
+};
+
+export type DeactivateOperatorStaffMembershipErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type DeactivateOperatorStaffMembershipError = DeactivateOperatorStaffMembershipErrors[keyof DeactivateOperatorStaffMembershipErrors];
+
+export type DeactivateOperatorStaffMembershipResponses = {
+    /**
+     * Membership deactivated or exact replay returned; no removed authority is restorable through reactivation.
+     */
+    200: OperatorStaffMembershipCommandResponse;
+};
+
+export type DeactivateOperatorStaffMembershipResponse = DeactivateOperatorStaffMembershipResponses[keyof DeactivateOperatorStaffMembershipResponses];
+
+export type ReactivateOperatorStaffMembershipData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/memberships/{membership}/reactivations';
+};
+
+export type ReactivateOperatorStaffMembershipErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ReactivateOperatorStaffMembershipError = ReactivateOperatorStaffMembershipErrors[keyof ReactivateOperatorStaffMembershipErrors];
+
+export type ReactivateOperatorStaffMembershipResponses = {
+    /**
+     * Membership reactivated or exact replay returned, with no roles, cohorts, appointments, or credentials restored.
+     */
+    200: OperatorStaffMembershipCommandResponse;
+};
+
+export type ReactivateOperatorStaffMembershipResponse = ReactivateOperatorStaffMembershipResponses[keyof ReactivateOperatorStaffMembershipResponses];
+
+export type ListOperatorInstitutionInvitesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'pending' | 'accepted' | 'revoked' | 'expired';
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/institution-invites';
+};
+
+export type ListOperatorInstitutionInvitesErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorInstitutionInvitesError = ListOperatorInstitutionInvitesErrors[keyof ListOperatorInstitutionInvitesErrors];
+
+export type ListOperatorInstitutionInvitesResponses = {
+    /**
+     * Bounded staff invitation page.
+     */
+    200: OperatorInstitutionInviteListing;
+};
+
+export type ListOperatorInstitutionInvitesResponse = ListOperatorInstitutionInvitesResponses[keyof ListOperatorInstitutionInvitesResponses];
+
+export type IssueOperatorInstitutionInviteData = {
+    body: IssueOperatorInstitutionInviteRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/institution-invites';
+};
+
+export type IssueOperatorInstitutionInviteErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type IssueOperatorInstitutionInviteError = IssueOperatorInstitutionInviteErrors[keyof IssueOperatorInstitutionInviteErrors];
+
+export type IssueOperatorInstitutionInviteResponses = {
+    /**
+     * Exact replay; the invitation exists but its activation code is unrecoverable.
+     */
+    200: OperatorInstitutionInviteCommandResponse;
+    /**
+     * Invitation issued; this is the only response containing the activation code.
+     */
+    201: OperatorInstitutionInviteCommandResponse;
+};
+
+export type IssueOperatorInstitutionInviteResponse = IssueOperatorInstitutionInviteResponses[keyof IssueOperatorInstitutionInviteResponses];
+
+export type RevokeOperatorInstitutionInviteData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        invite: Ulid;
+    };
+    query?: never;
+    url: '/operator/institution-invites/{invite}/revocations';
+};
+
+export type RevokeOperatorInstitutionInviteErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RevokeOperatorInstitutionInviteError = RevokeOperatorInstitutionInviteErrors[keyof RevokeOperatorInstitutionInviteErrors];
+
+export type RevokeOperatorInstitutionInviteResponses = {
+    /**
+     * Invitation revoked or exact replay returned.
+     */
+    200: OperatorInstitutionInviteLifecycleCommandResponse;
+};
+
+export type RevokeOperatorInstitutionInviteResponse = RevokeOperatorInstitutionInviteResponses[keyof RevokeOperatorInstitutionInviteResponses];
+
+export type ListOperatorRolesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'retired';
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/roles';
+};
+
+export type ListOperatorRolesErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorRolesError = ListOperatorRolesErrors[keyof ListOperatorRolesErrors];
+
+export type ListOperatorRolesResponses = {
+    /**
+     * Bounded role page plus the current actor-held seeded delegation ceiling.
+     */
+    200: OperatorRoleListing;
+};
+
+export type ListOperatorRolesResponse = ListOperatorRolesResponses[keyof ListOperatorRolesResponses];
+
+export type CreateOperatorRoleData = {
+    body: CreateOperatorRoleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/roles';
+};
+
+export type CreateOperatorRoleErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type CreateOperatorRoleError = CreateOperatorRoleErrors[keyof CreateOperatorRoleErrors];
+
+export type CreateOperatorRoleResponses = {
+    /**
+     * Exact replay returned the original role.
+     */
+    200: OperatorRoleCommandResponse;
+    /**
+     * Custom role created.
+     */
+    201: OperatorRoleCommandResponse;
+};
+
+export type CreateOperatorRoleResponse = CreateOperatorRoleResponses[keyof CreateOperatorRoleResponses];
+
+export type UpdateOperatorRoleData = {
+    body: UpdateOperatorRoleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        role: Ulid;
+    };
+    query?: never;
+    url: '/operator/roles/{role}/updates';
+};
+
+export type UpdateOperatorRoleErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type UpdateOperatorRoleError = UpdateOperatorRoleErrors[keyof UpdateOperatorRoleErrors];
+
+export type UpdateOperatorRoleResponses = {
+    /**
+     * Role updated or exact replay returned.
+     */
+    200: OperatorRoleCommandResponse;
+};
+
+export type UpdateOperatorRoleResponse = UpdateOperatorRoleResponses[keyof UpdateOperatorRoleResponses];
+
+export type RetireOperatorRoleData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        role: Ulid;
+    };
+    query?: never;
+    url: '/operator/roles/{role}/retirements';
+};
+
+export type RetireOperatorRoleErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RetireOperatorRoleError = RetireOperatorRoleErrors[keyof RetireOperatorRoleErrors];
+
+export type RetireOperatorRoleResponses = {
+    /**
+     * Role retired or exact replay returned.
+     */
+    200: OperatorRoleCommandResponse;
+};
+
+export type RetireOperatorRoleResponse = RetireOperatorRoleResponses[keyof RetireOperatorRoleResponses];
+
+export type ListOperatorTrainerProfilesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'suspended' | 'ended';
+        display_name_prefix?: string;
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/trainer-profiles';
+};
+
+export type ListOperatorTrainerProfilesErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorTrainerProfilesError = ListOperatorTrainerProfilesErrors[keyof ListOperatorTrainerProfilesErrors];
+
+export type ListOperatorTrainerProfilesResponses = {
+    /**
+     * Bounded derived trainer profile page.
+     */
+    200: OperatorTrainerProfileListing;
+};
+
+export type ListOperatorTrainerProfilesResponse = ListOperatorTrainerProfilesResponses[keyof ListOperatorTrainerProfilesResponses];
+
+export type AssignOperatorTrainerCohortData = {
+    body: OperatorTrainerCohortRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/cohort-assignments';
+};
+
+export type AssignOperatorTrainerCohortErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type AssignOperatorTrainerCohortError = AssignOperatorTrainerCohortErrors[keyof AssignOperatorTrainerCohortErrors];
+
+export type AssignOperatorTrainerCohortResponses = {
+    /**
+     * Cohort assignment applied or exact replay returned.
+     */
+    200: OperatorTrainerProfileCommandResponse;
+};
+
+export type AssignOperatorTrainerCohortResponse = AssignOperatorTrainerCohortResponses[keyof AssignOperatorTrainerCohortResponses];
+
+export type RevokeOperatorTrainerCohortData = {
+    body: OperatorTrainerCohortRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/cohort-revocations';
+};
+
+export type RevokeOperatorTrainerCohortErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RevokeOperatorTrainerCohortError = RevokeOperatorTrainerCohortErrors[keyof RevokeOperatorTrainerCohortErrors];
+
+export type RevokeOperatorTrainerCohortResponses = {
+    /**
+     * Cohort assignment revoked or exact replay returned.
+     */
+    200: OperatorTrainerProfileCommandResponse;
+};
+
+export type RevokeOperatorTrainerCohortResponse = RevokeOperatorTrainerCohortResponses[keyof RevokeOperatorTrainerCohortResponses];
+
+export type ListOperatorAuthorityAppointmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: {
+        authority_kind?: 'english_academic_reviewer' | 'kannada_reviewer' | 'rights_confirmer';
+        state?: 'pending' | 'active' | 'surrendered' | 'revoked' | 'expired';
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/trainer-profiles/{membership}/authority-appointments';
+};
+
+export type ListOperatorAuthorityAppointmentsErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type ListOperatorAuthorityAppointmentsError = ListOperatorAuthorityAppointmentsErrors[keyof ListOperatorAuthorityAppointmentsErrors];
+
+export type ListOperatorAuthorityAppointmentsResponses = {
+    /**
+     * Bounded safe appointment page for a manager or exact appointee.
+     */
+    200: OperatorAuthorityAppointmentListing;
+};
+
+export type ListOperatorAuthorityAppointmentsResponse = ListOperatorAuthorityAppointmentsResponses[keyof ListOperatorAuthorityAppointmentsResponses];
+
+export type CreateOperatorAuthorityAppointmentData = {
+    body: CreateOperatorAuthorityAppointmentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/authority-appointments';
+};
+
+export type CreateOperatorAuthorityAppointmentErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type CreateOperatorAuthorityAppointmentError = CreateOperatorAuthorityAppointmentErrors[keyof CreateOperatorAuthorityAppointmentErrors];
+
+export type CreateOperatorAuthorityAppointmentResponses = {
+    /**
+     * Exact replay returned the original appointment.
+     */
+    200: OperatorAuthorityAppointmentCommandResponse;
+    /**
+     * Authority appointment created in its initial state.
+     */
+    201: OperatorAuthorityAppointmentCommandResponse;
+};
+
+export type CreateOperatorAuthorityAppointmentResponse = CreateOperatorAuthorityAppointmentResponses[keyof CreateOperatorAuthorityAppointmentResponses];
+
+export type GetOperatorAuthorityAppointmentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        membership: Ulid;
+        appointment: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}';
+};
+
+export type GetOperatorAuthorityAppointmentErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type GetOperatorAuthorityAppointmentError = GetOperatorAuthorityAppointmentErrors[keyof GetOperatorAuthorityAppointmentErrors];
+
+export type GetOperatorAuthorityAppointmentResponses = {
+    /**
+     * Private appointment detail for an authorized manager or exact appointee.
+     */
+    200: OperatorAuthorityAppointmentResponse;
+};
+
+export type GetOperatorAuthorityAppointmentResponse = GetOperatorAuthorityAppointmentResponses[keyof GetOperatorAuthorityAppointmentResponses];
+
+export type AcceptOperatorAuthorityAppointmentData = {
+    body: OperatorExpectedStateFingerprintRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+        appointment: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/acceptances';
+};
+
+export type AcceptOperatorAuthorityAppointmentErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type AcceptOperatorAuthorityAppointmentError = AcceptOperatorAuthorityAppointmentErrors[keyof AcceptOperatorAuthorityAppointmentErrors];
+
+export type AcceptOperatorAuthorityAppointmentResponses = {
+    /**
+     * Appointment accepted or exact replay returned.
+     */
+    200: OperatorAuthorityAppointmentCommandResponse;
+};
+
+export type AcceptOperatorAuthorityAppointmentResponse = AcceptOperatorAuthorityAppointmentResponses[keyof AcceptOperatorAuthorityAppointmentResponses];
+
+export type SurrenderOperatorAuthorityAppointmentData = {
+    body: OperatorExpectedStateFingerprintRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+        appointment: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/surrenders';
+};
+
+export type SurrenderOperatorAuthorityAppointmentErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type SurrenderOperatorAuthorityAppointmentError = SurrenderOperatorAuthorityAppointmentErrors[keyof SurrenderOperatorAuthorityAppointmentErrors];
+
+export type SurrenderOperatorAuthorityAppointmentResponses = {
+    /**
+     * Appointment surrendered or exact replay returned.
+     */
+    200: OperatorAuthorityAppointmentCommandResponse;
+};
+
+export type SurrenderOperatorAuthorityAppointmentResponse = SurrenderOperatorAuthorityAppointmentResponses[keyof SurrenderOperatorAuthorityAppointmentResponses];
+
+export type RevokeOperatorAuthorityAppointmentData = {
+    body: RevokeOperatorAuthorityAppointmentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+        appointment: Ulid;
+    };
+    query?: never;
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/revocations';
+};
+
+export type RevokeOperatorAuthorityAppointmentErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RevokeOperatorAuthorityAppointmentError = RevokeOperatorAuthorityAppointmentErrors[keyof RevokeOperatorAuthorityAppointmentErrors];
+
+export type RevokeOperatorAuthorityAppointmentResponses = {
+    /**
+     * Appointment revoked or exact replay returned.
+     */
+    200: OperatorAuthorityAppointmentCommandResponse;
+};
+
+export type RevokeOperatorAuthorityAppointmentResponse = RevokeOperatorAuthorityAppointmentResponses[keyof RevokeOperatorAuthorityAppointmentResponses];
+
+export type GetOperatorMembershipSessionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/membership-sessions/{membership}';
+};
+
+export type GetOperatorMembershipSessionsErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type GetOperatorMembershipSessionsError = GetOperatorMembershipSessionsErrors[keyof GetOperatorMembershipSessionsErrors];
+
+export type GetOperatorMembershipSessionsResponses = {
+    /**
+     * Count-only selected credential state.
+     */
+    200: OperatorMembershipSessionsResponse;
+};
+
+export type GetOperatorMembershipSessionsResponse = GetOperatorMembershipSessionsResponses[keyof GetOperatorMembershipSessionsResponses];
+
+export type RevokeOperatorMembershipSessionsData = {
+    body: OperatorExpectedStateFingerprintRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        membership: Ulid;
+    };
+    query?: never;
+    url: '/operator/membership-sessions/{membership}/revocations';
+};
+
+export type RevokeOperatorMembershipSessionsErrors = {
+    /**
+     * The organization-administration request could not be completed.
+     */
+    401: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    403: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    404: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    409: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    422: OrganizationAdministrationProblemDetails;
+    /**
+     * The organization-administration request could not be completed.
+     */
+    default: OrganizationAdministrationProblemDetails;
+};
+
+export type RevokeOperatorMembershipSessionsError = RevokeOperatorMembershipSessionsErrors[keyof RevokeOperatorMembershipSessionsErrors];
+
+export type RevokeOperatorMembershipSessionsResponses = {
+    /**
+     * Matching credentials revoked or exact replay returned.
+     */
+    200: OperatorMembershipSessionRevocationResponse;
+};
+
+export type RevokeOperatorMembershipSessionsResponse = RevokeOperatorMembershipSessionsResponses[keyof RevokeOperatorMembershipSessionsResponses];
+
+export type ListOperatorLearnersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'active' | 'suspended' | 'ended';
+        goal_key?: OperatorLearnerGoalKey;
+        cohort_id?: Ulid;
+        q?: string;
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/learners';
+};
+
+export type ListOperatorLearnersErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ListOperatorLearnersError = ListOperatorLearnersErrors[keyof ListOperatorLearnersErrors];
+
+export type ListOperatorLearnersResponses = {
+    /**
+     * Bounded learner page with optional authorized cohort choices.
+     */
+    200: OperatorLearnerListing;
+};
+
+export type ListOperatorLearnersResponse = ListOperatorLearnersResponses[keyof ListOperatorLearnersResponses];
+
+export type GetOperatorLearnerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: never;
+    url: '/operator/learners/{learner}';
+};
+
+export type GetOperatorLearnerErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type GetOperatorLearnerError = GetOperatorLearnerErrors[keyof GetOperatorLearnerErrors];
+
+export type GetOperatorLearnerResponses = {
+    /**
+     * Safe learner projection.
+     */
+    200: OperatorLearnerResponse;
+};
+
+export type GetOperatorLearnerResponse = GetOperatorLearnerResponses[keyof GetOperatorLearnerResponses];
+
+export type CorrectOperatorLearnerGoalData = {
+    body: CorrectOperatorLearnerGoalRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: never;
+    url: '/operator/learners/{learner}/goal-corrections';
+};
+
+export type CorrectOperatorLearnerGoalErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type CorrectOperatorLearnerGoalError = CorrectOperatorLearnerGoalErrors[keyof CorrectOperatorLearnerGoalErrors];
+
+export type CorrectOperatorLearnerGoalResponses = {
+    /**
+     * Correction appended or exact replay returned.
+     */
+    200: OperatorLearnerCommandResponse;
+};
+
+export type CorrectOperatorLearnerGoalResponse = CorrectOperatorLearnerGoalResponses[keyof CorrectOperatorLearnerGoalResponses];
+
+export type ListOperatorLearnerEnrollmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: {
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/learners/{learner}/enrollments';
+};
+
+export type ListOperatorLearnerEnrollmentsErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ListOperatorLearnerEnrollmentsError = ListOperatorLearnerEnrollmentsErrors[keyof ListOperatorLearnerEnrollmentsErrors];
+
+export type ListOperatorLearnerEnrollmentsResponses = {
+    /**
+     * Bounded enrollment-history page; trainer summaries are permission-shaped.
+     */
+    200: OperatorLearnerEnrollmentListing;
+};
+
+export type ListOperatorLearnerEnrollmentsResponse = ListOperatorLearnerEnrollmentsResponses[keyof ListOperatorLearnerEnrollmentsResponses];
+
+export type CreateOperatorLearnerEnrollmentData = {
+    body: CreateOperatorLearnerEnrollmentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: never;
+    url: '/operator/learners/{learner}/enrollments';
+};
+
+export type CreateOperatorLearnerEnrollmentErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type CreateOperatorLearnerEnrollmentError = CreateOperatorLearnerEnrollmentErrors[keyof CreateOperatorLearnerEnrollmentErrors];
+
+export type CreateOperatorLearnerEnrollmentResponses = {
+    /**
+     * Exact replay returned the created enrollment.
+     */
+    200: OperatorLearnerEnrollmentCommandResponse;
+    /**
+     * Pending enrollment created.
+     */
+    201: OperatorLearnerEnrollmentCommandResponse;
+};
+
+export type CreateOperatorLearnerEnrollmentResponse = CreateOperatorLearnerEnrollmentResponses[keyof CreateOperatorLearnerEnrollmentResponses];
+
+export type SuspendOperatorLearnerData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: never;
+    url: '/operator/learners/{learner}/suspensions';
+};
+
+export type SuspendOperatorLearnerErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type SuspendOperatorLearnerError = SuspendOperatorLearnerErrors[keyof SuspendOperatorLearnerErrors];
+
+export type SuspendOperatorLearnerResponses = {
+    /**
+     * Learner suspended or exact replay returned; evidence and enrollments are retained.
+     */
+    200: OperatorLearnerCommandResponse;
+};
+
+export type SuspendOperatorLearnerResponse = SuspendOperatorLearnerResponses[keyof SuspendOperatorLearnerResponses];
+
+export type ReactivateOperatorLearnerData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        learner: Ulid;
+    };
+    query?: never;
+    url: '/operator/learners/{learner}/reactivations';
+};
+
+export type ReactivateOperatorLearnerErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ReactivateOperatorLearnerError = ReactivateOperatorLearnerErrors[keyof ReactivateOperatorLearnerErrors];
+
+export type ReactivateOperatorLearnerResponses = {
+    /**
+     * Learner reactivated or exact replay returned; no credential or enrollment state is restored.
+     */
+    200: OperatorLearnerCommandResponse;
+};
+
+export type ReactivateOperatorLearnerResponse = ReactivateOperatorLearnerResponses[keyof ReactivateOperatorLearnerResponses];
+
+export type ListOperatorLearnerInvitationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        status?: 'pending' | 'accepted' | 'revoked' | 'expired';
+        limit?: number;
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/learner-invitations';
+};
+
+export type ListOperatorLearnerInvitationsErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ListOperatorLearnerInvitationsError = ListOperatorLearnerInvitationsErrors[keyof ListOperatorLearnerInvitationsErrors];
+
+export type ListOperatorLearnerInvitationsResponses = {
+    /**
+     * Bounded invitation page plus active safe role and cohort choices.
+     */
+    200: OperatorLearnerInvitationListing;
+};
+
+export type ListOperatorLearnerInvitationsResponse = ListOperatorLearnerInvitationsResponses[keyof ListOperatorLearnerInvitationsResponses];
+
+export type IssueOperatorLearnerInvitationData = {
+    body: IssueOperatorLearnerInvitationRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/learner-invitations';
+};
+
+export type IssueOperatorLearnerInvitationErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type IssueOperatorLearnerInvitationError = IssueOperatorLearnerInvitationErrors[keyof IssueOperatorLearnerInvitationErrors];
+
+export type IssueOperatorLearnerInvitationResponses = {
+    /**
+     * Exact replay; the code is unrecoverable and activation_code is null.
+     */
+    200: OperatorLearnerInvitationCommandResponse;
+    /**
+     * Invitation issued; the activation code is returned only here.
+     */
+    201: OperatorLearnerInvitationCommandResponse;
+};
+
+export type IssueOperatorLearnerInvitationResponse = IssueOperatorLearnerInvitationResponses[keyof IssueOperatorLearnerInvitationResponses];
+
+export type RevokeOperatorLearnerInvitationData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        invitation: Ulid;
+    };
+    query?: never;
+    url: '/operator/learner-invitations/{invitation}/revocations';
+};
+
+export type RevokeOperatorLearnerInvitationErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type RevokeOperatorLearnerInvitationError = RevokeOperatorLearnerInvitationErrors[keyof RevokeOperatorLearnerInvitationErrors];
+
+export type RevokeOperatorLearnerInvitationResponses = {
+    /**
+     * Learner invitation revoked or exact replay returned.
+     */
+    200: OperatorLearnerInvitationLifecycleCommandResponse;
+};
+
+export type RevokeOperatorLearnerInvitationResponse = RevokeOperatorLearnerInvitationResponses[keyof RevokeOperatorLearnerInvitationResponses];
+
+export type ChangeOperatorLearnerEnrollmentCohortData = {
+    body: ChangeOperatorLearnerEnrollmentCohortRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        enrollment: Ulid;
+    };
+    query?: never;
+    url: '/operator/enrollments/{enrollment}/cohort-changes';
+};
+
+export type ChangeOperatorLearnerEnrollmentCohortErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ChangeOperatorLearnerEnrollmentCohortError = ChangeOperatorLearnerEnrollmentCohortErrors[keyof ChangeOperatorLearnerEnrollmentCohortErrors];
+
+export type ChangeOperatorLearnerEnrollmentCohortResponses = {
+    /**
+     * Cohort relationship changed or exact replay returned.
+     */
+    200: OperatorLearnerEnrollmentCommandResponse;
+};
+
+export type ChangeOperatorLearnerEnrollmentCohortResponse = ChangeOperatorLearnerEnrollmentCohortResponses[keyof ChangeOperatorLearnerEnrollmentCohortResponses];
+
+export type ActivateOperatorLearnerEnrollmentCurriculumData = {
+    body: ActivateOperatorLearnerEnrollmentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        enrollment: Ulid;
+    };
+    query?: never;
+    url: '/operator/enrollments/{enrollment}/curriculum-activations';
+};
+
+export type ActivateOperatorLearnerEnrollmentCurriculumErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ActivateOperatorLearnerEnrollmentCurriculumError = ActivateOperatorLearnerEnrollmentCurriculumErrors[keyof ActivateOperatorLearnerEnrollmentCurriculumErrors];
+
+export type ActivateOperatorLearnerEnrollmentCurriculumResponses = {
+    /**
+     * Curriculum activated or exact replay returned.
+     */
+    200: OperatorLearnerEnrollmentCommandResponse;
+};
+
+export type ActivateOperatorLearnerEnrollmentCurriculumResponse = ActivateOperatorLearnerEnrollmentCurriculumResponses[keyof ActivateOperatorLearnerEnrollmentCurriculumResponses];
+
+export type WithdrawOperatorLearnerEnrollmentData = {
+    body: OperatorExpectedVersionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        enrollment: Ulid;
+    };
+    query?: never;
+    url: '/operator/enrollments/{enrollment}/withdrawals';
+};
+
+export type WithdrawOperatorLearnerEnrollmentErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    422: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type WithdrawOperatorLearnerEnrollmentError = WithdrawOperatorLearnerEnrollmentErrors[keyof WithdrawOperatorLearnerEnrollmentErrors];
+
+export type WithdrawOperatorLearnerEnrollmentResponses = {
+    /**
+     * Enrollment withdrawn or exact replay returned.
+     */
+    200: OperatorLearnerEnrollmentCommandResponse;
+};
+
+export type WithdrawOperatorLearnerEnrollmentResponse = WithdrawOperatorLearnerEnrollmentResponses[keyof WithdrawOperatorLearnerEnrollmentResponses];
+
+export type ListOperatorContentWorkspacesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/content/workspaces';
+};
+
+export type ListOperatorContentWorkspacesErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type ListOperatorContentWorkspacesError = ListOperatorContentWorkspacesErrors[keyof ListOperatorContentWorkspacesErrors];
+
+export type ListOperatorContentWorkspacesResponses = {
+    /**
+     * Bounded content-workspace page.
+     */
+    200: OperatorContentWorkspaceListing;
+};
+
+export type ListOperatorContentWorkspacesResponse = ListOperatorContentWorkspacesResponses[keyof ListOperatorContentWorkspacesResponses];
+
+export type GetOperatorContentWorkspaceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/workspaces/{curriculumVersion}';
+};
+
+export type GetOperatorContentWorkspaceErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type GetOperatorContentWorkspaceError = GetOperatorContentWorkspaceErrors[keyof GetOperatorContentWorkspaceErrors];
+
+export type GetOperatorContentWorkspaceResponses = {
+    /**
+     * Exact graph, document heads, blockers and actions.
+     */
+    200: OperatorContentWorkspaceResponse;
+};
+
+export type GetOperatorContentWorkspaceResponse = GetOperatorContentWorkspaceResponses[keyof GetOperatorContentWorkspaceResponses];
+
+export type PreviewOperatorContentDocumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query: {
+        document_key: OperatorContentKey;
+    };
+    url: '/operator/content/workspaces/{curriculumVersion}/preview';
+};
+
+export type PreviewOperatorContentDocumentErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type PreviewOperatorContentDocumentError = PreviewOperatorContentDocumentErrors[keyof PreviewOperatorContentDocumentErrors];
+
+export type PreviewOperatorContentDocumentResponses = {
+    /**
+     * Private exact-head preview.
+     */
+    200: OperatorContentPreviewResponse;
+};
+
+export type PreviewOperatorContentDocumentResponse = PreviewOperatorContentDocumentResponses[keyof PreviewOperatorContentDocumentResponses];
+
+export type ListOperatorContentWorkspaceHistoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: {
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/content/workspaces/{curriculumVersion}/history';
+};
+
+export type ListOperatorContentWorkspaceHistoryErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type ListOperatorContentWorkspaceHistoryError = ListOperatorContentWorkspaceHistoryErrors[keyof ListOperatorContentWorkspaceHistoryErrors];
+
+export type ListOperatorContentWorkspaceHistoryResponses = {
+    /**
+     * Bounded workspace, review and publication timeline.
+     */
+    200: OperatorContentHistoryListing;
+};
+
+export type ListOperatorContentWorkspaceHistoryResponse = ListOperatorContentWorkspaceHistoryResponses[keyof ListOperatorContentWorkspaceHistoryResponses];
+
+export type ListOperatorContentReviewQueueData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query: {
+        queue: 'structure' | 'english' | 'kannada' | 'readiness';
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+    };
+    url: '/operator/content/review-queues';
+};
+
+export type ListOperatorContentReviewQueueErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type ListOperatorContentReviewQueueError = ListOperatorContentReviewQueueErrors[keyof ListOperatorContentReviewQueueErrors];
+
+export type ListOperatorContentReviewQueueResponses = {
+    /**
+     * Bounded exact-head review or readiness queue.
+     */
+    200: OperatorContentReviewQueueListing;
+};
+
+export type ListOperatorContentReviewQueueResponse = ListOperatorContentReviewQueueResponses[keyof ListOperatorContentReviewQueueResponses];
+
+export type CreateOperatorContentProgramData = {
+    body: CreateOperatorContentProgramRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/programs';
+};
+
+export type CreateOperatorContentProgramErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type CreateOperatorContentProgramError = CreateOperatorContentProgramErrors[keyof CreateOperatorContentProgramErrors];
+
+export type CreateOperatorContentProgramResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type CreateOperatorContentProgramResponse = CreateOperatorContentProgramResponses[keyof CreateOperatorContentProgramResponses];
+
+export type CorrectOperatorContentProgramDescriptorData = {
+    body: CorrectOperatorContentProgramDescriptorRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        program: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/programs/{program}/descriptor-corrections';
+};
+
+export type CorrectOperatorContentProgramDescriptorErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type CorrectOperatorContentProgramDescriptorError = CorrectOperatorContentProgramDescriptorErrors[keyof CorrectOperatorContentProgramDescriptorErrors];
+
+export type CorrectOperatorContentProgramDescriptorResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type CorrectOperatorContentProgramDescriptorResponse = CorrectOperatorContentProgramDescriptorResponses[keyof CorrectOperatorContentProgramDescriptorResponses];
+
+export type CreateOperatorContentSuccessorData = {
+    body: CreateOperatorContentSuccessorRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/versions/{curriculumVersion}/successors';
+};
+
+export type CreateOperatorContentSuccessorErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type CreateOperatorContentSuccessorError = CreateOperatorContentSuccessorErrors[keyof CreateOperatorContentSuccessorErrors];
+
+export type CreateOperatorContentSuccessorResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type CreateOperatorContentSuccessorResponse = CreateOperatorContentSuccessorResponses[keyof CreateOperatorContentSuccessorResponses];
+
+export type SaveOperatorContentGraphRevisionData = {
+    body: SaveOperatorContentGraphRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/workspaces/{curriculumVersion}/graph-revisions';
+};
+
+export type SaveOperatorContentGraphRevisionErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type SaveOperatorContentGraphRevisionError = SaveOperatorContentGraphRevisionErrors[keyof SaveOperatorContentGraphRevisionErrors];
+
+export type SaveOperatorContentGraphRevisionResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type SaveOperatorContentGraphRevisionResponse = SaveOperatorContentGraphRevisionResponses[keyof SaveOperatorContentGraphRevisionResponses];
+
+export type SubmitOperatorContentStructureReviewData = {
+    body: VersionedOperatorContentWorkspaceRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/workspaces/{curriculumVersion}/review-submissions';
+};
+
+export type SubmitOperatorContentStructureReviewErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type SubmitOperatorContentStructureReviewError = SubmitOperatorContentStructureReviewErrors[keyof SubmitOperatorContentStructureReviewErrors];
+
+export type SubmitOperatorContentStructureReviewResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type SubmitOperatorContentStructureReviewResponse = SubmitOperatorContentStructureReviewResponses[keyof SubmitOperatorContentStructureReviewResponses];
+
+export type AbandonOperatorContentWorkspaceData = {
+    body: AbandonOperatorContentWorkspaceRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/workspaces/{curriculumVersion}/abandonments';
+};
+
+export type AbandonOperatorContentWorkspaceErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type AbandonOperatorContentWorkspaceError = AbandonOperatorContentWorkspaceErrors[keyof AbandonOperatorContentWorkspaceErrors];
+
+export type AbandonOperatorContentWorkspaceResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type AbandonOperatorContentWorkspaceResponse = AbandonOperatorContentWorkspaceResponses[keyof AbandonOperatorContentWorkspaceResponses];
+
+export type CreateOperatorContentDocumentData = {
+    body: CreateOperatorContentDocumentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Organization-owned curriculum-version ULID.
+         */
+        curriculumVersion: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/workspaces/{curriculumVersion}/documents';
+};
+
+export type CreateOperatorContentDocumentErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type CreateOperatorContentDocumentError = CreateOperatorContentDocumentErrors[keyof CreateOperatorContentDocumentErrors];
+
+export type CreateOperatorContentDocumentResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type CreateOperatorContentDocumentResponse = CreateOperatorContentDocumentResponses[keyof CreateOperatorContentDocumentResponses];
+
+export type AppendOperatorEnglishContentRevisionData = {
+    body: AppendOperatorEnglishContentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        document: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/documents/{document}/english-revisions';
+};
+
+export type AppendOperatorEnglishContentRevisionErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type AppendOperatorEnglishContentRevisionError = AppendOperatorEnglishContentRevisionErrors[keyof AppendOperatorEnglishContentRevisionErrors];
+
+export type AppendOperatorEnglishContentRevisionResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type AppendOperatorEnglishContentRevisionResponse = AppendOperatorEnglishContentRevisionResponses[keyof AppendOperatorEnglishContentRevisionResponses];
+
+export type AppendOperatorKannadaContentVariantData = {
+    body: AppendOperatorKannadaContentRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        revision: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/revisions/{revision}/kannada-variants';
+};
+
+export type AppendOperatorKannadaContentVariantErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type AppendOperatorKannadaContentVariantError = AppendOperatorKannadaContentVariantErrors[keyof AppendOperatorKannadaContentVariantErrors];
+
+export type AppendOperatorKannadaContentVariantResponses = {
+    /**
+     * Exact actor, operation, target and body replay returned.
+     */
+    200: OperatorContentWorkspaceCommandResult;
+    /**
+     * Governed append-only content command completed.
+     */
+    201: OperatorContentWorkspaceCommandResult;
+};
+
+export type AppendOperatorKannadaContentVariantResponse = AppendOperatorKannadaContentVariantResponses[keyof AppendOperatorKannadaContentVariantResponses];
+
+export type RecordOperatorStructureContentReviewData = {
+    body: RecordOperatorStructureContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/reviews/structure';
+};
+
+export type RecordOperatorStructureContentReviewErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type RecordOperatorStructureContentReviewError = RecordOperatorStructureContentReviewErrors[keyof RecordOperatorStructureContentReviewErrors];
+
+export type RecordOperatorStructureContentReviewResponses = {
+    /**
+     * Structure decision recorded.
+     */
+    201: OperatorContentGovernanceResult;
+};
+
+export type RecordOperatorStructureContentReviewResponse = RecordOperatorStructureContentReviewResponses[keyof RecordOperatorStructureContentReviewResponses];
+
+export type WithdrawOperatorContentReviewData = {
+    body: WithdrawOperatorContentReviewRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        review: Ulid;
+    };
+    query?: never;
+    url: '/operator/content/reviews/{review}/withdrawals';
+};
+
+export type WithdrawOperatorContentReviewErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type WithdrawOperatorContentReviewError = WithdrawOperatorContentReviewErrors[keyof WithdrawOperatorContentReviewErrors];
+
+export type WithdrawOperatorContentReviewResponses = {
+    /**
+     * Withdrawal recorded.
+     */
+    201: OperatorContentGovernanceResult;
+};
+
+export type WithdrawOperatorContentReviewResponse = WithdrawOperatorContentReviewResponses[keyof WithdrawOperatorContentReviewResponses];
+
+export type ScheduleOperatorContentPublicationData = {
+    body: ScheduleOperatorContentPublicationRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publication-schedules';
+};
+
+export type ScheduleOperatorContentPublicationErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type ScheduleOperatorContentPublicationError = ScheduleOperatorContentPublicationErrors[keyof ScheduleOperatorContentPublicationErrors];
+
+export type ScheduleOperatorContentPublicationResponses = {
+    /**
+     * Exact publication-lifecycle command replay returned.
+     */
+    200: OperatorContentPublicationLifecycleResult;
+    /**
+     * Publication-lifecycle command completed.
+     */
+    201: OperatorContentPublicationLifecycleResult;
+};
+
+export type ScheduleOperatorContentPublicationResponse = ScheduleOperatorContentPublicationResponses[keyof ScheduleOperatorContentPublicationResponses];
+
+export type ActivateOperatorContentPublicationData = {
+    body: ActivateOperatorContentPublicationRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publication-activations';
+};
+
+export type ActivateOperatorContentPublicationErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type ActivateOperatorContentPublicationError = ActivateOperatorContentPublicationErrors[keyof ActivateOperatorContentPublicationErrors];
+
+export type ActivateOperatorContentPublicationResponses = {
+    /**
+     * Exact publication-lifecycle command replay returned.
+     */
+    200: OperatorContentPublicationLifecycleResult;
+    /**
+     * Publication-lifecycle command completed.
+     */
+    201: OperatorContentPublicationLifecycleResult;
+};
+
+export type ActivateOperatorContentPublicationResponse = ActivateOperatorContentPublicationResponses[keyof ActivateOperatorContentPublicationResponses];
+
+export type CancelOperatorContentPublicationScheduleData = {
+    body: CancelOperatorContentPublicationScheduleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publication-schedule-cancellations';
+};
+
+export type CancelOperatorContentPublicationScheduleErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type CancelOperatorContentPublicationScheduleError = CancelOperatorContentPublicationScheduleErrors[keyof CancelOperatorContentPublicationScheduleErrors];
+
+export type CancelOperatorContentPublicationScheduleResponses = {
+    /**
+     * Exact publication-lifecycle command replay returned.
+     */
+    200: OperatorContentPublicationLifecycleResult;
+    /**
+     * Publication-lifecycle command completed.
+     */
+    201: OperatorContentPublicationLifecycleResult;
+};
+
+export type CancelOperatorContentPublicationScheduleResponse = CancelOperatorContentPublicationScheduleResponses[keyof CancelOperatorContentPublicationScheduleResponses];
+
+export type RetireOperatorContentPublicationData = {
+    body: RetireOperatorContentPublicationRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/content/publication-retirements';
+};
+
+export type RetireOperatorContentPublicationErrors = {
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    401: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    403: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    404: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    409: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    422: ContentWorkspaceProblemDetails;
+    /**
+     * The governed content-workspace request could not be completed.
+     */
+    default: ContentWorkspaceProblemDetails;
+};
+
+export type RetireOperatorContentPublicationError = RetireOperatorContentPublicationErrors[keyof RetireOperatorContentPublicationErrors];
+
+export type RetireOperatorContentPublicationResponses = {
+    /**
+     * Exact publication-lifecycle command replay returned.
+     */
+    200: OperatorContentPublicationLifecycleResult;
+    /**
+     * Publication-lifecycle command completed.
+     */
+    201: OperatorContentPublicationLifecycleResult;
+};
+
+export type RetireOperatorContentPublicationResponse = RetireOperatorContentPublicationResponses[keyof RetireOperatorContentPublicationResponses];
+
 export type ListOperatorContentDraftsData = {
     body?: never;
     headers?: {
@@ -2869,6 +9309,10 @@ export type ListOperatorContentDraftsErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -2901,7 +9345,16 @@ export type ListOperatorContentPublicationsData = {
         'X-Correlation-ID'?: string;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+    };
     url: '/operator/content/publications';
 };
 
@@ -2910,6 +9363,10 @@ export type ListOperatorContentPublicationsErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -2955,6 +9412,10 @@ export type PublishOperatorCurriculumErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3015,6 +9476,10 @@ export type RecordOperatorEnglishContentReviewErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3065,6 +9530,10 @@ export type RecordOperatorKannadaContentReviewErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3121,6 +9590,10 @@ export type RollbackOperatorCurriculumErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3151,6 +9624,1247 @@ export type RollbackOperatorCurriculumResponses = {
 
 export type RollbackOperatorCurriculumResponse = RollbackOperatorCurriculumResponses[keyof RollbackOperatorCurriculumResponses];
 
+export type GetOperatorMediaManifestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/media/manifest';
+};
+
+export type GetOperatorMediaManifestErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type GetOperatorMediaManifestError = GetOperatorMediaManifestErrors[keyof GetOperatorMediaManifestErrors];
+
+export type GetOperatorMediaManifestResponses = {
+    /**
+     * Current Media Library policy and semantic actions.
+     */
+    200: OperatorMediaManifest;
+};
+
+export type GetOperatorMediaManifestResponse = GetOperatorMediaManifestResponses[keyof GetOperatorMediaManifestResponses];
+
+export type ListOperatorMediaAssetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+        kind?: OperatorMediaAssetKind;
+        state?: OperatorMediaAssetState;
+    };
+    url: '/operator/media/assets';
+};
+
+export type ListOperatorMediaAssetsErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type ListOperatorMediaAssetsError = ListOperatorMediaAssetsErrors[keyof ListOperatorMediaAssetsErrors];
+
+export type ListOperatorMediaAssetsResponses = {
+    /**
+     * Bounded accepted-asset page.
+     */
+    200: OperatorMediaAssetListing;
+};
+
+export type ListOperatorMediaAssetsResponse = ListOperatorMediaAssetsResponses[keyof ListOperatorMediaAssetsResponses];
+
+export type GetOperatorMediaAssetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}';
+};
+
+export type GetOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type GetOperatorMediaAssetError = GetOperatorMediaAssetErrors[keyof GetOperatorMediaAssetErrors];
+
+export type GetOperatorMediaAssetResponses = {
+    /**
+     * Exact governed media asset detail.
+     */
+    200: OperatorMediaAssetResponse;
+};
+
+export type GetOperatorMediaAssetResponse = GetOperatorMediaAssetResponses[keyof GetOperatorMediaAssetResponses];
+
+export type PreviewOperatorMediaAssetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Optional single RFC byte range. Multiple or malformed ranges are
+         * ignored and receive the complete representation.
+         *
+         */
+        Range?: string;
+        /**
+         * Strong lesson-video ETag returned by an earlier response. The range
+         * is honored only on an exact strong match; weak tags and dates receive
+         * the complete representation.
+         *
+         */
+        'If-Range'?: string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/preview';
+};
+
+export type PreviewOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    416: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type PreviewOperatorMediaAssetError = PreviewOperatorMediaAssetErrors[keyof PreviewOperatorMediaAssetErrors];
+
+export type PreviewOperatorMediaAssetResponses = {
+    /**
+     * Hash-verified private audio or complete MP4 object.
+     */
+    200: Blob | File;
+    /**
+     * One satisfiable range from verified private long-form lesson media.
+     */
+    206: Blob | File;
+};
+
+export type PreviewOperatorMediaAssetResponse = PreviewOperatorMediaAssetResponses[keyof PreviewOperatorMediaAssetResponses];
+
+export type ListOperatorMediaUploadsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Maximum number of tenant-bound rows to return.
+         */
+        limit?: number;
+        /**
+         * Encrypted continuation bound to tenant, purpose and filters.
+         */
+        cursor?: OperatorCursor;
+        state?: OperatorMediaUploadState;
+    };
+    url: '/operator/media/uploads';
+};
+
+export type ListOperatorMediaUploadsErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type ListOperatorMediaUploadsError = ListOperatorMediaUploadsErrors[keyof ListOperatorMediaUploadsErrors];
+
+export type ListOperatorMediaUploadsResponses = {
+    /**
+     * Bounded private upload page.
+     */
+    200: OperatorMediaUploadListing;
+};
+
+export type ListOperatorMediaUploadsResponse = ListOperatorMediaUploadsResponses[keyof ListOperatorMediaUploadsResponses];
+
+export type StartOperatorMediaUploadData = {
+    body: StartOperatorMediaUploadRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/media/uploads';
+};
+
+export type StartOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type StartOperatorMediaUploadError = StartOperatorMediaUploadErrors[keyof StartOperatorMediaUploadErrors];
+
+export type StartOperatorMediaUploadResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type StartOperatorMediaUploadResponse = StartOperatorMediaUploadResponses[keyof StartOperatorMediaUploadResponses];
+
+export type GetOperatorMediaUploadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}';
+};
+
+export type GetOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type GetOperatorMediaUploadError = GetOperatorMediaUploadErrors[keyof GetOperatorMediaUploadErrors];
+
+export type GetOperatorMediaUploadResponses = {
+    /**
+     * Exact private upload detail.
+     */
+    200: OperatorMediaUploadResponse;
+};
+
+export type GetOperatorMediaUploadResponse = GetOperatorMediaUploadResponses[keyof GetOperatorMediaUploadResponses];
+
+export type PreviewOperatorMediaUploadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Optional single RFC byte range. Multiple or malformed ranges are
+         * ignored and receive the complete representation.
+         *
+         */
+        Range?: string;
+        /**
+         * Strong lesson-video ETag returned by an earlier response. The range
+         * is honored only on an exact strong match; weak tags and dates receive
+         * the complete representation.
+         *
+         */
+        'If-Range'?: string;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}/preview';
+};
+
+export type PreviewOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    416: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type PreviewOperatorMediaUploadError = PreviewOperatorMediaUploadErrors[keyof PreviewOperatorMediaUploadErrors];
+
+export type PreviewOperatorMediaUploadResponses = {
+    /**
+     * Hash-verified private audio or complete MP4 object.
+     */
+    200: Blob | File;
+    /**
+     * One satisfiable range from verified quarantine long-form lesson media.
+     */
+    206: Blob | File;
+};
+
+export type PreviewOperatorMediaUploadResponse = PreviewOperatorMediaUploadResponses[keyof PreviewOperatorMediaUploadResponses];
+
+export type StoreOperatorMediaUploadPartData = {
+    body: Blob | File;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+        /**
+         * One-based exact sequential upload-part number.
+         */
+        'Media-Part-Number': number;
+        /**
+         * Lowercase SHA-256 of the exact binary request body.
+         */
+        'Media-Part-SHA256': Sha256;
+        /**
+         * Expected optimistic upload version before accepting this part.
+         */
+        'Media-Upload-Version': number;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}/parts';
+};
+
+export type StoreOperatorMediaUploadPartErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type StoreOperatorMediaUploadPartError = StoreOperatorMediaUploadPartErrors[keyof StoreOperatorMediaUploadPartErrors];
+
+export type StoreOperatorMediaUploadPartResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type StoreOperatorMediaUploadPartResponse = StoreOperatorMediaUploadPartResponses[keyof StoreOperatorMediaUploadPartResponses];
+
+export type FinalizeOperatorMediaUploadData = {
+    body: FinalizeOperatorMediaUploadRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}/finalizations';
+};
+
+export type FinalizeOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type FinalizeOperatorMediaUploadError = FinalizeOperatorMediaUploadErrors[keyof FinalizeOperatorMediaUploadErrors];
+
+export type FinalizeOperatorMediaUploadResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type FinalizeOperatorMediaUploadResponse = FinalizeOperatorMediaUploadResponses[keyof FinalizeOperatorMediaUploadResponses];
+
+export type AcceptOperatorMediaUploadData = {
+    body: DecideOperatorMediaUploadRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}/acceptances';
+};
+
+export type AcceptOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type AcceptOperatorMediaUploadError = AcceptOperatorMediaUploadErrors[keyof AcceptOperatorMediaUploadErrors];
+
+export type AcceptOperatorMediaUploadResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type AcceptOperatorMediaUploadResponse = AcceptOperatorMediaUploadResponses[keyof AcceptOperatorMediaUploadResponses];
+
+export type RejectOperatorMediaUploadData = {
+    body: RejectOperatorMediaUploadRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization private media-upload ULID.
+         */
+        upload: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/uploads/{upload}/rejections';
+};
+
+export type RejectOperatorMediaUploadErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type RejectOperatorMediaUploadError = RejectOperatorMediaUploadErrors[keyof RejectOperatorMediaUploadErrors];
+
+export type RejectOperatorMediaUploadResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type RejectOperatorMediaUploadResponse = RejectOperatorMediaUploadResponses[keyof RejectOperatorMediaUploadResponses];
+
+export type AdoptOperatorMediaAssetData = {
+    body: AdoptOperatorMediaAssetRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/adoptions';
+};
+
+export type AdoptOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type AdoptOperatorMediaAssetError = AdoptOperatorMediaAssetErrors[keyof AdoptOperatorMediaAssetErrors];
+
+export type AdoptOperatorMediaAssetResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type AdoptOperatorMediaAssetResponse = AdoptOperatorMediaAssetResponses[keyof AdoptOperatorMediaAssetResponses];
+
+export type AppendOperatorMediaMetadataData = {
+    body: AppendOperatorMediaMetadataRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/metadata-revisions';
+};
+
+export type AppendOperatorMediaMetadataErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type AppendOperatorMediaMetadataError = AppendOperatorMediaMetadataErrors[keyof AppendOperatorMediaMetadataErrors];
+
+export type AppendOperatorMediaMetadataResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type AppendOperatorMediaMetadataResponse = AppendOperatorMediaMetadataResponses[keyof AppendOperatorMediaMetadataResponses];
+
+export type AppendOperatorMediaKannadaVariantData = {
+    body: AppendOperatorMediaKannadaRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Exact active-organization English media-metadata revision ULID.
+         */
+        revision: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/metadata-revisions/{revision}/kannada-variants';
+};
+
+export type AppendOperatorMediaKannadaVariantErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type AppendOperatorMediaKannadaVariantError = AppendOperatorMediaKannadaVariantErrors[keyof AppendOperatorMediaKannadaVariantErrors];
+
+export type AppendOperatorMediaKannadaVariantResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type AppendOperatorMediaKannadaVariantResponse = AppendOperatorMediaKannadaVariantResponses[keyof AppendOperatorMediaKannadaVariantResponses];
+
+export type ReviewOperatorMediaMetadataData = {
+    body: ReviewOperatorMediaMetadataRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/media/metadata-reviews';
+};
+
+export type ReviewOperatorMediaMetadataErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type ReviewOperatorMediaMetadataError = ReviewOperatorMediaMetadataErrors[keyof ReviewOperatorMediaMetadataErrors];
+
+export type ReviewOperatorMediaMetadataResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type ReviewOperatorMediaMetadataResponse = ReviewOperatorMediaMetadataResponses[keyof ReviewOperatorMediaMetadataResponses];
+
+export type DecideOperatorMediaRightsData = {
+    body: DecideOperatorMediaRightsRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/media/rights-decisions';
+};
+
+export type DecideOperatorMediaRightsErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type DecideOperatorMediaRightsError = DecideOperatorMediaRightsErrors[keyof DecideOperatorMediaRightsErrors];
+
+export type DecideOperatorMediaRightsResponses = {
+    /**
+     * Append-only rights decision recorded.
+     */
+    201: OperatorMediaRightsDecisionResult;
+};
+
+export type DecideOperatorMediaRightsResponse = DecideOperatorMediaRightsResponses[keyof DecideOperatorMediaRightsResponses];
+
+export type AttachOperatorMediaAssetData = {
+    body: AttachOperatorMediaRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/attachments';
+};
+
+export type AttachOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type AttachOperatorMediaAssetError = AttachOperatorMediaAssetErrors[keyof AttachOperatorMediaAssetErrors];
+
+export type AttachOperatorMediaAssetResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type AttachOperatorMediaAssetResponse = AttachOperatorMediaAssetResponses[keyof AttachOperatorMediaAssetResponses];
+
+export type ReplaceOperatorMediaAssetData = {
+    body: ReplaceOperatorMediaAssetRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/replacements';
+};
+
+export type ReplaceOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type ReplaceOperatorMediaAssetError = ReplaceOperatorMediaAssetErrors[keyof ReplaceOperatorMediaAssetErrors];
+
+export type ReplaceOperatorMediaAssetResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type ReplaceOperatorMediaAssetResponse = ReplaceOperatorMediaAssetResponses[keyof ReplaceOperatorMediaAssetResponses];
+
+export type RetireOperatorMediaAssetData = {
+    body: RetireOperatorMediaAssetRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Active-organization managed media-asset ULID.
+         */
+        asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/assets/{asset}/retirements';
+};
+
+export type RetireOperatorMediaAssetErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type RetireOperatorMediaAssetError = RetireOperatorMediaAssetErrors[keyof RetireOperatorMediaAssetErrors];
+
+export type RetireOperatorMediaAssetResponses = {
+    /**
+     * Exact actor, operation, target and request replay returned.
+     */
+    200: OperatorMediaCommandResult;
+    /**
+     * Governed private-media command completed.
+     */
+    201: OperatorMediaCommandResult;
+};
+
+export type RetireOperatorMediaAssetResponse = RetireOperatorMediaAssetResponses[keyof RetireOperatorMediaAssetResponses];
+
 export type ListOperatorAuditEventsData = {
     body?: never;
     headers?: {
@@ -3164,6 +10878,7 @@ export type ListOperatorAuditEventsData = {
     path?: never;
     query?: {
         limit?: number;
+        cursor?: OperatorCursor;
     };
     url: '/operator/audit-events';
 };
@@ -3173,6 +10888,10 @@ export type ListOperatorAuditEventsErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3221,6 +10940,10 @@ export type GetOperatorPilotAnalyticsErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3261,6 +10984,10 @@ export type ListOperatorSupportDiagnosticsErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3311,6 +11038,10 @@ export type CreateOperatorPrivacyExportErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3358,6 +11089,10 @@ export type GetOperatorPrivacyExportErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3369,7 +11104,7 @@ export type GetOperatorPrivacyExportError = GetOperatorPrivacyExportErrors[keyof
 
 export type GetOperatorPrivacyExportResponses = {
     /**
-     * Privacy export status and identifier summary.
+     * Privacy export status and versioned record inventory.
      */
     200: OperatorPrivacyExport;
 };
@@ -3402,6 +11137,10 @@ export type CreateOperatorPrivacyErasureErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3452,6 +11191,10 @@ export type GetOperatorPrivacyErasureErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -3469,3 +11212,115 @@ export type GetOperatorPrivacyErasureResponses = {
 };
 
 export type GetOperatorPrivacyErasureResponse = GetOperatorPrivacyErasureResponses[keyof GetOperatorPrivacyErasureResponses];
+
+export type GetOperatorMediaTranscriptionCandidateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        campaign: Ulid;
+        campaign_asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/candidate';
+};
+
+export type GetOperatorMediaTranscriptionCandidateErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type GetOperatorMediaTranscriptionCandidateError = GetOperatorMediaTranscriptionCandidateErrors[keyof GetOperatorMediaTranscriptionCandidateErrors];
+
+export type GetOperatorMediaTranscriptionCandidateResponses = {
+    /**
+     * Exact unexpired candidate and bounded phrase evidence.
+     */
+    200: OperatorMediaTranscriptionCandidate;
+};
+
+export type GetOperatorMediaTranscriptionCandidateResponse = GetOperatorMediaTranscriptionCandidateResponses[keyof GetOperatorMediaTranscriptionCandidateResponses];
+
+export type ReconcileOperatorMediaTranscriptionCandidateData = {
+    body: ReconcileOperatorMediaTranscriptionCandidateRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        campaign: Ulid;
+        campaign_asset: Ulid;
+    };
+    query?: never;
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/reconciliations';
+};
+
+export type ReconcileOperatorMediaTranscriptionCandidateErrors = {
+    /**
+     * The governed private-media request could not be completed.
+     */
+    401: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    403: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    404: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    409: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    422: MediaLibraryProblemDetails;
+    /**
+     * The governed private-media request could not be completed.
+     */
+    default: MediaLibraryProblemDetails;
+};
+
+export type ReconcileOperatorMediaTranscriptionCandidateError = ReconcileOperatorMediaTranscriptionCandidateErrors[keyof ReconcileOperatorMediaTranscriptionCandidateErrors];
+
+export type ReconcileOperatorMediaTranscriptionCandidateResponses = {
+    /**
+     * Exact reconciliation command replay returned.
+     */
+    200: OperatorMediaTranscriptionReconciliationResult;
+    /**
+     * Candidate reconciliation completed atomically.
+     */
+    201: OperatorMediaTranscriptionReconciliationResult;
+};
+
+export type ReconcileOperatorMediaTranscriptionCandidateResponse = ReconcileOperatorMediaTranscriptionCandidateResponses[keyof ReconcileOperatorMediaTranscriptionCandidateResponses];

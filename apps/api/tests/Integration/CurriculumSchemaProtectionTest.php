@@ -561,6 +561,50 @@ final class CurriculumSchemaProtectionTest extends TenancyIntegrationTestCase
     {
         self::assertSame(1, $this->programAppendOnlyTriggerCount());
 
+        $transcriptionMigration = require database_path(
+            'migrations/2026_08_10_000170_create_media_transcription_commissioning.php',
+        );
+        if (
+            ! $transcriptionMigration instanceof Migration
+            || ! method_exists($transcriptionMigration, 'down')
+        ) {
+            self::fail('The transcription commissioning migration must provide down().');
+        }
+        $transcriptionMigration->down();
+
+        $mediaMigration = require database_path(
+            'migrations/2026_08_09_000150_create_admin_media_library.php',
+        );
+        if (
+            ! $mediaMigration instanceof Migration
+            || ! method_exists($mediaMigration, 'down')
+        ) {
+            self::fail('The media library migration must provide down().');
+        }
+        $mediaMigration->down();
+
+        $contentWorkspaceMigration = require database_path(
+            'migrations/2026_08_09_000140_create_admin_content_workspace.php',
+        );
+        if (
+            ! $contentWorkspaceMigration instanceof Migration
+            || ! method_exists($contentWorkspaceMigration, 'down')
+        ) {
+            self::fail('The content workspace migration must provide down().');
+        }
+        $contentWorkspaceMigration->down();
+
+        $learnerAdministrationMigration = require database_path(
+            'migrations/2026_08_09_000130_create_admin_learner_foundation.php',
+        );
+        if (
+            ! $learnerAdministrationMigration instanceof Migration
+            || ! method_exists($learnerAdministrationMigration, 'down')
+        ) {
+            self::fail('The learner administration migration must provide down().');
+        }
+        $learnerAdministrationMigration->down();
+
         $learningMigration = require database_path(
             'migrations/2026_07_30_000024_create_deterministic_learning_tables.php',
         );
@@ -1036,22 +1080,14 @@ final class CurriculumSchemaProtectionTest extends TenancyIntegrationTestCase
         string $userId,
         CarbonInterface $mfaVerifiedAt,
     ): AuthenticationSession {
-        return AuthenticationSession::query()->forceCreate([
-            'user_id' => $userId,
-            'storage_session_digest' => hash(
-                'sha256',
-                'schema-protection-session-'.Str::ulid(),
-            ),
-            'storage_session_ciphertext' => 'synthetic-test-session',
-            'is_privileged' => true,
-            'started_at' => now()->subMinute(),
-            'last_seen_at' => now(),
-            'idle_expires_at' => now()->addMinutes(30),
-            'absolute_expires_at' => now()->addHours(6),
-            'mfa_verified_at' => $mfaVerifiedAt,
-            'revoked_at' => null,
-            'revocation_reason' => null,
-        ]);
+        return $this->createTestPrivilegedAuthenticationSession(
+            $userId,
+            $mfaVerifiedAt,
+            [
+                'idle_expires_at' => now()->addMinutes(30),
+                'absolute_expires_at' => now()->addHours(6),
+            ],
+        );
     }
 
     /**

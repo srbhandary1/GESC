@@ -27,4 +27,18 @@ return [
     'candidate_expiry_hours' => 24,
     'history_days' => 30,
     'maximum_provider_attempts' => 2,
+    'deletion_lease_seconds' => env('VOICE_DELETION_LEASE_SECONDS', 300),
+    'deletion_retry_base_seconds' => env(
+        'VOICE_DELETION_RETRY_BASE_SECONDS',
+        60,
+    ),
+    'deletion_retry_max_seconds' => env(
+        'VOICE_DELETION_RETRY_MAX_SECONDS',
+        3600,
+    ),
+    'deletion_max_attempts' => env('VOICE_DELETION_MAX_ATTEMPTS', 5),
+    'deletion_outbox_stale_seconds' => env(
+        'VOICE_DELETION_OUTBOX_STALE_SECONDS',
+        3600,
+    ),
 ];

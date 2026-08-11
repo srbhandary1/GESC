@@ -599,12 +599,106 @@ describe('deterministic learner journey', () => {
     expect(api.completeOffline).toHaveBeenCalledOnce()
     expect(store.acceptReceipt).toHaveBeenCalledOnce()
   })
+
+  it('shows Level videos on home and switches the authenticated stream source', async () => {
+    const user = userEvent.setup()
+    const listLevelVideos = vi.fn(async (enrollmentId: string) => ({
+      enrollment_id: enrollmentId,
+      videos: [
+        {
+          enrollment_id: enrollmentId,
+          lesson_id: '01J00000000000000000000041',
+          level_label: 'Level 1',
+          publication_id: ids.publication,
+          title: { locale: 'en-IN' as const, text: 'Level 1 introduction' },
+          video: {
+            asset_id: '01J00000000000000000000051',
+            byte_size: 11515204,
+            mime_type: 'video/mp4' as const,
+            stream_url: '/api/v1/media-assets/01J00000000000000000000051/lesson-video',
+          },
+        },
+        {
+          enrollment_id: enrollmentId,
+          lesson_id: '01J00000000000000000000042',
+          level_label: 'Level 2',
+          publication_id: ids.publication,
+          title: { locale: 'en-IN' as const, text: 'Level 2 introduction' },
+          video: {
+            asset_id: '01J00000000000000000000052',
+            byte_size: 2048,
+            mime_type: 'video/mp4' as const,
+            stream_url: '/api/v1/media-assets/01J00000000000000000000052/lesson-video',
+          },
+        },
+      ],
+    }))
+    const api = {
+      ...fakeApi(completeHome()),
+      listLevelVideos,
+    } satisfies LearnerJourneyApi
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByTestId('lesson-video-element')).toBeVisible()
+    expect(screen.getByTestId('level-videos-panel')).toBeVisible()
+    expect(
+      screen.getByRole('heading', { name: t('learner.level_videos.title') }),
+    ).toBeVisible()
+    expect(listLevelVideos).toHaveBeenCalledWith(ids.enrollment, expect.any(AbortSignal))
+    expect(screen.getByTestId('lesson-video-element').querySelector('source'))
+      .toHaveAttribute(
+        'src',
+        '/api/v1/media-assets/01J00000000000000000000051/lesson-video',
+      )
+
+    await user.click(screen.getByRole('button', { name: 'Level 2' }))
+    expect(screen.getByTestId('lesson-video-element').querySelector('source'))
+      .toHaveAttribute(
+        'src',
+        '/api/v1/media-assets/01J00000000000000000000052/lesson-video',
+      )
+  })
+
+  it('hides Level videos when the enrollment catalog is empty', async () => {
+    const api = fakeApi(completeHome())
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('button', {
+        name: t('learner.home.start_mission'),
+      }),
+    ).toBeVisible()
+    await vi.waitFor(() => {
+      expect(api.listLevelVideos).toHaveBeenCalled()
+    })
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId('level-videos-panel')).not.toBeInTheDocument()
+    })
+  })
 })
 
 function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
   const api: LearnerJourneyApi = {
     home: vi.fn(async () => initialHome),
     updateOnboarding: vi.fn(async () => completeHome()),
+    listLevelVideos: vi.fn(async (enrollmentId: string) => ({
+      enrollment_id: enrollmentId,
+      videos: [],
+    })),
     mission: vi.fn(async () => mission),
     startAttempt: vi.fn(async () => ({
       id: ids.attempt,

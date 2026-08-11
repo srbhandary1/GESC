@@ -37,6 +37,10 @@ final class AuthenticationSessionController extends Controller
                     ->toIso8601String(),
                 'privileged' => $authenticationSession->is_privileged,
                 'mfa_verified_at' => $authenticationSession->mfa_verified_at?->toIso8601String(),
+                'mfa_verified_method' => $authenticationSession->mfa_verified_method,
+                'mfa_verified_scope' => $authenticationSession->mfa_verified_scope,
+                'password_confirmed_at' => $authenticationSession
+                    ->password_confirmed_at?->toIso8601String(),
             ],
         )->values();
 

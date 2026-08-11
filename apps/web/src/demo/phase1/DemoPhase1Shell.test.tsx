@@ -153,4 +153,31 @@ describe('DemoPhase1Shell', () => {
       'is-active',
     )
   })
+
+  it('resets the AI reply language when the interface locale changes', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(
+      <DemoPhase1Shell
+        locale="kn-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(screen.getByRole('link', { name: 'AI ಶಿಕ್ಷಕ' }))
+    await user.click(screen.getByRole('button', { name: 'English' }))
+    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
+      'is-active',
+    )
+
+    rerender(
+      <DemoPhase1Shell
+        locale="hi-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'हिन्दी' })).toHaveClass(
+      'is-active',
+    )
+  })
 })

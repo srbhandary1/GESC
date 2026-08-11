@@ -63,7 +63,7 @@ describe('message resolution', () => {
       usedFallback: true,
       reason: 'unapproved-translation',
       reviewStatus: 'source',
-      revision: 'ui-en-IN-2026-08-07.14',
+      revision: 'ui-en-IN-2026-08-11.7',
       isPreview: false,
     })
     expect(onFallback).toHaveBeenCalledOnce()
@@ -217,7 +217,7 @@ describe('message resolution', () => {
       requestedLocale: 'fr-FR',
     })
 
-    expect(result.text).toBe('Global English Speaking Course')
+    expect(result.text).toBe('Global spoken English Course')
     expect(result.requestedLocale).toBe('fr-FR')
     expect(result.resolvedLocale).toBe('en-IN')
     expect(result.reason).toBe('unsupported-locale')

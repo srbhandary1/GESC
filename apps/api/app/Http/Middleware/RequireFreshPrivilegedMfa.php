@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Authentication\Mfa\FreshPrivilegedMfaRequired;
+use App\Authentication\Password\FreshPasswordConfirmationRequired;
+use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Models\AuthenticationSession;
 use Closure;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class RequireFreshPrivilegedMfa
 {
-    public function __construct(private AuthenticationSessionService $sessions) {}
+    public function __construct(
+        private AuthenticationSessionService $sessions,
+        private PasswordCredentialService $passwords,
+    ) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -24,11 +29,16 @@ final readonly class RequireFreshPrivilegedMfa
             EnforceAuthenticationSession::REQUEST_ATTRIBUTE,
         );
 
-        if (
-            ! $authenticationSession instanceof AuthenticationSession
-            || ! $this->sessions->hasFreshMfa($authenticationSession)
-        ) {
-            throw new AuthorizationException('A recent privileged MFA assertion is required.');
+        if (! $authenticationSession instanceof AuthenticationSession) {
+            throw new FreshPrivilegedMfaRequired;
+        }
+
+        if ($this->passwords->mode() === 'password_only') {
+            if (! $this->passwords->hasFreshConfirmation($authenticationSession)) {
+                throw new FreshPasswordConfirmationRequired;
+            }
+        } elseif (! $this->sessions->hasFreshMfa($authenticationSession)) {
+            throw new FreshPrivilegedMfaRequired;
         }
 
         return $next($request);

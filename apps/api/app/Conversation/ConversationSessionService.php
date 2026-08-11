@@ -481,7 +481,7 @@ final readonly class ConversationSessionService
         string $organizationId,
         string $scenarioVersionId,
     ): array {
-        return DB::table('scenario_objectives')
+        return array_values(DB::table('scenario_objectives')
             ->where('organization_id', $organizationId)
             ->where('scenario_version_id', $scenarioVersionId)
             ->orderBy('sort_order')
@@ -501,7 +501,7 @@ final readonly class ConversationSessionService
                 ),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -511,7 +511,7 @@ final readonly class ConversationSessionService
         string $organizationId,
         string $sessionId,
     ): array {
-        return DB::table('roleplay_feedback_evidence')
+        return array_values(DB::table('roleplay_feedback_evidence')
             ->where('organization_id', $organizationId)
             ->where('conversation_session_id', $sessionId)
             ->orderBy('created_at')
@@ -531,7 +531,7 @@ final readonly class ConversationSessionService
                 'completion_state' => $this->string($row, 'completion_state'),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     private function string(stdClass $row, string $field): string

@@ -52,7 +52,7 @@ provider path or authorize production deployment.
 - Friend chat preference order (D-0094): OpenRouter free model via local
   `/demo/chat` when configured, else deterministic pattern replies. No
   ordinary Laravel LLM binding. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
-- Visible product name: **Global English Speaking Course**.
+- Visible product name: **Global spoken English Course**.
 - The Android wrapper packages the bundle with Capacitor 8.5.0 (minimum API
   24, target API 36, AGP 8.13.0, Gradle 8.14.3). `RECORD_AUDIO` supports the
   existing local-only practice capture; recordings stay in browser memory
@@ -67,7 +67,7 @@ provider path or authorize production deployment.
 
 | Command | Behaviour |
 |---|---|
-| `make demo` | Development-server demo on `127.0.0.1:5173` (unchanged) |
+| `make demo` | Development-server demo on `127.0.0.1:5174` |
 | `make demo-build` | Build the distribution bundle into `apps/web/dist-demo` |
 | `make demo-serve` | Serve the built bundle on `127.0.0.1:4175` |
 | `make demo-client` | Opt-in static-IP client serve on `0.0.0.0:8080` (see [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md)) |

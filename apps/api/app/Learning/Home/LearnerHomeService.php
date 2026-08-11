@@ -27,17 +27,22 @@ final readonly class LearnerHomeService
         $context = $this->authority->require($learner);
         $membershipId = (string) $context->membershipId;
         $onboarding = DB::table('learner_profiles')
-            ->leftJoin('learner_goals', function ($join): void {
+            ->leftJoin('learner_profile_current_goals', function ($join): void {
                 $join
                     ->on(
-                        'learner_goals.organization_id',
+                        'learner_profile_current_goals.organization_id',
                         '=',
                         'learner_profiles.organization_id',
                     )
                     ->on(
-                        'learner_goals.learner_profile_id',
+                        'learner_profile_current_goals.learner_profile_id',
                         '=',
                         'learner_profiles.id',
+                    )
+                    ->on(
+                        'learner_profile_current_goals.learner_membership_id',
+                        '=',
+                        'learner_profiles.learner_membership_id',
                     );
             })
             ->where(
@@ -51,7 +56,7 @@ final readonly class LearnerHomeService
             ->first([
                 'learner_profiles.adult_confirmed_at',
                 'learner_profiles.onboarding_completed_at',
-                'learner_goals.goal_key',
+                'learner_profile_current_goals.goal_key',
             ]);
         $enrollment = DB::table('enrollments')
             ->where('organization_id', $context->organizationId)

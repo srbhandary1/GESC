@@ -31,6 +31,32 @@
   font-weight: 750;
 }
 
+.learner-video-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+  margin: 0 0 var(--ge-space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.learner-video {
+  margin: 0;
+}
+
+.learner-video__caption {
+  margin: 0 0 var(--ge-space-2);
+  font-weight: 750;
+}
+
+.learner-video__element {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  border-radius: var(--ge-radius-sm);
+  background: #000;
+}
+
 .learner-status {
   margin: 0;
   padding: var(--ge-space-4);

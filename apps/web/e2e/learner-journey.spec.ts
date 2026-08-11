@@ -235,7 +235,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       }),
     )
     .toMatchObject({
-      cacheKeys: ['global-english-public-shell-v1'],
+      cacheKeys: ['global-english-public-shell-v2'],
       serviceWorkerRegistrations: 1,
     })
   const cachedUrls = await page.evaluate(async () => {
@@ -551,6 +551,10 @@ async function mockLearnerApi(
       state.requestBodies.push(postData)
     }
 
+    if (await fulfillPasswordSecurity(route, path)) {
+      return
+    }
+
     if (path === '/api/v1/me') {
       await json(route, {
         current_membership: {
@@ -668,6 +672,26 @@ async function mockLearnerApi(
   })
 
   return state
+}
+
+async function fulfillPasswordSecurity(
+  route: Route,
+  path: string,
+): Promise<boolean> {
+  if (path === '/api/v1/auth/password/status') {
+    await json(route, {
+      credential_ready: true,
+      mode: 'password_only',
+      password_confirmed_at: null,
+      username: 'learner.one',
+    })
+    return true
+  }
+  if (path === '/api/v1/auth/sessions') {
+    await json(route, { data: [] })
+    return true
+  }
+  return false
 }
 
 async function installWorkingMicrophone(page: Page): Promise<void> {

@@ -6,6 +6,7 @@ use App\Http\Middleware\AssignCorrelationId;
 use App\Http\Middleware\AuthenticateFirstParty;
 use App\Http\Middleware\EnforceAuthenticationSession;
 use App\Http\Middleware\RequireFreshPrivilegedMfa;
+use App\Http\Middleware\RequireWebAuthentication;
 use App\Http\Middleware\ResolveOrganizationContext;
 use App\Http\Problems\ProblemDetailsFactory;
 use Illuminate\Foundation\Application;
@@ -29,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.first-party' => AuthenticateFirstParty::class,
             'auth.session' => EnforceAuthenticationSession::class,
             'auth.mfa' => RequireFreshPrivilegedMfa::class,
+            'auth.password-confirmed' => RequireFreshPrivilegedMfa::class,
+            'auth.web-only' => RequireWebAuthentication::class,
             'organization.context' => ResolveOrganizationContext::class,
             'scope' => CheckToken::class,
             'scopes' => CheckTokenForAnyScope::class,
@@ -65,7 +68,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 /** @var ProblemDetailsFactory $problems */
                 $problems = app(ProblemDetailsFactory::class);
 
-                return $problems->fromExceptionResponse($request, $response);
+                return $problems->fromExceptionResponse(
+                    $request,
+                    $response,
+                    $exception,
+                );
             },
         );
     })

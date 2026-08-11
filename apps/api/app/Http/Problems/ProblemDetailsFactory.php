@@ -4,19 +4,33 @@ declare(strict_types=1);
 
 namespace App\Http\Problems;
 
+use App\Authentication\Mfa\FreshPrivilegedMfaRequired;
+use App\Authentication\Password\FreshPasswordConfirmationRequired;
 use App\Observability\CorrelationId;
+use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceConflict;
+use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceRejected;
+use App\Operator\LearnerAdministration\Exceptions\LearnerAdministrationConflict;
+use App\Operator\MediaLibrary\Exceptions\MediaLibraryConflict;
+use App\Operator\MediaLibrary\Exceptions\MediaLibraryRejected;
+use App\Operator\OrganizationAdministration\Exceptions\OrganizationAdministrationConflict;
+use App\Operator\OrganizationAdministration\Exceptions\OrganizationAdministrationRejected;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 final class ProblemDetailsFactory
 {
-    public function fromExceptionResponse(Request $request, Response $response): JsonResponse
-    {
+    public function fromExceptionResponse(
+        Request $request,
+        Response $response,
+        ?Throwable $exception = null,
+    ): JsonResponse {
         return $this->make(
             request: $request,
             status: $response->getStatusCode(),
             sourceResponse: $response,
+            exception: $exception,
         );
     }
 
@@ -29,6 +43,22 @@ final class ProblemDetailsFactory
         );
     }
 
+    public function rangeNotSatisfiable(
+        Request $request,
+        int $totalBytes,
+        string $etag,
+    ): JsonResponse {
+        return $this->make(
+            request: $request,
+            status: Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE,
+            headers: [
+                'Accept-Ranges' => 'bytes',
+                'Content-Range' => 'bytes */'.$totalBytes,
+                'ETag' => $etag,
+            ],
+        );
+    }
+
     /**
      * @param  array<string, string>  $headers
      */
@@ -37,8 +67,9 @@ final class ProblemDetailsFactory
         int $status,
         ?Response $sourceResponse = null,
         array $headers = [],
+        ?Throwable $exception = null,
     ): JsonResponse {
-        $definition = $this->definition($status);
+        $definition = $this->definition($status, $exception);
         $correlationId = CorrelationId::forRequest($request);
 
         foreach (['Allow', 'Retry-After', 'WWW-Authenticate'] as $header) {
@@ -69,8 +100,202 @@ final class ProblemDetailsFactory
     /**
      * @return array{type: string, title: string, detail: string, message_key: string}
      */
-    private function definition(int $status): array
+    private function definition(int $status, ?Throwable $exception = null): array
     {
+        if ($exception instanceof MediaLibraryConflict) {
+            return match ($exception->messageKey) {
+                MediaLibraryConflict::IDEMPOTENCY => [
+                    'type' => 'urn:global-english:problem:media-library-idempotency-conflict',
+                    'title' => 'Idempotency conflict',
+                    'detail' => 'The idempotency key is already bound to another request.',
+                    'message_key' => MediaLibraryConflict::IDEMPOTENCY,
+                ],
+                MediaLibraryConflict::STALE_UPLOAD => [
+                    'type' => 'urn:global-english:problem:media-library-stale-upload',
+                    'title' => 'Upload state changed',
+                    'detail' => 'Reload the upload and retry the request.',
+                    'message_key' => MediaLibraryConflict::STALE_UPLOAD,
+                ],
+                MediaLibraryConflict::STALE_METADATA => [
+                    'type' => 'urn:global-english:problem:media-library-stale-metadata',
+                    'title' => 'Metadata head changed',
+                    'detail' => 'Reload the metadata head and retry the request.',
+                    'message_key' => MediaLibraryConflict::STALE_METADATA,
+                ],
+                MediaLibraryConflict::STALE_WORKSPACE => [
+                    'type' => 'urn:global-english:problem:media-library-stale-workspace',
+                    'title' => 'Workspace version changed',
+                    'detail' => 'Reload the content workspace and retry the request.',
+                    'message_key' => MediaLibraryConflict::STALE_WORKSPACE,
+                ],
+                MediaLibraryConflict::STALE_LIFECYCLE => [
+                    'type' => 'urn:global-english:problem:media-library-stale-lifecycle',
+                    'title' => 'Media lifecycle changed',
+                    'detail' => 'Reload the media asset and retry the request.',
+                    'message_key' => MediaLibraryConflict::STALE_LIFECYCLE,
+                ],
+                MediaLibraryConflict::DUPLICATE_USE => [
+                    'type' => 'urn:global-english:problem:media-library-duplicate-use',
+                    'title' => 'Media relationship already exists',
+                    'detail' => 'This usage or replacement relationship already exists.',
+                    'message_key' => MediaLibraryConflict::DUPLICATE_USE,
+                ],
+                MediaLibraryConflict::STORAGE => [
+                    'type' => 'urn:global-english:problem:media-library-storage-failure',
+                    'title' => 'Private media storage unavailable',
+                    'detail' => 'The private media operation did not complete. It can be retried safely.',
+                    'message_key' => MediaLibraryConflict::STORAGE,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:media-library-concurrent-change',
+                    'title' => 'Concurrent media change',
+                    'detail' => 'Another media command completed first. Reload and retry.',
+                    'message_key' => MediaLibraryConflict::CONCURRENT_CHANGE,
+                ],
+            };
+        }
+
+        if ($exception instanceof MediaLibraryRejected) {
+            return [
+                'type' => 'urn:global-english:problem:media-library-not-found',
+                'title' => 'Resource not found',
+                'detail' => 'The requested resource could not be found.',
+                'message_key' => MediaLibraryRejected::NOT_FOUND,
+            ];
+        }
+
+        if ($exception instanceof ContentWorkspaceConflict) {
+            return match ($exception->messageKey) {
+                ContentWorkspaceConflict::IDEMPOTENCY => [
+                    'type' => 'urn:global-english:problem:content-workspace-idempotency-conflict',
+                    'title' => 'Idempotency conflict',
+                    'detail' => 'The idempotency key is already bound to another request.',
+                    'message_key' => ContentWorkspaceConflict::IDEMPOTENCY,
+                ],
+                ContentWorkspaceConflict::STATE => [
+                    'type' => 'urn:global-english:problem:content-workspace-state-conflict',
+                    'title' => 'Workspace state conflict',
+                    'detail' => 'The content workspace cannot accept this action in its current state.',
+                    'message_key' => ContentWorkspaceConflict::STATE,
+                ],
+                ContentWorkspaceConflict::HEAD => [
+                    'type' => 'urn:global-english:problem:content-workspace-head-conflict',
+                    'title' => 'Content head changed',
+                    'detail' => 'Reload the current content head and retry the request.',
+                    'message_key' => ContentWorkspaceConflict::HEAD,
+                ],
+                ContentWorkspaceConflict::CONCURRENT_CHANGE => [
+                    'type' => 'urn:global-english:problem:content-workspace-concurrent-change',
+                    'title' => 'Concurrent content change',
+                    'detail' => 'Another content command completed first. Reload and retry.',
+                    'message_key' => ContentWorkspaceConflict::CONCURRENT_CHANGE,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:content-workspace-stale-version',
+                    'title' => 'Workspace version changed',
+                    'detail' => 'Reload the content workspace and retry the request.',
+                    'message_key' => ContentWorkspaceConflict::STALE_VERSION,
+                ],
+            };
+        }
+
+        if ($exception instanceof ContentWorkspaceRejected) {
+            return [
+                'type' => 'urn:global-english:problem:content-workspace-not-found',
+                'title' => 'Resource not found',
+                'detail' => 'The requested resource could not be found.',
+                'message_key' => ContentWorkspaceRejected::NOT_FOUND,
+            ];
+        }
+
+        if ($exception instanceof LearnerAdministrationConflict) {
+            return match ($exception->messageKey) {
+                LearnerAdministrationConflict::IDEMPOTENCY => [
+                    'type' => 'urn:global-english:problem:learner-administration-idempotency-conflict',
+                    'title' => 'Idempotency conflict',
+                    'detail' => 'The idempotency key is already bound to another request.',
+                    'message_key' => LearnerAdministrationConflict::IDEMPOTENCY,
+                ],
+                LearnerAdministrationConflict::ACTIVE_DEPENDENCY => [
+                    'type' => 'urn:global-english:problem:learner-administration-active-dependency',
+                    'title' => 'Active dependency',
+                    'detail' => 'An active learner relationship prevents this change.',
+                    'message_key' => LearnerAdministrationConflict::ACTIVE_DEPENDENCY,
+                ],
+                LearnerAdministrationConflict::UNSAFE_ROLE => [
+                    'type' => 'urn:global-english:problem:learner-administration-unsafe-role',
+                    'title' => 'Learner role is not safe',
+                    'detail' => 'The selected role does not have the exact learner permission set.',
+                    'message_key' => LearnerAdministrationConflict::UNSAFE_ROLE,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:learner-administration-stale-state',
+                    'title' => 'Learner state changed',
+                    'detail' => 'Reload the learner resource and retry the request.',
+                    'message_key' => LearnerAdministrationConflict::STALE_STATE,
+                ],
+            };
+        }
+
+        if ($exception instanceof OrganizationAdministrationConflict) {
+            return match ($exception->messageKey) {
+                OrganizationAdministrationConflict::IDEMPOTENCY => [
+                    'type' => 'urn:global-english:problem:organization-administration-idempotency-conflict',
+                    'title' => 'Idempotency conflict',
+                    'detail' => 'The idempotency key is already bound to another request.',
+                    'message_key' => OrganizationAdministrationConflict::IDEMPOTENCY,
+                ],
+                OrganizationAdministrationConflict::LAST_MANAGER => [
+                    'type' => 'urn:global-english:problem:organization-administration-last-manager',
+                    'title' => 'Manager authority required',
+                    'detail' => 'The organization must retain an active authorized manager.',
+                    'message_key' => OrganizationAdministrationConflict::LAST_MANAGER,
+                ],
+                OrganizationAdministrationConflict::ACTIVE_DEPENDENCY => [
+                    'type' => 'urn:global-english:problem:organization-administration-active-dependency',
+                    'title' => 'Active dependency',
+                    'detail' => 'An active related resource prevents this change.',
+                    'message_key' => OrganizationAdministrationConflict::ACTIVE_DEPENDENCY,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:organization-administration-stale-state',
+                    'title' => 'Resource state changed',
+                    'detail' => 'Reload the resource and retry the request.',
+                    'message_key' => OrganizationAdministrationConflict::STALE_STATE,
+                ],
+            };
+        }
+
+        if (
+            $exception instanceof OrganizationAdministrationRejected
+            && $exception->messageKey === OrganizationAdministrationRejected::SELF_TARGET
+        ) {
+            return [
+                'type' => 'urn:global-english:problem:organization-administration-self-target',
+                'title' => 'Self-targeting is not permitted',
+                'detail' => 'This administrative action cannot target the current membership.',
+                'message_key' => OrganizationAdministrationRejected::SELF_TARGET,
+            ];
+        }
+
+        if ($this->hasCause($exception, FreshPrivilegedMfaRequired::class)) {
+            return [
+                'type' => 'urn:global-english:problem:fresh-mfa-required',
+                'title' => 'Fresh verification required',
+                'detail' => 'A recent authenticator-code verification is required.',
+                'message_key' => 'problem.fresh_mfa_required',
+            ];
+        }
+
+        if ($this->hasCause($exception, FreshPasswordConfirmationRequired::class)) {
+            return [
+                'type' => 'urn:global-english:problem:fresh-password-confirmation-required',
+                'title' => 'Fresh verification required',
+                'detail' => 'Re-enter the current password to continue.',
+                'message_key' => 'problem.fresh_password_confirmation_required',
+            ];
+        }
+
         return match ($status) {
             Response::HTTP_BAD_REQUEST => [
                 'type' => 'urn:global-english:problem:bad-request',
@@ -114,6 +339,12 @@ final class ProblemDetailsFactory
                 'detail' => 'One or more request values are invalid.',
                 'message_key' => 'problem.validation_failed',
             ],
+            Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE => [
+                'type' => 'urn:global-english:problem:range-not-satisfiable',
+                'title' => 'Range not satisfiable',
+                'detail' => 'The requested byte range is outside this resource.',
+                'message_key' => 'problem.range_not_satisfiable',
+            ],
             Response::HTTP_TOO_MANY_REQUESTS => [
                 'type' => 'urn:global-english:problem:too-many-requests',
                 'title' => 'Too many requests',
@@ -140,5 +371,23 @@ final class ProblemDetailsFactory
                     'message_key' => 'problem.request_failed',
                 ],
         };
+    }
+
+    /**
+     * @param  class-string<Throwable>  $class
+     */
+    private function hasCause(?Throwable $exception, string $class): bool
+    {
+        $current = $exception;
+
+        while ($current instanceof Throwable) {
+            if ($current instanceof $class) {
+                return true;
+            }
+
+            $current = $current->getPrevious();
+        }
+
+        return false;
     }
 }

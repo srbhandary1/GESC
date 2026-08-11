@@ -34,10 +34,17 @@ WebView cannot use same-origin relative `/api` routes, so set:
 export VITE_MOBILE_API_ORIGIN='https://your-closed-beta-api.example'
 # optional overrides:
 # export VITE_MOBILE_OAUTH_CLIENT_ID='public-android-client'
-# export VITE_MOBILE_OAUTH_REDIRECT_URI='com.globalenglish.app:/oauth/callback'
 # export VITE_MOBILE_OAUTH_AUTHORIZE_URL=...
 # export VITE_MOBILE_OAUTH_TOKEN_URL=...
 ```
+
+The redirect is fixed to `com.globalenglish.app:/oauth/callback`; any different
+`VITE_MOBILE_OAUTH_REDIRECT_URI` makes Android authentication fail closed.
+Authorization/token endpoint overrides must stay on the configured API origin
+and may not include credentials, query strings or fragments. The API origin
+must use HTTPS, except `http://10.0.2.2`, loopback or `localhost` for local
+device/emulator development. Missing or unsafe configuration never falls back
+to Sanctum cookie authentication inside the WebView.
 
 Never embed provider secrets, OTP credentials or Passport private keys in the
 Android package.
@@ -74,7 +81,7 @@ adb install -r apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk
 for local/staff closed-beta smoke installs. It is **not** Play App Signing and
 is not a public-release artifact. Record this limitation on acceptance.
 
-## Release AAB / APK with a local upload keystore (optional)
+## Release AAB with an external upload keystore
 
 1. Create a local upload keystore **outside the repository** (never commit):
 
@@ -85,28 +92,34 @@ keytool -genkeypair -v \
   -alias ge-closed-beta
 ```
 
-2. Create an ignored `apps/web/android-app/keystore.properties` (do not commit):
-
-```properties
-storeFile=/absolute/path/to/ge-closed-beta-upload.jks
-storePassword=...
-keyAlias=ge-closed-beta
-keyPassword=...
-```
-
-3. Wire `signingConfigs` in `app/build.gradle` when that file exists (operator
-   local change) and run:
+2. Export the four signing inputs from an operator-controlled secret source.
+   Do not put passwords in shell history, command-line arguments, `.env` files,
+   Gradle properties or the repository:
 
 ```bash
-cd apps/web/android-app
-./gradlew bundleRelease
-# or: ./gradlew assembleRelease
+export GE_ANDROID_UPLOAD_STORE_FILE=/absolute/path/outside/repository/ge-closed-beta-upload.jks
+export GE_ANDROID_UPLOAD_STORE_PASSWORD
+export GE_ANDROID_UPLOAD_KEY_ALIAS=ge-closed-beta
+export GE_ANDROID_UPLOAD_KEY_PASSWORD
+export VITE_MOBILE_API_ORIGIN=https://api.example.org
 ```
 
-Artifacts:
+   A shell can populate the two password variables through a protected secret
+   manager or a non-echoing prompt. Never paste them into chat or logs.
+
+3. Build the production-path bundle:
+
+```bash
+make android-release-bundle
+```
+
+Artifact:
 
 - AAB: `app/build/outputs/bundle/release/app-release.aab`
-- APK: `app/build/outputs/apk/release/app-release.apk`
+
+Gradle rejects release tasks unless all four signing variables are present,
+the keystore exists and it is outside the repository. Debug builds do not
+require signing inputs. The Make target also rejects non-HTTPS API origins.
 
 Google Play **public** listing remains unauthorized under APP-0030. Closed
 testing track upload, if used, is an operational step outside this APP’s
@@ -134,6 +147,17 @@ Expect:
 
 See [ADR-0012](adr/0012-android-native-secure-credential-store.md): project-owned
 Capacitor plugin over AndroidX `EncryptedSharedPreferences`.
+
+## Authenticated request selection
+
+See
+[ANDROID_AUTHENTICATED_REQUEST_LIFECYCLE.md](ANDROID_AUTHENTICATED_REQUEST_LIFECYCLE.md).
+The production Android runtime routes learner, conversation, operator,
+event-stream, token-family revocation and private model-audio/lesson-video
+requests through the shared Passport adapter. Access tokens are memory-only,
+cookies are omitted, and a 401 receives at most one refresh and exact replay.
+Do not add raw private-media `<audio src>` or `<video src>` paths to the Android
+runtime because DOM media requests cannot attach the bearer.
 
 ## Device verification
 

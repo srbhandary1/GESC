@@ -31,6 +31,16 @@ return [
             'scenario_key' => 'everyday-friend-prototype',
             'mode' => 'friend',
         ],
+        'skill_focus' => [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'past-tense-skill-focus-prototype',
+            'mode' => 'friend',
+        ],
+        'review' => [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'carry-sentence-review-prototype',
+            'mode' => 'friend',
+        ],
         'roleplay' => [
             'persona_key' => 'clinic-reception-roleplay-prototype',
             'scenario_key' => 'clinic-reception-roleplay-scenario',
@@ -57,7 +67,7 @@ return [
         'connection_timeout_seconds' => 3,
         'request_timeout_seconds' => 30,
         'maximum_json_response_bytes' => 256 * 1024,
-        'maximum_spend_inr' => 500.0,
+        'maximum_spend_inr' => 10000.0,
         'approved_spend_cap_inr' => env(
             'CONVERSATION_AZURE_OPENAI_APPROVED_SPEND_CAP_INR',
         ),

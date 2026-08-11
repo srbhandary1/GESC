@@ -52,7 +52,10 @@ final readonly class PublicationSnapshotWriter
             'program_id' => $programId,
             'curriculum_version_id' => $curriculumVersionId,
             'publication_number' => $publicationNumber,
-            'manifest_schema_version' => 1,
+            'manifest_schema_version' => ($manifest['schema'] ?? null)
+                === 'global-english.curriculum-publication.v2'
+                ? 2
+                : 1,
             'manifest' => CanonicalJson::encode($manifest),
             'manifest_hash' => $manifestHash,
             'created_by_membership_id' => $actorMembershipId,
@@ -65,6 +68,14 @@ final readonly class PublicationSnapshotWriter
             publicationId: $publicationId,
             manifest: $manifest,
             createdAt: $evaluatedAt,
+        );
+        $this->sealWorkspace(
+            organizationId: $organizationId,
+            programId: $programId,
+            curriculumVersionId: $curriculumVersionId,
+            publicationId: $publicationId,
+            actorMembershipId: $actorMembershipId,
+            sealedAt: $evaluatedAt,
         );
 
         return new PublicationSnapshot(
@@ -80,8 +91,70 @@ final readonly class PublicationSnapshotWriter
         }
 
         DB::statement(
-            'LOCK TABLE learning_objectives, objective_prerequisites, curriculum_modules, lessons, lesson_objectives, content_documents, content_revisions, content_revision_heads, localized_variants, learning_items, curriculum_missions, mission_items, curriculum_graph_revisions, curriculum_graph_heads, curriculum_graph_reviews, authority_appointments, authority_appointment_events, content_reviews, media_assets, media_rights_revisions, content_revision_media_assets IN SHARE MODE',
+            'LOCK TABLE curriculum_workspaces, curriculum_levels, learning_objectives, objective_prerequisites, curriculum_modules, lessons, lesson_objectives, content_documents, content_revisions, content_revision_heads, localized_variants, learning_items, curriculum_missions, mission_items, curriculum_graph_revisions, curriculum_graph_heads, curriculum_graph_reviews, authority_appointments, authority_appointment_events, content_reviews, media_assets, media_rights_revisions, content_revision_media_assets, media_security_scans, media_asset_lifecycles, media_asset_metadata_revisions, media_asset_metadata_heads, media_asset_metadata_variants, media_asset_metadata_variant_heads, media_asset_metadata_reviews, media_attachment_events IN SHARE MODE',
         );
+    }
+
+    private function sealWorkspace(
+        string $organizationId,
+        string $programId,
+        string $curriculumVersionId,
+        string $publicationId,
+        string $actorMembershipId,
+        CarbonInterface $sealedAt,
+    ): void {
+        $workspace = DB::table('curriculum_workspaces')
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
+            ->where('curriculum_version_id', $curriculumVersionId)
+            ->lockForUpdate()
+            ->first([
+                'state',
+                'version',
+                'current_draft_revision_id',
+                'submitted_graph_revision_id',
+            ]);
+
+        if (! $workspace instanceof \stdClass) {
+            return;
+        }
+
+        $state = $workspace->state ?? null;
+        $version = $workspace->version ?? null;
+
+        if (
+            $state !== 'in_review'
+            || (! is_int($version) && ! (is_string($version) && ctype_digit($version)))
+        ) {
+            throw new CurriculumOperationRejected;
+        }
+
+        $nextVersion = (int) $version + 1;
+        DB::table('curriculum_workspaces')
+            ->where('organization_id', $organizationId)
+            ->where('curriculum_version_id', $curriculumVersionId)
+            ->where('version', (int) $version)
+            ->update([
+                'state' => 'sealed',
+                'version' => $nextVersion,
+                'sealed_at' => $sealedAt,
+                'updated_at' => $sealedAt,
+            ]);
+        DB::table('curriculum_workspace_events')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'program_id' => $programId,
+            'curriculum_version_id' => $curriculumVersionId,
+            'event_type' => 'workspace.sealed',
+            'workspace_version' => $nextVersion,
+            'draft_revision_id' => $workspace->current_draft_revision_id,
+            'graph_revision_id' => $workspace->submitted_graph_revision_id,
+            'actor_membership_id' => $actorMembershipId,
+            'command_id' => null,
+            'reason_key' => 'publication_snapshot_created',
+            'occurred_at' => $sealedAt,
+            'created_at' => $sealedAt,
+        ]);
     }
 
     /**
@@ -132,6 +205,8 @@ final readonly class PublicationSnapshotWriter
         ]);
 
         $contentEntries = $manifest['content'] ?? null;
+        $managedPublication = ($manifest['schema'] ?? null)
+            === 'global-english.curriculum-publication.v2';
 
         if (! is_array($contentEntries) || ! array_is_list($contentEntries)) {
             throw new CurriculumOperationRejected;
@@ -253,6 +328,115 @@ final readonly class PublicationSnapshotWriter
                     ),
                     'usage_key' => $this->arrayString($media, 'usage_key'),
                     'sequence' => $this->arrayInteger($media, 'sequence'),
+                    'created_at' => $createdAt,
+                ]);
+
+                $governance = $media['governance'] ?? null;
+
+                if ($governance === null) {
+                    if ($managedPublication) {
+                        throw new CurriculumOperationRejected;
+                    }
+
+                    continue;
+                }
+
+                if (! is_array($governance) || array_is_list($governance)) {
+                    throw new CurriculumOperationRejected;
+                }
+
+                $selectedScan = $this->array(
+                    $governance,
+                    'selected_scan',
+                );
+                $metadata = $this->array($governance, 'metadata');
+                $englishReview = $this->array(
+                    $metadata,
+                    'english_review',
+                );
+                $kannadaVariant = $this->array(
+                    $metadata,
+                    'kannada_variant',
+                );
+                $kannadaReview = $this->array(
+                    $kannadaVariant,
+                    'review',
+                );
+                $rights = $this->array($governance, 'rights');
+                $assetId = $this->arrayString($media, 'asset_id');
+                $assetHash = $this->arraySha256($media, 'asset_hash');
+                $rightsRevisionId = $this->arrayString(
+                    $media,
+                    'rights_revision_id',
+                );
+                $rightsEvidenceHash = $this->arraySha256(
+                    $media,
+                    'evidence_hash',
+                );
+
+                if (
+                    $this->arrayString($rights, 'revision_id')
+                        !== $rightsRevisionId
+                    || ! hash_equals(
+                        $this->arraySha256($rights, 'evidence_hash'),
+                        $rightsEvidenceHash,
+                    )
+                    || ! hash_equals(
+                        $this->arraySha256($selectedScan, 'object_hash'),
+                        $assetHash,
+                    )
+                ) {
+                    throw new CurriculumOperationRejected;
+                }
+
+                DB::table('publication_media_governance_components')->insert([
+                    'organization_id' => $organizationId,
+                    'program_id' => $programId,
+                    'curriculum_version_id' => $curriculumVersionId,
+                    'curriculum_publication_id' => $publicationId,
+                    'source_revision_id' => $sourceRevisionId,
+                    'media_asset_id' => $assetId,
+                    'usage_key' => $this->arrayString($media, 'usage_key'),
+                    'selected_scan_id' => $this->arrayString(
+                        $selectedScan,
+                        'id',
+                    ),
+                    'object_hash' => $assetHash,
+                    'inspector_policy_version' => $this->arrayString(
+                        $selectedScan,
+                        'inspector_policy_version',
+                    ),
+                    'scanner_policy_version' => $this->arrayString(
+                        $selectedScan,
+                        'scanner_policy_version',
+                    ),
+                    'metadata_revision_id' => $this->arrayString(
+                        $metadata,
+                        'revision_id',
+                    ),
+                    'metadata_content_hash' => $this->arraySha256(
+                        $metadata,
+                        'content_hash',
+                    ),
+                    'english_review_id' => $this->arrayString(
+                        $englishReview,
+                        'id',
+                    ),
+                    'metadata_variant_id' => $this->arrayString(
+                        $kannadaVariant,
+                        'id',
+                    ),
+                    'variant_content_hash' => $this->arraySha256(
+                        $kannadaVariant,
+                        'content_hash',
+                    ),
+                    'kannada_review_id' => $this->arrayString(
+                        $kannadaReview,
+                        'id',
+                    ),
+                    'media_rights_revision_id' => $rightsRevisionId,
+                    'rights_evidence_status' => 'approved',
+                    'rights_evidence_hash' => $rightsEvidenceHash,
                     'created_at' => $createdAt,
                 ]);
             }

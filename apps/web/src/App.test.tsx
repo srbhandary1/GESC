@@ -6,16 +6,19 @@ import {
   type ResolutionPolicy,
   type SupportedLocale,
 } from '@global-english/localization'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import type {
+  AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { createLocalDemoRuntime } from './demo/localDemo'
+import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
 
 afterEach(() => {
   cleanup()
@@ -412,6 +415,17 @@ describe('localized application shell', () => {
     const home = vi.fn(async () => {
       throw new Error('Learner API must not be called.')
     })
+    const getOverview = vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      navigation: ['overview'] as const,
+      organization: {
+        id: '01J00000000000000000000003',
+        name: 'Hithaishi Learning Hub',
+        timezone: 'Asia/Kolkata',
+      },
+      panels: [] as const,
+      search_available: false,
+    }))
 
     render(
       <App
@@ -420,16 +434,77 @@ describe('localized application shell', () => {
           ['learner'],
         )}
         learnerJourneyApi={learnerApi(home)}
+        operatorConsoleApi={operatorApi(getOverview)}
       />,
     )
 
     expect(
-      await screen.findByText(text('session.authenticated')),
+      await screen.findByRole('heading', {
+        name: text('operator.shell.title'),
+      }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(text('shell.checkpoint_notice')),
-    ).toBeInTheDocument()
+    await waitFor(() => expect(getOverview).toHaveBeenCalledOnce())
     expect(home).not.toHaveBeenCalled()
+  })
+
+  it('keeps authenticated account security collapsed and offers sign out', async () => {
+    const user = userEvent.setup()
+    const authentication = webMembershipAuthentication()
+    const getOverview = vi.fn(async () => ({
+      generated_at: '2026-08-11T10:00:00+00:00',
+      navigation: ['overview'] as const,
+      organization: {
+        id: '01J00000000000000000000003',
+        name: 'Hithaishi Learning Hub',
+        timezone: 'Asia/Kolkata',
+      },
+      panels: [] as const,
+      search_available: false,
+    }))
+
+    render(
+      <App
+        authentication={authentication}
+        operatorConsoleApi={operatorApi(getOverview)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('operator.shell.title'),
+      }),
+    ).toBeInTheDocument()
+    const security = screen.getByRole('button', {
+      name: text('operator.password.title'),
+    })
+    expect(security).toHaveAttribute('aria-expanded', 'false')
+    expect(authentication.passwordStatus).not.toHaveBeenCalled()
+
+    await user.click(security)
+
+    expect(security).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      await screen.findByRole('heading', {
+        name: text('operator.password.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(authentication.passwordStatus).toHaveBeenCalledOnce()
+
+    await user.click(security)
+    expect(security).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      screen.queryByRole('heading', {
+        name: text('operator.password.title'),
+      }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: text('session.android_sign_out') }),
+    )
+    expect(authentication.logout).toHaveBeenCalledOnce()
+    expect(
+      await screen.findByText(text('session.anonymous')),
+    ).toBeInTheDocument()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {
@@ -447,6 +522,47 @@ describe('localized application shell', () => {
       await screen.findByText(text('session.unavailable')),
     ).toBeInTheDocument()
     expect(screen.queryByText('sensitive provider detail')).not.toBeInTheDocument()
+  })
+
+  it('returns the Android shell to anonymous after terminal bearer revocation', async () => {
+    let invalidate = () => undefined
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      beginAuthorization: vi.fn(async () => undefined),
+      completeAuthorization: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'authenticated',
+          identity: {
+            current_membership: null,
+            memberships: [],
+            user: { id: '01J00000000000000000000001' },
+          },
+        }),
+      ),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn((listener) => {
+        invalidate = listener
+
+        return () => undefined
+      }),
+      refresh: vi.fn(async () => undefined),
+    }
+
+    render(<App authentication={authentication} />)
+    expect(
+      await screen.findByText(text('session.select_membership')),
+    ).toBeInTheDocument()
+
+    act(() => invalidate())
+
+    expect(await screen.findByText(text('session.anonymous')))
+      .toBeInTheDocument()
   })
 })
 
@@ -492,6 +608,112 @@ function membershipAuthentication(
   }
 }
 
+function webMembershipAuthentication(): WebSessionAuthentication {
+  return {
+    transport: 'sanctum-cookie',
+    authenticationMode: vi.fn(async () => 'password_only' as const),
+    beginPrivilegedMfaEnrollment: vi.fn(),
+    changePassword: vi.fn(async () => undefined),
+    changeUsername: vi.fn(async () => undefined),
+    confirmPassword: vi.fn(async () => undefined),
+    confirmPrivilegedMfaEnrollment: vi.fn(),
+    createPrivilegedMfaChallenge: vi.fn(),
+    current: vi.fn(
+      async (): Promise<AuthenticationSnapshot> => ({
+        status: 'authenticated',
+        identity: {
+          current_membership: {
+            id: '01J00000000000000000000002',
+            membership_type: 'organization_admin',
+            organization: {
+              id: '01J00000000000000000000003',
+              kind: 'institution',
+              name: 'Hithaishi Learning Hub',
+            },
+            role_keys: ['organization-admin'],
+            status: 'active',
+          },
+          memberships: [],
+          user: { id: '01J00000000000000000000001' },
+        },
+      }),
+    ),
+    establishPassword: vi.fn(async () => undefined),
+    logout: vi.fn(async () => undefined),
+    passwordStatus: vi.fn(async () => ({
+      credential_ready: true,
+      mode: 'password_only' as const,
+      password_confirmed_at: null,
+      username: 'operator.one',
+    })),
+    privilegedMfaStatus: vi.fn(),
+    regeneratePrivilegedMfaRecoveryCodes: vi.fn(),
+    requestOtp: vi.fn(),
+    requestPasswordRecovery: vi.fn(async () => undefined),
+    revokeAllSessions: vi.fn(async () => undefined),
+    revokePrivilegedMfaFactor: vi.fn(),
+    revokeSession: vi.fn(async () => undefined),
+    sessions: vi.fn(async () => [
+      {
+        absolute_expires_at: '2026-08-12T10:00:00Z',
+        created_at: '2026-08-11T10:00:00Z',
+        current: true,
+        expires_at: '2026-08-11T11:00:00Z',
+        id: '01J00000000000000000000004',
+        last_activity_at: '2026-08-11T10:00:00Z',
+        mfa_verified_at: null,
+        mfa_verified_method: null,
+        mfa_verified_scope: null,
+        password_confirmed_at: null,
+        privileged: true,
+      },
+    ]),
+    signIn: vi.fn(async () => undefined),
+    verifyOtp: vi.fn(async () => undefined),
+    verifyPrivilegedMfaChallenge: vi.fn(),
+  }
+}
+
+function operatorApi(
+  getOverview: OperatorConsoleApi['getOverview'],
+): OperatorConsoleApi {
+  return {
+    getOverview,
+    getPilotAnalytics: vi.fn(async () => ({
+      demonstrated_learning: {
+        mastery_by_knowledge_state: {},
+        mastery_state_count: 0,
+        review_schedule_count: 0,
+      },
+      distinction_note:
+        'usage_counts_are_not_demonstrated_learning' as const,
+      generated_at: '2026-08-09T10:00:00+00:00',
+      usage: {
+        conversation_session_count: 0,
+        conversation_sessions_by_status: {},
+        formative_attempt_count: 0,
+        formative_attempts_by_status: {},
+        learner_membership_count: 0,
+      },
+    })),
+    listAuditEvents: vi.fn(async () => ({
+      items: [],
+      next_cursor: null,
+    })),
+    listDrafts: vi.fn(async () => []),
+    listPublications: vi.fn(async () => []),
+    listSupportDiagnostics: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+    })),
+    search: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+      next_cursor: null,
+    })),
+  }
+}
+
 function learnerApi(
   home: LearnerJourneyApi['home'],
 ): LearnerJourneyApi {
@@ -501,6 +723,10 @@ function learnerApi(
 
   return {
     home,
+    listLevelVideos: vi.fn(async () => ({
+      enrollment_id: '01J30000000000000000000004',
+      videos: [],
+    })),
     mission: vi.fn(unreachable),
     progress: vi.fn(unreachable),
     recordResponse: vi.fn(unreachable),

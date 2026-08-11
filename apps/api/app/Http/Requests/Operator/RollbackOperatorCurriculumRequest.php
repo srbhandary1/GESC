@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Operator;
 
+use App\Http\Requests\IdempotentRequest;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
 
-final class RollbackOperatorCurriculumRequest extends FormRequest
+final class RollbackOperatorCurriculumRequest extends IdempotentRequest
 {
     /**
      * @return array<string, list<mixed>>
      */
-    public function rules(): array
+    protected function payloadRules(): array
     {
         return [
             'program_id' => ['required', 'string', 'ulid'],
@@ -28,22 +28,6 @@ final class RollbackOperatorCurriculumRequest extends FormRequest
                 'string',
                 'regex:/\A[a-z][a-z0-9_]{0,119}\z/',
             ],
-            'idempotency_key' => [
-                'required',
-                'string',
-                'regex:/\A(?:[0-9A-HJKMNP-TV-Z]{26}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z/',
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function validationData(): array
-    {
-        return [
-            ...parent::validationData(),
-            'idempotency_key' => $this->header('Idempotency-Key'),
         ];
     }
 

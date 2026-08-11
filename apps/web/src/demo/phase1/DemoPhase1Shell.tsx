@@ -138,7 +138,10 @@ export function DemoPhase1Shell({
   const [module, setModule] = useState<Phase1Module>(() =>
     moduleFromHash(globalThis.location?.hash ?? ''),
   )
-  const [aiUsesEnglish, setAiUsesEnglish] = useState(false)
+  const [aiLanguage, setAiLanguage] = useState<{
+    readonly locale: SupportedLocale
+    readonly usesEnglish: boolean
+  }>(() => ({ locale, usesEnglish: false }))
   const [activeTopicId, setActiveTopicId] = useState(phase1AiTopics[0]!.id)
   const [selectedLevelId, setSelectedLevelId] = useState('level-1')
   const [answers, setAnswers] = useState<Record<string, number>>({})
@@ -151,6 +154,12 @@ export function DemoPhase1Shell({
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
 
+  if (aiLanguage.locale !== locale) {
+    setAiLanguage({ locale, usesEnglish: false })
+  }
+
+  const aiUsesEnglish =
+    aiLanguage.locale === locale && aiLanguage.usesEnglish
   const aiLocale: SupportedLocale = aiUsesEnglish ? 'en-IN' : locale
   const aiMessage = (key: MessageKey) =>
     resolveInterfaceMessage(key, aiLocale, localizationPolicy)
@@ -158,10 +167,6 @@ export function DemoPhase1Shell({
   const activeTopic =
     phase1AiTopics.find((topic) => topic.id === activeTopicId) ??
     phase1AiTopics[0]!
-
-  useEffect(() => {
-    setAiUsesEnglish(false)
-  }, [locale])
 
   useEffect(() => {
     const onHash = () => setModule(moduleFromHash(globalThis.location.hash))
@@ -416,7 +421,7 @@ export function DemoPhase1Shell({
               <button
                 type="button"
                 className={!aiUsesEnglish ? 'is-active' : undefined}
-                onClick={() => setAiUsesEnglish(false)}
+                onClick={() => setAiLanguage({ locale, usesEnglish: false })}
               >
                 <LocalizedMessage
                   resolution={message(localeEndonymKeys[locale])}
@@ -425,7 +430,7 @@ export function DemoPhase1Shell({
               <button
                 type="button"
                 className={aiUsesEnglish ? 'is-active' : undefined}
-                onClick={() => setAiUsesEnglish(true)}
+                onClick={() => setAiLanguage({ locale, usesEnglish: true })}
               >
                 <LocalizedMessage
                   resolution={message('demo.phase1.ai.lang_en')}

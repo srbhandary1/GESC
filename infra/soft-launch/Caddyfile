@@ -1,0 +1,34 @@
+# Soft-launch reverse proxy (loopback only).
+# Public HTTPS entry is via Cloudflare tunnel to :9080.
+
+{
+	auto_https off
+}
+
+:9080 {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle /sanctum/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle /health/live {
+		rewrite * /api/v1/health/live
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle /health/ready {
+		rewrite * /api/v1/health/ready
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -17,8 +17,8 @@ final class WebSessionPolicyTest extends TestCase
         self::assertTrue(config('session.http_only'));
         self::assertTrue(config('session.encrypt'));
         self::assertSame('lax', config('session.same_site'));
-        self::assertContains('localhost:5173', config('sanctum.stateful'));
-        self::assertContains('127.0.0.1:5173', config('sanctum.stateful'));
+        self::assertContains('localhost:5174', config('sanctum.stateful'));
+        self::assertContains('127.0.0.1:5174', config('sanctum.stateful'));
         self::assertSame(
             ValidateCsrfToken::class,
             config('sanctum.middleware.validate_csrf_token'),

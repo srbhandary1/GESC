@@ -1,11 +1,14 @@
 #!/bin/sh
-# Runs fail-closed speech:benchmark preflight without authorizing spend.
-# Incomplete evidence must exit non-zero and must not call Azure.
+# Runs speech:benchmark preflight without making a live Azure request.
+# A configured outside-repository environment is loaded when present; missing
+# or incomplete evidence remains a successful proof of fail-closed behavior.
 
 set -eu
 
 repository_root="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 api_dir="$repository_root/apps/api"
+workspace="${GE_SPEECH_BENCHMARK_ROOT:-$HOME/ge-speech-benchmark}"
+env_file="$workspace/env/speech-benchmark.env"
 php_bin="${PHP:-$repository_root/tmp/toolchain/php/php}"
 
 if [ ! -x "$php_bin" ]; then
@@ -20,7 +23,15 @@ fi
 # Ensure the outside workspace exists (templates only; no live secrets required).
 sh "$repository_root/scripts/setup-speech-benchmark-workspace.sh" >/dev/null
 
-echo "Running fail-closed speech:benchmark --phase=preflight (no live Azure call expected)..."
+if [ -f "$env_file" ]; then
+  # shellcheck disable=SC1090
+  set -a
+  . "$env_file"
+  set +a
+  echo "Running configured speech:benchmark --phase=preflight (no live Azure call)..."
+else
+  echo "Running fail-closed speech:benchmark --phase=preflight (no live Azure call)..."
+fi
 
 set +e
 output="$("$php_bin" "$api_dir/artisan" speech:benchmark --phase=preflight 2>&1)"
@@ -30,7 +41,14 @@ set -e
 printf '%s\n' "$output"
 
 if [ "$status" -eq 0 ]; then
-  echo "Unexpected success: preflight must stay fail-closed until real evidence and APO live-request exist." >&2
+  case "$output" in
+    *'"status":"ready"'*|*'status: "ready"'*)
+      echo "Preflight ready. No Azure request was made."
+      exit 0
+      ;;
+  esac
+
+  echo "Preflight exited successfully without a recognized ready payload." >&2
   exit 1
 fi
 

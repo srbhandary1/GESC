@@ -9,8 +9,12 @@ use App\Conversation\ConversationSessionService;
 use App\Conversation\ConversationTurnService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\Providers\ConversationModelProvider;
+use App\Conversation\Providers\ConversationModelRequest;
+use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
+use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextRequest;
 use App\Conversation\Providers\SpeechToTextResult;
@@ -18,6 +22,7 @@ use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
 use App\Models\User;
+use App\Providers\AppServiceProvider;
 use App\Tenancy\OrganizationContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +30,119 @@ use Illuminate\Support\Str;
 
 final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
 {
+    public function test_skill_focus_and_review_use_distinct_friend_scenario_snapshots(): void
+    {
+        [$learner, , $context] = $this->learner();
+        $sessions = $this->app->make(ConversationSessionService::class);
+
+        $skillFocus = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'past-tense-skill-focus-prototype',
+                coachingMode: 'tutor',
+                uiLocale: 'en-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+        $review = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'carry-sentence-review-prototype',
+                coachingMode: 'gentle',
+                uiLocale: 'en-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('friend', $skillFocus['mode']);
+        $this->assertSame('tutor', $skillFocus['coaching_mode']);
+        $this->assertSame(
+            'past-tense-skill-focus-prototype',
+            $skillFocus['scenario']['key'],
+        );
+        $this->assertSame(
+            'grammar-past-simple',
+            $skillFocus['scenario']['topic_code'],
+        );
+        $this->assertSame('friend', $review['mode']);
+        $this->assertSame('gentle', $review['coaching_mode']);
+        $this->assertSame(
+            'carry-sentence-review-prototype',
+            $review['scenario']['key'],
+        );
+        $this->assertSame(
+            'carry-sentence-review',
+            $review['scenario']['topic_code'],
+        );
+        $this->assertNotSame(
+            $skillFocus['scenario']['definition_hash'],
+            $review['scenario']['definition_hash'],
+        );
+    }
+
+    public function test_soft_launch_composes_confirmed_text_live_model_and_text_first_playback(): void
+    {
+        $this->app->detectEnvironment(static fn (): string => 'soft-launch');
+        config()->set('conversation.provider_driver', 'azure-openai-dev');
+        (new AppServiceProvider($this->app))->register();
+        $this->app->instance(
+            ConversationModelProvider::class,
+            new SoftLaunchAzureModelFixtureProvider,
+        );
+        [$learner, , $context] = $this->learner();
+        $sessions = $this->app->make(ConversationSessionService::class);
+        $turns = $this->app->make(ConversationTurnService::class);
+        $session = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'everyday-friend-prototype',
+                coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $turn = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: '  I spoke after work.  ',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('completed', $turn['status']);
+        $this->assertSame('I spoke after work.', $turn['transcript']);
+        $this->assertSame('A live-model fixture reply.', $turn['assistant_reply']);
+        $this->assertFalse($turn['speech']['playback_available']);
+        $this->assertSame(
+            'client-text-to-speech-fallback',
+            $turn['speech']['rendering_mode'],
+        );
+        $this->assertSame(25, $turn['usage']['estimated_cost_microunits']);
+        $this->assertSame(
+            [
+                'project-confirmed-text',
+                'azure-openai',
+                'project-text-first',
+            ],
+            DB::table('ai_cost_ledger')
+                ->orderBy('recorded_at')
+                ->orderByRaw(
+                    "case provider_stage when 'stt' then 1 when 'model' then 2 when 'tts' then 3 else 4 end",
+                )
+                ->pluck('provider_key')
+                ->all(),
+        );
+    }
+
     public function test_friend_turn_is_tenant_scoped_idempotent_and_content_minimized(): void
     {
         [$learner, $membership, $context] = $this->learner();
@@ -76,8 +194,8 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
                 $context,
                 fn (): array => $sessions->start(
                     learner: $learner,
-                    personaKey: 'patient-friend-prototype',
-                    scenarioKey: 'different-prototype',
+                    personaKey: 'clinic-reception-roleplay-prototype',
+                    scenarioKey: 'clinic-reception-roleplay-scenario',
                     coachingMode: 'gentle',
                     uiLocale: 'kn-IN',
                     idempotencyKey: $sessionCommand,
@@ -469,6 +587,26 @@ final class AlwaysFailSpeechToTextProvider implements SpeechToTextProvider
             modelVersion: 'fake-stt-v1',
             latencyMilliseconds: 1,
             inputUnits: 1,
+        );
+    }
+}
+
+final class SoftLaunchAzureModelFixtureProvider implements ConversationModelProvider
+{
+    public function respond(
+        ConversationModelRequest $request,
+    ): ConversationModelResult {
+        return new ConversationModelResult(
+            understoodIntent: 'confirmed_text_received',
+            assistantReply: 'A live-model fixture reply.',
+            providerUsage: new ProviderUsage(
+                providerKey: 'azure-openai',
+                modelVersion: 'soft-launch-live-fixture-v1',
+                latencyMilliseconds: 12,
+                inputUnits: 10,
+                outputUnits: 5,
+                estimatedCostMicrounits: 25,
+            ),
         );
     }
 }

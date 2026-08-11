@@ -88,6 +88,7 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
     private function runEnrollmentPinMigration(string $direction): void
     {
         if ($direction === 'down') {
+            $this->runLearnerAdministrationMigration('down');
             $this->runDeterministicLearningMigration('down');
         }
 
@@ -108,7 +109,29 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
 
         if ($direction === 'up') {
             $this->runDeterministicLearningMigration('up');
+            $this->runLearnerAdministrationMigration('up');
         }
+    }
+
+    /**
+     * @param  'down'|'up'  $direction
+     */
+    private function runLearnerAdministrationMigration(string $direction): void
+    {
+        $migration = require database_path(
+            'migrations/2026_08_09_000130_create_admin_learner_foundation.php',
+        );
+
+        if (
+            ! $migration instanceof Migration
+            || ! is_callable([$migration, $direction])
+        ) {
+            throw new RuntimeException(
+                'The ADMIN-LEARNER-01 migration is not executable.',
+            );
+        }
+
+        Closure::fromCallable([$migration, $direction])();
     }
 
     /**

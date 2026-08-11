@@ -86,6 +86,11 @@ With the pinned PHP toolchain and without real evidence filled in:
 sh scripts/run-speech-benchmark-preflight.sh
 ```
 
+The wrapper loads `~/ge-speech-benchmark/env/speech-benchmark.env` when that
+file exists. It reports `ready` only after every local evidence/configuration
+gate passes; otherwise it proves the provider remains fail-closed. The
+preflight phase never sends a request to Azure.
+
 Expected result: preflight **rejects** incomplete gates (proves fail-closed
 wiring). A successful live preflight requires completed external evidence,
 credential, spend approval and explicit APO live-request authorization.

@@ -1,3 +1,10 @@
+import {
+  defaultAuthenticationRuntime,
+  type ApiCsrfProtection,
+} from '../auth/defaultAuthentication'
+import type { OperatorOrganizationPanelKey } from './OperatorOrganizationApi'
+import type { OperatorLearnerPanelKey } from './OperatorLearnerApi'
+
 export interface OperatorContentDraft {
   readonly program_id: string
   readonly program_key: string
@@ -34,6 +41,17 @@ export interface OperatorPublicationStatus {
   readonly manifest_hash: string
   readonly is_head: boolean
   readonly head_version: number | null
+  readonly publication_head_version?: number
+  readonly lifecycle_status?:
+    | 'scheduled'
+    | 'cancelled'
+    | 'active'
+    | 'superseded'
+    | 'retired'
+    | 'suspended'
+  readonly effective_at?: string
+  readonly publication_suspended?: boolean
+  readonly allowed_actions?: readonly string[]
   readonly created_at: string
 }
 
@@ -45,6 +63,65 @@ export interface OperatorAuditEvent {
   readonly actor_membership_id: string | null
   readonly correlation_id: string | null
   readonly occurred_at: string
+}
+
+export interface OperatorAuditEventPage {
+  readonly items: readonly OperatorAuditEvent[]
+  readonly next_cursor: string | null
+}
+
+export type OperatorNavigationKey =
+  | 'overview'
+  | 'learning'
+  | 'operations'
+  | 'safety'
+  | 'people'
+  | 'learners'
+
+export type OperatorPanelKey =
+  | 'pilot_analytics'
+  | 'content_studio'
+  | 'media_library'
+  | 'review_queue'
+  | 'publish_status'
+  | 'support_diagnostics'
+  | 'audit'
+  | OperatorOrganizationPanelKey
+  | OperatorLearnerPanelKey
+
+export interface OperatorOverview {
+  readonly generated_at: string
+  readonly organization: {
+    readonly id: string
+    readonly name: string
+    readonly timezone: string
+  }
+  readonly navigation: readonly OperatorNavigationKey[]
+  readonly panels: readonly OperatorPanelKey[]
+  readonly search_available: boolean
+}
+
+export type OperatorSearchResultKind =
+  | 'curriculum_version'
+  | 'curriculum_publication'
+  | 'support_diagnostic'
+  | 'audit_event'
+
+export type OperatorSearchSection = 'learning' | 'operations' | 'safety'
+
+export interface OperatorSearchResult {
+  readonly kind: OperatorSearchResultKind
+  readonly id: string
+  readonly section: OperatorSearchSection
+  readonly primary_text: string
+  readonly secondary_text: string
+  readonly occurred_at: string | null
+}
+
+export interface OperatorSearchPage {
+  readonly generated_at: string
+  readonly items: readonly OperatorSearchResult[]
+  readonly next_cursor: string | null
 }
 
 export interface OperatorPilotAnalyticsSummary {
@@ -84,19 +161,26 @@ export interface OperatorSupportDiagnostics {
 }
 
 export interface OperatorConsoleApi {
+  getOverview(signal?: AbortSignal): Promise<OperatorOverview>
   listDrafts(signal?: AbortSignal): Promise<readonly OperatorContentDraft[]>
   listPublications(
     signal?: AbortSignal,
   ): Promise<readonly OperatorPublicationStatus[]>
   listAuditEvents(
+    cursor?: string,
     signal?: AbortSignal,
-  ): Promise<readonly OperatorAuditEvent[]>
+  ): Promise<OperatorAuditEventPage>
   getPilotAnalytics(
     signal?: AbortSignal,
   ): Promise<OperatorPilotAnalyticsSummary>
   listSupportDiagnostics(
     signal?: AbortSignal,
   ): Promise<OperatorSupportDiagnostics>
+  search(
+    query: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<OperatorSearchPage>
 }
 
 export class OperatorConsoleUnavailableError extends Error {
@@ -108,21 +192,29 @@ export class OperatorConsoleUnavailableError extends Error {
 
 export interface WebOperatorConsoleApiOptions {
   readonly baseUrl?: string
+  readonly csrfProtection?: ApiCsrfProtection
   readonly fetch?: typeof fetch
   readonly readCookie?: () => string
 }
 
 export class WebOperatorConsoleApi implements OperatorConsoleApi {
   readonly #baseUrl: string
+  readonly #csrfProtection: ApiCsrfProtection
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
 
   constructor(options: WebOperatorConsoleApiOptions = {}) {
     this.#baseUrl = options.baseUrl ?? '/api/v1'
+    this.#csrfProtection =
+      options.csrfProtection ?? 'sanctum-cookie'
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
     this.#readCookie =
       options.readCookie ??
       (() => (typeof document === 'undefined' ? '' : document.cookie))
+  }
+
+  async getOverview(signal?: AbortSignal): Promise<OperatorOverview> {
+    return this.#get<OperatorOverview>('/operator/overview', signal)
   }
 
   async listDrafts(
@@ -146,13 +238,19 @@ export class WebOperatorConsoleApi implements OperatorConsoleApi {
   }
 
   async listAuditEvents(
+    cursor?: string,
     signal?: AbortSignal,
-  ): Promise<readonly OperatorAuditEvent[]> {
-    const payload = await this.#get<{ items: OperatorAuditEvent[] }>(
-      '/operator/audit-events?limit=50',
+  ): Promise<OperatorAuditEventPage> {
+    const parameters = new URLSearchParams({ limit: '25' })
+
+    if (cursor !== undefined) {
+      parameters.set('cursor', cursor)
+    }
+
+    return this.#get<OperatorAuditEventPage>(
+      `/operator/audit-events?${parameters.toString()}`,
       signal,
     )
-    return payload.items
   }
 
   async getPilotAnalytics(
@@ -173,12 +271,31 @@ export class WebOperatorConsoleApi implements OperatorConsoleApi {
     )
   }
 
+  async search(
+    query: string,
+    cursor?: string,
+    signal?: AbortSignal,
+  ): Promise<OperatorSearchPage> {
+    const parameters = new URLSearchParams({ limit: '20', q: query })
+
+    if (cursor !== undefined) {
+      parameters.set('cursor', cursor)
+    }
+
+    return this.#get<OperatorSearchPage>(
+      `/operator/search?${parameters.toString()}`,
+      signal,
+    )
+  }
+
   async #get<T>(path: string, signal?: AbortSignal): Promise<T> {
     const response = await this.#fetch(`${this.#baseUrl}${path}`, {
       credentials: 'include',
       headers: {
         Accept: 'application/json',
-        'X-XSRF-TOKEN': this.#xsrfToken(),
+        ...(this.#csrfProtection === 'sanctum-cookie'
+          ? { 'X-XSRF-TOKEN': this.#xsrfToken() }
+          : {}),
       },
       method: 'GET',
       signal,
@@ -197,4 +314,8 @@ export class WebOperatorConsoleApi implements OperatorConsoleApi {
   }
 }
 
-export const defaultOperatorConsoleApi = new WebOperatorConsoleApi()
+export const defaultOperatorConsoleApi = new WebOperatorConsoleApi({
+  baseUrl: defaultAuthenticationRuntime.apiBaseUrl,
+  csrfProtection: defaultAuthenticationRuntime.csrfProtection,
+  fetch: defaultAuthenticationRuntime.apiFetch,
+})

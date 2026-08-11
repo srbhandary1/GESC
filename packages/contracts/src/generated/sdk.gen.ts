@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, AdvanceConversationSessionStageData, AdvanceConversationSessionStageErrors, AdvanceConversationSessionStageResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, CreateLearnerAiMemoryFactData, CreateLearnerAiMemoryFactErrors, CreateLearnerAiMemoryFactResponses, CreateOperatorPrivacyErasureData, CreateOperatorPrivacyErasureErrors, CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyExportData, CreateOperatorPrivacyExportErrors, CreateOperatorPrivacyExportResponses, DeleteLearnerAiMemoryFactData, DeleteLearnerAiMemoryFactErrors, DeleteLearnerAiMemoryFactResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetOperatorPilotAnalyticsData, GetOperatorPilotAnalyticsErrors, GetOperatorPilotAnalyticsResponses, GetOperatorPrivacyErasureData, GetOperatorPrivacyErasureErrors, GetOperatorPrivacyErasureResponses, GetOperatorPrivacyExportData, GetOperatorPrivacyExportErrors, GetOperatorPrivacyExportResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, ListLearnerAiMemoryData, ListLearnerAiMemoryErrors, ListLearnerAiMemoryResponses, ListOperatorAuditEventsData, ListOperatorAuditEventsErrors, ListOperatorAuditEventsResponses, ListOperatorContentDraftsData, ListOperatorContentDraftsErrors, ListOperatorContentDraftsResponses, ListOperatorContentPublicationsData, ListOperatorContentPublicationsErrors, ListOperatorContentPublicationsResponses, ListOperatorSupportDiagnosticsData, ListOperatorSupportDiagnosticsErrors, ListOperatorSupportDiagnosticsResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, PublishOperatorCurriculumData, PublishOperatorCurriculumErrors, PublishOperatorCurriculumResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RecordOperatorEnglishContentReviewData, RecordOperatorEnglishContentReviewErrors, RecordOperatorEnglishContentReviewResponses, RecordOperatorKannadaContentReviewData, RecordOperatorKannadaContentReviewErrors, RecordOperatorKannadaContentReviewResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, RollbackOperatorCurriculumData, RollbackOperatorCurriculumErrors, RollbackOperatorCurriculumResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, UpdateLearnerAiMemoryFactData, UpdateLearnerAiMemoryFactErrors, UpdateLearnerAiMemoryFactResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
+import type { AbandonOperatorContentWorkspaceData, AbandonOperatorContentWorkspaceErrors, AbandonOperatorContentWorkspaceResponses, AcceptInstitutionInviteData, AcceptInstitutionInviteErrors, AcceptInstitutionInviteResponses, AcceptOperatorAuthorityAppointmentData, AcceptOperatorAuthorityAppointmentErrors, AcceptOperatorAuthorityAppointmentResponses, AcceptOperatorMediaUploadData, AcceptOperatorMediaUploadErrors, AcceptOperatorMediaUploadResponses, ActivateOperatorContentPublicationData, ActivateOperatorContentPublicationErrors, ActivateOperatorContentPublicationResponses, ActivateOperatorLearnerEnrollmentCurriculumData, ActivateOperatorLearnerEnrollmentCurriculumErrors, ActivateOperatorLearnerEnrollmentCurriculumResponses, AdoptOperatorMediaAssetData, AdoptOperatorMediaAssetErrors, AdoptOperatorMediaAssetResponses, AdvanceConversationSessionStageData, AdvanceConversationSessionStageErrors, AdvanceConversationSessionStageResponses, AppendOperatorEnglishContentRevisionData, AppendOperatorEnglishContentRevisionErrors, AppendOperatorEnglishContentRevisionResponses, AppendOperatorKannadaContentVariantData, AppendOperatorKannadaContentVariantErrors, AppendOperatorKannadaContentVariantResponses, AppendOperatorMediaKannadaVariantData, AppendOperatorMediaKannadaVariantErrors, AppendOperatorMediaKannadaVariantResponses, AppendOperatorMediaMetadataData, AppendOperatorMediaMetadataErrors, AppendOperatorMediaMetadataResponses, ApprovePlatformIdentityRecoveryCaseData, ApprovePlatformIdentityRecoveryCaseErrors, ApprovePlatformIdentityRecoveryCaseResponses, ArchiveOperatorBranchData, ArchiveOperatorBranchErrors, ArchiveOperatorBranchResponses, ArchiveOperatorCohortData, ArchiveOperatorCohortErrors, ArchiveOperatorCohortResponses, AssignOperatorMembershipRoleData, AssignOperatorMembershipRoleErrors, AssignOperatorMembershipRoleResponses, AssignOperatorTrainerCohortData, AssignOperatorTrainerCohortErrors, AssignOperatorTrainerCohortResponses, AttachOperatorMediaAssetData, AttachOperatorMediaAssetErrors, AttachOperatorMediaAssetResponses, BeginMobileAuthorizationData, BeginMobileAuthorizationErrors, BeginMobileAuthorizationResponses, BeginPrivilegedMfaEnrollmentData, BeginPrivilegedMfaEnrollmentErrors, BeginPrivilegedMfaEnrollmentResponses, CancelOperatorContentPublicationScheduleData, CancelOperatorContentPublicationScheduleErrors, CancelOperatorContentPublicationScheduleResponses, ChangeCurrentPasswordData, ChangeCurrentPasswordErrors, ChangeCurrentPasswordResponses, ChangeCurrentUsernameData, ChangeCurrentUsernameErrors, ChangeCurrentUsernameResponses, ChangeOperatorLearnerEnrollmentCohortData, ChangeOperatorLearnerEnrollmentCohortErrors, ChangeOperatorLearnerEnrollmentCohortResponses, CompleteExcludedPasswordEstablishmentData, CompleteExcludedPasswordEstablishmentErrors, CompleteExcludedPasswordEstablishmentResponses, CompleteLearnerOfflineMissionData, CompleteLearnerOfflineMissionErrors, CompleteLearnerOfflineMissionResponses, CompleteLearnerOnboardingData, CompleteLearnerOnboardingErrors, CompleteLearnerOnboardingResponses, CompletePasswordRecoveryData, CompletePasswordRecoveryErrors, CompletePasswordRecoveryResponses, CompletePlatformIdentityRecoveryCaseData, CompletePlatformIdentityRecoveryCaseErrors, CompletePlatformIdentityRecoveryCaseResponses, ConfirmCurrentPasswordData, ConfirmCurrentPasswordErrors, ConfirmCurrentPasswordResponses, ConfirmPrivilegedMfaEnrollmentData, ConfirmPrivilegedMfaEnrollmentErrors, ConfirmPrivilegedMfaEnrollmentResponses, CorrectOperatorContentProgramDescriptorData, CorrectOperatorContentProgramDescriptorErrors, CorrectOperatorContentProgramDescriptorResponses, CorrectOperatorLearnerGoalData, CorrectOperatorLearnerGoalErrors, CorrectOperatorLearnerGoalResponses, CreateConversationTurnData, CreateConversationTurnErrors, CreateConversationTurnResponses, CreateLearnerAiMemoryFactData, CreateLearnerAiMemoryFactErrors, CreateLearnerAiMemoryFactResponses, CreateOperatorAuthorityAppointmentData, CreateOperatorAuthorityAppointmentErrors, CreateOperatorAuthorityAppointmentResponses, CreateOperatorBranchData, CreateOperatorBranchErrors, CreateOperatorBranchResponses, CreateOperatorCohortData, CreateOperatorCohortErrors, CreateOperatorCohortResponses, CreateOperatorContentDocumentData, CreateOperatorContentDocumentErrors, CreateOperatorContentDocumentResponses, CreateOperatorContentProgramData, CreateOperatorContentProgramErrors, CreateOperatorContentProgramResponses, CreateOperatorContentSuccessorData, CreateOperatorContentSuccessorErrors, CreateOperatorContentSuccessorResponses, CreateOperatorLearnerEnrollmentData, CreateOperatorLearnerEnrollmentErrors, CreateOperatorLearnerEnrollmentResponses, CreateOperatorPrivacyErasureData, CreateOperatorPrivacyErasureErrors, CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyExportData, CreateOperatorPrivacyExportErrors, CreateOperatorPrivacyExportResponses, CreateOperatorRoleData, CreateOperatorRoleErrors, CreateOperatorRoleResponses, CreatePrivilegedMfaChallengeData, CreatePrivilegedMfaChallengeErrors, CreatePrivilegedMfaChallengeResponses, DeactivateOperatorStaffMembershipData, DeactivateOperatorStaffMembershipErrors, DeactivateOperatorStaffMembershipResponses, DecideOperatorMediaRightsData, DecideOperatorMediaRightsErrors, DecideOperatorMediaRightsResponses, DeleteLearnerAiMemoryFactData, DeleteLearnerAiMemoryFactErrors, DeleteLearnerAiMemoryFactResponses, DeleteVoiceRecordingData, DeleteVoiceRecordingErrors, DeleteVoiceRecordingResponses, EstablishPasswordCredentialData, EstablishPasswordCredentialErrors, EstablishPasswordCredentialResponses, ExchangeMobileTokenData, ExchangeMobileTokenErrors, ExchangeMobileTokenResponses, FinalizeOperatorMediaUploadData, FinalizeOperatorMediaUploadErrors, FinalizeOperatorMediaUploadResponses, GetAuthenticationModeData, GetAuthenticationModeErrors, GetAuthenticationModeResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetLearnerHomeData, GetLearnerHomeErrors, GetLearnerHomeResponses, GetLearnerMissionData, GetLearnerMissionErrors, GetLearnerMissionResponses, GetLearnerOfflineMissionBundleData, GetLearnerOfflineMissionBundleErrors, GetLearnerOfflineMissionBundleResponses, GetLearnerProgressData, GetLearnerProgressErrors, GetLearnerProgressResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetOperatorAuthorityAppointmentData, GetOperatorAuthorityAppointmentErrors, GetOperatorAuthorityAppointmentResponses, GetOperatorContentWorkspaceData, GetOperatorContentWorkspaceErrors, GetOperatorContentWorkspaceResponses, GetOperatorLearnerData, GetOperatorLearnerErrors, GetOperatorLearnerResponses, GetOperatorMediaAssetData, GetOperatorMediaAssetErrors, GetOperatorMediaAssetResponses, GetOperatorMediaManifestData, GetOperatorMediaManifestErrors, GetOperatorMediaManifestResponses, GetOperatorMediaTranscriptionCandidateData, GetOperatorMediaTranscriptionCandidateErrors, GetOperatorMediaTranscriptionCandidateResponses, GetOperatorMediaUploadData, GetOperatorMediaUploadErrors, GetOperatorMediaUploadResponses, GetOperatorMembershipSessionsData, GetOperatorMembershipSessionsErrors, GetOperatorMembershipSessionsResponses, GetOperatorOrganizationData, GetOperatorOrganizationErrors, GetOperatorOrganizationResponses, GetOperatorOverviewData, GetOperatorOverviewErrors, GetOperatorOverviewResponses, GetOperatorPilotAnalyticsData, GetOperatorPilotAnalyticsErrors, GetOperatorPilotAnalyticsResponses, GetOperatorPrivacyErasureData, GetOperatorPrivacyErasureErrors, GetOperatorPrivacyErasureResponses, GetOperatorPrivacyExportData, GetOperatorPrivacyExportErrors, GetOperatorPrivacyExportResponses, GetPasswordAuthenticationStatusData, GetPasswordAuthenticationStatusErrors, GetPasswordAuthenticationStatusResponses, GetPrivilegedMfaStatusData, GetPrivilegedMfaStatusErrors, GetPrivilegedMfaStatusResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVoiceDeletionData, GetVoiceDeletionErrors, GetVoiceDeletionResponses, GetVoiceRecordingData, GetVoiceRecordingErrors, GetVoiceRecordingResponses, GrantVoiceConsentData, GrantVoiceConsentErrors, GrantVoiceConsentResponses, IssueOperatorInstitutionInviteData, IssueOperatorInstitutionInviteErrors, IssueOperatorInstitutionInviteResponses, IssueOperatorLearnerInvitationData, IssueOperatorLearnerInvitationErrors, IssueOperatorLearnerInvitationResponses, ListLearnerAiMemoryData, ListLearnerAiMemoryErrors, ListLearnerAiMemoryResponses, ListLearnerLevelVideosData, ListLearnerLevelVideosErrors, ListLearnerLevelVideosResponses, ListOperatorAuditEventsData, ListOperatorAuditEventsErrors, ListOperatorAuditEventsResponses, ListOperatorAuthorityAppointmentsData, ListOperatorAuthorityAppointmentsErrors, ListOperatorAuthorityAppointmentsResponses, ListOperatorBranchesData, ListOperatorBranchesErrors, ListOperatorBranchesResponses, ListOperatorCohortsData, ListOperatorCohortsErrors, ListOperatorCohortsResponses, ListOperatorContentDraftsData, ListOperatorContentDraftsErrors, ListOperatorContentDraftsResponses, ListOperatorContentPublicationsData, ListOperatorContentPublicationsErrors, ListOperatorContentPublicationsResponses, ListOperatorContentReviewQueueData, ListOperatorContentReviewQueueErrors, ListOperatorContentReviewQueueResponses, ListOperatorContentWorkspaceHistoryData, ListOperatorContentWorkspaceHistoryErrors, ListOperatorContentWorkspaceHistoryResponses, ListOperatorContentWorkspacesData, ListOperatorContentWorkspacesErrors, ListOperatorContentWorkspacesResponses, ListOperatorInstitutionInvitesData, ListOperatorInstitutionInvitesErrors, ListOperatorInstitutionInvitesResponses, ListOperatorLearnerEnrollmentsData, ListOperatorLearnerEnrollmentsErrors, ListOperatorLearnerEnrollmentsResponses, ListOperatorLearnerInvitationsData, ListOperatorLearnerInvitationsErrors, ListOperatorLearnerInvitationsResponses, ListOperatorLearnersData, ListOperatorLearnersErrors, ListOperatorLearnersResponses, ListOperatorMediaAssetsData, ListOperatorMediaAssetsErrors, ListOperatorMediaAssetsResponses, ListOperatorMediaUploadsData, ListOperatorMediaUploadsErrors, ListOperatorMediaUploadsResponses, ListOperatorRolesData, ListOperatorRolesErrors, ListOperatorRolesResponses, ListOperatorStaffMembershipsData, ListOperatorStaffMembershipsErrors, ListOperatorStaffMembershipsResponses, ListOperatorSupportDiagnosticsData, ListOperatorSupportDiagnosticsErrors, ListOperatorSupportDiagnosticsResponses, ListOperatorTrainerProfilesData, ListOperatorTrainerProfilesErrors, ListOperatorTrainerProfilesResponses, ListVoiceConsentsData, ListVoiceConsentsErrors, ListVoiceConsentsResponses, ListWebSessionsData, ListWebSessionsErrors, ListWebSessionsResponses, LogoutWebSessionData, LogoutWebSessionErrors, LogoutWebSessionResponses, OpenPlatformIdentityRecoveryCaseData, OpenPlatformIdentityRecoveryCaseErrors, OpenPlatformIdentityRecoveryCaseResponses, PreviewOperatorContentDocumentData, PreviewOperatorContentDocumentErrors, PreviewOperatorContentDocumentResponses, PreviewOperatorMediaAssetData, PreviewOperatorMediaAssetErrors, PreviewOperatorMediaAssetResponses, PreviewOperatorMediaUploadData, PreviewOperatorMediaUploadErrors, PreviewOperatorMediaUploadResponses, PublishOperatorCurriculumData, PublishOperatorCurriculumErrors, PublishOperatorCurriculumResponses, ReactivateOperatorLearnerData, ReactivateOperatorLearnerErrors, ReactivateOperatorLearnerResponses, ReactivateOperatorStaffMembershipData, ReactivateOperatorStaffMembershipErrors, ReactivateOperatorStaffMembershipResponses, ReconcileOperatorMediaTranscriptionCandidateData, ReconcileOperatorMediaTranscriptionCandidateErrors, ReconcileOperatorMediaTranscriptionCandidateResponses, RecordLearnerAttemptResponseData, RecordLearnerAttemptResponseErrors, RecordLearnerAttemptResponseResponses, RecordOperatorEnglishContentReviewData, RecordOperatorEnglishContentReviewErrors, RecordOperatorEnglishContentReviewResponses, RecordOperatorKannadaContentReviewData, RecordOperatorKannadaContentReviewErrors, RecordOperatorKannadaContentReviewResponses, RecordOperatorStructureContentReviewData, RecordOperatorStructureContentReviewErrors, RecordOperatorStructureContentReviewResponses, RegeneratePrivilegedMfaRecoveryCodesData, RegeneratePrivilegedMfaRecoveryCodesErrors, RegeneratePrivilegedMfaRecoveryCodesResponses, RejectOperatorMediaUploadData, RejectOperatorMediaUploadErrors, RejectOperatorMediaUploadResponses, ReplaceOperatorMediaAssetData, ReplaceOperatorMediaAssetErrors, ReplaceOperatorMediaAssetResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RequestPasswordRecoveryData, RequestPasswordRecoveryErrors, RequestPasswordRecoveryResponses, RetireOperatorContentPublicationData, RetireOperatorContentPublicationErrors, RetireOperatorContentPublicationResponses, RetireOperatorMediaAssetData, RetireOperatorMediaAssetErrors, RetireOperatorMediaAssetResponses, RetireOperatorRoleData, RetireOperatorRoleErrors, RetireOperatorRoleResponses, ReviewOperatorMediaMetadataData, ReviewOperatorMediaMetadataErrors, ReviewOperatorMediaMetadataResponses, ReviewVoiceTranscriptData, ReviewVoiceTranscriptErrors, ReviewVoiceTranscriptResponses, RevokeAllWebSessionsData, RevokeAllWebSessionsErrors, RevokeAllWebSessionsResponses, RevokeMobileTokenFamilyData, RevokeMobileTokenFamilyErrors, RevokeMobileTokenFamilyResponses, RevokeOperatorAuthorityAppointmentData, RevokeOperatorAuthorityAppointmentErrors, RevokeOperatorAuthorityAppointmentResponses, RevokeOperatorInstitutionInviteData, RevokeOperatorInstitutionInviteErrors, RevokeOperatorInstitutionInviteResponses, RevokeOperatorLearnerInvitationData, RevokeOperatorLearnerInvitationErrors, RevokeOperatorLearnerInvitationResponses, RevokeOperatorMembershipRoleData, RevokeOperatorMembershipRoleErrors, RevokeOperatorMembershipRoleResponses, RevokeOperatorMembershipSessionsData, RevokeOperatorMembershipSessionsErrors, RevokeOperatorMembershipSessionsResponses, RevokeOperatorTrainerCohortData, RevokeOperatorTrainerCohortErrors, RevokeOperatorTrainerCohortResponses, RevokePrivilegedMfaFactorData, RevokePrivilegedMfaFactorErrors, RevokePrivilegedMfaFactorResponses, RevokeWebSessionData, RevokeWebSessionErrors, RevokeWebSessionResponses, RollbackOperatorCurriculumData, RollbackOperatorCurriculumErrors, RollbackOperatorCurriculumResponses, SaveOperatorContentGraphRevisionData, SaveOperatorContentGraphRevisionErrors, SaveOperatorContentGraphRevisionResponses, ScheduleOperatorContentPublicationData, ScheduleOperatorContentPublicationErrors, ScheduleOperatorContentPublicationResponses, SearchOperatorWorkspaceData, SearchOperatorWorkspaceErrors, SearchOperatorWorkspaceResponses, SelectOrganizationContextData, SelectOrganizationContextErrors, SelectOrganizationContextResponses, SignInWithPasswordData, SignInWithPasswordErrors, SignInWithPasswordResponses, StartConversationSessionData, StartConversationSessionErrors, StartConversationSessionResponses, StartLearnerMissionAttemptData, StartLearnerMissionAttemptErrors, StartLearnerMissionAttemptResponses, StartOperatorMediaUploadData, StartOperatorMediaUploadErrors, StartOperatorMediaUploadResponses, StoreOperatorMediaUploadPartData, StoreOperatorMediaUploadPartErrors, StoreOperatorMediaUploadPartResponses, StreamConversationTurnEventsData, StreamConversationTurnEventsErrors, StreamConversationTurnEventsResponse, StreamConversationTurnEventsResponses, StreamLearnerLessonVideoData, StreamLearnerLessonVideoErrors, StreamLearnerLessonVideoResponses, StreamLearnerModelAudioData, StreamLearnerModelAudioErrors, StreamLearnerModelAudioResponses, SubmitLearnerMissionAttemptData, SubmitLearnerMissionAttemptErrors, SubmitLearnerMissionAttemptResponses, SubmitOperatorContentStructureReviewData, SubmitOperatorContentStructureReviewErrors, SubmitOperatorContentStructureReviewResponses, SurrenderOperatorAuthorityAppointmentData, SurrenderOperatorAuthorityAppointmentErrors, SurrenderOperatorAuthorityAppointmentResponses, SuspendOperatorLearnerData, SuspendOperatorLearnerErrors, SuspendOperatorLearnerResponses, UpdateLearnerAiMemoryFactData, UpdateLearnerAiMemoryFactErrors, UpdateLearnerAiMemoryFactResponses, UpdateOperatorBranchData, UpdateOperatorBranchErrors, UpdateOperatorBranchResponses, UpdateOperatorCohortData, UpdateOperatorCohortErrors, UpdateOperatorCohortResponses, UpdateOperatorRoleData, UpdateOperatorRoleErrors, UpdateOperatorRoleResponses, UploadVoiceRecordingData, UploadVoiceRecordingErrors, UploadVoiceRecordingResponses, VerifyOtpData, VerifyOtpErrors, VerifyOtpResponses, VerifyPrivilegedMfaChallengeData, VerifyPrivilegedMfaChallengeErrors, VerifyPrivilegedMfaChallengeResponses, WithdrawOperatorContentReviewData, WithdrawOperatorContentReviewErrors, WithdrawOperatorContentReviewResponses, WithdrawOperatorLearnerEnrollmentData, WithdrawOperatorLearnerEnrollmentErrors, WithdrawOperatorLearnerEnrollmentResponses, WithdrawVoiceConsentData, WithdrawVoiceConsentErrors, WithdrawVoiceConsentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -62,12 +62,199 @@ export const exchangeMobileToken = <ThrowOnError extends boolean = false>(option
 });
 
 /**
+ * Create a web session with username and password
+ */
+export const signInWithPassword = <ThrowOnError extends boolean = false>(options: Options<SignInWithPasswordData, ThrowOnError>): RequestResult<SignInWithPasswordResponses, SignInWithPasswordErrors, ThrowOnError> => (options.client ?? client).post<SignInWithPasswordResponses, SignInWithPasswordErrors, ThrowOnError>({
+    url: '/auth/password/sign-ins',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get safe password migration and freshness status
+ */
+export const getPasswordAuthenticationStatus = <ThrowOnError extends boolean = false>(options?: Options<GetPasswordAuthenticationStatusData, ThrowOnError>): RequestResult<GetPasswordAuthenticationStatusResponses, GetPasswordAuthenticationStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetPasswordAuthenticationStatusResponses, GetPasswordAuthenticationStatusErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/password/status',
+    ...options
+});
+
+/**
+ * Get the safe global authentication migration mode
+ */
+export const getAuthenticationMode = <ThrowOnError extends boolean = false>(options?: Options<GetAuthenticationModeData, ThrowOnError>): RequestResult<GetAuthenticationModeResponses, GetAuthenticationModeErrors, ThrowOnError> => (options?.client ?? client).get<GetAuthenticationModeResponses, GetAuthenticationModeErrors, ThrowOnError>({ url: '/auth/password/mode', ...options });
+
+/**
+ * Establish an existing user's migration credential once
+ */
+export const establishPasswordCredential = <ThrowOnError extends boolean = false>(options: Options<EstablishPasswordCredentialData, ThrowOnError>): RequestResult<EstablishPasswordCredentialResponses, EstablishPasswordCredentialErrors, ThrowOnError> => (options.client ?? client).post<EstablishPasswordCredentialResponses, EstablishPasswordCredentialErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/password/establishments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm the same password for five-minute privileged freshness
+ */
+export const confirmCurrentPassword = <ThrowOnError extends boolean = false>(options: Options<ConfirmCurrentPasswordData, ThrowOnError>): RequestResult<ConfirmCurrentPasswordResponses, ConfirmCurrentPasswordErrors, ThrowOnError> => (options.client ?? client).post<ConfirmCurrentPasswordResponses, ConfirmCurrentPasswordErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/password/confirmations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change the current password and revoke all credentials
+ */
+export const changeCurrentPassword = <ThrowOnError extends boolean = false>(options: Options<ChangeCurrentPasswordData, ThrowOnError>): RequestResult<ChangeCurrentPasswordResponses, ChangeCurrentPasswordErrors, ThrowOnError> => (options.client ?? client).put<ChangeCurrentPasswordResponses, ChangeCurrentPasswordErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change the global username after fresh password confirmation
+ */
+export const changeCurrentUsername = <ThrowOnError extends boolean = false>(options: Options<ChangeCurrentUsernameData, ThrowOnError>): RequestResult<ChangeCurrentUsernameResponses, ChangeCurrentUsernameErrors, ThrowOnError> => (options.client ?? client).put<ChangeCurrentUsernameResponses, ChangeCurrentUsernameErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/username',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Request enumeration-safe ordinary password recovery
+ */
+export const requestPasswordRecovery = <ThrowOnError extends boolean = false>(options: Options<RequestPasswordRecoveryData, ThrowOnError>): RequestResult<RequestPasswordRecoveryResponses, RequestPasswordRecoveryErrors, ThrowOnError> => (options.client ?? client).post<RequestPasswordRecoveryResponses, RequestPasswordRecoveryErrors, ThrowOnError>({
+    url: '/auth/password/recovery-requests',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consume a one-time recovery token and set a new password
+ */
+export const completePasswordRecovery = <ThrowOnError extends boolean = false>(options: Options<CompletePasswordRecoveryData, ThrowOnError>): RequestResult<CompletePasswordRecoveryResponses, CompletePasswordRecoveryErrors, ThrowOnError> => (options.client ?? client).post<CompletePasswordRecoveryResponses, CompletePasswordRecoveryErrors, ThrowOnError>({
+    url: '/auth/password/recoveries',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consume a governed excluded-user establishment token
+ */
+export const completeExcludedPasswordEstablishment = <ThrowOnError extends boolean = false>(options: Options<CompleteExcludedPasswordEstablishmentData, ThrowOnError>): RequestResult<CompleteExcludedPasswordEstablishmentResponses, CompleteExcludedPasswordEstablishmentErrors, ThrowOnError> => (options.client ?? client).post<CompleteExcludedPasswordEstablishmentResponses, CompleteExcludedPasswordEstablishmentErrors, ThrowOnError>({
+    url: '/auth/password/establishment-recoveries',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Open a content-minimized privileged identity recovery case
+ */
+export const openPlatformIdentityRecoveryCase = <ThrowOnError extends boolean = false>(options: Options<OpenPlatformIdentityRecoveryCaseData, ThrowOnError>): RequestResult<OpenPlatformIdentityRecoveryCaseResponses, OpenPlatformIdentityRecoveryCaseErrors, ThrowOnError> => (options.client ?? client).post<OpenPlatformIdentityRecoveryCaseResponses, OpenPlatformIdentityRecoveryCaseErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/platform/identity-recovery-cases',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one distinct platform-operator approval
+ */
+export const approvePlatformIdentityRecoveryCase = <ThrowOnError extends boolean = false>(options: Options<ApprovePlatformIdentityRecoveryCaseData, ThrowOnError>): RequestResult<ApprovePlatformIdentityRecoveryCaseResponses, ApprovePlatformIdentityRecoveryCaseErrors, ThrowOnError> => (options.client ?? client).post<ApprovePlatformIdentityRecoveryCaseResponses, ApprovePlatformIdentityRecoveryCaseErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/platform/identity-recovery-cases/{case_id}/approvals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Issue recovery after two approvals and the 24-hour delay
+ */
+export const completePlatformIdentityRecoveryCase = <ThrowOnError extends boolean = false>(options: Options<CompletePlatformIdentityRecoveryCaseData, ThrowOnError>): RequestResult<CompletePlatformIdentityRecoveryCaseResponses, CompletePlatformIdentityRecoveryCaseErrors, ThrowOnError> => (options.client ?? client).post<CompletePlatformIdentityRecoveryCaseResponses, CompletePlatformIdentityRecoveryCaseErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/platform/identity-recovery-cases/{case_id}/complete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Request a short-lived local OTP challenge
  *
  * Always returns the same accepted shape so callers cannot determine
  * whether the normalized mobile number already belongs to an identity.
  * PR-003 uses only the fake/local OTP adapter.
  *
+ *
+ * @deprecated
  */
 export const requestOtp = <ThrowOnError extends boolean = false>(options: Options<RequestOtpData, ThrowOnError>): RequestResult<RequestOtpResponses, RequestOtpErrors, ThrowOnError> => (options.client ?? client).post<RequestOtpResponses, RequestOtpErrors, ThrowOnError>({
     url: '/auth/otp/requests',
@@ -89,6 +276,8 @@ export const requestOtp = <ThrowOnError extends boolean = false>(options: Option
  * disclosed by the public error response. The response never contains
  * the cookie credential.
  *
+ *
+ * @deprecated
  */
 export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpData, ThrowOnError>): RequestResult<VerifyOtpResponses, VerifyOtpErrors, ThrowOnError> => (options.client ?? client).post<VerifyOtpResponses, VerifyOtpErrors, ThrowOnError>({
     url: '/auth/otp/verifications',
@@ -148,6 +337,148 @@ export const revokeWebSession = <ThrowOnError extends boolean = false>(options: 
             type: 'apiKey'
         }],
     url: '/auth/sessions/{session_id}',
+    ...options
+});
+
+/**
+ * Get the current privileged MFA state
+ *
+ * Web-session only. Returns factor lifecycle state, remaining recovery
+ * code count, and the current session's non-secret assertion scope. TOTP
+ * secrets and recovery-code values are never returned here.
+ *
+ *
+ * @deprecated
+ */
+export const getPrivilegedMfaStatus = <ThrowOnError extends boolean = false>(options?: Options<GetPrivilegedMfaStatusData, ThrowOnError>): RequestResult<GetPrivilegedMfaStatusResponses, GetPrivilegedMfaStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetPrivilegedMfaStatusResponses, GetPrivilegedMfaStatusErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa',
+    ...options
+});
+
+/**
+ * Begin enrollment or authorized replacement of a TOTP factor
+ *
+ * The otpauth URI is returned once and expires with its confirmation
+ * challenge after five minutes. Replacing an active factor first requires
+ * a fresh TOTP assertion or a recovery-code factor-replacement assertion.
+ *
+ *
+ * @deprecated
+ */
+export const beginPrivilegedMfaEnrollment = <ThrowOnError extends boolean = false>(options?: Options<BeginPrivilegedMfaEnrollmentData, ThrowOnError>): RequestResult<BeginPrivilegedMfaEnrollmentResponses, BeginPrivilegedMfaEnrollmentErrors, ThrowOnError> => (options?.client ?? client).post<BeginPrivilegedMfaEnrollmentResponses, BeginPrivilegedMfaEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/enrollments',
+    ...options
+});
+
+/**
+ * Confirm a pending TOTP factor and issue recovery codes
+ *
+ * Activates the factor only when its current TOTP is accepted. Exactly ten
+ * 128-bit one-time recovery codes are returned once. Factor replacement
+ * globally revokes all web sessions and Android token families.
+ *
+ *
+ * @deprecated
+ */
+export const confirmPrivilegedMfaEnrollment = <ThrowOnError extends boolean = false>(options: Options<ConfirmPrivilegedMfaEnrollmentData, ThrowOnError>): RequestResult<ConfirmPrivilegedMfaEnrollmentResponses, ConfirmPrivilegedMfaEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<ConfirmPrivilegedMfaEnrollmentResponses, ConfirmPrivilegedMfaEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/enrollments/{factor_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a five-minute MFA assertion challenge
+ *
+ * @deprecated
+ */
+export const createPrivilegedMfaChallenge = <ThrowOnError extends boolean = false>(options?: Options<CreatePrivilegedMfaChallengeData, ThrowOnError>): RequestResult<CreatePrivilegedMfaChallengeResponses, CreatePrivilegedMfaChallengeErrors, ThrowOnError> => (options?.client ?? client).post<CreatePrivilegedMfaChallengeResponses, CreatePrivilegedMfaChallengeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/challenges',
+    ...options
+});
+
+/**
+ * Verify TOTP or consume one recovery code
+ *
+ * TOTP creates a privileged-actions assertion. A recovery code creates
+ * only a factor-replacement assertion and cannot authorize operator or
+ * recovery-regeneration actions. The response is enumeration-safe.
+ *
+ *
+ * @deprecated
+ */
+export const verifyPrivilegedMfaChallenge = <ThrowOnError extends boolean = false>(options: Options<VerifyPrivilegedMfaChallengeData, ThrowOnError>): RequestResult<VerifyPrivilegedMfaChallengeResponses, VerifyPrivilegedMfaChallengeErrors, ThrowOnError> => (options.client ?? client).post<VerifyPrivilegedMfaChallengeResponses, VerifyPrivilegedMfaChallengeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/challenges/{challenge_id}/verify',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Replace every recovery code after fresh TOTP
+ *
+ * Returns ten new codes once, invalidates every prior code and globally
+ * revokes all web sessions and Android token families.
+ *
+ *
+ * @deprecated
+ */
+export const regeneratePrivilegedMfaRecoveryCodes = <ThrowOnError extends boolean = false>(options?: Options<RegeneratePrivilegedMfaRecoveryCodesData, ThrowOnError>): RequestResult<RegeneratePrivilegedMfaRecoveryCodesResponses, RegeneratePrivilegedMfaRecoveryCodesErrors, ThrowOnError> => (options?.client ?? client).post<RegeneratePrivilegedMfaRecoveryCodesResponses, RegeneratePrivilegedMfaRecoveryCodesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/recovery-codes/regenerate',
+    ...options
+});
+
+/**
+ * Revoke the active TOTP factor after fresh TOTP
+ *
+ * Invalidates recovery codes and globally revokes all web sessions and
+ * Android token families. Re-enrollment then requires reviewed support;
+ * primary SMS OTP alone cannot reset the privileged factor.
+ *
+ *
+ * @deprecated
+ */
+export const revokePrivilegedMfaFactor = <ThrowOnError extends boolean = false>(options?: Options<RevokePrivilegedMfaFactorData, ThrowOnError>): RequestResult<RevokePrivilegedMfaFactorResponses, RevokePrivilegedMfaFactorErrors, ThrowOnError> => (options?.client ?? client).delete<RevokePrivilegedMfaFactorResponses, RevokePrivilegedMfaFactorErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/factor',
     ...options
 });
 
@@ -697,6 +1028,48 @@ export const streamLearnerModelAudio = <ThrowOnError extends boolean = false>(op
 });
 
 /**
+ * List pin-gated lesson videos for an enrollment
+ *
+ * Returns lesson-video catalog rows from the learner's exact immutable
+ * publication pin where media usage_key is lesson_video and current
+ * rights allow learner delivery. The catalog is data-driven; missing
+ * source videos simply omit rows. Does not hard-code a level count.
+ *
+ */
+export const listLearnerLevelVideos = <ThrowOnError extends boolean = false>(options: Options<ListLearnerLevelVideosData, ThrowOnError>): RequestResult<ListLearnerLevelVideosResponses, ListLearnerLevelVideosErrors, ThrowOnError> => (options.client ?? client).get<ListLearnerLevelVideosResponses, ListLearnerLevelVideosErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/level-videos',
+    ...options
+});
+
+/**
+ * Stream exact governed lesson-video bytes
+ *
+ * Authorizes through the learner's exact enrollment and lesson pin,
+ * verifies the stored bytes against the published size and SHA-256, and
+ * streams those same verified bytes in fixed-size chunks without a
+ * full-file response buffer or storage-key disclosure. One satisfiable
+ * byte range returns 206. A stale or weak If-Range, a malformed range,
+ * or a multi-range request returns the complete 200 representation;
+ * syntactically valid ranges outside the object return 416. Separate
+ * from model-audio streaming (ADR-0013).
+ *
+ */
+export const streamLearnerLessonVideo = <ThrowOnError extends boolean = false>(options: Options<StreamLearnerLessonVideoData, ThrowOnError>): RequestResult<StreamLearnerLessonVideoResponses, StreamLearnerLessonVideoErrors, ThrowOnError> => (options.client ?? client).get<StreamLearnerLessonVideoResponses, StreamLearnerLessonVideoErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/media-assets/{asset_id}/lesson-video',
+    ...options
+});
+
+/**
  * Accept an institution invite for the authenticated identity
  *
  * The single-use invite is resolved server-side. Its organization is
@@ -718,6 +1091,1113 @@ export const acceptInstitutionInvite = <ThrowOnError extends boolean = false>(op
 });
 
 /**
+ * Get the permission-derived operator workspace manifest
+ *
+ * Returns safe active-organization metadata plus task navigation and
+ * panels derived independently from the caller's existing atomic read
+ * permissions. Permission names and unauthorized task families are not
+ * disclosed. Requires a first-party web session and active organization.
+ *
+ */
+export const getOperatorOverview = <ThrowOnError extends boolean = false>(options?: Options<GetOperatorOverviewData, ThrowOnError>): RequestResult<GetOperatorOverviewResponses, GetOperatorOverviewErrors, ThrowOnError> => (options?.client ?? client).get<GetOperatorOverviewResponses, GetOperatorOverviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/overview',
+    ...options
+});
+
+/**
+ * Search safe org-scoped operator records
+ *
+ * Searches only fixed safe fields in task families the caller may already
+ * read. Every source is independently permission-checked and organization
+ * scoped. The encrypted cursor is bound to the tenant, query and permitted
+ * source set. No learner audio, transcripts or conversation bodies return.
+ *
+ */
+export const searchOperatorWorkspace = <ThrowOnError extends boolean = false>(options: Options<SearchOperatorWorkspaceData, ThrowOnError>): RequestResult<SearchOperatorWorkspaceResponses, SearchOperatorWorkspaceErrors, ThrowOnError> => (options.client ?? client).get<SearchOperatorWorkspaceResponses, SearchOperatorWorkspaceErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/search',
+    ...options
+});
+
+/**
+ * Read the current organization registry profile
+ *
+ * Returns the fixed safe read-only registry projection. No organization setting is writable in ADMIN-ORG-01.
+ */
+export const getOperatorOrganization = <ThrowOnError extends boolean = false>(options?: Options<GetOperatorOrganizationData, ThrowOnError>): RequestResult<GetOperatorOrganizationResponses, GetOperatorOrganizationErrors, ThrowOnError> => (options?.client ?? client).get<GetOperatorOrganizationResponses, GetOperatorOrganizationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/organization',
+    ...options
+});
+
+/**
+ * List current-organization branches
+ */
+export const listOperatorBranches = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorBranchesData, ThrowOnError>): RequestResult<ListOperatorBranchesResponses, ListOperatorBranchesErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorBranchesResponses, ListOperatorBranchesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/branches',
+    ...options
+});
+
+/**
+ * Create a current-organization branch
+ */
+export const createOperatorBranch = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorBranchData, ThrowOnError>): RequestResult<CreateOperatorBranchResponses, CreateOperatorBranchErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorBranchResponses, CreateOperatorBranchErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/branches',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rename a current-organization branch with optimistic concurrency
+ */
+export const updateOperatorBranch = <ThrowOnError extends boolean = false>(options: Options<UpdateOperatorBranchData, ThrowOnError>): RequestResult<UpdateOperatorBranchResponses, UpdateOperatorBranchErrors, ThrowOnError> => (options.client ?? client).post<UpdateOperatorBranchResponses, UpdateOperatorBranchErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/branches/{branch}/updates',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archive an unreferenced branch
+ */
+export const archiveOperatorBranch = <ThrowOnError extends boolean = false>(options: Options<ArchiveOperatorBranchData, ThrowOnError>): RequestResult<ArchiveOperatorBranchResponses, ArchiveOperatorBranchErrors, ThrowOnError> => (options.client ?? client).post<ArchiveOperatorBranchResponses, ArchiveOperatorBranchErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/branches/{branch}/archivals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List safe current-organization cohorts
+ */
+export const listOperatorCohorts = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorCohortsData, ThrowOnError>): RequestResult<ListOperatorCohortsResponses, ListOperatorCohortsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorCohortsResponses, ListOperatorCohortsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/cohorts',
+    ...options
+});
+
+/**
+ * Create a current-organization cohort
+ */
+export const createOperatorCohort = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorCohortData, ThrowOnError>): RequestResult<CreateOperatorCohortResponses, CreateOperatorCohortErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorCohortResponses, CreateOperatorCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/cohorts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Update a cohort name or branch with optimistic concurrency
+ */
+export const updateOperatorCohort = <ThrowOnError extends boolean = false>(options: Options<UpdateOperatorCohortData, ThrowOnError>): RequestResult<UpdateOperatorCohortResponses, UpdateOperatorCohortErrors, ThrowOnError> => (options.client ?? client).post<UpdateOperatorCohortResponses, UpdateOperatorCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/cohorts/{cohort}/updates',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archive an unreferenced cohort without changing enrollments
+ */
+export const archiveOperatorCohort = <ThrowOnError extends boolean = false>(options: Options<ArchiveOperatorCohortData, ThrowOnError>): RequestResult<ArchiveOperatorCohortResponses, ArchiveOperatorCohortErrors, ThrowOnError> => (options.client ?? client).post<ArchiveOperatorCohortResponses, ArchiveOperatorCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/cohorts/{cohort}/archivals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List safe current-organization staff memberships
+ *
+ * Returns trainers and organization administrators only, without global identity identifiers or contact details.
+ */
+export const listOperatorStaffMemberships = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorStaffMembershipsData, ThrowOnError>): RequestResult<ListOperatorStaffMembershipsResponses, ListOperatorStaffMembershipsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorStaffMembershipsResponses, ListOperatorStaffMembershipsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/memberships',
+    ...options
+});
+
+/**
+ * Assign a delegable role to an active staff membership
+ */
+export const assignOperatorMembershipRole = <ThrowOnError extends boolean = false>(options: Options<AssignOperatorMembershipRoleData, ThrowOnError>): RequestResult<AssignOperatorMembershipRoleResponses, AssignOperatorMembershipRoleErrors, ThrowOnError> => (options.client ?? client).post<AssignOperatorMembershipRoleResponses, AssignOperatorMembershipRoleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/memberships/{membership}/role-assignments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a role while preserving the final-manager invariant
+ */
+export const revokeOperatorMembershipRole = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorMembershipRoleData, ThrowOnError>): RequestResult<RevokeOperatorMembershipRoleResponses, RevokeOperatorMembershipRoleErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorMembershipRoleResponses, RevokeOperatorMembershipRoleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/memberships/{membership}/role-revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Suspend staff and remove current organization authority
+ */
+export const deactivateOperatorStaffMembership = <ThrowOnError extends boolean = false>(options: Options<DeactivateOperatorStaffMembershipData, ThrowOnError>): RequestResult<DeactivateOperatorStaffMembershipResponses, DeactivateOperatorStaffMembershipErrors, ThrowOnError> => (options.client ?? client).post<DeactivateOperatorStaffMembershipResponses, DeactivateOperatorStaffMembershipErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/memberships/{membership}/deactivations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reactivate staff without restoring prior authority
+ */
+export const reactivateOperatorStaffMembership = <ThrowOnError extends boolean = false>(options: Options<ReactivateOperatorStaffMembershipData, ThrowOnError>): RequestResult<ReactivateOperatorStaffMembershipResponses, ReactivateOperatorStaffMembershipErrors, ThrowOnError> => (options.client ?? client).post<ReactivateOperatorStaffMembershipResponses, ReactivateOperatorStaffMembershipErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/memberships/{membership}/reactivations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List staff-only invitation lifecycle state
+ *
+ * Never returns an invitation code, digest, recipient, global user ID, role, cohort, or organization identifier.
+ */
+export const listOperatorInstitutionInvites = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorInstitutionInvitesData, ThrowOnError>): RequestResult<ListOperatorInstitutionInvitesResponses, ListOperatorInstitutionInvitesErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorInstitutionInvitesResponses, ListOperatorInstitutionInvitesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/institution-invites',
+    ...options
+});
+
+/**
+ * Issue a code-only staff invitation
+ *
+ * The activation code is returned only by the initial successful execution and is null on exact replay.
+ */
+export const issueOperatorInstitutionInvite = <ThrowOnError extends boolean = false>(options: Options<IssueOperatorInstitutionInviteData, ThrowOnError>): RequestResult<IssueOperatorInstitutionInviteResponses, IssueOperatorInstitutionInviteErrors, ThrowOnError> => (options.client ?? client).post<IssueOperatorInstitutionInviteResponses, IssueOperatorInstitutionInviteErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/institution-invites',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a pending staff invitation
+ */
+export const revokeOperatorInstitutionInvite = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorInstitutionInviteData, ThrowOnError>): RequestResult<RevokeOperatorInstitutionInviteResponses, RevokeOperatorInstitutionInviteErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorInstitutionInviteResponses, RevokeOperatorInstitutionInviteErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/institution-invites/{invite}/revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List organization roles and the actor's delegable permissions
+ *
+ * Permission keys are returned only on this roles-management surface and never in the shell manifest.
+ */
+export const listOperatorRoles = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorRolesData, ThrowOnError>): RequestResult<ListOperatorRolesResponses, ListOperatorRolesErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorRolesResponses, ListOperatorRolesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/roles',
+    ...options
+});
+
+/**
+ * Create a custom role within the actor's delegation ceiling
+ */
+export const createOperatorRole = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorRoleData, ThrowOnError>): RequestResult<CreateOperatorRoleResponses, CreateOperatorRoleErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorRoleResponses, CreateOperatorRoleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Replace a custom role name and complete permission set
+ */
+export const updateOperatorRole = <ThrowOnError extends boolean = false>(options: Options<UpdateOperatorRoleData, ThrowOnError>): RequestResult<UpdateOperatorRoleResponses, UpdateOperatorRoleErrors, ThrowOnError> => (options.client ?? client).post<UpdateOperatorRoleResponses, UpdateOperatorRoleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/roles/{role}/updates',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retire an unassigned custom role
+ */
+export const retireOperatorRole = <ThrowOnError extends boolean = false>(options: Options<RetireOperatorRoleData, ThrowOnError>): RequestResult<RetireOperatorRoleResponses, RetireOperatorRoleErrors, ThrowOnError> => (options.client ?? client).post<RetireOperatorRoleResponses, RetireOperatorRoleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/roles/{role}/retirements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List derived trainer governance profiles
+ *
+ * Profiles are derived from safe staff, cohort, and appointment projections; no trainer-profile identity store is created.
+ */
+export const listOperatorTrainerProfiles = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorTrainerProfilesData, ThrowOnError>): RequestResult<ListOperatorTrainerProfilesResponses, ListOperatorTrainerProfilesErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorTrainerProfilesResponses, ListOperatorTrainerProfilesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles',
+    ...options
+});
+
+/**
+ * Assign an active trainer to an active cohort
+ */
+export const assignOperatorTrainerCohort = <ThrowOnError extends boolean = false>(options: Options<AssignOperatorTrainerCohortData, ThrowOnError>): RequestResult<AssignOperatorTrainerCohortResponses, AssignOperatorTrainerCohortErrors, ThrowOnError> => (options.client ?? client).post<AssignOperatorTrainerCohortResponses, AssignOperatorTrainerCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/cohort-assignments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a trainer cohort assignment without changing learners
+ */
+export const revokeOperatorTrainerCohort = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorTrainerCohortData, ThrowOnError>): RequestResult<RevokeOperatorTrainerCohortResponses, RevokeOperatorTrainerCohortErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorTrainerCohortResponses, RevokeOperatorTrainerCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/cohort-revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List safe authority appointments for a scoped staff membership
+ *
+ * Qualification and approval evidence are omitted from list items.
+ */
+export const listOperatorAuthorityAppointments = <ThrowOnError extends boolean = false>(options: Options<ListOperatorAuthorityAppointmentsData, ThrowOnError>): RequestResult<ListOperatorAuthorityAppointmentsResponses, ListOperatorAuthorityAppointmentsErrors, ThrowOnError> => (options.client ?? client).get<ListOperatorAuthorityAppointmentsResponses, ListOperatorAuthorityAppointmentsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments',
+    ...options
+});
+
+/**
+ * Create an existing-kind authority appointment for a scoped staff membership
+ *
+ * The server derives the appointee user from the current-organization membership and never accepts a user identifier.
+ */
+export const createOperatorAuthorityAppointment = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorAuthorityAppointmentData, ThrowOnError>): RequestResult<CreateOperatorAuthorityAppointmentResponses, CreateOperatorAuthorityAppointmentErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorAuthorityAppointmentResponses, CreateOperatorAuthorityAppointmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read private authority appointment detail
+ *
+ * Qualification and approval evidence are returned only to the exact appointee or a current curriculum authority manager.
+ */
+export const getOperatorAuthorityAppointment = <ThrowOnError extends boolean = false>(options: Options<GetOperatorAuthorityAppointmentData, ThrowOnError>): RequestResult<GetOperatorAuthorityAppointmentResponses, GetOperatorAuthorityAppointmentErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorAuthorityAppointmentResponses, GetOperatorAuthorityAppointmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}',
+    ...options
+});
+
+/**
+ * Accept an appointment as its exact active appointee
+ */
+export const acceptOperatorAuthorityAppointment = <ThrowOnError extends boolean = false>(options: Options<AcceptOperatorAuthorityAppointmentData, ThrowOnError>): RequestResult<AcceptOperatorAuthorityAppointmentResponses, AcceptOperatorAuthorityAppointmentErrors, ThrowOnError> => (options.client ?? client).post<AcceptOperatorAuthorityAppointmentResponses, AcceptOperatorAuthorityAppointmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/acceptances',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Surrender an appointment as its exact active appointee
+ */
+export const surrenderOperatorAuthorityAppointment = <ThrowOnError extends boolean = false>(options: Options<SurrenderOperatorAuthorityAppointmentData, ThrowOnError>): RequestResult<SurrenderOperatorAuthorityAppointmentResponses, SurrenderOperatorAuthorityAppointmentErrors, ThrowOnError> => (options.client ?? client).post<SurrenderOperatorAuthorityAppointmentResponses, SurrenderOperatorAuthorityAppointmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/surrenders',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke an appointment as a current curriculum authority manager
+ */
+export const revokeOperatorAuthorityAppointment = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorAuthorityAppointmentData, ThrowOnError>): RequestResult<RevokeOperatorAuthorityAppointmentResponses, RevokeOperatorAuthorityAppointmentErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorAuthorityAppointmentResponses, RevokeOperatorAuthorityAppointmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read count-only credentials selected to a staff membership
+ *
+ * Returns no session, token, installation, device, network, storage, or MFA identifiers or metadata.
+ */
+export const getOperatorMembershipSessions = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMembershipSessionsData, ThrowOnError>): RequestResult<GetOperatorMembershipSessionsResponses, GetOperatorMembershipSessionsErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMembershipSessionsResponses, GetOperatorMembershipSessionsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/membership-sessions/{membership}',
+    ...options
+});
+
+/**
+ * Revoke credentials still selected to another staff membership
+ *
+ * Revokes only matching web sessions and Android token families; it does not alter global identity, MFA, or another membership.
+ */
+export const revokeOperatorMembershipSessions = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorMembershipSessionsData, ThrowOnError>): RequestResult<RevokeOperatorMembershipSessionsResponses, RevokeOperatorMembershipSessionsErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorMembershipSessionsResponses, RevokeOperatorMembershipSessionsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/membership-sessions/{membership}/revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List bounded current-organization learner projections
+ *
+ * Returns no global user identifier, contact detail, answers, audio,
+ * transcripts, conversations, memory facts, provider data or notes.
+ * Cohort filters and choices require the additional enrollment/cohort
+ * authority and the cursor is tenant- and filter-bound.
+ *
+ */
+export const listOperatorLearners = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorLearnersData, ThrowOnError>): RequestResult<ListOperatorLearnersResponses, ListOperatorLearnersErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorLearnersResponses, ListOperatorLearnersErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners',
+    ...options
+});
+
+/**
+ * Read one bounded current-organization learner projection
+ */
+export const getOperatorLearner = <ThrowOnError extends boolean = false>(options: Options<GetOperatorLearnerData, ThrowOnError>): RequestResult<GetOperatorLearnerResponses, GetOperatorLearnerErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorLearnerResponses, GetOperatorLearnerErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}',
+    ...options
+});
+
+/**
+ * Append an attributed learner goal correction
+ */
+export const correctOperatorLearnerGoal = <ThrowOnError extends boolean = false>(options: Options<CorrectOperatorLearnerGoalData, ThrowOnError>): RequestResult<CorrectOperatorLearnerGoalResponses, CorrectOperatorLearnerGoalErrors, ThrowOnError> => (options.client ?? client).post<CorrectOperatorLearnerGoalResponses, CorrectOperatorLearnerGoalErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}/goal-corrections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List versioned enrollment history for one learner
+ */
+export const listOperatorLearnerEnrollments = <ThrowOnError extends boolean = false>(options: Options<ListOperatorLearnerEnrollmentsData, ThrowOnError>): RequestResult<ListOperatorLearnerEnrollmentsResponses, ListOperatorLearnerEnrollmentsErrors, ThrowOnError> => (options.client ?? client).get<ListOperatorLearnerEnrollmentsResponses, ListOperatorLearnerEnrollmentsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}/enrollments',
+    ...options
+});
+
+/**
+ * Create one pending current enrollment
+ */
+export const createOperatorLearnerEnrollment = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorLearnerEnrollmentData, ThrowOnError>): RequestResult<CreateOperatorLearnerEnrollmentResponses, CreateOperatorLearnerEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorLearnerEnrollmentResponses, CreateOperatorLearnerEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}/enrollments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Suspend a learner membership and selected credentials
+ */
+export const suspendOperatorLearner = <ThrowOnError extends boolean = false>(options: Options<SuspendOperatorLearnerData, ThrowOnError>): RequestResult<SuspendOperatorLearnerResponses, SuspendOperatorLearnerErrors, ThrowOnError> => (options.client ?? client).post<SuspendOperatorLearnerResponses, SuspendOperatorLearnerErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}/suspensions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reactivate a learner without restoring credentials or relationships
+ */
+export const reactivateOperatorLearner = <ThrowOnError extends boolean = false>(options: Options<ReactivateOperatorLearnerData, ThrowOnError>): RequestResult<ReactivateOperatorLearnerResponses, ReactivateOperatorLearnerErrors, ThrowOnError> => (options.client ?? client).post<ReactivateOperatorLearnerResponses, ReactivateOperatorLearnerErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learners/{learner}/reactivations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List learner invitation state and bounded safe choices
+ *
+ * Never returns a code, digest, issuer, revoker or global user identity.
+ */
+export const listOperatorLearnerInvitations = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorLearnerInvitationsData, ThrowOnError>): RequestResult<ListOperatorLearnerInvitationsResponses, ListOperatorLearnerInvitationsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorLearnerInvitationsResponses, ListOperatorLearnerInvitationsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learner-invitations',
+    ...options
+});
+
+/**
+ * Issue a code-only invitation through an exact learner-safe role
+ */
+export const issueOperatorLearnerInvitation = <ThrowOnError extends boolean = false>(options: Options<IssueOperatorLearnerInvitationData, ThrowOnError>): RequestResult<IssueOperatorLearnerInvitationResponses, IssueOperatorLearnerInvitationErrors, ThrowOnError> => (options.client ?? client).post<IssueOperatorLearnerInvitationResponses, IssueOperatorLearnerInvitationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learner-invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a pending learner invitation
+ */
+export const revokeOperatorLearnerInvitation = <ThrowOnError extends boolean = false>(options: Options<RevokeOperatorLearnerInvitationData, ThrowOnError>): RequestResult<RevokeOperatorLearnerInvitationResponses, RevokeOperatorLearnerInvitationErrors, ThrowOnError> => (options.client ?? client).post<RevokeOperatorLearnerInvitationResponses, RevokeOperatorLearnerInvitationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/learner-invitations/{invitation}/revocations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change or clear the cohort on a current enrollment
+ */
+export const changeOperatorLearnerEnrollmentCohort = <ThrowOnError extends boolean = false>(options: Options<ChangeOperatorLearnerEnrollmentCohortData, ThrowOnError>): RequestResult<ChangeOperatorLearnerEnrollmentCohortResponses, ChangeOperatorLearnerEnrollmentCohortErrors, ThrowOnError> => (options.client ?? client).post<ChangeOperatorLearnerEnrollmentCohortResponses, ChangeOperatorLearnerEnrollmentCohortErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/enrollments/{enrollment}/cohort-changes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Verify and immutably pin curriculum to a pending enrollment
+ */
+export const activateOperatorLearnerEnrollmentCurriculum = <ThrowOnError extends boolean = false>(options: Options<ActivateOperatorLearnerEnrollmentCurriculumData, ThrowOnError>): RequestResult<ActivateOperatorLearnerEnrollmentCurriculumResponses, ActivateOperatorLearnerEnrollmentCurriculumErrors, ThrowOnError> => (options.client ?? client).post<ActivateOperatorLearnerEnrollmentCurriculumResponses, ActivateOperatorLearnerEnrollmentCurriculumErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/enrollments/{enrollment}/curriculum-activations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Withdraw a current enrollment while retaining history and pins
+ */
+export const withdrawOperatorLearnerEnrollment = <ThrowOnError extends boolean = false>(options: Options<WithdrawOperatorLearnerEnrollmentData, ThrowOnError>): RequestResult<WithdrawOperatorLearnerEnrollmentResponses, WithdrawOperatorLearnerEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<WithdrawOperatorLearnerEnrollmentResponses, WithdrawOperatorLearnerEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/enrollments/{enrollment}/withdrawals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List bounded organization content workspaces
+ *
+ * Returns a tenant-bound keyset page of ADMIN-CONTENT-01 workspaces with
+ * optimistic versions, draft blockers and semantic actions. Raw content
+ * and permission names are excluded.
+ *
+ */
+export const listOperatorContentWorkspaces = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorContentWorkspacesData, ThrowOnError>): RequestResult<ListOperatorContentWorkspacesResponses, ListOperatorContentWorkspacesErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorContentWorkspacesResponses, ListOperatorContentWorkspacesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces',
+    ...options
+});
+
+/**
+ * Get one exact organization content workspace
+ */
+export const getOperatorContentWorkspace = <ThrowOnError extends boolean = false>(options: Options<GetOperatorContentWorkspaceData, ThrowOnError>): RequestResult<GetOperatorContentWorkspaceResponses, GetOperatorContentWorkspaceErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorContentWorkspaceResponses, GetOperatorContentWorkspaceErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}',
+    ...options
+});
+
+/**
+ * Privately preview one exact governed document head
+ *
+ * Returns typed English and latest exact-source Kannada payloads without
+ * executing markup or creating a public URL. Unknown legacy schemas are
+ * explicitly read-only.
+ *
+ */
+export const previewOperatorContentDocument = <ThrowOnError extends boolean = false>(options: Options<PreviewOperatorContentDocumentData, ThrowOnError>): RequestResult<PreviewOperatorContentDocumentResponses, PreviewOperatorContentDocumentErrors, ThrowOnError> => (options.client ?? client).get<PreviewOperatorContentDocumentResponses, PreviewOperatorContentDocumentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/preview',
+    ...options
+});
+
+/**
+ * List a bounded append-only content history timeline
+ */
+export const listOperatorContentWorkspaceHistory = <ThrowOnError extends boolean = false>(options: Options<ListOperatorContentWorkspaceHistoryData, ThrowOnError>): RequestResult<ListOperatorContentWorkspaceHistoryResponses, ListOperatorContentWorkspaceHistoryErrors, ThrowOnError> => (options.client ?? client).get<ListOperatorContentWorkspaceHistoryResponses, ListOperatorContentWorkspaceHistoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/history',
+    ...options
+});
+
+/**
+ * List one bounded exact-head content review queue
+ */
+export const listOperatorContentReviewQueue = <ThrowOnError extends boolean = false>(options: Options<ListOperatorContentReviewQueueData, ThrowOnError>): RequestResult<ListOperatorContentReviewQueueResponses, ListOperatorContentReviewQueueErrors, ThrowOnError> => (options.client ?? client).get<ListOperatorContentReviewQueueResponses, ListOperatorContentReviewQueueErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/review-queues',
+    ...options
+});
+
+/**
+ * Create a program and blank graph-v2 workspace
+ */
+export const createOperatorContentProgram = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorContentProgramData, ThrowOnError>): RequestResult<CreateOperatorContentProgramResponses, CreateOperatorContentProgramErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorContentProgramResponses, CreateOperatorContentProgramErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/programs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append an expected-version program descriptor correction
+ */
+export const correctOperatorContentProgramDescriptor = <ThrowOnError extends boolean = false>(options: Options<CorrectOperatorContentProgramDescriptorData, ThrowOnError>): RequestResult<CorrectOperatorContentProgramDescriptorResponses, CorrectOperatorContentProgramDescriptorErrors, ThrowOnError> => (options.client ?? client).post<CorrectOperatorContentProgramDescriptorResponses, CorrectOperatorContentProgramDescriptorErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/programs/{program}/descriptor-corrections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a new-authority successor without copying reviews or pins
+ */
+export const createOperatorContentSuccessor = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorContentSuccessorData, ThrowOnError>): RequestResult<CreateOperatorContentSuccessorResponses, CreateOperatorContentSuccessorErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorContentSuccessorResponses, CreateOperatorContentSuccessorErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/versions/{curriculumVersion}/successors',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append a typed graph-v2 draft revision
+ */
+export const saveOperatorContentGraphRevision = <ThrowOnError extends boolean = false>(options: Options<SaveOperatorContentGraphRevisionData, ThrowOnError>): RequestResult<SaveOperatorContentGraphRevisionResponses, SaveOperatorContentGraphRevisionErrors, ThrowOnError> => (options.client ?? client).post<SaveOperatorContentGraphRevisionResponses, SaveOperatorContentGraphRevisionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/graph-revisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Materialize and submit the closed current graph for review
+ */
+export const submitOperatorContentStructureReview = <ThrowOnError extends boolean = false>(options: Options<SubmitOperatorContentStructureReviewData, ThrowOnError>): RequestResult<SubmitOperatorContentStructureReviewResponses, SubmitOperatorContentStructureReviewErrors, ThrowOnError> => (options.client ?? client).post<SubmitOperatorContentStructureReviewResponses, SubmitOperatorContentStructureReviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/review-submissions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append a terminal content-workspace abandonment
+ */
+export const abandonOperatorContentWorkspace = <ThrowOnError extends boolean = false>(options: Options<AbandonOperatorContentWorkspaceData, ThrowOnError>): RequestResult<AbandonOperatorContentWorkspaceResponses, AbandonOperatorContentWorkspaceErrors, ThrowOnError> => (options.client ?? client).post<AbandonOperatorContentWorkspaceResponses, AbandonOperatorContentWorkspaceErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/abandonments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a governed document and immutable English revision one
+ */
+export const createOperatorContentDocument = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorContentDocumentData, ThrowOnError>): RequestResult<CreateOperatorContentDocumentResponses, CreateOperatorContentDocumentErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorContentDocumentResponses, CreateOperatorContentDocumentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/workspaces/{curriculumVersion}/documents',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append an exact-head immutable English content revision
+ */
+export const appendOperatorEnglishContentRevision = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorEnglishContentRevisionData, ThrowOnError>): RequestResult<AppendOperatorEnglishContentRevisionResponses, AppendOperatorEnglishContentRevisionErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorEnglishContentRevisionResponses, AppendOperatorEnglishContentRevisionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/documents/{document}/english-revisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append an exact-source immutable Kannada content variant
+ */
+export const appendOperatorKannadaContentVariant = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorKannadaContentVariantData, ThrowOnError>): RequestResult<AppendOperatorKannadaContentVariantResponses, AppendOperatorKannadaContentVariantErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorKannadaContentVariantResponses, AppendOperatorKannadaContentVariantErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/revisions/{revision}/kannada-variants',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record an exact graph-revision structure decision
+ */
+export const recordOperatorStructureContentReview = <ThrowOnError extends boolean = false>(options: Options<RecordOperatorStructureContentReviewData, ThrowOnError>): RequestResult<RecordOperatorStructureContentReviewResponses, RecordOperatorStructureContentReviewErrors, ThrowOnError> => (options.client ?? client).post<RecordOperatorStructureContentReviewResponses, RecordOperatorStructureContentReviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/reviews/structure',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append an evidence-withdrawn review decision
+ */
+export const withdrawOperatorContentReview = <ThrowOnError extends boolean = false>(options: Options<WithdrawOperatorContentReviewData, ThrowOnError>): RequestResult<WithdrawOperatorContentReviewResponses, WithdrawOperatorContentReviewErrors, ThrowOnError> => (options.client ?? client).post<WithdrawOperatorContentReviewResponses, WithdrawOperatorContentReviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/reviews/{review}/withdrawals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create one future immutable publication schedule
+ */
+export const scheduleOperatorContentPublication = <ThrowOnError extends boolean = false>(options: Options<ScheduleOperatorContentPublicationData, ThrowOnError>): RequestResult<ScheduleOperatorContentPublicationResponses, ScheduleOperatorContentPublicationErrors, ThrowOnError> => (options.client ?? client).post<ScheduleOperatorContentPublicationResponses, ScheduleOperatorContentPublicationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/publication-schedules',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Activate one due scheduled immutable publication
+ */
+export const activateOperatorContentPublication = <ThrowOnError extends boolean = false>(options: Options<ActivateOperatorContentPublicationData, ThrowOnError>): RequestResult<ActivateOperatorContentPublicationResponses, ActivateOperatorContentPublicationErrors, ThrowOnError> => (options.client ?? client).post<ActivateOperatorContentPublicationResponses, ActivateOperatorContentPublicationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/publication-activations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Cancel one still-pending publication schedule
+ */
+export const cancelOperatorContentPublicationSchedule = <ThrowOnError extends boolean = false>(options: Options<CancelOperatorContentPublicationScheduleData, ThrowOnError>): RequestResult<CancelOperatorContentPublicationScheduleResponses, CancelOperatorContentPublicationScheduleErrors, ThrowOnError> => (options.client ?? client).post<CancelOperatorContentPublicationScheduleResponses, CancelOperatorContentPublicationScheduleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/publication-schedule-cancellations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retire the current publication head while retaining evidence
+ */
+export const retireOperatorContentPublication = <ThrowOnError extends boolean = false>(options: Options<RetireOperatorContentPublicationData, ThrowOnError>): RequestResult<RetireOperatorContentPublicationResponses, RetireOperatorContentPublicationErrors, ThrowOnError> => (options.client ?? client).post<RetireOperatorContentPublicationResponses, RetireOperatorContentPublicationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/content/publication-retirements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List org-scoped curriculum draft and publication status
  *
  * Returns curriculum versions for the active organization with safe
@@ -730,7 +2210,7 @@ export const listOperatorContentDrafts = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/drafts',
     ...options
 });
@@ -747,7 +2227,7 @@ export const listOperatorContentPublications = <ThrowOnError extends boolean = f
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/publications',
     ...options
 });
@@ -764,7 +2244,7 @@ export const publishOperatorCurriculum = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/publications',
     ...options,
     headers: {
@@ -785,7 +2265,7 @@ export const recordOperatorEnglishContentReview = <ThrowOnError extends boolean 
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/reviews/english',
     ...options,
     headers: {
@@ -806,7 +2286,7 @@ export const recordOperatorKannadaContentReview = <ThrowOnError extends boolean 
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/reviews/kannada',
     ...options,
     headers: {
@@ -827,8 +2307,378 @@ export const rollbackOperatorCurriculum = <ThrowOnError extends boolean = false>
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/rollbacks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get private Media Library limits and semantic actions
+ *
+ * Returns only server-derived current-organization actions, upload
+ * policy and the reusable owner-attestation reference. The attestation
+ * is evidence and never creates per-asset rights approval.
+ *
+ */
+export const getOperatorMediaManifest = <ThrowOnError extends boolean = false>(options?: Options<GetOperatorMediaManifestData, ThrowOnError>): RequestResult<GetOperatorMediaManifestResponses, GetOperatorMediaManifestErrors, ThrowOnError> => (options?.client ?? client).get<GetOperatorMediaManifestResponses, GetOperatorMediaManifestErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/manifest',
+    ...options
+});
+
+/**
+ * List bounded accepted private media assets
+ *
+ * Returns a tenant- and filter-bound keyset page. Storage keys,
+ * transcript bodies and provider payloads are excluded.
+ *
+ */
+export const listOperatorMediaAssets = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorMediaAssetsData, ThrowOnError>): RequestResult<ListOperatorMediaAssetsResponses, ListOperatorMediaAssetsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorMediaAssetsResponses, ListOperatorMediaAssetsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets',
+    ...options
+});
+
+/**
+ * Get exact private media asset governance detail
+ *
+ * Returns the exact lifecycle, selected scan, current accessibility
+ * heads and bounded append-only governance evidence for one active-
+ * organization asset.
+ *
+ */
+export const getOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaAssetData, ThrowOnError>): RequestResult<GetOperatorMediaAssetResponses, GetOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaAssetResponses, GetOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}',
+    ...options
+});
+
+/**
+ * Stream one hash-verified accepted private media asset
+ *
+ * Re-verifies the accepted object and streams it without disclosing its
+ * storage key. Lesson audio and lesson video support one bounded byte
+ * range.
+ *
+ */
+export const previewOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<PreviewOperatorMediaAssetData, ThrowOnError>): RequestResult<PreviewOperatorMediaAssetResponses, PreviewOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).get<PreviewOperatorMediaAssetResponses, PreviewOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/preview',
+    ...options
+});
+
+/**
+ * List bounded private upload and quarantine state
+ *
+ * Returns a tenant- and state-bound keyset page without object keys.
+ */
+export const listOperatorMediaUploads = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorMediaUploadsData, ThrowOnError>): RequestResult<ListOperatorMediaUploadsResponses, ListOperatorMediaUploadsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorMediaUploadsResponses, ListOperatorMediaUploadsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads',
+    ...options
+});
+
+/**
+ * Start one resumable private quarantine upload
+ *
+ * Server allocates every identifier and private object key.
+ */
+export const startOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<StartOperatorMediaUploadData, ThrowOnError>): RequestResult<StartOperatorMediaUploadResponses, StartOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<StartOperatorMediaUploadResponses, StartOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get exact private upload and scan history
+ */
+export const getOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaUploadData, ThrowOnError>): RequestResult<GetOperatorMediaUploadResponses, GetOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaUploadResponses, GetOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}',
+    ...options
+});
+
+/**
+ * Stream one exact clean quarantine candidate for human review
+ *
+ * Only scan-clean, unexpired candidate bytes are previewable.
+ */
+export const previewOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<PreviewOperatorMediaUploadData, ThrowOnError>): RequestResult<PreviewOperatorMediaUploadResponses, PreviewOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).get<PreviewOperatorMediaUploadResponses, PreviewOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/preview',
+    ...options
+});
+
+/**
+ * Store one exact sequential binary upload part
+ *
+ * The raw body is hash-, index-, optimistic-version- and idempotency-
+ * bound. Parts never enter JSON, logs, URLs or browser persistence.
+ *
+ */
+export const storeOperatorMediaUploadPart = <ThrowOnError extends boolean = false>(options: Options<StoreOperatorMediaUploadPartData, ThrowOnError>): RequestResult<StoreOperatorMediaUploadPartResponses, StoreOperatorMediaUploadPartErrors, ThrowOnError> => (options.client ?? client).post<StoreOperatorMediaUploadPartResponses, StoreOperatorMediaUploadPartErrors, ThrowOnError>({
+    bodySerializer: null,
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/parts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Assemble, inspect and scan exact quarantine bytes
+ *
+ * Missing, stale, unavailable or failed inspection/scanning fails closed.
+ */
+export const finalizeOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<FinalizeOperatorMediaUploadData, ThrowOnError>): RequestResult<FinalizeOperatorMediaUploadResponses, FinalizeOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<FinalizeOperatorMediaUploadResponses, FinalizeOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/finalizations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Accept one exact scan-clean quarantine candidate
+ *
+ * Human acceptance promotes and re-verifies bytes before creating an asset.
+ */
+export const acceptOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<AcceptOperatorMediaUploadData, ThrowOnError>): RequestResult<AcceptOperatorMediaUploadResponses, AcceptOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<AcceptOperatorMediaUploadResponses, AcceptOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/acceptances',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject one exact quarantine candidate and queue cleanup
+ */
+export const rejectOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<RejectOperatorMediaUploadData, ThrowOnError>): RequestResult<RejectOperatorMediaUploadResponses, RejectOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<RejectOperatorMediaUploadResponses, RejectOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/rejections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Inspect, scan and adopt one exact existing private asset
+ *
+ * Does not import reference/public media or inherit rights/review authority.
+ */
+export const adoptOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<AdoptOperatorMediaAssetData, ThrowOnError>): RequestResult<AdoptOperatorMediaAssetResponses, AdoptOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<AdoptOperatorMediaAssetResponses, AdoptOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/adoptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one exact English accessibility metadata revision
+ *
+ * Transcript and alternative bodies remain out of logs, audit and search.
+ */
+export const appendOperatorMediaMetadata = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorMediaMetadataData, ThrowOnError>): RequestResult<AppendOperatorMediaMetadataResponses, AppendOperatorMediaMetadataErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorMediaMetadataResponses, AppendOperatorMediaMetadataErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/metadata-revisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one Kannada accessibility variant for an exact English hash
+ *
+ * The translator must differ from the English source author.
+ */
+export const appendOperatorMediaKannadaVariant = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorMediaKannadaVariantData, ThrowOnError>): RequestResult<AppendOperatorMediaKannadaVariantResponses, AppendOperatorMediaKannadaVariantErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorMediaKannadaVariantResponses, AppendOperatorMediaKannadaVariantErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/metadata-revisions/{revision}/kannada-variants',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record appointed exact-hash accessibility review evidence
+ *
+ * English and Kannada decisions are append-only and require the exact
+ * current source/variant hashes and an accepted in-scope appointment.
+ *
+ */
+export const reviewOperatorMediaMetadata = <ThrowOnError extends boolean = false>(options: Options<ReviewOperatorMediaMetadataData, ThrowOnError>): RequestResult<ReviewOperatorMediaMetadataResponses, ReviewOperatorMediaMetadataErrors, ThrowOnError> => (options.client ?? client).post<ReviewOperatorMediaMetadataResponses, ReviewOperatorMediaMetadataErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/metadata-reviews',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm, reject or withdraw appointed program rights evidence
+ *
+ * Confirmation binds exact active clean bytes, program, use scope,
+ * channels, territories, time, retention and an accepted rights-confirmer
+ * appointment. Umbrella owner evidence never auto-approves an asset.
+ *
+ */
+export const decideOperatorMediaRights = <ThrowOnError extends boolean = false>(options: Options<DecideOperatorMediaRightsData, ThrowOnError>): RequestResult<DecideOperatorMediaRightsResponses, DecideOperatorMediaRightsErrors, ThrowOnError> => (options.client ?? client).post<DecideOperatorMediaRightsResponses, DecideOperatorMediaRightsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/rights-decisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Attach exact reviewed media evidence to one draft source
+ *
+ * Requires exact workspace/lifecycle heads and current approved English,
+ * Kannada and program-rights evidence. It advances the draft workspace
+ * without copying bytes or authority.
+ *
+ */
+export const attachOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<AttachOperatorMediaAssetData, ThrowOnError>): RequestResult<AttachOperatorMediaAssetResponses, AttachOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<AttachOperatorMediaAssetResponses, AttachOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/attachments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record immutable same-kind replacement lineage
+ *
+ * No scan, metadata, review, rights, attachment or publication authority is inherited.
+ */
+export const replaceOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<ReplaceOperatorMediaAssetData, ThrowOnError>): RequestResult<ReplaceOperatorMediaAssetResponses, ReplaceOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<ReplaceOperatorMediaAssetResponses, ReplaceOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/replacements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retire one exact asset from future attachment and publication
+ *
+ * Prior immutable publications and enrollment pins remain unchanged.
+ */
+export const retireOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<RetireOperatorMediaAssetData, ThrowOnError>): RequestResult<RetireOperatorMediaAssetResponses, RetireOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<RetireOperatorMediaAssetResponses, RetireOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/retirements',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -850,7 +2700,7 @@ export const listOperatorAuditEvents = <ThrowOnError extends boolean = false>(op
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/audit-events',
     ...options
 });
@@ -869,7 +2719,7 @@ export const getOperatorPilotAnalytics = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/pilot-analytics',
     ...options
 });
@@ -887,17 +2737,19 @@ export const listOperatorSupportDiagnostics = <ThrowOnError extends boolean = fa
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/support/diagnostics',
     ...options
 });
 
 /**
- * Create an org-scoped learner identifier export
+ * Create an org-scoped learner privacy export
  *
- * Creates a JSON summary of membership, consent, recording, deletion,
- * session, and attempt identifiers for one learner membership. Never
- * includes audio or transcripts. Requires privacy.export.request.
+ * Creates a versioned inventory of all learner-owned or linked record
+ * classes for one organization membership. Safe structured values are
+ * included without silent truncation. Credentials, cryptographic digests,
+ * raw audio, transcripts, object keys, and provider secret payloads are
+ * never included. Requires privacy.export.request.
  *
  */
 export const createOperatorPrivacyExport = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyExportData, ThrowOnError>): RequestResult<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError>({
@@ -905,7 +2757,7 @@ export const createOperatorPrivacyExport = <ThrowOnError extends boolean = false
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/privacy/exports',
     ...options,
     headers: {
@@ -922,7 +2774,7 @@ export const getOperatorPrivacyExport = <ThrowOnError extends boolean = false>(o
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/privacy/exports/{export_request_id}',
     ...options
 });
@@ -930,8 +2782,10 @@ export const getOperatorPrivacyExport = <ThrowOnError extends boolean = false>(o
 /**
  * Create an org-scoped account-erasure request
  *
- * Starts an ADR-0007-aligned erasure workflow for one learner membership,
- * including voice deletion receipts. Requires privacy.erasure.request.
+ * Starts a deterministic organization-membership erasure workflow. The
+ * response records the outcome for every inventoried class, including
+ * retained authoritative evidence and ADR-0007 voice deletion receipts.
+ * Requires privacy.erasure.request.
  *
  */
 export const createOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyErasureData, ThrowOnError>): RequestResult<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError>({
@@ -939,7 +2793,7 @@ export const createOperatorPrivacyErasure = <ThrowOnError extends boolean = fals
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/privacy/erasures',
     ...options,
     headers: {
@@ -956,7 +2810,49 @@ export const getOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/privacy/erasures/{erasure_request_id}',
     ...options
+});
+
+/**
+ * Read one short-lived governed transcription candidate
+ *
+ * Returns the application-encrypted candidate only to a current-
+ * organization web operator with media.metadata.manage and fresh password confirmation.
+ * The response is non-authoritative and must be checked against the
+ * complete exact audio before reconciliation.
+ *
+ */
+export const getOperatorMediaTranscriptionCandidate = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaTranscriptionCandidateData, ThrowOnError>): RequestResult<GetOperatorMediaTranscriptionCandidateResponses, GetOperatorMediaTranscriptionCandidateErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaTranscriptionCandidateResponses, GetOperatorMediaTranscriptionCandidateErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/candidate',
+    ...options
+});
+
+/**
+ * Reconcile one exact provider candidate through a human
+ *
+ * Requires current-organization web authentication, selected membership,
+ * fresh password confirmation, media.metadata.manage, optimistic version and candidate
+ * digest. Confirmed or corrected outcomes atomically create an immutable
+ * English media-metadata revision; no outcome is academic approval.
+ *
+ */
+export const reconcileOperatorMediaTranscriptionCandidate = <ThrowOnError extends boolean = false>(options: Options<ReconcileOperatorMediaTranscriptionCandidateData, ThrowOnError>): RequestResult<ReconcileOperatorMediaTranscriptionCandidateResponses, ReconcileOperatorMediaTranscriptionCandidateErrors, ThrowOnError> => (options.client ?? client).post<ReconcileOperatorMediaTranscriptionCandidateResponses, ReconcileOperatorMediaTranscriptionCandidateErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/reconciliations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

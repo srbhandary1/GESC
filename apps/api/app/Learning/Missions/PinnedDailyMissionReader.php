@@ -101,20 +101,20 @@ final readonly class PinnedDailyMissionReader implements DailyMissionReader
         }
 
         $goal = DB::table('learner_profiles')
-            ->join('learner_goals', function ($join): void {
+            ->join('learner_profile_current_goals', function ($join): void {
                 $join
                     ->on(
-                        'learner_goals.organization_id',
+                        'learner_profile_current_goals.organization_id',
                         '=',
                         'learner_profiles.organization_id',
                     )
                     ->on(
-                        'learner_goals.learner_profile_id',
+                        'learner_profile_current_goals.learner_profile_id',
                         '=',
                         'learner_profiles.id',
                     )
                     ->on(
-                        'learner_goals.learner_membership_id',
+                        'learner_profile_current_goals.learner_membership_id',
                         '=',
                         'learner_profiles.learner_membership_id',
                     );
@@ -130,7 +130,7 @@ final readonly class PinnedDailyMissionReader implements DailyMissionReader
             ->whereNotNull('learner_profiles.adult_confirmed_at')
             ->whereNotNull('learner_profiles.onboarding_completed_at')
             ->lockForUpdate()
-            ->value('learner_goals.goal_key');
+            ->value('learner_profile_current_goals.goal_key');
 
         if (! is_string($goal) || $goal === '') {
             throw new LearningOperationRejected;
@@ -154,26 +154,39 @@ final readonly class PinnedDailyMissionReader implements DailyMissionReader
         }
 
         $mission = $missions[0];
-        $missionItems = array_values(array_filter(
-            $this->list($manifest, 'mission_items'),
-            fn (array $edge): bool => $this->string(
-                $edge,
-                'mission_id',
-            ) === $missionId,
-        ));
+        $documentId = $this->string(
+            $mission,
+            'instruction_content_document_id',
+        );
+        $learningItems = $this->list($manifest, 'learning_items');
+        $speakingItems = [];
 
-        if (count($missionItems) !== 1) {
+        foreach ($this->list($manifest, 'mission_items') as $edge) {
+            if ($this->string($edge, 'mission_id') !== $missionId) {
+                continue;
+            }
+
+            $candidate = $this->findById(
+                $learningItems,
+                $this->string($edge, 'learning_item_id'),
+            );
+
+            if (
+                $this->string($candidate, 'content_document_id')
+                === $documentId
+            ) {
+                $speakingItems[] = $candidate;
+            }
+        }
+
+        // A mission may also carry non-speaking items (for example
+        // lesson_video). Exactly one item must match the instruction document.
+        if (count($speakingItems) !== 1) {
             throw new LearningOperationRejected;
         }
 
-        $learningItemId = $this->string(
-            $missionItems[0],
-            'learning_item_id',
-        );
-        $item = $this->findById(
-            $this->list($manifest, 'learning_items'),
-            $learningItemId,
-        );
+        $item = $speakingItems[0];
+        $learningItemId = $this->string($item, 'id');
         $lessonId = $this->string($item, 'lesson_id');
         $objectiveEdges = array_values(array_filter(
             $this->list($manifest, 'lesson_objectives'),
@@ -191,14 +204,6 @@ final readonly class PinnedDailyMissionReader implements DailyMissionReader
             $objectiveEdges[0],
             'objective_id',
         );
-        $documentId = $this->string(
-            $mission,
-            'instruction_content_document_id',
-        );
-
-        if ($this->string($item, 'content_document_id') !== $documentId) {
-            throw new LearningOperationRejected;
-        }
 
         $content = $this->findContent(
             $this->list($manifest, 'content'),

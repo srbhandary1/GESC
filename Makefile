@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install
 
 help:
 	@printf '%s\n' \
@@ -25,6 +25,16 @@ help:
 		'make demo-client-tunnel  Temporary HTTPS Cloudflare tunnel for remote client testing' \
 		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
 		'make android-closed-beta  Build the PR-014 production-path closed-beta Android APK' \
+		'make android-release-bundle Build a signed production-path Android App Bundle' \
+		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
+		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
+		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
+		'make soft-launch-status  Soft-launch process and health status' \
+		'make soft-launch-ready   Soft-launch readiness checklist' \
+		'make soft-launch-backup  Dump soft-launch Postgres to ~/ge-soft-launch/backups' \
+		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
+		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
+		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
 		'make test          Run deterministic backend and frontend tests' \
 		'make e2e           Run the critical web browser journeys' \
@@ -32,6 +42,7 @@ help:
 		'make demo-dist-e2e Run the browser journey against the built demo bundle' \
 		'make ai-eval       Run locked AI evaluation; speech complete when SPEECH_BENCHMARK_RUN_ID is set' \
 		'make openapi       Validate OpenAPI and check generated-client drift' \
+		'make release-contract Validate fail-closed CI release-gate structure' \
 		'make migrate       Apply local Laravel migrations' \
 		'make seed          Load safe local Laravel seed data' \
 		'make build         Build the API configuration and React production bundle' \
@@ -55,6 +66,12 @@ services-up:
 
 services-down:
 	$(DOCKER_COMPOSE) down
+
+media-tools:
+	@sh scripts/provision-media-tools.sh
+
+media-services-up:
+	$(DOCKER_COMPOSE) --profile media up -d --wait clamav
 
 check-local-auth-env:
 	@sh scripts/check-local-auth-env.sh
@@ -110,7 +127,16 @@ android-closed-beta:
 	@test -n "$${VITE_MOBILE_API_ORIGIN}" || (printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the absolute API origin reachable from the device (see docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md).' && exit 1)
 	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
-	cd $(WEB_DIR)/android-app && ./gradlew assembleDebug
+	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest assembleDebug
+
+# Fail-closed Play/closed-track bundle. Signing secrets are accepted only from
+# process environment and the keystore must live outside this repository.
+android-release-bundle:
+	@case "$${VITE_MOBILE_API_ORIGIN}" in https://*) ;; *) printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the deployed HTTPS API origin.'; exit 1 ;; esac
+	@test -n "$${GE_ANDROID_UPLOAD_STORE_FILE}" && test -n "$${GE_ANDROID_UPLOAD_STORE_PASSWORD}" && test -n "$${GE_ANDROID_UPLOAD_KEY_ALIAS}" && test -n "$${GE_ANDROID_UPLOAD_KEY_PASSWORD}" || (printf '%s\n' 'Set all four GE_ANDROID_UPLOAD_* signing variables from the protected operator secret source.'; exit 1)
+	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
+	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
+	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest bundleRelease
 
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish
@@ -123,6 +149,8 @@ verify: check-toolchain
 	$(PNPM) audit --audit-level=high
 	$(PNPM) run locale:check
 	$(MAKE) openapi
+	$(MAKE) release-contract
+	$(MAKE) soft-launch-contract-test
 	$(PNPM) run lint
 	$(PNPM) run typecheck
 	$(PNPM) run test
@@ -131,8 +159,10 @@ test:
 	cd $(API_DIR) && $(PHP) artisan test
 	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) run test
+	$(MAKE) soft-launch-contract-test
 
 e2e:
+	cd $(API_DIR) && $(PHP) artisan test tests/Integration/MediaTranscriptionReconciliationApiTest.php
 	$(PNPM) run e2e
 
 demo-e2e:
@@ -142,7 +172,7 @@ demo-dist-e2e:
 	$(PNPM) --filter $(WEB_FILTER) e2e:demo-dist
 
 ai-eval:
-	cd $(API_DIR) && $(PHP) artisan ai:evaluate
+	cd $(API_DIR) && APP_ENV=local CONVERSATION_PROVIDER_DRIVER=fake CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=false $(PHP) artisan ai:evaluate
 	@if [ -n "$${SPEECH_BENCHMARK_RUN_ID}" ]; then \
 		cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID}"; \
 	else \
@@ -151,6 +181,12 @@ ai-eval:
 
 openapi:
 	$(PNPM) run openapi:check
+
+release-contract:
+	$(PNPM) run release:check
+
+soft-launch-contract-test:
+	@sh scripts/test-soft-launch-environment.sh
 
 migrate:
 	cd $(API_DIR) && $(PHP) artisan migrate
@@ -181,3 +217,49 @@ backup-restore-drill:
 staged-deploy-dry-run:
 	@chmod +x scripts/run-staged-deploy-dry-run.sh
 	@bash scripts/run-staged-deploy-dry-run.sh
+
+# APP-0053 Ubuntu invite-only soft launch (real product; not make demo).
+soft-launch-setup:
+	@chmod +x scripts/setup-soft-launch-workspace.sh scripts/install-soft-launch-caddy.sh
+	@bash scripts/setup-soft-launch-workspace.sh
+
+soft-launch-start:
+	@chmod +x scripts/run-soft-launch.sh scripts/install-soft-launch-caddy.sh
+	@test -x "$${HOME}/.local/bin/caddy" || bash scripts/install-soft-launch-caddy.sh
+	@bash scripts/run-soft-launch.sh start
+
+soft-launch-stop:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh stop
+
+soft-launch-restart:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh restart
+
+soft-launch-status:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh status
+
+soft-launch-tunnel:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh tunnel
+
+soft-launch-tunnel-stop:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh tunnel-stop
+
+soft-launch-health:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh health
+
+soft-launch-ready:
+	@chmod +x scripts/check-soft-launch-readiness.sh
+	@bash scripts/check-soft-launch-readiness.sh
+
+soft-launch-backup:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh backup
+
+soft-launch-systemd-install:
+	@chmod +x scripts/install-soft-launch-systemd.sh
+	@bash scripts/install-soft-launch-systemd.sh --start

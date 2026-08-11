@@ -6,6 +6,7 @@ namespace App\Curriculum\Publication;
 
 use App\Audit\AuditEventRecorder;
 use App\Curriculum\CanonicalJson;
+use App\Curriculum\Exceptions\CurriculumHeadConflict;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Models\User;
@@ -28,6 +29,7 @@ final readonly class CurriculumPublicationScheduler
         private OrganizationContextManager $contexts,
         private OrganizationAuthorization $authorization,
         private PublicationSnapshotWriter $snapshots,
+        private PublicationEvidenceRevalidator $evidence,
         private AuditEventRecorder $audit,
         private OutboxEventRecorder $outbox,
     ) {}
@@ -116,6 +118,7 @@ final readonly class CurriculumPublicationScheduler
                 idempotencyKey: $idempotencyKey,
                 fingerprint: $fingerprint,
                 expectedHeadVersion: $expectedHeadVersion,
+                activationAt: $normalizedActivationAt,
             );
 
             if ($replay instanceof ScheduledPublicationResult) {
@@ -137,14 +140,26 @@ final readonly class CurriculumPublicationScheduler
                 : 0;
             $scheduledAt = Date::now()->toImmutable()->utc();
 
+            if ($headVersion !== $expectedHeadVersion) {
+                throw new CurriculumHeadConflict;
+            }
+
             if (
-                $headVersion !== $expectedHeadVersion
-                || ! $normalizedActivationAt->greaterThan($scheduledAt)
+                ! $normalizedActivationAt->greaterThan($scheduledAt)
+                || $this->hasPendingSchedule(
+                    $context->organizationId,
+                    $programId,
+                )
             ) {
                 throw new CurriculumOperationRejected;
             }
 
-            $snapshot = $this->snapshots->create(
+            $snapshot = $this->reusableCancelledSnapshot(
+                $context->organizationId,
+                $programId,
+                $curriculumVersionId,
+                $scheduledAt,
+            ) ?? $this->snapshots->create(
                 organizationId: $context->organizationId,
                 programId: $programId,
                 curriculumVersionId: $curriculumVersionId,
@@ -245,6 +260,7 @@ final readonly class CurriculumPublicationScheduler
         string $idempotencyKey,
         string $fingerprint,
         int $expectedHeadVersion,
+        CarbonInterface $activationAt,
     ): ?ScheduledPublicationResult {
         $command = DB::table('publication_commands')
             ->where('organization_id', $organizationId)
@@ -253,7 +269,11 @@ final readonly class CurriculumPublicationScheduler
             ->where('aggregate_id', $programId)
             ->where('idempotency_key', $idempotencyKey)
             ->lockForUpdate()
-            ->first(['request_fingerprint', 'result_id']);
+            ->first([
+                'request_fingerprint',
+                'result_id',
+                'completed_at',
+            ]);
 
         if (! $command instanceof stdClass) {
             return null;
@@ -279,6 +299,8 @@ final readonly class CurriculumPublicationScheduler
             ->where('program_id', $programId)
             ->where('curriculum_publication_id', $publicationId)
             ->where('event_type', 'scheduled')
+            ->where('created_at', $this->string($command, 'completed_at'))
+            ->where('effective_at', $this->timestamp($activationAt))
             ->first(['effective_at']);
 
         if (
@@ -334,6 +356,125 @@ final readonly class CurriculumPublicationScheduler
 
             throw $exception;
         }
+    }
+
+    private function hasPendingSchedule(
+        string $organizationId,
+        string $programId,
+    ): bool {
+        return DB::table('publication_events as lifecycle_events')
+            ->where('lifecycle_events.organization_id', $organizationId)
+            ->where('lifecycle_events.program_id', $programId)
+            ->where('lifecycle_events.event_type', 'scheduled')
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('publication_events as later_events')
+                    ->whereColumn(
+                        'later_events.organization_id',
+                        'lifecycle_events.organization_id',
+                    )
+                    ->whereColumn(
+                        'later_events.program_id',
+                        'lifecycle_events.program_id',
+                    )
+                    ->whereColumn(
+                        'later_events.curriculum_publication_id',
+                        'lifecycle_events.curriculum_publication_id',
+                    )
+                    ->whereIn('later_events.event_type', [
+                        'scheduled',
+                        'schedule_cancelled',
+                        'activated',
+                        'rollback_activated',
+                        'retired',
+                    ])
+                    ->where(function ($position): void {
+                        $position
+                            ->whereColumn(
+                                'later_events.created_at',
+                                '>',
+                                'lifecycle_events.created_at',
+                            )
+                            ->orWhere(function ($same): void {
+                                $same
+                                    ->whereColumn(
+                                        'later_events.created_at',
+                                        'lifecycle_events.created_at',
+                                    )
+                                    ->whereColumn(
+                                        'later_events.id',
+                                        '>',
+                                        'lifecycle_events.id',
+                                    );
+                            });
+                    });
+            })
+            ->exists();
+    }
+
+    private function reusableCancelledSnapshot(
+        string $organizationId,
+        string $programId,
+        string $curriculumVersionId,
+        CarbonInterface $evaluatedAt,
+    ): ?PublicationSnapshot {
+        $publication = DB::table('curriculum_publications')
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
+            ->where('curriculum_version_id', $curriculumVersionId)
+            ->lockForUpdate()
+            ->first(['id', 'manifest_hash']);
+
+        if (! $publication instanceof stdClass) {
+            return null;
+        }
+
+        $publicationId = $this->string($publication, 'id');
+        $latest = DB::table('publication_events')
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
+            ->where('curriculum_publication_id', $publicationId)
+            ->whereIn('event_type', [
+                'scheduled',
+                'schedule_cancelled',
+                'activated',
+                'rollback_activated',
+                'retired',
+            ])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->lockForUpdate()
+            ->first(['event_type']);
+
+        if (
+            ! $latest instanceof stdClass
+            || $this->string($latest, 'event_type') !== 'schedule_cancelled'
+        ) {
+            throw new CurriculumOperationRejected;
+        }
+
+        $verified = $this->evidence->verify(
+            ownerOrganizationId: $organizationId,
+            publicationId: $publicationId,
+            evaluatedAt: $evaluatedAt,
+            lockMutableEvidence: true,
+            rejectSupersededRights: true,
+            requireCurrentManagedMedia: true,
+        );
+        $manifestHash = $this->string($publication, 'manifest_hash');
+
+        if (
+            ! hash_equals($verified->programId, $programId)
+            || ! hash_equals(
+                $verified->curriculumVersionId,
+                $curriculumVersionId,
+            )
+            || ! hash_equals($verified->manifestHash, $manifestHash)
+        ) {
+            throw new CurriculumOperationRejected;
+        }
+
+        return new PublicationSnapshot($publicationId, $manifestHash);
     }
 
     private function assertInput(

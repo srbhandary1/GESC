@@ -44,6 +44,7 @@ import {
 import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
+import { LevelVideosPanel } from './LevelVideosPanel'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
 import './LearnerJourney.css'
@@ -821,6 +822,14 @@ export function LearnerJourney({
           </button>
         </section>
       )}
+      {state.home.enrollment === null ? null : (
+        <LevelVideosPanel
+          api={api}
+          enrollmentId={state.home.enrollment.id}
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+        />
+      )}
     </section>
   )
 }
@@ -1178,6 +1187,7 @@ function MissionExperience({
                 ),
                 errorStatus: text('learner.audio.error_status'),
               }}
+              loadSource={api.downloadModelAudio}
               mimeType={mission.model_audio.mime_type}
               source={mission.model_audio.stream_url}
             />

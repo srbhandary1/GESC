@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Identity\IdentityIdentifierDigester;
+use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\UserIdentity;
 use App\Tenancy\DirectLearnerProvisioner;
 use App\Tenancy\Exceptions\FoundationConfigurationException;
+use App\Tenancy\Exceptions\IdentityUnavailable;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +33,7 @@ final class DirectLearnerProvisionerTest extends TenancyIntegrationTestCase
             ->where('organization_id', $organization->getKey())
             ->where('key', 'learner')
             ->count());
-        $this->assertSame(21, DB::table('permissions')->count());
+        $this->assertSame(40, DB::table('permissions')->count());
     }
 
     public function test_verified_identity_provisioning_is_transactional_and_replay_safe(): void
@@ -66,6 +68,101 @@ final class DirectLearnerProvisionerTest extends TenancyIntegrationTestCase
         $this->assertIsString($recorded);
         $this->assertStringNotContainsString($phone, $recorded);
         $this->assertStringNotContainsString('ignored', $recorded);
+    }
+
+    public function test_existing_verified_direct_staff_identity_authenticates_without_learner_mutation(): void
+    {
+        $phone = '+919876543211';
+        $organization = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->sole();
+        $user = $this->createUser();
+        [$membership] = $this->createMembership(
+            $organization,
+            $user,
+            Membership::TYPE_ORGANIZATION_ADMIN,
+        );
+        $role = DB::table('roles')
+            ->where('organization_id', $organization->getKey())
+            ->where('key', 'organization_admin')
+            ->sole(['id']);
+        $now = now();
+        DB::table('membership_roles')->insert([
+            'organization_id' => $organization->getKey(),
+            'membership_id' => $membership->getKey(),
+            'role_id' => $role->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $identity = UserIdentity::query()->forceCreate([
+            'user_id' => $user->getKey(),
+            'type' => 'phone',
+            'identifier_digest' => $this->app
+                ->make(IdentityIdentifierDigester::class)
+                ->digest('phone', $phone),
+            'display_hint' => null,
+            'status' => UserIdentity::STATUS_VERIFIED,
+            'verified_at' => $now,
+        ]);
+
+        $result = $this->app->make(DirectLearnerProvisioner::class)
+            ->provisionVerifiedIdentity('phone', $phone);
+
+        self::assertTrue($result->replayed);
+        self::assertSame($user->getKey(), $result->user->getKey());
+        self::assertSame($identity->getKey(), $result->identity->getKey());
+        self::assertSame($membership->getKey(), $result->membership->getKey());
+        $this->assertDatabaseHas('memberships', [
+            'id' => $membership->getKey(),
+            'membership_type' => Membership::TYPE_ORGANIZATION_ADMIN,
+            'status' => Membership::STATUS_ACTIVE,
+        ]);
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('user_identities', 1);
+        $this->assertDatabaseCount('memberships', 1);
+        $this->assertDatabaseCount('membership_roles', 1);
+        $this->assertDatabaseCount('audit_events', 0);
+        $this->assertDatabaseCount('outbox_events', 0);
+    }
+
+    public function test_existing_verified_suspended_direct_staff_identity_is_rejected_without_mutation(): void
+    {
+        $phone = '+919876543212';
+        $organization = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->sole();
+        $user = $this->createUser();
+        [$membership] = $this->createMembership(
+            $organization,
+            $user,
+            Membership::TYPE_TRAINER,
+        );
+        DB::table('memberships')
+            ->where('id', $membership->getKey())
+            ->update(['status' => Membership::STATUS_SUSPENDED]);
+        UserIdentity::query()->forceCreate([
+            'user_id' => $user->getKey(),
+            'type' => 'phone',
+            'identifier_digest' => $this->app
+                ->make(IdentityIdentifierDigester::class)
+                ->digest('phone', $phone),
+            'display_hint' => null,
+            'status' => UserIdentity::STATUS_VERIFIED,
+            'verified_at' => now(),
+        ]);
+
+        try {
+            $this->app->make(DirectLearnerProvisioner::class)
+                ->provisionVerifiedIdentity('phone', $phone);
+            self::fail('Expected a suspended staff identity to be rejected.');
+        } catch (IdentityUnavailable) {
+            $this->assertDatabaseCount('users', 1);
+            $this->assertDatabaseCount('user_identities', 1);
+            $this->assertDatabaseCount('memberships', 1);
+            $this->assertDatabaseCount('membership_roles', 0);
+            $this->assertDatabaseCount('audit_events', 0);
+            $this->assertDatabaseCount('outbox_events', 0);
+        }
     }
 
     public function test_missing_foundation_role_rolls_back_identity_and_membership_writes(): void

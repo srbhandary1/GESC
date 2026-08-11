@@ -86,7 +86,28 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  clamav:
+    # Local governed-media scanning only. The exact base image is immutable;
+    # FreshClam signatures persist independently in the named volume.
+    image: clamav/clamav:1.5.4_base@sha256:a3c78b2f808ea797f842c6bca1c5f0a54a3d1182ab2efac1884510f667e44f56
+    profiles: ["media"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CLAMAV_PORT:-3310}:3310"
+    volumes:
+      - clamav-data:/var/lib/clamav
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 10m
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   postgres-data:
   redis-data:
   object-storage-data:
+  clamav-data:

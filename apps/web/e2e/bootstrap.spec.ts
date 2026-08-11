@@ -102,7 +102,9 @@ test('supports skip-link and destination navigation from the keyboard', async ({
   )
 
   await page.goto('/#learn')
+  await page.reload()
   await page.keyboard.press('Tab')
+  await expect(skipLink).toBeFocused()
   await page.keyboard.press('Enter')
 
   await expect(page.getByRole('main')).toBeFocused()
@@ -279,6 +281,13 @@ test('loads every Phase 1 interface font and honors reduced motion', async ({
 })
 
 async function mockAnonymousSession(page: Page): Promise<void> {
+  await page.route('**/api/v1/auth/password/mode', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: { mode: 'password_only' },
+      status: 200,
+    })
+  })
   await page.route('**/api/v1/me', async (route) => {
     await route.fulfill({
       contentType: 'application/problem+json',
