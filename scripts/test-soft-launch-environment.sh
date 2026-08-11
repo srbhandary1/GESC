@@ -109,4 +109,12 @@ if grep -Eq 'localhost-only|fresh-TOTP' "$reconciliation_aid"; then
   exit 1
 fi
 
+soft_launch_runner="$root_dir/scripts/run-soft-launch.sh"
+grep -Fq 'nohup "${PHP_BIN}" -S "127.0.0.1:${API_PORT}" "${API_ROUTER}"' \
+  "$soft_launch_runner"
+if grep -Fq 'artisan serve' "$soft_launch_runner"; then
+  printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
+  exit 1
+fi
+
 printf '%s\n' 'Soft-launch environment contract passed.'

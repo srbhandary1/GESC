@@ -9,6 +9,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT_LOADER="${ROOT_DIR}/scripts/lib/soft-launch-environment.sh"
 PUBLIC_HTTP_CONFIGURATOR="${ROOT_DIR}/scripts/lib/soft-launch-public-http.sh"
 PHP_BIN="${GE_SOFT_LAUNCH_PHP:-${ROOT_DIR}/tmp/toolchain/php/php}"
+API_PUBLIC="${ROOT_DIR}/apps/api/public"
+API_ROUTER="${ROOT_DIR}/apps/api/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php"
 NODE_BIN="${GE_SOFT_LAUNCH_NODE:-${ROOT_DIR}/tmp/toolchain/node/bin/node}"
 PNPM_BIN="${GE_SOFT_LAUNCH_PNPM:-${ROOT_DIR}/tmp/toolchain/node/bin/pnpm}"
 CADDY_BIN="${GE_SOFT_LAUNCH_CADDY:-${HOME}/.local/bin/caddy}"
@@ -95,11 +97,13 @@ source_soft_launch_env() {
 
 start_api() {
   require_php
+  [[ -f "${API_PUBLIC}/index.php" ]] || die "Laravel public entrypoint is missing."
+  [[ -f "${API_ROUTER}" ]] || die "Laravel development-server router is missing."
   stop_pidfile api
   (
-    cd "${ROOT_DIR}/apps/api"
+    cd "${API_PUBLIC}"
     source_soft_launch_env
-    nohup "${PHP_BIN}" artisan serve --host=127.0.0.1 --port="${API_PORT}" \
+    nohup "${PHP_BIN}" -S "127.0.0.1:${API_PORT}" "${API_ROUTER}" \
       >"${LOG_DIR}/api.log" 2>&1 &
     echo $! >"${PID_DIR}/api.pid"
   )

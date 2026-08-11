@@ -6518,3 +6518,19 @@ authenticated cleartext origin. Passwords and cookies remain on HTTPS, API and
 data services retain their existing bindings, and no secret, transcript,
 learner data or provider payload was inspected or logged. Router reachability
 does not constitute production authorization or independent review.
+
+## Managed API ownership regression — 11 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Failure isolation | Confirmed | Managed API PID dead; verified older Laravel parent/child owned `127.0.0.1:8000`; restart log contained `Address in use` |
+| Root cause | Confirmed | Readiness reached the stale process, whose inherited stateful origin predated the active HTTPS tunnel |
+| Lifecycle contract | Corrected | Runner invokes the repository-pinned PHP server/router directly and records the actual listener PID; contract rejects `artisan serve` |
+| Live process ownership | Pass | Corrected API listener PID is running inside the managed systemd unit; every soft-launch process reports running |
+| Stateful/CSRF protocol | Pass | Current HTTPS origin returned password-only mode, issued XSRF plus `__Host-` session cookies and delivered a synthetic invalid request to the password controller as generic HTTP 422 |
+| Complete regression | Pass | `make verify`: 175 SQLite / 1,919 assertions; 309 PostgreSQL / 4,497 assertions; 282 JavaScript tests; audits, analysis and contracts passed |
+| Sensitive-data handling | Pass | No credential, username, request body, session value or learner content inspected |
+
+This is an operational process-ownership correction. It changes no password,
+session lifetime, tenant authority, API contract, schema or production-release
+authority.

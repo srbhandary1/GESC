@@ -887,3 +887,28 @@ The immediately preceding REL-01 final evidence remains:
   release authorization. The HTTPS tunnel hostname is ephemeral and remains
   authoritative from the protected runtime state; a stable named HTTPS tunnel
   and the outstanding human/release gates remain separate.
+
+## Remote password sign-in process ownership correction — 11 August 2026
+
+- A live remote sign-in loop exposed that the managed API PID was stopped while
+  port `8000` remained owned by an older manually started `artisan serve`
+  parent/child pair. Managed restarts logged `Address in use`, yet readiness
+  was falsely satisfied by that stale process with its obsolete tunnel-origin
+  environment.
+- The soft-launch runner now launches the repository-pinned Laravel PHP server
+  router directly from `apps/api/public` and records the actual long-lived
+  server PID. Stop/restart therefore owns the process that holds port `8000`
+  and cannot silently retain an old stateful-domain/session origin.
+- No credential, request body, username or password was inspected. Diagnosis
+  used only process identity, bind-error evidence, health responses and
+  non-secret origin/session configuration.
+- The exact stale parent/child pair was stopped after the managed unit was
+  stopped. The corrected unit then started one directly owned API listener and
+  reports API, worker, scheduler, both Caddy listeners and tunnel as running.
+  A credential-free live protocol probe returned `password_only` / HTTP 200,
+  issued the XSRF and `__Host-global_english_session` cookies, and reached the
+  password controller with an expected generic HTTP 422 for a synthetic
+  invalid account rather than a stateful/CSRF failure.
+- The post-correction `make verify` passed Pint, PHPStan, 175 SQLite tests /
+  1,919 assertions, 309 PostgreSQL tests / 4,497 assertions, audits, contracts,
+  ESLint, TypeScript and 282 JavaScript tests.

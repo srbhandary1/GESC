@@ -80,6 +80,13 @@ policy rejects that last operation, an administrator must run the exact
 stay in the existing mode-`0600` outside-repository environment files and are
 not copied into the unit.
 
+The runner starts PHP's repository-pinned Laravel development-server router
+directly and records that exact process ID. Do not start a separate
+`artisan serve` on port `8000`: its parent/child process can outlive a stale PID
+record, retain an obsolete tunnel origin and prevent managed restart. A healthy
+`make soft-launch-status` must report `api`, worker, scheduler, both Caddy
+listeners and tunnel as running.
+
 Share only the printed `https://*.trycloudflare.com` URL with invitees.
 `make soft-launch-restart` recreates the Cloudflare tunnel when it was active;
 the hostname normally changes, so share only the newly printed URL. An explicit
