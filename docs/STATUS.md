@@ -828,4 +828,33 @@ The immediately preceding REL-01 final evidence remains:
   gate. A product-owner-controlled upload key, protected backup/custody record,
   production-bound signed AAB, Play App Signing, physical DM-01/DM-02 evidence
   and Google Play upload authorization remain outstanding. GitHub publication
-  also remains paused because the installed `gh` credential is invalid.
+  was still paused at this mechanism-only check; the candidate publication
+  recorded below supersedes that transient tooling state.
+
+## Release-candidate remote verification — 11 August 2026
+
+- The accumulated governed implementation was committed to
+  `codex/confidence-conversation` and published as draft pull request
+  [#3](https://github.com/srbhandary1/GESC/pull/3). Repository-local IDE state,
+  runtime output, build artifacts and secrets remain excluded.
+- Clean GitHub runners exposed two environment assumptions that local ignored
+  files had masked. CI now installs the Android command-line SDK through an
+  exact-commit-pinned action, and production session-default coverage runs in
+  an isolated process. The PostgreSQL HTTP suite additionally fixes its HTTPS
+  cookie contract before middleware resolution so host environment variables
+  cannot weaken the assertions.
+- The final local `make verify` passed Pint, PHPStan, 175 SQLite tests / 1,919
+  assertions, 309 PostgreSQL tests / 4,496 assertions, dependency audits,
+  locale/OpenAPI/release contracts, ESLint, TypeScript and all 282 JavaScript
+  tests. A hostile-environment reproduction separately passed the affected 25
+  PostgreSQL authentication/PKCE tests / 800 assertions.
+- GitHub Actions run
+  [31487637244](https://github.com/srbhandary1/GESC/actions/runs/31487637244)
+  passed Verify, Android, Operations and the fail-closed Release Gate. This
+  closes the previously open remote-CI gate for this candidate revision.
+- Remote repository verification is not production authorization. Independent
+  security, privacy, tenancy, accessibility and language reviews; production
+  infrastructure/configuration evidence; product-owner upload-key custody;
+  physical-device DM-01/DM-02 evidence; a production-bound AAB; Play App
+  Signing/upload authority; and LPL-01 human content reconciliation remain
+  open.

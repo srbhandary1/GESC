@@ -6478,3 +6478,23 @@ properties or repository files. The test key was disposable and outside the
 repository; its artifact is ignored build output and is not a candidate for
 distribution. No learner data, provider credential or authentication secret
 was read or packaged for this verification.
+
+## Release-candidate clean-run verification — 11 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Candidate publication | Pass | Draft PR [#3](https://github.com/srbhandary1/GESC/pull/3) on `codex/confidence-conversation` |
+| Android SDK bootstrap | Pass | Exact-commit-pinned `android-actions/setup-android`; remote Android job passed in 3m47s |
+| Production session defaults | Pass | Isolated subprocess test is independent of ignored/local `.env` state |
+| PostgreSQL HTTPS session policy | Pass | Host-conflict reproduction: 25 tests / 800 assertions; full suite: 309 / 4,496 |
+| Complete local verification | Pass | `make verify`: Pint, PHPStan, 175 SQLite tests / 1,919 assertions, PostgreSQL, audits, contracts, ESLint, TypeScript and 282 JavaScript tests |
+| Remote Verify | Pass | GitHub Actions run [31487637244](https://github.com/srbhandary1/GESC/actions/runs/31487637244), 8m41s |
+| Remote Operations | Pass | Same run, 1m29s |
+| Remote Release Gate | Pass | Same run; all required upstream jobs succeeded |
+
+The corrections affect CI/test determinism only and do not weaken the
+production cookie policy. No credential, personal data, learner content or
+provider secret was logged or committed. Remote CI is closed for this
+candidate; independent review, production-environment validation, physical
+devices, production signing identity, Play authorization and release approval
+remain explicit gates.
