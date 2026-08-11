@@ -48,6 +48,15 @@ if (!jobs || typeof jobs !== 'object') {
   if (!commandRuns('android').includes('make android-closed-beta')) {
     fail('android job does not run the production-path Android target')
   }
+  const androidUses = (jobs.android?.steps ?? [])
+    .map((step) => (typeof step?.uses === 'string' ? step.uses : ''))
+  if (
+    !androidUses.includes(
+      'android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699',
+    )
+  ) {
+    fail('android job does not install the pinned Android SDK command-line tools')
+  }
   if (!makefile.includes('./gradlew --no-daemon testDebugUnitTest assembleDebug')) {
     fail('Android target does not require both native unit tests and APK assembly')
   }
