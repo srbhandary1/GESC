@@ -12,6 +12,9 @@ interface ModelAudioPlayerProps {
     signal?: AbortSignal,
   ) => Promise<Blob>
   readonly mimeType: string
+  readonly onEnded?: () => void
+  readonly onPause?: () => void
+  readonly onPlaying?: () => void
   readonly source: string
 }
 
@@ -19,15 +22,28 @@ export function ModelAudioPlayer({
   labels,
   loadSource,
   mimeType,
+  onEnded,
+  onPause,
+  onPlaying,
   source,
 }: ModelAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const [state, setState] = useState<AudioControlState>('ready')
+  const onEndedRef = useRef(onEnded)
+  const onPauseRef = useRef(onPause)
+  const onPlayingRef = useRef(onPlaying)
+  const [state, setState] = useState<AudioControlState>(
+    loadSource === undefined ? 'ready' : 'loading',
+  )
   const [loadedSource, setLoadedSource] = useState<{
     readonly loader: NonNullable<ModelAudioPlayerProps['loadSource']>
+    readonly mimeType: string
     readonly objectUrl: string
     readonly source: string
   } | null>(null)
+
+  onEndedRef.current = onEnded
+  onPauseRef.current = onPause
+  onPlayingRef.current = onPlaying
 
   useEffect(() => {
     if (loadSource === undefined) {
@@ -36,6 +52,7 @@ export function ModelAudioPlayer({
 
     const controller = new AbortController()
     let objectUrl: string | null = null
+    setState('loading')
 
     void loadSource(source, controller.signal)
       .then((audio) => {
@@ -46,9 +63,11 @@ export function ModelAudioPlayer({
         objectUrl = URL.createObjectURL(audio)
         setLoadedSource({
           loader: loadSource,
+          mimeType: audio.type === '' ? mimeType : audio.type,
           objectUrl,
           source,
         })
+        setState('ready')
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -63,7 +82,7 @@ export function ModelAudioPlayer({
         URL.revokeObjectURL(objectUrl)
       }
     }
-  }, [loadSource, source])
+  }, [loadSource, mimeType, source])
 
   const playableSource =
     loadSource === undefined
@@ -80,33 +99,41 @@ export function ModelAudioPlayer({
       return
     }
 
-    const onCanPlay = () => setState('ready')
-    const onEnded = () => setState('ended')
-    const onError = () => setState('error')
-    const onPause = () => {
+    const handleCanPlay = () => setState('ready')
+    const handleEnded = () => {
+      setState('ended')
+      onEndedRef.current?.()
+    }
+    const handleError = () => setState('error')
+    const handlePause = () => {
       if (!audio.ended) {
         setState('paused')
+        onPauseRef.current?.()
       }
     }
-    const onPlaying = () => setState('playing')
-    const onWaiting = () => setState('loading')
+    const handlePlaying = () => {
+      setState('playing')
+      onPlayingRef.current?.()
+    }
+    const handleWaiting = () => setState('loading')
 
-    audio.addEventListener('canplay', onCanPlay)
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('error', onError)
-    audio.addEventListener('pause', onPause)
-    audio.addEventListener('playing', onPlaying)
-    audio.addEventListener('waiting', onWaiting)
-    setState('loading')
+    audio.addEventListener('canplay', handleCanPlay)
+    audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('playing', handlePlaying)
+    if (loadSource === undefined) {
+      audio.addEventListener('waiting', handleWaiting)
+    }
     audio.load()
 
     return () => {
-      audio.removeEventListener('canplay', onCanPlay)
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('error', onError)
-      audio.removeEventListener('pause', onPause)
-      audio.removeEventListener('playing', onPlaying)
-      audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('playing', handlePlaying)
+      audio.removeEventListener('waiting', handleWaiting)
       audio.pause()
       for (const sourceElement of audio.querySelectorAll('source')) {
         sourceElement.removeAttribute('src')
@@ -156,7 +183,7 @@ export function ModelAudioPlayer({
         >
           <source
             src={playableSource}
-            type={mimeType}
+            type={loadedSource?.mimeType ?? mimeType}
           />
         </audio>
       )}

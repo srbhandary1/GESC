@@ -200,11 +200,11 @@ final class FoundationSeederIntegrityTest extends TestCase
         self::assertSame(0, $trainerAdministrativeGrantCount);
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('curriculum_publications')->count());
-        $this->assertSame(2, DB::table('ai_personas')->count());
-        $this->assertSame(2, DB::table('persona_versions')->count());
-        $this->assertSame(4, DB::table('roleplay_scenarios')->count());
-        $this->assertSame(4, DB::table('scenario_versions')->count());
-        $this->assertSame(2, DB::table('scenario_objectives')->count());
+        $this->assertSame(13, DB::table('ai_personas')->count());
+        $this->assertSame(13, DB::table('persona_versions')->count());
+        $this->assertSame(15, DB::table('roleplay_scenarios')->count());
+        $this->assertSame(15, DB::table('scenario_versions')->count());
+        $this->assertSame(24, DB::table('scenario_objectives')->count());
         $this->assertDatabaseHas('roleplay_scenarios', [
             'key' => 'past-tense-skill-focus-prototype',
             'mode' => 'friend',
@@ -212,6 +212,14 @@ final class FoundationSeederIntegrityTest extends TestCase
         $this->assertDatabaseHas('roleplay_scenarios', [
             'key' => 'carry-sentence-review-prototype',
             'mode' => 'friend',
+        ]);
+        $this->assertDatabaseHas('roleplay_scenarios', [
+            'key' => 'job-interview-roleplay-scenario',
+            'mode' => 'roleplay',
+        ]);
+        $this->assertDatabaseHas('ai_personas', [
+            'key' => 'bus-train-ticket-roleplay-prototype',
+            'status' => 'development_only',
         ]);
     }
 

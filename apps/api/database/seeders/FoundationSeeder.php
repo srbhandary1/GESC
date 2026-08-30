@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Conversation\RoleplayCatalogSeeder;
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\CurriculumGraphProjector;
 use App\Models\Organization;
@@ -189,7 +190,7 @@ final class FoundationSeeder extends Seeder
                 $organizationId,
                 $now,
             );
-            $this->seedSyntheticRoleplayPrototype(
+            (new RoleplayCatalogSeeder)->seedOrganization(
                 $organizationId,
                 $now,
             );
@@ -896,181 +897,6 @@ final class FoundationSeeder extends Seeder
         );
     }
 
-    private function seedSyntheticRoleplayPrototype(
-        string $organizationId,
-        CarbonInterface $now,
-    ): void {
-        $attribution = 'codex_synthetic_fake_pending_human_review';
-        $personaKey = 'clinic-reception-roleplay-prototype';
-        $personaDefinition = [
-            'disclosure' => 'I am a deterministic AI role-play prototype, not a human.',
-            'display_name' => 'Clinic Reception Role-play Prototype',
-            'style_code' => 'clinic-reception-roleplay-v1',
-        ];
-        $personaHash = CanonicalJson::sha256($personaDefinition);
-
-        DB::table('ai_personas')->insertOrIgnore([
-            'id' => (string) Str::ulid(),
-            'organization_id' => $organizationId,
-            'key' => $personaKey,
-            'status' => 'development_only',
-            'created_by_attribution' => $attribution,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $personaId = $this->requiredId('ai_personas', [
-            'organization_id' => $organizationId,
-            'key' => $personaKey,
-        ]);
-        $this->assertCanonicalRecord(
-            'ai_personas',
-            ['id' => $personaId],
-            [
-                'organization_id' => $organizationId,
-                'key' => $personaKey,
-                'status' => 'development_only',
-                'created_by_attribution' => $attribution,
-            ],
-        );
-
-        DB::table('persona_versions')->insertOrIgnore([
-            'id' => (string) Str::ulid(),
-            'organization_id' => $organizationId,
-            'persona_id' => $personaId,
-            'version' => 1,
-            'display_name' => $personaDefinition['display_name'],
-            'disclosure' => $personaDefinition['disclosure'],
-            'style_code' => $personaDefinition['style_code'],
-            'definition_hash' => $personaHash,
-            'review_status' => 'synthetic_unreviewed',
-            'created_at' => $now,
-        ]);
-        $personaVersionId = $this->requiredId('persona_versions', [
-            'organization_id' => $organizationId,
-            'persona_id' => $personaId,
-            'version' => 1,
-        ]);
-        $this->assertCanonicalRecord(
-            'persona_versions',
-            ['id' => $personaVersionId],
-            [
-                'organization_id' => $organizationId,
-                'persona_id' => $personaId,
-                'version' => 1,
-                ...$personaDefinition,
-                'definition_hash' => $personaHash,
-                'review_status' => 'synthetic_unreviewed',
-            ],
-        );
-
-        $scenarioKey = 'clinic-reception-roleplay-scenario';
-        $scenarioDefinition = [
-            'topic_code' => 'clinic-reception',
-            'response_code' => 'roleplay.clinic-reception.follow-up.v1',
-        ];
-        $scenarioHash = CanonicalJson::sha256($scenarioDefinition);
-
-        DB::table('roleplay_scenarios')->insertOrIgnore([
-            'id' => (string) Str::ulid(),
-            'organization_id' => $organizationId,
-            'key' => $scenarioKey,
-            'mode' => 'roleplay',
-            'status' => 'development_only',
-            'created_by_attribution' => $attribution,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $scenarioId = $this->requiredId('roleplay_scenarios', [
-            'organization_id' => $organizationId,
-            'key' => $scenarioKey,
-        ]);
-        $this->assertCanonicalRecord(
-            'roleplay_scenarios',
-            ['id' => $scenarioId],
-            [
-                'organization_id' => $organizationId,
-                'key' => $scenarioKey,
-                'mode' => 'roleplay',
-                'status' => 'development_only',
-                'created_by_attribution' => $attribution,
-            ],
-        );
-
-        DB::table('scenario_versions')->insertOrIgnore([
-            'id' => (string) Str::ulid(),
-            'organization_id' => $organizationId,
-            'scenario_id' => $scenarioId,
-            'version' => 1,
-            'topic_code' => $scenarioDefinition['topic_code'],
-            'response_code' => $scenarioDefinition['response_code'],
-            'definition_hash' => $scenarioHash,
-            'review_status' => 'synthetic_unreviewed',
-            'created_at' => $now,
-        ]);
-        $scenarioVersionId = $this->requiredId('scenario_versions', [
-            'organization_id' => $organizationId,
-            'scenario_id' => $scenarioId,
-            'version' => 1,
-        ]);
-        $this->assertCanonicalRecord(
-            'scenario_versions',
-            ['id' => $scenarioVersionId],
-            [
-                'organization_id' => $organizationId,
-                'scenario_id' => $scenarioId,
-                'version' => 1,
-                ...$scenarioDefinition,
-                'definition_hash' => $scenarioHash,
-                'review_status' => 'synthetic_unreviewed',
-            ],
-        );
-
-        $objectives = [
-            [
-                'objective_key' => 'greet-receptionist',
-                'title' => 'Greet the receptionist',
-                'completion_criteria_code' => 'synthetic.greet-receptionist.v1',
-                'sort_order' => 1,
-            ],
-            [
-                'objective_key' => 'state-appointment-reason',
-                'title' => 'State the appointment reason',
-                'completion_criteria_code' => 'synthetic.state-appointment-reason.v1',
-                'sort_order' => 2,
-            ],
-        ];
-
-        foreach ($objectives as $objective) {
-            DB::table('scenario_objectives')->insertOrIgnore([
-                'id' => (string) Str::ulid(),
-                'organization_id' => $organizationId,
-                'scenario_version_id' => $scenarioVersionId,
-                'objective_key' => $objective['objective_key'],
-                'title' => $objective['title'],
-                'completion_criteria_code' => $objective['completion_criteria_code'],
-                'sort_order' => $objective['sort_order'],
-                'created_at' => $now,
-            ]);
-            $objectiveId = $this->requiredId('scenario_objectives', [
-                'organization_id' => $organizationId,
-                'scenario_version_id' => $scenarioVersionId,
-                'objective_key' => $objective['objective_key'],
-            ]);
-            $this->assertCanonicalRecord(
-                'scenario_objectives',
-                ['id' => $objectiveId],
-                [
-                    'organization_id' => $organizationId,
-                    'scenario_version_id' => $scenarioVersionId,
-                    ...$objective,
-                ],
-            );
-        }
-    }
-
-    /**
-     * @param  array<string, string|int>  $where
-     */
     private function requiredId(string $table, array $where): string
     {
         $id = DB::table($table)->where($where)->value('id');
