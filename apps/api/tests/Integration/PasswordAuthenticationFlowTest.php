@@ -8,14 +8,21 @@ use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\Password\PasswordPolicy;
 use App\Authentication\Password\PasswordPolicyViolation;
 use App\Authentication\Password\PasswordRecoveryDeliveryAdapter;
-use App\Authentication\Password\PasswordRecoveryFailed;
-use App\Authentication\Password\PrivilegedPasswordRecoveryService;
+use App\Identity\IdentityIdentifierDigester;
 use App\Models\AuthenticationSession;
+use App\Models\InstitutionInvite;
+use App\Models\Membership;
+use App\Models\Organization;
 use App\Models\OtpChallenge;
 use App\Models\PasswordRecoveryChallenge;
 use App\Models\PrivilegedMfaFactor;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserIdentity;
+use App\Tenancy\InstitutionInviteCodeDigester;
+use App\Tenancy\OrganizationContext;
+use App\Tenancy\OrganizationContextManager;
+use App\Tenancy\OrganizationContextSource;
 use Carbon\CarbonImmutable;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -133,9 +140,10 @@ final class PasswordAuthenticationFlowTest extends TestCase
         }
     }
 
-    public function test_recovery_is_generic_single_use_and_globally_advances_the_credential(): void
+    public function test_recovery_is_role_neutral_generic_single_use_and_globally_advances_the_credential(): void
     {
         $user = $this->credentialReadyUser('learner.two', 'Correct horse battery 2026!');
+        $tenantAuthorityBefore = $this->attachAuthorityAcrossTwoOrganizations($user);
         UserIdentity::query()->forceCreate([
             'user_id' => $user->getKey(),
             'type' => 'email',
@@ -168,6 +176,7 @@ final class PasswordAuthenticationFlowTest extends TestCase
             ])
             ->assertNoContent();
         self::assertSame(2, $user->fresh()?->credential_version);
+        self::assertSame($tenantAuthorityBefore, $this->tenantAuthoritySnapshot($user));
         self::assertSame(
             'consumed',
             PasswordRecoveryChallenge::query()
@@ -193,6 +202,75 @@ final class PasswordAuthenticationFlowTest extends TestCase
                 'mobile_number' => '+919876543210',
             ])
             ->assertGone();
+    }
+
+    public function test_invitation_enrollment_creates_one_password_only_account_atomically(): void
+    {
+        config()->set('authentication.mode', 'password_only');
+        $rawCode = 'GEI-CLOSED-GROUP-2026';
+        $invite = $this->closedGroupLearnerInvite($rawCode);
+
+        $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/invitation-enrollments', [
+                'invitation_code' => $rawCode,
+                'username' => 'closed.tester',
+                'password' => 'Closed group learner phrase 2026!',
+            ])
+            ->assertNoContent();
+
+        $user = User::query()->where('username', 'closed.tester')->sole();
+        self::assertNotNull($user->credential_cutover_at);
+        self::assertTrue($user->passwordCredential()->exists());
+        $membership = DB::table('memberships')
+            ->where('user_id', $user->getKey())
+            ->sole();
+        self::assertSame(Membership::TYPE_LEARNER, $membership->membership_type);
+        self::assertSame(
+            (string) $invite->organization_id,
+            (string) $membership->organization_id,
+        );
+        self::assertSame(1, DB::table('membership_roles')
+            ->where('membership_id', $membership->id)
+            ->count());
+        self::assertSame(
+            InstitutionInvite::STATUS_ACCEPTED,
+            $invite->fresh()?->status,
+        );
+
+        $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/sign-ins', [
+                'username' => 'closed.tester',
+                'password' => 'Closed group learner phrase 2026!',
+            ])
+            ->assertOk();
+    }
+
+    public function test_invitation_enrollment_failure_is_generic_and_rolls_back_every_account_write(): void
+    {
+        config()->set('authentication.mode', 'password_only');
+        $usersBefore = User::query()->count();
+
+        $response = $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/invitation-enrollments', [
+                'invitation_code' => 'GEI-NOT-A-REAL-CODE',
+                'username' => 'closed.invalid',
+                'password' => 'Closed group learner phrase 2026!',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('detail', 'One or more request values are invalid.');
+
+        self::assertSame($usersBefore, User::query()->count());
+        self::assertSame(0, DB::table('password_credentials')
+            ->where('user_id', User::query()->where('username', 'closed.invalid')->value('id'))
+            ->count());
+        self::assertStringNotContainsString(
+            'GEI-NOT-A-REAL-CODE',
+            (string) $response->getContent(),
+        );
+        self::assertStringNotContainsString(
+            'Closed group learner phrase 2026!',
+            (string) $response->getContent(),
+        );
     }
 
     public function test_cutover_command_is_complete_idempotent_and_clears_legacy_secrets(): void
@@ -222,7 +300,7 @@ final class PasswordAuthenticationFlowTest extends TestCase
             'expires_at' => now()->addMinutes(5),
         ]);
         $manifestPath = '/tmp/auth-password-cutover-'.strtolower((string) Str::ulid()).'.json';
-        config()->set('platform.identity_recovery.actor_user_ids', [$excluded->getKey()]);
+        config()->set('platform.account_recovery.manager_user_ids', [$excluded->getKey()]);
         file_put_contents($manifestPath, json_encode([
             'exclusions' => [[
                 'user_id' => $excluded->getKey(),
@@ -234,7 +312,7 @@ final class PasswordAuthenticationFlowTest extends TestCase
         try {
             $this->assertCutoverCommandFails($manifestPath, true);
 
-            config()->set('platform.identity_recovery.actor_user_ids', [$user->getKey()]);
+            config()->set('platform.account_recovery.manager_user_ids', [$user->getKey()]);
             file_put_contents($manifestPath, json_encode([
                 'exclusions' => [[
                     'user_id' => $excluded->getKey(),
@@ -271,84 +349,10 @@ final class PasswordAuthenticationFlowTest extends TestCase
         }
     }
 
-    public function test_privileged_recovery_requires_two_distinct_operators_and_24_hours(): void
+    public function test_one_manager_issues_immediate_setup_without_mutating_tenant_authority(): void
     {
-        CarbonImmutable::setTestNow('2026-08-11T10:00:00+00:00');
-        $target = $this->credentialReadyUser('privileged.target', 'Correct horse battery 2026!');
-        UserIdentity::query()->forceCreate([
-            'user_id' => $target->getKey(),
-            'type' => 'email',
-            'identifier_digest' => hash('sha256', 'privileged@example.test'),
-            'display_hint' => 'p***@example.test',
-            'status' => UserIdentity::STATUS_VERIFIED,
-            'verified_at' => now(),
-        ]);
-        /** @var User $firstOperator */
-        $firstOperator = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
-        /** @var User $secondOperator */
-        $secondOperator = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
-        config()->set('platform.identity_recovery.actor_user_ids', [
-            (string) $firstOperator->getKey(),
-            (string) $secondOperator->getKey(),
-        ]);
-        $request = Request::create('/internal/platform-recovery', 'POST');
-        $request->server->set('REMOTE_ADDR', '127.0.0.1');
-        $request->setLaravelSession($this->app->make('session')->driver());
-        $service = $this->app->make(PrivilegedPasswordRecoveryService::class);
-        $evidence = 'support-case:AUTH-2026-0001';
-        $case = $service->open(
-            $firstOperator,
-            (string) $target->getKey(),
-            'identity_recovery.verified_support_case',
-            $evidence,
-            $request,
-        );
-        self::assertSame('pending_approval', $case['status']);
-        $caseId = $case['id'];
-        self::assertIsString($caseId);
-
-        $service->approve($firstOperator, $caseId, $evidence, $request);
-        try {
-            $service->approve($firstOperator, $caseId, $evidence, $request);
-            self::fail('The same operator approved twice.');
-        } catch (PasswordRecoveryFailed) {
-            // Expected: one operator cannot provide both approvals.
-        }
-        $scheduled = $service->approve($secondOperator, $caseId, $evidence, $request);
-        self::assertSame('waiting_delay', $scheduled['status']);
-        self::assertSame(2, $scheduled['approval_count']);
-
-        try {
-            $service->complete($firstOperator, $caseId, $evidence, $request);
-            self::fail('The recovery completed before the delay.');
-        } catch (PasswordRecoveryFailed) {
-            // Expected: the mandatory recovery delay has not elapsed.
-        }
-
-        CarbonImmutable::setTestNow(now()->addHours(24));
-        $completed = $service->complete($firstOperator, $caseId, $evidence, $request);
-        self::assertSame('completed', $completed['status']);
-        self::assertCount(1, $this->delivery->deliveries);
-        $this->assertDatabaseHas('audit_events', [
-            'scope_kind' => 'platform',
-            'capability_key' => 'platform.identity_recovery.approve',
-            'subject_id' => $caseId,
-            'action' => 'authentication.password_recovery.completed',
-        ]);
-        $this->assertDatabaseHas('outbox_events', [
-            'scope_kind' => 'platform',
-            'aggregate_id' => $caseId,
-            'event_type' => 'authentication.password_recovery.completed',
-        ]);
-
-        CarbonImmutable::setTestNow();
-    }
-
-    public function test_excluded_user_recovery_reconciles_exact_manifest_and_establishes_target_chosen_credentials(): void
-    {
-        CarbonImmutable::setTestNow('2026-08-11T10:00:00+00:00');
-        $firstOperator = $this->credentialReadyUser('recovery.one', 'Correct horse battery 2026!');
-        $secondOperator = $this->credentialReadyUser('recovery.two', 'Another correct battery 2026!');
+        $managerPassword = 'Correct manager battery 2026!';
+        $manager = $this->credentialReadyUser('recovery.manager', $managerPassword);
         /** @var User $target */
         $target = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
         UserIdentity::query()->forceCreate([
@@ -359,177 +363,148 @@ final class PasswordAuthenticationFlowTest extends TestCase
             'status' => UserIdentity::STATUS_VERIFIED,
             'verified_at' => now(),
         ]);
-        $tenantAuthorityBefore = $this->attachAuthorityAcrossTwoOrganizations($target);
-        config()->set('platform.identity_recovery.actor_user_ids', [
-            (string) $firstOperator->getKey(),
-            (string) $secondOperator->getKey(),
+        DB::table('password_authentication_cutovers')->insert([
+            'scope_key' => 'global',
+            'status' => 'password_only',
+            'manifest_digest' => str_repeat('a', 64),
+            'evidence_digest' => str_repeat('b', 64),
+            'active_user_count' => 2,
+            'credential_ready_count' => 1,
+            'excluded_user_count' => 1,
+            'completed_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-        $manifestPath = '/tmp/auth-password-excluded-'.strtolower((string) Str::ulid()).'.json';
-        $manifest = json_encode([
-            'exclusions' => [[
-                'user_id' => (string) $target->getKey(),
-                'reason_key' => 'cutover_excluded.synthetic_fixture',
-                'owner_user_id' => (string) $firstOperator->getKey(),
-            ]],
+        DB::table('password_cutover_exclusions')->insert([
+            'user_id' => (string) $target->getKey(),
+            'cutover_scope_key' => 'global',
+            'reason_key' => 'cutover_excluded.synthetic_fixture',
+            'owner_user_id' => (string) $manager->getKey(),
+            'manifest_digest' => str_repeat('a', 64),
+            'reconciled_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $tenantAuthorityBefore = $this->attachAuthorityAcrossTwoOrganizations($target);
+        config()->set('platform.account_recovery.manager_user_ids', [
+            (string) $manager->getKey(),
+        ]);
+        $this->signInAndConfirm($manager, $managerPassword);
+
+        $created = $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/platform/account-recovery/setups', [
+                'target_user_id' => (string) $target->getKey(),
+                'reason_key' => 'account_recovery.migration_setup',
+                'evidence_reference' => 'support-case:AUTH-2026-SETUP',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'delivered');
+        $eventId = $created->json('id');
+        self::assertIsString($eventId);
+        self::assertCount(1, $this->delivery->deliveries);
+        $delivered = $this->delivery->deliveries[0];
+        self::assertSame(43, strlen($delivered['token']));
+        $challenge = PasswordRecoveryChallenge::query()
+            ->findOrFail($delivered['challenge_id']);
+        self::assertSame(PasswordRecoveryChallenge::PURPOSE_ACCOUNT_SETUP, $challenge->purpose);
+        self::assertSame($eventId, $challenge->account_recovery_management_event_id);
+        self::assertNull($challenge->privileged_recovery_case_id);
+
+        $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/setups', [
+                'challenge_id' => $delivered['challenge_id'],
+                'username' => 'recovered.operator',
+                'token' => $delivered['token'],
+                'password' => 'Target chooses this battery 2026!',
+            ])->assertNoContent();
+        $recovered = $target->fresh();
+        self::assertInstanceOf(User::class, $recovered);
+        self::assertSame('recovered.operator', $recovered->username);
+        self::assertTrue($recovered->passwordCredential()->exists());
+        self::assertSame($tenantAuthorityBefore, $this->tenantAuthoritySnapshot($target));
+        $this->assertDatabaseHas('audit_events', [
+            'capability_key' => 'platform.account_recovery.manage',
+            'subject_id' => $eventId,
+            'action' => 'authentication.account_recovery.setup_requested',
+        ]);
+        $this->assertDatabaseCount('privileged_password_recovery_cases', 0);
+
+        $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/platform/identity-recovery-cases', [])
+            ->assertNotFound();
+    }
+
+    public function test_manager_can_replace_lost_contact_with_content_minimized_evidence(): void
+    {
+        $managerPassword = 'Correct manager battery 2026!';
+        $manager = $this->credentialReadyUser('contact.manager', $managerPassword);
+        $target = $this->credentialReadyUser('contact.target', 'Correct target battery 2026!');
+        $identifiers = $this->app->make(IdentityIdentifierDigester::class);
+        /** @var UserIdentity $former */
+        $former = UserIdentity::query()->forceCreate([
+            'user_id' => $target->getKey(),
+            'type' => 'email',
+            'identifier_digest' => $identifiers->digest('email', 'former@example.test'),
+            'display_hint' => 'f***@example.test',
+            'status' => UserIdentity::STATUS_VERIFIED,
+            'verified_at' => now(),
+        ]);
+        config()->set('platform.account_recovery.manager_user_ids', [
+            (string) $manager->getKey(),
+        ]);
+        $this->signInAndConfirm($manager, $managerPassword);
+
+        config()->set('platform.account_recovery.manager_user_ids', []);
+        config()->set('platform.identity_recovery.actor_user_ids', [
+            (string) $manager->getKey(),
+        ]);
+        $this->withHeader('Origin', 'https://localhost')
+            ->putJson('/api/v1/platform/account-recovery/users/'.$target->getKey().'/contact', [
+                'contact_type' => 'email',
+                'contact' => 'replacement@example.test',
+                'reason_key' => 'account_recovery.verified_contact_replacement',
+                'evidence_reference' => 'support-case:AUTH-2026-CONTACT',
+            ])->assertUnprocessable();
+
+        config()->set('platform.account_recovery.manager_user_ids', [
+            (string) $manager->getKey(),
+        ]);
+        $response = $this->withHeader('Origin', 'https://localhost')
+            ->putJson('/api/v1/platform/account-recovery/users/'.$target->getKey().'/contact', [
+                'contact_type' => 'email',
+                'contact' => 'replacement@example.test',
+                'reason_key' => 'account_recovery.verified_contact_replacement',
+                'evidence_reference' => 'support-case:AUTH-2026-CONTACT',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'completed')
+            ->assertJsonPath('notification_outcome', 'unavailable');
+        $eventId = $response->json('id');
+        self::assertIsString($eventId);
+        self::assertSame(UserIdentity::STATUS_DISABLED, $former->fresh()?->status);
+        $this->assertDatabaseHas('user_identities', [
+            'user_id' => (string) $target->getKey(),
+            'type' => 'email',
+            'identifier_digest' => $identifiers->digest('email', 'replacement@example.test'),
+            'status' => UserIdentity::STATUS_VERIFIED,
+        ]);
+        $this->assertDatabaseHas('account_recovery_notification_events', [
+            'management_event_id' => $eventId,
+            'former_identity_id' => (string) $former->getKey(),
+            'outcome' => 'unavailable',
+        ]);
+        $this->assertDatabaseHas('audit_events', [
+            'capability_key' => 'platform.account_recovery.manage',
+            'subject_id' => $eventId,
+            'action' => 'authentication.account_recovery.contact_replaced',
+        ]);
+        $serializedEvidence = json_encode([
+            DB::table('account_recovery_management_events')->where('id', $eventId)->first(),
+            DB::table('audit_events')->where('subject_id', $eventId)->get()->all(),
+            DB::table('outbox_events')->where('aggregate_id', $eventId)->get()->all(),
         ], JSON_THROW_ON_ERROR);
-        file_put_contents($manifestPath, $manifest);
-        chmod($manifestPath, 0600);
-
-        try {
-            $this->assertCutoverCommandSucceeds($manifestPath);
-            config()->set('authentication.password.cutover_exclusion_reconciliation_enabled', true);
-            config()->set('authentication.password.cutover_manifest_sha256', hash('sha256', $manifest));
-            config()->set('platform.identity_recovery.actor_user_ids', [
-                (string) $firstOperator->getKey(),
-                (string) $firstOperator->getKey(),
-            ]);
-            $this->assertExclusionReconciliation($manifestPath, true, false);
-            config()->set('platform.identity_recovery.actor_user_ids', [
-                (string) $firstOperator->getKey(),
-                (string) $secondOperator->getKey(),
-            ]);
-            $this->assertExclusionReconciliation($manifestPath, true, true);
-            $this->assertExclusionReconciliation($manifestPath, false, true);
-            $this->assertDatabaseHas('password_cutover_exclusions', [
-                'user_id' => (string) $target->getKey(),
-                'owner_user_id' => (string) $firstOperator->getKey(),
-            ]);
-
-            $request = Request::create('/internal/platform-recovery', 'POST');
-            $request->server->set('REMOTE_ADDR', '127.0.0.1');
-            $request->setLaravelSession($this->app->make('session')->driver());
-            $service = $this->app->make(PrivilegedPasswordRecoveryService::class);
-            $evidence = 'support-case:AUTH-2026-EXCLUDED';
-
-            try {
-                $service->open(
-                    $secondOperator,
-                    (string) $target->getKey(),
-                    'identity_recovery.verified_support_case',
-                    $evidence,
-                    $request,
-                );
-                self::fail('A non-owner recovery actor opened the excluded-user case.');
-            } catch (PasswordRecoveryFailed) {
-                // Expected: the manifest owner must open the excluded-user case.
-            }
-
-            $case = $service->open(
-                $firstOperator,
-                (string) $target->getKey(),
-                'identity_recovery.verified_support_case',
-                $evidence,
-                $request,
-            );
-            self::assertSame(
-                PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT,
-                $case['recovery_kind'],
-            );
-            $caseId = $case['id'];
-            self::assertIsString($caseId);
-            $service->approve($firstOperator, $caseId, $evidence, $request);
-            $service->approve($secondOperator, $caseId, $evidence, $request);
-
-            try {
-                $service->complete($firstOperator, $caseId, $evidence, $request);
-                self::fail('Excluded-user establishment completed before the 24-hour delay.');
-            } catch (PasswordRecoveryFailed) {
-                // Expected: no local time bypass exists.
-            }
-
-            CarbonImmutable::setTestNow(now()->addHours(24));
-            $completed = $service->complete($firstOperator, $caseId, $evidence, $request);
-            self::assertSame('completed', $completed['status']);
-            self::assertCount(1, $this->delivery->deliveries);
-            $delivered = $this->delivery->deliveries[0];
-            self::assertSame(43, strlen($delivered['token']));
-            $challenge = PasswordRecoveryChallenge::query()
-                ->findOrFail($delivered['challenge_id']);
-            self::assertSame(
-                PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT,
-                $challenge->purpose,
-            );
-            self::assertSame($caseId, $challenge->privileged_recovery_case_id);
-            self::assertNotSame($delivered['token'], $challenge->token_digest);
-
-            $wrongTokenResponse = $this->withHeader('Origin', 'https://localhost')
-                ->postJson('/api/v1/auth/password/establishment-recoveries', [
-                    'challenge_id' => $delivered['challenge_id'],
-                    'username' => 'recovered.operator',
-                    'token' => str_repeat('x', 43),
-                    'password' => 'Target chooses this battery 2026!',
-                ])->assertUnprocessable();
-            self::assertSame(1, $challenge->fresh()?->failed_attempts);
-            self::assertStringNotContainsString(
-                str_repeat('x', 43),
-                (string) $wrongTokenResponse->getContent(),
-            );
-
-            $this->credentialReadyUser('reserved.name', 'Reserved correct battery 2026!');
-            $this->withHeader('Origin', 'https://localhost')
-                ->postJson('/api/v1/auth/password/establishment-recoveries', [
-                    'challenge_id' => $delivered['challenge_id'],
-                    'username' => 'reserved.name',
-                    'token' => $delivered['token'],
-                    'password' => 'Target chooses this battery 2026!',
-                ])->assertUnprocessable();
-            self::assertSame(
-                PasswordRecoveryChallenge::STATUS_PENDING,
-                $challenge->fresh()->status,
-            );
-
-            $this->withHeader('Origin', 'https://localhost')
-                ->postJson('/api/v1/auth/password/establishment-recoveries', [
-                    'challenge_id' => $delivered['challenge_id'],
-                    'username' => 'recovered.operator',
-                    'token' => $delivered['token'],
-                    'password' => 'Target chooses this battery 2026!',
-                ])->assertNoContent();
-            $recovered = $target->fresh();
-            self::assertInstanceOf(User::class, $recovered);
-            self::assertSame('recovered.operator', $recovered->username);
-            self::assertNotNull($recovered->credential_cutover_at);
-            self::assertTrue($recovered->passwordCredential()->exists());
-            self::assertSame(
-                PasswordRecoveryChallenge::STATUS_CONSUMED,
-                $challenge->fresh()->status,
-            );
-            self::assertSame(
-                $tenantAuthorityBefore,
-                $this->tenantAuthoritySnapshot($target),
-                'Global credential establishment must not mutate either tenant membership or role.',
-            );
-
-            $contentFreeEvidence = json_encode([
-                'audit' => DB::table('audit_events')
-                    ->where('subject_id', $caseId)->get()->all(),
-                'outbox' => DB::table('outbox_events')
-                    ->where('aggregate_id', $caseId)->get()->all(),
-                'security' => DB::table('password_security_events')
-                    ->where('user_id', $target->getKey())->get()->all(),
-            ], JSON_THROW_ON_ERROR);
-
-            foreach ([
-                $delivered['token'],
-                'Target chooses this battery 2026!',
-                'recovered.operator',
-                'excluded@example.test',
-            ] as $secret) {
-                self::assertStringNotContainsString($secret, $contentFreeEvidence);
-            }
-
-            $this->withHeader('Origin', 'https://localhost')
-                ->postJson('/api/v1/auth/password/establishment-recoveries', [
-                    'challenge_id' => $delivered['challenge_id'],
-                    'username' => 'recovered.operator',
-                    'token' => $delivered['token'],
-                    'password' => 'Target chooses this battery 2026!',
-                ])->assertUnprocessable();
-        } finally {
-            if (is_file($manifestPath)) {
-                unlink($manifestPath);
-            }
-        }
+        self::assertStringNotContainsString('replacement@example.test', $serializedEvidence);
+        self::assertStringNotContainsString('support-case:AUTH-2026-CONTACT', $serializedEvidence);
     }
 
     private function credentialReadyUser(string $username, string $password): User
@@ -545,6 +520,56 @@ final class PasswordAuthenticationFlowTest extends TestCase
             ->establish($user, $username, $password, $request);
 
         return User::query()->whereKey($user->getKey())->firstOrFail();
+    }
+
+    private function signInAndConfirm(User $user, string $password): void
+    {
+        $signedIn = $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/sign-ins', [
+                'username' => (string) $user->username,
+                'password' => $password,
+            ])->assertOk();
+        $cookie = $signedIn->getCookie((string) config('session.cookie'));
+        self::assertNotNull($cookie);
+        $this->withCookie($cookie->getName(), (string) $cookie->getValue());
+        $this->withHeader('Origin', 'https://localhost')
+            ->postJson('/api/v1/auth/password/confirmations', [
+                'password' => $password,
+            ])->assertOk();
+    }
+
+    private function closedGroupLearnerInvite(string $rawCode): InstitutionInvite
+    {
+        $organization = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->sole();
+        /** @var User $issuer */
+        $issuer = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        $context = new OrganizationContext(
+            organizationId: (string) $organization->getKey(),
+            actorUserId: (string) $issuer->getKey(),
+            membershipId: null,
+            source: OrganizationContextSource::InstitutionInvite,
+        );
+
+        return $this->app->make(OrganizationContextManager::class)->run(
+            $context,
+            function () use ($rawCode): InstitutionInvite {
+                $role = Role::query()
+                    ->where('key', Role::DIRECT_LEARNER_KEY)
+                    ->sole();
+
+                return InstitutionInvite::query()->forceCreate([
+                    'code_digest' => $this->app
+                        ->make(InstitutionInviteCodeDigester::class)
+                        ->digest($rawCode),
+                    'membership_type' => Membership::TYPE_LEARNER,
+                    'role_id' => $role->getKey(),
+                    'status' => InstitutionInvite::STATUS_PENDING,
+                    'expires_at' => now()->addDay(),
+                ]);
+            },
+        );
     }
 
     private function attachAuthorityAcrossTwoOrganizations(User $target): string
@@ -638,31 +663,6 @@ final class PasswordAuthenticationFlowTest extends TestCase
         }
 
         self::assertSame(0, $result);
-    }
-
-    private function assertExclusionReconciliation(
-        string $manifestPath,
-        bool $dryRun,
-        bool $successful,
-    ): void {
-        $parameters = ['--manifest' => $manifestPath];
-
-        if ($dryRun) {
-            $parameters['--dry-run'] = true;
-        }
-
-        $result = $this->artisan(
-            'auth:reconcile-password-cutover-exclusions',
-            $parameters,
-        );
-
-        if ($result instanceof PendingCommand) {
-            $successful ? $result->assertSuccessful() : $result->assertFailed();
-
-            return;
-        }
-
-        self::assertSame($successful ? 0 : 1, $result);
     }
 
     private function assertCutoverCommandFails(string $manifestPath, bool $dryRun = false): void

@@ -145,15 +145,15 @@ final class PasswordCutoverExclusionReconciliationCommand extends Command
             throw new RuntimeException('The cutover manifest contract is invalid.');
         }
 
-        $allowedOwners = config('platform.identity_recovery.actor_user_ids', []);
+        $allowedOwners = config('platform.account_recovery.manager_user_ids', []);
 
         if (! is_array($allowedOwners)
             || array_filter(
                 $allowedOwners,
                 static fn (mixed $id): bool => ! is_string($id) || ! Str::isUlid($id),
             ) !== []
-            || count(array_unique($allowedOwners)) < 2) {
-            throw new RuntimeException('Two configured recovery actors are required.');
+            || count(array_unique($allowedOwners)) < 1) {
+            throw new RuntimeException('A configured account-recovery manager is required.');
         }
 
         $entries = [];
@@ -202,7 +202,7 @@ final class PasswordCutoverExclusionReconciliationCommand extends Command
         foreach ($allowedOwners as $allowedOwner) {
             if (! isset($ready[$allowedOwner])) {
                 throw new RuntimeException(
-                    'Every configured recovery actor must remain credential-ready.',
+                    'Every configured account-recovery manager must remain credential-ready.',
                 );
             }
         }

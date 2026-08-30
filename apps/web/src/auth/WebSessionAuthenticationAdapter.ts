@@ -114,6 +114,22 @@ export class WebSessionAuthenticationAdapter
     })
   }
 
+  async enrollWithInvitation(
+    invitationCode: string,
+    username: string,
+    password: string,
+  ): Promise<void> {
+    await this.#credentialRequest(
+      '/auth/password/invitation-enrollments',
+      'POST',
+      {
+        invitation_code: invitationCode,
+        username,
+        password,
+      },
+    )
+  }
+
   async passwordStatus(): Promise<import('./AuthenticationAdapter').PasswordAuthenticationStatus> {
     const response = await this.#fetch(`${this.#baseUrl ?? ''}/auth/password/status`, {
       credentials: 'include',

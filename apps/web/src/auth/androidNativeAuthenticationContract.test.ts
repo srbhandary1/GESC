@@ -56,4 +56,22 @@ describe('production Android native authentication contract', () => {
     expect(manifest).toContain('android:scheme="com.globalenglish.app"')
     expect(manifest).not.toContain('com.globalenglish.demo:/oauth/callback')
   })
+
+  it('opens only the configured HTTPS authorization path from the foreground activity', () => {
+    const source = readFileSync(
+      resolve(
+        androidMain,
+        'java/com/globalenglish/app/GlobalEnglishSystemBrowserPlugin.java',
+      ),
+      'utf8',
+    )
+
+    expect(source).toContain('BuildConfig.MOBILE_API_ORIGIN')
+    expect(source).toContain('Activity activity = getActivity()')
+    expect(source).toContain('"https".equals(uri.getScheme())')
+    expect(source).toContain('"/oauth/authorize".equals(uri.getPath())')
+    expect(source).toContain('customTabsIntent.launchUrl(activity, uri)')
+    expect(source).not.toContain('Intent.FLAG_ACTIVITY_NEW_TASK')
+    expect(source).not.toContain('launchUrl(getContext(), uri)')
+  })
 })

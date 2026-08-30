@@ -11,6 +11,7 @@ import {
   type AndroidPkceAuthentication,
   type AuthenticationSnapshot,
 } from './AuthenticationAdapter'
+import { formDataWithFileParts } from './formDataWithFileParts'
 
 interface PendingAuthorization {
   state: string
@@ -58,7 +59,7 @@ export class AndroidPkceAuthenticationAdapter
   #refreshInFlight: Promise<void> | null = null
 
   readonly authenticatedFetch: typeof fetch = async (input, init) =>
-    this.#authenticatedApiFetch(input, init)
+    this.#authenticatedApiFetch(input, await this.#withNativeMultipart(init))
 
   constructor(options: AndroidPkceAuthenticationOptions) {
     this.#options = options
@@ -287,11 +288,28 @@ export class AndroidPkceAuthenticationAdapter
     }
   }
 
+  async #withNativeMultipart(
+    init?: RequestInit,
+  ): Promise<RequestInit | undefined> {
+    if (init === undefined || !(init.body instanceof FormData)) {
+      return init
+    }
+
+    return {
+      ...init,
+      body: formDataWithFileParts(init.body),
+    }
+  }
+
   async #authenticatedApiFetch(
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> {
-    const request = this.#apiRequest(input, init)
+    const formBody = init?.body instanceof FormData ? init.body : null
+    const request = this.#apiRequest(
+      input,
+      formBody === null ? init : { ...init, body: undefined },
+    )
 
     if (this.#accessToken === null) {
       const refreshToken = await this.#readRefreshTokenOrUnavailable()
@@ -309,8 +327,10 @@ export class AndroidPkceAuthenticationAdapter
 
     const firstAccessToken = this.#accessToken
     const retryRequest = request.clone()
-    const response = await this.#fetch(
-      this.#authorizedRequest(request, firstAccessToken),
+    const response = await this.#sendAuthorized(
+      request,
+      firstAccessToken,
+      formBody,
     )
 
     if (response.status !== 401 || firstAccessToken === null) {
@@ -338,8 +358,10 @@ export class AndroidPkceAuthenticationAdapter
       return response
     }
 
-    const retried = await this.#fetch(
-      this.#authorizedRequest(retryRequest, replacementAccessToken),
+    const retried = await this.#sendAuthorized(
+      retryRequest,
+      replacementAccessToken,
+      formBody,
     )
 
     if (retried.status === 401) {
@@ -350,15 +372,33 @@ export class AndroidPkceAuthenticationAdapter
     return retried
   }
 
+  /**
+   * Capacitor's fetch interceptor reads `init.body`. A pre-built Request turns
+   * FormData into a ReadableStream, which it UTF-8-decodes and corrupts.
+   */
+  #sendAuthorized(
+    request: Request,
+    accessToken: string | null,
+    formBody: FormData | null,
+  ): Promise<Response> {
+    if (formBody !== null) {
+      return this.#fetch(request.url, {
+        body: formBody,
+        credentials: 'omit',
+        headers: this.#authorizedHeaders(request, accessToken),
+        method: request.method,
+      })
+    }
+
+    return this.#fetch(this.#authorizedRequest(request, accessToken))
+  }
+
   #apiRequest(
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Request {
     const base = new URL(this.#options.apiBaseUrl)
-    const candidate =
-      input instanceof Request
-        ? new URL(input.url)
-        : new URL(input.toString(), `${base.origin}/`)
+    const candidate = this.#resolveApiUrl(input, base)
     const basePath = base.pathname.replace(/\/+$/u, '')
 
     if (
@@ -377,10 +417,37 @@ export class AndroidPkceAuthenticationAdapter
     return new Request(normalizedInput, init)
   }
 
-  #authorizedRequest(
+  /**
+   * Capacitor serves the WebView from https://localhost. Relative `/api/v1`
+   * fetches can be resolved against that origin before this adapter runs.
+   * Map only that WebView origin back onto the baked API origin; other hosts
+   * stay rejected.
+   */
+  #resolveApiUrl(input: RequestInfo | URL, base: URL): URL {
+    const candidate =
+      input instanceof Request
+        ? new URL(input.url)
+        : new URL(input.toString(), `${base.origin}/`)
+    const webViewHosts = new Set(['localhost', '127.0.0.1'])
+
+    if (
+      !webViewHosts.has(candidate.hostname) ||
+      (candidate.protocol !== 'https:' && candidate.protocol !== 'http:')
+    ) {
+      return candidate
+    }
+
+    const rewritten = new URL(candidate.href)
+    rewritten.protocol = base.protocol
+    rewritten.host = base.host
+
+    return rewritten
+  }
+
+  #authorizedHeaders(
     request: Request,
     accessToken: string | null,
-  ): Request {
+  ): Headers {
     const headers = new Headers(request.headers)
 
     if (accessToken === null) {
@@ -389,9 +456,16 @@ export class AndroidPkceAuthenticationAdapter
       headers.set('Authorization', `Bearer ${accessToken}`)
     }
 
+    return headers
+  }
+
+  #authorizedRequest(
+    request: Request,
+    accessToken: string | null,
+  ): Request {
     return new Request(request, {
       credentials: 'omit',
-      headers,
+      headers: this.#authorizedHeaders(request, accessToken),
     })
   }
 

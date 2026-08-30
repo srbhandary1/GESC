@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $recovery_identity_id
  * @property string $purpose
  * @property string|null $privileged_recovery_case_id
+ * @property string|null $account_recovery_management_event_id
  * @property string $lookup_digest
  * @property string $token_digest
  * @property string $status
@@ -38,6 +39,8 @@ final class PasswordRecoveryChallenge extends Model
     public const string PURPOSE_PASSWORD_RESET = 'password_reset';
 
     public const string PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT = 'excluded_credential_establishment';
+
+    public const string PURPOSE_ACCOUNT_SETUP = 'account_setup';
 
     protected $guarded = ['*'];
 

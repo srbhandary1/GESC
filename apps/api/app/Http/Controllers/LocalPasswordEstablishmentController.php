@@ -48,7 +48,7 @@ final class LocalPasswordEstablishmentController extends Controller
         try {
             $completed = DB::transaction(function () use ($challengeId, $request, $validated): bool {
                 try {
-                    $user = $this->recovery->consumeExcludedEstablishment(
+                    $user = $this->recovery->consumeAccountSetup(
                         $challengeId,
                         (string) $validated['username'],
                         $this->delivery->tokenFor($challengeId),
@@ -60,12 +60,12 @@ final class LocalPasswordEstablishmentController extends Controller
                 }
                 $this->mobileFamilies->revokeAllForUser(
                     (string) $user->getKey(),
-                    'excluded_password_established',
+                    'account_setup_completed',
                 );
                 $this->sessions->revokeAll(
                     $user,
                     $request,
-                    'excluded_password_established',
+                    'account_setup_completed',
                 );
 
                 return true;

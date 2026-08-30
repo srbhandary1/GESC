@@ -9,6 +9,7 @@ use App\Authentication\Password\FreshPasswordConfirmationRequired;
 use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Models\AuthenticationSession;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,15 +31,23 @@ final readonly class RequireFreshPrivilegedMfa
         );
 
         if (! $authenticationSession instanceof AuthenticationSession) {
-            throw new FreshPrivilegedMfaRequired;
+            throw new FreshPasswordConfirmationRequired;
         }
 
-        if ($this->passwords->mode() === 'password_only') {
-            if (! $this->passwords->hasFreshConfirmation($authenticationSession)) {
-                throw new FreshPasswordConfirmationRequired;
+        $credentialReady = $authenticationSession->exists
+            && $authenticationSession->user_id !== ''
+            && User::query()
+                ->whereKey($authenticationSession->user_id)
+                ->whereNotNull('username')
+                ->whereHas('passwordCredential')
+                ->exists();
+
+        if ($this->passwords->mode() === 'legacy_otp' || ! $credentialReady) {
+            if (! $this->sessions->hasFreshMfa($authenticationSession)) {
+                throw new FreshPrivilegedMfaRequired;
             }
-        } elseif (! $this->sessions->hasFreshMfa($authenticationSession)) {
-            throw new FreshPrivilegedMfaRequired;
+        } elseif (! $this->passwords->hasFreshConfirmation($authenticationSession)) {
+            throw new FreshPasswordConfirmationRequired;
         }
 
         return $next($request);

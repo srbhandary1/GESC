@@ -205,7 +205,7 @@ final class PasswordAuthenticationCutoverCommand extends Command
     {
         $exclusions = [];
         $exclusionOwners = [];
-        $allowedOwners = config('platform.identity_recovery.actor_user_ids', []);
+        $allowedOwners = config('platform.account_recovery.manager_user_ids', []);
 
         if (! is_array($allowedOwners)) {
             throw new RuntimeException('The cutover owner configuration is invalid.');

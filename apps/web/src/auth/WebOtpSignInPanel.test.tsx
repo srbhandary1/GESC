@@ -109,6 +109,7 @@ function webAuthentication(): WebSessionAuthentication {
     changePassword: vi.fn(),
     changeUsername: vi.fn(),
     confirmPassword: vi.fn(),
+    enrollWithInvitation: vi.fn(),
     establishPassword: vi.fn(),
     passwordStatus: vi.fn(),
     requestPasswordRecovery: vi.fn(),

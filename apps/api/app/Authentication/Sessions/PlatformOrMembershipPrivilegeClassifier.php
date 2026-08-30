@@ -17,7 +17,7 @@ final readonly class PlatformOrMembershipPrivilegeClassifier implements Privileg
         $userId = (string) $user->getAuthIdentifier();
 
         foreach ([
-            config('platform.identity_recovery.actor_user_ids', []),
+            config('platform.account_recovery.manager_user_ids', []),
             config('platform.content_emergency.actor_user_ids', []),
         ] as $configuredActorIds) {
             if (is_array($configuredActorIds)

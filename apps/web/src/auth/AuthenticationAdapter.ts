@@ -35,6 +35,12 @@ export interface WebSessionAuthentication extends AuthenticationAdapter {
 
   requestPasswordRecovery(username: string): Promise<void>
 
+  enrollWithInvitation(
+    invitationCode: string,
+    username: string,
+    password: string,
+  ): Promise<void>
+
   passwordStatus(): Promise<PasswordAuthenticationStatus>
 
   establishPassword(username: string, password: string): Promise<void>

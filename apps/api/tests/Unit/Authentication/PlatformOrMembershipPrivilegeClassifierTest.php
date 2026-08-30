@@ -16,7 +16,7 @@ final class PlatformOrMembershipPrivilegeClassifierTest extends TestCase
     {
         $recoveryActor = $this->unsavedUser();
         $emergencyActor = $this->unsavedUser();
-        config()->set('platform.identity_recovery.actor_user_ids', [
+        config()->set('platform.account_recovery.manager_user_ids', [
             (string) $recoveryActor->getKey(),
         ]);
         config()->set('platform.content_emergency.actor_user_ids', [

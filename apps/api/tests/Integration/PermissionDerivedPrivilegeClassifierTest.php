@@ -114,7 +114,7 @@ final class PermissionDerivedPrivilegeClassifierTest extends TenancyIntegrationT
     {
         $recoveryActor = $this->createUser();
         $emergencyActor = $this->createUser();
-        config()->set('platform.identity_recovery.actor_user_ids', [
+        config()->set('platform.account_recovery.manager_user_ids', [
             (string) $recoveryActor->getKey(),
         ]);
         config()->set('platform.content_emergency.actor_user_ids', [

@@ -11,6 +11,7 @@ use App\Authentication\Password\PasswordRecoveryService;
 use App\Authentication\Password\RecoveryTokenDigester;
 use App\Models\PasswordRecoveryChallenge;
 use App\Models\User;
+use App\Models\UserIdentity;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ use Tests\TestCase;
 use Throwable;
 
 /** @phpstan-type Worker array{pid: int, pipe: resource, reaped: bool} */
-final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
+final class ConcurrentAccountSetupTest extends TestCase
 {
     use DatabaseTruncation;
 
@@ -32,7 +33,7 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
         self::assertSame('pgsql', DB::connection()->getDriverName());
         self::assertTrue(
             function_exists('pcntl_fork'),
-            'The excluded-account establishment race gate requires pcntl.',
+            'The account-setup race gate requires pcntl.',
         );
         $this->seed(FoundationSeeder::class);
     }
@@ -175,7 +176,7 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
             1,
             DB::table('password_security_events')
                 ->where('user_id', $targetId)
-                ->where('event_type', 'password.excluded_establishment_completed')
+                ->where('event_type', 'password.account_setup_completed')
                 ->count(),
         );
     }
@@ -192,6 +193,15 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
             ->establish($actor, 'race.actor', 'Race actor correct battery 2026!', $request);
         /** @var User $target */
         $target = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        /** @var UserIdentity $identity */
+        $identity = UserIdentity::query()->forceCreate([
+            'user_id' => (string) $target->getKey(),
+            'type' => 'email',
+            'identifier_digest' => hash('sha256', 'race@example.test'),
+            'display_hint' => 'r***@example.test',
+            'status' => UserIdentity::STATUS_VERIFIED,
+            'verified_at' => $now,
+        ]);
         DB::table('password_authentication_cutovers')->insert([
             'scope_key' => 'global',
             'status' => 'password_only',
@@ -214,21 +224,17 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-        $caseId = (string) Str::ulid();
-        DB::table('privileged_password_recovery_cases')->insert([
-            'id' => $caseId,
+        $managementEventId = (string) Str::ulid();
+        DB::table('account_recovery_management_events')->insert([
+            'id' => $managementEventId,
             'target_user_id' => (string) $target->getKey(),
-            'requested_by_user_id' => (string) $actor->getKey(),
-            'reason_key' => 'identity_recovery.verified_support_case',
-            'recovery_kind' => PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT,
-            'evidence_reference' => 'support-case:concurrent-fixture',
+            'actor_user_id' => (string) $actor->getKey(),
+            'action' => 'credential_setup_requested',
+            'reason_key' => 'account_recovery.migration_setup',
             'evidence_digest' => str_repeat('c', 64),
-            'status' => 'completed',
-            'version' => 1,
-            'requested_at' => $now->copy()->subDays(2),
-            'not_before_at' => $now->copy()->subDay(),
-            'expires_at' => $now->copy()->addDays(6),
-            'completed_at' => $now,
+            'prior_identity_id' => null,
+            'replacement_identity_id' => null,
+            'occurred_at' => $now,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -238,8 +244,10 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
         PasswordRecoveryChallenge::query()->forceCreate([
             'id' => $challengeId,
             'user_id' => (string) $target->getKey(),
-            'purpose' => PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT,
-            'privileged_recovery_case_id' => $caseId,
+            'recovery_identity_id' => (string) $identity->getKey(),
+            'purpose' => PasswordRecoveryChallenge::PURPOSE_ACCOUNT_SETUP,
+            'privileged_recovery_case_id' => null,
+            'account_recovery_management_event_id' => $managementEventId,
             'lookup_digest' => $digester->digest(
                 'password-establishment-lookup',
                 (string) $target->getKey(),
@@ -297,12 +305,12 @@ final class ConcurrentExcludedPasswordEstablishmentTest extends TestCase
                     throw new RuntimeException('The recovery worker was not released.');
                 }
 
-                $request = Request::create('/auth/password/establishment-recoveries', 'POST');
+                $request = Request::create('/auth/password/setups', 'POST');
                 $request->server->set('REMOTE_ADDR', '127.0.0.1');
 
                 try {
                     $this->app->make(PasswordRecoveryService::class)
-                        ->consumeExcludedEstablishment(
+                        ->consumeAccountSetup(
                             $challengeId,
                             $username,
                             $token,

@@ -11,6 +11,10 @@ import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  Object.defineProperty(window, 'isSecureContext', {
+    configurable: true,
+    value: true,
+  })
 })
 
 describe('web password sign-in panel', () => {
@@ -36,6 +40,7 @@ describe('web password sign-in panel', () => {
     const username = screen.getByLabelText('Username')
     const password = screen.getByLabelText('Password')
     expect(username).toHaveAttribute('autocomplete', 'username')
+    expect(username).toHaveAttribute('pattern', '[A-Za-z][A-Za-z0-9._-]{3,63}')
     expect(password).toHaveAttribute('autocomplete', 'current-password')
     expect(password).toHaveAttribute('type', 'password')
     await user.type(username, 'learner.one')
@@ -79,6 +84,73 @@ describe('web password sign-in panel', () => {
       'If the account is eligible, recovery instructions will be sent.',
     )
   })
+
+  it('creates an invited account without retaining its code or password', async () => {
+    const user = userEvent.setup()
+    const authentication = webAuthentication()
+    const localStorageWrite = vi.spyOn(Storage.prototype, 'setItem')
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'I have an invitation code' }),
+    )
+    await user.type(
+      screen.getByLabelText('Invitation code'),
+      'GEI-CLOSED-GROUP-2026',
+    )
+    await user.type(screen.getByLabelText('Username'), 'closed.tester')
+    await user.type(
+      screen.getByLabelText('Password'),
+      'Closed group learner phrase 2026!',
+    )
+    await user.type(
+      screen.getByLabelText('Confirm password'),
+      'Closed group learner phrase 2026!',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(authentication.enrollWithInvitation).toHaveBeenCalledWith(
+      'GEI-CLOSED-GROUP-2026',
+      'closed.tester',
+      'Closed group learner phrase 2026!',
+    )
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Your account is ready. You can sign in now.',
+    )
+    expect(screen.queryByDisplayValue('GEI-CLOSED-GROUP-2026')).toBeNull()
+    expect(
+      screen.queryByDisplayValue('Closed group learner phrase 2026!'),
+    ).toBeNull()
+    expect(localStorageWrite).not.toHaveBeenCalled()
+  })
+
+  it('explains that plain HTTP cannot complete sign-in', () => {
+    vi.stubGlobal('location', {
+      hostname: '117.254.108.143',
+      protocol: 'http:',
+    })
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={webAuthentication()}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('alert'),
+    ).toHaveTextContent(
+      'Use the HTTPS link to sign in. This page is plain HTTP, so the browser cannot keep a sign-in cookie.',
+    )
+  })
 })
 
 const message = (key: Parameters<typeof resolveInterfaceMessage>[0]) =>
@@ -95,6 +167,7 @@ function webAuthentication(): WebSessionAuthentication {
     confirmPrivilegedMfaEnrollment: vi.fn(),
     createPrivilegedMfaChallenge: vi.fn(),
     current: vi.fn(async () => ({ status: 'anonymous' as const })),
+    enrollWithInvitation: vi.fn(async () => undefined),
     establishPassword: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     passwordStatus: vi.fn(),

@@ -74,7 +74,7 @@ final class PrivilegedMfaLifecycleTest extends TestCase
             ->assertJsonPath('can_enroll', true)
             ->assertJsonPath('requires_support', false);
 
-        $this->postJson('/api/v1/operator/privacy/exports', [])
+        $this->postJson('/api/v1/operator/roles', [])
             ->assertForbidden();
 
         $enrollment = $this->postJson('/api/v1/auth/mfa/enrollments', [])
@@ -141,7 +141,7 @@ final class PrivilegedMfaLifecycleTest extends TestCase
         )->assertOk()
             ->assertJsonPath('scope', 'privileged_actions');
 
-        $this->postJson('/api/v1/operator/privacy/exports', [])
+        $this->postJson('/api/v1/operator/roles', [])
             ->assertUnprocessable();
 
         $recoveryChallenge = $this->issueAssertionChallenge();
@@ -152,7 +152,7 @@ final class PrivilegedMfaLifecycleTest extends TestCase
             ['method' => 'recovery_code', 'code' => $usedRecoveryCode],
         )->assertOk()
             ->assertJsonPath('scope', 'factor_replacement');
-        $this->postJson('/api/v1/operator/privacy/exports', [])
+        $this->postJson('/api/v1/operator/roles', [])
             ->assertForbidden();
 
         $replacement = $this->postJson('/api/v1/auth/mfa/enrollments', [])

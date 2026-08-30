@@ -259,6 +259,18 @@ final class PassportPkceFlowTest extends TestCase
             $this->relativeLocation((string) $signedIn->headers->get('Location')),
         );
         $this->assertDatabaseCount('authentication_sessions', 1);
+        $this->adoptSessionCookie($signedIn, true);
+
+        $completed = $this->get($target)->assertRedirect();
+        $this->assertAuthenticationPageHeaders($completed);
+        self::assertSame(
+            'com.globalenglish.app',
+            parse_url((string) $completed->headers->get('Location'), PHP_URL_SCHEME),
+        );
+        self::assertStringNotContainsString(
+            'Continue to',
+            (string) $completed->getContent(),
+        );
 
         $this->post('/auth/mobile/sign-in/otp/requests', [
             'mobile_number' => '+919876543210',
@@ -545,29 +557,13 @@ final class PassportPkceFlowTest extends TestCase
             $this->assertDatabaseSessionExcludes($institutionInviteCode);
         }
 
-        $consent = $this->get($target)
-            ->assertOk()
-            ->assertSee('Continue to Global English Android integration client');
-        $this->assertAuthenticationPageHeaders($consent);
-        $this->adoptSessionCookie($consent);
-
-        $matches = [];
-        self::assertSame(
-            1,
-            preg_match(
-                '/name="auth_token" value="([^"]+)"/',
-                (string) $consent->getContent(),
-                $matches,
-            ),
-        );
-        self::assertIsString($matches[1] ?? null);
-
-        $approved = $this->post('/oauth/authorize', [
-            'state' => $state,
-            'client_id' => $client->getKey(),
-            'auth_token' => $matches[1],
-        ])->assertRedirect();
+        $approved = $this->get($target)->assertRedirect();
         $this->assertAuthenticationPageHeaders($approved);
+
+        self::assertSame(
+            'com.globalenglish.app',
+            parse_url((string) $approved->headers->get('Location'), PHP_URL_SCHEME),
+        );
 
         return $approved;
     }

@@ -452,6 +452,122 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 
+  it('rewrites Capacitor WebView localhost API URLs onto the baked origin', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    secureStore.refreshToken = 'initial-refresh-token'
+    const apiRequests: string[] = []
+    const adapter = createAdapter(
+      secureStore,
+      { open: vi.fn(async () => undefined) },
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = new Request(input, init)
+
+        if (request.url.endsWith('/oauth/token')) {
+          return Response.json({
+            access_token: 'memory-only-access-token',
+            expires_in: 900,
+            refresh_token: 'rotated-refresh-token',
+            token_type: 'Bearer',
+          })
+        }
+
+        apiRequests.push(request.url)
+        return Response.json({ levels: [] })
+      }) as typeof fetch,
+    )
+
+    await adapter.refresh()
+    const response = await adapter.authenticatedFetch(
+      'https://localhost/api/v1/me/levels',
+    )
+
+    expect(response.status).toBe(200)
+    expect(apiRequests).toEqual([
+      'https://api.global-english.test/api/v1/me/levels',
+    ])
+  })
+
+  it('rejects Capacitor WebView localhost paths outside /api/v1', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const fetcher = vi.fn(async () => Response.json({ ok: true }))
+    const adapter = createAdapter(
+      secureStore,
+      { open: vi.fn(async () => undefined) },
+      fetcher as typeof fetch,
+    )
+
+    await expect(
+      adapter.authenticatedFetch('https://localhost/oauth/token'),
+    ).rejects.toBeInstanceOf(AuthenticationUnavailableError)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('promotes Blob voice parts to File so Capacitor keeps the WAV', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    secureStore.refreshToken = 'initial-refresh-token'
+    const adapter = createAdapter(
+      secureStore,
+      { open: vi.fn(async () => undefined) },
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof Request
+              ? input.url
+              : String(input)
+
+        if (url.endsWith('/oauth/token')) {
+          return Response.json({
+            access_token: 'memory-only-access-token',
+            expires_in: 900,
+            refresh_token: 'rotated-refresh-token',
+            token_type: 'Bearer',
+          })
+        }
+
+        expect(url).toBe(
+          'https://api.global-english.test/api/v1/conversation-sessions/01TESTSESSION00000000000001/recordings',
+        )
+        expect(typeof input === 'string' || input instanceof URL).toBe(true)
+        expect(init?.credentials).toBe('omit')
+        expect(new Headers(init?.headers).get('Authorization')).toBe(
+          'Bearer memory-only-access-token',
+        )
+        expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(
+          '01TESTCOMMAND000000000000001',
+        )
+        expect(init?.body).toBeInstanceOf(FormData)
+        const audio = (init?.body as FormData).get('audio')
+        expect(audio).toBeInstanceOf(File)
+        expect((audio as File).name).toBe('voice-practice.wav')
+        expect((audio as File).type).toBe('audio/wav')
+
+        return Response.json(
+          { status: 'awaiting_learner_confirmation' },
+          { status: 201 },
+        )
+      }) as typeof fetch,
+    )
+
+    await adapter.refresh()
+    const formData = new FormData()
+    formData.append(
+      'audio',
+      new Blob([new Uint8Array([82, 73, 70, 70])], { type: 'audio/wav' }),
+    )
+
+    const response = await adapter.authenticatedFetch(
+      '/api/v1/conversation-sessions/01TESTSESSION00000000000001/recordings',
+      {
+        body: formData,
+        headers: { 'Idempotency-Key': '01TESTCOMMAND000000000000001' },
+        method: 'POST',
+      },
+    )
+
+    expect(response.status).toBe(201)
+  })
+
   it('rejects token responses outside the generated strict contract', async () => {
     const secureStore = new InMemoryReviewedSecureStore()
     const adapter = createAdapter(

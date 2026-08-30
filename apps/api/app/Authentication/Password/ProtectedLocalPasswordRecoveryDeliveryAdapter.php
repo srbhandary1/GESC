@@ -56,7 +56,7 @@ final class ProtectedLocalPasswordRecoveryDeliveryAdapter implements PasswordRec
         $this->guardEnabled();
         /** @var PasswordRecoveryChallenge|null $challenge */
         $challenge = PasswordRecoveryChallenge::query()
-            ->where('purpose', PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT)
+            ->where('purpose', PasswordRecoveryChallenge::PURPOSE_ACCOUNT_SETUP)
             ->where('status', PasswordRecoveryChallenge::STATUS_PENDING)
             ->where('delivery_outcome', 'accepted')
             ->where('expires_at', '>', Date::now())

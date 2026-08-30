@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Authentication\Password;
 
-use App\Authentication\Sessions\PrivilegeClassifier;
 use App\Models\PasswordRecoveryChallenge;
 use App\Models\User;
 use App\Models\UserIdentity;
@@ -21,7 +20,6 @@ final readonly class PasswordRecoveryService
         private RecoveryTokenDigester $digester,
         private PasswordRecoveryDeliveryAdapter $delivery,
         private PasswordCredentialService $passwords,
-        private PrivilegeClassifier $privileges,
     ) {}
 
     public function request(string $username): void
@@ -32,22 +30,18 @@ final readonly class PasswordRecoveryService
             $canonical = strtolower(trim($username));
         }
 
-        $this->issue($canonical, false, null);
+        $this->issue($canonical);
     }
 
-    public function issuePrivileged(User $user, string $caseId): bool
+    public function issueAccountSetup(User $user, string $managementEventId): bool
     {
-        if ($user->username === null || ! $user->passwordCredential()->exists()) {
-            return $this->issueExcludedEstablishment($user, $caseId);
-        }
-
-        return $this->issue((string) $user->username, true, $caseId);
+        return $this->issueCredentialSetup($user, $managementEventId);
     }
 
-    private function issue(string $canonical, bool $allowPrivileged, ?string $caseId): bool
+    private function issue(string $canonical): bool
     {
         $lookupDigest = $this->digester->digest('password-recovery-lookup', $canonical);
-        $token = Str::random(64);
+        $token = $this->newToken();
         $challengeId = (string) Str::ulid();
 
         /** @var User|null $user */
@@ -55,9 +49,7 @@ final readonly class PasswordRecoveryService
             ->where('username', $canonical)
             ->where('status', User::STATUS_ACTIVE)
             ->first();
-        $eligible = $user instanceof User
-            && $user->passwordCredential()->exists()
-            && ($allowPrivileged || ! $this->isPrivileged($user));
+        $eligible = $user instanceof User && $user->passwordCredential()->exists();
         /** @var UserIdentity|null $identity */
         $identity = $eligible
             ? UserIdentity::query()
@@ -69,7 +61,6 @@ final readonly class PasswordRecoveryService
             : null;
 
         DB::transaction(function () use (
-            $caseId,
             $challengeId,
             $identity,
             $lookupDigest,
@@ -95,7 +86,8 @@ final readonly class PasswordRecoveryService
                     : null,
                 'recovery_identity_id' => $identity?->getKey(),
                 'purpose' => PasswordRecoveryChallenge::PURPOSE_PASSWORD_RESET,
-                'privileged_recovery_case_id' => $caseId,
+                'privileged_recovery_case_id' => null,
+                'account_recovery_management_event_id' => null,
                 'lookup_digest' => $lookupDigest,
                 'token_digest' => $this->digester->digest('password-recovery-token', $token),
                 'status' => 'pending',
@@ -131,12 +123,25 @@ final readonly class PasswordRecoveryService
         }
     }
 
-    private function issueExcludedEstablishment(User $user, string $caseId): bool
-    {
+    private function issueCredentialSetup(
+        User $user,
+        string $managementEventId,
+    ): bool {
         if ($user->status !== User::STATUS_ACTIVE
             || $user->username !== null
             || $user->passwordCredential()->exists()
-            || ! DB::table('password_cutover_exclusions')->where('user_id', $user->getKey())->exists()) {
+            || ! $this->hasCurrentCutoverExclusion((string) $user->getKey())) {
+            return false;
+        }
+
+        $authorized = DB::table('account_recovery_management_events')
+            ->where('id', $managementEventId)
+            ->where('target_user_id', $user->getKey())
+            ->where('action', 'credential_setup_requested')
+            ->where('reason_key', 'account_recovery.migration_setup')
+            ->exists();
+
+        if (! $authorized) {
             return false;
         }
 
@@ -153,9 +158,15 @@ final readonly class PasswordRecoveryService
         }
 
         $challengeId = (string) Str::ulid();
-        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $token = $this->newToken();
 
-        DB::transaction(function () use ($caseId, $challengeId, $identity, $token, $user): void {
+        DB::transaction(function () use (
+            $challengeId,
+            $identity,
+            $managementEventId,
+            $token,
+            $user,
+        ): void {
             PasswordRecoveryChallenge::query()
                 ->where('user_id', $user->getKey())
                 ->where('status', PasswordRecoveryChallenge::STATUS_PENDING)
@@ -169,8 +180,9 @@ final readonly class PasswordRecoveryService
                 'id' => $challengeId,
                 'user_id' => (string) $user->getKey(),
                 'recovery_identity_id' => (string) $identity->getKey(),
-                'purpose' => PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT,
-                'privileged_recovery_case_id' => $caseId,
+                'purpose' => PasswordRecoveryChallenge::PURPOSE_ACCOUNT_SETUP,
+                'privileged_recovery_case_id' => null,
+                'account_recovery_management_event_id' => $managementEventId,
                 'lookup_digest' => $this->digester->digest(
                     'password-establishment-lookup',
                     (string) $user->getKey(),
@@ -205,7 +217,7 @@ final readonly class PasswordRecoveryService
         }
     }
 
-    public function consumeExcludedEstablishment(
+    public function consumeAccountSetup(
         string $challengeId,
         string $username,
         string $token,
@@ -233,13 +245,12 @@ final readonly class PasswordRecoveryService
                 $this->digester->digest('password-recovery-token', $token),
             );
 
-            if ($challenge->purpose !== PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT
+            if ($challenge->purpose !== PasswordRecoveryChallenge::PURPOSE_ACCOUNT_SETUP
                 || $challenge->status !== PasswordRecoveryChallenge::STATUS_PENDING
                 || $challenge->expires_at->lessThanOrEqualTo($now)
                 || $challenge->failed_attempts >= 5
                 || ! $tokenMatches
-                || $challenge->user_id === null
-                || $challenge->privileged_recovery_case_id === null) {
+                || $challenge->user_id === null) {
                 $this->recordFailedAttempt($challenge, $now);
 
                 return null;
@@ -247,19 +258,28 @@ final readonly class PasswordRecoveryService
 
             /** @var User|null $user */
             $user = User::query()->whereKey($challenge->user_id)->lockForUpdate()->first();
-            $caseValid = DB::table('privileged_password_recovery_cases')
-                ->where('id', $challenge->privileged_recovery_case_id)
-                ->where('target_user_id', $challenge->user_id)
-                ->where('recovery_kind', PasswordRecoveryChallenge::PURPOSE_EXCLUDED_CREDENTIAL_ESTABLISHMENT)
-                ->where('status', 'completed')
-                ->exists();
+            $authorizationValid = $challenge->account_recovery_management_event_id !== null
+                && DB::table('account_recovery_management_events')
+                    ->where('id', $challenge->account_recovery_management_event_id)
+                    ->where('target_user_id', $challenge->user_id)
+                    ->where('action', 'credential_setup_requested')
+                    ->where('reason_key', 'account_recovery.migration_setup')
+                    ->exists();
+            $identityValid = $challenge->recovery_identity_id !== null
+                && UserIdentity::query()
+                    ->whereKey($challenge->recovery_identity_id)
+                    ->where('user_id', $challenge->user_id)
+                    ->where('status', UserIdentity::STATUS_VERIFIED)
+                    ->whereIn('type', ['phone', 'email'])
+                    ->exists();
 
             if (! $user instanceof User
                 || $user->status !== User::STATUS_ACTIVE
                 || $user->username !== null
                 || $user->passwordCredential()->exists()
-                || ! $caseValid
-                || ! DB::table('password_cutover_exclusions')->where('user_id', $user->getKey())->exists()) {
+                || ! $authorizationValid
+                || ! $identityValid
+                || ! $this->hasCurrentCutoverExclusion((string) $user->getKey())) {
                 $this->recordFailedAttempt($challenge, $now);
 
                 return null;
@@ -274,7 +294,7 @@ final readonly class PasswordRecoveryService
             DB::table('password_security_events')->insert([
                 'id' => (string) Str::ulid(),
                 'user_id' => (string) $user->getKey(),
-                'event_type' => 'password.excluded_establishment_completed',
+                'event_type' => 'password.account_setup_completed',
                 'outcome' => 'succeeded',
                 'request_digest' => $this->digester->digest(
                     'password-establishment-event',
@@ -293,6 +313,27 @@ final readonly class PasswordRecoveryService
         }
 
         return $result;
+    }
+
+    private function hasCurrentCutoverExclusion(string $userId): bool
+    {
+        return DB::table('password_cutover_exclusions as exclusion')
+            ->join(
+                'password_authentication_cutovers as cutover',
+                'cutover.scope_key',
+                '=',
+                'exclusion.cutover_scope_key',
+            )
+            ->where('exclusion.user_id', $userId)
+            ->where('exclusion.cutover_scope_key', 'global')
+            ->where('cutover.status', 'password_only')
+            ->whereColumn('cutover.manifest_digest', 'exclusion.manifest_digest')
+            ->exists();
+    }
+
+    private function newToken(): string
+    {
+        return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     }
 
     public function consume(
@@ -335,13 +376,23 @@ final readonly class PasswordRecoveryService
                 $this->digester->digest('password-recovery-lookup', $canonical),
             );
 
+            $identityValid = $challenge->recovery_identity_id !== null
+                && UserIdentity::query()
+                    ->whereKey($challenge->recovery_identity_id)
+                    ->where('user_id', $challenge->user_id)
+                    ->where('status', UserIdentity::STATUS_VERIFIED)
+                    ->whereIn('type', ['phone', 'email'])
+                    ->exists();
+
             if (
-                $challenge->status !== 'pending'
+                $challenge->purpose !== PasswordRecoveryChallenge::PURPOSE_PASSWORD_RESET
+                || $challenge->status !== 'pending'
                 || $challenge->expires_at->lessThanOrEqualTo($now)
                 || $challenge->failed_attempts >= 5
                 || ! $tokenMatches
                 || ! $lookupMatches
                 || $challenge->user_id === null
+                || ! $identityValid
             ) {
                 $attempts = min(5, $challenge->failed_attempts + 1);
                 $challenge->forceFill([
@@ -392,27 +443,5 @@ final readonly class PasswordRecoveryService
                 ? PasswordRecoveryChallenge::STATUS_EXPIRED
                 : $challenge->status,
         ])->save();
-    }
-
-    private function isPrivileged(User $user): bool
-    {
-        if ($this->privileges->isPrivileged($user)) {
-            return true;
-        }
-
-        foreach ([
-            config('platform.identity_recovery.actor_user_ids', []),
-            config('platform.content_emergency.actor_user_ids', []),
-        ] as $configured) {
-            if (! is_array($configured)) {
-                return true;
-            }
-
-            if (in_array((string) $user->getKey(), $configured, true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

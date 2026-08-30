@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Authentication\Mobile\MobileOAuthClient;
 use App\Http\Middleware\EnforceMobileOAuthPolicy;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Laravel\Passport\Client;
+use Laravel\Passport\Scope;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
@@ -101,6 +102,15 @@ final class MobileOAuthPolicyTest extends TestCase
             $this->createMobileClient([
                 'grant_types' => ['refresh_token'],
             ]),
+            $this->createMobileClient([
+                'grant_types' => ['authorization_code', 'refresh_token', 'implicit'],
+            ]),
+            $this->createMobileClient([
+                'redirect_uris' => [
+                    'com.globalenglish.app:/oauth/callback',
+                    'https://unexpected.example/callback',
+                ],
+            ]),
         ];
 
         foreach ($rejectedClients as $client) {
@@ -119,6 +129,20 @@ final class MobileOAuthPolicyTest extends TestCase
                 )->getStatusCode(),
             );
         }
+    }
+
+    public function test_only_the_exact_reviewed_mobile_scope_skips_first_party_consent(): void
+    {
+        $client = $this->createMobileClient();
+        $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+
+        self::assertTrue($client->skipsAuthorization($user, [
+            new Scope('mobile:api', 'Use the Global English mobile API.'),
+        ]));
+        self::assertFalse($client->skipsAuthorization($user, []));
+        self::assertFalse($client->skipsAuthorization($user, [
+            new Scope('unexpected', 'Unexpected scope.'),
+        ]));
     }
 
     public function test_policy_rejects_http_basic_and_php_auth_client_credentials(): void
@@ -190,12 +214,26 @@ final class MobileOAuthPolicyTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_loopback_reverse_proxy_preserves_the_external_https_mobile_redirect(): void
+    {
+        $client = $this->createMobileClient();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->withHeaders([
+                'X-Forwarded-Host' => 'mobile.example.test',
+                'X-Forwarded-Port' => '443',
+                'X-Forwarded-Proto' => 'https',
+            ])
+            ->get($this->authorizationRequest($client)->getRequestUri())
+            ->assertRedirect('https://mobile.example.test/auth/mobile/sign-in');
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */
-    private function createMobileClient(array $overrides = []): Client
+    private function createMobileClient(array $overrides = []): MobileOAuthClient
     {
-        return Client::query()->create([
+        return MobileOAuthClient::query()->create([
             'name' => 'Global English Android policy client',
             'secret' => null,
             'provider' => 'users',
@@ -208,7 +246,7 @@ final class MobileOAuthPolicyTest extends TestCase
         ]);
     }
 
-    private function authorizationRequest(Client $client): Request
+    private function authorizationRequest(MobileOAuthClient $client): Request
     {
         return Request::create('/oauth/authorize', 'GET', [
             'client_id' => $client->getKey(),
@@ -221,7 +259,7 @@ final class MobileOAuthPolicyTest extends TestCase
         ]);
     }
 
-    private function tokenRequest(Client $client): Request
+    private function tokenRequest(MobileOAuthClient $client): Request
     {
         return Request::create('/oauth/token', 'POST', [
             'grant_type' => 'authorization_code',

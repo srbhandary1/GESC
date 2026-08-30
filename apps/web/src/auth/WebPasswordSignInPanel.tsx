@@ -10,19 +10,31 @@ import { WebOtpSignInPanel } from './WebOtpSignInPanel'
 
 interface WebPasswordSignInPanelProps {
   readonly authentication: WebSessionAuthentication
+  readonly embedded?: boolean
   readonly message: (key: MessageKey) => InterfaceMessageResolution
   readonly onAuthenticated: (snapshot: AuthenticationSnapshot) => void
 }
 
+const USERNAME_PATTERN = /^[A-Za-z][A-Za-z0-9._-]{3,63}$/
+
+function isValidUsername(value: string): boolean {
+  return USERNAME_PATTERN.test(value)
+}
+
 export function WebPasswordSignInPanel({
   authentication,
+  embedded = false,
   message,
   onAuthenticated,
 }: WebPasswordSignInPanelProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [invitationCode, setInvitationCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [recovery, setRecovery] = useState(false)
+  const [invitationSetup, setInvitationSetup] = useState(false)
+  const [invitationSetupComplete, setInvitationSetupComplete] = useState(false)
   const [recoverySent, setRecoverySent] = useState(false)
   const [mode, setMode] = useState<
     'legacy_otp' | 'credential_migration' | 'password_only' | null
@@ -30,6 +42,16 @@ export function WebPasswordSignInPanel({
   const [legacySetup, setLegacySetup] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
+  const [secureContext] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
+    }
+
+    const host = window.location.hostname
+    const loopback = host === '127.0.0.1' || host === 'localhost' || host === '::1'
+
+    return window.location.protocol === 'https:' || loopback
+  })
 
   useEffect(() => {
     let active = true
@@ -43,6 +65,14 @@ export function WebPasswordSignInPanel({
       active = false
     }
   }, [authentication])
+
+  useEffect(() => {
+    if (!embedded || mode === null || mode === 'legacy_otp' || legacySetup) {
+      return
+    }
+
+    document.getElementById('web-password-username')?.focus()
+  }, [embedded, mode, legacySetup])
 
   if (mode === 'legacy_otp' || legacySetup) {
     return (
@@ -65,6 +95,10 @@ export function WebPasswordSignInPanel({
 
   const signIn = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!isValidUsername(username.trim())) {
+      setError(true)
+      return
+    }
     setBusy(true)
     setError(false)
 
@@ -81,6 +115,10 @@ export function WebPasswordSignInPanel({
 
   const requestRecovery = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!isValidUsername(username.trim())) {
+      setError(true)
+      return
+    }
     setBusy(true)
     setError(false)
 
@@ -91,17 +129,88 @@ export function WebPasswordSignInPanel({
       .finally(() => setBusy(false))
   }
 
+  const enrollWithInvitation = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(false)
+
+    if (!isValidUsername(username.trim())) {
+      setError(true)
+      return
+    }
+
+    if (password !== passwordConfirmation) {
+      setError(true)
+      return
+    }
+
+    setBusy(true)
+    void authentication
+      .enrollWithInvitation(
+        invitationCode.trim(),
+        username.trim(),
+        password,
+      )
+      .then(() => {
+        setInvitationSetupComplete(true)
+        setInvitationSetup(false)
+        setInvitationCode('')
+        setPasswordConfirmation('')
+      })
+      .catch(() => setError(true))
+      .finally(() => {
+        setPassword('')
+        setPasswordConfirmation('')
+        setBusy(false)
+      })
+  }
+
   return (
     <section
-      aria-labelledby="web-password-sign-in-title"
-      className="web-otp-sign-in"
+      aria-labelledby={
+        embedded ? undefined : 'web-password-sign-in-title'
+      }
+      className={
+        embedded
+          ? 'web-password-sign-in web-password-sign-in--embedded'
+          : 'web-password-sign-in'
+      }
     >
-      <h3 id="web-password-sign-in-title">
-        <LocalizedMessage resolution={message('auth.password.title')} />
-      </h3>
-      <p>
-        <LocalizedMessage resolution={message('auth.password.lead')} />
-      </p>
+      {embedded ? null : (
+        <div aria-hidden="true" className="web-password-sign-in__visual">
+          <span className="web-password-sign-in__brand-mark">GSE</span>
+          <span className="web-password-sign-in__visual-ring" />
+        </div>
+      )}
+      <div className="web-password-sign-in__card">
+      {embedded ? null : (
+        <>
+          <h3 id="web-password-sign-in-title">
+            <LocalizedMessage
+              resolution={message(
+                invitationSetup
+                  ? 'auth.password.invitation_title'
+                  : 'auth.password.title',
+              )}
+            />
+          </h3>
+          <p>
+            <LocalizedMessage
+              resolution={message(
+                invitationSetup
+                  ? 'auth.password.invitation_lead'
+                  : 'auth.password.lead',
+              )}
+            />
+          </p>
+        </>
+      )}
+      {!secureContext ? (
+        <p className="web-otp-sign-in__error" role="alert">
+          <LocalizedMessage
+            resolution={message('auth.password.https_required')}
+          />
+        </p>
+      ) : null}
 
       {mode === 'credential_migration' ? (
         <button onClick={() => setLegacySetup(true)} type="button">
@@ -113,8 +222,38 @@ export function WebPasswordSignInPanel({
 
       <form
         className="web-otp-sign-in__form"
-        onSubmit={recovery ? requestRecovery : signIn}
+        onSubmit={
+          invitationSetup
+            ? enrollWithInvitation
+            : recovery
+              ? requestRecovery
+              : signIn
+        }
       >
+        {invitationSetup ? (
+          <>
+            <label htmlFor="web-password-invitation-code">
+              <LocalizedMessage
+                resolution={message('auth.password.invitation_code')}
+              />
+            </label>
+            <input
+              autoCapitalize="none"
+              autoComplete="off"
+              disabled={busy}
+              id="web-password-invitation-code"
+              maxLength={128}
+              minLength={12}
+              onChange={(event) =>
+                setInvitationCode(event.currentTarget.value)
+              }
+              required
+              spellCheck={false}
+              type="text"
+              value={invitationCode}
+            />
+          </>
+        ) : null}
         <label htmlFor="web-password-username">
           <LocalizedMessage resolution={message('auth.password.username')} />
         </label>
@@ -124,8 +263,9 @@ export function WebPasswordSignInPanel({
           disabled={busy}
           id="web-password-username"
           maxLength={64}
+          minLength={4}
           onChange={(event) => setUsername(event.currentTarget.value)}
-          pattern="[a-zA-Z][a-zA-Z0-9._-]{3,63}"
+          pattern="[A-Za-z][A-Za-z0-9._-]{3,63}"
           required
           spellCheck={false}
           type="text"
@@ -140,7 +280,9 @@ export function WebPasswordSignInPanel({
               />
             </label>
             <input
-              autoComplete="current-password"
+              autoComplete={
+                invitationSetup ? 'new-password' : 'current-password'
+              }
               disabled={busy}
               id="web-password-password"
               maxLength={512}
@@ -149,6 +291,29 @@ export function WebPasswordSignInPanel({
               type={showPassword ? 'text' : 'password'}
               value={password}
             />
+            {invitationSetup ? (
+              <>
+                <label htmlFor="web-password-confirmation">
+                  <LocalizedMessage
+                    resolution={message(
+                      'auth.password.invitation_password_confirmation',
+                    )}
+                  />
+                </label>
+                <input
+                  autoComplete="new-password"
+                  disabled={busy}
+                  id="web-password-confirmation"
+                  maxLength={512}
+                  onChange={(event) =>
+                    setPasswordConfirmation(event.currentTarget.value)
+                  }
+                  required
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordConfirmation}
+                />
+              </>
+            ) : null}
             <label>
               <input
                 checked={showPassword}
@@ -166,7 +331,9 @@ export function WebPasswordSignInPanel({
         <button disabled={busy || recoverySent} type="submit">
           <LocalizedMessage
             resolution={message(
-              recovery
+              invitationSetup
+                ? 'auth.password.invitation_submit'
+                : recovery
                 ? 'auth.password.recovery_submit'
                 : busy
                   ? 'auth.password.signing_in'
@@ -177,7 +344,11 @@ export function WebPasswordSignInPanel({
         <button
           disabled={busy}
           onClick={() => {
-            setRecovery((current) => !current)
+            if (invitationSetup) {
+              setInvitationSetup(false)
+            } else {
+              setRecovery((current) => !current)
+            }
             setRecoverySent(false)
             setError(false)
           }}
@@ -185,12 +356,27 @@ export function WebPasswordSignInPanel({
         >
           <LocalizedMessage
             resolution={message(
-              recovery
+              recovery || invitationSetup
                 ? 'auth.password.back'
                 : 'auth.password.recovery_open',
             )}
           />
         </button>
+        {!recovery && !invitationSetup ? (
+          <button
+            disabled={busy}
+            onClick={() => {
+              setInvitationSetup(true)
+              setInvitationSetupComplete(false)
+              setError(false)
+            }}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message('auth.password.invitation_open')}
+            />
+          </button>
+        ) : null}
       </form>
 
       {recoverySent ? (
@@ -200,11 +386,19 @@ export function WebPasswordSignInPanel({
           />
         </p>
       ) : null}
+      {invitationSetupComplete ? (
+        <p role="status">
+          <LocalizedMessage
+            resolution={message('auth.password.invitation_complete')}
+          />
+        </p>
+      ) : null}
       {error ? (
         <p className="web-otp-sign-in__error" role="alert">
           <LocalizedMessage resolution={message('auth.password.error')} />
         </p>
       ) : null}
+      </div>
     </section>
   )
 }

@@ -15,6 +15,11 @@ use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Http\Middleware\EnforceAuthenticationSession;
 use App\Models\AuthenticationSession;
 use App\Models\User;
+use App\Observability\CorrelationId;
+use App\Tenancy\Exceptions\FoundationConfigurationException;
+use App\Tenancy\Exceptions\InstitutionInviteUnavailable;
+use App\Tenancy\InstitutionInviteAcceptor;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +33,7 @@ final class PasswordAuthenticationController extends Controller
         private readonly AuthenticationSessionService $sessions,
         private readonly MobileTokenFamilyService $mobileFamilies,
         private readonly PasswordRecoveryService $recovery,
+        private readonly InstitutionInviteAcceptor $invites,
     ) {}
 
     public function signIn(Request $request): JsonResponse
@@ -67,6 +73,65 @@ final class PasswordAuthenticationController extends Controller
     {
         return response()->json(['mode' => $this->passwords->mode()])
             ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function enrollWithInvitation(Request $request): Response
+    {
+        if ($this->passwords->mode() === 'legacy_otp') {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $this->rejectUnexpectedFields(
+            $request,
+            ['invitation_code', 'username', 'password'],
+        );
+        $validated = $request->validate([
+            'invitation_code' => ['required', 'string', 'min:12', 'max:128'],
+            'username' => ['required', 'string', 'max:64'],
+            'password' => ['required', 'string', 'max:512'],
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $validated): void {
+                $user = User::query()->forceCreate([
+                    'display_name' => null,
+                    'status' => User::STATUS_ACTIVE,
+                ]);
+                $this->passwords->establish(
+                    $user,
+                    (string) $validated['username'],
+                    (string) $validated['password'],
+                    $request,
+                );
+                $this->invites->accept(
+                    (string) $validated['invitation_code'],
+                    $user,
+                    CorrelationId::forRequest($request),
+                );
+
+                if ($this->passwords->mode() === 'password_only') {
+                    User::query()->whereKey($user->getKey())->update([
+                        'credential_cutover_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }, 3);
+        } catch (
+            PasswordPolicyViolation
+            |PasswordAuthenticationFailed
+            |InstitutionInviteUnavailable
+            |FoundationConfigurationException
+            |QueryException
+        ) {
+            throw ValidationException::withMessages([
+                'enrollment' => ['Account setup could not be completed.'],
+            ]);
+        } finally {
+            $request->request->remove('invitation_code');
+            $request->request->remove('password');
+        }
+
+        return response()->noContent()->header('Cache-Control', 'private, no-store');
     }
 
     public function status(Request $request): JsonResponse
@@ -152,7 +217,7 @@ final class PasswordAuthenticationController extends Controller
         return response()->noContent()->header('Cache-Control', 'private, no-store');
     }
 
-    public function establishRecovered(Request $request): Response
+    public function completeSetup(Request $request): Response
     {
         $this->rejectUnexpectedFields(
             $request,
@@ -168,7 +233,7 @@ final class PasswordAuthenticationController extends Controller
         try {
             $completed = DB::transaction(function () use ($request, $validated): bool {
                 try {
-                    $user = $this->recovery->consumeExcludedEstablishment(
+                    $user = $this->recovery->consumeAccountSetup(
                         (string) $validated['challenge_id'],
                         (string) $validated['username'],
                         (string) $validated['token'],
@@ -180,12 +245,12 @@ final class PasswordAuthenticationController extends Controller
                 }
                 $this->mobileFamilies->revokeAllForUser(
                     (string) $user->getKey(),
-                    'excluded_password_established',
+                    'account_setup_completed',
                 );
                 $this->sessions->revokeAll(
                     $user,
                     $request,
-                    'excluded_password_established',
+                    'account_setup_completed',
                 );
 
                 return true;
@@ -196,7 +261,7 @@ final class PasswordAuthenticationController extends Controller
             }
         } catch (PasswordRecoveryFailed) {
             throw ValidationException::withMessages([
-                'recovery' => ['Credential establishment could not be completed.'],
+                'recovery' => ['Account setup could not be completed.'],
             ]);
         } finally {
             $request->request->remove('token');
