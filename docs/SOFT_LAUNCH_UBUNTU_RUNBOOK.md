@@ -185,14 +185,13 @@ authorize ordinary learner audio.
 
 ### 3. Obtain ordinary learner Speech activation
 
-ADR-0007/0008 currently keep ordinary Azure learner STT disabled. Before code
-binding, record a separate exact approval containing: allowed adult pilot
-organizations; Central India resource; STT/TTS purposes; consent wording;
-no-training/no-human-review controls; audio/transcript retention and deletion;
-monthly INR cap; incident kill switch; and independent privacy/legal/security
-review evidence. Only then may a bounded implementation enable
-`VOICE_UPLOAD_ENABLED`, bind the project-owned Azure recorded-speech adapter
-and run a consented learner smoke. Text must remain available.
+ADR-0007/0008 keep ordinary Azure learner STT disabled in production and Play.
+APP-0068 / D-0212 authorizes invite-only Direct soft-launch only: set
+`VOICE_UPLOAD_ENABLED=true`, `VOICE_PROVIDER_DRIVER=azure`, and
+`VOICE_ALLOWED_ORGANIZATION_IDS` to the Direct organization in the outside-repo
+soft-launch env (not Git). Typed input remains available after Type instead.
+Production/Play, partner tenants, independent privacy-firm review, and
+DR-0028 Phase B supervised smoke stay unauthorized.
 
 ### 4. Configure the separate Azure OpenAI model resource
 
@@ -274,28 +273,52 @@ access, close that tenant blocker before provisioning:
 following login rebuilds it. Never paste an Azure key into any of these
 management-plane commands.
 
-### 5. Verify port 8080 and add stable HTTPS separately
+### 5. Configure the stable static-IP HTTPS origin
 
-The router forward must be TCP WAN `8080` → `192.168.1.3:8080`, with a DHCP
-reservation for `192.168.1.3`. If UFW is active, an administrator must allow
-that exact port. Test from mobile data or an external VPS because the LAN may
-not support NAT loopback:
+The approved product hostname is `ai.globalspokenenglish.com`. In Cloudflare
+DNS create one **DNS-only** A record named `ai` pointing to the current static
+public IPv4 address. Do not change the apex or `www` records. Reserve
+`192.168.1.3` for this host and configure these TCP router mappings:
+
+| WAN | LAN target |
+|---|---|
+| `80` | `192.168.1.3:8080` |
+| `443` | `192.168.1.3:8443` |
+
+Caddy's `http_port`/`https_port` settings deliberately use unprivileged local
+ports; clients still use ordinary public ports 80/443. If UFW is active, allow
+only the exact TCP ports 8080 and 8443. After DNS and router forwarding exist:
 
 ```bash
-curl -i http://117.254.108.143:8080/api/v1/health/ready
-curl -I http://117.254.108.143:8080/
+make soft-launch-configure-stable HOST=ai.globalspokenenglish.com
+make soft-launch-restart
+make soft-launch-status
 ```
 
-The expected response while the HTTPS tunnel is active is HTTP `307` with a
-`Location` on the current approved HTTPS origin. A timeout from inside the same
-LAN may mean the router lacks NAT loopback; verify using mobile data or an
-external host.
+The stable edge obtains a public certificate, redirects HTTP to the exact
+HTTPS origin, adds HSTS/nosniff/frame/referrer headers and proxies only to the
+loopback application edge. Configuration fails closed unless `APP_URL` exactly
+matches the stable host. A configured stable host disables Quick-Tunnel start
+and the systemd supervisor no longer requires a tunnel process.
 
-Plain public HTTP is not suitable for sign-in, secure cookies or microphone
-capture. Keep the Cloudflare HTTPS tunnel primary. For a stable address, create
-a separately approved hostname such as `learn.globalspokenenglish.com` mapped
-to a named tunnel whose origin is `http://127.0.0.1:9080`; leave the existing
-`www`/apex records and website hosting unchanged.
+Verify from mobile data or an external host because the LAN may not support NAT
+loopback:
+
+```bash
+curl -I http://ai.globalspokenenglish.com/
+curl --fail https://ai.globalspokenenglish.com/api/v1/health/ready
+curl --fail https://ai.globalspokenenglish.com/api/v1/auth/password/mode
+```
+
+Expected results are an HTTP redirect to the same stable HTTPS hostname,
+`ready`, and exactly `password_only`. Do not rebuild or distribute Android
+until those checks pass. Then build with
+`VITE_MOBILE_API_ORIGIN=https://ai.globalspokenenglish.com`; the old
+Quick-Tunnel APK is obsolete.
+
+SSH remains appropriate only for administration and deliberately loopback-only
+recovery surfaces. It is not the learner/Web/Android transport. Plain public
+HTTP and raw-IP sign-in remain prohibited.
 
 ## Content already on this host
 

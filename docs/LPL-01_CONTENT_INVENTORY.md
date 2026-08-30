@@ -4,12 +4,12 @@
 
 **Observed:** 10 August 2026
 
-**State:** Inventory, exact source-processing authorization and four-asset
-governed ingestion recorded; checkpoint blocked on canonical program/runtime
-rights authority, transcript and human review
+**State:** Inventory, exact processing authorization, governed ingestion,
+program-scoped rights and four human-confirmed English metadata revisions
+recorded; checkpoint blocked on typed blueprint and English/Kannada review
 
-**Authority:** `ENTERPRISE_PRODUCT_MASTER_PLAN.md` 3.2; ADR-0004; ADR-0013;
-ADR-0015; `LPL-00_SPEC.md`; `LESSON_PRACTICE_LOOP_PLAN.md`
+**Authority:** `ENTERPRISE_PRODUCT_MASTER_PLAN.md` 3.4; ADR-0004; ADR-0013;
+ADR-0015; ADR-0020; `LPL-00_SPEC.md`; `LESSON_PRACTICE_LOOP_PLAN.md`
 
 ## 1. Scope and evidence boundary
 
@@ -46,7 +46,7 @@ lesson records.
 
 | Claim or source | Exact observed result | LPL-01 interpretation |
 |---|---|---|
-| Four Level 1 audio lessons | Four upstream MP3 parts identified and hashed: Introduction, Practice, Conversation and Interaction; APP-0047 authorizes bounded processing; four matching active `lesson_audio` assets now have persisted clean scans | Source identity, owner authorization and ingestion resolved; canonical program, runtime rights, transcription and review remain blocked |
+| Four Level 1 audio lessons | Four upstream MP3 parts identified and hashed: Introduction, Practice, Conversation and Interaction; APP-0047 authorizes bounded processing; four matching active `lesson_audio` assets have clean scans, program-scoped rights and human-confirmed English metadata | Source identity, authorization, ingestion and metadata-author reconciliation resolved; blueprint and specialist review remain blocked |
 | Governed Level 1 media | One unique MP4, imported twice into two local staging-smoke programs with the same bytes/hash | A duplicate record, not two lessons and not four audio lessons |
 | Audio assets in the two imports | One 34-byte OGG scaffold per import, both SHA-256 `6367d82662f1204d33941f7e23f59e6eddce69d63583258720a56b8f1d737e01` | Synthetic publication scaffold; not Level 1 legacy content |
 | Demo level shell | Pre-Level 1, Pre-Level 2 and Levels 1–17 plus an available “Audio Lessons” room | Demonstration navigation only; it contains no governed lesson or media identity |
@@ -131,8 +131,10 @@ not that successor confirmation.
 
 The four newly identified Level 1 MP3s now have exact active `lesson_audio`
 assets and selected ffprobe/ClamAV clean-scan evidence, recorded in
-`LPL-01_INGESTION_PREFLIGHT.md`. They still have no program-scoped rights
-revision, metadata/transcript, content attachment or publication component.
+`LPL-01_INGESTION_PREFLIGHT.md`. They also have exact program-scoped rights
+revisions and four human-confirmed English metadata revisions under D-0191.
+They still have no content attachment, blueprint, academic/Kannada review or
+publication component.
 APP-0047 authorizes only those hashes for bounded private non-production
 ingestion, transcription and derivative lesson drafting, with later
 web/Android learner-delivery eligibility in India. It does not make a rights
@@ -150,8 +152,8 @@ review.
 | Exact lesson identities and order | One current video node plus four ordered upstream Audio parts | Six upstream lesson rows per level; current graph imports only available Video nodes | Partial |
 | Exact media hash/bytes | Present for one current MP4 and four active exact-hash MP3 assets | Present for 11 current MP4s; 63 additional upstream Audio references not hashed in this checkpoint | Partial |
 | Current private object | Level 1 MP4 hash matched; four MP3s accepted through governed private storage with exact scan evidence | Prior smoke evidence says all 12 MP4s were present; not re-read in this checkpoint | Partial |
-| Processing/derivative rights | Current MP4 explicitly false; APP-0047 authorizes the four exact MP3 hashes, but current asset-bound rights revisions await canonical program/authority | Current imported media explicitly false; other upstream files ungoverned | Partial; owner choice resolved, authoritative rows pending |
-| Timestamped transcript | Absent | Absent | Blocked |
+| Processing/derivative rights | Current MP4 explicitly false; four exact MP3s have approved program-scoped APP-0047 rights revisions | Current imported media explicitly false; other upstream files ungoverned | Level 1 MP3 processing rights complete; later levels blocked |
+| Timestamped transcript | Four exact audio parts have human-confirmed English metadata revisions; provider segment candidates were inspected and then deleted under retention policy | Absent | Level 1 metadata authoring complete; academic review pending |
 | Topic and target patterns supported by source | Upstream body supports `can`; audio/body correspondence unverified | Upstream level themes present; not reviewed objectives | Partial |
 | Topic-specific can-do objective/prerequisites | Upstream Level 1 says “Can — I can speak in English”; current objective remains generic orientation | Upstream grammar labels only; current objective remains generic orientation | Blocked |
 | Examples/misconceptions/chunks | Rich upstream Level 1 examples exist but require academic correction/review | Not inventoried at body level | Partial |
@@ -165,13 +167,12 @@ review.
 ## 7. Checkpoint determination
 
 LPL-01 inventory step 1 and the truthful completeness matrix are complete.
-The four reported Level 1 audio parts and the `can` source topic are now
-evidence-backed at the legacy source. The checkpoint exit is **not** complete
-because the accepted bytes still have no canonical-program rights revision,
-transcript or reviewed publishable Level 1 blueprint. DR-0021's distinct
-`lesson_audio` policy and DR-0023's governed ingestion are complete; the next
-stop is the runtime rights-authority/program choice, not media shape or
-ingestion policy.
+The four reported Level 1 audio parts and the `can` source topic are
+evidence-backed at the legacy source. Program-scoped rights, bounded provider
+commissioning and human metadata-author reconciliation are also complete. The
+checkpoint exit is **not** complete because the typed source snapshot,
+deterministic blueprint, English academic review and Kannada creation/review
+remain absent.
 
 The accompanying `LPL-01_LEVEL1_BLUEPRINT_REVIEW_PACKET.md` records the exact
 blocked blueprint state and the minimum evidence needed to resume. LPL-02 must

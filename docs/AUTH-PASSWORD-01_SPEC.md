@@ -6,6 +6,11 @@ runtime cutover and production remain separately gated
 **Checkpoint:** AUTH-PASSWORD-01 only
 **Production/public release:** Not authorized
 
+> Historical baseline: ADR-0022 / AUTH-SIMPLE-01 supersedes this document's
+> privileged recovery and credential-unready establishment sections. Its
+> global username/password, session, cutover and tenant-authority rules remain
+> authoritative where ADR-0022 does not amend them.
+
 ## 1. Authority and outcome
 
 This specification translates accepted DR-0026 Option B,

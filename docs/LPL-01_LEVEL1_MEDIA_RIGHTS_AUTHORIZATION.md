@@ -75,9 +75,12 @@ asset. Every row uses this authorization's approved evidence hash, permits
 `android`/`web` in `IN`, allows derivative use and only later-gated learner
 delivery, prohibits sharing, has no expiry and retains `accepted_media` /
 `preserve_while_referenced`. This binding authorizes bounded processing only;
-it creates no transcript, content approval, attachment, publication,
-enrollment, learner delivery or production/public release.
+it does not itself create transcript, content approval, attachment,
+publication, enrollment, learner delivery or production/public release.
 [DR-0025](DR-0025_LPL01_TRANSCRIPTION_COMMISSIONING_REQUEST.md) Option A is now
-accepted under APP-0052 / D-0153 / ADR-0020. Its finite provider/provenance/
-reconciliation implementation and live gates remain pending; acceptance
-itself made no provider request or content record.
+accepted under APP-0052 / D-0153 / ADR-0020. Its finite provider campaign and
+D-0191 human reconciliation are complete: four confirmed English metadata
+revisions bind the exact authorized assets and four encrypted-candidate
+deletion receipts completed with no retry/dead-letter backlog. Those later
+records do not create English academic approval, Kannada review, attachment,
+publication, learner delivery or production/public release.

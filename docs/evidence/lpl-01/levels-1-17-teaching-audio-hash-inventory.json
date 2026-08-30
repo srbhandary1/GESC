@@ -1,0 +1,622 @@
+{
+  "schema": "global-english.legacy-teaching-audio-hash-inventory.v1",
+  "observed_at": "2026-08-14",
+  "method": "Authenticated read-only download of Audio lesson MP3s from owner-designated legacy admin; credentials and object URLs not retained in repository",
+  "privacy_boundary": [
+    "No user lists, messages, reports or Assignment audio were accessed",
+    "Bytes remain outside Git under local /tmp staging only",
+    "No Media Library upload, rights revision, attachment or publication was performed in this observation"
+  ],
+  "summary": {
+    "levels": 17,
+    "files": 67,
+    "total_bytes": 300247014,
+    "unique_sha256": 67,
+    "level_1_matches_app0047": true
+  },
+  "parts": [
+    {
+      "level_number": 1,
+      "concept_key": "can",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4968408,
+      "sha256": "6838818d74481ffe38e13948dea2954886dcc519ed927112b703f8e2064573aa"
+    },
+    {
+      "level_number": 1,
+      "concept_key": "can",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 7357881,
+      "sha256": "75909e9baf340356d7ecf66435977ee1cce1fe93a597da58a24b5b9ea1833dd7"
+    },
+    {
+      "level_number": 1,
+      "concept_key": "can",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2157215,
+      "sha256": "8124b3bc6f71b65258358b0121cc3d72f1543948ca3ef3a1bb419f1fa0d65c70"
+    },
+    {
+      "level_number": 1,
+      "concept_key": "can",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4276686,
+      "sha256": "4862e927078ecb0ea56b7240f6d5b52356365115a6512836357bf340fdcf895e"
+    },
+    {
+      "level_number": 2,
+      "concept_key": "should",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3660196,
+      "sha256": "acdc065204e589dbe1ec93c4471f54d9a5880b5f3aec898c929e4e7efa1c7363"
+    },
+    {
+      "level_number": 2,
+      "concept_key": "should",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 6998436,
+      "sha256": "490d98fb7630884c4d2b71dc1bb3219f1cdbbbff6f22db95ee1a4b0da84e8abd"
+    },
+    {
+      "level_number": 2,
+      "concept_key": "should",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2183128,
+      "sha256": "0ecde00e8e3b0c2ed772ab3229fe65a03ee76289a7ae9aca0010fd07665778b6"
+    },
+    {
+      "level_number": 2,
+      "concept_key": "should",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4651595,
+      "sha256": "69f56b1406f51096255d5334bc4b13d92518ade4c89a1f2c282dc445172172f3"
+    },
+    {
+      "level_number": 3,
+      "concept_key": "do_does",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4606038,
+      "sha256": "2b9419808a697ba0bdfd1d833ca7f46c314b2cfe75aed7e486735bc0313c9ad8"
+    },
+    {
+      "level_number": 3,
+      "concept_key": "do_does",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 5244261,
+      "sha256": "85d54d726c6014298002f7769970e42bcad0b045e1c717ab439072a9483c10fd"
+    },
+    {
+      "level_number": 3,
+      "concept_key": "do_does",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 3085920,
+      "sha256": "6a44c5bd0d47c0ed35bf76e838edf94519839a3429ef4478633f3132de97d8ca"
+    },
+    {
+      "level_number": 3,
+      "concept_key": "do_does",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3934795,
+      "sha256": "a5efdcb223d74b3cf26fc107cccb74164dda1632917e795abd02a06bb84e6d7d"
+    },
+    {
+      "level_number": 4,
+      "concept_key": "is_are_ing",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3375148,
+      "sha256": "0fea08d60b46f0024ea0be50731b592310ef1d140afcb9d9a7d65a7f9e9996f5"
+    },
+    {
+      "level_number": 4,
+      "concept_key": "is_are_ing",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 7781274,
+      "sha256": "1fe15f5eaa6a34a5e34f2846fbff299605e4d66c8687313a46b7b618396b1b44"
+    },
+    {
+      "level_number": 4,
+      "concept_key": "is_are_ing",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2105388,
+      "sha256": "bd43289d9bb76b77e888c3bfc8f31edafc40421693cc47d3eb95f7d1f5066789"
+    },
+    {
+      "level_number": 4,
+      "concept_key": "is_are_ing",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 5169447,
+      "sha256": "602912ff37737eb34391e561c6316b45a74ac90ed296426bf37a9c824961ac51"
+    },
+    {
+      "level_number": 5,
+      "concept_key": "did",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 8015749,
+      "sha256": "f03e76f91c866ba871df5a053e3b820c8f56ddf703746d0f8cd877ae62732677"
+    },
+    {
+      "level_number": 5,
+      "concept_key": "did",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 7538857,
+      "sha256": "cccb5f4ca4708bbd2b7581907afad4a5deac78cd860c8883d99156318d63c585"
+    },
+    {
+      "level_number": 5,
+      "concept_key": "did",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2742358,
+      "sha256": "12de33e3d0f7d4e10ff55d79dfe82570143b5679d93db97fd130eab9229b84de"
+    },
+    {
+      "level_number": 5,
+      "concept_key": "did",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4907386,
+      "sha256": "781cbebc61e1081d5012f706bda2d12c7baad99a933600a6e415ebf1f3ab4256"
+    },
+    {
+      "level_number": 6,
+      "concept_key": "was_were_ing",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4887742,
+      "sha256": "63100e612f816d04a6aafa1960ae1a1d8d5a6c5c6c3735a91252b75a7d688a8a"
+    },
+    {
+      "level_number": 6,
+      "concept_key": "was_were_ing",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 4693391,
+      "sha256": "beb8ccd8f35be01529eaf09f9ba2a506f4168060946edc21a74d57a96f5ccd8a"
+    },
+    {
+      "level_number": 6,
+      "concept_key": "was_were_ing",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1977492,
+      "sha256": "9082a7debaa824b6a158c9056206edb14856ac6af962ccb991b1da2460beff37"
+    },
+    {
+      "level_number": 6,
+      "concept_key": "was_were_ing",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 2515406,
+      "sha256": "f926180a4fc928a01bf5309c81e3a09e30468026da58b70e874dd0aa863794ec"
+    },
+    {
+      "level_number": 7,
+      "concept_key": "have_has",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 8531510,
+      "sha256": "e86f2054c20e362cf54fbd8e331dff69443ef510f34960825f73db8f1180e639"
+    },
+    {
+      "level_number": 7,
+      "concept_key": "have_has",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 8064650,
+      "sha256": "2bab968d3ce31aa59fd2afff65c7f99d07bd0c5ac15569ffeb9c3e91f2c5a25f"
+    },
+    {
+      "level_number": 7,
+      "concept_key": "have_has",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1897662,
+      "sha256": "4af06216287894051127352c3390ae27870fb366977e2bcbb51483c3dc283439"
+    },
+    {
+      "level_number": 7,
+      "concept_key": "have_has",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3987876,
+      "sha256": "ef4eb9d4a1529de9679a7cfb522a234ed371668abc95faa6ee724ffe27ddc476"
+    },
+    {
+      "level_number": 8,
+      "concept_key": "have_been_has_been",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3668973,
+      "sha256": "06e43a78eb612b259fbdf1eebde97343493564d79804fe7d769bd1309d3e1ce8"
+    },
+    {
+      "level_number": 8,
+      "concept_key": "have_been_has_been",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 4089858,
+      "sha256": "3fe14ac6d7d68c4aa6237a60bfb0ce80e2e570cb0129fcccc95090c7b7352db8"
+    },
+    {
+      "level_number": 8,
+      "concept_key": "have_been_has_been",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1902678,
+      "sha256": "9c4280178b3ed1eb20d26f65f7dfe3715bbb1a219ff969a13ca01eb035c93408"
+    },
+    {
+      "level_number": 8,
+      "concept_key": "have_been_has_been",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3968232,
+      "sha256": "d1606e8e31f003647b722378215e2dcbe1352659d5ff981374c3182cc7ad61b3"
+    },
+    {
+      "level_number": 9,
+      "concept_key": "had",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4410851,
+      "sha256": "7e21169c44d2fb937249ee5880f0a075cc16a60ca5c7af9ce2c6c7dd38fe46fc"
+    },
+    {
+      "level_number": 9,
+      "concept_key": "had",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 13069293,
+      "sha256": "1422f8f8fa7f3e6f026df07650ce949b64d37e334430d34eef53ca4f98e4e40a"
+    },
+    {
+      "level_number": 9,
+      "concept_key": "had",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2660438,
+      "sha256": "df301b38b926ddb1e9ca168a1b98860352aa7f40f9e49008ce6598225612507e"
+    },
+    {
+      "level_number": 9,
+      "concept_key": "had",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 5795550,
+      "sha256": "3b163c350dd0a77fcb828170840d82021cea18db084d01e75eeaa7d42a269b4f"
+    },
+    {
+      "level_number": 10,
+      "concept_key": "will",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 5196196,
+      "sha256": "01bd5079a0dc0a00d6a62ea076dfa8b3089a719e36873478e07829bee76cb6f9"
+    },
+    {
+      "level_number": 10,
+      "concept_key": "will",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 6010799,
+      "sha256": "02b33192439ba7b26732e1c2de0e0621882e2a8c2fcd05efca91c3c3cba37735"
+    },
+    {
+      "level_number": 10,
+      "concept_key": "will",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2500777,
+      "sha256": "0998d2334f8c9ca8f3f697a532e778fd12f3b9629cdbaf27660db6531c447be9"
+    },
+    {
+      "level_number": 10,
+      "concept_key": "will",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3259373,
+      "sha256": "8336c81eb3db5520709a401706cb598a2bfef09aef4790ec5d606b6dfb138ccb"
+    },
+    {
+      "level_number": 11,
+      "concept_key": "gonna_wanna",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 6113199,
+      "sha256": "2e1dea79312e5193f082adb9ed39b0785dd1fdbf7b8bc5907ed09cbcafe65138"
+    },
+    {
+      "level_number": 11,
+      "concept_key": "gonna_wanna",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 8679468,
+      "sha256": "b160bde321bdbd6fe16e69d128e3937d00a6619bed61eb5523ad36c95858290e"
+    },
+    {
+      "level_number": 11,
+      "concept_key": "gonna_wanna",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2283857,
+      "sha256": "59dee565a41cab0e2164107384f439373986844591c9c0e9baecdfb915573594"
+    },
+    {
+      "level_number": 11,
+      "concept_key": "gonna_wanna",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4492353,
+      "sha256": "5c70613564aca1bccb507d38ed483712c09641f4170754efc2f74ae0b95cb69a"
+    },
+    {
+      "level_number": 12,
+      "concept_key": "would",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3025316,
+      "sha256": "0409f814570f413036f798cc9a63c6ebedea04ed81ba036cff79665cf36fc4ac"
+    },
+    {
+      "level_number": 12,
+      "concept_key": "would",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 2918319,
+      "sha256": "9d3a76c73609388a145ba0b13e64864a51b540547f37c266f98b1b1b72f1af85"
+    },
+    {
+      "level_number": 12,
+      "concept_key": "would",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2141332,
+      "sha256": "3558f953308cd7be56c92c92a3ed0cce1e51c6b880086c0c20df2a2747efc29a"
+    },
+    {
+      "level_number": 12,
+      "concept_key": "would",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3964052,
+      "sha256": "924e601d5d08405d6efbc2408b2eadf6047a0148e17d87dbe77fc26aefc89f0f"
+    },
+    {
+      "level_number": 13,
+      "concept_key": "may",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3281525,
+      "sha256": "31e5761c12959566150ae6cc126dc8d78d08309b6ebe23fc6b7e84685dc418ef"
+    },
+    {
+      "level_number": 13,
+      "concept_key": "may",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 4385355,
+      "sha256": "b5155c1c7294bafb37ab04e81bbb4da46ddf4550b7ccebb7547e958889e82979"
+    },
+    {
+      "level_number": 13,
+      "concept_key": "may",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1913963,
+      "sha256": "f83ba35e8df4ffed3956d749a07034a337c1d1b23fed3825ab0bf34c1d478970"
+    },
+    {
+      "level_number": 13,
+      "concept_key": "may",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3119775,
+      "sha256": "446e3919266ab4b81a712f3bc92515d34a770a7595b873205af03365f24b35ee"
+    },
+    {
+      "level_number": 14,
+      "concept_key": "if",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4219425,
+      "sha256": "a6fb969e5ddee73f903ea8fb659396b68fe7ec6901c30fba7abebc551d7b626f"
+    },
+    {
+      "level_number": 14,
+      "concept_key": "if",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 5849048,
+      "sha256": "a3adbe0d80204b9a3e2640c69c94b5c974cc47f0908002adfae1bc5183c0bd96"
+    },
+    {
+      "level_number": 14,
+      "concept_key": "if",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2184382,
+      "sha256": "00a1736575995d4b78b8d4a312050ab540c5707ab5f64ace0e6f46fac2019e66"
+    },
+    {
+      "level_number": 14,
+      "concept_key": "if",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4910730,
+      "sha256": "4bab87b34bfe9c81e9e80a320c0265eccadb7b07b9e391e19b84253557ef25ec"
+    },
+    {
+      "level_number": 15,
+      "concept_key": "must",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction / Practice",
+      "bytes": 9297212,
+      "sha256": "b9a7ef87ff877ca23848caaf40dd6d40d92a62b95ededaa8b95ebfedda8f1ce6"
+    },
+    {
+      "level_number": 15,
+      "concept_key": "must",
+      "part_order": 2,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1974985,
+      "sha256": "8f8930a51aeabaa1e01ce657e9c91f70edc677d0825caae165bf98bbe60399cb"
+    },
+    {
+      "level_number": 15,
+      "concept_key": "must",
+      "part_order": 3,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 5293581,
+      "sha256": "ce36c3b2edabc46dde426862f53b0b24e7feeff3faa25588a1b9b21310a74077"
+    },
+    {
+      "level_number": 16,
+      "concept_key": "should_have",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 3738354,
+      "sha256": "92b92285b913fe68aab4804b404b7124c3a811e3f42cf8d7e5f005e65e56e324"
+    },
+    {
+      "level_number": 16,
+      "concept_key": "should_have",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 4615233,
+      "sha256": "12fca94a63b3639e8088902b3a88220d1e8d044adb4d24b3c372ff9b4bf033ac"
+    },
+    {
+      "level_number": 16,
+      "concept_key": "should_have",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 2560545,
+      "sha256": "af4293372bf331729ea94adca8ae017f5486c0d8aff9c79e1f64ca39ddb2b86d"
+    },
+    {
+      "level_number": 16,
+      "concept_key": "should_have",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 4212320,
+      "sha256": "15cedb5bea80021aa54f9a9bd5e1b92019fe468ad2182f8f4028db640e11417f"
+    },
+    {
+      "level_number": 17,
+      "concept_key": "used_to",
+      "part_order": 1,
+      "part_id": "introduction",
+      "source_part_label": "Introduction",
+      "bytes": 4249101,
+      "sha256": "71a6d0a73fea7f346c7c28f3f768543640d7b94740cbb530a54b514d69efb107"
+    },
+    {
+      "level_number": 17,
+      "concept_key": "used_to",
+      "part_order": 2,
+      "part_id": "practice",
+      "source_part_label": "Practice",
+      "bytes": 7988581,
+      "sha256": "e43e46f002d229eec071afa0d9410e6049d7906e0b7304960864ba02af9c23df"
+    },
+    {
+      "level_number": 17,
+      "concept_key": "used_to",
+      "part_order": 3,
+      "part_id": "conversation",
+      "source_part_label": "Conversation",
+      "bytes": 1835804,
+      "sha256": "c54ce94e0efe4a20e9c4b353c8be892e2686dc29762da38b01bb0c81ff9a2fc3"
+    },
+    {
+      "level_number": 17,
+      "concept_key": "used_to",
+      "part_order": 4,
+      "part_id": "interaction",
+      "source_part_label": "Interaction",
+      "bytes": 3150286,
+      "sha256": "5f92f6a183f6cedf583565d0e4b5b395604a74198b7c0ae4d844493c9e9abe6b"
+    }
+  ]
+}

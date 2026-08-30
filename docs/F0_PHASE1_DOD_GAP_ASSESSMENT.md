@@ -47,7 +47,8 @@ FAQ) and is not the production free-flow path.
    (sampled speaking review still unauthorized).
 3. **Android physical device matrix** DM-01/DM-02 (+ credential negatives).
 4. **Independent specialist reviews**.
-5. **Production-like environment** — OTP cutover, consented pilots, monitoring beyond harnesses.
+5. **Production-like environment** — accepted password-only authentication,
+   consented pilots, stable HTTPS, recovery and monitoring beyond harnesses.
 6. **Google Play public listing** stays separately gated.
 
 ## Android mobile-test readiness
@@ -76,3 +77,8 @@ ops accepted under APP-0036; DR-0007 synthetic limitation under APP-0037.
 **unauthorized**. Next gates: physical DM-01/DM-02, specialist reviews
 ([F0_SPECIALIST_REVIEW_PACKET.md](F0_SPECIALIST_REVIEW_PACKET.md)), then
 Option A/B in [F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md](F0_PHASE1_DOD_CONSIDERATION_PACKAGE.md).
+
+The ordered 12 August 2026 current-state view—including the rebuilt current-
+hostname APK, provider/voice decision stops and payload-bound L1 review gate—is
+maintained in the
+[production readiness closure matrix](PRODUCTION_READINESS_CLOSURE_MATRIX.md).

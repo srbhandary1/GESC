@@ -64,10 +64,8 @@ Have the following ready:
 
 - a supported phone or computer with a modern browser, or the authorized
   Android build;
-- the mobile number registered for your account;
-- access to the one-time password sent during sign-in;
-- an invitation code if a college, employer or training organization gave you
-  one; and
+- the username and password issued for your account, or an invitation code
+  from a college, employer or training organization;
 - headphones and a quiet place if you want to listen or practise aloud.
 
 A microphone is optional. You can complete the current daily mission without
@@ -80,18 +78,20 @@ computer or shared phone.
 
 ### 4.1 Web or PWA
 
-1. Open the application sign-in page.
-2. Enter your registered mobile number.
-3. Select **Send OTP**.
-4. Enter the six-digit one-time password you receive.
-5. If your organization supplied a learner invitation code, enter it on the
-   verification step. Otherwise leave the invitation field empty.
-6. Select the verification action to finish signing in.
+1. Open the application and select **Sign in**, or open the `#sign-in` page
+   directly.
+2. Enter your username (at least four characters, starting with a letter).
+3. Enter your password.
+4. Select **Sign in**.
 
-The invitation code is sent only when the OTP is verified. A direct learner
-can sign in without an invitation. An institutional learner uses the
-show-once code supplied by the organization to accept the intended membership
-and enrollment.
+If your organization gave you an invitation code, select **I have an
+invitation code** on the sign-in page, enter the code, choose a username and
+password, then create the account. After that you sign in with those
+credentials.
+
+A direct learner can sign in without an invitation. An institutional learner
+uses the show-once code supplied by the organization to accept the intended
+membership and enrollment.
 
 The web/PWA uses a secure cookie session. The application does not need you to
 copy or manage an access token.
@@ -113,7 +113,8 @@ not paste sign-in links or codes into another person's device.
 Use **Sign out** when you finish, especially if someone else can access the
 device. Signing out ends the current product session. If you believe an
 account or device is unsafe, contact the support channel provided by your
-organization rather than sharing OTPs or invitation codes.
+organization rather than sharing passwords, invitation codes or recovery
+codes.
 
 ## 5. First-time setup
 
@@ -384,7 +385,7 @@ workplace situations after the content and review evidence is approved.
 
 ## 13. Protect your privacy and account
 
-- Never share an OTP, invitation code, recovery code or sign-in callback.
+- Never share a password, invitation code, recovery code or sign-in callback.
 - Use voice only after reading the consent shown for that operation.
 - Prefer text when the surroundings are not private.
 - Do not record another person without their knowledge and authorization.
@@ -418,7 +419,7 @@ For a lower-bandwidth experience:
 
 | Problem | What to do |
 |---|---|
-| OTP does not arrive | Confirm the mobile number and network, wait for the displayed retry interval, then request one new OTP. Never ask another person to receive it. |
+| Username or password is rejected | Check the username is at least four characters and starts with a letter. Use **Forgot password?** for recovery. Never ask another person to receive a recovery message. |
 | Invitation is rejected | Re-enter the exact show-once code. It may be expired, revoked, already used or intended for another organization; contact the issuer. |
 | No lesson appears | Check connectivity and active organization/enrollment. Retry once, then send the safe error reference to support. |
 | Audio does not play | Check media volume and browser permission, use the transcript, and retry the individual audio resource. |
@@ -484,7 +485,7 @@ When asking for help, provide only:
 - device/browser type and app version; and
 - whether the issue occurs online, offline, with text or with voice.
 
-Do not send an OTP, invitation code, access token, raw recording, full
+Do not send a password, invitation code, access token, raw recording, full
 conversation transcript or another learner's information in an ordinary
 support message.
 

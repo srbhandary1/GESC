@@ -1,0 +1,471 @@
+{
+  "schema": "lpl01.app0063.levels_2_17_private_commission_result.v1",
+  "approval_reference": "APP-0063",
+  "observed_at": "2026-08-14T12:54:00+00:00",
+  "privacy_boundary": "private_unpublished_draft_provisional_reviews",
+  "publication_eligible": false,
+  "quality_debt": [
+    "english_academic_reviews_are_provisional_auto_approvals",
+    "kannada_reviews_are_provisional_auto_approvals",
+    "blueprint_objectives_checks_are_template_content",
+    "level_15_practice_reuses_introduction_practice_combined_asset",
+    "metadata_transcripts_may_be_placeholders"
+  ],
+  "result": {
+    "status": "completed",
+    "approval_reference": "APP-0063",
+    "organization_id": "01KYS97G7MX374P303XJHDXT72",
+    "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+    "levels_commissioned": 16,
+    "levels": [
+      {
+        "level_number": 2,
+        "concept_key": "should",
+        "blueprint_id": "01M005JX81S50YYFFKZZ0DCXNQ",
+        "content_hash": "aa2cde1469d313fe657f8741e12da9fc9871188327620179427f64f506afe9b8",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV95TXFAGPNVDY4RFYSEJF"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV96732S8XKV3ED96075YK"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV96PDKG8C3ZE5M8SZYJXR"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV96Y0394E37D3AEX782H2"
+          }
+        ]
+      },
+      {
+        "level_number": 3,
+        "concept_key": "do_does",
+        "blueprint_id": "01M005JX8NZDZDZMG2KCJPWVNW",
+        "content_hash": "46d9e74f3191c406259cbc95908c100b8fc0ad2018bf91b4633a78ffd785e109",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV979A47NMGND11XNDKWDF"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV97MN7ANG1X0KA396412W"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9803WTP21T0XR0G85Q4G"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV98758X8K1JT9Y0JE0FJM"
+          }
+        ]
+      },
+      {
+        "level_number": 4,
+        "concept_key": "is_are_ing",
+        "blueprint_id": "01M005JX96XWJS5HN7GBNMYWXD",
+        "content_hash": "5a8937a68ab681c00f6a53a3be9d2a3125b679f0e03c5bce70fcba970a5e1472",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV98FZKYVEH5MM3ZP9ZBV5"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV98S28V3V8BY46ZCGEJT4"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV999WF9VQJ773228KDYMR"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV99FEME0S3GRSF2TZFC9F"
+          }
+        ]
+      },
+      {
+        "level_number": 5,
+        "concept_key": "did",
+        "blueprint_id": "01M005JX9SZTVCXFCR38RYX1VP",
+        "content_hash": "33a8e99908472b5af84fe8a9609e2611de0e4ef8869c406f0ac246a588b60a64",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV99VCAR0SE32S78Y3CQMF"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9ACTECBWZQ873V0F49A0"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9AXANBZ1S4FEQYHFAWF2"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9B40X18HZ0ZCM2JHTPE8"
+          }
+        ]
+      },
+      {
+        "level_number": 6,
+        "concept_key": "was_were_ing",
+        "blueprint_id": "01M005JXAEYGYQBKN7ZBBV10TE",
+        "content_hash": "c39c96792b961e98c1ea6e6c398559ed6bf7cde05f765ed51f1c521d96f78ce3",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9BFQVPEMN6E1CJFBNSQT"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9BTW8GE2S89T4YBWK2B5"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9C58BH1Y3QQBECRW7JQD"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9CAQ4JCKK2QR19GJEGKY"
+          }
+        ]
+      },
+      {
+        "level_number": 7,
+        "concept_key": "have_has",
+        "blueprint_id": "01M005JXB5E60FS3K1JER224KP",
+        "content_hash": "eae493afe96bbac5c5b59b379b3c315e4612fafae4df370c1f205c7ac0afadb1",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9CHP0FC9S25G2QJDCH7V"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9D4N333PWA8ZPYAJ9PZZ"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9DNK2SB7ZRF9967BXA8C"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9DTGVDKYKDKNF01HAZ7F"
+          }
+        ]
+      },
+      {
+        "level_number": 8,
+        "concept_key": "have_been_has_been",
+        "blueprint_id": "01M005JXC04RAT7WNHNVS50PER",
+        "content_hash": "1d726c55d5f6c59f8776cc06d41d88bacac4bfce2a5145f5de35e378a0278b1d",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9E3VHTWKCWQGWEVTF19C"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9EC51XH2FGYW1NTYTB1D"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9ENJ0NX4Y77D18V34WAR"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9ETR7EQFPER3S5RB536K"
+          }
+        ]
+      },
+      {
+        "level_number": 9,
+        "concept_key": "had",
+        "blueprint_id": "01M005JXCGZAJJ4Z801W0PB83G",
+        "content_hash": "8713f6f2cd04cc5390510c3e2eb6a55a4f40a47b92006113133b2c93fbf38a0f",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9F4NCDY7GVTPP15A0FNM"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9FF7TKBX7SZ7MF8ZC26T"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9G8ZE4N1555FS9D8FWH2"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9GG23MKBNEZHDVDH0DXT"
+          }
+        ]
+      },
+      {
+        "level_number": 10,
+        "concept_key": "will",
+        "blueprint_id": "01M005JXCYRDF99F5MF083E29B",
+        "content_hash": "801c828b04b9a55c5f9ef00c01145d0afae184308c48adc4ce2af11c9a9da7f5",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9GXGT40JSJQVYV4DB1WF"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9H9HR7JTF0SW1ZB9A019"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9HPNC5RAG6N13EC0J5X4"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9HWVVW11VAXXP2B44AE0"
+          }
+        ]
+      },
+      {
+        "level_number": 11,
+        "concept_key": "gonna_wanna",
+        "blueprint_id": "01M005JXDBS2T7S5F5PQTMZ1BC",
+        "content_hash": "029dd447b7c4224113d32641ed40c5839550c8defc49adb5c95054d46dca4226",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9J51WEVMMXNQYEJVJ7PP"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9JJWEFH2F3FC24H3JH27"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9K594AC1EFFX0JMTKNAP"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9KB07XVKEKX06T5D9FX7"
+          }
+        ]
+      },
+      {
+        "level_number": 12,
+        "concept_key": "would",
+        "blueprint_id": "01M005JXDN4T2ZVH7VKJKMNVJ7",
+        "content_hash": "6da8192be0dfa795843bfda6403e51698224043291cc0ee792762b518263926d",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9KN28YB6Z7Q2BBC306P2"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9KWHDGRTD2HNC0V25ZDW"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9M383N286GXD3YJA9BGV"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9M95KJCBYBDXRQTZC7HQ"
+          }
+        ]
+      },
+      {
+        "level_number": 13,
+        "concept_key": "may",
+        "blueprint_id": "01M005JXE5BM40XGY8EBPX9PZ1",
+        "content_hash": "eeb72a902d752c640947375f507b730dd46bb39a2823aaf9933bb4cfea66ca77",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9MHV5NE1SXFS9EQ6W8G8"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9MSHT0172F6F1F37M86X"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9N39WA97VNMWKF6DBB44"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9N8MXHPNHCKP3N7M500P"
+          }
+        ]
+      },
+      {
+        "level_number": 14,
+        "concept_key": "if",
+        "blueprint_id": "01M005JXETQQ1N7YWR1QKXJE07",
+        "content_hash": "34eeeb8d4962349a759a0559b3950c092ec54c8950865b463ead45449cfffb3d",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9NG16PTGYWA6D4S7NDYB"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9NSQQ663MQX0E2RWXMZA"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9P6TE9RT34F83GGV3E52"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9PCF3N68ABAD6NW0H3JT"
+          }
+        ]
+      },
+      {
+        "level_number": 15,
+        "concept_key": "must",
+        "blueprint_id": "01M005JXFK6N5S6AE03QMK1CMT",
+        "content_hash": "a7a7129b619f613890d55057102dcb96e38ea333c60e766abf4b6650c1515d85",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9PR1NTC95W4AG8PZ9TZR"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9PR1NTC95W4AG8PZ9TZR"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9QBJ5KP86DRAFJ0W3QM3"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9QJR6BSVA7BSGHSQKBVR"
+          }
+        ]
+      },
+      {
+        "level_number": 16,
+        "concept_key": "should_have",
+        "blueprint_id": "01M005JXGXQKZSETDMK3G1G1QJ",
+        "content_hash": "e9d70abcd503a35e2b8b4d298da5fa8c8d03af4d108c35be2f930fd993666d62",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9QYEPPCZW4Z4S9NHJNWF"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9R74HZFESS2A9YD62956"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9RHQ1JSEKMJTZYPBCG7A"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9RSE95YD61FP7M9WHZR1"
+          }
+        ]
+      },
+      {
+        "level_number": 17,
+        "concept_key": "used_to",
+        "blueprint_id": "01M005JXHVRRVQGVAGPG75MM0C",
+        "content_hash": "c61aa57c2b2e8e6462e59d99b573ef3a47a6e2a2da9053e2a8301ab062487b59",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+          {
+            "part_id": "introduction",
+            "media_asset_id": "01KZZV9S3GYWPWC34QP4E9SBNT"
+          },
+          {
+            "part_id": "practice",
+            "media_asset_id": "01KZZV9SDH3KS2JKS4E4QQYJ5W"
+          },
+          {
+            "part_id": "conversation",
+            "media_asset_id": "01KZZV9SYQ18JP4TSVXV1DYWV8"
+          },
+          {
+            "part_id": "interaction",
+            "media_asset_id": "01KZZV9T3RC8T5TF3X8SZ8PJ20"
+          }
+        ]
+      }
+    ]
+  }
+}

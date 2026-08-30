@@ -14,7 +14,7 @@
 1. Physical Android device matrix DM-01/DM-02 (no device attached; AVD system
    image missing / no KVM on this workstation)
 2. Independent specialist reviews (see specialist packet — not APO-substitutable)
-3. Production-like OTP cutover + consented pilot learners
+3. Production-like password-only authentication/recovery + consented pilot learners
 4. Reviewed pathway content commissioning (budget/owner still open; synthetic
    retained under D-0116 / APP-0037 with explicit F0 incompleteness)
 
@@ -51,7 +51,8 @@ named open limitations (not a waiver of specialist reviews for production):
 APO accept Phase 1 Definition of Done at Exact commit 22815bdfea835acfdd8eb4968743dd2b7ec52a7d
 with recorded limitations: physical Android DM-01/DM-02 open; independent
 specialist reviews open; synthetic pathway incompleteness under D-0116;
-production OTP/pilot cutover open; Play public release remains unauthorized.
+production authentication/recovery and pilot cutover open; Play public release
+remains unauthorized.
 ```
 
 Until an Exact accept statement is recorded, Codex must not claim F0 DoD.

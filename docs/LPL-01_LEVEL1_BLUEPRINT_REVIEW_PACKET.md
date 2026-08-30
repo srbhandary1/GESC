@@ -1,12 +1,25 @@
 # LPL-01 Level 1 blueprint review packet
 
-**State:** Blocked draft; governed ingestion, private pilot and four exact
-program-scoped rights revisions complete; DR-0025 accepted, commissioning
-implementation, transcript and human review pending
+**State:** Blocked draft; governed ingestion, rights, bounded transcription,
+four human-confirmed English metadata revisions and candidate cleanup complete;
+local hash-bound manifest and ordered blueprint shell recorded; exact typed
+source body, authored blueprint fields and English/Kannada review pending
 
 **Source inventory:** `LPL-01_CONTENT_INVENTORY.md`
 
 **Schema target:** `global-english.lesson-practice-loop.v1`
+
+The local evidence files are
+[`level1-source-snapshot-manifest.json`](evidence/lpl-01/level1-source-snapshot-manifest.json),
+[`level1-blueprint-draft.json`](evidence/lpl-01/level1-blueprint-draft.json) and
+[`validate-lpl01-evidence.mjs`](../scripts/validate-lpl01-evidence.mjs). They
+bind the exact four reconciled media records but intentionally contain no
+source-body text and no learner-visible answer authority.
+
+Because the original rich-text body is unavailable, a separate newly authored
+draft is recorded in [`level1-authored-blueprint-draft.json`](evidence/lpl-01/level1-authored-blueprint-draft.json).
+It is explicitly not a legacy reconciliation and remains unpublished pending
+English academic and Kannada review.
 
 ## 1. Why this packet is blocked
 
@@ -24,10 +37,11 @@ upstream Level 1 MP3 parts—Introduction, Practice, Conversation and
 Interaction—and a rich-text `CAN` lesson body. Exact source hashes are recorded
 in `LPL-01_LEGACY_SOURCE_MAP.md`. Those exact MP3s are now active private
 `lesson_audio` Media Library assets with one approved initial asset-bound
-rights revision each under the standalone LPL pilot. They still have no
-attachment, transcript or review evidence. APP-0047 authorizes the four exact
-hashes for bounded private non-production processing, but does not create
-those later content records.
+rights revision each under the standalone LPL pilot. D-0191 now binds each to
+one human-confirmed English metadata revision and content hash. They still
+have no content attachment, academic review or Kannada review. APP-0047
+authorizes the four exact hashes for bounded private non-production
+processing, but does not create those later approval records.
 DR-0021 Option A is accepted and its distinct `lesson_audio` Media Library
 policy has passed repository verification, E2E and build gates. Reacquired
 temporary copies of all four exact hashes also passed the project-owned real
@@ -43,12 +57,23 @@ DR-0024 Option A created the standalone private program
 `curriculum.author` and `media.rights.approve`, and one accepted program-
 scoped `rights_confirmer` appointment. Ordinary selected-membership/fresh-TOTP
 HTTP commands recorded the four exact APP-0047 rights revisions. This packet
-therefore stops before provider use or content drafting, not at rights
-authority. [DR-0025](DR-0025_LPL01_TRANSCRIPTION_COMMISSIONING_REQUEST.md)
+therefore does not stop at rights authority. [DR-0025](DR-0025_LPL01_TRANSCRIPTION_COMMISSIONING_REQUEST.md)
 Option A is accepted under APP-0052 / D-0153 / ADR-0020 and fixes the finite
 direct-MP3 Azure campaign, provider-neutral provenance, encrypted candidate
-and human reconciliation boundary. That implementation and its live gates are
-pending; acceptance itself made no provider request or content record.
+and human reconciliation boundary. Its exact campaign and D-0191 human
+reconciliation are complete: four provider successes, four confirmed metadata
+revisions and four completed encrypted-candidate deletion receipts, with no
+failure/retry or cleanup backlog. Provider output became metadata only through
+the recorded human action; it did not become academic or Kannada approval.
+
+The content-free resulting records are:
+
+| Part | Metadata revision | Metadata content hash |
+|---|---|---|
+| Introduction | `01KZZB3DJFKAN8BQD30K6WJGV6` | `2e8335f5998dace0a619acbd24945beafbb3b9a2e427bd71dd01f473b3b17e0b` |
+| Practice | `01KZZBHZXE93YYHPGNKFJZ8EBY` | `a185249064c4e153237e1a54f8375fe1e7e4fac2ce45525684a929ea174a6298` |
+| Conversation | `01KZZBPQSS5ECMMGEBGAA2W3M4` | `830bba76c97bb19d3b132da8bd7a021cb5160be146592cfffcaaaa810bc48635` |
+| Interaction | `01KZZC03NX6QGCWGMD9WX1AH1D` | `5db31dd35f5d9fe1f0d02fc116e2793f718bf6b4cff1dde00c25c93ec8ba2d37` |
 
 Consequently, this packet may use `can` as the upstream source topic, but does
 not infer that the MP4 or each MP3 exactly matches the rich-text body and does
@@ -61,7 +86,7 @@ not promote source examples into reviewed answer keys.
 | Source lesson | Upstream Level 1: `Can — I can speak in English`, with Video, Audio, CAN body, Workshop, Group Practice and Assignment rows | Source exact; not current governed content |
 | Source media | One current MP4 plus four active private `lesson_audio` assets with exact APP-0047 hashes, clean scans and approved program-scoped rights | Governed ingestion/rights complete; attachment pending |
 | Ordered source parts | Introduction → Practice → Conversation → Interaction | Exact upstream order and asset/right IDs recorded; attachment pending |
-| Transcript/language/segments | Unknown | Blocked |
+| Transcript/language/segments | Four human-confirmed English metadata revisions bind the exact ordered audio parts; provider candidate objects and segment detail were deleted after reconciliation | Metadata authoring complete; academic review pending |
 | Primary and secondary topics | `can`: ability, possibility/impossibility, permission and polite requests | Source-supported; academic review pending |
 | Can-do objective | Source promise “I can speak in English” is too broad; existing `legacy.level_video.orientation` is insufficient | Authored observable objective required |
 | Target patterns/chunks/examples | Source body contains affirmative/negative, yes/no and WH questions, polite requests and substitution examples | Extraction/correction/review pending |
@@ -113,14 +138,14 @@ LPL-01 resumes only in this order:
    false, derivatives allowed, no expiry and approved retention/deletion;
 4. **Pending:** snapshot/convert the upstream rich-text body into typed inert source fields
    with exact lineage, without importing Assignment audio;
-5. **In progress — DR-0025 accepted:** implement and verify the bounded non-
-   production provider run ceiling and kill switch, then, only after every live
-   gate passes, transcribe the eligible exact assets through its dedicated
-   project adapter, recording provider/model/configuration/input/output hashes,
-   cost and safe failure state;
-6. **Pending:** have a human reconcile/correct every transcript against the
-   complete exact audio and source body;
-7. draft and deterministically validate the ordered four-part blueprint;
+5. **Complete:** DR-0025's bounded campaign passed every live gate and
+   transcribed the four eligible exact assets through the dedicated adapter,
+   recording provider/model/configuration/input/output hashes, cost and safe
+   terminal state;
+6. **Complete:** the authorized metadata author listened to every complete
+   exact asset, inspected every returned segment and confirmed all four
+   transcripts; all four encrypted candidate deletions completed;
+7. after step 4, draft and deterministically validate the ordered four-part blueprint;
 8. obtain English academic review of the exact source blueprint;
 9. create Kannada guidance from that approved source and obtain independent
    Kannada review; and
@@ -136,7 +161,7 @@ This section is intentionally unapproved.
 
 | Review | Reviewer/authority evidence | Exact artifact hash | Decision | Rationale |
 |---|---|---|---|---|
-| English academic | — | — | pending | Source transcript and blueprint absent |
+| English academic | — | — | pending | Human-confirmed metadata exists; typed source blueprint absent |
 | Kannada | — | — | pending | Approved English source and Kannada variant absent |
 
 APP-0047 is exact processing authorization for the four selected hashes, but

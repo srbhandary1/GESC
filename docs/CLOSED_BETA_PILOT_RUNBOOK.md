@@ -41,7 +41,7 @@
 |---|---|
 | Exact commit APK assemble recorded | Yes |
 | DM-01 + DM-02 journeys 1–8 | Yes |
-| Staging/prod-like API OTP path | Yes |
+| Staging/prod-like API password-only path | Yes |
 | Privacy/support ops APP (or explicit deferral accepted by APO) | Yes |
 | F0 DoD Exact accept | Recommended before broad pilot; not claimed here |
 | Play public listing | No |

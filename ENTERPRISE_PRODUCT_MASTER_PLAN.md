@@ -1,8 +1,8 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.3"
+version: "3.9"
 status: "Canonical implementation baseline"
-prepared: "11 August 2026"
+prepared: "14 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
 supersedes:
   - "Global_English_High_Level_Plan_v2.md"
@@ -93,7 +93,7 @@ The product promise is:
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
-| Authentication | Platform-global username and password for every role; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android; fresh same-password confirmation for sensitive privileged actions |
+| Authentication | One platform-global username/password sign-in and the same verified-contact setup/recovery lifecycle for every role; roles and permission groups authorize work after sign-in; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Authoritative records | Deterministic, versioned, explainable and auditable |
 | AI authority | Advisory only; never writes marks, mastery, attendance or unlocks |
 | Offline | Downloaded deterministic mission, recording/playback and queued progress; no offline AI in Phase 1 |
@@ -285,7 +285,31 @@ Role-play stages:
 3. **Perform:** complete an open-ended exchange.
 4. **Reflect:** review task completion, priority corrections, stronger vocabulary and a retry task.
 
-### 4.2 Standard daily mission
+### 4.2 All-levels four-session path
+
+Every configured level uses the same learner-facing sessions, accepted under
+ADR-0025 / APP-0061:
+
+1. **Introduction** — play the exact governed Introduction audio; the
+   Structured Tutor explains it in Kannada; complete short speak-heavy
+   activities that notice the target pattern.
+2. **Practice** — rehearse with the Practice audio and authored activities;
+   complete deterministic Check items when authored.
+3. **Conversation** — open a free-speech, lesson-scoped Skill Chat on
+   level-appropriate topics (not a fixed script); meaning-first reply with a
+   separate coaching object.
+4. **Interaction** — freer Friend or light Role-play Apply speech still
+   bounded by level safety and topic policy.
+
+Session kinds are data-driven. Domain code must not hard-code Level 1–17,
+four lessons, or a single concept such as `can`. Levels without commissioned
+media remain visible as commissioning-pending shells. Review remains a
+deterministic delayed return rather than a fifth first-run room.
+
+These sessions map onto Learn → Talk → Check → Apply → Review without making
+AI authoritative for marks, mastery or unlocks.
+
+### 4.3 Standard daily mission
 
 A normal mission should take approximately 10–15 minutes:
 
@@ -303,7 +327,7 @@ A normal mission should take approximately 10–15 minutes:
 
 Every core mission contains learner speech. When a microphone is unavailable, the learner receives a transparent alternative path but is not awarded spoken mastery without spoken evidence.
 
-### 4.3 Correction model
+### 4.4 Correction model
 
 The system distinguishes:
 
@@ -336,7 +360,7 @@ A correction object should contain:
 
 The system must not correct a legitimate Indian English form merely because it differs from one native-speaker preference. Prioritize comprehensibility, task success and broadly useful professional English.
 
-### 4.4 Kannada-guided grammar teaching
+### 4.5 Kannada-guided grammar teaching
 
 Kannada explanations are contrastive, practical and short. Grammar is taught through repeated speaking rather than long lectures.
 
@@ -351,7 +375,7 @@ Kannada explanations are contrastive, practical and short. Grammar is taught thr
 
 Maintain an educator-reviewed contrastive error bank. Trigger guidance from a learner’s actual evidence, not from stereotypes about Kannada speakers.
 
-### 4.5 Pronunciation and fluency
+### 4.6 Pronunciation and fluency
 
 Phase 1 provides non-authoritative coaching through:
 
@@ -364,7 +388,7 @@ Phase 1 provides non-authoritative coaching through:
 
 Pronunciation signals do not control marks, mastery or access in Phase 1. The product must not penalize a legitimate accent merely for differing from a native accent.
 
-### 4.6 Assessment and mastery
+### 4.7 Assessment and mastery
 
 Separate practice from formal checks:
 
@@ -385,7 +409,7 @@ The speaking rubric covers:
 
 Mastery and level unlocking are deterministic, versioned, explainable and auditable. An LLM may explain a result but may not create or modify the authoritative result.
 
-### 4.7 Learner memory
+### 4.8 Learner memory
 
 The learner profile may retain:
 
@@ -608,26 +632,41 @@ If the delivery team must research, author, adapt, record, review and validate t
 
 ### 7.1 Mobile navigation
 
-Use four primary destinations:
+Use five primary destinations, with 1:1 last:
 
-- **Home**
-- **Learn**
-- **Practice**
+- **Home** — today’s recommended lesson journey
+- **Learn** — the four-session level path (Introduction → Practice → Conversation → Interaction)
+- **Speak** — one speaking room (everyday talk with Swathi and a situation picker)
 - **Progress**
+- **1:1** — waitlist request plus institute contact links; not an in-app call, booking or payment
 
 Account, privacy, downloads, help and settings are available through the profile/menu area. Backend module boundaries must not become learner navigation.
 
 ### 7.2 Home
 
-Home has one dominant action:
+Home has one dominant action, resolved deterministically:
 
-- today’s recommended practice;
+- a **due delayed review** when one exists; otherwise today’s recommended practice;
 - mode and estimated time;
 - download size when relevant;
 - current progress such as “1 of 3 steps complete”;
 - one large Continue button;
 - connection, offline and sync state;
 - one urgent support or service message when necessary.
+
+Home also shows a **meaningful-speaking-day streak** as secondary chrome. A day
+counts only when it contains learner speech and a recorded response or task
+outcome, matching the §3.3 north-star definition; application opens, lesson-audio
+playback and multiple-choice-only sessions never count. The streak is derived,
+advisory and never gates content. There is no attendance percentage in canonical
+learning records, and no streak freeze, repair or purchase in Phase 1. See
+[ADR-0028](docs/adr/0028-meaningful-speaking-streak-and-delayed-review.md).
+
+Authentication before Home is one platform-global username/password surface
+for every role. Organization, role, cohort, program, level and tier are
+resolved only after sign-in. Every role uses the same enumeration-safe,
+verified-contact password setup/recovery path under ADR-0022; a privileged
+role never selects a different login or recovery product.
 
 ### 7.3 Core screens
 
@@ -701,7 +740,10 @@ Tenancy is an internal security boundary, not mandatory learner-facing friction.
 - organization, branch and cohort configuration where required;
 - enrollment and trainer assignment;
 - organization-scoped roles and permissions;
-- account/PIN reset and session revocation;
+- session revocation and organization-scoped account support; global recovery
+  contact replacement remains restricted to the explicit
+  `platform.account_recovery.manage` capability and is never granted by an
+  organization role;
 - timezone and feature settings;
 - audit, retention, export and deletion workflows.
 
@@ -841,7 +883,7 @@ Exact patch versions are pinned during repository scaffolding and updated throug
 | Web/PWA authentication | Laravel Sanctum same-origin Secure, HttpOnly cookie sessions |
 | Android authentication | Laravel Passport Authorization Code with PKCE; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
 | Credential-storage rule | No authentication credential in browser `localStorage`, IndexedDB or ordinary Capacitor preferences |
-| Privileged authentication | Fresh confirmation of the same password within five minutes for sensitive actions, plus session listing/revocation; this is explicitly one factor, not MFA |
+| Privileged authentication | The signed-in session plus current organization role/permission groups authorizes routine operator work. Current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes; session listing/revocation remains available. |
 | Background processing | Laravel queues and scheduler |
 | Frontend testing | Vitest, React Testing Library and Playwright |
 | Backend testing | Pest/PHPUnit with real PostgreSQL integration tests |
@@ -883,7 +925,7 @@ Authentication verifies the same user identity but uses a platform-appropriate c
 - keep access tokens in memory while the app is active where practical;
 - revoke the active token family on logout, account closure, security reset or detected refresh-token reuse.
 
-The React client uses one project-owned authentication interface with separate web and Android adapters. A password is verified only by the server and is never the long-lived application transport credential. Sensitive privileged web actions require a server-side confirmation of the same password no more than five minutes old; this freshness proof is not MFA. Exact password, recovery, lifetime, rotation and device-binding policy is fixed by ADR-0002 as amended by ADR-0021.
+The React client uses one project-owned authentication interface with separate web and Android adapters. A password is verified only by the server and is never the long-lived application transport credential. Successful sign-in establishes the Web session used for routine learner, trainer, reviewer, content, media, privacy and administrator work; current organization role and permission groups are checked independently at command time. Current-password confirmation is limited to changing credentials, replacing a recovery contact and changing administrator authority. Exact password, recovery, lifetime, rotation and device-binding policy is fixed by ADR-0002 as amended by ADR-0021 and ADR-0023. ADR-0022 requires the same verified-contact setup/recovery lifecycle for every role, retires active two-actor/24-hour privileged recovery and keeps lost-contact replacement behind one freshly password-confirmed explicit platform capability with global revocation and content-free audit.
 
 ---
 
@@ -1378,7 +1420,7 @@ Use OWASP ASVS 5.0.0 Level 2 as the primary application-security verification ta
 Minimum controls:
 
 - organization-scoped authorization policies and cross-tenant tests;
-- fresh same-password confirmation for sensitive privileged actions, with the accepted single-factor risk recorded under ADR-0021;
+- one username/password sign-in for routine operator work, followed by independent command-time organization, role and permission checks; current-password confirmation is limited by ADR-0023 to credential, recovery-contact and administrator-authority changes;
 - session listing and revocation;
 - CSRF, CSP, HSTS, secure cookies and strict CORS policy;
 - rate limits and abuse controls;
@@ -1986,7 +2028,7 @@ Deliver:
 - same-origin Sanctum web/PWA session flow;
 - Laravel Passport Authorization Code with PKCE mobile-client foundation and a shared frontend authentication adapter;
 - project-owned username/password credential and local recovery adapters;
-- privileged fresh-password confirmation extension point;
+- narrowly scoped current-password confirmation for credential, recovery-contact and administrator-authority changes;
 - tenant-scoped policies and tests.
 
 Acceptance:
@@ -2351,7 +2393,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Architecture | Modular monolith with external inference adapters |
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
-| Authentication | Every role uses one platform-global username and password; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with transport credentials only in native secure storage; sensitive privileged actions require fresh same-password confirmation and have no second factor |
+| Authentication | Every role uses one platform-global username/password sign-in and the same verified-contact setup/recovery lifecycle; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; role and permission groups authorize routine work after sign-in; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with transport credentials only in native secure storage; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |

@@ -1,5 +1,392 @@
 # Quality review
 
+## Guidance TTS cost ledger + Swathi identity — 29 August 2026
+
+### Scope reviewed
+
+- Live Speak/Learn turns failed after successful STT because guidance TTS cost-ledger rows were rejected by PostgreSQL CHECK.
+- Product owner required the on-screen teacher name Swathi instead of Maya.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Cost-ledger CHECK | Pass | `GuidanceTtsCostLedgerConstraintTest` 1 passed; live migrate `000250`; constraint includes `azure-speech-guidance` |
+| Friend prompts pin Swathi | Pass | `ConversationOrchestrationTest` 2 passed; live migrate `000260`; tutor body starts “You are Swathi” |
+| Azure output contract | Pass | `AzureOpenAiConversationAdapterTest` 6 passed |
+| Android events URL | Pass | `WebConversationJourneyApi` vitest; prefixes baked API origin |
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; catalogues `ui-*-2026-08-29.6`; Kannada still pending-independent-review |
+| Conversation unit tests | Pass | ConversationJourney + LevelPathPanel + events-URL tests: 18 passed |
+| Conversation e2e | Pass | Playwright `conversation-journey.spec.ts` 3 passed |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL (103 Gradle tasks); `adb install -r` Success on RMX3085; origin `https://demands-cashiers-bryan-quit.trycloudflare.com` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Lesson-aware model history (Swathi remembering the exact lesson question in the turn payload) remains a later checkpoint.
+- Role-play scene characters (Priya, Arun, receptionist, and others) stay scene names, not Swathi.
+- Illustration asset filenames remain `tutor-maya.png` unless a later checkpoint renames files.
+- Kannada UI catalogue remains `pending-independent-review`.
+- Device confirmation of a completed hold-to-talk turn (HTTP 201, spoken Swathi reply) is still needed after this install.
+
+## Android voice answers + lesson question after audio — 29 August 2026
+
+### Scope reviewed
+
+- Android hold-to-talk still failed after lesson audio because Capacitor dropped Blob/ArrayBuffer recordings.
+- After audio, Maya did not ask a lesson question; the learner had to speak first into a generic Friend session.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| File-part voice upload | Pass | `formDataWithFileParts` + Android adapter `fetch(url, { body: FormData })` + conversation API tests; vitest 37 passed; `tsc -b` |
+| Lesson opening question | Pass | `LevelPathPanel` uses a fallback-turn question (`Can I use your pen?`); `ConversationJourney` opening-line test |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL; `adb install -r` Success on RMX3085 against `https://demands-cashiers-bryan-quit.trycloudflare.com` |
+
+### Known limitations
+
+- Azure OpenAI from this Ubuntu host is reachable: dummy-key probe returned 401 (not VNet 403); a 2-token live smoke on `ge-conversation-southindia` returned HTTP 200. The remaining learner-path risk is in-app STT/upload and the lesson question loop, not this host’s IP allowlist.
+- Lesson-aware model history (Maya remembering the exact question in the turn payload) remains a later checkpoint; the opening line is shown and spoken client-side from the blueprint.
+
+## Android lesson-audio playback — 29 August 2026
+
+### Scope reviewed
+
+- Learn level-session audio on Android used a raw media element against a private `/api/v1` path and could not attach a Passport bearer.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Authenticated lesson-audio download | Pass | `WebLevelSessionsApi` path allowlist + Android private-media fetch |
+| Player uses blob URL when required | Pass | `LevelPathPanel` + `ModelAudioPlayer` + `WebLevelSessionsApi` vitest 11 passed; `tsc -b` |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL; `adb install -r` Success on RMX3085 |
+| Web cookie path unchanged | Pass | `downloadAudio` is wired only when `privateMediaRequiresFetch` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Whole-body blob buffering remains the bounded implementation (same as model audio). HTTP range delivery is still VIDEO-01.
+- Device confirmation of audible playback on RMX3085 is still needed after this install.
+
+## Five-destination nav + Indic STT port (D-0216 / D-0217) — 29 August 2026
+
+### Scope reviewed
+
+- DR-0037 B five-item learner nav with 1:1 last and institute contact.
+- Indic HTTP recorded-STT adapter behind the existing voice port; Azure remains live.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Nav destinations | Pass | `PRIMARY_DESTINATIONS` Home/Learn/Speak/Progress/tuition; `#practice` aliases Speak; design-system 10 passed |
+| 1:1 contact | Pass | `InstituteContact` fail-closed; empty env hides links; OpenAPI `institute_contact`; tuition panel test |
+| Indic STT framework | Pass | `IndicSpeechAdapterTest` + binding + InstituteContact PHPUnit 13 passed (`DB_CONNECTION=sqlite`) |
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; `ui-*-2026-08-29.5` |
+| Web unit | Pass | `apps/web` vitest 263 passed; `tsc -b` |
+| Conversation e2e | Pass | Playwright `conversation-journey.spec.ts` 3 passed |
+| OpenAPI | Pass | `openapi:check`; contract `0.33.0` |
+| PHPStan / Pint | Pass | Indic STT and institute-contact files clean |
+| Production/Play | Unchanged | Not authorized; live Indic STT not enabled |
+
+### Known limitations
+
+- Direct institute phone/WhatsApp/email are not committed; set `TUITION_CONTACT_*` when named.
+- Indic STT is not live. REST clip-length limits of a future vendor remain a later checkpoint.
+- Role-play stays `synthetic_unreviewed`.
+
+## Maya identity + disclosure copy — 29 August 2026
+
+### Scope reviewed
+
+- Pin Friend Talk prompts and Azure output contract to Maya.
+- Remove duplicate disclosure heading; rename learner copy from generic AI Friend to Maya.
+- Voice consent/upload copy remains present (ADR-0007).
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; `ui-*-2026-08-29.3`; Kannada still pending-independent-review |
+| Conversation unit tests | Pass | ConversationJourney + LevelPathPanel 11 passed |
+| Azure adapter contract | Pass | `AzureOpenAiConversationAdapterTest` 6 passed; OUTPUT_CONTRACT includes Maya |
+| Conversation orchestration | Pass | `ConversationOrchestrationTest` 2 passed against `global_english_test` after bootstrap isolation |
+| `make ai-eval` | Pass | Fake-provider eval 15 passed, 0 failed, suite_hash `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Existing Talk-stage replies already stored as Swathi are unchanged; learners must start a new conversation.
+- Role-play scene characters (Priya, Arun, receptionist, and others) stay scene names, not Maya.
+- Kannada UI catalogue remains `pending-independent-review`.
+- `make e2e` / `make verify` were not re-run for the full suite. PostgreSQL integration tests must use `phpunit.postgres.xml` (now with `tests/bootstrap.postgres.php`).
+- Operator usernames `trainer` and `reviewer` were not in the 13 August dump and were not recreated.
+
+## Learner tutor UI + in-session teacher — 29 August 2026
+
+### Scope reviewed
+
+- Character-led animated learner shell (web + Capacitor Android).
+- Listen-then-live-teacher in the same level session.
+- Role-play scene cards; bilingual correction card styling.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Web unit/typecheck | Pass (this slice) | `@global-english/web` vitest 259 passed before the extra LevelPathPanel case; LevelPathPanel 4 passed after; `tsc -b` passed |
+| Localization hashes | Pass (tests) | `packages/localization` vitest 31 passed; catalogues `ui-*-2026-08-29.1` |
+| Design system | Pass | 9 tests; ApplicationFrame optional `className`; speak control class |
+| Production/Play | Unchanged | Not authorized |
+| Independent Kannada UI review | Unchanged | Pending |
+
+### Known limitations
+
+- Practice complete still requires the deterministic MCQ in the API.
+- Role-play remains `synthetic_unreviewed`.
+- Maya art is original generated illustration, not a licensed photo.
+- `make verify` / `make e2e` were not re-run for this slice.
+- Full-screen Android rebuild was not executed here; the WebView loads the same React bundle.
+
+## APP-0068 — Neural listen voice + playable recording — 14 August 2026
+
+
+### Scope reviewed
+
+- Replace device `speechSynthesis` for Conversation/Role-play model lines with session guidance TTS.
+- Capture PCM WAV so local review is audible.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Natural listen voice | Pass (this slice) | `GuidanceSpeechService` + Azure NeerjaNeural WAV; SSML `prosody rate="0.92"`; browser TTS is not the product path |
+| Local recording playback | Pass (this slice) | PCM ScriptProcessor capture encoded as 16 kHz WAV for review |
+| Tenancy | Pass (tests) | Cross-tenant session speech rejected; unauthenticated speech POST 401 |
+| Production STT/TTS gates | Unchanged | Fake/testing remains text-first without audio; live Azure stays soft-launch |
+
+### Known limitations
+
+- Human consented mic→transcript in the browser is still not a completed named-learner smoke.
+- Full `make verify` / `make e2e` were not re-run after this slice.
+- Neural voice is still Azure neural TTS, not a human recording (ADR-0011).
+
+## APP-0068 — Soft-launch voice-first learner STT — 14 August 2026
+
+### Scope reviewed
+
+- Voice-first Conversation/Role-play with type only on request.
+- Bounded Direct soft-launch STT on the APP-0064 Speech resource.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Type is on request | Pass (this slice) | Default `speak` input mode; Type instead; transcript correction typing hidden until requested |
+| Soft-launch STT DI | Pass (this slice) | `SoftLaunchRecordedAzureSpeechToTextProvider`; live preflight empty for Direct allowlist |
+| Live Azure STT | Pass (provider roundtrip) | Guidance TTS WAV transcribed; non-empty English; `market` present; 9936 bps |
+| Production STT | Unchanged, off | Gate rejects `production`; `.env.example` stays disabled |
+| Independent privacy firm | Not claimed | APO acting as consolidated reviewer; DR-0028 Phase B smoke not run |
+
+### Known limitations
+
+- Spend shares APP-0064 ₹500. No separate STT spend file.
+- Role-play remains `synthetic_unreviewed`.
+- Browser-microphone consent/upload by a named learner was not captured; the live check used a guidance-TTS fixture through the product STT adapter.
+- Full `make verify` / `make e2e` were not re-run after this slice.
+
+## APP-0067 — Named Kannada review of authored Levels 2–17 — 14 August 2026
+
+### Scope reviewed
+
+- Record `Level 2-17 Kannada approved.` against the APP-0065 authored pack.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Kannada lesson review | Pass (named owner review of agent-authored pack) | Exact statement; APP-0067; Direct revision 4; `docs/evidence/lpl-01/levels-2-17-kannada-review-result.json` |
+| Kannada UI catalogue | Not claimed | kn-IN still `pending-independent-review` |
+| Publication | Not claimed | Blocker: `curriculum_publication_gate` |
+| Role-play | Unchanged | Still `synthetic_unreviewed` |
+
+### Known limitations
+
+- Product owner reviewing agent-authored Kannada, not a commissioned linguist firm.
+
+## Honest listen-then-type copy + Kannada UI preview — 14 August 2026
+
+### Scope reviewed
+
+- Stop serving English chrome when Kannada is selected on invite-only soft-launch.
+- Stop advertising microphone / live speaking as available while replies are typed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Soft-launch UI policy | Pass (this slice) | `VITE_UI_TRANSLATION_PREVIEW=true` dist stamp; D-0030 preview notice; production remains `approved-only` |
+| Kannada catalogue independently approved | Not claimed | kn-IN still `pending-independent-review` |
+| Conversation/Role-play honesty | Pass (this slice) | Catalogue copy + voice panel `unavailable` status; STT gate unchanged |
+| Learner STT / `VOICE_UPLOAD_ENABLED` | Later enabled for invite-only Direct under APP-0068 | D-0178 / DR-0028; superseded in-scope by D-0212 |
+
+### Known limitations
+
+- Draft Kannada chrome is a review preview, not an independent translation approval.
+- Guidance TTS can still speak; learner microphone transcription is not on.
+- Role-play remains `synthetic_unreviewed`.
+- Full `make verify` / `make e2e` were not re-run after this honesty slice.
+
+## APP-0066 — Named English academic review of authored Levels 2–17 — 14 August 2026
+
+### Scope reviewed
+
+- Record the Accountable Product Owner statement `Levels 2–17 English approved`
+  against the APP-0065 authored pack.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| English academic review | Pass (named owner review of agent-authored pack) | Exact statement; APP-0066; blueprint `english_review_reference` |
+| Kannada independent review | Not claimed | `kannada_guidance.independent_review` remains false |
+| Publication | Not claimed | Blockers: `independent_kannada_review`, `curriculum_publication_gate` |
+| Role-play | Unchanged | Still `synthetic_unreviewed` |
+
+### Known limitations
+
+- This is the product owner reviewing agent-authored English, not a separately commissioned linguist firm.
+- Kannada carry-forward decision rows exist only so four-part audio can attach to the new hash.
+- Live Direct drafts are revision 3; evidence `docs/evidence/lpl-01/levels-2-17-english-review-result.json`.
+
+## APP-0065 — Authored levels, Role-play scripts, 1:1 request — 14 August 2026
+
+### Scope reviewed
+
+- Replace APP-0063 provisional Levels 2–17 lesson text with authored English + Kannada copy.
+- Give Role-play Observe/Rehearse/Perform authored scripts without changing `synthetic_unreviewed`.
+- Replace “hire a tutor” marketing with an org-scoped 1:1 tuition request.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Levels 2–17 not templates | Pass (this slice, in code and live Direct drafts) | `AuthoredFoundationLessons`; validator covers all 16 concepts; live replace evidence `docs/evidence/lpl-01/levels-2-17-authored-replace-result.json` (16 levels, revision 2) |
+| Independent bilingual review | English named under APP-0066; Kannada not claimed | `kannada_guidance.independent_review` is false; publication still gated |
+| Role-play scripts | Pass (this slice) | `RoleplayPedagogy` + `roleplayCatalog.ts`; UI still `data-review-status="synthetic_unreviewed"` |
+| 1:1 is a request | Pass (this slice) | `/me/tuition-requests` + operator queue; marketing copy updated |
+| Payments / calendar / hire | Out of scope | Explicitly excluded under DR-0036 |
+
+### Known limitations
+
+- Independent named review of the authored pack is still required before publication.
+- Named English review of Levels 2–17 is recorded under APP-0066; Kannada remains outstanding.
+- Role-play remains synthetic until specialist curriculum review.
+- Help, certificates, staff invite UI, privacy operator UI, and Content Studio pagination remain later checkpoints.
+- Full `make verify` / `make e2e` were not re-run after this slice. Host `php` in PATH has no `pdo_pgsql`; Postgres PHPUnit used Docker image `ge-php84-pgsql:local`.
+
+## Release-gate repair — 14 August 2026
+
+### Scope reviewed
+
+- TypeScript, ESLint, and unit failures that kept the web gate red.
+- Ordered four-session path (UI + API), bound AI Tutor handoff, Practice tab semantics, sign-in pattern/IDs/focus, missing operator confirm hint, Role-play learner turn, Home/Progress placeholders, Kannada fallback copy, learner guide OTP docs.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Session order | Pass (this slice) | `LevelPathPanel` locks later tabs; `LevelSessionDeliveryService` rejects `session_locked` |
+| Bound tutor handoff | Pass (this slice) | `ConversationJourney` `initialSession`; demo/API return a full session |
+| Practice tablist | Pass (this slice) | `role="tab"` / `aria-selected` / `tabpanel` |
+| Sign-in username pattern | Pass (this slice) | JS `/^[A-Za-z][A-Za-z0-9._-]{3,63}$/` plus escaped HTML pattern and `minLength={4}` |
+| Operator confirm hint | Pass (this slice) | `operator.password.confirm_hint` in all six catalogues |
+| Kannada approved | Not claimed | Still `pending-independent-review`; production notice updated |
+
+### Known limitations
+
+- Help, downloads, recording management, privacy/export, account deletion, certificate, trainer, and booking experiences remain later checkpoints.
+- Staff invite-to-first-login, privacy export/erasure UI, organization switching UI, Content Studio pagination, retry idempotency keys, and beginner-admin ULID/hash forms remain later operator work.
+- Role-play remains `synthetic_unreviewed` (scripts are now authored).
+- 1:1 tutor hiring/marketplace remains out of scope; waitlist requests are implemented under APP-0065.
+- Levels 2–17 lesson text is authored under APP-0065; independent bilingual review remains outstanding.
+- Full `make e2e` / all-controls demo were not re-run after this slice. Bootstrap guest/sign-in expectations were updated; remaining E2E files may still need a green pass on the host.
+- Level-session API lock tests were added in `LevelSessionDeliveryTest` but were not executed here: host PHP has no `pdo_pgsql` driver.
+
+## Learner marketing four-session path + pedagogy — 14 August 2026
+
+### Scope reviewed
+
+- Four-session path and pedagogy vs chat-only tutoring on the marketing home.
+- Marketing difference tiles (hybrid, 1:1 tuition, combined path).
+- Header Sign in / dedicated `#sign-in` page; logos split web vs Android.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Home has no login form | Pass | `MarketingLanding` has no `signInSlot`; App.test |
+| Path and pedagogy on home | Pass | `marketing.path.*` / `marketing.pedagogy.*`; App.test |
+| Level session HTTP idempotency | Pass | `createClientId` in `LevelPathPanel`; English-first lesson copy |
+| Licensed photos only | Pass | Unsplash files + `PHOTO_ATTRIBUTION.md` |
+| Web vs Android logo | Pass | Capacitor platform selects `logo-web` / `logo-android` |
+
+### Known limitations
+
+- 1:1 tutor hiring/marketplace is not implemented; waitlist requests are under APP-0065.
+- Conversation “not saved unless you choose” is policy copy on the home page; this slice does not add a new memory opt-in control.
+- Kannada catalogue remains pending independent language review.
+
+## Learner UI locale + chrome polish — 14 August 2026
+
+### Scope reviewed
+
+- Interface locale picker restricted to kn-IN / en-IN.
+- Marketing, practice switch, and level path localization.
+- Sign-in embedded in marketing join; typography scale reduced.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Only kn + en in learner picker | Pass | `INTERFACE_LOCALES`; App.test |
+| Marketing no longer hardcoded English | Pass | `MarketingLanding.tsx` + catalogue keys |
+| Bottom school-project sign-in removed on home | Pass | SessionSummary only via marketing `signInSlot` |
+| Catalogue parity maintained | Pass | 978 keys across all `*-IN.json`; governance hashes updated |
+
+### Known limitations
+
+- kn-IN remains `pending-independent-review` (preview policy shows Kannada; approved-only falls back to en-IN).
+- Concept labels / lesson content strings from the API may still be English.
+- Full visual QA on every authenticated surface not completed in this pass.
+
+## APP-0064 — Soft-launch guidance TTS + Role-play catalog
+
+### Scope reviewed
+
+- Soft-launch Azure Speech TTS DI for GuidanceTtsPolicy (`model_en`, `guidance_l1`)
+  under APP-0064 ₹500 evidence, separate from PR-009 speech-benchmark.
+- Text-first fallback on TTS failure; optional WAV base64 on turn speech payload.
+- Synthetic Role-play catalog expansion (clinic + 11 common scenarios) + UI picker.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Live multi-locale TTS gated by APP + kill-switch | Pass | `SoftLaunchGuidanceTtsConfiguration`; `.env.example` default false |
+| PR-009 benchmark gate unchanged | Pass | Benchmark `AzureSpeechConfiguration` / fixture voices untouched |
+| Text remains primary | Pass | Provider falls back to `TextFirstTextToSpeechProvider` |
+| Role-play catalog ≥10 additional scenarios | Pass | `conversation.roleplay_catalog` size 12; UI select |
+| Production/Play/STT not enabled | Pass | Soft-launch only binding; STT remains confirmed-text |
+
+### Known limitations
+
+- Guidance TTS spend evidence and secrets live outside the repository.
+- Role-play scenarios remain `synthetic_unreviewed` / `development_only`.
+- Ordinary learner STT and production promote remain unauthorized.
+
 ## PR-000 — Governance baseline
 
 ### Scope reviewed
@@ -2085,6 +2472,16 @@ implementation is completed and separately accepted.
 | `php artisan ai:evaluate` | Pass | Docker PHP 8.4.24 against `global_english_test` after migrate/seed: status `completed`, 4 passed / 0 failed, suite_hash `9d1f8d6069af09abbc9c20dd5048af6c640a4c77c927f0f43eed3364c13dc5e6`, report_digest `407d67cc39091c5703a291c042da3ba7bb14b1f1f67f236b70a305ab883cd318`, estimated_cost_microunits 0; speech half skipped (no `SPEECH_BENCHMARK_RUN_ID`) |
 | Full host `make verify` / remote CI | Not claimed | Host PHP 8.5.4 lacks `pdo_pgsql`; Node 22 cannot load locale `.ts` imports without pinned Node 24 |
 | Real LLM / PR-012 / production / Play | Not authorized | APP-0019; STATUS |
+
+### Re-verification — 14 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| LearnerMemoryTest + AiEvaluationRunnerTest | Pass | postgres phpunit: 11 tests / 65 assertions |
+| AiMemoryPanel vitest | Pass | 2 passed |
+| `artisan ai:evaluate` (fake) | Pass | `passed_count=15`, `failed_count=0`, `estimated_cost_microunits=0`, suite_hash `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270` |
+| STATUS closed-checkpoint note | Pass | `docs/STATUS.md` restored PR-011 / APP-0020 closed entry without changing current APP-0061 checkpoint |
+| LearnerHttpBoundaryTest full class | Not claimed | 1 passed / 2 failed on unrelated conversation turn auth (401); memory routes remain covered by LearnerMemoryTest |
 
 ### Subsequent checkpoint acceptance
 
@@ -6534,3 +6931,718 @@ does not constitute production authorization or independent review.
 This is an operational process-ownership correction. It changes no password,
 session lifetime, tenant authority, API contract, schema or production-release
 authority.
+
+## Closed-group Ubuntu Web and Android password test pack — 11 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Supervised Ubuntu service | Pass | Enabled foreground user unit with lingering; monitors API, worker, scheduler, loopback Caddy, port-8080 redirect and tunnel and restarts on child/repeated-health failure |
+| External HTTPS readiness | Pass | Current Quick-Tunnel `/api/v1/health/ready` returned `ready` |
+| Locked authentication mode | Pass | Current external `/api/v1/auth/password/mode` returned exactly `password_only` |
+| Invited learner credential setup | Pass | Atomic invitation acceptance plus learner-created global username/password; focused API 9 tests / 98 assertions; generic rollback failure covered |
+| Public API/client contract | Pass | OpenAPI 0.27.0 and generated TypeScript clients include password invitation enrollment |
+| Browser credential handling | Pass | Invited account E2E clears form secrets and proves local/session storage empty; no OTP/TOTP/social control introduced |
+| Critical Web journey | Pass | `make e2e`: 4 API tests / 105 assertions and 19 Playwright journeys, including axe, 320-pixel/400%-text reflow and invited setup |
+| Production-path APK build | Pass | `make android-closed-beta`; Gradle `testDebugUnitTest assembleDebug`, 102 tasks |
+| APK identity and transport | Pass | `com.globalenglish.app`, version 1.0 (1), target SDK 36; exact HTTPS origin present; static HTTP origin and demo package absent |
+| APK integrity and signing | Pass for closed sideload | 8,461,979 bytes; SHA-256 `bc67ee2dd0520a3a26abd98d62320b996c5ca74f0c89e9e57480a8ddb47040ed`; v2 Android debug signature verified |
+| Controlled distribution | Pass | Mode-0640 artifact under `~/ge-soft-launch/artifacts/closed-group`; no unauthenticated public download route |
+| Complete repository verification | Pass | `make verify`: 175 SQLite tests / 1,919 assertions; 311 PostgreSQL tests / 4,512 assertions; 283 JavaScript tests; audits, Pint, PHPStan, locale/OpenAPI/release/runtime contracts, ESLint and TypeScript passed |
+| DR-0027 excluded administrator | Correctly retained | `waiting_delay` until 12 August 2026 10:44:26 UTC; no bypass or credential establishment; affects that administrator and invitation issuance only |
+| Production / Google Play | Not authorized | Debug sideload artifact only; no production signing, Play upload, public release or VPS claim |
+
+Security, privacy and tenancy result: the new tester-setup operation consumes
+one exact tenant-scoped invitation inside the same transaction that creates the
+credential and membership, returns only generic failures, and removes raw
+invitation/password inputs before request logging. Testers choose their own
+passwords. No credentials are written to browser storage or ordinary Android
+preferences. No learner audio, transcript, provider secret or real tester
+credential was inspected or logged.
+
+Retained limitations: a Quick Tunnel can rotate and then requires APK rebuild;
+new invitation-only accounts do not yet have a verified recovery contact;
+LPL-01 reviewed publication is incomplete; the live AI kill switch remains
+disabled; translation reviews, independent security/privacy/tenancy/
+accessibility reviews, physical-device evidence, production signing, VPS
+migration and Play/public authorization remain open.
+
+## Closed-group hostname rotation and APK rebuild — 12 August 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Current supervised runtime | Pass | `global-english-soft-launch.service` enabled/active; host-network `make soft-launch-ready` returned 17 pass / 1 disabled-live-AI warning / 0 fail |
+| External HTTPS protocol | Pass | Current tunnel root HTTP 200 with valid TLS; readiness returned `ready`; same-origin password-mode request returned exactly `password_only` |
+| Active Android PKCE client | Pass | Non-revoked `Android closed-beta` client targets exactly `com.globalenglish.app:/oauth/callback` |
+| Production-path rebuild | Pass | Repository-documented Temurin JDK 21; `make android-closed-beta`; Gradle `testDebugUnitTest assembleDebug`, 102 tasks |
+| APK identity and transport | Pass | `com.globalenglish.app`, version 1.0 (1), min SDK 24, target SDK 36; current HTTPS origin and exact public client present; prior tunnel origin, static HTTP origin and demo package absent |
+| APK integrity and signing | Pass for controlled sideload | 8,461,968 bytes; SHA-256 `eab6128229fa2a9dc03bc1e47ac45e3b3df785e37d2403d4986ffb0071427e6a`; APK Signature Scheme v2 verified with the Android debug certificate |
+| Controlled staging | Pass | Byte-identical mode-0640 artifact at `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-closed-group-20260812.apk`; the prior artifact was preserved |
+| Attached device evidence | Open | `adb devices -l` returned no attached device; physical DM-01/DM-02, authenticated Web/Android tester journeys and storage-negative inspection are not claimed |
+| Live conversation model | Correctly blocked | Read-only Azure capability query still returned no `ContentLogging` capability; the live kill switch remains false and no model request or spend occurred |
+
+The first build attempt was stopped by sandbox write restrictions on the
+existing Gradle cache. The authorized retry exposed host JDK 17 rather than the
+required JDK 21; rerunning with the repository-documented Temurin 21 path
+passed without changing project code. No credential, learner content, provider
+secret, authentication token, audio or transcript was inspected or logged.
+
+This closes only the rotated-hostname APK-build gap. Closed-group acceptance
+still requires intended testers and physical devices; production additionally
+retains the provider privacy gate, independent reviews, reviewed learning
+content, production infrastructure/signing and explicit release approval.
+
+## Independent L1 gate and production-closure controls — 12 August 2026
+
+### Delivered behavior
+
+- Added separate deterministic export and strict human-review Make targets.
+  The export contains the actual English reply/correction and L1 explanation,
+  not only case identifiers and dispositions.
+- Canonical row hashes bind reviewer acceptance to the exact prompt/context,
+  reply, correction, explanation, locale and safety result. The strict gate
+  recomputes the hash from the submitted row and compares it with the current
+  generated result, so both packet tampering and stale output fail closed.
+- Strict mode requires all 15 cases, `accept`, locale-specific reviewer role,
+  reviewer/evidence identity, `independent_review: true` and an ISO-8601
+  instant. The evaluation report digest includes the review requirement,
+  reviewer/evidence references and payload hashes.
+- Pending/rejected/incomplete review emits only
+  `ai_evaluation_review_rejected`; no raw generated content or framework stack
+  is emitted by the command.
+- Added the independent-review runbook, updated F0 wording for the accepted
+  password-only posture, opened the bounded Speech decision stop and recorded
+  a single ordered production closure matrix. No external approval was
+  manufactured.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Formatter | Pass; Pint on runner, console route and integration tests |
+| Focused review suite | Pass; 9 PostgreSQL tests / 54 assertions, including complete-review acceptance, missing-package rejection and changed-reviewed-output rejection |
+| Focused PHPStan | Pass; zero errors |
+| Final `make verify` | Pass; Composer/pnpm audits, Pint, PHPStan, 175 SQLite tests / 1,919 assertions, 314 PostgreSQL tests / 4,522 assertions, locale/OpenAPI/generated-client/release/soft-launch contracts, ESLint/TypeScript and 283 JavaScript tests |
+| `make e2e` | Pass; 4 API tests / 105 assertions and all 19 Chromium journeys |
+| `make ai-eval` | Pass; suite hash `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270`, report digest `800ff3dd6ab2d24f2df29dcefe62c5cc756b15c442f35d750bbd96011a77a183`, 15/15, zero estimated cost; separately gated Speech benchmark skipped without a run ID |
+| Review export | Pass; 15 actual-output rows; protected packet 17,364 bytes, SHA-256 `47d5f2f10fe0d0d6d8cdcb8ea57cf39e6dadf9b67c031aa2ea072cc61341a05d` |
+| Strict pending-package gate | Pass by expected fail-closed result; exit 2 with safe code `ai_evaluation_review_rejected` |
+| Production build | Pass; Laravel optimization/cleanup and 117-module Vite build; retained measured 1,069.17 kB chunk-size advisory |
+| Diff hygiene | Pass; `git diff --check` |
+
+The review packet is byte-identically staged mode 0640 at
+`~/ge-soft-launch/artifacts/review/friend-l1-review-20260812-47d5f2f1.json`.
+It contains synthetic evaluation text, not learner content. It is deliberately
+still `pending`; passing the strict gate is not claimed.
+
+### Security, privacy, tenancy and retained gates
+
+No schema, migration, OpenAPI, provider request, model/Speech spend,
+authoritative learning record, tenant resource or learner content changed. AI
+remains advisory. Reviewer evidence stays outside Git and only safe references
+enter the report digest. Ordinary learner Speech and the Azure model kill
+switch remain disabled.
+
+The current-host APK gap and review mechanism are closed. Physical DM-01/
+DM-02 intended-tester evidence, actual independent L1/specialist findings,
+Microsoft modified-abuse-monitoring approval, DR-0028 authorization and
+implementation, reviewed LPL-01 content, stable production operations,
+production signing/Play evidence and exact-commit F0/release acceptance remain
+open; production is not authorized.
+
+## Android first-party PKCE journey correction — 12 August 2026
+
+### Root cause and delivered behavior
+
+- Physical testing on an attached Realme 8 (Android 13) proved that the native
+  app stayed anonymous while Chrome displayed the Web shell. Sanitized Chrome
+  metadata showed `/oauth/authorize` in the address bar while the document was
+  the cached `Home` shell. No credential, cookie, token or learner content was
+  read.
+- The soft-launch origin had three interacting defects: OAuth/mobile-auth
+  paths were not part of the original reverse-proxy contract; the public Host
+  and HTTPS scheme were not preserved through the loopback tunnel origin; and
+  an older PWA worker could substitute the public shell for an authentication
+  navigation. All authentication prefixes are now network-only, the worker is
+  version 4 with forced update checks, and the Caddy listener accepts any
+  public Host while binding only to loopback.
+- Laravel now trusts only the configured proxy addresses and forces generated
+  HTTPS URLs whenever the configured application URL is HTTPS. Live external
+  health returns the Laravel JSON contract, a unique `/oauth/*` probe returns
+  Laravel 404, and a fresh authorization request redirects to the HTTPS mobile
+  sign-in page with `no-store` and secure cookies.
+- Passport auto-approval is fail-closed to the exact reviewed public Android
+  client shape and the sole `mobile:api` scope. Username/password remains in
+  the system browser; state/S256 PKCE, exact callback validation, rotating
+  refresh families and native secure storage remain unchanged. The separate
+  **Continue** consent page is removed, and Android exposes one top-right
+  **Sign in** action.
+
+### Verification and artifact
+
+| Check | Result |
+|---|---|
+| Focused API/Web contracts | Pass; 9 SQLite tests / 38 assertions, 8 focused PostgreSQL tests / 503 assertions, 17 Android/Web tests |
+| Complete repository verification | Pass; `make verify`: 177 SQLite / 1,928 assertions, 314 PostgreSQL / 4,473 assertions, 285 JavaScript tests; audits, Pint, PHPStan, localization, OpenAPI, release/soft-launch, lint and type checks |
+| Critical browser journey | Pass; `make e2e`: 4 API tests / 105 assertions and 19/19 Chromium journeys |
+| Android packaging | Pass; JDK 21 `make android-closed-beta`, 103 Gradle tasks |
+| Final APK identity/signature | Pass; `com.globalenglish.app` 1.0 (1), min SDK 24, target SDK 36, APK Signature Scheme v2 |
+| Final APK transport/integrity | Pass; only `https://award-bite-monica-seafood.trycloudflare.com`; 8,461,998 bytes; SHA-256 `d3e55fe4790cb4e7fd7cebf428fb6818f3c419df849f877039e550669366f448` |
+| Controlled staging/install | Pass; byte-identical mode-0640 revision 4 artifact; `adb install -r` succeeded; package update recorded on the Realme 8 |
+| Human password/automatic return | Open; final result requested from the device operator after revision 4 cold launch |
+
+### Security, privacy, tenancy and retained gates
+
+No schema, migration, API payload, provider call, AI spend, tenant authority,
+credential or authoritative learning record changed. Auto-approval applies
+only after browser authentication and only to the exact first-party public
+client/scope/callback contract; all other client shapes retain ordinary
+consent or fail policy validation. The five non-English UI catalogues remain
+explicit implementation previews pending independent review.
+
+This correction does not make the Quick Tunnel production infrastructure.
+DM-01/DM-02 evidence, stable product hosting/domain, production signing and
+Play controls, independent security/privacy/tenancy/accessibility review,
+independent L1 quality review, reviewed LPL-01 content and explicit release
+approval remain open. Production is not authorized.
+
+## Stable static-IP HTTPS edge implementation — 12 August 2026
+
+| Check | Result |
+|---|---|
+| Exact public origin | Pass in repository contract: `https://ai.globalspokenenglish.com`; scheme/path/port and APP_URL mismatches reject |
+| Unprivileged direct TLS design | Pass: Caddy `http_port 8080`, `https_port 8443`; documented WAN 80/443 mapping |
+| Origin isolation | Pass: stable edge proxies only to `127.0.0.1:9080`; API and recovery internals remain loopback-bound |
+| Session/authentication alignment | Pass: persisted exact APP_URL, Secure cookie and Sanctum host; Android remains Passport PKCE and requires a stable-origin rebuild after activation |
+| Transport hardening | Pass in generated configuration: public automatic TLS, exact-host redirect, HSTS, nosniff, frame denial and strict-origin referrer policy; no internal certificate or Quick-Tunnel hostname |
+| Runtime behavior | Pass in contract: stable mode refuses Quick Tunnel and systemd supervision no longer expects it |
+| Shell/config validation | Pass: Bash syntax, soft-launch environment contract and installed-Caddy config validation |
+| Complete repository verification | Pass: 177 SQLite tests / 1,928 assertions; 314 PostgreSQL tests / 4,472 assertions; 285 JavaScript tests; audits, Pint, PHPStan, locale/OpenAPI/generated-client/release/runtime checks, ESLint and TypeScript |
+| Production build | Pass: Laravel optimize/cleanup and 117-module Vite build; retained measured 1,068.90 kB chunk-size advisory |
+| Public DNS | Incomplete; deferred to 13 August 2026: Cloudflare authoritative DNS is verified, but authorized dashboard credentials are unavailable and the `ai` A record is absent |
+| Router/certificate/external health | Pending until WAN 80/443 map to LAN 8080/8443 and Caddy obtains the public certificate |
+| Live runtime/APK | Deliberately unchanged; temporary closed-test origin remains available and the existing APK is not misrepresented as stable |
+
+No database migration, API/OpenAPI shape, credential, permission, tenant
+resource, learner evidence, provider call or content changed. The design keeps
+low ports at the router boundary, does not run the application as root and
+does not expose localhost-only recovery through SSH or the public edge.
+
+This closes the repository implementation portion of stable hosting, not its
+external evidence. DNS, router reachability, public TLS/health/password-mode,
+stable-origin Android packaging, production signing/Play, independent reviews,
+reviewed content and explicit production authorization remain open.
+
+The external activation plan is recorded as incomplete and deferred to 13
+August 2026. Cloudflare credentials must remain private and may not be pasted
+into chat, shell history, repository files or evidence.
+
+## Levels 1–17 blanket-activation assessment — 12 August 2026
+
+| Check | Result |
+|---|---|
+| Governed level records | Blocked: zero active `curriculum_levels` rows |
+| Numbered source coverage | Partial: current smoke imports include Levels 1, 2, 3, 6–11, 13, 14 and 17; Levels 4, 5, 12, 15 and 16 have no current imported video module |
+| Publications | Not production evidence: two duplicate active staging-smoke imports, each with 13 modules including one scaffold and one generic mission |
+| Complete learning loops | Blocked: transcripts, reviewed objectives, quizzes/rationales, Talk goals, Apply rubrics and delayed review are absent |
+| AI scenarios | Blocked for live claim: four `development_only` scenarios; four `synthetic_unreviewed` versions; zero persisted turns |
+| Live model and learner voice | Disabled behind existing privacy/provider/consent gates |
+| Rights | Bounded smoke rights only; derivative use is disabled for imported video, and APP-0047 covers four exact Level 1 MP3s for non-production processing only |
+| Blanket production waiver | Rejected as non-executable; it cannot create content or replace rights, consent, provider, tenant publication or enrollment authority |
+
+[DR-0029](DR-0029_LEVELS_1_17_LIVE_ACTIVATION_REQUEST.md) Option A is accepted
+under APP-0058 / D-0184. The review result makes LPL-01 the only active content
+checkpoint and preserves the Level 1 → Levels 2–3 → remaining source-complete
+wave order. No database, provider, publication, enrollment, permission,
+rights, content or learner evidence mutation was performed by approval.
+## Unified production login and recovery decision review — 13 August 2026
+
+- Read-only recovery evidence confirmed one unexpired DR-0027 case with two
+  approvals and an elapsed delay, zero establishment challenges, and an
+  unchanged credential-unready target with exactly one active organization-
+  administrator membership.
+- A fresh pre-completion PostgreSQL backup was created at mode `0600`, measured
+  915,762 bytes, had SHA-256
+  `e8db7b98186b1f5f19c4451e9825fcfd90fc5dd21dd5982e793434acfe8d8fec`,
+  and passed `pg_restore --list` catalogue validation.
+- The recovery actor's browser-only password confirmation succeeded. The
+  following status request failed closed because the managed `soft-launch`
+  environment is not accepted by the local/testing-only APP-0057 controller.
+  No case completion, token delivery, credential, role or permission mutation
+  occurred.
+- The product owner then rejected the exceptional recovery complexity for
+  production. DR-0030 records one shared username/password login, role-based
+  authorization, enrollment-based learner tiers and verified-contact recovery
+  for every role. Baseline hashing, secure transport, token expiry/replay,
+  revocation, tenancy and audit controls remain explicit.
+- This is a decision checkpoint only. No runtime, schema, API, OpenAPI/client,
+  configuration or provider behavior changed. Exact Option A/B acceptance is
+  required before implementation because the choice supersedes accepted
+  privileged-recovery authority in ADR-0021 and DR-0027.
+## AUTH-SIMPLE-01 unified login and recovery — 13 August 2026
+
+### Delivered behavior
+
+- Recorded the exact DR-0030 Option A approval under APP-0059, D-0186 and
+  accepted ADR-0022, then amended the master plan to one platform-global
+  username/password sign-in and one verified-contact recovery model for every
+  role.
+- Replaced active privileged/two-actor recovery with a 256-bit, 15-minute,
+  single-use role-neutral reset and reviewed migration-exclusion setup. The
+  setup actor cannot see the token or choose the username/password.
+- Added only `platform.account_recovery.manage` for global lost-contact
+  support. It is never derived from an organization role, requires a current
+  active session plus five-minute same-password confirmation, denies self-
+  targeting, records keyed external-evidence digests and revokes all target
+  Web/Android credentials.
+- Added append-only management and former-contact-notification evidence. The
+  transition keeps old cases/approvals, marks incomplete cases superseded and
+  removes their routes/services/configuration from active runtime.
+- Added the public setup/recovery fragment pages with immediate history
+  erasure, memory-only tokens, CSRF initialization, service-worker exclusion
+  and no-store/referrer/robot headers. Android remains system-browser Passport
+  Authorization Code with S256 PKCE and reviewed native secure refresh-token
+  storage.
+- Restyled the anonymous Web gate using the public website's split-layout
+  visual pattern while intentionally retaining username/password and excluding
+  phone-number sign-in, Google sign-in, remember-me credential storage and
+  third-party scripts.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Focused SQLite auth/setup/readiness | Pass — 11 tests / 109 assertions |
+| Focused PostgreSQL auth and live-case migration/rollback | Pass — 10 tests / 101 assertions |
+| PostgreSQL concurrent setup | Pass — one test / 8 assertions; exactly one winner |
+| Formatter and static analysis | Pass — Pint and PHPStan, zero errors |
+| Public contract | Pass — OpenAPI 0.28.1 valid; generated TypeScript clients match |
+| Complete `make verify` | Pass — 177 SQLite tests / 1,934 assertions; 315 PostgreSQL tests / 4,477 assertions; 285 JavaScript tests; dependency audits, locales, release/runtime contracts, lint and typecheck passed |
+| Critical journey `make e2e` | Pass — 4 API tests / 105 assertions and 20/20 Chromium journeys |
+| Production build | Pass — Laravel optimize/cleanup and 117-module Vite build; retained 1,069.30 kB chunk-size advisory |
+| Backup/restore | Pass — `global_english_test`; migrations, application schema and deletion/tombstone state match; RTO 2 seconds |
+| Diff hygiene | Pass — `git diff --check` |
+
+### Security, privacy, tenancy and retained gates
+
+Raw passwords, contacts and setup/reset tokens are absent from API responses,
+audit, outbox and browser storage. Replacement contacts use the existing keyed
+identity digest plus a bounded masked hint; external proof enters the database
+only as a keyed digest. Recovery never creates or changes membership, role,
+permission, appointment, enrollment, cohort, level, publication or learning
+records, and cross-organization authority snapshots remain identical.
+
+The accepted one-factor administrator-takeover risk remains explicit. The
+production readiness probe fails closed until both a reviewed recovery delivery
+adapter and former-contact notification adapter are configured. Provider/DPA/
+subprocessor, sender/secret custody, delivery observability, independent
+security/privacy/tenancy/accessibility review, stable-host activation, LPL-01
+resumption and public/Play release remain open.
+Manager actions remain API/runbook operations rather than a React support
+console. No provider request or production mutation was performed.
+
+## Local AUTH-SIMPLE administrator transition — 13 August 2026
+
+### Evidence and behavior
+
+- Reconfirmed the live recovery inventory using content-free counts only: 16
+  active users, two credential-ready accounts, 14 exclusions, one waiting case,
+  two approvals, an active credential-unready target and one verified target
+  contact.
+- Resolved the manager deterministically to that exact exclusion's existing
+  manifest owner, who was also the original case requester and an active,
+  credential-ready reviewed actor. No identifier was selected by convenience
+  and no organization role gained platform recovery authority.
+- Created and gzip-verified a 138,142-byte pre-migration snapshot with SHA-256
+  `357714361f38ed162d63bbed53513946fba47af3cb7218a80b54b91d33791b31`.
+  The exact file was restricted from inherited `0664` to `0600`; the runtime
+  backup function now uses `umask 077` before creating future snapshots.
+- Applied migration batch 8 successfully. The one incomplete legacy case is
+  superseded with the approved reason and its two approval rows remain. The
+  new management and notification tables exist and remain empty.
+- Opened a temporary loopback-only manager aid bound to the exact target. It
+  returned no token and required normal Web authentication plus five-minute
+  current-password confirmation. The human authorization was not completed
+  during ten minutes, so no management event or setup challenge was created.
+  The aid was then deleted and the managed API, worker, scheduler, Caddy edges
+  and tunnel restored healthy.
+- A subsequent human attempt proved normal password sign-in but failed the
+  current-password confirmation. Recovery stayed fail closed at zero events,
+  challenges and target credentials. The guard's expected fresh-confirmation
+  exception was incorrectly serialized with HTTP 500; it now returns the safe
+  HTTP 403 `fresh-password-confirmation-required` problem. The account-setup
+  feature test first proves denial and absent evidence, then confirms that the
+  same session can complete the one-manager protected-local lifecycle after a
+  valid current-password confirmation.
+- The exact manager subsequently completed a valid current-password
+  confirmation and authorized one setup. Exactly one management event and one
+  accepted challenge were created. The target alone chose the username and
+  password; the challenge is consumed, no setup remains pending, the delivery
+  file is removed and the first normal sign-in succeeded. The operator shell
+  loaded through existing authorization without any role, membership,
+  permission, appointment, cohort or enrollment mutation.
+- The protected-local metadata GET initially returned 401 because the page's
+  `no-referrer` policy suppressed Sanctum's same-origin stateful signal. The
+  corrected `same-origin` policy cannot send a referrer cross-origin, and any
+  public token fragment is erased before the request. A three-journey browser
+  regression proves protected metadata loads and both setup/recovery fragments
+  remain absent from browser persistence.
+- Content-free before/after authority snapshots have the identical SHA-256
+  `d7ed3f404a5a986f7199882a38454563af6999eee69a0fd3534fe2fabd557cf6`.
+  Reconciliation is disabled, the verified-empty protected delivery directory
+  is removed and the managed service is healthy. A later managed-HTTPS sign-in
+  and current-password confirmation both succeeded; the active session is
+  bound to the target's current credential version.
+
+### Verification and retained gates
+
+| Check | Result |
+|---|---|
+| Pre-migration backup | Pass — gzip readable, 138,142 bytes, exact SHA-256, final mode `0600` |
+| Migration | Pass — `000200` batch 8 |
+| Historical evidence | Pass — one superseded case, two preserved approvals |
+| New recovery evidence | Pass — exactly one management event and one consumed accepted setup challenge; zero pending |
+| Target credential/sign-in | Pass — credential ready; first normal password sign-in succeeded; no value inspected |
+| Target fresh confirmation | Pass — managed-HTTPS confirmation succeeded and the active session is current-version-bound |
+| Protected delivery cleanup | Pass — token never retrieved; delivery removed and empty directory deleted |
+| Tenant authority | Pass — exact pre/post SHA-256 match; no role, membership, permission, cohort or enrollment change |
+| Manager authority | Pass — exactly one manifest-designated active credential-ready user; retired two-actor configuration removed |
+| Managed runtime restoration | Pass — API, worker, scheduler, both Caddy processes and tunnel running; loopback liveness `ok` |
+| Backup creation regression | Pass — shell syntax and soft-launch contract cover `umask 077` |
+| Fresh-confirmation error contract | Pass — HTTP 403 with safe corrective problem; zero evidence before confirmation; SQLite and PostgreSQL feature regression |
+| Protected-local stateful GET | Pass — same-origin-only referrer, no cross-origin referrer, fragment erased first; focused browser 3/3 |
+| Complete `make verify` | Pass — 177 SQLite tests / 1,934 assertions; 315 PostgreSQL tests / 4,477 assertions; 285 JavaScript tests and all static/contract gates |
+| Critical journey `make e2e` | Pass — 4 API tests / 105 assertions and 20/20 Chromium journeys |
+| Production build | Pass — Laravel optimize/cleanup and 117-module Vite build; retained 1,069.30 kB chunk-size advisory |
+| Diff hygiene | Pass — `git diff --check` |
+
+Credential issuance, normal sign-in and fresh confirmation are complete. The
+manager's current password and the target's username/password remained human-controlled secrets;
+no session or token was synthesized, the raw protected-local token was never
+read and no direct credential/database mutation was used. Production delivery/
+notifier providers, stable hosting and independent review remain separate
+gates.
+
+## LPL-01 human transcript reconciliation — 14 August 2026
+
+### Evidence and behavior
+
+- The authorized Direct operator completed the private HTTPS reconciliation
+  journey for exact campaign `01KZP5129TNAQPE542XM15604C`. The page verified
+  each downloaded audio object against its fixed SHA-256 in browser memory;
+  the human listened to each complete part, checked every provider segment and
+  selected `confirmed` for Introduction, Practice, Conversation and
+  Interaction.
+- Four append-only reconciliation records atomically created four English
+  metadata revisions. Their content hashes, in source order, are
+  `2e8335f5998dace0a619acbd24945beafbb3b9a2e427bd71dd01f473b3b17e0b`,
+  `a185249064c4e153237e1a54f8375fe1e7e4fac2ce45525684a929ea174a6298`,
+  `830bba76c97bb19d3b132da8bd7a021cb5160be146592cfffcaaaa810bc48635`
+  and
+  `5db31dd35f5d9fe1f0d02fc116e2793f718bf6b4cff1dde00c25c93ec8ba2d37`.
+  No transcript text, segment text, audio, candidate key or credential entered
+  this review evidence.
+- Candidate deletion completed on the first attempt for all four assets. The
+  last receipt completed at 14 August 2026 05:35:20 UTC; the campaign then
+  moved from `provider_complete` to `completed`. Content-free aggregate checks
+  show four reconciliations, four completed deletion receipts and zero
+  retry/dead-letter backlog.
+- The campaign's fixed usage remains four successful provider attempts, zero
+  failures/retries, 18,760,190 uploaded bytes, 1,172,513 billable milliseconds
+  and 11,189,394 INR microunits (₹11.189394), inside APP-0052's limits.
+- The journey exposed a usability defect in the accepted policy: successful
+  password sign-in creates no fresh-password proof, while candidate read and
+  reconciliation both require a separate proof that expires after five
+  minutes. The exact audio set lasts 19 minutes 32.513 seconds, so the separate
+  Account Security flow necessarily caused repeated same-factor prompts.
+  [DR-0031](DR-0031_LPL01_RECONCILIATION_AUTHENTICATION_SIMPLIFICATION_REQUEST.md)
+  records three bounded options and recommends ordinary signed-in,
+  permissioned access for these two exact routes. It changes no current
+  authentication behavior.
+
+### Verification and retained gates
+
+| Check | Result |
+|---|---|
+| Reconciliation aggregate | Pass — campaign `completed`; four reconciliations; all outcomes `confirmed` |
+| Metadata lineage | Pass — four non-null metadata revision IDs and four exact content hashes |
+| Candidate cleanup | Pass — four completed receipts on first attempt; zero retry/dead-letter backlog |
+| Provider/cost boundary | Pass — historical 4/4 success, zero retry/failure and exact usage/cost remain within caps |
+| Runtime health | Pass — managed API, worker, scheduler, Caddy edges and current HTTPS tunnel healthy during reconciliation |
+| Sensitive-content handling | Pass — only content-free identifiers, hashes, counts, states and timestamps were inspected/recorded |
+| Repository behavior | Unchanged — no API, schema, session, credential, provider or learner runtime edit |
+
+Human metadata reconciliation is complete, but it is not English academic or
+Kannada review. The typed legacy-source snapshot, deterministic ordered
+blueprint, English academic approval, Kannada creation/review and publication
+readiness remain open; LPL-01 and LPL-02 exit gates are not claimed. DR-0031
+required exact option acceptance and a successor ADR at this evidence point;
+the subsequent section records its APP-0060 / ADR-0023 resolution.
+
+## One-login role-group operator authorization — 14 August 2026
+
+### Scope reviewed
+
+- APP-0060 contextual approval, resolved DR-0031, ADR-0023 and master-plan
+  version 3.5;
+- exact routine-versus-administrator-authority route classification;
+- Account settings wording and removal of routine fresh-error handling;
+- retirement of the completed LPL reconciliation page and Caddy exception;
+- OpenAPI 0.29.0/generated clients, locale governance, user/runbook/matrix
+  documentation and retained recovery behavior.
+
+### Review result
+
+| Check | Result |
+|---|---|
+| One signed-in routine workflow | Pass — branch creation, learner administration, Content Studio, Media Library, publication, privacy and reconciliation routes have no `auth.password-confirmed`; command-time auth/session/tenant middleware and domain permissions remain |
+| Administrator-authority boundary | Pass — route policy fixes nine exact staff invitation, role-group, role-assignment and staff-lifecycle routes; an unconfirmed role creation is HTTP 403 and creates no role |
+| Recovery/credential boundary | Pass — platform setup/contact routes retain `auth:web`, `auth.session`, `auth.password-confirmed`, exact capability and throttling; current password remains required for credential changes |
+| Tenant and authoritative controls | Pass — focused backend suite passed 23 tests / 1,342 assertions, including cross-tenant denial, version/hash conflict, idempotent replay, immutable evidence and candidate cleanup |
+| Visible simplification | Pass — Account settings says routine work needs no further password check; learner/content/media clients no longer advertise impossible fresh-password detours |
+| Temporary aid retirement | Pass — the public file and Caddy handler are absent; browser and soft-launch contracts fail if the commissioning surface returns |
+| API/client contract | Pass — OpenAPI 0.29.0 validates and all five generated TypeScript files match |
+| Localization | Pass — six catalogues share `.10` key parity and exact hashes; five implementation previews retain honest independent-review warnings |
+| Full repository verification | Pass — `make verify`: 177 SQLite tests / 1,935 assertions, 315 PostgreSQL tests / 4,469 assertions, 31 localization + 9 design-system + 242 Web tests, Composer/pnpm audits, Pint, PHPStan, lint, typecheck and all contract gates |
+| Critical browser journey | Pass — `make e2e`: 4 reconciliation API tests / 103 assertions and Chromium 21/21, including one-login routine branch work and retired aid fallback |
+| Production build | Pass — `make build`; only the existing non-failing large-chunk advisory remains |
+
+### Security, privacy and tenancy review
+
+- The visible/repeated one-factor ceremony is removed; password hashing,
+  compromised-password rules, HTTPS Secure/HttpOnly cookies, CSRF, throttling,
+  credential/session revocation, tenant scoping, role/permission checks,
+  transactions, idempotency and content-free audit remain.
+- APP-0060 accepts the increased risk that a stolen active administrator
+  session can perform more authorized routine work before expiry/revocation.
+  It does not grant cross-tenant or unheld permission authority.
+- No raw password, token, transcript, audio, contact or learner content was
+  inspected or added to repository evidence. No database or runtime authority
+  mutation was required.
+
+### Known limitations and retained gates
+
+- Role/staff authority changes still use the optional Account settings
+  confirmation control; a future UI may place that rare confirmation inline
+  without changing the ADR boundary.
+- No future integrated transcription campaign wizard was built because the
+  only authorized LPL-01 campaign is terminal and its candidates are deleted.
+  Future campaign UI remains a later bounded Media/Content slice.
+- The repository change is not deployed to the temporary or stable host.
+  Production/public release and independent security, privacy, tenancy,
+  accessibility and language review remain gated.
+
+### Exit decision
+
+ADR-0023 repository implementation is complete under D-0194. LPL-01 remains
+active at the typed source snapshot and deterministic Level 1 blueprint step;
+no LPL-02 work is authorized.
+
+## LPL-01 local evidence manifest — 14 August 2026
+
+### Review result
+
+The local evidence package records a deterministic, review-only shell for the
+ordered Level 1 media parts. It verifies the four exact metadata revision IDs,
+content hashes and source order, and keeps publication ineligible. The rich-text
+body is intentionally absent because this turn did not access or modify the
+legacy admin site and no exact read-only export was available locally.
+
+| Check | Result |
+|---|---|
+| Four-part order | Pass — Introduction → Practice → Conversation → Interaction |
+| Metadata bindings | Pass — all four reconciled revision/content-hash pairs match D-0191 |
+| Rights bindings | Pass — all four approved program-scoped rights revisions are recorded |
+| Typed rich-text body | Blocked — exact read-only source export not supplied |
+| Blueprint content | Blocked — objective, Talk, Check and Apply fields remain absent |
+| English/Kannada review | Blocked — no authored source blueprint exists to review |
+| Publication | Blocked — manifest and blueprint shell cannot publish |
+| Legacy-site safety | Pass — no request or mutation was made; temporary capture state was removed |
+| Deterministic validator | Pass — `tmp/toolchain/node/bin/node scripts/validate-lpl01-evidence.mjs` |
+
+No migration, API, runtime, tenant, credential, provider, transcript, learner
+record, curriculum attachment or publication changed. LPL-01 remains active and
+LPL-02 remains unauthorized.
+
+The newly authored draft is deterministic and unpublished. Its validator confirms
+the objective, weighted Check items, Apply evidence boundary and English-before-
+Kannada review ordering; it does not claim legacy source fidelity.
+
+ADR-0024 and the LPL-02 specification now define the typed lesson-practice
+attachment boundary. No migration, API route, runtime record or publication has
+yet been changed under that checkpoint.
+
+## All-levels four-session journey (APP-0061) — 14 August 2026
+
+### Scope reviewed
+
+- ADR-0025 / master plan 3.6 four-session contract;
+- operator lesson-practice attachment APIs;
+- learner `/me/levels` delivery and Practice UI path;
+- OpenAPI 0.30.0 and LevelSessionDeliveryTest evidence.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Option A accepted and ADR recorded | Pass | APP-0061; ADR-0025; D-0201 |
+| Four sessions data-driven for all levels | Pass | `config/level_sessions.php`; Levels 2–17 commissioning_pending |
+| Attachment requires reviews + active lesson_audio + approved rights | Pass | `LessonPracticeAttachmentService` |
+| Check answers withheld until submit; deterministic scoring | Pass | `LevelSessionDeliveryService`; LevelSessionDeliveryTest |
+| Cross-tenant isolation of availability | Pass | LevelSessionDeliveryTest other-org case |
+| OpenAPI/contracts updated | Pass | openapi 0.30.0; `pnpm run contracts:generate` |
+| Web path renders Introduction with Kannada guidance | Pass | LevelPathPanel vitest |
+
+### Known limitations
+
+- Exact live Direct Level 1 four-asset attachment is an operator action, not auto-performed here.
+- Levels 2–17 have no commissioned media/blueprints.
+- Curriculum publication and production/public release remain unauthorized.
+- Bound conversation start still depends on the existing conversation provider gate/fakes.
+- Full `make verify` / `make e2e` were not claimed for this stroke.
+
+## APP-0062 — Levels 2–17 teaching-audio Media Library ingest
+
+### Scope reviewed
+
+- Exact inventory SHA-256 private `lesson_audio` ingest under APP-0062 / D-0203;
+- ffprobe inspection + ClamAV scan path;
+- program-scoped Direct pilot rights confirmation (web/Android, India);
+- no credentials or media bytes committed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Inventory hashes ingested privately | Pass | 63 accepted + 4 skipped Level 1; DB 67/67 match inventory |
+| Malware/inspection drivers used | Pass | `MEDIA_INSPECTOR_DRIVER=ffprobe`, `MEDIA_SCANNER_DRIVER=clamav` |
+| Program rights confirmed | Pass | 63 APP-0062 rights rows; 67 assets with approved program rights |
+| No Git media binaries / no secrets in evidence | Pass | `/tmp` staging only; ingest-result JSON is hash/ops metadata |
+| Attachment/publication not claimed | Pass | STATUS next action remains attachment |
+
+### Known limitations
+
+- Levels 2–17 blueprints, content review and four-session attachment remain open.
+- Artisan command `media:ingest-app0062-lesson-audio` is a local operator aid bound to approval `APP-0062` only.
+- Operator password was supplied ephemerally for the ingest command and must not be committed; rotate if exposed beyond the intended operator channel.
+
+## APP-0061 — Level 1 private draft attachment execution
+
+### Scope reviewed
+
+- Private unpublished Level 1 `can` blueprint create + English/Kannada approve +
+  four-part APP-0047 audio attachment on Direct LPL pilot program.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Migrations applied | Pass | `lesson_practice_*` and `level_session_*` tables |
+| Blueprint + dual reviews | Pass | blueprint `01KZZY3RFR2DB04JY0GTFRXQZ1`; both reviews approved |
+| Four assets attached | Pass | introduction/practice/conversation/interaction media rows |
+| Learner Level 1 available | Pass | `LevelSessionDeliveryService::listLevels` → `available` |
+| Publication not claimed | Pass | readiness `publication_eligible: false` |
+
+### Known limitations
+
+- Independent production security/privacy review is still outstanding.
+- Live Azure conversation remains unauthorized locally; local uses
+  `CONVERSATION_PROVIDER_DRIVER=fake` only.
+
+## APP-0063 — Levels 2–17 private auto-commission
+
+### Scope reviewed
+
+- Private Direct auto-commission of Levels 2–17 blueprints, provisional English
+  and Kannada approvals, four-part audio attachment, `level_concepts` config.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| APO waiver recorded | Pass | APP-0063; DR-0034; D-0204 |
+| Levels 2–17 commissioned | Pass | 16 levels; evidence `levels-2-17-private-commission-result.json` |
+| Learner catalog | Pass | `listLevels` → 17 `available` |
+| Publication not claimed | Pass | `publication_eligible: false`; quality_debt listed in evidence |
+| Level 15 Practice reuse | Pass | documented; same asset as Introduction/Practice combined file |
+
+### Known limitations
+
+- Reviews are provisional auto-approvals, not specialist bilingual sign-off.
+- Template objectives/checks and Kannada summaries must be replaced before
+  curriculum publication.
+- Production/Play remain unauthorized.
+- Some metadata transcripts are APP-0063 placeholders.
+
+## Speak room hold-to-talk (D-0215) — 29 August 2026
+
+### Scope reviewed
+
+- Hold-to-talk Speak room, one Practice speaking surface, optional example
+  stages, ADR-0007 per-turn submit amendment.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Hold control is presentation-only in the design system | Pass | `RecordingControls` `captureMode="hold"`; host owns capture |
+| Release is the consented per-turn submit | Pass | D-0215; VoicePracticePanel auto-upload/accept; low-confidence candidate retained |
+| One speaking room | Pass | Practice tabs Levels \| Speak; SpeakRoom everyday / situation |
+| Blocking Warm-up/Observe gates removed | Pass | Conversation starts at Talk; Role-play auto-advances to Perform |
+| SuperNova trademarks not copied | Pass | Original Maya hold/example copy; catalogues `ui-*-2026-08-29.4` |
+| 1:1 not added as fifth nav item | Pass | DR-0037 B remains open; tuition request stays on Home |
+| Marks/mastery unchanged | Pass | Advisory L1 correction only |
+
+### Known limitations
+
+- Always-on listening, in-app video, and paid subscriptions remain out of scope.
+- Role-play stays `synthetic_unreviewed`. Kannada UI catalogue remains
+  `pending-independent-review`.
+- Production/Play remain unauthorized.
+
+## APP-0022 live Azure enablement on soft-launch stack — 14 August 2026
+
+### Scope reviewed
+
+- Switch active API from `fake` to `azure-openai-dev` under ₹500 APP-0022 spend
+  evidence; soft-launch environment; live Confidence Conversation smoke.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Preflight empty | Pass | `AzureOpenAiConversationConfiguration::preflightErrors()` → `[]` |
+| Provider binding | Pass | `AzureOpenAiConversationModelProvider` |
+| Live Friend turn kn-IN | Pass | HTTP 201; Kannada `explanation_l1` present |
+| Live clinic role-play start | Pass | HTTP 201; mode `roleplay` |
+| Cap | Pass | spend evidence `APP-0022` / `cap_inr=500` |
+
+### Known limitations
+
+- Ordinary conversation STT/TTS remain text-first (not fake, not live Azure Speech DI).
+- Production/Play remain unauthorized; this is soft-launch only.
+- Level 2–17 lesson copy remains provisional (APP-0063).
+
+## APP-0061 — Level 1 audio stream + bound free-speech (local)
+
+### Scope reviewed
+
+- Session-scoped lesson audio streaming and bound Confidence Conversation start
+  for Level path parts; local fake provider enablement.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Audio route streams MPEG | Pass | `GET .../sessions/{part}/audio` → 200 `audio/mpeg` for all Level 1 parts as `northstar` |
+| Browser canplay | Pass | Playwright: conversation audio `readyState=4`, duration ≈135s |
+| Bound conversation start | Pass | `POST .../conversation-sessions` → 201; UI handoff to Confidence Conversation |
+| Provider fail-closed mapping | Pass | `ConversationProviderException` → 503 on level conversation start |
+| OpenAPI + contracts | Pass | `pnpm run openapi:check` |
+| LevelSessionDeliveryTest | Pass | postgres phpunit filter, 3 tests |
+
+### Known limitations
+
+- Production must keep conversation provider disabled.
+- Levels 2–17 still commissioning_pending for learner delivery.
+- Rate-limit redis can make password sign-in look stuck after repeated failures;
+  flush local redis if needed during operator testing.

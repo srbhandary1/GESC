@@ -2,9 +2,9 @@
 
 **Recorded:** 10 August 2026
 
-**State:** DR-0024 private pilot authority and four exact asset-bound rights
-confirmations complete; DR-0025 accepted and commissioning implementation
-pending
+**State:** DR-0024 private pilot authority, four exact asset-bound rights
+confirmations, DR-0025 commissioning, human transcript reconciliation and
+candidate cleanup complete
 
 **Authority:** APP-0047 / APP-0048 / APP-0050 / APP-0051 / ADR-0016 /
 ADR-0018 / ADR-0019 / APP-0052 / ADR-0020
@@ -109,7 +109,7 @@ receipts are complete with no retry, dead-letter, unavailable or overdue
 backlog, and all four accepted-object digests were independently re-read and
 matched.
 
-## Current stop condition
+## Commissioning completion and current stop
 
 DR-0024 Option A established standalone private pilot program
 `01KZNK3BWD8A8NJ5A5JW0ZVZMT`, the exact least-privilege role and accepted
@@ -119,12 +119,21 @@ for each exact asset. Their IDs, in source order, are
 `01KZNKNFWGSRDBD57H18YCDPG8`, `01KZNKNFXKFRSVXRKPYWHDCF7C`,
 `01KZNKNFYDDC31CV2BR155DXVR` and `01KZNKNFZ7A5Z9JPSC2AV0QPZQ`.
 
-No provider, metadata, attachment, transcript, curriculum version,
-publication, enrollment or learner delivery was created. DR-0025 Option A is
-now accepted under APP-0052 / D-0153 / ADR-0020. LPL-01 stops before
-implementing and verifying its direct-MP3 Azure campaign, first-class provider
-provenance and human reconciliation contract, and before any provider request.
-Acceptance itself created no runtime or provider result.
+DR-0025 Option A was accepted under APP-0052 / D-0153 / ADR-0020 and its
+bounded direct-MP3 Azure campaign later completed with four successful
+attempts, zero failures/retries, 18,760,190 uploaded bytes, 1,172,513 billable
+milliseconds and ₹11.189394 estimated usage. Under D-0191 the authorized
+operator listened to every complete exact asset, inspected every returned
+segment and confirmed all four candidates into English metadata revisions.
+The scheduled retention worker completed all four encrypted-candidate
+deletions on the first attempt, with no retry/dead-letter backlog, and campaign
+`01KZP5129TNAQPE542XM15604C` became `completed` at 14 August 2026 05:35:20
+UTC.
+
+No attachment, curriculum version, academic/Kannada review, publication,
+enrollment or learner delivery was created by commissioning or reconciliation.
+LPL-01 now stops at the typed source snapshot, ordered blueprint and specialist
+review boundary rather than provider or transcript availability.
 
 Source copies remain restricted temporary non-production inputs until the
 approved transcription/commissioning sequence completes or is abandoned.

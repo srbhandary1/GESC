@@ -2844,6 +2844,759 @@ Approve DR-0027 Option A as written.
   independent security/privacy/tenancy/accessibility/language-review waivers
   remain unauthorized.
 
+<a id="app-0058"></a>
+
+## APP-0058 — DR-0029 accelerated governed Levels 1–17 rollout approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-12 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated development reviewers |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0029](DR-0029_LEVELS_1_17_LIVE_ACTIVATION_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `8f2363579a58a84d55032d6e3e4aec2b996d77503b8afa1aa9424a08baebdafb` |
+| Related decision | [D-0184](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0029 Option A as written.
+```
+
+### Accepted scope
+
+- Complete LPL-01's exact Level 1 transcript reconciliation and publishable
+  blueprint, then obtain the required exact-hash content reviews.
+- Proceed in the existing ordered LPL checkpoints: one verified Level 1
+  Learn → Talk → Check → Apply → Review slice, Levels 2–3, then the remaining
+  source-complete levels in reviewed waves.
+- Keep every incomplete level unavailable with an exact reason and never
+  fabricate missing media, transcripts, answers or learning evidence.
+- Permit qualified English/Kannada role consolidation only where ADR-0004
+  allows it and only when author/translator/reviewer separation still passes.
+- Enable typed AI, learner voice, immutable publication and enrollment pinning
+  only after each option's separately retained provider, consent, rights,
+  review, tenancy and physical-device gates pass.
+
+### Conditions and limitations
+
+- This approval makes only LPL-01 active. It does not accept its result or
+  authorize LPL-02–LPL-07 implementation opportunistically.
+- It is not a blanket review, rights, privacy, security, provider, content,
+  publication, enrollment, production or Google Play waiver.
+- Development-only synthetic scenarios and smoke publications cannot be
+  represented as reviewed live AI learning.
+- Stable-host activation remains separately incomplete and deferred to 13
+  August 2026.
+
+<a id="app-0059"></a>
+
+## APP-0059 — DR-0030 unified login and recovery approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-13 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Approved request | [DR-0030](DR-0030_UNIFIED_ROLE_BASED_LOGIN_AND_RECOVERY_REQUEST.md) Option A exactly as written |
+| Approved pre-resolution DR SHA-256 | `3a671fbf56fa482d1d950668ed0ef76744dbcfe90931b42e1d753667a8a51534` |
+| Resulting ADR | [ADR-0022](adr/0022-unified-role-based-login-and-recovery.md) |
+| Authorized specification | [AUTH-SIMPLE-01](AUTH-SIMPLE-01_SPEC.md) |
+| Related decision | [D-0186](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — one verified-contact setup/recovery path applies to every role and the exceptional two-actor/24-hour path is retired |
+
+### Exact human statement
+
+```text
+Approve DR-0030 Option A as written.
+```
+
+### Accepted scope
+
+- Retain one platform-global username/password sign-in for every learner,
+  trainer, reviewer and administrator; resolve organization roles and learner
+  enrollment only after authentication.
+- Use one enumeration-safe 256-bit, 15-minute, single-use verified-contact
+  setup/recovery path for every role, including reviewed credential-unready
+  migration exclusions.
+- Retire the active two-recovery-actor/24-hour privileged case APIs and
+  commissioning pages while preserving their rows as restricted historical
+  evidence.
+- Permit one freshly password-confirmed platform actor with exactly
+  `platform.account_recovery.manage` to replace a lost recovery contact after
+  external verification evidence, former-contact notification where possible,
+  global revocation and content-free audit.
+- Implement only the bounded AUTH-SIMPLE-01 schema, API/client, Web/Android
+  contract, tests, runbooks, privacy/threat and governance updates.
+
+### Conditions and limitations
+
+- No administrator may view a reset/setup token or choose/set another user's
+  username or password. No shared/default credential, phone-number sign-in,
+  Google/social sign-in or tenant role bypass is authorized.
+- A stolen administrator password or verified recovery contact can enable
+  account takeover; the approver accepts this documented one-factor risk.
+- Production delivery/notification still requires a reviewed adapter, provider
+  and subprocessor evidence, protected secrets, sender controls, replay/expiry/
+  throttling/redaction tests and independent security/privacy review.
+- This approval does not authorize production, public/Google Play release,
+  learner voice/AI activation, curriculum publication or LPL-02.
+
+<a id="app-0062"></a>
+
+## APP-0062 — DR-0033 Levels 2–17 teaching-audio processing approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; retained Rights Confirmer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related request | [DR-0033](DR-0033_LEVELS_2_17_TEACHING_AUDIO_PROCESSING_REQUEST.md) Option A |
+| Pre-resolution DR SHA-256 | `85bbf170ee5fbaf98b33bb93d5253bed83955db309ceef2eb92cdc508171667a` |
+| Selected inventory artifact | [levels-1-17-teaching-audio-hash-inventory.json](evidence/lpl-01/levels-1-17-teaching-audio-hash-inventory.json) |
+| Selected inventory SHA-256 | `00b27b12a19af09bdadb5e580e5dfca998a69ab2b3e634243dfe5e5c6d695d30` |
+| Related decision | [D-0203](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Approve DR-0033 Option A for the exact inventory hashes.
+```
+
+### Context and interpretation
+
+Immediately before this statement:
+
+1. authenticated read-only legacy inspection inventoried 67 unique teaching
+   MP3s across Levels 1–17 with exact SHA-256 and byte sizes;
+2. Level 1 hashes matched APP-0047 exactly and remain already authorized;
+3. Levels 2–17 bytes were staged only in ephemeral local `/tmp` storage; and
+4. DR-0033 recommended Option A: private non-production Media Library
+   ingestion of the exact inventory hashes as `lesson_audio`, with
+   program-scoped Direct pilot rights for web/Android in India.
+
+The approval authorizes processing of the exact inventory SHA-256 values. It
+does not invent hashes, authorize Assignment audio, mutate the live legacy
+site, commit media bytes to Git, or authorize production/public release.
+
+### Accepted scope
+
+- Private non-production ingestion of the exact inventory hashes through the
+  current quarantine, ffprobe inspection, ClamAV clean-scan and acceptance
+  lifecycle as `lesson_audio` (ADR-0016).
+- Skip re-ingestion of Level 1 hashes already accepted under APP-0047 when
+  the current Media Library already holds those exact objects.
+- Program-scoped rights for private Direct pilot learner delivery on web and
+  Android in India after ordinary rights confirmation; sharing and
+  production/public release remain prohibited.
+- Later attachment into ADR-0025 four-session blueprints remains a separate
+  operator command after English/Kannada gates for each level's content.
+
+### Conditions and limitations
+
+- One human exercised consolidated development roles. This is not independent
+  production security, privacy, legal or academic/Kannada review.
+- Transcription, blueprint attachment, curriculum publication and production
+  remain separately gated.
+- Existing tenant, permission, exact-hash, scan, retention and audit controls
+  remain mandatory.
+- Credentials and object URLs must not enter repository evidence.
+
+<a id="app-0061"></a>
+
+## APP-0061 — all-levels four-session journey and single-stroke implementation approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related request | [DR-0032](DR-0032_ALL_LEVELS_FOUR_SESSION_LEARNER_JOURNEY_REQUEST.md) Option A |
+| Pre-resolution DR SHA-256 | `ef26f0bfbabac0c23bebf55df4475957e764272af974b41566d292870465fc79` |
+| Resulting ADR | [ADR-0025](adr/0025-all-levels-four-session-learner-journey.md) |
+| Related decision | [D-0201](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — every level uses Introduction → Practice → Conversation → Interaction; master-plan version 3.6 |
+
+### Exact human statement
+
+```text
+Lets go with option A. Codex takes a lot of timme to complete it. Consider you have a blanket waiver and approval and complete it all in a saingle stroke.
+```
+
+### Context and interpretation
+
+Immediately before the statement, Codex/Cursor recorded DR-0032 recommending
+Option A: the universal four-session contract for every level, with Kannada
+Tutor explanation of governed Introduction audio, designed activities, and a
+free-speech conversation room. The human accepted Option A and authorized a
+single-stroke implementation under a blanket development waiver so the work
+is not split across many slow Codex checkpoints.
+
+Accepted interpretation of the blanket waiver for this approval only:
+
+1. Option A becomes product law (ADR-0025 / master plan 3.6).
+2. Implementation may complete LPL-02 typed attachment, private Direct-org
+   learner delivery of the attached Level 1 draft, data-driven Levels 1–17
+   shells, four-session learner UX, OpenAPI/contracts, tests and governance
+   closure in one continuous implementation stroke.
+3. The waiver does **not** invent Levels 2–17 media, skip English/Kannada
+   specialist rules for new content, award AI mastery, auto-ingest memory,
+   authorize production/public/Google Play release, or disable tenant,
+   permission, hashing, CSRF, throttling or audit controls.
+
+### Accepted scope
+
+- Resolve DR-0032 Option A via ADR-0025 and amend the master plan and lesson-
+  practice learner-experience naming.
+- Implement operator blueprint/review/attachment APIs and learner
+  `/me/levels` four-session delivery for private Direct pilot evidence.
+- Ship Levels 1–17 path UI with Level 1 as the first content instance and
+  later levels as `commissioning_pending` until their media/reviews exist.
+- Wire Introduction/Practice coaching and Conversation/Interaction free
+  speech to the existing conversation stack where providers are already
+  authorized or fake/deterministic.
+- Update OpenAPI, generated clients, localization, STATUS, DECISIONS and
+  QUALITY_REVIEW and run repository gates appropriate to the change.
+
+### Conditions and limitations
+
+- One human exercised multiple development review roles. This is not
+  independent production security, privacy or tenancy review.
+- Curriculum publication and production/public release remain separately
+  gated.
+- Levels 2–17 remain shells until commissioned media, blueprints and reviews
+  exist; the blanket does not fabricate those assets.
+- Live ordinary-learner STT/TTS spend remains subject to existing voice/
+  provider approvals; fake/deterministic paths may prove UX without new
+  provider spend.
+- This approval does not retire Confidence Conversation as a separate Friend
+  practice surface; level sessions are the curriculum path.
+
+
+<a id="app-0064"></a>
+
+## APP-0064 — Soft-launch Kannada + English guidance TTS
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0024](APPROVALS.md#app-0024); [APP-0022](APPROVALS.md#app-0022); [APP-0054](APPROVALS.md#app-0054) |
+| Related decision | [D-0205](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Authorize Kannada+English guidance TTS under soft-launch and enable it.
+I want at least 10 other comon roleplays.
+```
+
+### Context and interpretation
+
+APP-0024 authorized GuidanceTtsPolicy with fakes/text-first only and left live
+multi-locale Azure TTS unauthorized. Soft-launch Confidence Conversation already
+returns Kannada `explanation_l1` text under APP-0022. The Accountable Product
+Owner now authorizes **soft-launch ordinary-product Azure Speech TTS** for
+GuidanceTtsPolicy purposes only:
+
+1. English model lines (`model_en` / `en-IN-NeerjaNeural`)
+2. Kannada (and other allowlisted UI-locale) L1 guidance (`guidance_l1`)
+
+Accepted interpretation for this approval only:
+
+1. Soft-launch DI may bind a project-owned guidance TTS adapter that calls the
+   existing Central India Azure Speech resource under a **₹500 INR** hard ceiling
+   and APP-0064 spend evidence.
+2. PR-009 speech-benchmark allowlist and `APP_ENV=speech-benchmark` gate remain
+   unchanged; this path must not reuse the benchmark-only provider assertions.
+3. Text remains primary; TTS failure must fall back to text-first and must not
+   fail the conversation turn.
+4. Production / Play / ordinary learner STT remain unauthorized by this approval.
+5. The same instruction authorizes seeding **at least 10 additional common
+   synthetic Role-play scenarios** (clinic retained) for soft-launch practice;
+   they remain `development_only` / `synthetic_unreviewed`.
+
+### Accepted scope
+
+- Record APP-0064 evidence and enable soft-launch guidance TTS kill-switch + DI.
+- Expand Role-play catalog to clinic + ≥10 common scenarios with UI selection.
+- Update OpenAPI speech payload for optional model/guidance audio, STATUS,
+  DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Cap `cap_inr` ≤ 500; kill-switch default remains off in `.env.example`.
+- Credentials and spend evidence stay outside the repository.
+- Not production promote, not Google Play, not live STT DI.
+
+<a id="app-0069"></a>
+
+## APP-0069 — DR-0038 A/B/C: daily loop, Progress dashboard, Speak latency
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-30 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Structured decision-form selection in the active Cursor conversation, not free text |
+| Related request | [DR-0038](DR-0038_PHASE1_DAILY_LOOP_CLIENT_PLATFORM_AND_PROVIDER_REQUEST.md) |
+| Related prior approvals | [APP-0068](APPROVALS.md#app-0068) |
+| Related decision | [D-0219](DECISIONS.md) |
+| Related ADR | [ADR-0028](adr/0028-meaningful-speaking-streak-and-delayed-review.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | Yes — §7.2 Home, via ADR-0028 |
+
+### Exact human statement
+
+Selection recorded on the DR-0038 sequencing question:
+
+```text
+Record your APO acceptance of DR-0038 A/B/C as D-0219 first, then I emit the Step 1 payload (Recommended)
+```
+
+Selection recorded on the preceding assessment question:
+
+```text
+No, proceed on this basis
+```
+
+### Context and interpretation
+
+Immediately before the first statement, the Cursor agent had:
+
+1. delivered an assessment of the product-owner "Master Orchestration
+   Specification (Phase 1 – Revised)" of 30 August 2026;
+2. offered explicit disagreement options covering Flutter/iOS, attendance
+   tracking, 19-level naming and the teacher rename; and
+3. authored [DR-0038](DR-0038_PHASE1_DAILY_LOOP_CLIENT_PLATFORM_AND_PROVIDER_REQUEST.md)
+   separating that specification into seven independently decidable items.
+
+Both statements are structured selections from an agent-authored option list.
+They are durable and unambiguous for the options presented, but they are not
+free-text product-owner prose. A later free-text confirmation may supersede
+this record without changing the decisions accepted here.
+
+### Accepted scope
+
+- **DR-0038 A** — Daily Mission Home built on the existing `LearnerHomeService`,
+  with a *meaningful-speaking-day* streak and deterministic delayed-review
+  scheduling.
+- **DR-0038 B** — Progress becomes a distinct mastery and review surface and
+  stops rendering the Learn level path.
+- **DR-0038 C** — Speak hold-to-talk latency reduction with no new provider.
+
+### Confirmed by the "No, proceed on this basis" selection
+
+- **D** — the learner client stays React PWA plus Capacitor 8; Flutter and iOS
+  stay deferred under master plan §9.2.
+- **F** — levels stay generically modelled; Levels 2–17 keep their APP-0065 /
+  APP-0066 / APP-0067 authored content and do not revert to placeholders.
+- **G** — no attendance percentage in canonical learning records; Notice Board
+  stays deferred; the on-screen teacher remains Swathi (D-0218).
+
+### Conditions and limitations
+
+- **E is not accepted by this record.** The Sarvam driver flip stays governed
+  by D-0217 and needs keys plus a reviewed secret file. ElevenLabs stays
+  deferred pending a costed comparison against Azure `kn-IN-SapnaNeural`.
+- Streak and delayed-review scheduling are deterministic and must never be
+  written by AI output (master plan §0.3).
+- No production or Google Play authorization.
+- No curriculum publication for Levels 2–17; `curriculum_publication_gate`
+  is unchanged.
+- Kannada UI catalogue remains `pending-independent-review`.
+- The compute-profile orchestration protocol in the source specification is
+  **not** accepted; DR-0038 records it as out of scope.
+
+### Correction to DR-0038 as authored
+
+DR-0038 stated that accepting A and B amends master plan §7.1. On inspection
+that is wrong and is corrected here:
+
+- §7.1 is navigation and is **unchanged**; the five destinations stand.
+- §7.2 Home is the section amended by A, to add the streak.
+- §7.3 already requires Progress to show "Objectives, speaking activity, review
+  due, recurring errors and recent improvement". **B is a conformance fix, not
+  an amendment.**
+
+<a id="app-0068"></a>
+
+## APP-0068 — Soft-launch voice-first learner STT
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related request | [DR-0028](DR-0028_ORDINARY_LEARNER_SPEECH_ACTIVATION_REQUEST.md) |
+| Related prior approvals | [APP-0064](APPROVALS.md#app-0064); [APP-0067](APPROVALS.md#app-0067) |
+| Related decision | [D-0212](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Typed text is only on request. Everything else sould be voice based.
+```
+
+### Context and interpretation
+
+The Accountable Product Owner required Conversation and Role-play to be
+spoken by default. Typed input remains available only after the learner
+chooses Type instead.
+
+Accepted interpretation for this approval only:
+
+1. Invite-only Direct soft-launch may enable `VOICE_UPLOAD_ENABLED` and bind
+   a project-owned Azure recorded-speech adapter on the existing Central India
+   Speech resource used by APP-0064 guidance TTS.
+2. Consent, review, deletion and advisory-AI rules from ADR-0007 remain.
+3. Production, Play and partner tenants stay disabled.
+4. This is not a commissioned privacy-firm review and not DR-0028 Phase B
+   supervised smoke of two named learners.
+
+### Accepted scope
+
+- Voice-first Conversation/Role-play UI.
+- Soft-launch VoiceFeatureGate + Azure STT DI for Direct allowlist.
+- STATUS, DECISIONS, QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Spend shares the APP-0064 ₹500 Speech ceiling.
+- Credentials stay outside Git. Soft-launch env may set `VOICE_UPLOAD_ENABLED`
+  for Direct only; committed `.env.example` stays disabled.
+- Kannada UI catalogue is not independently approved.
+- Role-play remains `synthetic_unreviewed`.
+- DR-0028 Phase B supervised smoke of two named learners is not this approval.
+
+<a id="app-0067"></a>
+
+## APP-0067 — Named Kannada review of authored Levels 2–17
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as Kannada reviewer of the APP-0065 authored pack |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0066](APPROVALS.md#app-0066); [APP-0065](APPROVALS.md#app-0065) |
+| Related decision | [D-0211](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Level 2-17 Kannada approved.
+```
+
+### Context and interpretation
+
+The Accountable Product Owner completed named Kannada review of the
+APP-0065 authored Levels 2–17 `kannada_summary` pack after APP-0066 English
+review.
+
+Accepted interpretation:
+
+1. Kannada lesson summaries for Levels 2–17 are approved for private Direct
+   pilot drafts.
+2. This is not an independent Kannada UI-catalogue approval.
+3. Role-play remains `synthetic_unreviewed`.
+4. Curriculum publication, production and Play remain unauthorized.
+
+### Accepted scope
+
+- Update authored blueprint Kannada review metadata to APP-0067.
+- Create new Direct draft revisions (revision 4) reusing the same four audio
+  parts. Evidence:
+  `docs/evidence/lpl-01/levels-2-17-kannada-review-result.json`.
+- STATUS, DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Not a separately commissioned linguist firm; the reviewer is the same
+  product owner who authorized APP-0065 and APP-0066.
+- Not publication.
+- Kannada interface chrome remains `pending-independent-review`.
+
+<a id="app-0066"></a>
+
+## APP-0066 — Named English academic review of authored Levels 2–17
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as English academic reviewer of the APP-0065 authored pack |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0065](APPROVALS.md#app-0065) |
+| Related decision | [D-0209](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Levels 2–17 English approved
+```
+
+### Context and interpretation
+
+The Accountable Product Owner completed Step 1 of the remaining human reviews
+for the APP-0065 authored Levels 2–17 pack. The agent authored the English
+text; this statement is the named human English academic review of that pack.
+
+Accepted interpretation:
+
+1. English objectives, patterns, checks, Talk and Apply for Levels 2–17 are
+   approved for private Direct pilot drafts.
+2. Kannada summaries are **not** independently reviewed.
+3. Role-play remains `synthetic_unreviewed`.
+4. Curriculum publication, production and Play remain unauthorized.
+
+### Accepted scope
+
+- Update authored blueprint English review metadata to APP-0066.
+- Create new Direct draft revisions (revision 3) reusing the same four audio
+  parts.
+- STATUS, DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Kannada `independent_review` remains false.
+- Attachment still records a kannada decision row for the new hash; that row
+  is authored carry-forward, not independent Kannada approval.
+- Not a separately commissioned linguist firm; the reviewer is the same
+  product owner who authorized APP-0065.
+- Not publication.
+
+<a id="app-0065"></a>
+
+## APP-0065 — Authored Levels 2–17, Role-play scripts, 1:1 tuition request
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related request | [DR-0036](DR-0036_AUTHORED_LEVELS_ROLEPLAY_TUITION_REQUEST.md) |
+| Related prior approvals | [APP-0063](APPROVALS.md#app-0063); [APP-0064](APPROVALS.md#app-0064) |
+| Related decision | [D-0208](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Can we fix this now? In case it needs humans to fix it, i will do it now.
+Else you have a blanket approval to close thwese gaps - Role-play remains a
+synthetic prototype. 1:1 booking is still marketing copy. Levels 2–17 lesson
+text is still provisional.
+```
+
+### Context and interpretation
+
+The Accountable Product Owner authorized closing three disclosed quality debts
+in the current private/soft-launch product, and offered to perform remaining
+human review immediately.
+
+Accepted interpretation:
+
+1. Authored English + Kannada lesson text may replace APP-0063 templates for
+   Levels 2–17 private Direct drafts. Independent named bilingual review is
+   still required before publication.
+2. Role-play Observe/Rehearse/Perform may receive authored scripts while
+   remaining `synthetic_unreviewed`.
+3. 1:1 tuition may become an org-scoped request/waitlist (no payments,
+   calendar or trainer marketplace). Marketing copy must match that product.
+
+### Accepted scope
+
+- Authored Levels 2–17 blueprints and APP-0065 replace command.
+- Role-play pedagogical scripts for the 12 catalog scenarios.
+- Learner and operator tuition-request APIs, UI, OpenAPI 0.31.0, privacy
+  inventory v5.
+- STATUS, DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Not curriculum publication, not production/Play.
+- Not independent Kannada UI catalogue approval.
+- Not specialist Role-play curriculum approval.
+- Not billing, scheduling or direct trainer assignment.
+
+<a id="app-0063"></a>
+
+## APP-0063 — Levels 2–17 private auto-commission (provisional bilingual reviews)
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related request | [DR-0034](DR-0034_LEVELS_2_17_AUTO_COMMISSION_REQUEST.md) |
+| Related prior approvals | [APP-0061](APPROVALS.md#app-0061); [APP-0062](APPROVALS.md#app-0062) |
+| Related decision | [D-0204](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Approve all these automatically - Levels 2–17 blueprints + English/Kannada reviews + attach 4 parts each. I will fix it later as we catch bugs after live.
+```
+
+### Context and interpretation
+
+APP-0061 left Levels 2–17 as `commissioning_pending` shells and forbade
+skipping English/Kannada specialist review. APP-0062 ingested teaching audio
+hashes only. The Accountable Product Owner now authorizes **private Direct
+pilot auto-commission** of Levels 2–17 so learners can open all levels before
+independent bilingual review, accepting content-quality debt until later
+correction.
+
+Accepted interpretation for this approval only:
+
+1. Create provisional lesson-practice blueprints for inventory concepts on
+   Levels 2–17, auto-record English and Kannada reviews as `approved`, and
+   attach four `lesson_audio` parts per level (Level 15 Practice reuses the
+   combined Introduction/Practice asset).
+2. Provisional metadata stubs (operator label + placeholder transcript) may be
+   written where APP-0062 assets lack metadata heads, solely to satisfy
+   attachment predicates.
+3. Drafts remain private/unpublished. Curriculum publication, production and
+   Google Play remain unauthorized.
+4. Auto-approvals are **not** independent academic or Kannada specialist
+   sign-off; STATUS/QUALITY must record the provisional quality debt.
+
+### Accepted scope
+
+- Execute private Direct-org commissioning for Levels 2–17 under this approval.
+- Update `level_sessions.level_concepts`, evidence JSON, STATUS, DECISIONS and
+  QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- One human exercised consolidated development roles. This is not independent
+  production security, privacy, legal or bilingual review.
+- Publication and production/public release remain separately gated.
+- Live AI conversation providers remain subject to existing conversation
+  approvals; this approval does not enable Azure live spend or Play.
+
+<a id="app-0060"></a>
+
+## APP-0060 — one-login role-group operator authorization approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-08-14 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; consolidated Security, Privacy and Tenancy Reviewer |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Related request | [DR-0031](DR-0031_LPL01_RECONCILIATION_AUTHENTICATION_SIMPLIFICATION_REQUEST.md), resolved and broadened by the contextual instruction |
+| Pre-resolution DR SHA-256 | `da8f04370560bf7c8309a33c04b646e6ca0ef4951fcf3376ba34bdff893b739b` |
+| Resulting ADR | [ADR-0023](adr/0023-one-login-role-group-operator-authorization.md) |
+| Related decision | [D-0193](DECISIONS.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Evidence repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — routine operator work uses one signed-in session plus role/permission groups; password confirmation is narrowed to credential, recovery-contact and administrator-authority changes |
+
+### Exact human statement
+
+```text
+Yes and also the enterprise security needs to be removed and lets go by username and password and role based groups to manage the project.
+```
+
+### Context and interpretation
+
+Immediately before the statement, Codex proposed this exact scope:
+
+1. one username/password login per session and one organization/role choice;
+2. no repeated authentication for routine learner, trainer, administrator,
+   content, media, reconciliation or publishing work;
+3. a small Account settings surface for credential and device management;
+4. retained invisible password hashing, HTTPS Secure/HttpOnly cookies, CSRF,
+   throttling, tenant isolation, role enforcement and audit; and
+5. password re-entry only for credential, recovery-contact or administrator-
+   authority changes, with the completed temporary LPL page removed.
+
+The human first answered `Yes`, then added the exact statement above. The
+accepted interpretation removes the visible and repeated enterprise-style
+reauthentication ceremony; it does not authorize plaintext passwords,
+insecure transport, shared credentials, tenant bypass or removal of role and
+permission checks.
+
+### Accepted scope
+
+- Amend DR-0031's one-login reconciliation recommendation into the general
+  routine operator policy in ADR-0023 and master-plan version 3.5.
+- Remove `auth.password-confirmed` from routine operator routes while keeping
+  the exact account recovery and administrator-authority route boundary.
+- Use the existing organization roles and permission grants as the project-
+  management access model; add no parallel account hierarchy or schema.
+- Simplify the visible Account Security wording/surface and remove the
+  completed standalone LPL reconciliation aid.
+- Update route-policy, integration, browser, OpenAPI/client and governance
+  evidence and run the full repository gates.
+
+### Conditions and limitations
+
+- One human exercised multiple development review roles. This is not
+  independent production security, privacy or tenancy review.
+- The accepted risk is that a stolen active administrator session can perform
+  more authorized routine work until expiry or revocation.
+- Credential and recovery secrets remain server-verified and excluded from
+  logs, audit, analytics and browser persistence.
+- This approval does not authorize production/public deployment, curriculum
+  review/publication results, LPL-02, learner data import or a provider call.
+
 <a id="app-0052"></a>
 
 ## APP-0052 — LPL-01 governed transcription commissioning approval

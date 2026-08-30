@@ -4,7 +4,8 @@
 D-0130; ADMIN-SHELL-01 through ADMIN-CONTENT-01 have realized only their
 bounded rows; ADMIN-MEDIA-01 is at APP-0044/D-0138/DR-0019 gate
 
-**Recorded:** 9 August 2026
+**Recorded:** 13 August 2026; authentication rows amended by ADR-0021 and
+ADR-0022
 
 **Next ordered checkpoint:** ADMIN-MEDIA-01; DR-0019 must resolve before its
 feature schema/runtime work and no later row may begin opportunistically
@@ -23,7 +24,9 @@ comes from the canonical master plan, [ADR-0001](adr/0001-approval-authority-and
 [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md),
 [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md),
 [ADR-0013](adr/0013-lesson-video-learner-delivery.md) and
-[ADR-0014](adr/0014-secure-reference-admin-functional-parity.md).
+[ADR-0014](adr/0014-secure-reference-admin-functional-parity.md),
+[ADR-0021](adr/0021-username-password-only-authentication.md) and
+[ADR-0022](adr/0022-unified-role-based-login-and-recovery.md).
 
 “Frozen” means every later ADMIN checkpoint must select its behavior from
 these rows. A checkpoint may narrow a row. Expanding ownership, authority,
@@ -45,8 +48,10 @@ until the named retained decision is recorded.
 1. Every operator route is first-party, web-session-only and resolves one
    active membership-derived `OrganizationContext`. Passport bearers remain
    denied.
-2. Every operator mutation requires a fresh TOTP assertion. Recovery-code
-   assertions remain limited to the approved factor-replacement scope.
+2. Routine operator mutations use the signed-in Web session plus current role,
+   permission and resource checks without password re-entry. Credential,
+   recovery-contact and administrator-authority changes retain current-
+   password confirmation under ADR-0023.
 3. Tenant equality and permission authorization are separate mandatory
    checks. A guessed identifier from another tenant is indistinguishable from
    a missing resource.
@@ -114,14 +119,16 @@ allowlist at this gate.
 | `foundation.tenant.bootstrap` | Test-only foundation membership fixture | None |
 | `authentication.session.lifecycle` | Internal global authentication-session expiry/revocation audit | None; not a tenant-admin bypass |
 | `authentication.mobile_credential.lifecycle` | Internal mobile-family rotation/revocation audit | None; not a tenant-admin bypass |
-| `authentication.privileged_mfa.lifecycle` | Internal factor/challenge/recovery audit | Self-service MFA lifecycle only |
-| `content.emergency-suspend` | Named, targeted platform legal/rights/safety/security intervention | Separate audited platform operation with target organization and fresh MFA; no edit/publish authority |
+| `authentication.privileged_mfa.lifecycle` | Restricted historical factor/challenge/recovery audit | No new runtime authority after password-only cutover |
+| `platform.account_recovery.manage` | Exact global credential-setup/lost-contact support | Configured platform actor only; fresh current-password confirmation, bounded external evidence, global revocation and append-only audit; no organization role grant |
+| `content.emergency-suspend` | Named, targeted platform legal/rights/safety/security intervention | Separate audited platform operation with target organization and fresh current-password confirmation; no edit/publish authority |
 
 No ADMIN role or permission grants a platform capability. Platform-wide
-configuration, identity recovery, tenant impersonation, bulk cross-tenant
-reporting and public-editorial override have no capability or route. Adding one
-requires a separate accepted security/privacy/tenancy decision and a named
-reason/audit contract.
+configuration, tenant impersonation, bulk cross-tenant reporting and public-
+editorial override have no capability or route. Global identity support is
+limited to the exact account-recovery capability above; expanding it requires
+a separate accepted security/privacy/tenancy decision and a named reason/audit
+contract.
 
 ## Permission matrix
 
@@ -218,11 +225,12 @@ public web. Reserving a prefix does not register a route.
 | Profile | Minimum contract |
 |---|---|
 | `O-READ` | `GET/HEAD`; `auth.first-party` → `auth.web-only` → `organization.context`; exact read permission; bounded cursor/filter allowlist; private `no-store`; existence-hidden denial |
-| `O-COMMAND` | `POST` command subresource, or `PATCH` only for an explicitly mutable draft/typed setting; all `O-READ` guards plus `auth.mfa`; `Idempotency-Key`; expected version/fingerprint; transaction; safe audit; outbox when needed |
+| `O-COMMAND` | `POST` command subresource, or `PATCH` only for an explicitly mutable draft/typed setting; all `O-READ` guards; signed-in session plus exact command-time role/permission check; `Idempotency-Key`; expected version/fingerprint; transaction; safe audit; outbox when needed |
+| `O-AUTHORITY` | Administrator-authority-changing `O-COMMAND` only; additionally requires `auth.password-confirmed`. Current routes are staff invitation issue/revocation, role-group create/update/retire, staff role assignment/revocation and staff membership activation/deactivation. |
 | `O-BULK` | Separate `O-READ` preview followed by one `O-COMMAND` with immutable target fingerprint, bounded item count and per-item safe result; no guessed “all” scope |
 | `O-EXPORT` | `O-COMMAND` job request plus `O-READ` status/download; source read + `reports.export` or domain export permission; allowlisted fields; encrypted bounded artifact; purge policy |
 | `PUBLIC-READ` | `GET/HEAD`; active immutable editorial publication only; no tenant/private joins; rights/accessibility checks; safe cache validators and retirement invalidation |
-| `PLATFORM-COMMAND` | No generic HTTP profile. Requires a separately named `PlatformCapability`, target scope, reason, fresh MFA and platform audit before context |
+| `PLATFORM-COMMAND` | No generic HTTP profile. Requires a separately named `PlatformCapability`, target scope, reason, fresh current-password confirmation and platform audit before context |
 | `BLOCKED` | No route, controller, schema, seed, fake-success response or feature flag until the retained decision is accepted |
 
 Every operator lifecycle change uses an explicit command subresource. Generic
@@ -253,9 +261,10 @@ public path or weakening its profile requires a matrix update first.
 
 ## Existing operator route conformance baseline
 
-The repository currently registers 15 operator operations across 14 OpenAPI
-paths. Every row already carries the common `O-READ` web/tenant middleware;
-the mutation rows additionally carry fresh MFA and header-only idempotency.
+The baseline table below records the original 15 operator operations across 14
+OpenAPI paths. Every row carries the common `O-READ` web/tenant middleware;
+routine mutation rows use role authorization and header-only idempotency
+without repeated password confirmation under ADR-0023.
 
 | Method and path | Atomic authority | Profile |
 |---|---|---|
@@ -276,8 +285,10 @@ the mutation rows additionally carry fresh MFA and header-only idempotency.
 | `GET /operator/privacy/erasures/{erasure_request_id}` | `privacy.erasure.request`, owning organization and request | `O-READ` |
 
 `AdminGovernanceRoutePolicyTest` fails when an operator route loses first-party
-web authentication, membership-derived organization context, fresh MFA on a
-mutation or the explicit lifecycle-command rule.
+web authentication, membership-derived organization context or the explicit
+lifecycle-command rule. It also fixes the exact nine `O-AUTHORITY` route names:
+no routine mutation may acquire repeated password confirmation and no listed
+administrator-authority change may lose it.
 
 ## Retained decision gates
 

@@ -22,13 +22,15 @@ Android sign-in, while the OAuth authorize/token, S256 PKCE, state, redirect,
 installation and rotating refresh-family contracts remain unchanged.
 
 The Android transport is shared by learner, conversation, operator and SSE
-clients. Private model audio and lesson video also pass through it before the UI
-receives a blob URL. OAuth authorization and token exchange remain separate
-unauthenticated protocol endpoints.
+clients. Private model audio, level-session lesson audio and lesson video also
+pass through it before the UI receives a blob URL. OAuth authorization and token
+exchange remain separate unauthenticated protocol endpoints.
 
 ## Request and refresh rules
 
-1. Resolve the request against the configured API base.
+1. Resolve the request against the configured API base. Capacitor WebView
+   `https://localhost` / `http://127.0.0.1` URLs whose path stays inside `/api/v1`
+   are rewritten to that baked origin; every other host stays rejected.
 2. Reject any origin outside the configured API origin or path outside the
    `/api/v1` boundary before a bearer can be attached.
 3. If memory has no access token but native secure storage has a refresh token,
@@ -37,7 +39,11 @@ unauthenticated protocol endpoints.
 4. Replace any caller-supplied `Authorization` header with the memory-only
    bearer and force `credentials: omit`.
 5. Send the request. On a 401, refresh at most once and replay an exact clone of
-   the request body, method and non-authorization headers.
+   the request body, method and non-authorization headers. Voice uploads keep
+   FormData `File` parts and call native `fetch(url, { body: formData })`.
+   Capacitor drops unnamed `Blob` parts, and a pre-built `Request` turns FormData
+   into a stream that it UTF-8-decodes. Do not send a hand-built multipart
+   ArrayBuffer.
 6. Concurrent 401 responses share refresh state. A second 401 clears native
    authentication and notifies the application shell once.
 
@@ -77,11 +83,13 @@ before resolving calls, and retains only the installation ULID on logout.
 ## Private media boundary
 
 Android cannot attach a bearer from a raw DOM `<audio src>` or `<video src>`.
-The learner client therefore downloads private model audio and lesson video
-through the authenticated transport, creates a blob URL for the media element,
-and revokes it on source change or unmount. The Capacitor response workaround
-strips a false `Content-Length: 0` only for JSON responses; binary media is not
-decoded or rewritten.
+The learner client therefore downloads private model audio, level-session lesson
+audio and lesson video through the authenticated transport, creates a blob URL
+for the media element, and revokes it on source change or unmount. A relative
+`/api/v1/me/levels/{n}/sessions/{part}/audio` path on a native `<audio>` element
+resolves to the Capacitor WebView origin and fails closed (play stays disabled).
+The Capacitor response workaround strips a false `Content-Length: 0` only for
+JSON responses; binary media is not decoded or rewritten.
 
 Whole-body blob buffering is the current bounded implementation. HTTP range
 delivery and large-video memory behavior remain VIDEO-01 and must be completed

@@ -112,19 +112,20 @@ The level page is a calm visual path rather than a room grid. It contains:
   met; and
 - one next-best action, not several competing primary buttons.
 
-Each lesson card shows five stages:
+Each level shows four learner sessions (ADR-0025):
 
-| Stage | Learner promise | Authority |
+| Session | Learner promise | Authority |
 |---|---|---|
-| Learn | Hear the lesson, read the transcript and understand the idea | Published content and governed media |
-| Talk | Use the idea in a 4–8 turn AI Skill Chat | Advisory AI only |
-| Check | Answer 3–7 authored questions with rationale after submission | Deterministic scoring |
-| Apply | Use the skill in a new speaking situation | Evidence captured; AI feedback advisory |
-| Review | Retry the useful pattern when due | Deterministic schedule |
+| Introduction | Hear the governed audio, receive Kannada Tutor explanation and complete short activities | Published/attached content and governed media; AI advisory |
+| Practice | Rehearse with Practice audio and authored activities; answer Check items | Deterministic Check scoring; AI coaching advisory |
+| Conversation | Free-speech Skill Chat on level topics (not a fixed script) | Advisory AI only |
+| Interaction | Freer Apply speaking / light role-play | Evidence captured; AI feedback advisory |
+
+Delayed **Review** remains a deterministic return path, not a fifth first-run room. These sessions map onto Learn → Talk → Check → Apply → Review without changing scoring authority.
 
 AI unavailability never makes a downloaded deterministic lesson unusable or
-blocks progression. The Talk stage falls back to an authored guided-dialogue
-path, and the Check stage remains available offline.
+blocks progression. Conversation/Interaction fall back honestly when AI is
+unavailable, and the Check stage remains available offline.
 
 ### 2.2 Skill Chat
 
@@ -752,7 +753,7 @@ LPL-07; later evolution checkpoints cannot be pulled forward opportunistically.
 | Checkpoint | Outcome | Current state |
 |---|---|---|
 | **LPL-00** | Close prerequisite gates and freeze exact policy/specification | complete — APP-0046 / D-0140 / ADR-0015 |
-| **LPL-01** | Inventory every exact lesson/media/objective and draft Level 1 blueprint | active — DR-0025 accepted; commissioning implementation, transcript reconciliation and English/Kannada review pending |
+| **LPL-01** | Inventory every exact lesson/media/objective and draft Level 1 blueprint | active under APP-0058 / D-0184 — commissioning implementation is verified; live transcription dispatch, human reconciliation and English/Kannada blueprint review remain pending |
 | **LPL-02** | Deliver one Level 1 `can` vertical slice end to end | pending |
 | **LPL-03** | Add governed operator authoring/review/publication for practice loops | pending |
 | **LPL-04** | Deliver a complete four-lesson level journey and level checkpoint | pending |

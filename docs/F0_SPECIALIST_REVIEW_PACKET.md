@@ -19,7 +19,7 @@ Each row requires an independent human specialist before production claims.
 | Privacy / DPDP | Independent privacy reviewer / qualified counsel | ADR-0007, voice consent/retention/deletion, privacy export/erasure (APP-0036), no operator audio/transcript access | Not claimed |
 | Tenancy | Independent tenancy reviewer | Organization scoping, cross-tenant 404 tests, curriculum share grants, operator privacy/support isolation | Not claimed |
 | Accessibility | Independent a11y reviewer | Learner shell, operator console, localization fallback policy, keyboard/focus paths | Not claimed |
-| Language / content | Independent language/content reviewers | kn-IN UI packs (pending independent review), synthetic pathway/Role-play limitation (D-0116), L1 explanation drafts | Not claimed |
+| Language / content | Independent language/content reviewers | kn-IN UI packs (pending independent review), synthetic pathway/Role-play limitation (D-0116), L1 explanation drafts; execute [the exact review runbook](L1_INDEPENDENT_REVIEW_RUNBOOK.md) | Mechanism ready; review not claimed |
 | Legal | Qualified counsel | Consent notices, retention/deletion, store listing claims (Play still unauthorized) | Not claimed |
 
 ## Suggested review questions

@@ -2,7 +2,7 @@
 
 **Checkpoint:** PRIV-DSR-01
 
-**Inventory version:** `learner-privacy-v3`
+**Inventory version:** `learner-privacy-v5`
 
 **Scope:** one learner membership in one organization
 
@@ -51,8 +51,10 @@ authorization boundary; it does not make the record public or mutable.
 | `password_credentials` | Global `user_id` | Count only; password hash and hashing metadata excluded | Retain as global authentication authority; no organization-scoped operator can export, erase or reset it |
 | `password_recovery_challenges` | Global `user_id` when eligible | Count only; lookup/token digests and delivery metadata excluded | Retain through short security expiry/cleanup; successful organization erasure revokes sessions but does not create a recovery bypass |
 | `password_cutover_exclusions` | Exact excluded global `user_id`, global cutover marker and configured recovery owner | Count only; manifest digest and owner relationship remain restricted platform evidence | Retain append-only cutover and recovery accountability; it cannot be changed through tenant administration or learner erasure |
-| `privileged_password_recovery_cases` | Target global `user_id` | Safe case reason/status/version/times; external evidence reference/digest excluded | Retain privileged recovery accountability outside tenant administration |
-| `privileged_password_recovery_approvals` | Recovery-case chain | Count only; actor and evidence digests remain restricted platform evidence | Retain append-only two-operator approval accountability |
+| `privileged_password_recovery_cases` | Target global `user_id` | Safe historical reason/status/version/times; external evidence reference/digest excluded | Retain superseded/completed historical accountability outside tenant administration; no active route advances it |
+| `privileged_password_recovery_approvals` | Historical recovery-case chain | Count only; actor and evidence digests remain restricted platform evidence | Retain historical append-only two-operator approval accountability |
+| `account_recovery_management_events` | Target global `user_id` | Safe action/reason/time; actor, old/new identity links and evidence digest excluded | Retain append-only account setup/contact-replacement accountability outside tenant administration |
+| `account_recovery_notification_events` | Account-recovery management-event chain | Safe notification outcome/time; former identity link excluded | Retain append-only former-contact notification accountability |
 | `password_security_events` | Global `user_id` | Content-free event type/outcome/time; request digest excluded | Retain security accountability evidence |
 | `otp_challenges` | Identity destination digest | Count only; destination/code digests excluded | Retain only through existing security expiry/cleanup policy |
 | `oauth_auth_codes`, `oauth_access_tokens`, `oauth_refresh_tokens` | Global `user_id` or access-token chain | Count only; token IDs/scopes excluded | Revoke globally and retain security evidence until normal cleanup |
@@ -75,6 +77,7 @@ authorization boundary; it does not make the record public or mutable.
 | `correction_suggestions` | `learner_membership_id` | Error category, retry and safety state; correction/explanation digests excluded | Retain derived feedback evidence linked to immutable turns |
 | `learner_error_patterns` | `learner_membership_id` | Aggregate category/count/times | Delete reconstructable personalization projection |
 | `learner_memory_facts` | `learner_membership_id` | Learner-visible fact text and lifecycle fields | Replace all fact text with `[privacy-erased]`, mark active facts deleted and write one digest-only deletion event |
+| `tuition_requests` | `membership_id` | Preferred window, topic, notes and status for 1:1 waitlist requests | Redact `preferred_window`/`topic` to `[privacy-erased]`, clear notes, retain lifecycle/status |
 | `memory_events` | `learner_membership_id` | Event ID/type/time; before/after digests excluded | Retain append-only digest lifecycle evidence |
 | `conversation_session_stage_events`, `roleplay_feedback_evidence` | `learner_membership_id` | Safe stage/objective state; evidence digest excluded | Retain immutable roleplay evidence |
 | `voice_consent_events` | `learner_membership_id` | Purpose, policy/notice revision, locale, state and time; notice digest/interaction key excluded | Retain grant/withdrawal accountability for the ADR-0007 window |

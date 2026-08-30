@@ -31,6 +31,17 @@ This approval does not accept PR-008, authorize PR-009 implementation, select
 a production provider, approve production, or permit audio/model data to train
 a provider.
 
+## Amendment D-0215 (29 August 2026)
+
+For consented Talk and Role-play Perform turns, pressing and holding the speak
+control and then releasing is the learner-initiated submit. Session-level
+consent for `voice_upload_and_transcription` and
+`conversation_provider_processing` is unchanged and still required before the
+hold control is offered. Local playback and retry remain available after a
+failed, low-confidence, or discarded turn, and Type instead remains. This does
+not authorize always-on capture, silent upload, or using speech scores as
+marks.
+
 ## Context
 
 PR-009 is the first checkpoint that may accept learner audio on the server,
@@ -148,8 +159,15 @@ checkpoint. It cannot be bundled with access to core learning.
 ### Per-turn upload authorization
 
 Active standing consent does not silently upload a recording. Each upload
-requires a learner-initiated submit action after local playback/retry controls
-and a concise reminder of:
+requires a learner-initiated submit action. After D-0215, that submit is:
+
+- **Hold-to-talk (Talk / Perform):** releasing the hold control after a
+  consented session, with a concise reminder in the speaking room that letting
+  go sends the turn; or
+- **Tap capture (level-path local recording and failed-turn retry):** a
+  separate upload or continue action after local playback/retry controls.
+
+The reminder still covers:
 
 - what will be uploaded;
 - which processing purpose applies;

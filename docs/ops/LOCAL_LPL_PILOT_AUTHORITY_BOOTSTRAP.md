@@ -13,14 +13,15 @@ production or authority-recovery mechanism.
 The command creates no curriculum version, publication, enrollment, learner
 entitlement, media rights revision, transcript, provider job or content. It
 never accepts the appointment. Those later actions must use ordinary
-first-party web authentication, selected membership, fresh TOTP and the
-existing HTTP command paths.
+first-party web authentication, selected membership, fresh current-password
+confirmation and the existing HTTP command paths.
 
 ## Preconditions
 
 Before execution, verify all of the following:
 
-1. the runtime environment is `local` and the OTP adapter is `local`;
+1. the runtime environment is `local` and the completed global password-only
+   cutover remains current;
 2. APP-0051, APP-0047 and APP-0004 remain current and unrevoked;
 3. the exact Direct organization, user and membership identifiers in DR-0024
    are active and the membership retains its system administrator assignment;
@@ -40,7 +41,6 @@ environment file:
 
 ```text
 APP_ENV=local \
-AUTH_OTP_DRIVER=local \
 CONTENT_GOVERNANCE_APP_0004_ACTOR_USER_ID=01KZGE9QRTCQE3PQ3RN31AXQSE \
 LPL01_PILOT_AUTHORITY_BOOTSTRAP_ENABLED=true \
 php apps/api/artisan lpl:bootstrap-local-pilot-authority \
@@ -63,9 +63,9 @@ do not repair it with SQL or a broader grant.
 
 1. Confirm that `LPL01_PILOT_AUTHORITY_BOOTSTRAP_ENABLED` is absent from
    persistent environment files or explicitly false.
-2. Sign in through ordinary OTP as the exact actor and select membership
+2. Sign in through the shared username/password form as the exact actor and select membership
    `01KZGE9QRTCQE3PQ3RN31AXQSF`.
-3. Establish a fresh TOTP assertion through the normal MFA challenge.
+3. Confirm the same current password on that Web session within five minutes.
 4. Read and accept the exact pending appointment through the existing
    appointee HTTP routes with its current state fingerprint and a unique
    `Idempotency-Key`.

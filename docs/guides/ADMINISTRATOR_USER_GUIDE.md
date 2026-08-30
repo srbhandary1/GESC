@@ -1,7 +1,7 @@
 # Global Spoken English administrator and operator user guide
 
 **Document status:** Repository baseline guide, pre-production
-**Prepared:** 10 August 2026
+**Prepared:** 13 August 2026
 **Audience:** Organization administrators, trainers, content authors, appointed
 reviewers, rights confirmers, auditors, support operators and privacy operators
 **Production/public release:** Not authorized
@@ -9,8 +9,9 @@ reviewers, rights confirmers, auditors, support operators and privacy operators
 This guide explains the current organization-scoped operator console and its
 governed workflows. It is an operating guide, not a grant of authority. The
 server-generated panel manifest, atomic permissions, active organization
-membership, fresh MFA and any required human appointment decide what a signed-
-in operator may see or do.
+membership, role/permission groups and any required human appointment decide
+what a signed-in operator may see or do. Current-password confirmation is
+limited to credential, recovery-contact and administrator-authority changes.
 
 Use this guide with the current [status ledger](../STATUS.md), the
 [governance matrix](../ADMIN_GOVERNANCE_MATRIX.md), and the relevant operating
@@ -19,7 +20,7 @@ independent review and production release gates.
 
 ## Quick navigation
 
-- [Access and privileged security](#3-access-prerequisites)
+- [Access and account settings](#3-access-prerequisites)
 - [Understand the console](#5-understand-the-console)
 - [People administration](#7-people-administration)
 - [Learner administration](#8-learner-administration)
@@ -51,8 +52,10 @@ Five rules govern every operation:
    or replace the owning organization.
 2. **Permissions are atomic.** Role names are setup conveniences; server code
    checks exact permission keys.
-3. **Sensitive mutations need fresh TOTP.** A normal sign-in or recovery code
-   alone cannot authorize an administrative mutation.
+3. **One sign-in authorizes routine work through role groups.** Routine
+   commands do not ask for the password again. Credential, recovery-contact
+   and administrator-authority changes retain a five-minute current-password
+   confirmation.
 4. **Published content and submitted evidence are immutable.** Correction uses
    a new revision, successor, rollback, withdrawal or append-only event.
 5. **Human authority stays human.** AI cannot approve content, rights, marks,
@@ -70,8 +73,9 @@ An operator needs:
   Passport bearer credentials;
 - an active staff membership in the current organization;
 - one or more exact permissions for the relevant panel and action;
-- an enrolled authenticator-app TOTP factor;
-- a fresh TOTP assertion for mutable work; and
+- a platform-global username/password credential;
+- a current-password confirmation no older than five minutes only when
+  changing credentials, recovery contacts or administrator authority; and
 - when reviewing English, Kannada or rights, a current accepted appointment
   whose scope covers the exact program/content/media.
 
@@ -79,18 +83,22 @@ The server sends only the navigation and resource panels authorized for the
 current membership. A missing panel usually means the required read permission
 is absent; it is not a client-side feature flag to bypass.
 
-## 4. Sign in and secure the privileged account
+## 4. Sign in and manage the account
 
 ### 4.1 Accept a staff invitation
 
-Staff invitations are code-only and currently support the bounded Trainer and
-Organization administrator onboarding paths. The issuer selects an expiry of
-24, 72 or 168 hours.
+Existing credential-ready staff use the same username/password sign-in as
+learners. A new staff invitation or appointment may authorize a one-time setup
+link only after that invitation type has a reviewed password-setup integration.
+The current AUTH-SIMPLE-01 slice implements direct learner invitation setup and
+reviewed migration-exclusion setup; it does not restore OTP for unsupported
+staff onboarding.
 
-1. Receive the code through an approved secure channel.
-2. Open the normal web sign-in flow and verify the registered mobile number by
-   OTP.
-3. Enter the exact invitation code during verification.
+1. Receive the approved invitation/setup instruction through its reviewed
+   channel.
+2. Open the one-time setup link and choose your own globally unique username
+   and password.
+3. Sign in through the normal shared sign-in page.
 4. Confirm that the expected organization and staff membership are active.
 
 The plaintext invitation secret is shown only at issue time. It cannot be
@@ -98,40 +106,28 @@ recovered later or revealed by replaying the issuance request. If lost, revoke
 it and issue a new invitation; do not copy it into an audit note, ticket or
 ordinary email.
 
-### 4.2 Enroll TOTP
+### 4.2 Account settings and administrator-access changes
 
-Open **Account Security** when prompted or before performing administrative
-work.
-
-1. Start authenticator-factor setup.
-2. Scan or manually enter the one-time provisioning URI in a trusted
-   authenticator app.
-3. Enter the current six-digit TOTP to confirm enrollment.
-4. Save the ten show-once recovery codes in a secure offline location.
-5. Confirm that the setup screen no longer exposes the provisioning secret.
-
-Each recovery code is single-use. Recovery codes authorize the approved factor
-replacement flow only; they do not make an ordinary admin mutation “fresh.”
-
-### 4.3 Refresh the MFA window
-
-Before a mutable operation, the console asks for the current six-digit TOTP.
-A successful assertion opens a 15-minute freshness window for the same
-privileged web session. Re-authenticate when the window expires.
+Routine project work uses the signed-in session and does not require another
+password check. Open **Account settings** only to change the username/password,
+sign out another device or, when specifically requested, confirm an
+administrator-access change. That confirmation lasts five minutes for the
+current Web session and credential version.
 
 Do not leave a freshly asserted administrator session unattended. Sign out or
 lock the device before stepping away.
 
-### 4.4 Replace or revoke a factor
+### 4.3 Recover a password or lost contact
 
-Use the reviewed factor-recovery workflow. Replacing/revoking the factor or
-regenerating recovery codes revokes active web sessions and Android credential
-families as required by policy. If no valid recovery route remains, use the
-reviewed support process; an organization administrator cannot inspect or reset
-global identity credentials directly.
+Every role uses the same verified-contact, 15-minute, single-use password
+recovery link. Successful recovery revokes all Web sessions and Android token
+families. If the verified contact is no longer usable, only an explicitly
+configured, freshly password-confirmed platform account-recovery manager may
+replace it after external identity verification. Organization roles cannot
+inspect or reset a global credential.
 
-See the [privileged MFA runbook](../PRIVILEGED_MFA_RUNBOOK.md) for incident and
-recovery detail.
+See the [password authentication runbook](../ops/PASSWORD_AUTHENTICATION_RUNBOOK.md)
+for setup, recovery and incident detail.
 
 ## 5. Understand the console
 
@@ -145,7 +141,7 @@ The current console can expose the following top-level destinations:
 | **Learning** | Governed Content Studio and Media Library resources |
 | **Operations** | Permission-bounded support diagnostics |
 | **Safety** | Safe audit-event list and detail |
-| **Account Security** | TOTP, recovery-code and factor lifecycle |
+| **Account settings** | Optional credential and signed-in-device management; administrator-access confirmation when specifically required |
 
 The navigation is derived from the server manifest. Resources load
 independently: one failed panel should display its own retry state while other
@@ -197,7 +193,7 @@ To create a branch:
 1. Open **Branches**.
 2. Select the create action.
 3. Enter the allowlisted branch fields.
-4. Review the organization context and submit with fresh MFA.
+4. Review the organization context and submit.
 5. Confirm the new branch appears in the refreshed list.
 
 To rename a branch, use the provided update action. To stop new use, archive
@@ -211,7 +207,7 @@ A cohort groups learners for administration and trainer derivation.
 
 1. Open **Cohorts** and create a cohort with its allowed descriptor.
 2. Optionally select an active branch.
-3. Save with fresh MFA.
+3. Save.
 4. Update its allowed fields as needed.
 5. Archive it when it should no longer receive new operational use.
 
@@ -226,7 +222,7 @@ Roles bundle exact permissions for setup and navigation.
 1. Open the role-management resource.
 2. Create a role with a clear organization-local name.
 3. Select only the permissions needed for the duty.
-4. Save with fresh MFA.
+4. Save.
 5. Assign it to the intended active staff membership.
 
 An operator can delegate only permissions within the operator's own current
@@ -241,7 +237,7 @@ management authority.
 
 1. Open **Invitations**.
 2. Choose the supported staff role path and expiry: 24, 72 or 168 hours.
-3. Submit with fresh MFA.
+3. Submit with fresh current-password confirmation.
 4. Copy the plaintext code from the one-time display.
 5. Send it through a secure channel to the intended person.
 6. Close the one-time display after transfer.
@@ -259,12 +255,15 @@ The staff membership panel supports bounded lifecycle and role operations:
 - reactivate a deactivated staff membership; and
 - inspect safe status needed for administration.
 
+Because these actions can change administrator authority, confirm the current
+password once in **Account settings** when the console requests it.
+
 Deactivation removes active roles, trainer links, current authority
 appointments and selected current credentials according to policy.
 Reactivation does not restore those relationships automatically. Reassign each
 needed role, trainer scope or appointment after a deliberate review.
 
-This panel does not reveal the person's global identity record, OTP factors,
+This panel does not reveal the person's global identity record, recovery contacts,
 token values, phone/email credentials or memberships in another organization.
 
 ### 7.7 Assign trainers to cohorts
@@ -274,7 +273,7 @@ Trainer profiles and cohort assignments are organization-owned relationships.
 1. Confirm the staff membership is active and intended to act as a trainer.
 2. Open the trainer assignment panel.
 3. Select the active cohort(s) within the current organization.
-4. Save with fresh MFA.
+4. Save.
 5. Verify the derived trainer/cohort view.
 
 Learner trainer summaries are derived from these cohort links. There is no
@@ -308,8 +307,7 @@ for the target organization membership. It does not expose tokens, devices or
 global credential details.
 
 Use it when a staff member leaves the organization or an organization-scoped
-session is suspected. It is not a substitute for platform identity recovery or
-factor replacement.
+session is suspected. It is not a substitute for global account recovery.
 
 ## 8. Learner administration
 
@@ -332,7 +330,7 @@ filters. Do not search another tenant or request direct database access.
 2. Select the exact learner role, which contains only
    `learning.participate`.
 3. Optionally select an active cohort.
-4. Submit with fresh MFA.
+4. Submit.
 5. Transfer the one-time code securely to the intended learner.
 
 Acceptance can create the pending organization enrollment while preserving the
@@ -351,8 +349,8 @@ is not implemented.
 
 ### 8.4 Change a learner's cohort
 
-Select an active cohort in the current organization and submit the change with
-fresh MFA. The relationship changes prospectively. It does not rewrite prior
+Select an active cohort in the current organization and submit the change. The
+relationship changes prospectively. It does not rewrite prior
 trainer history, learning evidence or publication pins.
 
 ### 8.5 Manage enrollment
@@ -580,7 +578,7 @@ accepted quarantine, metadata and current program-scoped rights state.
 1. Select the exact eligible asset.
 2. Select the exact draft source and allowed media slot.
 3. Review the program and current revision.
-4. Submit with fresh MFA.
+4. Submit.
 5. Re-run Content Studio readiness.
 
 Attachment does not publish. It supplies one exact dependency to a draft
@@ -666,7 +664,7 @@ ceiling.
 | Confirm rights | `media.rights.approve` | Accepted in-scope rights-confirmer appointment and exact evidence |
 | Upload media | `media.upload` | Allowed usage/type/size and private quarantine |
 | Accept quarantine | `media.quarantine.review` | Clean scanner/inspection evidence and independent human action |
-| Manage learners | Exact learner/enrollment permissions | Active current-organization membership and fresh MFA |
+| Manage learners | Exact learner/enrollment permissions | Active current-organization membership |
 | Read audit/diagnostics | Exact read permission | Bounded safe projection only |
 
 Refer to the [full governance matrix](../ADMIN_GOVERNANCE_MATRIX.md) for the
@@ -686,7 +684,9 @@ mutations. The service binds it to the normalized operation and request.
   Reload and compare current authority/state before deciding again.
 - A not-found response can intentionally hide a foreign-organization target.
   Do not request a bypass.
-- A fresh-MFA failure requires a new TOTP assertion, not repeated submission.
+- A password-confirmation failure should appear only for a credential,
+  recovery-contact or administrator-authority change. Open **Account settings**
+  and confirm once; do not repeatedly resubmit the command.
 
 Authoritative multi-write operations use transactions and post-lock
 reauthorization. A losing concurrent command should have no partial effect.
@@ -698,7 +698,7 @@ reauthorization. A losing concurrent command should have no partial effect.
 - Confirm the duty and least-privilege permission bundle.
 - Issue a bounded staff invitation and transfer the code securely.
 - Confirm membership activation.
-- Require TOTP enrollment and secure recovery-code storage.
+- Confirm a verified recovery contact and explain the common recovery path.
 - Assign only reviewed roles/cohorts.
 - Create a reviewer/rights appointment only when evidence and separation are
   valid.
@@ -735,7 +735,7 @@ reauthorization. A losing concurrent command should have no partial effect.
 - Obtain independent structure/language decisions.
 - Resolve all readiness blockers.
 - Preview privately at narrow and desktop widths.
-- Publish/schedule with fresh MFA and record the resulting publication.
+- Publish/schedule through the current role permission and record the resulting publication.
 - Test only through an authorized enrollment pin; never through a public object
   URL.
 
@@ -755,7 +755,7 @@ reauthorization. A losing concurrent command should have no partial effect.
 - Never place raw audio, transcripts, answers, secrets or personal learner
   content in logs, audit rationales, search queries or idempotency keys.
 - Never use direct object-store URLs or expose storage keys.
-- Never share OTP, TOTP, invitation or recovery secrets.
+- Never share passwords, invitation codes, or setup/recovery tokens.
 - Never approve your own authored/translated work where separation applies.
 - Never use AI output as a committed review, mark, mastery, progression,
   attendance or entitlement decision.
@@ -775,7 +775,7 @@ outside the documented workflow, stop and open a decision request.
 | Condition | Safe response |
 |---|---|
 | Panel is missing | Confirm active membership and exact read permission. The server manifest intentionally hides unauthorized resources. |
-| Mutation asks for MFA | Enter a current authenticator TOTP. A recovery code is not an admin-action substitute. |
+| Mutation asks for password confirmation | Enter the same current password. Recovery does not substitute for command-time confirmation. |
 | `forbidden` | Recheck permission and required appointment. Do not add a broader role merely to bypass a workflow. |
 | `not_found` for a known ID | Confirm organization context and current lifecycle. Foreign IDs are existence-hidden. |
 | `stale_state`/conflict | Preserve unsaved form data, reload current state, compare and submit a new deliberate operation. |
@@ -789,7 +789,7 @@ outside the documented workflow, stop and open a decision request.
 
 ## 17. Current limitations and unavailable functions
 
-As of 10 August 2026:
+As of 13 August 2026:
 
 - production/public release is not authorized;
 - ADMIN-MEDIA-01 focused repository evidence exists, but full PostgreSQL race
@@ -798,7 +798,10 @@ As of 10 August 2026:
   approved production media set;
 - organization settings are read-only;
 - global identity recovery, credential inspection and tenant impersonation are
-  unavailable to organization admins;
+  unavailable to organization admins; lost-contact replacement is restricted
+  to the exact configured platform account-recovery manager;
+- password setup for new staff invitation types beyond the implemented direct
+  learner and reviewed migration-exclusion paths remains incomplete;
 - general support-note authoring is unavailable;
 - direct per-learner trainer assignment and enrollment reactivation are not
   implemented;
@@ -819,7 +822,7 @@ As of 10 August 2026:
 ## 18. Related operator documents
 
 - [Administrator governance matrix](../ADMIN_GOVERNANCE_MATRIX.md)
-- [Privileged MFA runbook](../PRIVILEGED_MFA_RUNBOOK.md)
+- [Password authentication runbook](../ops/PASSWORD_AUTHENTICATION_RUNBOOK.md)
 - [Privacy data inventory](../PRIVACY_DATA_INVENTORY.md)
 - [Voice deletion reconciliation](../VOICE_DELETION_RECONCILIATION.md)
 - [Incident and support runbook](../ops/INCIDENT_SUPPORT_RUNBOOK.md)
@@ -835,7 +838,7 @@ As of 10 August 2026:
 | **Atomic permission** | One exact organization capability checked by the server |
 | **Role pack** | Convenience bundle of permissions; never an authorization primitive |
 | **Authority appointment** | Accepted, scoped human mandate needed in addition to certain review/rights permissions |
-| **Fresh MFA** | Confirmed TOTP assertion within the current 15-minute privileged window |
+| **Fresh password confirmation** | The same current password confirmed on the current privileged Web session within five minutes |
 | **Idempotency key** | Request identifier binding a replayable command to one exact normalized operation |
 | **Workspace head** | Exact latest immutable graph/content revision used for concurrency and review |
 | **Readiness blocker** | Code-owned reason an exact draft cannot yet be published |

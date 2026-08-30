@@ -1,8 +1,7 @@
 # Password authentication operations runbook
 
-**Checkpoint:** AUTH-PASSWORD-01
-**Authority:** APP-0056, APP-0057, D-0164, D-0169, ADR-0021,
-AUTH-PASSWORD-01 and DR-0027
+**Checkpoint:** AUTH-SIMPLE-01
+**Authority:** APP-0059, APP-0060, D-0186, D-0193, ADR-0022, ADR-0023 and AUTH-SIMPLE-01
 **Production/public release:** Not authorized
 
 ## Modes and invariants
@@ -17,10 +16,11 @@ stale.
 - Passwords are 15–128 NFC-normalized Unicode code points and are stored only
   as Argon2id hashes. They must never be copied into commands, tickets, logs,
   screenshots or chat.
-- Privileged commands require the same current password to have been confirmed
-  on the exact privileged web session within five minutes. This is one-factor
-  freshness, not MFA; tenant, membership, permission and appointment checks
-  still run at command time.
+- Routine operator commands use the signed-in session plus current tenant,
+  membership, role, permission and appointment checks. They do not require
+  another password entry. Credential, recovery-contact and administrator-
+  authority changes may require the same current password on the exact Web
+  session within five minutes; this is one-factor freshness, not MFA.
 - Password or username change and every recovery path revoke all web sessions
   and Android token families.
 
@@ -34,9 +34,10 @@ Before `credential_migration`, configure and verify:
 - Argon2id settings at or above 65,536 KiB, three iterations and one thread;
 - a reviewed `PasswordRecoveryDeliveryAdapter` for verified contact delivery;
   the repository default is intentionally unavailable; and
-- two or more stable active platform users in
-  `PLATFORM_IDENTITY_RECOVERY_ACTOR_USER_IDS`, provisioned and identity-proofed
-  outside organization administration.
+- at least one stable, active, credential-ready platform user in
+  `PLATFORM_ACCOUNT_RECOVERY_MANAGER_USER_IDS`, provisioned and
+  identity-proofed outside organization administration. This allowlist grants
+  only `platform.account_recovery.manage`; organization roles never grant it.
 
 Do not use repository example secrets in production. Clear and rebuild Laravel
 configuration only through the reviewed deployment procedure.
@@ -44,7 +45,7 @@ configuration only through the reviewed deployment procedure.
 ## Existing-user establishment
 
 During `credential_migration`, an existing user performs the current legacy
-sign-in once, opens **Username and password security**, chooses a globally unique username
+sign-in once, opens **Account settings**, chooses a globally unique username
 and their own password, and is signed out everywhere. They then sign in with
 that username and password. An institution or operator may reserve a candidate
 username, but must never choose, transmit or store the user's password.
@@ -60,40 +61,44 @@ password and is retired after cutover.
    always generic; do not confirm account or contact existence.
 2. Delivery goes only to an already verified eligible contact. The challenge
    expires after 15 minutes, is single-use, and is superseded by a newer one.
+   The reviewed provider link opens
+   `/password-recovery.html#challenge_id=…&token=…`; the fragment is removed
+   immediately and is never sent as a request URL or stored by the browser.
 3. The user supplies challenge ID, username, raw token and a policy-compliant
    new password. Five failed attempts expire the challenge.
 4. Successful recovery advances the credential version and revokes all web
    sessions and Android token families.
 
-Privileged users and platform emergency/recovery actors are ineligible for
-ordinary recovery.
+The same eligibility and challenge lifecycle apply to every role. Role,
+organization, level, tier and cohort are resolved only after authentication.
 
-## Privileged recovery
+## Lost-contact recovery
 
-1. Open a content-minimized support case using reason
-   `identity_recovery.verified_support_case` and an opaque external evidence
-   reference. Never put identity documents or personal data in the API.
-2. Two distinct configured active platform recovery operators approve the
-   exact case version and evidence digest. The target cannot approve.
-3. The second approval starts a fresh 24-hour delay. Approvals are append-only.
-4. At completion, the service revalidates both approvers, the target, case
-   version, evidence digest, expiry and delay under database locks.
-5. Completion sends a short-lived ordinary reset token to an already verified
-   contact, globally revokes credentials, and writes content-free platform
-   audit/outbox evidence. Operators never see or set the new password.
+1. The configured account-recovery manager signs in and confirms the same
+   current password within five minutes.
+2. Complete external identity verification and retain the authoritative
+   evidence outside this system. Send only an opaque 8–160 character reference
+   and exact reason `account_recovery.verified_contact_replacement`.
+3. Replace the contact through
+   `PUT /platform/account-recovery/users/{user_id}/contact`. The manager must
+   not be the target and must never see or set target credentials.
+4. Verify that the old contact is disabled, the replacement is represented
+   only by its keyed digest and masked hint, all target Web/Android credentials
+   are revoked, former-contact notification outcome exists and tenant
+   authority is unchanged.
 
-Any mismatch, expired capability, unavailable delivery or incomplete approval
-fails closed. Escalate through the incident process; do not bypass the service
-or mutate credential tables directly.
+Any mismatch or stale confirmation fails closed. Escalate through the incident
+process; do not bypass the service or mutate identity/credential tables.
 
-### Local excluded-account establishment under APP-0057
+### Credential-unready migration setup
 
-This procedure is limited to the local non-production cutover recorded by
-D-0166 and the exact manifest approved by APP-0057. It is not a production
-recovery procedure.
+This procedure applies only to an active account already recorded in the exact
+append-only cutover exclusion manifest with an existing verified contact.
 
 1. Take and verify a fresh PostgreSQL backup before applying the additive
-   recovery migration or reconciling exclusions.
+   recovery migration or reconciling exclusions. The snapshot must be created
+   with owner-only mode `0600`; verify gzip readability, byte count and SHA-256
+   before proceeding.
 2. Enable `AUTH_PASSWORD_CUTOVER_EXCLUSION_RECONCILIATION_ENABLED` only in the
    local environment. Configure the exact reviewed manifest SHA-256,
    `AUTH_PASSWORD_RECOVERY_DELIVERY_DRIVER=protected-local`, and an absolute
@@ -103,27 +108,30 @@ recovery procedure.
    command without `--dry-run`. The manifest must be an owner-only mode-`0600`
    file. The imported rows are append-only and linked to the existing global
    cutover marker.
-4. Recovery actor 1 signs in, opens **Username and password security**, confirms
-   their current password, and uses `/password-recovery-commissioning.html` to
-   open and approve the exact excluded-operator case. Actor 2 signs in through
-   a separate session, confirms their own current password, and approves the
-   same case. Neither actor may be the target or enter target credentials.
-5. Wait the complete 24 hours measured from the second approval. There is no
-   local time override. After the delay, either still-authorized configured
-   actor reconfirms their password and completes the case. Completion creates
-   one 256-bit, single-use establishment token that expires after 15 minutes.
-6. Hand control to the target at `/password-establishment.html`. The raw token
+4. The configured manager signs in, confirms the current password and requests
+   setup through `POST /platform/account-recovery/setups` with reason
+   `account_recovery.migration_setup` and an opaque evidence reference. There
+   is no second actor or delay. The manager cannot be the target and cannot
+   enter or retrieve target credentials.
+5. Successful delivery creates one 256-bit, single-use setup token that expires
+   after 15 minutes. Reviewed provider links open
+   `/password-establishment.html#challenge_id=…&token=…`. For local
+   protected commissioning, hand control to the target at
+   `/password-establishment.html` in protected-local commissioning. The token
    remains in an owner-only mode-`0600` local delivery file and is submitted by
    the protected localhost surface; it is not rendered or stored by the
-   browser. The target chooses their own globally unique username and password.
-7. Verify challenge consumption, deletion of the delivery file, target
+   browser. The page uses a `same-origin` referrer policy only so Sanctum can
+   recognize its localhost metadata GET as stateful; history erases any public
+   setup fragment before that request, and no referrer is sent cross-origin.
+   The target chooses their own globally unique username and password.
+6. Verify challenge consumption, deletion of the delivery file, target
    `credential_cutover_at`, global session/token revocation, unchanged role and
    membership authority, password sign-in, and a fresh password confirmation.
    Then disable the reconciliation switch and remove any empty delivery
    directory through the incident evidence procedure.
 
-Wrong manifest/owner/target, fewer than two distinct actors, stale password
-confirmation, early completion, expired/replayed token, username collision,
+Wrong manifest/target, unauthorized manager, stale password confirmation,
+expired/replayed token, username collision,
 unavailable protected delivery, or any non-loopback request fails closed. Do
 not display or copy the raw token, password, contact value, transcript, or
 audio into a ticket, screenshot, chat, log, audit or outbox record.
