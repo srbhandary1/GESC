@@ -27,6 +27,16 @@ import type {
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
 import { AiMemoryPanel } from './AiMemoryPanel'
 import { VoicePracticePanel } from './VoicePracticePanel'
+import { TutorPresence, type TutorMood } from '../tutor/TutorPresence'
+import { SpeakLoopTimingOverlay } from './SpeakLoopTimingOverlay'
+import {
+  abandonSpeakLoop,
+  completeSpeakLoop,
+  markSpeakLoop,
+  type SpeakLoopPhase,
+} from './speakLoopTimings'
+import { isAbortError } from '../shared/isAbortError'
+import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
 import {
   CONFIDENCE_LISTEN_LINES,
   CONFIDENCE_MIN_TURNS_BEFORE_REFLECT,
@@ -150,18 +160,15 @@ export function ConversationJourney({
   const [speakingReply, setSpeakingReply] = useState(false)
   const [speechError, setSpeechError] = useState(false)
   const [showHint, setShowHint] = useState(false)
-  const [showSilenceNudge, setShowSilenceNudge] = useState(false)
-  const [inputMode, setInputMode] = useState<'type' | 'speak'>('type')
-  const [aboutOpen, setAboutOpen] = useState(
-    () =>
-      !embedded && !readFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY),
-  )
-  const autoStarted = useRef(false)
-  const openingSpoken = useRef(false)
+  const [inputMode, setInputMode] = useState<'type' | 'speak'>('speak')
+  const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
+  const [holdResetEpoch, setHoldResetEpoch] = useState(0)
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
   const stopRecognition = useRef<(() => void) | null>(null)
   const utteranceFieldRef = useRef<HTMLTextAreaElement | null>(null)
+  const openingSpoken = useRef(false)
+  const inFlightAbort = useRef<AbortController | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
   const text = (key: MessageKey) => message(key).text
@@ -170,6 +177,7 @@ export function ConversationJourney({
     return () => {
       stopRecognition.current?.()
       stopDemoSpeech()
+      inFlightAbort.current?.abort()
     }
   }, [])
 
@@ -184,29 +192,101 @@ export function ConversationJourney({
       return
     }
 
-    const timer = globalThis.setTimeout(() => {
-      setShowSilenceNudge(true)
-    }, 8_000)
+  const settleHold = useCallback(() => {
+    setLoopPhase('waiting')
+    setHoldResetEpoch((epoch) => epoch + 1)
+  }, [])
 
-    return () => globalThis.clearTimeout(timer)
-  }, [state, utterance, listening])
+  const abortInFlight = useCallback(() => {
+    inFlightAbort.current?.abort()
+    inFlightAbort.current = null
+    stopSpeechPlayback()
+    abandonSpeakLoop()
+    setSpeakingReply(false)
+    settleHold()
+  }, [settleHold])
 
-  const speakEnglish = (reply: string) => {
-    const trimmed = reply.trim()
-    if (trimmed === '') {
-      return
-    }
+  const speakTurnAudio = async (
+    turn: FriendTurn,
+    signal?: AbortSignal,
+  ) => {
+    const speech = turn.speech
+    const modelAudio = speech?.model_audio_base64
+    const guidanceAudio = speech?.guidance_audio_base64
 
     setSpeechError(false)
     setSpeakingReply(true)
+    const hasModelAudio = typeof modelAudio === 'string' && modelAudio !== ''
+    if (hasModelAudio || (demoMode && turn.assistant_reply !== null)) {
+      setLoopPhase('speaking')
+    }
 
-    const playback = demoMode
-      ? speakDemoText(trimmed, 'en-IN')
-      : speakWithBrowserSpeech(trimmed, 'en-IN')
+    try {
+      if (typeof modelAudio === 'string' && modelAudio !== '') {
+        await playBase64Audio(
+          modelAudio,
+          speech?.model_audio_mime_type ?? 'audio/wav',
+          {
+            signal,
+            onStarted: () => {
+              markSpeakLoop('first_audio')
+            },
+          },
+        )
+      } else if (turn.assistant_reply !== null && demoMode) {
+        markSpeakLoop('first_audio')
+        await speakSessionSpeech({
+          api,
+          demoMode: true,
+          locale: 'en-IN',
+          purpose: 'model_en',
+          sessionId: turn.conversation_session_id,
+          text: turn.assistant_reply,
+        })
+      } else {
+        completeSpeakLoop()
+      }
 
-    void playback
-      .catch(() => setSpeechError(true))
-      .finally(() => setSpeakingReply(false))
+      if (signal?.aborted) {
+        return
+      }
+
+      if (typeof guidanceAudio === 'string' && guidanceAudio !== '') {
+        await playBase64Audio(
+          guidanceAudio,
+          speech?.guidance_audio_mime_type ?? 'audio/wav',
+          { signal },
+        )
+      } else {
+        const guidance = turn.priority_correction?.explanation_l1
+        const guidanceLocale =
+          turn.priority_correction?.explanation_locale ?? locale
+        if (
+          typeof guidance === 'string' &&
+          guidance.trim() !== '' &&
+          demoMode
+        ) {
+          await speakSessionSpeech({
+            api,
+            demoMode: true,
+            locale: guidanceLocale,
+            purpose: 'guidance_l1',
+            sessionId: turn.conversation_session_id,
+            text: guidance,
+          })
+        }
+      }
+    } catch (error) {
+      if (!isAbortError(error)) {
+        setSpeechError(true)
+        completeSpeakLoop()
+      }
+    } finally {
+      setSpeakingReply(false)
+      if (signal === undefined || !signal.aborted) {
+        settleHold()
+      }
+    }
   }
 
   const start = () => {
@@ -281,9 +361,16 @@ export function ConversationJourney({
     }
 
     const session = state.session
-    const completedTurns =
-      state.kind === 'result' ? state.completedTurns : state.completedTurns
-    const prototypeUtterance = utterance.trim()
+    const completedTurns = state.completedTurns
+    const nextUtterance = prototypeUtterance.trim()
+    inFlightAbort.current?.abort()
+    const controller = new AbortController()
+    inFlightAbort.current = controller
+    setLoopPhase((current) =>
+      current === 'listening' || current === 'processing'
+        ? current
+        : 'preparing',
+    )
     setState({
       kind: 'sending',
       session,
@@ -298,11 +385,30 @@ export function ConversationJourney({
         session.id,
         { prototype_utterance: prototypeUtterance },
         turnCommandId.current,
+        controller.signal,
       )
       .then(async (turn) => {
-        const events = await api.events(turn.events_url)
+        if (controller.signal.aborted) {
+          return
+        }
+
+        markSpeakLoop('turn_json_ready')
         const nextCompleted =
           turn.status === 'completed' ? completedTurns + 1 : completedTurns
+        const eventsPromise = api.events(turn.events_url, controller.signal)
+
+        if (turn.status === 'completed' && turn.assistant_reply !== null) {
+          void speakTurnAudio(turn, controller.signal)
+        } else {
+          completeSpeakLoop()
+          settleHold()
+        }
+
+        const events = await eventsPromise
+        if (controller.signal.aborted) {
+          return
+        }
+
         setState({
           events,
           kind: 'result',
@@ -313,19 +419,27 @@ export function ConversationJourney({
         })
         setUtterance('')
         turnCommandId.current = createClientId()
-
-        if (turn.status === 'completed' && turn.assistant_reply !== null) {
-          speakEnglish(turn.assistant_reply)
-        }
       })
-      .catch(() =>
+      .catch((error: unknown) => {
+        if (isAbortError(error) || controller.signal.aborted) {
+          setState({
+            kind: 'ready',
+            session,
+            stage: 'talk',
+            completedTurns,
+          })
+          return
+        }
+
+        completeSpeakLoop()
+        settleHold()
         setState({
           kind: 'error',
           session,
           stage: 'talk',
           completedTurns,
-        }),
-      )
+        })
+      })
   }
 
   const startListening = () => {
@@ -481,16 +595,17 @@ export function ConversationJourney({
       aria-labelledby="conversation-title"
       data-demo-speech={demoMode ? 'browser' : undefined}
       data-confidence-stage={stage}
-      data-embedded={embedded ? 'true' : undefined}
+      data-session-type={sessionType}
+      data-speak-loop={loopPhase}
     >
       <div className="conversation-journey__heading">
-        <div className="conversation-journey__presence">
-          <AvatarSlot
-            label={text('shell.mira.name')}
-            size="lg"
-            slot="ai-friend"
-          />
-        </div>
+        <TutorPresence
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+          mood={tutorMood(loopPhase, speakingReply, listening)}
+          size={embedded ? 'lg' : 'md'}
+        />
+        <SpeakLoopTimingOverlay />
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message(
@@ -786,24 +901,47 @@ export function ConversationJourney({
 
       {session !== undefined && stage === 'talk' ? (
         <>
-          {api.uploadVoiceRecording === undefined ? null : (
-            <VoicePracticePanel
-              api={api}
-              createClientId={createClientId}
-              locale={locale}
-              onTranscriptSelected={setUtterance}
-              sessionId={session.id}
-              text={text}
-            />
-          )}
-          {demoMode || api.listAiMemory === undefined ? null : (
-            <AiMemoryPanel
-              api={api}
-              createClientId={createClientId}
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              text={text}
-            />
+          {openingLine !== undefined && openingLine.trim() !== '' ? (
+            <div className="conversation-journey__chat">
+              <dl className="conversation-journey__bubble conversation-journey__bubble--teacher">
+                <div>
+                  <dt>
+                    <LocalizedMessage
+                      resolution={message('conversation.chat.teacher')}
+                    />
+                  </dt>
+                  <dd lang="en-IN">{openingLine}</dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
+          {demoMode ? null : (
+            <>
+              <VoicePracticePanel
+                api={api}
+                createClientId={createClientId}
+                locale={locale}
+                onPreferTyping={typeInstead}
+                onTranscriptSelected={(transcript) => {
+                  setUtterance(transcript)
+                  submitTurn(transcript)
+                }}
+                onLoopPhase={setLoopPhase}
+                onCancelInFlight={abortInFlight}
+                resetEpoch={holdResetEpoch}
+                sessionId={session.id}
+                text={text}
+              />
+              {embedded ? null : (
+              <AiMemoryPanel
+                api={api}
+                createClientId={createClientId}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                text={text}
+              />
+              )}
+            </>
           )}
 
           <div
@@ -1130,4 +1268,28 @@ export function ConversationJourney({
       ) : null}
     </section>
   )
+}
+
+function tutorMood(
+  loopPhase: SpeakLoopPhase,
+  speakingReply: boolean,
+  listening: boolean,
+): TutorMood {
+  if (speakingReply || loopPhase === 'speaking') {
+    return 'speaking'
+  }
+
+  if (listening || loopPhase === 'listening') {
+    return 'listening'
+  }
+
+  if (loopPhase === 'processing') {
+    return 'processing'
+  }
+
+  if (loopPhase === 'preparing') {
+    return 'preparing'
+  }
+
+  return 'idle'
 }

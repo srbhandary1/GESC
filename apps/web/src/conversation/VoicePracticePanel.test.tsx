@@ -1,7 +1,11 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ConversationJourneyApi, VoiceConsents } from './ConversationJourneyApi'
+import type {
+  ConversationJourneyApi,
+  SecureVoiceRecording,
+  VoiceConsents,
+} from './ConversationJourneyApi'
 import { VoicePracticePanel } from './VoicePracticePanel'
 
 afterEach(cleanup)
@@ -123,6 +127,138 @@ describe('secure voice practice consent boundary', () => {
         name: 'conversation.voice.consent_provider',
       }),
     ).toBeVisible()
+  })
+
+  it('opens Type instead when the learner continues without recording', async () => {
+    const bothGranted = listing('granted', 'granted')
+    const onPreferTyping = vi.fn()
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => crypto.randomUUID()}
+        locale="en-IN"
+        onPreferTyping={onPreferTyping}
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'learner.recording.continue_without',
+      }),
+    )
+    expect(onPreferTyping).toHaveBeenCalledOnce()
+  })
+
+  it('treats a closed voice gate as an honest status, not a failure alert', async () => {
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => {
+        throw new Error('voice_gate_closed')
+      }),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => crypto.randomUUID()}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('status'),
+    ).toHaveTextContent('conversation.voice.error')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'conversation.voice.setup' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('aborts an in-flight upload when hold cancel is pressed', async () => {
+    const bothGranted = listing('granted', 'granted')
+    let uploadSignal: AbortSignal | undefined
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn((_sessionId, _audio, _command, signal) => {
+        uploadSignal = signal
+        return new Promise<SecureVoiceRecording>(() => undefined)
+      }),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const session = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        recorder={recorder}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    await vi.waitFor(() => {
+      expect(api.uploadVoiceRecording).toHaveBeenCalled()
+    })
+    await user.click(
+      screen.getByRole('button', { name: 'learner.recording.cancel' }),
+    )
+    expect(uploadSignal?.aborted).toBe(true)
   })
 })
 

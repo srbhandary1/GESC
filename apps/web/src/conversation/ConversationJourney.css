@@ -106,6 +106,66 @@
   gap: var(--ge-space-3);
 }
 
+.conversation-journey__heading,
+.conversation-journey__stage,
+.conversation-journey__result,
+.conversation-journey__start,
+.conversation-journey__notice,
+.conversation-journey__voice,
+.conversation-journey__memory {
+  min-width: 0;
+  padding: clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: conversation-rise 520ms ease-out both;
+}
+
+.conversation-journey__heading {
+  background:
+    linear-gradient(
+      145deg,
+      #0a1f18 0%,
+      #071611 70%,
+      color-mix(in srgb, var(--ge-color-brass) 28%, #071611) 100%
+    );
+  color: #f4f8f5;
+  border-color: color-mix(in srgb, var(--ge-color-brass) 35%, #071611);
+}
+
+.speak-loop-timings {
+  justify-self: end;
+  margin: 0;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px dashed color-mix(in srgb, var(--ge-color-brass) 45%, transparent);
+  border-radius: var(--ge-radius-sm);
+  background: rgb(7 22 17 / 0.45);
+  color: #d7e4dc;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.speak-loop-timings p,
+.speak-loop-timings ul {
+  margin: 0;
+}
+
+.speak-loop-timings ul {
+  padding-inline-start: 1.1rem;
+}
+
+.conversation-journey__heading h2,
+.conversation-journey__heading h3 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f8f4e8;
+}
+
 .conversation-journey__controls {
   display: flex;
   flex-wrap: wrap;
@@ -188,6 +248,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ge-space-3);
+}
+
+.learner-recording__waveform {
+  display: block;
+  width: min(100%, 15rem);
+  height: 3rem;
+  margin-inline: auto;
+  border-radius: var(--ge-radius-sm);
+  background: color-mix(in srgb, var(--ge-color-brass) 12%, var(--ge-color-surface));
 }
 
 .conversation-journey__eyebrow {

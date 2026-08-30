@@ -23,6 +23,11 @@ import {
   type FriendTurn,
   type StartFriendSessionInput,
 } from './ConversationJourneyApi'
+import { isAbortError } from '../shared/isAbortError'
+import {
+  defaultAuthenticationRuntime,
+  type ApiCsrfProtection,
+} from '../auth/defaultAuthentication'
 
 export interface WebConversationJourneyApiOptions {
   readonly baseUrl?: string
@@ -36,6 +41,7 @@ export class WebConversationJourneyApi
   readonly #baseUrl: string
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
+  #csrfTokenCached = false
 
   constructor(options: WebConversationJourneyApiOptions = {}) {
     this.#baseUrl = options.baseUrl ?? '/api/v1'
@@ -104,7 +110,11 @@ export class WebConversationJourneyApi
         headers: { Accept: 'text/event-stream' },
         signal,
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
@@ -285,7 +295,11 @@ export class WebConversationJourneyApi
           ...init.headers,
         },
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
@@ -295,7 +309,11 @@ export class WebConversationJourneyApi
 
     try {
       return (await response.json()) as T
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
   }
@@ -303,6 +321,13 @@ export class WebConversationJourneyApi
   async #csrfHeaders(
     signal: AbortSignal | null | undefined,
   ): Promise<Record<string, string>> {
+    if (this.#csrfTokenCached) {
+      const cached = readCookieValue(this.#readCookie(), 'XSRF-TOKEN')
+      if (cached !== undefined) {
+        return { 'X-XSRF-TOKEN': cached }
+      }
+    }
+
     let response: Response
 
     try {
@@ -311,7 +336,11 @@ export class WebConversationJourneyApi
         headers: { Accept: 'application/json' },
         signal,
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
@@ -321,6 +350,7 @@ export class WebConversationJourneyApi
       throw new ConversationJourneyUnavailableError()
     }
 
+    this.#csrfTokenCached = true
     return { 'X-XSRF-TOKEN': token }
   }
 

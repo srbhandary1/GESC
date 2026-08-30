@@ -1,5 +1,45 @@
 # Quality review
 
+## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
+
+### Scope reviewed
+
+- Client hold-to-talk loop: stage timings, §7.4 states, live waveform,
+  abortable upload/turn, PCM-first WAV, play-before-events, CSRF cache.
+- No new provider, no `ai_cost_ledger` change, no consent-flow change
+  (ADR-0007 / ADR-0011).
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Stage timings without learner data | Pass | `speakLoopTimings.test.ts`; `console.debug('[speak-loop]', durationsMs)` |
+| Distinct listening/processing/preparing/speaking | Pass | `data-speak-loop`, tutor moods, localized loop copy |
+| Cancel aborts in-flight fetch | Pass | `VoicePracticePanel` + `RecordingTurn` + `playBase64Audio` abort tests |
+| Type-instead and low-confidence retry intact | Pass | Existing VoicePracticePanel and ConversationJourney tests still pass |
+| Lint / typecheck / unit tests | Pass | `pnpm run lint`; `pnpm run typecheck`; `pnpm run test` (295 web + 11 design-system + 31 localization) |
+| Locale parity | Pass | `pnpm run locale:check`; catalogues `ui-*-2026-08-30.4` |
+| PHP / ledger / consent | Unchanged | No PHP files in this checkpoint |
+
+### Client latency on this machine (21 samples)
+
+Synthetic client pipeline only (80ms MediaRecorder stop wait + 40ms events RTT + WAV encode/decode). Azure STT/OpenAI/TTS were **not** in the path.
+
+| | p50 | p95 |
+|---|---|---|
+| Current (serial backup-recorder wait then events then decode) | 125ms | 127ms |
+| Achieved (PCM WAV without backup wait; decode overlaps events) | 43ms | 44ms |
+
+Provider time is unchanged. Full release-to-first-audio with live Azure was not measured on this host.
+
+### Known limitations
+
+- End-to-end Azure p50/p95 is still dominated by STT + model + TTS; this pass does not shrink those stages.
+- CSRF cookie is reused after the first Sanctum fetch in a `WebConversationJourneyApi` instance; a 419 would need a later retry path.
+- Dev timing overlay is `import.meta.env.DEV` only and is `aria-hidden`.
+- Kannada UI catalogue remains `pending-independent-review`.
+- Production/Play remain unauthorized.
+
 ## DR-0038 B: Progress read-model API — 30 August 2026
 
 ### Scope reviewed
@@ -23,7 +63,7 @@
 
 ### Known limitations
 
-- Progress UI not started; `#progress` still reuses Learn level path.
+- Progress UI landed locally at `44e3339` (`#progress` uses `ProgressDashboard`).
 - Integration test requires PostgreSQL (`phpunit.postgres.xml`); skipped locally without `pdo_pgsql`.
 - Recurring-error `trend` is a heuristic from pattern timestamps, not a time series.
 
@@ -53,7 +93,8 @@
 
 - Default review intervals `[1, 3, 7, 14]` in `config/review.php` remain
   provisional pending named academic review (ADR-0028).
-- DR-0038 B (Progress §7.3) and C (Speak latency) are not started.
+- DR-0038 C Speak latency is implemented locally (D-0221); live Azure
+  p50/p95 was not measured on this host.
 - Kannada UI catalogue remains `pending-independent-review`.
 - Production/Play and curriculum publication remain unauthorized.
 

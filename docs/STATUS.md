@@ -4,15 +4,24 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | DR-0038 B: Progress dashboard (§7.3 conformance) — **next** |
-| Status | Checkpoint A is **accepted and verified** (D-0220). CI run [33317082476](https://github.com/srbhandary1/GESC/actions/runs/33317082476) on PR [#3](https://github.com/srbhandary1/GESC/pull/3) passed `verify`, `android`, `operations`, and `release-gate`, including the PostgreSQL integration suite and both ADR-0028 constraint tests. Meaningful-speaking-day streak, deterministic delayed review, Home API/UI, contracts, and flagship Home polish are implemented at `9818fe2`. B and C are not started. Curriculum publication, Play, and independent Kannada UI review remain unauthorized. |
+| Checkpoint | DR-0038 C: Speak hold-to-talk latency — **implemented locally** |
+| Status | Checkpoints A and B are accepted. A is verified on CI (D-0220). B Progress API+UI landed locally (`a5753fb`, `44e3339`). C Speak latency is implemented locally (D-0221): client timings, §7.4 states, abortable hold loop, PCM-first WAV, play-before-events. No new provider. Curriculum publication, Play, and independent Kannada UI review remain unauthorized. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.9 |
 | Updated date | 30 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); Indic STT port built, Azure still live (ADR-0027); meaningful-speaking streak + delayed review built (ADR-0028 / D-0220); Progress read-model API (`GET /api/v1/me/progress-dashboard`, OpenAPI 0.35.0) implemented locally — Progress UI still reuses Learn level path |
-| Next required action | Finish DR-0038 B: build Progress dashboard UI on `#progress` consuming `GET /api/v1/me/progress-dashboard` (read model landed locally; UI not started). Then C (Speak latency). Still open from the prior checkpoint: on the reinstalled closed-beta APK, Learn → play Introduction audio, then hold-to-talk to answer Swathi’s lesson question. Public HTTPS is `https://demands-cashiers-bryan-quit.trycloudflare.com` (Quick Tunnel; rotates). Soft-launch Speak hold loop on Vite (`http://127.0.0.1:5173/#speak`). Set `TUITION_CONTACT_*` when a Direct number is named. Indic STT stays off until a later driver switch. Production/Play remain unauthorized. |
+| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); Indic STT port built, Azure still live (ADR-0027); meaningful-speaking streak + delayed review (ADR-0028 / D-0220); Progress dashboard API+UI (`GET /api/v1/me/progress-dashboard`); Speak hold-to-talk latency pass (D-0221) |
+| Next required action | Review DR-0038 C on a live Azure Speak hold. Still open: on the reinstalled closed-beta APK, Learn → play Introduction audio, then hold-to-talk. Public HTTPS is `https://demands-cashiers-bryan-quit.trycloudflare.com` (Quick Tunnel; rotates). Soft-launch Speak hold loop on Vite (`http://127.0.0.1:5173/#speak`). Set `TUITION_CONTACT_*` when a Direct number is named. Indic STT stays off until a later driver switch. Production/Play remain unauthorized. |
 | Production/public release | Not authorized |
 | Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged from APP-0068. |
+
+## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
+
+- Client loop now logs `record_stop` → `wav_ready` → `upload_done` → `transcript_ready` → `turn_json_ready` → `first_audio` as millisecond durations only (no transcript, audio, or PII). Dev overlay is `aria-hidden`.
+- Hold UI shows listening / processing / preparing / speaking (§7.4) with a live waveform while held. Cancel aborts the in-flight upload and turn (`AbortSignal`).
+- PCM with audible speech encodes WAV immediately and does not wait for the backup MediaRecorder `stop`. Reply audio plays when the turn JSON arrives, in parallel with `GET .../events`. Sanctum CSRF is reused after the first fetch on that API instance.
+- Type-instead and low-confidence “Swathi heard” retry are unchanged. No new provider, no ledger change, no consent-flow change.
+- Client-only synthetic release-to-first-audio on this machine (21 samples, 80ms recorder wait + 40ms events RTT model): **p50 125→43ms, p95 127→44ms**. Live Azure STT/model/TTS was not measured and is unchanged.
+- Verified: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test` (295 web tests), `pnpm run locale:check`. PHP not touched.
 
 ## CI `verify` e2e failures fixed locally — 30 August 2026
 
