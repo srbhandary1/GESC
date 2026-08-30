@@ -56,7 +56,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
 
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await expect(
@@ -155,7 +155,8 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     client_capture_id: expect.stringMatching(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     ),
-    mime_type: 'audio/webm',
+    // Chromium's real recorder reports the canonical opus-tagged variant.
+    mime_type: expect.stringMatching(/^audio\/webm(;codecs=opus)?$/),
   })
   expect(api.lastResponse!.local_recording!.byte_size).toBeGreaterThanOrEqual(
     128,
@@ -270,7 +271,7 @@ test('contract-stubbed microphone denial stays spoken-unassessed', async ({
   await page.goto('/#home')
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await page
@@ -394,7 +395,7 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   await context.setOffline(true)
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await page
@@ -706,58 +707,36 @@ async function installWorkingMicrophone(page: Page): Promise<void> {
       nativeRevoke(url)
     }
     Object.assign(window, { __recordingTestState: testState })
+
+    // The PCM recorder feeds getUserMedia's stream into a real AudioContext,
+    // so a scripted stub object cannot work and headless CI has no capture
+    // device. Synthesize a genuine MediaStream from an oscillator instead:
+    // deterministic, device-free, and type-correct for WebAudio.
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,
       value: {
-        getUserMedia: async () => ({
-          getTracks: () => [
-            {
-              stop: () => {
-                testState.stoppedTracks += 1
-              },
-            },
-          ],
-        }),
+        getUserMedia: async () => {
+          const context = new AudioContext()
+          const oscillator = context.createOscillator()
+          const destination = context.createMediaStreamDestination()
+          oscillator.frequency.value = 440
+          oscillator.connect(destination)
+          oscillator.start()
+          void context.resume()
+
+          const stream = destination.stream
+          for (const track of stream.getTracks()) {
+            const nativeStop = track.stop.bind(track)
+            track.stop = () => {
+              testState.stoppedTracks += 1
+              oscillator.stop()
+              void context.close()
+              nativeStop()
+            }
+          }
+          return stream
+        },
       },
-    })
-
-    class DeterministicMediaRecorder extends EventTarget {
-      static isTypeSupported(): boolean {
-        return true
-      }
-
-      readonly mimeType = 'audio/webm'
-      state: RecordingState = 'inactive'
-
-      start(): void {
-        this.state = 'recording'
-      }
-
-      pause(): void {
-        this.state = 'paused'
-      }
-
-      resume(): void {
-        this.state = 'recording'
-      }
-
-      stop(): void {
-        this.state = 'inactive'
-        const data = new Blob(['deterministic-local-audio'.padEnd(128, 'x')], {
-          type: this.mimeType,
-        })
-        const event = new Event('dataavailable')
-        Object.defineProperty(event, 'data', { value: data })
-        queueMicrotask(() => {
-          this.dispatchEvent(event)
-          this.dispatchEvent(new Event('stop'))
-        })
-      }
-    }
-
-    Object.defineProperty(window, 'MediaRecorder', {
-      configurable: true,
-      value: DeterministicMediaRecorder,
     })
   })
 }
@@ -786,6 +765,7 @@ async function installDeniedMicrophone(page: Page): Promise<void> {
 
 function home(onboarded: boolean) {
   return {
+    due_review: null,
     enrollment: onboarded
       ? { id: ids.enrollment, status: 'active' }
       : null,
@@ -800,6 +780,11 @@ function home(onboarded: boolean) {
       adult_confirmed: onboarded,
       completed: onboarded,
       goal_key: onboarded ? 'workplace-confidence' : null,
+    },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 0,
+      timezone: 'Asia/Kolkata',
     },
   }
 }

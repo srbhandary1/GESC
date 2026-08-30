@@ -92,7 +92,8 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   )
   await expect(page.getByRole('banner')).toBeVisible()
   await expect(
-    page.getByRole('link', { name: message('session.label') }),
+    // exact: the marketing hero CTA contains this label as a substring.
+    page.getByRole('link', { exact: true, name: message('session.label') }),
   ).toBeVisible()
   await expect(page.getByRole('main')).toBeVisible()
   await expect(
@@ -139,7 +140,9 @@ test('supports skip-link and sign-in from the keyboard', async ({
   await page.keyboard.press('Enter')
   await expect(page.getByRole('main')).toBeFocused()
 
-  await page.getByRole('link', { name: message('session.label') }).click()
+  await page
+    .getByRole('link', { exact: true, name: message('session.label') })
+    .click()
   await expect(page.locator('#sign-in-title')).toBeVisible()
   await expect(page.locator('#web-password-username')).toBeFocused()
 })
@@ -191,7 +194,7 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
     await expectNoHorizontalOverflow(page)
     await expect(page.getByRole('main')).toBeVisible()
     await expect(
-      page.getByRole('link', { name: message('session.label') }),
+      page.getByRole('link', { exact: true, name: message('session.label') }),
     ).toBeVisible()
   }
 
@@ -308,6 +311,16 @@ test('loads every Phase 1 interface font and honors reduced motion', async ({
 })
 
 async function mockAnonymousSession(page: Page): Promise<void> {
+  await page.context().addCookies([
+    {
+      name: 'XSRF-TOKEN',
+      url: 'http://127.0.0.1:4173',
+      value: 'bootstrap-e2e-csrf-token',
+    },
+  ])
+  await page.route('**/sanctum/csrf-cookie', async (route) => {
+    await route.fulfill({ status: 204 })
+  })
   await page.route('**/api/v1/auth/password/mode', async (route) => {
     await route.fulfill({
       contentType: 'application/json',

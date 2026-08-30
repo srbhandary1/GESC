@@ -1002,6 +1002,8 @@
   border: 1px solid var(--ge-notice-border);
   border-inline-start: 3px solid var(--ge-color-brass);
   background: var(--ge-notice-background);
+  /* The dark heading panel sets light text; this notice keeps a light background. */
+  color: var(--ge-color-ink);
 }
 
 .operator-console__shell-state {

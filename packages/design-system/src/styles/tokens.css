@@ -31,7 +31,8 @@
   --ge-color-action-text: #f6fbf8;
   --ge-color-accent: #e31c23;
   --ge-color-accent-hover: #c8161c;
-  --ge-color-brass: #8f6f28;
+  /* 4.5:1+ on surface (#f7f5fc), panel tints and the notice background. */
+  --ge-color-brass: #7d6124;
   --ge-color-brass-soft: #c4a45a;
   --ge-color-focus: #8f6f28;
   --ge-color-status: #d9ebe2;
