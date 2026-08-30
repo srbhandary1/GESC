@@ -22,6 +22,15 @@ export default defineConfig(({ mode }) => ({
     host: '127.0.0.1',
     port: 5174,
     strictPort: true,
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '192.168.1.3',
+      '100.89.51.18',
+      '117.254.108.143',
+      'real-studioz',
+      '.ts.net',
+    ],
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',

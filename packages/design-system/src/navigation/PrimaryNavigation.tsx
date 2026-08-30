@@ -4,8 +4,9 @@ import type { SupportedLanguage } from '../text/MixedLanguageText'
 export const PRIMARY_DESTINATIONS = [
   'home',
   'learn',
-  'practice',
+  'speak',
   'progress',
+  'tuition',
 ] as const
 
 export type PrimaryDestination = (typeof PRIMARY_DESTINATIONS)[number]
@@ -49,6 +50,7 @@ export function PrimaryNavigation({
                   currentDestination === destination ? 'page' : undefined
                 }
                 className="ge-primary-navigation__link"
+                data-destination={destination}
                 href={link.href}
               >
                 {link.label}

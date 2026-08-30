@@ -17,7 +17,7 @@ const ids = {
   user: '01J20000000000000000000009',
 } as const
 
-test('completes the disclosed text-first AI conversation journey', async ({
+test('completes the disclosed voice-first AI conversation journey', async ({
   page,
 }) => {
   const requests: Array<{
@@ -29,34 +29,32 @@ test('completes the disclosed text-first AI conversation journey', async ({
   }> = []
   await mockConversationApi(page, requests)
 
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
 
   await expect(
     page.getByText(
-      'This is an AI practice partner, not a human. Feedback is advisory and never changes marks, mastery, or progress.',
+      'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
     ),
   ).toBeVisible()
   await expect(
     page.getByText(
-      'Typed or approved transcript text is used for the current turn; only content-free digests are retained. Voice recording and transcript retention follow your consent choices.',
+      'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
     ),
   ).toBeVisible()
 
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: 'Talk with Swathi' })
     .click()
   await expect(
     page.getByText(
-      'I am an AI practice partner, not a human. My feedback is advisory.',
+      'I am Swathi, your AI English teacher. Feedback is advisory.',
     ),
   ).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
+  await expect(page.getByText('Hear an example')).toBeVisible()
+  await page.getByRole('button', { name: 'Type instead' }).click()
 
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })
@@ -67,9 +65,6 @@ test('completes the disclosed text-first AI conversation journey', async ({
     page.getByText(
       'Thank you for sharing that. What would you like to talk about next?',
     ),
-  ).toBeVisible()
-  await expect(
-    page.getByText('The English text above is enough. Playback is optional.'),
   ).toBeVisible()
   await expect(page.getByText('Turn completed')).toBeVisible()
 
@@ -83,7 +78,7 @@ test('completes the disclosed text-first AI conversation journey', async ({
     ),
   ).toBe(true)
   expect(
-    requests.some(({ path }) => /audio|speech|upload/u.test(path)),
+    requests.some(({ path }) => /upload/u.test(path)),
   ).toBe(false)
   expect(
     requests
@@ -109,23 +104,15 @@ test('shows separate optional voice purposes before microphone capture', async (
     url: string
   }> = []
   await mockConversationApi(page, requests)
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: 'Talk with Swathi' })
     .click()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
-  await page
-    .getByRole('button', { name: 'Set up optional voice practice' })
-    .click()
-
   await expect(
-    page.getByText(
-      'Implementation draft: audio is uploaded privately and deleted after transcription.',
-    ),
+    page.getByRole('button', { name: 'Allow Swathi to hear me' }),
   ).toBeVisible()
   await expect(
     page.getByRole('button', {
@@ -160,25 +147,18 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   }> = []
   await mockConversationApi(page, requests)
 
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
-  await page
-    .getByRole('button', { name: 'Role-play (synthetic)' })
-    .click()
-
-  await expect(
-    page.getByText(
-      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
-    ),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
-  await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('tab', { name: 'A situation' }).click()
+  await page.getByRole('button', { name: 'Start this situation' }).click()
   await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
+  await page.getByRole('button', { name: 'Type instead' }).click()
+  await page
+    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .fill('Hello, I have an appointment.')
+  await page.getByRole('button', { name: 'Send turn' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
   await expect(

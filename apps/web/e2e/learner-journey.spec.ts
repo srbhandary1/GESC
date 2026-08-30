@@ -31,7 +31,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
   await installWorkingMicrophone(page)
   const api = await mockLearnerApi(page, false)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
 
   await expect(
     page.getByRole('heading', {
@@ -235,7 +235,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       }),
     )
     .toMatchObject({
-      cacheKeys: ['global-english-public-shell-v2'],
+      cacheKeys: ['global-english-public-shell-v5'],
       serviceWorkerRegistrations: 1,
     })
   const cachedUrls = await page.evaluate(async () => {
@@ -267,7 +267,7 @@ test('contract-stubbed microphone denial stays spoken-unassessed', async ({
   await installDeniedMicrophone(page)
   const api = await mockLearnerApi(page, true)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
   await page
     .getByRole('button', {
       name: message('learner.home.start_mission'),
@@ -320,7 +320,7 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   await installDeniedMicrophone(page)
   const api = await mockLearnerApi(page, true)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
   await page
     .getByRole('checkbox', {
       name: message('learner.offline.personal_confirmation'),

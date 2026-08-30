@@ -28,6 +28,7 @@ export {
 } from './media/AudioControls'
 export {
   RecordingControls,
+  type RecordingCaptureMode,
   type RecordingControlLabels,
   type RecordingControlState,
   type RecordingControlsProps,

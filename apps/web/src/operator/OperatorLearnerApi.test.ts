@@ -79,7 +79,6 @@ describe('web operator learner API', () => {
   })
 
   it.each([
-    [403, 'problem.fresh_mfa_required', 'fresh_mfa'],
     [403, 'problem.forbidden', 'forbidden'],
     [409, 'problem.learner_administration.stale_state', 'stale_state'],
     [409, 'problem.learner_administration.idempotency_conflict', 'idempotency_conflict'],

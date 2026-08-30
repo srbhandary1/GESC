@@ -8,6 +8,7 @@ import {
   speakWithBrowserSpeech,
   stopBrowserSpeech,
 } from './browserSpeech'
+import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
 
 export type DemoSpeechSource = 'azure' | 'browser'
 
@@ -16,6 +17,7 @@ let currentObjectUrl: string | null = null
 let azureConfiguredCache: boolean | null = null
 
 export function stopDemoSpeech(): void {
+  stopSpeechPlayback()
   if (currentAudio !== null) {
     currentAudio.pause()
     currentAudio.src = ''

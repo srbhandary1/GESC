@@ -160,7 +160,6 @@ export interface OperatorContentStudioApi {
 export type OperatorContentErrorKind =
   | 'concurrent_change'
   | 'forbidden'
-  | 'fresh_mfa'
   | 'head_conflict'
   | 'idempotency_conflict'
   | 'not_found'
@@ -555,13 +554,6 @@ export class WebOperatorContentStudioApi implements OperatorContentStudioApi {
 
     if (response.status === 409 && messageKey !== null && messageKey in mapped) {
       throw new OperatorContentApiError(mapped[messageKey as keyof typeof mapped])
-    }
-    if (
-      response.status === 403
-      && (messageKey === 'problem.fresh_mfa_required'
-        || messageKey === 'problem.fresh_password_confirmation_required')
-    ) {
-      throw new OperatorContentApiError('fresh_mfa')
     }
     if (response.status === 403) throw new OperatorContentApiError('forbidden')
     if (response.status === 404) throw new OperatorContentApiError('not_found')

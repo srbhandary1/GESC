@@ -1,10 +1,11 @@
+import { Capacitor } from '@capacitor/core'
 import {
   ApplicationFrame,
   type PrimaryDestination,
 } from '@global-english/design-system'
 import {
   DEFAULT_LOCALE,
-  SUPPORTED_LOCALES,
+  INTERFACE_LOCALES,
   type MessageKey,
   type ResolutionPolicy,
   type SupportedLocale,
@@ -18,6 +19,7 @@ import {
 } from 'react'
 import './App.css'
 import './demo/demoExperience.css'
+import './tutor/tutorExperience.css'
 import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
@@ -27,11 +29,10 @@ import type {
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
-import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
-import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
-import { RoleplayJourney } from './conversation/RoleplayJourney'
+import type { ConversationJourneyApi, FriendSession } from './conversation/ConversationJourneyApi'
+import { SpeakRoom } from './conversation/SpeakRoom'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
@@ -40,10 +41,17 @@ import {
   type InterfaceMessageResolution,
 } from './localization/interfaceLocalization'
 import { LocalizedMessage } from './localization/LocalizedMessage'
+import { MarketingLanding } from './marketing/MarketingLanding'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
+import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
+import { LevelPathPanel } from './learner/LevelPathPanel'
+import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
+import type { LevelSessionsApi } from './learner/LevelSessionsApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
+import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import { browserOfflineLearningStore } from './offline/BrowserOfflineLearningStore'
 import type {
   OfflineLearningStore,
@@ -71,10 +79,27 @@ interface AppProps {
   createClientId?: () => string
   demoMode?: boolean
   learnerJourneyApi?: LearnerJourneyApi
+  levelSessionsApi?: LevelSessionsApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
   operatorConsoleApi?: OperatorConsoleApi
   operatorOrganizationApi?: OperatorOrganizationApi
+}
+
+const demoTuitionRequestsApi: TuitionRequestsApi = {
+  async list() {
+    return {
+      requests: [],
+      institute_contact: {
+        email: null,
+        phone: null,
+        whatsapp: null,
+      },
+    }
+  },
+  async create() {
+    throw new Error('Demo tuition requests are local-only.')
+  },
 }
 
 const destinationMessages: Readonly<
@@ -91,13 +116,17 @@ const destinationMessages: Readonly<
     description: 'page.learn.description',
     title: 'page.learn.title',
   },
-  practice: {
-    description: 'page.practice.description',
-    title: 'page.practice.title',
+  speak: {
+    description: 'page.speak.description',
+    title: 'page.speak.title',
   },
   progress: {
     description: 'page.progress.description',
     title: 'page.progress.title',
+  },
+  tuition: {
+    description: 'page.tuition.description',
+    title: 'page.tuition.title',
   },
 }
 
@@ -115,23 +144,25 @@ const demoDestinationMessages: Readonly<
     description: 'demo.page.learn.description',
     title: 'demo.page.learn.title',
   },
-  practice: {
-    description: 'demo.page.practice.description',
-    title: 'demo.page.practice.title',
+  speak: {
+    description: 'demo.page.speak.description',
+    title: 'demo.page.speak.title',
   },
   progress: {
     description: 'demo.page.progress.description',
     title: 'demo.page.progress.title',
   },
+  tuition: {
+    description: 'demo.page.tuition.description',
+    title: 'demo.page.tuition.title',
+  },
 }
 
-const localeMessageKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
+const localeMessageKeys: Readonly<
+  Record<(typeof INTERFACE_LOCALES)[number], MessageKey>
+> = {
   'en-IN': 'locale.en_IN',
-  'hi-IN': 'locale.hi_IN',
   'kn-IN': 'locale.kn_IN',
-  'ml-IN': 'locale.ml_IN',
-  'ta-IN': 'locale.ta_IN',
-  'te-IN': 'locale.te_IN',
 }
 
 function App({
@@ -141,6 +172,7 @@ function App({
   createClientId,
   demoMode = false,
   learnerJourneyApi = defaultLearnerJourneyApi,
+  levelSessionsApi = defaultLevelSessionsApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
   operatorConsoleApi = defaultOperatorConsoleApi,
@@ -154,14 +186,22 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
-  const [practiceSurface, setPracticeSurface] = useState<
-    'confidence' | 'roleplay'
-  >('confidence')
+  const [speakMode, setSpeakMode] = useState<'everyday' | 'situation'>(
+    'everyday',
+  )
+  const [boundConversation, setBoundConversation] =
+    useState<FriendSession | null>(null)
+  const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
+  const [locationHash, setLocationHash] = useState(
+    () => globalThis.location?.hash ?? '',
+  )
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
     () => destinationFromHash(globalThis.location?.hash) ?? 'home',
   )
+  const isNativeAndroid =
+    Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
   const message = (key: MessageKey) =>
@@ -259,7 +299,9 @@ function App({
 
   useEffect(() => {
     const updateDestination = () => {
-      const nextDestination = destinationFromHash(globalThis.location?.hash)
+      const hash = globalThis.location?.hash ?? ''
+      setLocationHash(hash)
+      const nextDestination = destinationFromHash(hash)
 
       if (nextDestination !== null) {
         setDestination(nextDestination)
@@ -273,18 +315,7 @@ function App({
     }
   }, [])
 
-  useEffect(() => {
-    if (previousDestination.current !== destination) {
-      destinationTitle.current?.focus()
-      previousDestination.current = destination
-    }
-  }, [destination])
-
-  const brand = resolveInterfaceMessage(
-    'app.name',
-    'en-IN',
-    localizationPolicy,
-  )
+  const brand = message('app.name')
   const navigationLabel = message('shell.navigation_label')
   const skipToContent = message('shell.skip_to_content')
   const fallbackLabel = message('localization.fallback_label')
@@ -307,13 +338,17 @@ function App({
       href: '#learn',
       label: <LocalizedMessage resolution={message('nav.learn')} />,
     },
-    practice: {
-      href: '#practice',
-      label: <LocalizedMessage resolution={message('nav.practice')} />,
+    speak: {
+      href: '#speak',
+      label: <LocalizedMessage resolution={message('nav.speak')} />,
     },
     progress: {
       href: '#progress',
       label: <LocalizedMessage resolution={message('nav.progress')} />,
+    },
+    tuition: {
+      href: '#tuition',
+      label: <LocalizedMessage resolution={message('nav.tuition')} />,
     },
   } as const
   const authenticatedOfflineBinding = useMemo<OfflineProfileBinding | null>(
@@ -364,18 +399,106 @@ function App({
     navigationLabel.usedFallback ||
     title.usedFallback ||
     description.usedFallback
-  const canLearn =
+  const canHomeLearner =
+    destination === 'home' &&
+    isLearnerSession &&
+    !demoMode
+  const canLearnPath =
     destination === 'learn' &&
     (isLearnerSession || offlineResume !== null)
-  const canPractice =
-    destination === 'practice' && isLearnerSession
+  const canSpeak = destination === 'speak' && isLearnerSession
+  const canTuition = destination === 'tuition' && isLearnerSession
+  const showDemoMission =
+    demoMode && locationHash.replace(/^#/u, '') === 'mission' && isLearnerSession
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
+  const canShowLevelProgress =
+    !demoMode && destination === 'progress' && isLearnerSession
   const canShowOperatorConsole = isOperatorSession
   const mfaAuthentication = isWebSessionAuthentication(authentication)
     ? authentication
     : undefined
+  const androidAuthentication =
+    authentication.transport === 'passport-pkce'
+      ? (authentication as AndroidPkceAuthentication)
+      : null
+  const isGuestSession =
+    !demoMode &&
+    (session.status === 'checking' ||
+      session.status === 'anonymous' ||
+      session.status === 'unavailable')
   const showDemoPhase1 = demoMode && destination === 'home'
+  const showDedicatedSignIn = isGuestSession && locationHash === '#sign-in'
+  const showMarketingLanding =
+    isGuestSession && destination === 'home' && !showDedicatedSignIn
+  const accountSecurityVisible =
+    accountSecurityOpen && session.status === 'authenticated'
+  const showAuthenticatedAccountPanel =
+    !demoMode && accountSecurityVisible
+  const suppressVisibleHero =
+    showDemoMission ||
+    canHomeLearner ||
+    canLearnPath ||
+    canSpeak ||
+    canTuition ||
+    canShowDemoProgress ||
+    canShowLevelProgress ||
+    canShowOperatorConsole
+  const useQuietHero =
+    !suppressVisibleHero &&
+    !showMarketingLanding &&
+    !showDedicatedSignIn &&
+    !showDemoPhase1 &&
+    (isLearnerSession ||
+      session.status === 'anonymous' ||
+      session.status === 'unavailable')
+
+  useEffect(() => {
+    const openAccountSecurityFromHash = () => {
+      if (window.location.hash === '#operator-account-settings-title') {
+        setAccountSecurityOpen(true)
+      }
+    }
+
+    openAccountSecurityFromHash()
+    window.addEventListener('hashchange', openAccountSecurityFromHash)
+
+    return () => {
+      window.removeEventListener('hashchange', openAccountSecurityFromHash)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!showDedicatedSignIn) {
+      return
+    }
+
+    const focusSignIn = () => {
+      window.scrollTo(0, 0)
+      const username = document.getElementById('web-password-username')
+      if (username instanceof HTMLElement) {
+        username.focus()
+        return
+      }
+      document.getElementById('sign-in-title')?.focus()
+    }
+
+    window.scrollTo(0, 0)
+    const frame = window.requestAnimationFrame(focusSignIn)
+    return () => {
+      window.cancelAnimationFrame(frame)
+    }
+  }, [showDedicatedSignIn])
+  useEffect(() => {
+    if (previousDestination.current !== destination) {
+      if (showMarketingLanding) {
+        document.getElementById('marketing-hero-title')?.focus()
+      } else {
+        destinationTitle.current?.focus()
+      }
+      previousDestination.current = destination
+    }
+  }, [destination, showMarketingLanding])
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -396,55 +519,212 @@ function App({
       data-demo-mode={demoMode ? 'synthetic-local' : undefined}
     >
     <ApplicationFrame
-      brandLabel={brand.text}
+      className={
+        isOperatorSession ? undefined : 'ge-application-frame--tutor'
+      }
+      brandLabel={
+        <>
+          <img
+            alt=""
+            aria-hidden="true"
+            className={
+              isNativeAndroid
+                ? 'shell-brand-logo shell-brand-logo--android'
+                : 'shell-brand-logo'
+            }
+            height={isNativeAndroid ? 48 : 72}
+            src={
+              isNativeAndroid
+                ? '/marketing/brand/logo-android.png'
+                : '/marketing/brand/logo-web.png'
+            }
+            width={isNativeAndroid ? 110 : 180}
+          />
+          <span className="visually-hidden">{brand.text}</span>
+        </>
+      }
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
-      hidePrimaryNavigation={isOperatorSession}
+      hidePrimaryNavigation={isOperatorSession || isGuestSession}
       headerActions={
-        <div className="shell-locale-control">
-          <label
-            className="shell-locale-control__label"
-            htmlFor="interface-locale"
-          >
-            <LocalizedMessage resolution={message('shell.locale_label')} />
-          </label>
-          <select
-            className="shell-locale-control__select"
-            id="interface-locale"
-            value={locale}
-            onChange={handleLocaleChange}
-          >
-            {SUPPORTED_LOCALES.map((supported) => {
-              // Language names are endonyms in every catalogue. Tag each
-              // option with that language so assistive tech and fonts match.
-              const option = resolveInterfaceMessage(
-                localeMessageKeys[supported],
-                locale,
-                localizationPolicy,
-              )
+        <div className="shell-header-actions">
+          {androidAuthentication === null || session.status === 'checking' ? null : (
+            <>
+              {session.status === 'authenticated' ? (
+                <p className="shell-account-menu__status" role="status">
+                  <LocalizedMessage
+                    resolution={message(sessionMessageKey(session))}
+                  />
+                </p>
+              ) : null}
+              <button
+              className="shell-header-authentication"
+              type="button"
+              onClick={() => {
+                if (session.status === 'authenticated') {
+                  void androidAuthentication
+                    .logout()
+                    .then(() => setSession({ status: 'anonymous' }))
+                    .catch(() => setSession({ status: 'unavailable' }))
 
-              return (
-                <option key={supported} lang={supported} value={supported}>
-                  {option.text}
-                </option>
-              )
-            })}
-          </select>
-          <p
-            className="visually-hidden"
-            aria-atomic="true"
-            aria-live="polite"
-          >
-            {announcedLocale === null ? null : (
+                  return
+                }
+
+                void androidAuthentication.beginAuthorization().catch(() => {
+                  setSession({ status: 'unavailable' })
+                })
+              }}
+            >
               <LocalizedMessage
-                resolution={resolveInterfaceMessage(
-                  'shell.locale_changed',
-                  announcedLocale,
-                  localizationPolicy,
+                resolution={message(
+                  session.status === 'authenticated'
+                    ? 'session.android_sign_out'
+                    : 'session.android_sign_in',
                 )}
               />
-            )}
-          </p>
+            </button>
+            </>
+          )}
+          {!demoMode &&
+          authentication.transport === 'sanctum-cookie' &&
+          (session.status === 'anonymous' ||
+            session.status === 'unavailable') ? (
+            <>
+              {session.status === 'unavailable' ? (
+                <p className="shell-account-menu__status" role="status">
+                  <LocalizedMessage
+                    resolution={message('session.unavailable')}
+                  />
+                </p>
+              ) : null}
+            <a
+              className={
+                showDedicatedSignIn
+                  ? 'shell-header-authentication shell-header-authentication--quiet'
+                  : 'shell-header-authentication'
+              }
+              href={showDedicatedSignIn ? '#home' : '#sign-in'}
+              onClick={() => {
+                if (showDedicatedSignIn) {
+                  setDestination('home')
+                  setLocationHash('#home')
+                  return
+                }
+
+                setDestination('home')
+                setLocationHash('#sign-in')
+              }}
+            >
+              <LocalizedMessage
+                resolution={message(
+                  showDedicatedSignIn ? 'nav.home' : 'session.label',
+                )}
+              />
+            </a>
+            </>
+          ) : null}
+          {!demoMode &&
+          authentication.transport === 'sanctum-cookie' &&
+          session.status === 'authenticated' ? (
+            <div className="shell-account-menu">
+              <p className="shell-account-menu__status" role="status">
+                <LocalizedMessage
+                  resolution={message(sessionMessageKey(session))}
+                />
+                {session.identity.current_membership?.organization.name ? (
+                  <bdi className="shell-account-menu__organization" lang="">
+                    {session.identity.current_membership.organization.name}
+                  </bdi>
+                ) : null}
+              </p>
+              <div className="shell-account-menu__actions">
+                <button
+                  aria-controls="session-account-security"
+                  aria-expanded={accountSecurityVisible}
+                  className="shell-header-authentication"
+                  onClick={() =>
+                    setAccountSecurityOpen((current) => !current)
+                  }
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message('session.account_menu')}
+                  />
+                </button>
+                <button
+                  className="shell-header-authentication shell-header-authentication--quiet"
+                  onClick={() => {
+                    const webAuth = isWebSessionAuthentication(authentication)
+                      ? authentication
+                      : null
+                    if (webAuth === null) {
+                      return
+                    }
+                    void webAuth
+                      .logout()
+                      .then(() => {
+                        setAccountSecurityOpen(false)
+                        setSession({ status: 'anonymous' })
+                      })
+                      .catch(() => {
+                        setAccountSecurityOpen(false)
+                        setSession({ status: 'unavailable' })
+                      })
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message('session.android_sign_out')}
+                  />
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <div className="shell-locale-control">
+            <label
+              className="shell-locale-control__label"
+              htmlFor="interface-locale"
+            >
+              <LocalizedMessage resolution={message('shell.locale_label')} />
+            </label>
+            <select
+              className="shell-locale-control__select"
+              id="interface-locale"
+              value={locale}
+              onChange={handleLocaleChange}
+            >
+              {INTERFACE_LOCALES.map((supported) => {
+                // Language names are endonyms in every catalogue. Tag each
+                // option with that language so assistive tech and fonts match.
+                const option = resolveInterfaceMessage(
+                  localeMessageKeys[supported],
+                  locale,
+                  localizationPolicy,
+                )
+
+                return (
+                  <option key={supported} lang={supported} value={supported}>
+                    {option.text}
+                  </option>
+                )
+              })}
+            </select>
+            <p
+              className="visually-hidden"
+              aria-atomic="true"
+              aria-live="polite"
+            >
+              {announcedLocale === null ? null : (
+                <LocalizedMessage
+                  resolution={resolveInterfaceMessage(
+                    'shell.locale_changed',
+                    announcedLocale,
+                    localizationPolicy,
+                  )}
+                />
+              )}
+            </p>
+          </div>
         </div>
       }
       navigationLabel={navigationLabel.text}
@@ -454,7 +734,15 @@ function App({
         <LocalizedMessage resolution={skipToContent} />
       }
     >
-      <div className="shell-content">
+      <div
+        className={
+          showMarketingLanding
+            ? 'shell-content shell-content--gate shell-content--landing'
+            : session.status === 'anonymous' || session.status === 'unavailable'
+              ? 'shell-content shell-content--gate'
+              : 'shell-content'
+        }
+      >
         {demoMode ? (
           <aside
             className="shell-demo"
@@ -505,9 +793,22 @@ function App({
           </aside>
         ) : null}
 
-        {showDemoPhase1 ? null : (
+        {showDemoPhase1 || showMarketingLanding || showDedicatedSignIn ? null : suppressVisibleHero ? (
+          <h1
+            className="visually-hidden"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : (
           <section
-            className="shell-introduction"
+            className={
+              useQuietHero
+                ? 'shell-introduction shell-introduction--quiet'
+                : 'shell-introduction'
+            }
             aria-labelledby="destination-title"
           >
             <p className="shell-eyebrow">
@@ -527,12 +828,67 @@ function App({
           </section>
         )}
 
-        {showDemoPhase1 ? (
-          <DemoPhase1Shell
+        {showMarketingLanding ? (
+          <MarketingLanding
             locale={locale}
-            localizationPolicy={localizationPolicy}
+            message={message}
           />
-        ) : canLearn ? (
+        ) : null}
+
+        {showDedicatedSignIn ? (
+          <section
+            className="shell-sign-in-page"
+            aria-labelledby="sign-in-title"
+            id="web-sign-in-page"
+          >
+            <div className="shell-sign-in-page__card">
+              <a
+                className="shell-sign-in-page__close"
+                href="#home"
+                onClick={() => {
+                  setDestination('home')
+                  setLocationHash('#home')
+                }}
+              >
+                <span aria-hidden="true">×</span>
+                <LocalizedMessage resolution={message('nav.home')} />
+              </a>
+              <header className="shell-sign-in-page__header">
+                <TutorPresence
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  size="md"
+                />
+                <p className="shell-sign-in-page__eyebrow">
+                  <LocalizedMessage
+                    resolution={message('marketing.hero.badge')}
+                  />
+                </p>
+                <h1 id="sign-in-title" tabIndex={-1}>
+                  <LocalizedMessage resolution={message('session.label')} />
+                </h1>
+                <p className="shell-sign-in-page__lede">
+                  <LocalizedMessage
+                    resolution={message('marketing.join.body')}
+                  />
+                </p>
+              </header>
+              <SessionSummary
+                accountSecurityOpen={accountSecurityVisible}
+                authentication={authentication}
+                embedded
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                message={message}
+                onAccountSecurityOpenChange={setAccountSecurityOpen}
+                onSessionChange={setSession}
+                session={session}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {showDemoMission ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
@@ -543,47 +899,83 @@ function App({
             offlineStore={offlineStore}
             resumeBundle={offlineResume?.storedBundle}
           />
-        ) : canPractice ? (
-          practiceSurface === 'roleplay' ? (
-            <RoleplayJourney
-              api={conversationApi}
+        ) : showDemoPhase1 ? (
+          <DemoPhase1Shell
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canHomeLearner ? (
+          <div className="learner-stack">
+            <TutorHomeHero
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+            />
+            <LearnerJourney
+              api={learnerJourneyApi}
+              audioRecorder={audioRecorder}
               createClientId={createClientId}
               locale={locale}
               localizationPolicy={localizationPolicy}
-              onBack={() => {
-                setPracticeSurface('confidence')
-              }}
+              offlineBinding={offlineBinding}
+              offlineStore={offlineStore}
+              resumeBundle={offlineResume?.storedBundle}
             />
-          ) : (
-            <>
-              <div className="shell-practice-switch">
-                <button
-                  onClick={() => {
-                    setPracticeSurface('roleplay')
-                  }}
-                  type="button"
-                >
-                  <LocalizedMessage
-                    resolution={message(
-                      'conversation.roleplay.entry_button',
-                    )}
-                  />
-                </button>
-              </div>
-              <ConversationJourney
-                api={conversationApi}
-                createClientId={createClientId}
-                demoMode={demoMode}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-              />
-            </>
-          )
+          </div>
+        ) : canLearnPath ? (
+          <LevelPathPanel
+            api={levelSessionsApi}
+            conversationApi={conversationApi}
+            createClientId={createClientId}
+            demoMode={demoMode}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onOpenRoleplay={() => {
+              setBoundConversation(null)
+              setSpeakMode('situation')
+              globalThis.location.hash = '#speak'
+            }}
+          />
+        ) : canSpeak ? (
+          <SpeakRoom
+            api={conversationApi}
+            createClientId={createClientId}
+            demoMode={demoMode}
+            initialMode={speakMode}
+            initialSession={boundConversation ?? undefined}
+            key={`speak-${speakMode}-${boundConversation?.id ?? 'unbound'}`}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canTuition ? (
+          <TuitionRequestPanel
+            api={
+              demoMode
+                ? demoTuitionRequestsApi
+                : undefined
+            }
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
         ) : canShowDemoProgress ? (
           <DemoLearnerProgress
             api={learnerJourneyApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
+          />
+        ) : canShowLevelProgress ? (
+          <LevelPathPanel
+            api={levelSessionsApi}
+            conversationApi={conversationApi}
+            createClientId={createClientId}
+            demoMode={demoMode}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onOpenRoleplay={() => {
+              setBoundConversation(null)
+              setSpeakMode('situation')
+              globalThis.location.hash = '#speak'
+            }}
           />
         ) : canShowOperatorConsole ? (
           <OperatorConsole
@@ -603,6 +995,22 @@ function App({
             }}
             organizationApi={operatorOrganizationApi}
           />
+        ) : showMarketingLanding ? null : session.status === 'anonymous' ||
+          session.status === 'unavailable' ? (
+          <p className="shell-sign-in-hint">
+            <LocalizedMessage resolution={message('session.sign_in_hint')} />{' '}
+            <a
+              href="#sign-in"
+              onClick={() => {
+                setDestination('home')
+                setLocationHash('#sign-in')
+              }}
+            >
+              <LocalizedMessage
+                resolution={message('session.label')}
+              />
+            </a>
+          </p>
         ) : (
           <p className="shell-checkpoint-notice">
             <LocalizedMessage
@@ -611,16 +1019,22 @@ function App({
           </p>
         )}
 
-        {demoMode ? null : (
-          <SessionSummary
-            authentication={authentication}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            message={message}
-            onSessionChange={setSession}
-            session={session}
-          />
-        )}
+        {demoMode || showMarketingLanding || showDedicatedSignIn
+          ? null
+          : showAuthenticatedAccountPanel
+            ? (
+                <SessionSummary
+                  accountSecurityOpen={accountSecurityVisible}
+                  authentication={authentication}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  message={message}
+                  onAccountSecurityOpenChange={setAccountSecurityOpen}
+                  onSessionChange={setSession}
+                  session={session}
+                />
+              )
+            : null}
       </div>
     </ApplicationFrame>
     </div>
@@ -628,190 +1042,125 @@ function App({
 }
 
 interface SessionSummaryProps {
+  accountSecurityOpen: boolean
   authentication: AuthenticationAdapter
+  embedded?: boolean
   locale: SupportedLocale
   localizationPolicy: ResolutionPolicy
   message: (key: MessageKey) => InterfaceMessageResolution
+  onAccountSecurityOpenChange: (open: boolean) => void
   onSessionChange: (session: SessionState) => void
   session: SessionState
 }
 
 function SessionSummary({
+  accountSecurityOpen,
   authentication,
+  embedded = false,
   locale,
   localizationPolicy,
   message,
+  onAccountSecurityOpenChange,
   onSessionChange,
   session,
 }: SessionSummaryProps) {
-  const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
-
-  useEffect(() => {
-    const openAccountSecurityFromHash = () => {
-      if (window.location.hash === '#operator-account-security-title') {
-        setAccountSecurityOpen(true)
-      }
-    }
-
-    openAccountSecurityFromHash()
-    window.addEventListener('hashchange', openAccountSecurityFromHash)
-
-    return () => {
-      window.removeEventListener('hashchange', openAccountSecurityFromHash)
-    }
-  }, [])
-
   useEffect(() => {
     if (
       accountSecurityOpen &&
-      window.location.hash === '#operator-account-security-title'
+      window.location.hash === '#operator-account-settings-title'
     ) {
       document
-        .getElementById('operator-account-security-title')
+        .getElementById('operator-account-settings-title')
         ?.scrollIntoView({ block: 'start' })
     }
   }, [accountSecurityOpen])
+
   const statusMessage = sessionMessageKey(session)
   const organization =
     session.status === 'authenticated'
       ? session.identity.current_membership?.organization.name
       : undefined
-  const isAndroidPkce = authentication.transport === 'passport-pkce'
-  const androidAuth = isAndroidPkce
-    ? (authentication as AndroidPkceAuthentication)
-    : null
   const webAuth = isWebSessionAuthentication(authentication)
     ? authentication
     : null
+  const isAuthenticated = session.status === 'authenticated'
 
   return (
     <section
-      className="shell-session"
-      aria-labelledby="session-title"
+      className={`shell-session${
+        webAuth !== null && !isAuthenticated ? ' shell-session--sign-in' : ''
+      }${isAuthenticated ? ' shell-session--account' : ''}${
+        embedded ? ' shell-session--embedded' : ''
+      }`}
+      aria-labelledby={embedded && !isAuthenticated ? undefined : 'session-title'}
+      id={
+        embedded
+          ? undefined
+          : isAuthenticated
+            ? 'session-account-security'
+            : 'sign-in'
+      }
     >
-      <h2
-        className="shell-session__title"
-        id="session-title"
-      >
-        <LocalizedMessage resolution={message('session.label')} />
-      </h2>
-      <div
-        className="shell-session__status"
-        role="status"
-      >
-        <LocalizedMessage resolution={message(statusMessage)} />
-        {organization === undefined ? null : (
+      {embedded && !isAuthenticated ? null : (
+        <h2 className="shell-session__title" id="session-title">
+          <LocalizedMessage
+            resolution={message(
+              isAuthenticated ? 'session.account_menu' : 'session.label',
+            )}
+          />
+        </h2>
+      )}
+      {!isAuthenticated && (!embedded || session.status !== 'anonymous') ? (
+        <div
+          className={
+            embedded
+              ? 'shell-session__status shell-session__status--embedded'
+              : 'shell-session__status'
+          }
+          role="status"
+        >
+          <LocalizedMessage resolution={message(statusMessage)} />
+        </div>
+      ) : null}
+      {!embedded && isAuthenticated && organization !== undefined ? (
+        <div className="shell-session__status" role="status">
           <span className="shell-session__organization">
             <span className="shell-session__organization-label">
               <LocalizedMessage
                 resolution={message('session.organization_label')}
               />
             </span>
-            <bdi
-              className="shell-session__organization-name"
-              lang=""
-            >
+            <bdi className="shell-session__organization-name" lang="">
               {organization}
             </bdi>
           </span>
-        )}
-      </div>
-      {androidAuth === null ? null : (
-        <div className="shell-session__actions">
-          {session.status === 'anonymous' || session.status === 'unavailable' ? (
-            <button
-              type="button"
-              onClick={() => {
-                void androidAuth.beginAuthorization().catch(() => {
-                  onSessionChange({ status: 'unavailable' })
-                })
-              }}
-            >
-              <LocalizedMessage
-                resolution={message('session.android_sign_in')}
-              />
-            </button>
-          ) : null}
-          {session.status === 'authenticated' ? (
-            <button
-              type="button"
-              onClick={() => {
-                void androidAuth.logout().then(() => {
-                  onSessionChange({ status: 'anonymous' })
-                })
-              }}
-            >
-              <LocalizedMessage
-                resolution={message('session.android_sign_out')}
-              />
-            </button>
-          ) : null}
-        </div>
-      )}
-      {webAuth !== null && session.status === 'authenticated' ? (
-        <div className="shell-session__actions">
-          <button
-            aria-controls="session-account-security"
-            aria-expanded={accountSecurityOpen}
-            onClick={() => setAccountSecurityOpen((current) => !current)}
-            type="button"
-          >
-            <LocalizedMessage
-              resolution={message('operator.password.title')}
-            />
-          </button>
-          <button
-            onClick={() => {
-              void webAuth
-                .logout()
-                .then(() => {
-                  setAccountSecurityOpen(false)
-                  onSessionChange({ status: 'anonymous' })
-                })
-                .catch(() => {
-                  setAccountSecurityOpen(false)
-                  onSessionChange({ status: 'unavailable' })
-                })
-            }}
-            type="button"
-          >
-            <LocalizedMessage
-              resolution={message('session.android_sign_out')}
-            />
-          </button>
         </div>
       ) : null}
-      {webAuth !== null &&
-      (session.status === 'anonymous' || session.status === 'unavailable') ? (
+      {webAuth !== null && !isAuthenticated ? (
         <WebPasswordSignInPanel
           authentication={webAuth}
+          embedded={embedded}
           message={message}
           onAuthenticated={onSessionChange}
         />
       ) : null}
-      {webAuth !== null &&
-      session.status === 'authenticated' &&
-      accountSecurityOpen ? (
-        <div id="session-account-security">
-          <PasswordAccountSecurityPanel
-            authentication={webAuth}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            onCredentialsRevoked={() => {
-              setAccountSecurityOpen(false)
-              onSessionChange({ status: 'anonymous' })
-            }}
-          />
-        </div>
+      {webAuth !== null && isAuthenticated && accountSecurityOpen ? (
+        <PasswordAccountSecurityPanel
+          authentication={webAuth}
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+          onCredentialsRevoked={() => {
+            onAccountSecurityOpenChange(false)
+            onSessionChange({ status: 'anonymous' })
+          }}
+        />
       ) : null}
     </section>
   )
 }
 
 function supportedLocale(value: string): SupportedLocale | null {
-  return (
-    SUPPORTED_LOCALES.find((locale) => locale === value) ?? null
-  )
+  return INTERFACE_LOCALES.find((locale) => locale === value) ?? null
 }
 
 function isWebSessionAuthentication(
@@ -849,13 +1198,16 @@ function destinationFromHash(
 ): PrimaryDestination | null {
   const candidate = hash?.replace(/^#/u, '')
 
-  if (
-    candidate === 'home' ||
-    candidate === 'learn' ||
-    candidate === 'practice' ||
-    candidate === 'progress'
-  ) {
+  if (candidate === 'practice' || candidate === 'speak') {
+    return 'speak'
+  }
+
+  if (candidate === 'home' || candidate === 'learn' || candidate === 'progress') {
     return candidate
+  }
+
+  if (candidate === 'tuition' || candidate === 'one-to-one') {
+    return 'tuition'
   }
 
   return null

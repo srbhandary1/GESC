@@ -142,6 +142,22 @@ export interface OperatorLearnerFilters {
   readonly q?: string
 }
 
+export interface OperatorTuitionRequest {
+  readonly id: string
+  readonly membership_id: string
+  readonly display_name: string | null
+  readonly preferred_window: string
+  readonly topic: string
+  readonly notes: string | null
+  readonly status: 'submitted' | 'acknowledged'
+  readonly created_at: string | null
+  readonly acknowledged_at: string | null
+}
+
+export interface OperatorTuitionRequestListing {
+  readonly requests: readonly OperatorTuitionRequest[]
+}
+
 export interface OperatorLearnerApi {
   listLearners(
     filters?: OperatorLearnerFilters,
@@ -162,6 +178,13 @@ export interface OperatorLearnerApi {
     cursor?: string,
     signal?: AbortSignal,
   ): Promise<OperatorLearnerInvitationCollection>
+  listTuitionRequests(
+    signal?: AbortSignal,
+  ): Promise<OperatorTuitionRequestListing>
+  acknowledgeTuitionRequest(
+    requestId: string,
+    idempotencyKey: string,
+  ): Promise<OperatorTuitionRequest>
   correctGoal(
     membershipId: string,
     body: Readonly<{ goal_key: OperatorLearnerGoalKey; expected_version: number }>,
@@ -231,7 +254,6 @@ export interface OperatorLearnerApi {
 export type OperatorLearnerErrorKind =
   | 'active_dependency'
   | 'forbidden'
-  | 'fresh_mfa'
   | 'idempotency_conflict'
   | 'stale_state'
   | 'unsafe_role'
@@ -327,6 +349,21 @@ export class WebOperatorLearnerApi implements OperatorLearnerApi {
     return this.#get<OperatorLearnerInvitationCollection>(
       `/operator/learner-invitations?${parameters.toString()}`,
       signal,
+    )
+  }
+
+  listTuitionRequests(signal?: AbortSignal) {
+    return this.#get<OperatorTuitionRequestListing>(
+      '/operator/tuition-requests',
+      signal,
+    )
+  }
+
+  acknowledgeTuitionRequest(requestId: string, idempotencyKey: string) {
+    return this.#post<OperatorTuitionRequest>(
+      `/operator/tuition-requests/${this.#segment(requestId)}/acknowledgements`,
+      {},
+      idempotencyKey,
     )
   }
 
@@ -528,13 +565,6 @@ export class WebOperatorLearnerApi implements OperatorLearnerApi {
       // Failure bodies are deliberately not reflected into the interface.
     }
 
-    if (
-      response.status === 403
-      && (messageKey === 'problem.fresh_mfa_required'
-        || messageKey === 'problem.fresh_password_confirmation_required')
-    ) {
-      throw new OperatorLearnerApiError('fresh_mfa')
-    }
     if (response.status === 403 && messageKey === 'problem.forbidden') {
       throw new OperatorLearnerApiError('forbidden')
     }

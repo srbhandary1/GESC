@@ -19,6 +19,13 @@ import type {
   MissionResult,
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
+import type {
+  CheckSubmissionResult,
+  LevelSessionDetail,
+  LevelSessionsApi,
+  LevelSessionsList,
+  SessionPartId,
+} from '../learner/LevelSessionsApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
 import { requestDemoChatReply } from './demoChat'
 
@@ -68,6 +75,7 @@ export function createLocalDemoRuntime() {
     authentication: demoAuthentication,
     conversationApi: new LocalDemoConversationApi(),
     learnerJourneyApi: new LocalDemoLearnerApi(),
+    levelSessionsApi: new LocalDemoLevelSessionsApi(),
   } as const
 }
 
@@ -214,6 +222,227 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
   }
 }
 
+class LocalDemoLevelSessionsApi implements LevelSessionsApi {
+  #completions = new Set<SessionPartId>()
+
+  async listLevels(signal?: AbortSignal) {
+    abortIfNeeded(signal)
+    const levels = Array.from({ length: 17 }, (_, index) => {
+      const levelNumber = index + 1
+      if (levelNumber === 1) {
+        return {
+          level_number: 1,
+          concept_key: 'can',
+          availability: 'available' as const,
+          blueprint_id: '01J30000000000000000000030',
+          session_part_ids: [
+            'introduction',
+            'practice',
+            'conversation',
+            'interaction',
+          ],
+        }
+      }
+      return {
+        level_number: levelNumber,
+        concept_key: null,
+        availability: 'commissioning_pending' as const,
+        blueprint_id: null,
+        session_part_ids: [
+          'introduction',
+          'practice',
+          'conversation',
+          'interaction',
+        ],
+      }
+    })
+    return { levels }
+  }
+
+  async listSessions(
+    levelNumber: number,
+    signal?: AbortSignal,
+  ): Promise<LevelSessionsList> {
+    abortIfNeeded(signal)
+    if (levelNumber !== 1) {
+      throw new Error('level_unavailable')
+    }
+    const parts: SessionPartId[] = [
+      'introduction',
+      'practice',
+      'conversation',
+      'interaction',
+    ]
+    return {
+      level_number: 1,
+      concept_key: 'can',
+      blueprint_id: '01J30000000000000000000030',
+      blueprint_content_hash: 'd'.repeat(64),
+      sessions: parts.map((partId, index) => ({
+        part_id: partId,
+        part_order: index + 1,
+        media_asset_id: ids.asset,
+        completed: this.#completions.has(partId),
+      })),
+    }
+  }
+
+  async sessionDetail(
+    levelNumber: number,
+    partId: SessionPartId,
+    signal?: AbortSignal,
+  ): Promise<LevelSessionDetail> {
+    abortIfNeeded(signal)
+    if (levelNumber !== 1) {
+      throw new Error('level_unavailable')
+    }
+    const order = (
+      ['introduction', 'practice', 'conversation', 'interaction'] as const
+    ).indexOf(partId)
+    return {
+      level_number: 1,
+      part_id: partId,
+      part_order: order + 1,
+      completed: this.#completions.has(partId),
+      media_asset_id: ids.asset,
+      audio_stream_path: encodeDemoSpeechUrl(
+        'en-IN',
+        'I can speak English. Can I help you?',
+      ),
+      objective:
+        'By the end of this lesson, the learner can use can and cannot.',
+      target_patterns: ['I can + base verb.', 'Can I + base verb?'],
+      kannada_guidance: {
+        summary: 'ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.',
+      },
+      talk: {
+        scenario: 'Ask for permission at a community centre.',
+        elicitation_goals: ['Ask one Can I...? question.'],
+        fallback_turns: ['Can I use your pen?'],
+        free_speech: partId === 'conversation' || partId === 'interaction',
+      },
+      apply:
+        partId === 'interaction'
+          ? {
+              task: 'State one ability and ask permission.',
+              rubric: ['Uses one accurate I can statement'],
+              free_speech: true,
+            }
+          : null,
+      check:
+        partId === 'practice'
+          ? {
+              pass_threshold: 80,
+              items: [
+                {
+                  id: 'can-01',
+                  weight: 35,
+                  prompt: 'Choose the correct sentence.',
+                  options: [
+                    'I can speak English.',
+                    'I can speaking English.',
+                    'I can to speak English.',
+                  ],
+                },
+                {
+                  id: 'can-02',
+                  weight: 30,
+                  prompt: 'Choose the permission question.',
+                  options: [
+                    'Can I use your pen?',
+                    'I can use your pen?',
+                    'Can I using your pen?',
+                  ],
+                },
+                {
+                  id: 'can-03',
+                  weight: 35,
+                  prompt: 'Choose the answer.',
+                  options: [
+                    'Yes, you can.',
+                    'Yes, you can to.',
+                    'Yes, you can sitting.',
+                  ],
+                },
+              ],
+            }
+          : null,
+      activities: [
+        {
+          id: 'listen',
+          prompt: `Listen to the ${partId} audio once for meaning.`,
+        },
+        {
+          id: 'repeat',
+          prompt: 'Repeat one useful line aloud.',
+        },
+      ],
+      conversation_binding: {
+        prototype:
+          partId === 'introduction' ? 'skill_focus' : 'confidence_friend',
+        coaching_mode: partId === 'introduction' ? 'tutor' : 'friend',
+      },
+    }
+  }
+
+  async completeSession(
+    _levelNumber: number,
+    partId: SessionPartId,
+    _idempotencyKey: string,
+    signal?: AbortSignal,
+  ) {
+    abortIfNeeded(signal)
+    this.#completions.add(partId)
+    return {
+      replayed: false,
+      completion_id: '01J30000000000000000000031',
+      part_id: partId,
+    }
+  }
+
+  async submitCheck(
+    _levelNumber: number,
+    _partId: SessionPartId,
+    answers: Record<string, number>,
+    _idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<CheckSubmissionResult> {
+    abortIfNeeded(signal)
+    const keys = ['can-01', 'can-02', 'can-03'] as const
+    const itemResults = keys.map((id) => {
+      const selected = answers[id] ?? -1
+      return {
+        id,
+        selected_option: selected,
+        correct: selected === 0,
+        rationale: selected === 0 ? 'Correct.' : 'Try the base-verb form.',
+      }
+    })
+    const score = Math.round(
+      (itemResults.filter((item) => item.correct).length / itemResults.length) *
+        100,
+    )
+    return {
+      replayed: false,
+      score,
+      pass_threshold: 80,
+      passed: score >= 80,
+      item_results: itemResults,
+    }
+  }
+
+  async startConversation(
+    _levelNumber: number,
+    _partId: SessionPartId,
+    uiLocale: string,
+    _idempotencyKey: string,
+    signal?: AbortSignal,
+  ) {
+    abortIfNeeded(signal)
+    return demoFriendSession(uiLocale)
+  }
+}
+
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
   #roleplaySession: FriendSession | null = null
@@ -234,35 +463,7 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       return this.#roleplaySession
     }
 
-    return {
-      coaching_mode: input.coaching_mode ?? 'gentle',
-      id: ids.session,
-      mode: 'friend',
-      stage: null,
-      persona: {
-        definition_hash: 'b'.repeat(64),
-        disclosure:
-          'I am a demo practice Friend. When OpenRouter is configured I use a free model; otherwise I use scripted replies. I am not a human.',
-        display_name: 'Patient Friend Demo',
-        id: ids.persona,
-        key: 'patient-friend-prototype',
-        review_status: 'synthetic_unreviewed',
-        version: 1,
-        version_id: ids.personaVersion,
-      },
-      replayed: false,
-      scenario: {
-        definition_hash: 'c'.repeat(64),
-        id: ids.scenario,
-        key: 'everyday-friend-prototype',
-        review_status: 'synthetic_unreviewed',
-        topic_code: 'everyday-conversation',
-        version: 1,
-        version_id: ids.scenarioVersion,
-      },
-      status: 'active',
-      ui_locale: input.ui_locale,
-    }
+    return demoFriendSession(input.ui_locale, input.coaching_mode)
   }
 
   async advanceStage(
@@ -358,6 +559,41 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
         state,
       }),
     )
+  }
+}
+
+function demoFriendSession(
+  uiLocale: string,
+  coachingMode: FriendSession['coaching_mode'] = 'gentle',
+): FriendSession {
+  return {
+    coaching_mode: coachingMode,
+    id: ids.session,
+    mode: 'friend',
+    stage: null,
+    persona: {
+      definition_hash: 'b'.repeat(64),
+      disclosure:
+        'I am a demo practice Friend. When OpenRouter is configured I use a free model; otherwise I use scripted replies. I am not a human.',
+      display_name: 'Patient Friend Demo',
+      id: ids.persona,
+      key: 'patient-friend-prototype',
+      review_status: 'synthetic_unreviewed',
+      version: 1,
+      version_id: ids.personaVersion,
+    },
+    replayed: false,
+    scenario: {
+      definition_hash: 'c'.repeat(64),
+      id: ids.scenario,
+      key: 'everyday-friend-prototype',
+      review_status: 'synthetic_unreviewed',
+      topic_code: 'everyday-conversation',
+      version: 1,
+      version_id: ids.scenarioVersion,
+    },
+    status: 'active',
+    ui_locale: uiLocale as FriendSession['ui_locale'],
   }
 }
 
@@ -487,6 +723,7 @@ function demoFriendReply(
 
 function demoHome(): LearnerHome {
   return {
+    due_review: null,
     enrollment: { id: ids.enrollment, status: 'active' },
     next_mission: {
       estimated_minutes: 5,
@@ -497,6 +734,11 @@ function demoHome(): LearnerHome {
       adult_confirmed: true,
       completed: true,
       goal_key: 'workplace-confidence',
+    },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 2,
+      timezone: 'Asia/Kolkata',
     },
   }
 }

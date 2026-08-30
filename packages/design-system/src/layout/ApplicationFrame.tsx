@@ -23,6 +23,7 @@ export interface ApplicationFrameProps {
    */
   hidePrimaryNavigation?: boolean
   mainId?: string
+  className?: string
 }
 
 export function ApplicationFrame({
@@ -37,9 +38,16 @@ export function ApplicationFrame({
   headerActions,
   hidePrimaryNavigation = false,
   mainId = 'main-content',
+  className,
 }: ApplicationFrameProps) {
   return (
-    <div className="ge-application-frame">
+    <div
+      className={
+        className === undefined || className === ''
+          ? 'ge-application-frame'
+          : `ge-application-frame ${className}`
+      }
+    >
       <SkipLink
         label={skipToContentLabel}
         targetId={mainId}
@@ -50,7 +58,13 @@ export function ApplicationFrame({
             className="ge-application-frame__brand"
             lang={brandLabelLocale}
           >
-            {brandLabel}
+            <span
+              aria-hidden="true"
+              className="ge-application-frame__brand-mark"
+            />
+            <span className="ge-application-frame__brand-text">
+              {brandLabel}
+            </span>
           </span>
           {headerActions === undefined ? null : (
             <div className="ge-application-frame__header-actions">

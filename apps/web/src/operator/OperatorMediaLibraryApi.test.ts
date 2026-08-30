@@ -93,7 +93,6 @@ describe('web operator Media Library API', () => {
   })
 
   it.each([
-    [403, 'problem.fresh_mfa_required', 'fresh_mfa'],
     [403, 'problem.forbidden', 'forbidden'],
     [404, 'problem.media_library.not_found', 'not_found'],
     [409, 'problem.media_library.stale_upload', 'stale_upload'],

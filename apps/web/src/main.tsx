@@ -35,6 +35,7 @@ createRoot(
         conversationApi={demoRuntime?.conversationApi}
         demoMode={demoMode}
         learnerJourneyApi={demoRuntime?.learnerJourneyApi}
+        levelSessionsApi={demoRuntime?.levelSessionsApi}
       />
     </StrictMode>
   </ApplicationErrorBoundary>,

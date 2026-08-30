@@ -1,6 +1,13 @@
 const CACHE_PREFIX = 'global-english-public-shell-'
-const CACHE_NAME = `${CACHE_PREFIX}v2`
-const FORBIDDEN_PATH_PREFIXES = ['/api/', '/sanctum/', '/oauth/']
+const CACHE_NAME = `${CACHE_PREFIX}v5`
+const FORBIDDEN_PATH_PREFIXES = [
+  '/api/',
+  '/sanctum/',
+  '/oauth/',
+  '/auth/mobile/',
+  '/password-establishment.html',
+  '/password-recovery.html',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -30,6 +37,14 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'GET_OFFLINE_SHELL_VERSION') {
+    event.source?.postMessage({
+      type: 'OFFLINE_SHELL_VERSION',
+      version: 'v5',
+    })
+    return
+  }
+
   if (
     event.data?.type !== 'CACHE_PUBLIC_SHELL' ||
     !Array.isArray(event.data.urls)

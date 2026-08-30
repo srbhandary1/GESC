@@ -341,11 +341,20 @@ function learnerApi(overrides: Partial<OperatorLearnerApi> = {}): OperatorLearne
   const unavailable = vi.fn(async () => {
     throw new Error('Unexpected learner API call')
   })
-  return new Proxy(overrides as OperatorLearnerApi, {
-    get(target, property, receiver) {
-      return Reflect.has(target, property)
-        ? Reflect.get(target, property, receiver)
-        : unavailable
+  return new Proxy(
+    {
+      acknowledgeTuitionRequest: vi.fn(async () => {
+        throw new Error('Unexpected tuition acknowledge')
+      }),
+      listTuitionRequests: vi.fn(async () => ({ requests: [] })),
+      ...overrides,
+    } as OperatorLearnerApi,
+    {
+      get(target, property, receiver) {
+        return Reflect.has(target, property)
+          ? Reflect.get(target, property, receiver)
+          : unavailable
+      },
     },
-  })
+  )
 }

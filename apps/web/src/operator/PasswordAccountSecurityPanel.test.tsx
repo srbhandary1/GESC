@@ -106,7 +106,7 @@ describe('password account security panel', () => {
     )
   })
 
-  it('does not offer privileged confirmation or username change to an ordinary learner session', async () => {
+  it('keeps ordinary learner account settings small', async () => {
     const authentication = webAuthentication({
       credentialReady: true,
       privileged: false,
@@ -137,7 +137,7 @@ describe('password account security panel', () => {
     ).toBeVisible()
   })
 
-  it('shows confirmation success for a privileged session', async () => {
+  it('limits privileged confirmation wording to administrator access changes', async () => {
     const user = userEvent.setup()
     const authentication = webAuthentication({
       credentialReady: true,
@@ -157,13 +157,25 @@ describe('password account security panel', () => {
       (await screen.findAllByLabelText('Current password'))[0]!,
       'Correct horse battery 2026!',
     )
-    await user.click(screen.getByRole('button', { name: 'Confirm password' }))
+    expect(
+      await screen.findByText(
+        'Routine project work does not require another password check.',
+        { exact: false },
+      ),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Confirm administrator access change',
+      }),
+    )
 
     expect(authentication.confirmPassword).toHaveBeenCalledWith(
       'Correct horse battery 2026!',
     )
     expect(
-      await screen.findByText('Password confirmed for five minutes.'),
+      await screen.findByText(
+        'Administrator access changes are confirmed for five minutes.',
+      ),
     ).toBeInTheDocument()
   })
 
@@ -190,7 +202,11 @@ describe('password account security panel', () => {
       (await screen.findAllByLabelText('Current password'))[0]!,
       'Incorrect password',
     )
-    await user.click(screen.getByRole('button', { name: 'Confirm password' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Confirm administrator access change',
+      }),
+    )
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Password confirmation failed. Re-enter the current password for this username and try again.',
@@ -213,6 +229,7 @@ function webAuthentication(
     confirmPrivilegedMfaEnrollment: vi.fn(),
     createPrivilegedMfaChallenge: vi.fn(),
     current: vi.fn(async () => ({ status: 'anonymous' as const })),
+    enrollWithInvitation: vi.fn(async () => undefined),
     establishPassword: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     passwordStatus: vi.fn(async () => ({

@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import {
   DEFAULT_LOCALE,
+  INTERFACE_LOCALES,
   resolveMessage,
-  SUPPORTED_LOCALES,
   type MessageKey,
   type SupportedLocale,
 } from '@global-english/localization'
@@ -10,6 +10,75 @@ import { expect, test, type Page } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   await mockAnonymousSession(page)
+})
+
+test('opens the dedicated sign-in page instead of the retired LPL-01 review aid', async ({
+  page,
+}) => {
+  await page.goto('/lpl01-reconciliation.html')
+  await expect(
+    page.getByRole('heading', {
+      name: 'LPL-01 human transcript reconciliation',
+    }),
+  ).toHaveCount(0)
+
+  await page.goto('/#sign-in')
+  await expect(page.locator('#sign-in-title')).toBeVisible()
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
+test('creates one invited password account without browser persistence', async ({
+  page,
+}) => {
+  let submitted: unknown = null
+  await page.route(
+    '**/api/v1/auth/password/invitation-enrollments',
+    async (route) => {
+      submitted = route.request().postDataJSON()
+      await route.fulfill({ status: 204 })
+    },
+  )
+  await page.goto('/#sign-in')
+
+  await page
+    .getByRole('button', {
+      name: message('auth.password.invitation_open'),
+    })
+    .click()
+  await page
+    .getByLabel(message('auth.password.invitation_code'))
+    .fill('GEI-CLOSED-GROUP-2026')
+  await page
+    .getByLabel(message('auth.password.username'))
+    .fill('closed.tester')
+  await page
+    .locator('#web-password-password')
+    .fill('Closed group learner phrase 2026!')
+  await page
+    .locator('#web-password-confirmation')
+    .fill('Closed group learner phrase 2026!')
+  await page
+    .getByRole('button', {
+      name: message('auth.password.invitation_submit'),
+    })
+    .click()
+
+  await expect(
+    page.getByText(message('auth.password.invitation_complete')),
+  ).toBeVisible()
+  expect(submitted).toEqual({
+    invitation_code: 'GEI-CLOSED-GROUP-2026',
+    username: 'closed.tester',
+    password: 'Closed group learner phrase 2026!',
+  })
+  expect(
+    await page.evaluate(() => ({
+      local: Object.keys(localStorage),
+      session: Object.keys(sessionStorage),
+    })),
+  ).toEqual({ local: [], session: [] })
 })
 
 test('renders an axe-clean Kannada-first semantic shell', async ({
@@ -23,27 +92,27 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   )
   await expect(page.getByRole('banner')).toBeVisible()
   await expect(
-    page.getByRole('navigation', {
-      name: message('shell.navigation_label'),
-    }),
+    page.getByRole('link', { name: message('session.label') }),
   ).toBeVisible()
   await expect(page.getByRole('main')).toBeVisible()
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title'),
+      name: message('marketing.hero.title'),
     }),
   ).toBeVisible()
   await expect(
-    page.getByRole('link', { name: message('nav.home') }),
-  ).toHaveAttribute('aria-current', 'page')
+    page.getByRole('navigation', {
+      name: message('shell.navigation_label'),
+    }),
+  ).toHaveCount(0)
   await expect(page.getByRole('alert')).toHaveCount(0)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
 
   expect(accessibility.violations).toEqual([])
 
-  for (const locale of SUPPORTED_LOCALES.filter(
+  for (const locale of INTERFACE_LOCALES.filter(
     (candidate) => candidate !== DEFAULT_LOCALE,
   )) {
     await page.locator('#interface-locale').selectOption(locale)
@@ -55,7 +124,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   }
 })
 
-test('supports skip-link and destination navigation from the keyboard', async ({
+test('supports skip-link and sign-in from the keyboard', async ({
   page,
 }) => {
   await page.goto('/')
@@ -70,53 +139,9 @@ test('supports skip-link and destination navigation from the keyboard', async ({
   await page.keyboard.press('Enter')
   await expect(page.getByRole('main')).toBeFocused()
 
-  await page.reload()
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-
-  const learnLink = page.locator('a[href="#learn"]')
-  await expect(learnLink).toBeFocused()
-  await page.keyboard.press('Enter')
-
-  const learnTitle = page.getByRole('heading', {
-    level: 1,
-    name: message('page.learn.title'),
-  })
-
-  await expect(learnLink).toHaveAttribute('aria-current', 'page')
-  await expect(learnTitle).toBeFocused()
-
-  await page.goto('/#progress')
-
-  await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: message('page.progress.title'),
-    }),
-  ).toBeVisible()
-  await expect(page.locator('a[href="#progress"]')).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
-
-  await page.goto('/#learn')
-  await page.reload()
-  await page.keyboard.press('Tab')
-  await expect(skipLink).toBeFocused()
-  await page.keyboard.press('Enter')
-
-  await expect(page.getByRole('main')).toBeFocused()
-  expect(new URL(page.url()).hash).toBe('#learn')
-
-  await page.reload()
-  await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: message('page.learn.title'),
-    }),
-  ).toBeVisible()
+  await page.getByRole('link', { name: message('session.label') }).click()
+  await expect(page.locator('#sign-in-title')).toBeVisible()
+  await expect(page.locator('#web-password-username')).toBeFocused()
 })
 
 test('keeps the locale selection ephemeral and stores no credentials', async ({
@@ -132,7 +157,7 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title', 'en-IN'),
+      name: 'Let’s speak English fluently',
     }),
   ).toBeVisible()
   await expect
@@ -165,7 +190,9 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
 
     await expectNoHorizontalOverflow(page)
     await expect(page.getByRole('main')).toBeVisible()
-    await expect(page.locator('.ge-primary-navigation')).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: message('session.label') }),
+    ).toBeVisible()
   }
 
   await page.setViewportSize({ height: 900, width: 320 })
@@ -183,7 +210,7 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
   })
 
   for (const target of await page
-    .locator('.ge-primary-navigation__link, #interface-locale')
+    .locator('.shell-header-authentication, #interface-locale')
     .all()) {
     const box = await target.boundingBox()
 

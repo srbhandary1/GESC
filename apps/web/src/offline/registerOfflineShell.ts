@@ -1,5 +1,11 @@
 const SERVICE_WORKER_PATH = '/service-worker.js'
 const PUBLIC_SHELL_CACHE_PREFIX = 'global-english-public-shell-'
+const AUTHENTICATED_PATH_PREFIXES = [
+  '/api/',
+  '/sanctum/',
+  '/oauth/',
+  '/auth/mobile/',
+] as const
 
 export async function registerOfflineShell(): Promise<void> {
   if (
@@ -19,7 +25,9 @@ export async function registerOfflineShell(): Promise<void> {
     const registration =
       await navigator.serviceWorker.register(SERVICE_WORKER_PATH, {
         scope: '/',
+        updateViaCache: 'none',
       })
+    await registration.update()
     const worker =
       registration.active ??
       registration.waiting ??
@@ -36,8 +44,9 @@ export async function registerOfflineShell(): Promise<void> {
 
       if (
         url.origin === location.origin &&
-        !url.pathname.startsWith('/api/') &&
-        !url.pathname.startsWith('/sanctum/')
+        !AUTHENTICATED_PATH_PREFIXES.some((prefix) =>
+          url.pathname.startsWith(prefix),
+        )
       ) {
         urls.add(`${url.pathname}${url.search}`)
       }

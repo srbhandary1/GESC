@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+
 export type RecordingControlState =
   | 'idle'
   | 'ready'
@@ -7,6 +9,8 @@ export type RecordingControlState =
   | 'processing'
   | 'blocked'
   | 'error'
+
+export type RecordingCaptureMode = 'tap' | 'hold'
 
 export interface RecordingControlLabels {
   region: string
@@ -23,11 +27,15 @@ export interface RecordingControlLabels {
   processing: string
   blocked: string
   error: string
+  hold?: string
+  holding?: string
+  release?: string
 }
 
 export interface RecordingControlsProps {
   labels: RecordingControlLabels
   state: RecordingControlState
+  captureMode?: RecordingCaptureMode
   onRequestCancel: () => void
   onRequestPause: () => void
   onRequestResume: () => void
@@ -38,6 +46,7 @@ export interface RecordingControlsProps {
 export function RecordingControls({
   labels,
   state,
+  captureMode = 'tap',
   onRequestCancel,
   onRequestPause,
   onRequestResume,
@@ -58,6 +67,113 @@ export function RecordingControls({
   const canStart = state === 'idle' || state === 'ready'
   const isRecording = state === 'recording'
   const isPaused = state === 'paused'
+  const holdActive = useRef(false)
+
+  const endHold = () => {
+    if (!holdActive.current) {
+      return
+    }
+
+    holdActive.current = false
+    onRequestStop()
+  }
+
+  const beginHold = () => {
+    if (state === 'processing' || state === 'blocked' || state === 'error') {
+      return
+    }
+
+    if (isRecording || state === 'requesting-permission') {
+      holdActive.current = true
+      return
+    }
+
+    if (!canStart) {
+      return
+    }
+
+    holdActive.current = true
+    onRequestStart()
+  }
+
+  if (captureMode === 'hold') {
+    const holdPressed =
+      isRecording || state === 'requesting-permission'
+    const holdLabel = isRecording
+      ? (labels.release ?? labels.stop)
+      : state === 'requesting-permission'
+        ? (labels.holding ?? labels.requestingPermission)
+        : state === 'processing'
+          ? labels.processing
+          : (labels.hold ?? labels.start)
+
+    return (
+      <section
+        aria-label={labels.region}
+        className="ge-media-controls ge-media-controls--hold"
+      >
+        <p
+          aria-live="polite"
+          className="ge-media-controls__status"
+        >
+          {statusLabel}
+        </p>
+        {state === 'blocked' || state === 'error' ? null : (
+          <div className="ge-media-controls__actions">
+            <button
+              aria-pressed={holdPressed}
+              className="ge-button ge-button--primary ge-button--speak ge-button--hold-to-talk"
+              disabled={state === 'processing'}
+              onContextMenu={(event) => {
+                event.preventDefault()
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== ' ' && event.key !== 'Enter') {
+                  return
+                }
+
+                if (event.repeat) {
+                  return
+                }
+
+                event.preventDefault()
+                beginHold()
+              }}
+              onKeyUp={(event) => {
+                if (event.key !== ' ' && event.key !== 'Enter') {
+                  return
+                }
+
+                event.preventDefault()
+                endHold()
+              }}
+              onLostPointerCapture={endHold}
+              onPointerCancel={endHold}
+              onPointerDown={(event) => {
+                if (event.button !== 0) {
+                  return
+                }
+
+                event.preventDefault()
+                if (typeof event.currentTarget.setPointerCapture === 'function') {
+                  try {
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                  } catch {
+                    // jsdom and some WebViews omit pointer capture.
+                  }
+                }
+                beginHold()
+              }}
+              onPointerUp={endHold}
+              type="button"
+            >
+              {holdLabel}
+            </button>
+          </div>
+        )}
+      </section>
+    )
+  }
 
   return (
     <section
@@ -73,7 +189,7 @@ export function RecordingControls({
       <div className="ge-media-controls__actions">
         {canStart ? (
           <button
-            className="ge-button ge-button--primary"
+            className="ge-button ge-button--primary ge-button--speak"
             onClick={onRequestStart}
             type="button"
           >

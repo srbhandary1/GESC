@@ -1799,9 +1799,7 @@ function CommandFeedback({ command, message }: Readonly<{ command: CommandState;
     ? 'operator.content.command.success'
     : isConflict(command.kind)
       ? 'operator.content.command.conflict'
-      : command.kind === 'fresh_mfa'
-        ? 'operator.content.command.mfa'
-        : 'operator.content.command.error'
+      : 'operator.content.command.error'
   return <p aria-live="assertive"><LocalizedMessage resolution={message(key)} /></p>
 }
 

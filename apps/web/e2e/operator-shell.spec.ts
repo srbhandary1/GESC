@@ -42,7 +42,7 @@ const ids = {
   version: '01J90000000000000000000008',
 } as const
 
-test('organization People workspace handles fresh password confirmation, conflict recovery, and one-time invitations', async ({
+test('organization People workspace uses one login for routine commands, conflict recovery, and one-time invitations', async ({
   page,
 }) => {
   const api = await mockOrganizationApi(page)
@@ -86,33 +86,8 @@ test('organization People workspace handles fresh password confirmation, conflic
   await branches
     .getByRole('button', { name: message('operator.people.action.create') })
     .click()
-  await expect(branches.getByRole('alert')).toContainText(
-    message('operator.people.command.fresh_mfa'),
-  )
-
-  await branches
-    .getByRole('link', { name: message('operator.people.command.open_mfa') })
-    .click()
-  const security = page.getByRole('region', {
-    name: message('operator.password.title'),
-  })
-  await security
-    .getByLabel(message('operator.password.current_password'))
-    .first()
-    .fill('Correct horse battery 2026!')
-  await security
-    .getByRole('button', { name: message('operator.password.confirm') })
-    .click()
-  await expect(security).toContainText(
-    message('operator.password.confirmed'),
-  )
-
-  await branches
-    .getByRole('button', { name: message('operator.people.action.create') })
-    .click()
   await expect(branches.getByText('North Branch')).toBeVisible()
-  expect(api.branchCommandIds).toHaveLength(2)
-  expect(api.branchCommandIds[0]).toBe(api.branchCommandIds[1])
+  expect(api.branchCommandIds).toHaveLength(1)
 
   await branches
     .getByRole('button', { name: message('operator.people.action.archive') })
@@ -704,7 +679,6 @@ interface MockMediaLibraryState {
 
 async function mockOrganizationApi(page: Page): Promise<MockOrganizationState> {
   let branchCreated = false
-  let branchCreates = 0
   let invitationIssues = 0
   let mfaFresh = false
   const state: MockOrganizationState = {
@@ -816,31 +790,21 @@ async function mockOrganizationApi(page: Page): Promise<MockOrganizationState> {
       url.pathname === '/api/v1/operator/branches' &&
       request.method() === 'POST'
     ) {
-      branchCreates += 1
       state.branchCommandIds.push(request.headers()['idempotency-key'])
-
-      if (branchCreates === 1) {
-        await json(
-          route,
-          { message_key: 'problem.fresh_mfa_required' },
-          403,
-        )
-      } else {
-        branchCreated = true
-        await json(
-          route,
-          {
-            data: branchRecord({
-              allowed_actions: [],
-              id: '01J90000000000000000000014',
-              key: 'north',
-              name: 'North Branch',
-            }),
-            replayed: false,
-          },
-          201,
-        )
-      }
+      branchCreated = true
+      await json(
+        route,
+        {
+          data: branchRecord({
+            allowed_actions: [],
+            id: '01J90000000000000000000014',
+            key: 'north',
+            name: 'North Branch',
+          }),
+          replayed: false,
+        },
+        201,
+      )
 
       return
     }

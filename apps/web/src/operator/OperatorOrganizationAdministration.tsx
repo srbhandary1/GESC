@@ -2956,7 +2956,7 @@ function CommandFeedback({
     <div className="operator-people__feedback" role="alert">
       <p>{message(errorKey[state.kind]).text}</p>
       {state.kind === 'fresh_mfa' ? (
-        <a href="#operator-account-security-title">
+        <a href="#operator-account-settings-title">
           {message('operator.people.command.open_mfa').text}
         </a>
       ) : null}

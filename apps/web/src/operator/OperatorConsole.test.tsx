@@ -153,6 +153,7 @@ describe('operator console', () => {
         learnerApi={{
           listInvitations,
           listLearners,
+          listTuitionRequests: vi.fn(async () => ({ requests: [] })),
         } as unknown as OperatorLearnerApi}
         locale="en-IN"
         localizationPolicy="development-preview"

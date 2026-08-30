@@ -33,6 +33,7 @@ import {
   type OperatorLearnerInvitationCollection,
   type OperatorLearnerInvitationIssuance,
   type OperatorLearnerPanelKey,
+  type OperatorTuitionRequest,
 } from './OperatorLearnerApi'
 
 type MessageResolver = (key: MessageKey) => InterfaceMessageResolution
@@ -178,6 +179,15 @@ export function OperatorLearnerAdministration({
 
         {panels.includes('learner_invitations') ? (
           <InvitationsPanel
+            api={api}
+            createCommandId={createCommandId}
+            locale={locale}
+            message={message}
+          />
+        ) : null}
+
+        {panels.includes('learner_directory') ? (
+          <TuitionQueuePanel
             api={api}
             createCommandId={createCommandId}
             locale={locale}
@@ -818,6 +828,106 @@ function IssueInvitationForm({ api, choices, command, message, onIssuance }: Rea
   )
 }
 
+function TuitionQueuePanel({
+  api,
+  createCommandId,
+  locale,
+  message,
+}: Readonly<{
+  api: OperatorLearnerApi
+  createCommandId: () => string
+  locale: SupportedLocale
+  message: MessageResolver
+}>) {
+  const [requests, setRequests] = useState<readonly OperatorTuitionRequest[]>([])
+  const [loadError, setLoadError] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void api
+      .listTuitionRequests(controller.signal)
+      .then((listing) => {
+        setRequests(listing.requests)
+        setLoadError(false)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setLoadError(true)
+        }
+      })
+    return () => controller.abort()
+  }, [api])
+
+  return (
+    <article aria-labelledby="operator-tuition-title">
+      <h4 id="operator-tuition-title">
+        <LocalizedMessage resolution={message('operator.learners.tuition.title')} />
+      </h4>
+      <p>
+        <LocalizedMessage resolution={message('operator.learners.tuition.lead')} />
+      </p>
+      {loadError ? (
+        <p role="alert">
+          <LocalizedMessage resolution={message('operator.panel.error')} />
+        </p>
+      ) : null}
+      {requests.length === 0 && !loadError ? (
+        <p>
+          <LocalizedMessage resolution={message('operator.learners.tuition.empty')} />
+        </p>
+      ) : (
+        <ul>
+          {requests.map((request) => (
+            <li key={request.id} lang={locale}>
+              <strong>{request.display_name ?? request.membership_id}</strong>
+              {' · '}
+              {request.topic}
+              {' · '}
+              {request.preferred_window}
+              {' · '}
+              <LocalizedMessage
+                resolution={message(
+                  request.status === 'acknowledged'
+                    ? 'tuition.status.acknowledged'
+                    : 'tuition.status.submitted',
+                )}
+              />
+              {request.status === 'submitted' ? (
+                <button
+                  disabled={busyId === request.id}
+                  onClick={() => {
+                    setBusyId(request.id)
+                    void api
+                      .acknowledgeTuitionRequest(request.id, createCommandId())
+                      .then((updated) => {
+                        setRequests((current) =>
+                          current.map((item) =>
+                            item.id === updated.id ? updated : item,
+                          ),
+                        )
+                      })
+                      .finally(() => setBusyId(null))
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message(
+                      busyId === request.id
+                        ? 'operator.learners.tuition.acknowledging'
+                        : 'operator.learners.tuition.acknowledge',
+                    )}
+                  />
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
+  )
+}
+
 function InvitationSecret({ issuance, message, onDismiss }: Readonly<{
   issuance: OperatorLearnerInvitationIssuance
   message: MessageResolver
@@ -1162,7 +1272,6 @@ function CommandFeedback({ message, onReload, state }: Readonly<{
   const keys: Readonly<Record<OperatorLearnerErrorKind, MessageKey>> = {
     active_dependency: 'operator.learners.command.active_dependency',
     forbidden: 'operator.people.command.forbidden',
-    fresh_mfa: 'operator.people.command.fresh_mfa',
     idempotency_conflict: 'operator.people.command.idempotency_conflict',
     stale_state: 'operator.people.command.conflict',
     unavailable: 'operator.people.command.unavailable',
@@ -1172,7 +1281,6 @@ function CommandFeedback({ message, onReload, state }: Readonly<{
   return (
     <div className="operator-people__feedback" role="alert">
       <p>{message(keys[state.kind]).text}</p>
-      {state.kind === 'fresh_mfa' ? <a href="#operator-account-security-title">{message('operator.people.command.open_mfa').text}</a> : null}
       {state.kind === 'stale_state' ? <button onClick={onReload} type="button">{message('operator.people.command.reload').text}</button> : null}
     </div>
   )

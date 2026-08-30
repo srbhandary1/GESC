@@ -106,7 +106,6 @@ describe('web operator Content Studio API', () => {
   })
 
   it.each([
-    [403, 'problem.fresh_mfa_required', 'fresh_mfa'],
     [403, 'problem.forbidden', 'forbidden'],
     [404, 'problem.content_workspace.not_found', 'not_found'],
     [409, 'problem.content_workspace.stale_version', 'stale_version'],

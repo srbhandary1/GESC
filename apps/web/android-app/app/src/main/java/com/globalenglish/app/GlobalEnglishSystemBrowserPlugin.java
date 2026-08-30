@@ -2,6 +2,7 @@ package com.globalenglish.app;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.app.Activity;
 
 import androidx.browser.customtabs.CustomTabsIntent;
 
@@ -25,15 +26,30 @@ public class GlobalEnglishSystemBrowserPlugin extends Plugin {
         }
 
         Uri uri = Uri.parse(url);
+        Uri configuredOrigin = Uri.parse(BuildConfig.MOBILE_API_ORIGIN);
+        Activity activity = getActivity();
+        if (
+            activity == null
+                || BuildConfig.MOBILE_API_ORIGIN.isEmpty()
+                || !"https".equals(uri.getScheme())
+                || !uri.getScheme().equals(configuredOrigin.getScheme())
+                || uri.getAuthority() == null
+                || !uri.getAuthority().equals(configuredOrigin.getAuthority())
+                || uri.getUserInfo() != null
+                || !"/oauth/authorize".equals(uri.getPath())
+                || uri.getFragment() != null
+        ) {
+            call.reject("authorization url is not allowed");
+            return;
+        }
+
         try {
             CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
-            customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            customTabsIntent.launchUrl(getContext(), uri);
+            customTabsIntent.launchUrl(activity, uri);
             call.resolve();
         } catch (Exception customTabsError) {
             Intent fallback = new Intent(Intent.ACTION_VIEW, uri);
-            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(fallback);
+            activity.startActivity(fallback);
             call.resolve();
         }
     }

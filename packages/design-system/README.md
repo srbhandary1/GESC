@@ -33,7 +33,9 @@ when the caller has already applied its governed normalization policy.
 
 `AudioControls` and `RecordingControls` are intentionally inert presentation
 components. They accept state, labels and request callbacks but do not accept
-media sources or captured data. This package must not access microphone or
+media sources or captured data. `RecordingControls` may render tap start/stop
+or a single hold-to-talk control (`captureMode="hold"`); the host still owns
+capture, upload and consent. This package must not access microphone or
 playback APIs, make provider/network calls, or persist learner data.
 
 ## Font and accessibility boundary

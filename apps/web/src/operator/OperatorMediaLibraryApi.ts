@@ -261,7 +261,6 @@ export type OperatorMediaErrorKind =
   | 'concurrent_change'
   | 'duplicate_use'
   | 'forbidden'
-  | 'fresh_mfa'
   | 'idempotency_conflict'
   | 'not_found'
   | 'stale_lifecycle'
@@ -555,8 +554,6 @@ export class WebOperatorMediaLibraryApi implements OperatorMediaLibraryApi {
     }
     const kinds: Readonly<Record<string, OperatorMediaErrorKind>> = {
       'problem.forbidden': 'forbidden',
-      'problem.fresh_mfa_required': 'fresh_mfa',
-      'problem.fresh_password_confirmation_required': 'fresh_mfa',
       'problem.media_library.concurrent_change': 'concurrent_change',
       'problem.media_library.duplicate_use': 'duplicate_use',
       'problem.media_library.idempotency_conflict': 'idempotency_conflict',

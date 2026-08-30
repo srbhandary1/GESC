@@ -142,10 +142,10 @@ export function PasswordAccountSecurityPanel({
 
   return (
     <section
-      aria-labelledby="operator-account-security-title"
+      aria-labelledby="operator-account-settings-title"
       className="operator-panel operator-mfa"
     >
-      <h3 id="operator-account-security-title">
+      <h3 id="operator-account-settings-title">
         <LocalizedMessage resolution={message('operator.password.title')} />
       </h3>
       <p>
@@ -271,31 +271,36 @@ export function PasswordAccountSecurityPanel({
         <>
           {isPrivilegedSession ? (
             <form className="operator-mfa__form" onSubmit={confirm}>
-            <label htmlFor="operator-password-confirm">
-              <LocalizedMessage
-                resolution={message('operator.password.current_password')}
-              />
-            </label>
-            <input
-              autoComplete="current-password"
-              id="operator-password-confirm"
-              onChange={(event) => setPassword(event.currentTarget.value)}
-              required
-              type="password"
-              value={password}
-            />
-            <button disabled={busy} type="submit">
-              <LocalizedMessage
-                resolution={message('operator.password.confirm')}
-              />
-            </button>
-            {confirmed ? (
-              <p role="status">
+              <p className="operator-mfa__hint">
                 <LocalizedMessage
-                  resolution={message('operator.password.confirmed')}
+                  resolution={message('operator.password.confirm_hint')}
                 />
               </p>
-            ) : null}
+              <label htmlFor="operator-password-confirm">
+                <LocalizedMessage
+                  resolution={message('operator.password.current_password')}
+                />
+              </label>
+              <input
+                autoComplete="current-password"
+                id="operator-password-confirm"
+                onChange={(event) => setPassword(event.currentTarget.value)}
+                required
+                type="password"
+                value={password}
+              />
+              <button disabled={busy} type="submit">
+                <LocalizedMessage
+                  resolution={message('operator.password.confirm')}
+                />
+              </button>
+              {confirmed ? (
+                <p role="status">
+                  <LocalizedMessage
+                    resolution={message('operator.password.confirmed')}
+                  />
+                </p>
+              ) : null}
             </form>
           ) : null}
 

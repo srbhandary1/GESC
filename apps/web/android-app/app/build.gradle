@@ -8,6 +8,10 @@ def releaseSigningValues = [
 ].collectEntries { key, value -> [key, value?.trim()] }
 def releaseSigningPresent = releaseSigningValues.values().every { it }
 def releaseSigningAbsent = releaseSigningValues.values().every { !it }
+def mobileApiOrigin = System.getenv('VITE_MOBILE_API_ORIGIN')?.trim() ?: ''
+def mobileApiOriginLiteral = mobileApiOrigin
+    .replace('\\', '\\\\')
+    .replace('"', '\\"')
 
 if (!releaseSigningPresent && !releaseSigningAbsent) {
     throw new GradleException('Android release signing is incomplete. Set all four GE_ANDROID_UPLOAD_* variables or unset all of them.')
@@ -39,12 +43,16 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        buildConfigField "String", "MOBILE_API_ORIGIN", "\"${mobileApiOriginLiteral}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     signingConfigs {
         if (releaseSigningPresent) {
