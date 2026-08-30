@@ -41,9 +41,11 @@ export function ModelAudioPlayer({
     readonly source: string
   } | null>(null)
 
-  onEndedRef.current = onEnded
-  onPauseRef.current = onPause
-  onPlayingRef.current = onPlaying
+  useEffect(() => {
+    onEndedRef.current = onEnded
+    onPauseRef.current = onPause
+    onPlayingRef.current = onPlaying
+  })
 
   useEffect(() => {
     if (loadSource === undefined) {
@@ -52,7 +54,6 @@ export function ModelAudioPlayer({
 
     const controller = new AbortController()
     let objectUrl: string | null = null
-    setState('loading')
 
     void loadSource(source, controller.signal)
       .then((audio) => {
@@ -91,6 +92,14 @@ export function ModelAudioPlayer({
           loadedSource.source === source
         ? loadedSource.objectUrl
         : null
+
+  // While a fetched source is not yet playable the player is loading unless
+  // the fetch already failed. Deriving this replaces a synchronous setState
+  // inside the fetch effect.
+  const visibleState: AudioControlState =
+    loadSource !== undefined && playableSource === null && state !== 'error'
+      ? 'loading'
+      : state
 
   useEffect(() => {
     const audio = audioRef.current
@@ -140,7 +149,7 @@ export function ModelAudioPlayer({
       }
       audio.load()
     }
-  }, [playableSource])
+  }, [loadSource, playableSource])
 
   const play = async () => {
     const audio = audioRef.current
@@ -192,7 +201,7 @@ export function ModelAudioPlayer({
         onRequestPause={() => audioRef.current?.pause()}
         onRequestPlay={() => void play()}
         onRequestReplay={() => void replay()}
-        state={state}
+        state={visibleState}
       />
     </>
   )

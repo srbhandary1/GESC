@@ -4,6 +4,7 @@ import type {
   SupportedLocale,
 } from '@global-english/localization'
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -186,34 +187,33 @@ export function ConversationJourney({
     }
   }, [])
 
-  const speakModel = (
-    sessionId: string,
-    reply: string,
-    reportError = true,
-  ) => {
-    const trimmed = reply.trim()
-    if (trimmed === '') {
-      return
-    }
+  const speakModel = useCallback(
+    (sessionId: string, reply: string, reportError = true) => {
+      const trimmed = reply.trim()
+      if (trimmed === '') {
+        return
+      }
 
-    setSpeechError(false)
-    setSpeakingReply(true)
+      setSpeechError(false)
+      setSpeakingReply(true)
 
-    void speakSessionSpeech({
-      api,
-      demoMode,
-      locale: 'en-IN',
-      purpose: 'model_en',
-      sessionId,
-      text: trimmed,
-    })
-      .catch(() => {
-        if (reportError) {
-          setSpeechError(true)
-        }
+      void speakSessionSpeech({
+        api,
+        demoMode,
+        locale: 'en-IN',
+        purpose: 'model_en',
+        sessionId,
+        text: trimmed,
       })
-      .finally(() => setSpeakingReply(false))
-  }
+        .catch(() => {
+          if (reportError) {
+            setSpeechError(true)
+          }
+        })
+        .finally(() => setSpeakingReply(false))
+    },
+    [api, demoMode],
+  )
 
   useEffect(() => {
     if (
@@ -227,7 +227,8 @@ export function ConversationJourney({
 
     openingSpoken.current = true
     speakModel(initialSession.id, openingLine, false)
-  }, [initialSession, openingLine])
+    // The openingSpoken ref keeps this idempotent even if dependencies change.
+  }, [initialSession, openingLine, speakModel])
 
   const speakTurnAudio = async (turn: FriendTurn) => {
     const speech = turn.speech
