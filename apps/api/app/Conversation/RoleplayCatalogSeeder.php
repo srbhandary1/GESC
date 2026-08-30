@@ -168,7 +168,7 @@ final class RoleplayCatalogSeeder
     }
 
     /**
-     * @param  array<string, string>  $where
+     * @param  array<string, int|string>  $where
      */
     private function requiredId(string $table, array $where): string
     {

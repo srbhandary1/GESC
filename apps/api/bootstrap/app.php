@@ -24,11 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Proxies come from config/trustedproxy.php, which TrustProxies reads per
+        // request. The environment file is not loaded yet at this point, so reading
+        // TRUSTED_PROXIES here would silently ignore it.
         $middleware->trustProxies(
-            at: array_values(array_filter(array_map(
-                trim(...),
-                explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1')),
-            ))),
             headers: Request::HEADER_X_FORWARDED_FOR
                 | Request::HEADER_X_FORWARDED_HOST
                 | Request::HEADER_X_FORWARDED_PORT

@@ -897,6 +897,9 @@ final class FoundationSeeder extends Seeder
         );
     }
 
+    /**
+     * @param  array<string, int|string>  $where
+     */
     private function requiredId(string $table, array $where): string
     {
         $id = DB::table($table)->where($where)->value('id');

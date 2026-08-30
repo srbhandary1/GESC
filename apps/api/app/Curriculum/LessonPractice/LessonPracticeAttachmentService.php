@@ -207,7 +207,7 @@ final class LessonPracticeAttachmentService
         }
         foreach ($ordered as $index => $part) {
             if ((int) $part['order'] !== $index + 1
-                || ($part['part_id'] ?? null) !== $expectedOrder[$index]
+                || $part['part_id'] !== $expectedOrder[$index]
             ) {
                 throw new LessonPracticeOperationRejected('parts_order');
             }
@@ -231,12 +231,14 @@ final class LessonPracticeAttachmentService
                 if ((string) $existingEvent->blueprint_id !== $blueprintId) {
                     throw new LessonPracticeIdempotencyConflict('attach_blueprint_mismatch');
                 }
-                $media = LessonPracticeMedia::query()
-                    ->where('organization_id', $context->organizationId)
-                    ->where('blueprint_id', $blueprintId)
-                    ->orderBy('part_order')
-                    ->get()
-                    ->all();
+                $media = array_values(
+                    LessonPracticeMedia::query()
+                        ->where('organization_id', $context->organizationId)
+                        ->where('blueprint_id', $blueprintId)
+                        ->orderBy('part_order')
+                        ->get()
+                        ->all(),
+                );
 
                 return ['media' => $media, 'created' => false];
             }

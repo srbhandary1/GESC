@@ -54,7 +54,7 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
 
         try {
             return $this->synthesizeAzure($request);
-        } catch (ConversationProviderException|Throwable) {
+        } catch (Throwable) {
             if (! GuidanceTtsPolicy::textFirstFallbackRequired()) {
                 throw new ConversationProviderException(
                     safeCode: 'provider_transport_failure',

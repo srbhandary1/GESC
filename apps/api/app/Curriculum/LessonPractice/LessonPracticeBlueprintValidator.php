@@ -8,7 +8,10 @@ use App\Curriculum\CanonicalJson;
 
 final class LessonPracticeBlueprintValidator
 {
-    /** @return list<string> */
+    /**
+     * @param  array<string, mixed>  $blueprint
+     * @return list<string>
+     */
     public function validate(array $blueprint): array
     {
         $errors = [];

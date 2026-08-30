@@ -260,13 +260,11 @@ final class App0062LessonAudioIngestor
         if (($finalized->data['inspection_outcome'] ?? null) !== 'passed') {
             throw new MediaLibraryRejected;
         }
+        // Prefer explicit clean; also accept scan_clean state.
         if (($finalized->data['malware_outcome'] ?? null) !== 'clean'
             && ($finalized->data['upload_state'] ?? null) !== 'scan_clean'
         ) {
-            // Prefer explicit clean; also accept scan_clean state.
-            if (($finalized->data['upload_state'] ?? null) !== 'scan_clean') {
-                throw new MediaLibraryRejected;
-            }
+            throw new MediaLibraryRejected;
         }
 
         $accepted = $this->uploads->accept(

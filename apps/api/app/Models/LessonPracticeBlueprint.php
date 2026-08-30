@@ -6,6 +6,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $organization_id
+ * @property string $program_id
+ * @property string $curriculum_version_id
+ * @property int $revision_number
+ * @property string $concept_key
+ * @property string $state
+ * @property array<array-key, mixed> $canonical_json
+ * @property string $content_hash
+ */
 final class LessonPracticeBlueprint extends Model
 {
     public $incrementing = false;
