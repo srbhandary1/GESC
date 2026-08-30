@@ -1,5 +1,62 @@
 # Quality review
 
+## DR-0038 B: Progress read-model API — 30 August 2026
+
+### Scope reviewed
+
+- `GET /api/v1/me/progress-dashboard` read model over existing
+  `mastery_states`, `meaningful_speaking_days`, `conversation_turns`,
+  `learner_attempts`, `delayed_review_occurrences`, and
+  `learner_error_patterns`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Organization-scoped queries | Pass | All reads filter `organization_id` + active enrollment |
+| No raw transcript exposure | Pass | Speaking activity uses turn counts and duration metadata only |
+| Deterministic marks only | Pass | Objectives sourced from `mastery_states`; no AI fields |
+| OpenAPI / contracts | Pass | Version 0.35.0; `pnpm run openapi:check` |
+| Feature auth + shape | Pass | `LearnerProgressDashboardTest` (SQLite) |
+| Cross-tenant isolation | Pass (CI) | `ProgressDashboardTenancyTest` (pgsql-guarded; not runnable on this host) |
+| PHPStan / Pint | Pass | 0 errors |
+
+### Known limitations
+
+- Progress UI not started; `#progress` still reuses Learn level path.
+- Integration test requires PostgreSQL (`phpunit.postgres.xml`); skipped locally without `pdo_pgsql`.
+- Recurring-error `trend` is a heuristic from pattern timestamps, not a time series.
+
+## DR-0038 A: daily loop — 30 August 2026
+
+### Scope reviewed
+
+- Meaningful-speaking-day streak and deterministic delayed-review scheduling on
+  `LearnerHomeService`, Home API fields, flagship authenticated Home UI, and
+  ADR-0028 PostgreSQL constraint coverage.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Meaningful-speaking-day predicate and projector | Pass | Unit/feature tests; org-scoped `insertOrIgnore`; no AI writes |
+| Streak reader and delayed-review scheduler | Pass | Home API returns `streak` and `due_review`; due review outranks mission in UI tests |
+| Cross-tenant isolation | Pass | PostgreSQL integration test (CI `verify`) |
+| Review occurrence requires mastery evidence | Pass | PostgreSQL integration test (CI `verify`) |
+| Idempotent mastery replay | Pass | Existing PR-006 lifecycle coverage |
+| OpenAPI / generated contracts | Pass | Contract validation in `make verify` |
+| Localization key parity | Pass | `pnpm run locale:check` in `make verify` |
+| Flagship Home UI | Pass | `LearnerJourney.test.tsx`; e2e learner journeys (21/21 Playwright) |
+| Full gate | Pass | GitHub Actions run [33317082476](https://github.com/srbhandary1/GESC/actions/runs/33317082476): `verify`, `android`, `operations`, `release-gate` at `9818fe2` |
+
+### Known limitations
+
+- Default review intervals `[1, 3, 7, 14]` in `config/review.php` remain
+  provisional pending named academic review (ADR-0028).
+- DR-0038 B (Progress §7.3) and C (Speak latency) are not started.
+- Kannada UI catalogue remains `pending-independent-review`.
+- Production/Play and curriculum publication remain unauthorized.
+
 ## Guidance TTS cost ledger + Swathi identity — 29 August 2026
 
 ### Scope reviewed

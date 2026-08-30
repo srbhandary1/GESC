@@ -3327,6 +3327,263 @@ export const LearnerDueReviewSchema = {
     }
 } as const;
 
+export const LearnerProgressDashboardSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'enrollment',
+        'objectives',
+        'speaking_activity',
+        'attempt_improvement',
+        'delayed_review',
+        'recurring_errors'
+    ],
+    properties: {
+        enrollment: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ActiveLearnerEnrollment'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        objectives: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ProgressObjectiveMastery'
+            }
+        },
+        speaking_activity: {
+            $ref: '#/components/schemas/ProgressSpeakingActivity'
+        },
+        attempt_improvement: {
+            $ref: '#/components/schemas/ProgressAttemptImprovement'
+        },
+        delayed_review: {
+            $ref: '#/components/schemas/ProgressDelayedReviewPerformance'
+        },
+        recurring_errors: {
+            $ref: '#/components/schemas/ProgressRecurringErrors'
+        }
+    }
+} as const;
+
+export const ProgressObjectiveMasterySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'objective_id',
+        'objective_key',
+        'knowledge_state',
+        'spoken_state',
+        'best_knowledge_score',
+        'mastered_at',
+        'evidence_attempt_id'
+    ],
+    properties: {
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objective_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        knowledge_state: {
+            type: 'string',
+            enum: [
+                'mastered',
+                'not_mastered'
+            ]
+        },
+        spoken_state: {
+            type: 'string',
+            enum: [
+                'unassessed'
+            ]
+        },
+        best_knowledge_score: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100
+        },
+        mastered_at: {
+            oneOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        evidence_attempt_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const ProgressSpeakingActivitySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'meaningful_speaking_days_count',
+        'completed_turn_count',
+        'speaking_duration_ms',
+        'speaking_minutes',
+        'timezone'
+    ],
+    properties: {
+        meaningful_speaking_days_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        completed_turn_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        speaking_duration_ms: {
+            type: 'integer',
+            minimum: 0
+        },
+        speaking_minutes: {
+            type: 'integer',
+            minimum: 0
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const ProgressAttemptImprovementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'missions_attempted',
+        'missions_passed_on_first_attempt',
+        'missions_improved_on_retry',
+        'missions_still_not_mastered'
+    ],
+    properties: {
+        missions_attempted: {
+            type: 'integer',
+            minimum: 0
+        },
+        missions_passed_on_first_attempt: {
+            type: 'integer',
+            minimum: 0
+        },
+        missions_improved_on_retry: {
+            type: 'integer',
+            minimum: 0
+        },
+        missions_still_not_mastered: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const ProgressDelayedReviewPerformanceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'scheduled_count',
+        'due_count',
+        'pending_count',
+        'completed_count',
+        'completed_on_time_count',
+        'completed_late_count'
+    ],
+    properties: {
+        scheduled_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        due_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        pending_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        completed_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        completed_on_time_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        completed_late_count: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const ProgressRecurringErrorsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'patterns'
+    ],
+    properties: {
+        patterns: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/ProgressRecurringErrorPattern'
+            }
+        }
+    }
+} as const;
+
+export const ProgressRecurringErrorPatternSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'error_category',
+        'observation_count',
+        'first_observed_at',
+        'last_observed_at',
+        'trend'
+    ],
+    properties: {
+        error_category: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        observation_count: {
+            type: 'integer',
+            minimum: 1
+        },
+        first_observed_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        last_observed_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        trend: {
+            type: 'string',
+            enum: [
+                'reducing',
+                'stable',
+                'increasing'
+            ]
+        }
+    }
+} as const;
+
 export const CompleteLearnerOnboardingRequestSchema = {
     type: 'object',
     additionalProperties: false,
