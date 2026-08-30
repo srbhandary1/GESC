@@ -10,12 +10,14 @@ use App\Conversation\ConversationSessionService;
 use App\Conversation\ConversationTurnService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\GuidanceSpeechService;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\RoleplayStageService;
 use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\ConversationTurnEventsRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
+use App\Http\Requests\Conversation\SynthesizeConversationSpeechRequest;
 use Illuminate\Http\JsonResponse;
 use JsonException;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +30,7 @@ final class ConversationController extends Controller
         private readonly ConversationTurnService $turns,
         private readonly ConversationEventService $events,
         private readonly RoleplayStageService $stages,
+        private readonly GuidanceSpeechService $speech,
     ) {}
 
     public function start(
@@ -124,6 +127,29 @@ final class ConversationController extends Controller
                 ? Response::HTTP_OK
                 : Response::HTTP_CREATED,
         )->header('Cache-Control', 'private, no-store');
+    }
+
+    public function speak(
+        SynthesizeConversationSpeechRequest $request,
+        string $session,
+    ): JsonResponse {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+
+        try {
+            $result = $this->speech->synthesize(
+                learner: $principal->user,
+                sessionId: $session,
+                text: (string) $request->validated('text'),
+                purpose: (string) $request->validated('purpose'),
+            );
+        } catch (ConversationOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        } catch (ConversationProviderException) {
+            abort(Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        return response()->json($result)
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function events(

@@ -6,6 +6,7 @@ namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\RoleplayCatalog;
 use App\Conversation\Support\RoleplayStages;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
@@ -156,6 +157,12 @@ final readonly class ConversationSessionService
 
     private function resolveMode(string $personaKey, string $scenarioKey): string
     {
+        $catalogMode = RoleplayCatalog::modeFor($personaKey, $scenarioKey);
+
+        if (is_string($catalogMode)) {
+            return $catalogMode;
+        }
+
         $prototypes = config('conversation.prototypes', []);
 
         if (is_array($prototypes)) {

@@ -19,7 +19,7 @@ final readonly class AzureOpenAiConversationModelProvider implements Conversatio
     private const string OUTPUT_CONTRACT = <<<'TEXT'
 Return only one JSON object (no markdown) with keys:
 understood_intent (string),
-assistant_reply_en (string, English Friend reply, no HTML),
+assistant_reply_en (string, English reply spoken as Swathi, no HTML, never any other personal name),
 safety_state ("ok" or "fallback"),
 priority_correction (object or null) with:
   needed (boolean),
@@ -31,6 +31,7 @@ priority_correction (object or null) with:
   learner_span (optional string),
   encouragement_l1 (optional string).
 Never invent scores. Never change learning records. Never use shame language.
+Speak only as Swathi, the on-screen English teacher. Do not use any other name.
 TEXT;
 
     public function __construct(

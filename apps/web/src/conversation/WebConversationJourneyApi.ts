@@ -1,4 +1,4 @@
-import type { ConversationTurnEvent } from '@global-english/contracts'
+import type { ConversationSpeechResult, ConversationTurnEvent, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
 import type {
   CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
@@ -100,6 +100,23 @@ export class WebConversationJourneyApi
     )
   }
 
+  synthesizeSpeech(
+    sessionId: string,
+    input: SynthesizeConversationSpeechRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<ConversationSpeechResult> {
+    return this.#mutation<ConversationSpeechResult>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/speech`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
   async events(
     eventsUrl: string,
     signal?: AbortSignal,
@@ -169,8 +186,14 @@ export class WebConversationJourneyApi
     commandId: string,
     signal?: AbortSignal,
   ): Promise<VoiceRecording> {
+    const file =
+      audio instanceof File && audio.name.trim() !== ''
+        ? audio
+        : new File([audio], 'voice-practice.wav', {
+            type: audio.type.trim() === '' ? 'audio/wav' : audio.type,
+          })
     const body = new FormData()
-    body.append('audio', audio, 'voice-practice.wav')
+    body.append('audio', file, file.name)
 
     return this.#mutation<VoiceRecording>(
       `/conversation-sessions/${encodeURIComponent(sessionId)}/recordings`,
@@ -350,6 +373,10 @@ export class WebConversationJourneyApi
     }
 
     if (eventsUrl.startsWith('/api/v1/')) {
+      if (/^https?:\/\//u.test(this.#baseUrl)) {
+        return `${new URL(this.#baseUrl).origin}${eventsUrl}`
+      }
+
       return eventsUrl
     }
 

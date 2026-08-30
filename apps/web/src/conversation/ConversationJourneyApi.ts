@@ -1,6 +1,7 @@
 import type {
   AdvanceConversationSessionStageRequest,
   ConversationSession,
+  ConversationSpeechResult,
   ConversationTurn,
   ConversationTurnEvent,
   CreateConversationTurnRequest,
@@ -12,6 +13,7 @@ import type {
   ReviewVoiceTranscriptRequest,
   StartConversationSessionRequest,
   SupportedLocale as ApiSupportedLocale,
+  SynthesizeConversationSpeechRequest,
   UpdateLearnerAiMemoryFactRequest,
   VoiceConsentEvent,
   VoiceConsentListing,
@@ -55,6 +57,13 @@ export interface ConversationJourneyApi {
     commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendTurn>
+
+  synthesizeSpeech?(
+    sessionId: string,
+    input: SynthesizeConversationSpeechRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<ConversationSpeechResult>
 
   events(
     eventsUrl: string,

@@ -66,9 +66,15 @@ final readonly class ConversationProviderUsagePolicy
                 && $usage->estimatedCostMicrounits === 0,
             'model' => $usage->providerKey === 'azure-openai'
                 && $usage->estimatedCostMicrounits >= 0,
-            'tts' => $usage->providerKey === 'project-text-first'
+            'tts' => (
+                $usage->providerKey === 'project-text-first'
                 && $usage->modelVersion === 'text-first-v1'
-                && $usage->estimatedCostMicrounits === 0,
+                && $usage->estimatedCostMicrounits === 0
+            ) || (
+                $usage->providerKey === 'azure-speech-guidance'
+                && str_starts_with($usage->modelVersion, 'soft-launch-guidance-tts-v1:')
+                && $usage->estimatedCostMicrounits >= 0
+            ),
             default => false,
         };
     }

@@ -18,6 +18,45 @@
   gap: var(--ge-space-3);
 }
 
+.conversation-journey__heading,
+.conversation-journey__stage,
+.conversation-journey__result,
+.conversation-journey__start,
+.conversation-journey__notice,
+.conversation-journey__voice,
+.conversation-journey__memory {
+  min-width: 0;
+  padding: clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: conversation-rise 520ms ease-out both;
+}
+
+.conversation-journey__heading {
+  background:
+    linear-gradient(
+      145deg,
+      #0a1f18 0%,
+      #071611 70%,
+      color-mix(in srgb, var(--ge-color-brass) 28%, #071611) 100%
+    );
+  color: #f4f8f5;
+  border-color: color-mix(in srgb, var(--ge-color-brass) 35%, #071611);
+}
+
+.conversation-journey__heading h2,
+.conversation-journey__heading h3 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f8f4e8;
+}
+
 .conversation-journey__controls {
   display: flex;
   flex-wrap: wrap;
@@ -32,14 +71,37 @@
 }
 
 .conversation-journey__progress {
-  font-weight: 600;
+  font-weight: 650;
+  color: var(--ge-color-action);
 }
 
-.conversation-journey__memory {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  padding: var(--ge-space-4);
+.conversation-journey__example {
+  display: grid;
+  gap: var(--ge-space-3);
+  padding: var(--ge-space-3);
+  border: 1px dashed color-mix(in srgb, var(--ge-color-border) 80%, transparent);
+  border-radius: var(--ge-radius-sm);
+}
+
+.conversation-journey__example summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.conversation-journey__consent-details {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.speak-room {
+  display: grid;
+  gap: var(--ge-space-4);
+}
+
+.level-session__part-hint {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.95rem;
 }
 
 .conversation-journey__memory-list {
@@ -64,32 +126,29 @@
 }
 
 .conversation-journey__correction {
-  border-inline-start: 0.25rem solid var(--ge-color-border);
+  border-inline-start: 0.28rem solid var(--ge-color-brass);
   margin-block-start: var(--ge-space-3);
-  padding-inline-start: var(--ge-space-3);
+  padding: var(--ge-space-3) var(--ge-space-4);
+  border-radius: 0 var(--ge-radius-sm) var(--ge-radius-sm) 0;
+  background: color-mix(in srgb, var(--ge-color-brass) 10%, var(--ge-color-surface));
 }
 
 .conversation-journey__start select {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
+  background: var(--ge-color-surface-elevated);
+  border: 1px solid var(--ge-color-border);
   border-radius: var(--ge-radius-sm);
   color: var(--ge-color-text);
   font: inherit;
   max-width: 16rem;
   min-height: var(--ge-target-minimum);
   padding-inline: var(--ge-space-3);
-}
-
-.conversation-journey__voice {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  padding: var(--ge-space-4);
+  box-shadow: inset 0 1px 2px rgb(7 22 17 / 0.04);
 }
 
 .conversation-journey__voice-notice {
-  border-inline-start: 0.25rem solid var(--ge-color-border);
+  border-inline-start: 0.25rem solid var(--ge-color-brass);
   padding-inline-start: var(--ge-space-3);
+  color: var(--ge-color-text-muted);
 }
 
 .conversation-journey__voice-actions {
@@ -99,21 +158,30 @@
 }
 
 .conversation-journey__eyebrow {
-  color: var(--ge-color-text-muted);
-  font-weight: 700;
   margin: 0;
+  color: var(--ge-color-brass-soft);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.conversation-journey__stage .conversation-journey__eyebrow,
+.conversation-journey__start .conversation-journey__eyebrow,
+.conversation-journey__result .conversation-journey__eyebrow,
+.conversation-journey__voice .conversation-journey__eyebrow,
+.conversation-journey__memory .conversation-journey__eyebrow {
+  color: var(--ge-color-brass);
 }
 
 .conversation-journey__notice {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  padding: var(--ge-space-4);
+  border-color: var(--ge-notice-border);
+  background: var(--ge-notice-background);
 }
 
 .conversation-journey textarea {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
+  background: var(--ge-color-surface-elevated);
+  border: 1px solid var(--ge-color-border);
   border-radius: var(--ge-radius-sm);
   color: var(--ge-color-text);
   font: inherit;
@@ -123,13 +191,59 @@
   resize: vertical;
 }
 
+.conversation-journey textarea:focus {
+  border-color: var(--ge-color-brass);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--ge-color-brass) 28%, transparent);
+  outline: none;
+}
+
 .conversation-journey button {
   justify-self: start;
   min-height: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-4);
+  border: 1px solid var(--ge-color-action);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-action);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.conversation-journey button:hover:not(:disabled) {
+  background: var(--ge-color-status);
+  transform: translateY(-1px);
+}
+
+.conversation-journey button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.conversation-journey__lead {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .conversation-journey__identity {
   font-weight: 700;
+  color: var(--ge-color-ink);
 }
 
 .conversation-journey__result dl,
@@ -147,4 +261,44 @@
   gap: var(--ge-space-2);
   margin: 0;
   padding-inline-start: 1.5rem;
+}
+
+.conversation-journey__stage h3,
+.conversation-journey__result h3,
+.conversation-journey__start h3,
+.conversation-journey__voice h3,
+.conversation-journey__memory h3 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ge-color-ink);
+}
+
+@keyframes conversation-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-journey__heading,
+  .conversation-journey__stage,
+  .conversation-journey__result,
+  .conversation-journey__start,
+  .conversation-journey__notice,
+  .conversation-journey__voice,
+  .conversation-journey__memory {
+    animation: none;
+  }
+
+  .conversation-journey button:hover:not(:disabled) {
+    transform: none;
+  }
 }

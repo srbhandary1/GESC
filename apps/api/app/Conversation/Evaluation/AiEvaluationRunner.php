@@ -35,6 +35,7 @@ final readonly class AiEvaluationRunner
         ?string $exportReviewPath = null,
         ?string $importReviewPath = null,
         ?string $reportPath = null,
+        bool $requireHumanReview = false,
     ): array {
         if (
             (! app()->environment('local') && ! app()->environment('testing'))
@@ -53,7 +54,11 @@ final readonly class AiEvaluationRunner
         $missingL1Count = 0;
         $shameLanguageHits = 0;
         $schemaInvalidCount = 0;
-        $humanReview = $this->loadHumanReview($importReviewPath, $suite);
+        $humanReview = $this->loadHumanReview(
+            $importReviewPath,
+            $suite,
+            $requireHumanReview,
+        );
 
         foreach ($suite['cases'] as $case) {
             $uiLocale = (string) $case['ui_locale'];
@@ -85,10 +90,36 @@ final readonly class AiEvaluationRunner
                 $uiLocale,
                 (bool) $case['requires_explanation_l1'],
             );
-            $humanDisposition = $humanReview[$case['id']] ?? null;
-            $humanPass = $humanDisposition === null
-                || $humanDisposition === 'accept'
-                || $humanDisposition === 'pending';
+            $humanReviewRow = $humanReview[$case['id']] ?? null;
+            $humanDisposition = $humanReviewRow['disposition'] ?? null;
+            $reviewPayloadSha256 = $this->reviewPayloadSha256([
+                'case_id' => $case['id'],
+                'ui_locale' => $uiLocale,
+                'prompt_body_sha256' => $prompt['body_sha256'],
+                'coaching_mode' => $case['coaching_mode'],
+                'observed_error_category' => $observedCategory,
+                'assistant_reply_en' => $result->assistantReply,
+                'correction_en' => $result->priorityCorrection?->correctionEn,
+                'explanation_l1' => $result->priorityCorrection?->explanationL1,
+                'explanation_locale' => $result->priorityCorrection?->explanationLocale,
+                'safety_state' => $result->safetyState,
+            ]);
+
+            if (
+                $requireHumanReview
+                && ! hash_equals(
+                    $reviewPayloadSha256,
+                    (string) ($humanReviewRow['review_payload_sha256'] ?? ''),
+                )
+            ) {
+                throw new ConversationOperationRejected;
+            }
+
+            $humanPass = $requireHumanReview
+                ? $humanDisposition === 'accept'
+                : $humanDisposition === null
+                    || $humanDisposition === 'accept'
+                    || $humanDisposition === 'pending';
             $shamePass = ! (bool) $case['expects_shame_rejection'] || (
                 $shameRejected
                 && $result->usedFallback
@@ -127,6 +158,9 @@ final readonly class AiEvaluationRunner
                 'observed_error_category' => $observedCategory,
                 'expected_safety_state' => $case['expected_safety_state'],
                 'observed_safety_state' => $result->safetyState,
+                'assistant_reply_en' => $result->assistantReply,
+                'correction_en' => $result->priorityCorrection?->correctionEn,
+                'explanation_l1' => $result->priorityCorrection?->explanationL1,
                 'schema_valid' => $schemaValid,
                 'explanation_l1_present' => $l1Present,
                 'explanation_locale' => $result->priorityCorrection?->explanationLocale,
@@ -134,6 +168,9 @@ final readonly class AiEvaluationRunner
                 'shame_rejected' => $shameRejected,
                 'expects_shame_rejection' => (bool) $case['expects_shame_rejection'],
                 'human_disposition' => $humanDisposition,
+                'human_reviewer_id' => $humanReviewRow['reviewer_id'] ?? null,
+                'human_review_evidence_reference' => $humanReviewRow['evidence_reference'] ?? null,
+                'human_review_payload_sha256' => $humanReviewRow['review_payload_sha256'] ?? null,
                 'passed' => $casePassed,
                 'estimated_cost_microunits' => $result->usage()
                     ->estimatedCostMicrounits,
@@ -170,6 +207,7 @@ final readonly class AiEvaluationRunner
             'failed_count' => $failedCount,
             'estimated_cost_microunits' => $estimatedCost,
             'metrics' => $metrics,
+            'human_review_required' => $requireHumanReview,
             'prompt_comparison' => $this->comparePrompts($caseResults),
             'cost_ledger_rollup' => [
                 'provider_key' => 'deterministic-fake',
@@ -186,6 +224,7 @@ final readonly class AiEvaluationRunner
             'passed_count' => $report['passed_count'],
             'failed_count' => $report['failed_count'],
             'estimated_cost_microunits' => $report['estimated_cost_microunits'],
+            'human_review_required' => $requireHumanReview,
             'metrics' => $metrics,
             'cases' => array_map(
                 static fn (array $case): array => [
@@ -195,6 +234,10 @@ final readonly class AiEvaluationRunner
                     'observed_error_category' => $case['observed_error_category'],
                     'observed_safety_state' => $case['observed_safety_state'],
                     'explanation_l1_present' => $case['explanation_l1_present'],
+                    'human_disposition' => $case['human_disposition'],
+                    'human_reviewer_id' => $case['human_reviewer_id'],
+                    'human_review_evidence_reference' => $case['human_review_evidence_reference'],
+                    'human_review_payload_sha256' => $case['human_review_payload_sha256'],
                 ],
                 $caseResults,
             ),
@@ -261,11 +304,23 @@ final readonly class AiEvaluationRunner
 
     /**
      * @param  array<string, mixed>  $suite
-     * @return array<string, string>
+     * @return array<string, array{
+     *   disposition: string,
+     *   reviewer_id: ?string,
+     *   evidence_reference: ?string,
+     *   review_payload_sha256: ?string
+     * }>
      */
-    private function loadHumanReview(?string $path, array $suite): array
-    {
+    private function loadHumanReview(
+        ?string $path,
+        array $suite,
+        bool $required,
+    ): array {
         if (! is_string($path) || $path === '') {
+            if ($required) {
+                throw new ConversationOperationRejected;
+            }
+
             return [];
         }
 
@@ -303,6 +358,16 @@ final readonly class AiEvaluationRunner
 
             $caseId = $row['case_id'] ?? null;
             $disposition = $row['disposition'] ?? null;
+            $reviewerId = $row['reviewer_id'] ?? null;
+            $reviewerRole = $row['reviewer_role'] ?? null;
+            $reviewerLocale = $row['reviewer_locale'] ?? null;
+            $independentReview = $row['independent_review'] ?? null;
+            $reviewedAt = $row['reviewed_at'] ?? null;
+            $evidenceReference = $row['evidence_reference'] ?? null;
+            $reviewPayloadSha256 = $row['review_payload_sha256'] ?? null;
+            $expectedReviewerRole = $reviewerLocale === 'en-IN'
+                ? 'independent_academic_english_reviewer'
+                : 'independent_language_content_reviewer';
 
             if (
                 ! is_string($caseId)
@@ -314,11 +379,62 @@ final readonly class AiEvaluationRunner
                 throw new ConversationOperationRejected;
             }
 
+            if ($required && (
+                $disposition !== 'accept'
+                || ! is_string($reviewerId)
+                || trim($reviewerId) === ''
+                || ! is_string($reviewerRole)
+                || $reviewerRole !== $expectedReviewerRole
+                || ! is_string($reviewerLocale)
+                || $reviewerLocale !== $this->caseLocale($suite, $caseId)
+                || $independentReview !== true
+                || ! is_string($reviewedAt)
+                || preg_match(
+                    '/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})\z/',
+                    $reviewedAt,
+                ) !== 1
+                || strtotime($reviewedAt) === false
+                || ! is_string($evidenceReference)
+                || trim($evidenceReference) === ''
+                || ! is_string($reviewPayloadSha256)
+                || preg_match('/\A[0-9a-f]{64}\z/', $reviewPayloadSha256) !== 1
+                || ! hash_equals(
+                    $reviewPayloadSha256,
+                    $this->reviewPayloadSha256([
+                        'case_id' => $row['case_id'] ?? null,
+                        'ui_locale' => $row['ui_locale'] ?? null,
+                        'prompt_body_sha256' => $row['prompt_body_sha256'] ?? null,
+                        'coaching_mode' => $row['coaching_mode'] ?? null,
+                        'observed_error_category' => $row['observed_error_category'] ?? null,
+                        'assistant_reply_en' => $row['assistant_reply_en'] ?? null,
+                        'correction_en' => $row['correction_en'] ?? null,
+                        'explanation_l1' => $row['explanation_l1'] ?? null,
+                        'explanation_locale' => $row['explanation_locale'] ?? null,
+                        'safety_state' => $row['safety_state'] ?? null,
+                    ]),
+                )
+            )) {
+                throw new ConversationOperationRejected;
+            }
+
             if (isset($map[$caseId])) {
                 throw new ConversationOperationRejected;
             }
 
-            $map[$caseId] = $disposition;
+            $map[$caseId] = [
+                'disposition' => $disposition,
+                'reviewer_id' => is_string($reviewerId) ? $reviewerId : null,
+                'evidence_reference' => is_string($evidenceReference)
+                    ? $evidenceReference
+                    : null,
+                'review_payload_sha256' => is_string($reviewPayloadSha256)
+                    ? $reviewPayloadSha256
+                    : null,
+            ];
+        }
+
+        if ($required && count($map) !== count($knownCaseIds)) {
+            throw new ConversationOperationRejected;
         }
 
         return $map;
@@ -338,15 +454,32 @@ final readonly class AiEvaluationRunner
             'suite_hash' => $suite['suite_hash'],
             'exported_at' => Date::now()->toIso8601String(),
             'dispositions' => array_map(
-                static fn (array $case): array => [
-                    'case_id' => $case['id'],
-                    'ui_locale' => $case['ui_locale'],
-                    'prompt_body_sha256' => $case['prompt_body_sha256'],
-                    'coaching_mode' => $case['coaching_mode'],
-                    'observed_error_category' => $case['observed_error_category'],
-                    'explanation_locale' => $case['explanation_locale'],
-                    'disposition' => 'pending',
-                ],
+                fn (array $case): array => array_merge(
+                    $reviewPayload = [
+                        'case_id' => $case['id'],
+                        'ui_locale' => $case['ui_locale'],
+                        'prompt_body_sha256' => $case['prompt_body_sha256'],
+                        'coaching_mode' => $case['coaching_mode'],
+                        'observed_error_category' => $case['observed_error_category'],
+                        'assistant_reply_en' => $case['assistant_reply_en'],
+                        'correction_en' => $case['correction_en'],
+                        'explanation_l1' => $case['explanation_l1'],
+                        'explanation_locale' => $case['explanation_locale'],
+                        'safety_state' => $case['observed_safety_state'],
+                    ],
+                    [
+                        'review_payload_sha256' => $this->reviewPayloadSha256(
+                            $reviewPayload,
+                        ),
+                        'disposition' => 'pending',
+                        'reviewer_id' => null,
+                        'reviewer_role' => null,
+                        'reviewer_locale' => $case['ui_locale'],
+                        'independent_review' => false,
+                        'reviewed_at' => null,
+                        'evidence_reference' => null,
+                    ],
+                ),
                 $caseResults,
             ),
         ];
@@ -355,6 +488,30 @@ final readonly class AiEvaluationRunner
             $path,
             json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT)."\n",
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function reviewPayloadSha256(array $payload): string
+    {
+        return CanonicalJson::sha256($payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $suite
+     */
+    private function caseLocale(array $suite, string $caseId): ?string
+    {
+        foreach ($suite['cases'] as $case) {
+            if (($case['id'] ?? null) === $caseId) {
+                $locale = $case['ui_locale'] ?? null;
+
+                return is_string($locale) ? $locale : null;
+            }
+        }
+
+        return null;
     }
 
     private function explanationL1Adequate(

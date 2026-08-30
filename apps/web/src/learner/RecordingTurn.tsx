@@ -1,9 +1,11 @@
 import {
   RecordingControls,
+  type RecordingCaptureMode,
   type RecordingControlLabels,
   type RecordingControlState,
 } from '@global-english/design-system'
 import { useEffect, useRef, useState } from 'react'
+import { audioToPcmWav } from '../conversation/audioToPcmWav'
 import {
   RecordingPermissionDeniedError,
   type AudioRecorder,
@@ -11,7 +13,7 @@ import {
   type CapturedAudio,
 } from './BrowserAudioRecorder'
 import type { LocalRecordingMetadata } from './LearnerJourneyApi'
-import { isValidLocalCapture } from './LocalCaptureReceipt'
+import { isValidLocalCapture, canonicalCaptureMimeType } from './LocalCaptureReceipt'
 
 export interface RecordingTurnLabels {
   readonly controls: RecordingControlLabels
@@ -24,6 +26,7 @@ export interface RecordingTurnLabels {
 }
 
 interface RecordingTurnProps {
+  readonly captureMode?: RecordingCaptureMode
   readonly createClientId: () => string
   readonly labels: RecordingTurnLabels
   readonly onAudioCaptureChange?: (audio: CapturedAudio | null) => void
@@ -32,6 +35,7 @@ interface RecordingTurnProps {
   ) => void
   readonly onContinueWithoutRecording: () => void
   readonly recorder: AudioRecorder
+  readonly skipReviewPlayback?: boolean
 }
 
 interface LocalCapture {
@@ -41,12 +45,14 @@ interface LocalCapture {
 }
 
 export function RecordingTurn({
+  captureMode = 'tap',
   createClientId,
   labels,
   onAudioCaptureChange,
   onCaptureChange,
   onContinueWithoutRecording,
   recorder,
+  skipReviewPlayback = false,
 }: RecordingTurnProps) {
   const [state, setState] = useState<RecordingControlState>(
     recorder.isSupported() ? 'ready' : 'blocked',
@@ -56,6 +62,7 @@ export function RecordingTurn({
   const captureRef = useRef<LocalCapture | null>(null)
   const active = useRef(true)
   const requestGeneration = useRef(0)
+  const holdIntent = useRef(false)
 
   useEffect(() => {
     active.current = true
@@ -63,6 +70,7 @@ export function RecordingTurn({
     return () => {
       active.current = false
       requestGeneration.current += 1
+      holdIntent.current = false
       sessionRef.current?.cancel()
       sessionRef.current = null
       const currentCapture = captureRef.current
@@ -73,6 +81,11 @@ export function RecordingTurn({
   }, [])
 
   const start = async () => {
+    if (sessionRef.current !== null) {
+      return
+    }
+
+    holdIntent.current = true
     clearCapture()
     setState('requesting-permission')
     const generation = requestGeneration.current + 1
@@ -81,8 +94,15 @@ export function RecordingTurn({
     try {
       const session = await recorder.start()
 
-      if (!active.current || requestGeneration.current !== generation) {
+      if (
+        !active.current ||
+        requestGeneration.current !== generation ||
+        !holdIntent.current
+      ) {
         session.cancel()
+        if (active.current && requestGeneration.current === generation) {
+          setState(recorder.isSupported() ? 'ready' : 'blocked')
+        }
         return
       }
 
@@ -93,6 +113,7 @@ export function RecordingTurn({
         return
       }
 
+      holdIntent.current = false
       setState(
         error instanceof RecordingPermissionDeniedError
           ? 'blocked'
@@ -102,12 +123,15 @@ export function RecordingTurn({
   }
 
   const stop = async () => {
+    holdIntent.current = false
     const session = sessionRef.current
     if (session === null) {
-      setState('error')
+      requestGeneration.current += 1
+      setState(recorder.isSupported() ? 'ready' : 'blocked')
       return
     }
 
+    sessionRef.current = null
     setState('processing')
     const generation = requestGeneration.current
 
@@ -119,7 +143,12 @@ export function RecordingTurn({
       }
 
       if (!isValidLocalCapture(audio)) {
-        sessionRef.current = null
+        setState('error')
+        return
+      }
+
+      const mimeType = canonicalCaptureMimeType(audio.mimeType)
+      if (mimeType === null) {
         setState('error')
         return
       }
@@ -129,14 +158,25 @@ export function RecordingTurn({
         byte_size: audio.blob.size,
         client_capture_id: createClientId(),
         duration_ms: audio.durationMs,
-        mime_type: audio.mimeType,
+        mime_type: mimeType,
       }
+
+      if (skipReviewPlayback) {
+        onAudioCaptureChange?.(audio)
+        onCaptureChange(metadata)
+        setState('ready')
+        return
+      }
+
+      const reviewBlob =
+        audio.blob.type === 'audio/wav'
+          ? audio.blob
+          : await audioToPcmWav(audio).catch(() => audio.blob)
       const nextCapture = {
         audio,
         metadata,
-        objectUrl: URL.createObjectURL(audio.blob),
+        objectUrl: URL.createObjectURL(reviewBlob),
       }
-      sessionRef.current = null
       captureRef.current = nextCapture
       setCapture(nextCapture)
       onAudioCaptureChange?.(audio)
@@ -147,12 +187,12 @@ export function RecordingTurn({
         return
       }
 
-      sessionRef.current = null
       setState('error')
     }
   }
 
   const cancel = () => {
+    holdIntent.current = false
     requestGeneration.current += 1
     sessionRef.current?.cancel()
     sessionRef.current = null
@@ -187,6 +227,7 @@ export function RecordingTurn({
       </h3>
       <p>{labels.permissionExplanation}</p>
       <RecordingControls
+        captureMode={captureMode}
         labels={labels.controls}
         onRequestCancel={cancel}
         onRequestPause={() => {

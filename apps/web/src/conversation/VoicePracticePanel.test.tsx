@@ -11,32 +11,50 @@ describe('secure voice practice consent boundary', () => {
     const initial = listing('not_granted', 'not_granted')
     const uploadGranted = listing('granted', 'not_granted')
     const bothGranted = listing('granted', 'granted')
+    let currentListing = initial
     const api: ConversationJourneyApi = {
       createTurn: vi.fn(),
       deleteVoiceRecording: vi.fn(),
       events: vi.fn(),
-      grantVoiceConsent: vi.fn(async (input) => ({
-        effective_at: '2026-07-31T12:00:00Z',
-        id: '01J00000000000000000000010',
-        notice_revision: 'voice-processing-notice-2026-07-31',
-        notice_sha256: 'a'.repeat(64),
-        policy_version: 'recording-policy-v1',
-        purpose: input.purpose,
-        replayed: false,
-        requested_locale: input.requested_locale,
-        resolved_locale: 'en-IN' as const,
-        state: 'granted' as const,
-      })),
+      grantVoiceConsent: vi.fn(async (input) => {
+        currentListing =
+          input.purpose === 'voice_upload_and_transcription'
+            ? uploadGranted
+            : bothGranted
+
+        return {
+          effective_at: '2026-07-31T12:00:00Z',
+          id: '01J00000000000000000000010',
+          notice_revision: 'voice-processing-notice-2026-07-31',
+          notice_sha256: 'a'.repeat(64),
+          policy_version: 'recording-policy-v1',
+          purpose: input.purpose,
+          replayed: false,
+          requested_locale: input.requested_locale,
+          resolved_locale: 'en-IN' as const,
+          state: 'granted' as const,
+        }
+      }),
       reviewVoiceTranscript: vi.fn(),
       startSession: vi.fn(),
       uploadVoiceRecording: vi.fn(),
-      voiceConsents: vi
-        .fn()
-        .mockResolvedValueOnce(initial)
-        .mockResolvedValueOnce(uploadGranted)
-        .mockResolvedValueOnce(bothGranted)
-        .mockResolvedValueOnce(uploadGranted),
-      withdrawVoiceConsent: vi.fn(),
+      voiceConsents: vi.fn(async () => currentListing),
+      withdrawVoiceConsent: vi.fn(async (purpose, input) => {
+        currentListing = uploadGranted
+
+        return {
+          effective_at: '2026-07-31T12:00:00Z',
+          id: '01J00000000000000000000011',
+          notice_revision: 'voice-processing-notice-2026-07-31',
+          notice_sha256: 'a'.repeat(64),
+          policy_version: 'recording-policy-v1',
+          purpose,
+          replayed: false,
+          requested_locale: input.requested_locale,
+          resolved_locale: 'en-IN' as const,
+          state: 'withdrawn' as const,
+        }
+      }),
     }
     const user = userEvent.setup()
 
@@ -51,29 +69,13 @@ describe('secure voice practice consent boundary', () => {
       />,
     )
 
-    await user.click(
-      screen.getByRole('button', {
-        name: 'conversation.voice.setup',
-      }),
-    )
     expect(
       (await screen.findByText(initial.notice.notice)).closest('aside'),
     ).toHaveAttribute('lang', 'en-IN')
 
     await user.click(
       screen.getByRole('button', {
-        name: 'conversation.voice.consent_upload',
-      }),
-    )
-    expect(
-      await screen.findByRole('button', {
-        name: 'conversation.voice.consent_provider',
-      }),
-    ).toBeEnabled()
-
-    await user.click(
-      screen.getByRole('button', {
-        name: 'conversation.voice.consent_provider',
+        name: 'conversation.voice.consent_both',
       }),
     )
     expect(
@@ -82,10 +84,10 @@ describe('secure voice practice consent boundary', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', {
+      screen.queryByRole('button', {
         name: 'conversation.voice.upload',
       }),
-    ).toBeDisabled()
+    ).not.toBeInTheDocument()
     expect(api.grantVoiceConsent).toHaveBeenNthCalledWith(
       1,
       {
@@ -104,9 +106,7 @@ describe('secure voice practice consent boundary', () => {
     )
 
     await user.click(
-      screen.getByRole('button', {
-        name: 'conversation.voice.manage_consent',
-      }),
+      screen.getByText('conversation.voice.manage_consent'),
     )
     await user.click(
       screen.getByRole('button', {
@@ -123,6 +123,76 @@ describe('secure voice practice consent boundary', () => {
         name: 'conversation.voice.consent_provider',
       }),
     ).toBeVisible()
+  })
+
+  it('opens Type instead when the learner continues without recording', async () => {
+    const bothGranted = listing('granted', 'granted')
+    const onPreferTyping = vi.fn()
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => crypto.randomUUID()}
+        locale="en-IN"
+        onPreferTyping={onPreferTyping}
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'learner.recording.continue_without',
+      }),
+    )
+    expect(onPreferTyping).toHaveBeenCalledOnce()
+  })
+
+  it('treats a closed voice gate as an honest status, not a failure alert', async () => {
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => {
+        throw new Error('voice_gate_closed')
+      }),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => crypto.randomUUID()}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('status'),
+    ).toHaveTextContent('conversation.voice.error')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'conversation.voice.setup' }),
+    ).not.toBeInTheDocument()
   })
 })
 

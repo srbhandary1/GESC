@@ -105,9 +105,11 @@ describe('RecordingTurn privacy boundaries', () => {
   it.each([
     'audio/webm',
     'audio/webm;codecs=opus',
+    'audio/webm; codecs=opus',
     'audio/ogg',
     'audio/ogg;codecs=opus',
     'audio/mp4',
+    'audio/mp4;codecs=mp4a.40.2',
   ])('accepts bounded integer metadata for %s', (mimeType) => {
     const blob = new Blob([], { type: mimeType })
     Object.defineProperty(blob, 'size', { value: 128 })
@@ -215,6 +217,59 @@ describe('RecordingTurn privacy boundaries', () => {
     view.unmount()
 
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:local')
+  })
+
+  it('hold-to-talk release submits capture without local playback', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const onAudioCaptureChange = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={onAudioCaptureChange}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: button })
+    await screen.findByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[/MouseLeft]', target: button })
+
+    await waitFor(() => {
+      expect(onAudioCaptureChange).toHaveBeenCalled()
+    })
+    expect(
+      screen.queryByLabelText(labels.playbackLabel),
+    ).not.toBeInTheDocument()
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
   })
 })
 

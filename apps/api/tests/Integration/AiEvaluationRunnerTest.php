@@ -37,6 +37,24 @@ final class AiEvaluationRunnerTest extends TenancyIntegrationTestCase
         $this->assertNotEmpty($report['prompt_comparison']);
         $this->assertTrue(File::isFile($reportPath));
         $this->assertTrue(File::isFile($exportPath));
+        $export = json_decode(
+            File::get($exportPath),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+        $this->assertSame(
+            'Thank you for sharing that. What would you like to talk about next?',
+            $export['dispositions'][0]['assistant_reply_en'],
+        );
+        $this->assertNotEmpty($export['dispositions'][0]['correction_en']);
+        $this->assertNotEmpty($export['dispositions'][0]['explanation_l1']);
+        $this->assertMatchesRegularExpression(
+            '/\A[0-9a-f]{64}\z/',
+            $export['dispositions'][0]['review_payload_sha256'],
+        );
+        $this->assertNull($export['dispositions'][0]['reviewer_id']);
+        $this->assertFalse($export['dispositions'][0]['independent_review']);
         $this->assertSame(1, DB::table('evaluation_runs')->count());
         $this->assertSame(
             'completed',
@@ -169,6 +187,101 @@ final class AiEvaluationRunnerTest extends TenancyIntegrationTestCase
             importReviewPath: storage_path(
                 'framework/testing/ai-evaluation/missing-review.json',
             ),
+        );
+    }
+
+    public function test_required_human_review_accepts_only_complete_independent_locale_evidence(): void
+    {
+        $directory = storage_path('framework/testing/ai-evaluation');
+        File::ensureDirectoryExists($directory);
+        $importPath = $directory.'/review-import-required.json';
+        $runner = $this->app->make(AiEvaluationRunner::class);
+        $suite = $this->app->make(AiEvaluationSuite::class)->load();
+        $exportPath = $directory.'/review-export-required.json';
+        $runner->run(exportReviewPath: $exportPath);
+        $export = json_decode(
+            File::get($exportPath),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+
+        File::put($importPath, json_encode([
+            'suite_key' => $suite['suite_key'],
+            'suite_hash' => $suite['suite_hash'],
+            'dispositions' => array_map(
+                static fn (array $row): array => array_merge($row, [
+                    'disposition' => 'accept',
+                    'reviewer_id' => 'reviewer-'.$row['ui_locale'],
+                    'reviewer_role' => $row['ui_locale'] === 'en-IN'
+                        ? 'independent_academic_english_reviewer'
+                        : 'independent_language_content_reviewer',
+                    'reviewer_locale' => $row['ui_locale'],
+                    'independent_review' => true,
+                    'reviewed_at' => '2026-08-12T04:00:00Z',
+                    'evidence_reference' => 'APP-TEST-'.$row['ui_locale'],
+                ]),
+                $export['dispositions'],
+            ),
+        ], JSON_THROW_ON_ERROR));
+
+        $report = $runner->run(
+            importReviewPath: $importPath,
+            requireHumanReview: true,
+        );
+
+        $this->assertSame('completed', $report['status']);
+        $this->assertTrue($report['human_review_required']);
+        $this->assertSame(
+            'reviewer-kn-IN',
+            $report['cases'][0]['human_reviewer_id'],
+        );
+    }
+
+    public function test_required_human_review_fails_without_a_completed_package(): void
+    {
+        $runner = $this->app->make(AiEvaluationRunner::class);
+
+        $this->expectException(ConversationOperationRejected::class);
+        $runner->run(requireHumanReview: true);
+    }
+
+    public function test_required_human_review_fails_when_reviewed_output_changed(): void
+    {
+        $directory = storage_path('framework/testing/ai-evaluation');
+        File::ensureDirectoryExists($directory);
+        $exportPath = $directory.'/review-export-tampered.json';
+        $importPath = $directory.'/review-import-tampered.json';
+        $runner = $this->app->make(AiEvaluationRunner::class);
+
+        $runner->run(exportReviewPath: $exportPath);
+        $export = json_decode(
+            File::get($exportPath),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+        $export['dispositions'] = array_map(
+            static fn (array $row): array => array_merge($row, [
+                'disposition' => 'accept',
+                'reviewer_id' => 'reviewer-'.$row['ui_locale'],
+                'reviewer_role' => $row['ui_locale'] === 'en-IN'
+                    ? 'independent_academic_english_reviewer'
+                    : 'independent_language_content_reviewer',
+                'reviewer_locale' => $row['ui_locale'],
+                'independent_review' => true,
+                'reviewed_at' => '2026-08-12T04:00:00Z',
+                'evidence_reference' => 'APP-TEST-'.$row['ui_locale'],
+            ]),
+            $export['dispositions'],
+        );
+        $export['dispositions'][0]['assistant_reply_en'] = 'Changed after review.';
+        File::put($importPath, json_encode($export, JSON_THROW_ON_ERROR));
+
+        $this->expectException(ConversationOperationRejected::class);
+        $runner->run(
+            importReviewPath: $importPath,
+            requireHumanReview: true,
         );
     }
 }

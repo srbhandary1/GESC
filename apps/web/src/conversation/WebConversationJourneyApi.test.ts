@@ -136,6 +136,35 @@ describe('web deterministic conversation API', () => {
     )
   })
 
+  it('resolves turn events against the baked API origin on Android', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      new Response(
+        'id: 1\nevent: conversation-status\ndata: {"sequence":1,"state":"accepted","event_code":"turn.accepted","provider_stage":null,"provider_attempt":null,"recorded_at":"2026-07-30T12:00:00Z"}\n\n',
+        {
+          headers: { 'Content-Type': 'text/event-stream' },
+          status: 200,
+        },
+      ),
+    )
+    const api = new WebConversationJourneyApi({
+      baseUrl: 'https://api.global-english.test/api/v1',
+      csrfProtection: 'none',
+      fetch,
+    })
+
+    await api.events(
+      '/api/v1/conversation-turns/01J00000000000000000000006/events',
+    )
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.global-english.test/api/v1/conversation-turns/01J00000000000000000000006/events',
+      expect.objectContaining({
+        credentials: 'include',
+        headers: { Accept: 'text/event-stream' },
+      }),
+    )
+  })
+
   it('uploads WAV with CSRF and lets the browser set the multipart boundary', async () => {
     const recording = {
       byte_size: 48,
@@ -177,6 +206,9 @@ describe('web deterministic conversation API', () => {
       '/api/v1/conversation-sessions/01J00000000000000000000001/recordings',
     )
     expect(init?.body).toBeInstanceOf(FormData)
+    const audio = (init?.body as FormData).get('audio')
+    expect(audio).toBeInstanceOf(File)
+    expect((audio as File).name).toBe('voice-practice.wav')
     expect(new Headers(init?.headers).get('Content-Type')).toBeNull()
     expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(
       'voice-command',
@@ -212,6 +244,49 @@ describe('web deterministic conversation API', () => {
       expect.objectContaining({
         headers: expect.not.objectContaining({
           'X-XSRF-TOKEN': expect.anything(),
+        }),
+        method: 'POST',
+      }),
+    )
+  })
+
+  it('posts bounded session speech through CSRF JSON', async () => {
+    const speech = {
+      guidance_audio_base64: null,
+      guidance_audio_mime_type: null,
+      model_audio_base64: 'QQ==',
+      model_audio_mime_type: 'audio/wav' as const,
+      playback_available: true,
+      rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+    }
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json(speech, { status: 200 }))
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=speech-csrf',
+    })
+
+    await expect(
+      api.synthesizeSpeech(
+        '01J00000000000000000000001',
+        {
+          purpose: 'model_en',
+          text: 'I went to the market this morning.',
+        },
+        'speech-command',
+      ),
+    ).resolves.toEqual(speech)
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/conversation-sessions/01J00000000000000000000001/speech',
+      expect.objectContaining({
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'Idempotency-Key': 'speech-command',
+          'X-XSRF-TOKEN': 'speech-csrf',
         }),
         method: 'POST',
       }),

@@ -53,6 +53,12 @@ final class ConversationProviderUsagePolicyTest extends TestCase
             'text-first-v1',
             0,
         ];
+        yield 'soft-launch guidance speech' => [
+            'tts',
+            'azure-speech-guidance',
+            'soft-launch-guidance-tts-v1:kn-IN-SapnaNeural',
+            12,
+        ];
     }
 
     public function test_soft_launch_rejects_fake_or_cross_stage_usage(): void

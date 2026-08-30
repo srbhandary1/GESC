@@ -17,6 +17,8 @@ use App\Conversation\Providers\SpeechToTextResult;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
 use App\Conversation\Providers\TextToSpeechResult;
+use App\Conversation\Support\GuidanceTtsPolicy;
+use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -35,6 +37,7 @@ final readonly class ConversationTurnService
         private SpeechToTextProvider $speechToText,
         private ConversationOrchestrator $orchestrator,
         private TextToSpeechProvider $textToSpeech,
+        private MeaningfulSpeakingDayProjector $speakingDays,
     ) {}
 
     /**
@@ -247,22 +250,52 @@ final readonly class ConversationTurnService
                     state: $state,
                     stage: 'tts',
                     operation: fn (): TextToSpeechResult => $this
-                        ->textToSpeech
-                        ->synthesize(new TextToSpeechRequest(
-                            interactionId: $turnId,
+                        ->synthesizeSpeech(
+                            turnId: $turnId,
                             text: $assistantReply,
-                        )),
+                            purpose: GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+                            uiLocale: $this->string($session, 'ui_locale'),
+                        ),
                 );
 
                 if (! $textToSpeechResult instanceof TextToSpeechResult) {
                     throw new ConversationOperationRejected;
                 }
 
-                $speech = [
-                    'playback_available' => $textToSpeechResult
-                        ->playbackAvailable,
-                    'rendering_mode' => $textToSpeechResult->renderingMode,
-                ];
+                $guidanceSpeechResult = null;
+                $guidanceText = $priorityCorrection?->explanationL1;
+
+                if (is_string($guidanceText) && trim($guidanceText) !== '') {
+                    try {
+                        $guidanceSpeechResult = $this->synthesizeSpeech(
+                            turnId: $turnId,
+                            text: $guidanceText,
+                            purpose: GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1,
+                            uiLocale: $this->string($session, 'ui_locale'),
+                        );
+                        $this->usagePolicy->assertAllowed(
+                            'tts',
+                            $guidanceSpeechResult->usage(),
+                        );
+                        $this->recordUsage(
+                            organizationId: $context->organizationId,
+                            membershipId: $membershipId,
+                            sessionId: $sessionId,
+                            turnId: $turnId,
+                            stage: 'tts',
+                            attempt: 2,
+                            usage: $guidanceSpeechResult->usage(),
+                            resultStatus: 'succeeded',
+                        );
+                    } catch (ConversationProviderException|ConversationOperationRejected) {
+                        $guidanceSpeechResult = null;
+                    }
+                }
+
+                $speech = $this->speechPayload(
+                    $textToSpeechResult,
+                    $guidanceSpeechResult,
+                );
                 $state = $this->transition(
                     organizationId: $context->organizationId,
                     membershipId: $membershipId,
@@ -272,6 +305,11 @@ final readonly class ConversationTurnService
                     to: 'completed',
                     eventCode: 'turn.completed',
                     updates: ['completed_at' => Date::now()->toImmutable()],
+                );
+                $this->speakingDays->reconcileTurn(
+                    $context->organizationId,
+                    $membershipId,
+                    $turnId,
                 );
             } catch (ConversationProviderException $exception) {
                 $completedAt = Date::now()->toImmutable();
@@ -672,12 +710,24 @@ final readonly class ConversationTurnService
             ),
             persistAdvisory: false,
         );
-        $textToSpeechResult = $this->textToSpeech->synthesize(
-            new TextToSpeechRequest(
-                interactionId: $turnId,
-                text: $modelResult->assistantReply,
-            ),
+        $uiLocale = $this->string($session, 'ui_locale');
+        $textToSpeechResult = $this->synthesizeSpeech(
+            turnId: $turnId,
+            text: $modelResult->assistantReply,
+            purpose: GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+            uiLocale: $uiLocale,
         );
+        $guidanceSpeechResult = null;
+        $guidanceText = $modelResult->priorityCorrection?->explanationL1;
+
+        if (is_string($guidanceText) && trim($guidanceText) !== '') {
+            $guidanceSpeechResult = $this->synthesizeSpeech(
+                turnId: $turnId,
+                text: $guidanceText,
+                purpose: GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1,
+                uiLocale: $uiLocale,
+            );
+        }
 
         if (
             ! hash_equals(
@@ -704,17 +754,16 @@ final readonly class ConversationTurnService
             understoodIntent: $modelResult->understoodIntent,
             priorityCorrection: $modelResult->priorityCorrection,
             safetyState: $modelResult->safetyState,
-            speech: [
-                'playback_available' => $textToSpeechResult
-                    ->playbackAvailable,
-                'rendering_mode' => $textToSpeechResult->renderingMode,
-            ],
+            speech: $this->speechPayload(
+                $textToSpeechResult,
+                $guidanceSpeechResult,
+            ),
             replayed: $replayed,
         );
     }
 
     /**
-     * @param  array<string, bool|string>|null  $speech
+     * @param  array<string, bool|string|null>|null  $speech
      * @return array<string, mixed>
      */
     private function result(
@@ -775,6 +824,57 @@ final readonly class ConversationTurnService
                 $turnId,
             ),
             'replayed' => $replayed,
+        ];
+    }
+
+    private function synthesizeSpeech(
+        string $turnId,
+        string $text,
+        string $purpose,
+        string $uiLocale,
+    ): TextToSpeechResult {
+        return $this->textToSpeech->synthesize(new TextToSpeechRequest(
+            interactionId: $turnId,
+            text: $text,
+            voice: GuidanceTtsPolicy::voiceFor($purpose, $uiLocale),
+            purpose: $purpose,
+            uiLocale: $uiLocale,
+        ));
+    }
+
+    /**
+     * @return array{
+     *   playback_available: bool,
+     *   rendering_mode: string,
+     *   model_audio_base64: ?string,
+     *   model_audio_mime_type: ?string,
+     *   guidance_audio_base64: ?string,
+     *   guidance_audio_mime_type: ?string
+     * }
+     */
+    private function speechPayload(
+        TextToSpeechResult $modelSpeech,
+        ?TextToSpeechResult $guidanceSpeech,
+    ): array {
+        $modelAudio = $modelSpeech->audioBytes;
+        $guidanceAudio = $guidanceSpeech?->audioBytes;
+
+        return [
+            'playback_available' => $modelSpeech->playbackAvailable
+                || ($guidanceSpeech?->playbackAvailable ?? false),
+            'rendering_mode' => $modelSpeech->renderingMode,
+            'model_audio_base64' => is_string($modelAudio) && $modelAudio !== ''
+                ? base64_encode($modelAudio)
+                : null,
+            'model_audio_mime_type' => is_string($modelAudio) && $modelAudio !== ''
+                ? ($modelSpeech->mimeType ?? 'audio/wav')
+                : null,
+            'guidance_audio_base64' => is_string($guidanceAudio) && $guidanceAudio !== ''
+                ? base64_encode($guidanceAudio)
+                : null,
+            'guidance_audio_mime_type' => is_string($guidanceAudio) && $guidanceAudio !== ''
+                ? ($guidanceSpeech?->mimeType ?? 'audio/wav')
+                : null,
         ];
     }
 

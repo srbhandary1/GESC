@@ -41,4 +41,29 @@ return [
         'VOICE_DELETION_OUTBOX_STALE_SECONDS',
         3600,
     ),
+    'soft_launch' => [
+        'stt_api_version' => '2025-10-15',
+        'stt_route' => '/speechtotext/transcriptions:transcribe',
+        'stt_locale' => 'en-IN',
+        'stt_profanity_filter_mode' => 'None',
+        'maximum_json_response_bytes' => 1024 * 1024,
+    ],
+    /*
+     | Optional Indic HTTP STT (translate-to-English). Off until
+     | VOICE_PROVIDER_DRIVER=indic with a secret file outside the repo.
+     | Compatible with Sarvam-style REST; no vendor SDK in domain code.
+     */
+    'indic' => [
+        'transcribe_url' => env('VOICE_INDIC_TRANSCRIBE_URL', ''),
+        'allowed_host' => env('VOICE_INDIC_ALLOWED_HOST', ''),
+        'secret_file' => env('VOICE_INDIC_SECRET_FILE', ''),
+        'auth_header' => env('VOICE_INDIC_AUTH_HEADER', 'api-subscription-key'),
+        'model' => env('VOICE_INDIC_MODEL', ''),
+        'mode' => env('VOICE_INDIC_MODE', 'translate'),
+        'language_code' => env('VOICE_INDIC_LANGUAGE_CODE', 'unknown'),
+        'output_language' => env('VOICE_INDIC_OUTPUT_LANGUAGE', 'en-IN'),
+        'maximum_json_response_bytes' => 256 * 1024,
+        'connection_timeout_seconds' => 5,
+        'request_timeout_seconds' => 20,
+    ],
 ];

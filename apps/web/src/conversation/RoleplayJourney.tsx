@@ -7,12 +7,43 @@ import { useState } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
+import { speakSessionSpeech } from './speakSessionSpeech'
+import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
 import type {
   ConversationJourneyApi,
   FriendSession,
+  StartFriendSessionInput,
 } from './ConversationJourneyApi'
+import { ROLEPLAY_CATALOG, type RoleplayCatalogEntry } from './roleplayCatalog'
+import { VoicePracticePanel } from './VoicePracticePanel'
+import { TutorPresence } from '../tutor/TutorPresence'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
 import './ConversationJourney.css'
+
+function defaultRoleplayEntry(): RoleplayCatalogEntry {
+  const entry = ROLEPLAY_CATALOG[0]
+  if (entry === undefined) {
+    throw new Error('roleplay_catalog_empty')
+  }
+  return entry
+}
+
+const DEFAULT_ROLEPLAY_ENTRY = defaultRoleplayEntry()
+
+const ROLEPLAY_SCENE_ICONS: Readonly<Record<string, string>> = {
+  'clinic-reception': '🏥',
+  'job-interview': '💼',
+  'bank-counter': '🏦',
+  'restaurant-order': '🍽️',
+  'hotel-checkin': '🏨',
+  'phone-customer-support': '📞',
+  'grocery-shop': '🛒',
+  'school-parent-meeting': '🏫',
+  'doctor-appointment': '🩺',
+  'airport-checkin': '✈️',
+  'office-meeting': '📋',
+  'bus-train-ticket': '🚌',
+}
 
 export interface RoleplayJourneyProps {
   readonly locale: SupportedLocale
@@ -30,14 +61,17 @@ type RoleplayState =
   | {
       readonly kind: 'ready'
       readonly session: FriendSession
+      readonly catalogId: string
     }
   | {
       readonly kind: 'advancing'
       readonly session: FriendSession
+      readonly catalogId: string
     }
   | {
       readonly kind: 'error'
       readonly session?: FriendSession
+      readonly catalogId?: string
       readonly messageKey: MessageKey
     }
 
@@ -77,24 +111,63 @@ export function RoleplayJourney({
   createClientId = createRandomClientId,
   onBack,
 }: RoleplayJourneyProps) {
+  const [selected, setSelected] = useState<RoleplayCatalogEntry>(
+    DEFAULT_ROLEPLAY_ENTRY,
+  )
   const [state, setState] = useState<RoleplayState>({ kind: 'idle' })
+  const [utterance, setUtterance] = useState('')
+  const [performed, setPerformed] = useState(false)
+  const [inputMode, setInputMode] = useState<'type' | 'speak'>('speak')
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const text = (key: MessageKey) => message(key).text
+
+  const playEnglish = (sessionId: string, lines: readonly string[]) => {
+    void speakSessionSpeech({
+      api,
+      locale: 'en-IN',
+      purpose: 'model_en',
+      sessionId,
+      text: lines.join(' '),
+    }).catch(() => undefined)
+  }
 
   const start = async () => {
     setState({ kind: 'starting' })
+    setUtterance('')
+    setPerformed(false)
 
     try {
-      const session = await api.startSession(
+      let session = await api.startSession(
         {
           coaching_mode: 'gentle',
-          persona_key: 'clinic-reception-roleplay-prototype',
-          scenario_key: 'clinic-reception-roleplay-scenario',
+          persona_key: selected.personaKey as StartFriendSessionInput['persona_key'],
+          scenario_key:
+            selected.scenarioKey as StartFriendSessionInput['scenario_key'],
           ui_locale: locale,
         },
         createClientId(),
       )
-      setState({ kind: 'ready', session })
+
+      let stage = asRoleplayStage(session.stage)
+      while (
+        (stage === 'observe' || stage === 'rehearse') &&
+        api.advanceStage !== undefined
+      ) {
+        const next = NEXT_STAGE[stage]
+        if (next === undefined || next === 'reflect') {
+          break
+        }
+        session = await api.advanceStage(
+          session.id,
+          { to_stage: next },
+          createClientId(),
+        )
+        stage = asRoleplayStage(session.stage)
+      }
+
+      setState({ kind: 'ready', session, catalogId: selected.id })
+      playEnglish(session.id, [selected.pedagogy.performPrompt])
     } catch {
       setState({
         kind: 'error',
@@ -103,7 +176,7 @@ export function RoleplayJourney({
     }
   }
 
-  const advance = async (session: FriendSession) => {
+  const advance = async (session: FriendSession, catalogId: string) => {
     const current = asRoleplayStage(session.stage)
     const next = current === null ? null : (NEXT_STAGE[current] ?? null)
 
@@ -111,12 +184,13 @@ export function RoleplayJourney({
       setState({
         kind: 'error',
         session,
+        catalogId,
         messageKey: 'conversation.roleplay.error',
       })
       return
     }
 
-    setState({ kind: 'advancing', session })
+    setState({ kind: 'advancing', session, catalogId })
 
     try {
       const updated = await api.advanceStage(
@@ -124,11 +198,43 @@ export function RoleplayJourney({
         { to_stage: next },
         createClientId(),
       )
-      setState({ kind: 'ready', session: updated })
+      setState({ kind: 'ready', session: updated, catalogId })
     } catch {
       setState({
         kind: 'error',
         session,
+        catalogId,
+        messageKey: 'conversation.roleplay.error',
+      })
+    }
+  }
+
+  const sendPerformTurn = async (
+    session: FriendSession,
+    catalogId: string,
+    spokenText = utterance.trim(),
+  ) => {
+    const prototypeUtterance = spokenText.trim()
+    if (prototypeUtterance === '') {
+      return
+    }
+
+    setState({ kind: 'advancing', session, catalogId })
+
+    try {
+      await api.createTurn(
+        session.id,
+        { prototype_utterance: prototypeUtterance },
+        createClientId(),
+      )
+      setPerformed(true)
+      setUtterance('')
+      setState({ kind: 'ready', session, catalogId })
+    } catch {
+      setState({
+        kind: 'error',
+        session,
+        catalogId,
         messageKey: 'conversation.roleplay.error',
       })
     }
@@ -140,17 +246,34 @@ export function RoleplayJourney({
     (state.kind === 'error' && state.session !== undefined)
       ? state.session
       : undefined
+  const catalogId =
+    state.kind === 'ready' ||
+    state.kind === 'advancing' ||
+    (state.kind === 'error' && state.catalogId !== undefined)
+      ? state.catalogId
+      : selected.id
+  const resolvedCatalogId = catalogId ?? selected.id
+  const selectedEntry =
+    ROLEPLAY_CATALOG.find((entry) => entry.id === resolvedCatalogId) ?? selected
+  const selectedLabel = selectedEntry.displayName
+  const selectedPedagogy = selectedEntry.pedagogy
   const stage = asRoleplayStage(session?.stage ?? null)
   const nextStage = stage === null ? null : (NEXT_STAGE[stage] ?? null)
 
   return (
     <section
       aria-labelledby="roleplay-journey-title"
-      className="conversation-journey"
+      className="conversation-journey conversation-journey--embedded"
       data-mode="roleplay"
       data-review-status="synthetic_unreviewed"
     >
       <header className="conversation-journey__heading">
+        <TutorPresence
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+          mood="idle"
+          size="md"
+        />
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message('conversation.roleplay.eyebrow')}
@@ -161,6 +284,9 @@ export function RoleplayJourney({
             resolution={message('conversation.roleplay.title')}
           />
         </h1>
+        <p className="conversation-journey__lead" lang="en-IN">
+          {selectedLabel}
+        </p>
         {onBack ? (
           <button
             className="conversation-journey__secondary"
@@ -194,6 +320,51 @@ export function RoleplayJourney({
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
         <div className="conversation-journey__start">
+          <ul className="roleplay-scenes">
+            {ROLEPLAY_CATALOG.map((entry) => (
+              <li key={entry.id}>
+                <button
+                  aria-pressed={selected.id === entry.id}
+                  disabled={state.kind === 'starting'}
+                  onClick={() => setSelected(entry)}
+                  type="button"
+                >
+                  <span aria-hidden="true" className="roleplay-scenes__icon">
+                    {ROLEPLAY_SCENE_ICONS[entry.id] ?? '🎭'}
+                  </span>
+                  {entry.displayName}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <label
+            className="visually-hidden"
+            htmlFor="roleplay-scenario"
+          >
+            <LocalizedMessage
+              resolution={message('conversation.roleplay.choose')}
+            />
+            <select
+              className="visually-hidden"
+              disabled={state.kind === 'starting'}
+              id="roleplay-scenario"
+              onChange={(event) => {
+                const next = ROLEPLAY_CATALOG.find(
+                  (entry) => entry.id === event.target.value,
+                )
+                if (next !== undefined) {
+                  setSelected(next)
+                }
+              }}
+              value={selected.id}
+            >
+              {ROLEPLAY_CATALOG.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             disabled={state.kind === 'starting'}
             onClick={() => {
@@ -259,6 +430,150 @@ export function RoleplayJourney({
             </ul>
           ) : null}
 
+          {stage === 'perform' ? (
+            <>
+              <p lang="en-IN">{selectedPedagogy.performPrompt}</p>
+              <details className="conversation-journey__example">
+                <summary>
+                  <LocalizedMessage
+                    resolution={message('conversation.roleplay.example')}
+                  />
+                </summary>
+                <h3>
+                  <LocalizedMessage
+                    resolution={message('conversation.roleplay.model_title')}
+                  />
+                </h3>
+                <ul className="conversation-journey__model-lines">
+                  {selectedPedagogy.observeModel.map((line) => (
+                    <li key={line} lang="en-IN">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="ge-button"
+                  onClick={() => {
+                    if (session === undefined) {
+                      return
+                    }
+                    playEnglish(session.id, selectedPedagogy.observeModel)
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message('conversation.confidence.listen_play')}
+                  />
+                </button>
+                <h3>
+                  <LocalizedMessage
+                    resolution={message(
+                      'conversation.roleplay.rehearse_chunks_title',
+                    )}
+                  />
+                </h3>
+                <ul className="conversation-journey__model-lines">
+                  {selectedPedagogy.rehearseChunks.map((chunk) => (
+                    <li key={chunk} lang="en-IN">
+                      {chunk}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="ge-button"
+                  onClick={() => {
+                    if (session === undefined) {
+                      return
+                    }
+                    playEnglish(session.id, selectedPedagogy.rehearseChunks)
+                  }}
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message('conversation.confidence.listen_play')}
+                  />
+                </button>
+              </details>
+            </>
+          ) : null}
+
+          {stage === 'perform' && session !== undefined ? (
+            <>
+              <VoicePracticePanel
+                api={api}
+                createClientId={createClientId}
+                locale={locale}
+                onPreferTyping={() => setInputMode('type')}
+                onTranscriptSelected={(transcript) => {
+                  setUtterance(transcript)
+                  void sendPerformTurn(session, resolvedCatalogId, transcript)
+                }}
+                sessionId={session.id}
+                text={text}
+              />
+              <button
+                className="ge-button"
+                type="button"
+                onClick={() => setInputMode('type')}
+              >
+                <LocalizedMessage
+                  resolution={message('conversation.confidence.type_instead')}
+                />
+              </button>
+            </>
+          ) : null}
+
+          {stage === 'perform' &&
+          (inputMode === 'type' || utterance.trim() !== '') ? (
+            <form
+              className="conversation-journey__controls"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (session === undefined) {
+                  return
+                }
+                void sendPerformTurn(session, resolvedCatalogId)
+              }}
+            >
+              {inputMode === 'type' ? (
+                <>
+                  <label htmlFor="roleplay-utterance">
+                    <LocalizedMessage
+                      resolution={message('conversation.utterance_label')}
+                    />
+                  </label>
+                  <textarea
+                    id="roleplay-utterance"
+                    onChange={(event) =>
+                      setUtterance(event.currentTarget.value)
+                    }
+                    required
+                    rows={3}
+                    value={utterance}
+                  />
+                </>
+              ) : (
+                <p role="status" lang="en-IN">
+                  {utterance}
+                </p>
+              )}
+              <button
+                disabled={
+                  state.kind === 'advancing' || utterance.trim() === ''
+                }
+                type="submit"
+              >
+                <LocalizedMessage
+                  resolution={message(
+                    state.kind === 'advancing'
+                      ? 'conversation.sending'
+                      : 'conversation.send',
+                  )}
+                />
+              </button>
+            </form>
+          ) : null}
+
           {stage === 'reflect' &&
           session.feedback !== undefined &&
           session.feedback.length > 0 ? (
@@ -271,13 +586,24 @@ export function RoleplayJourney({
                 />
               </h3>
               <ul className="conversation-journey__model-lines">
-                {session.feedback.map((item) => (
-                  <li key={item.id}>
-                    {item.completion_state}
-                    {' · '}
-                    <code>{item.evidence_digest.slice(0, 12)}</code>
-                  </li>
-                ))}
+                {session.feedback.map((item) => {
+                  const objective = session.objectives?.find(
+                    (entry) => entry.id === item.scenario_objective_id,
+                  )
+                  return (
+                    <li key={item.id}>
+                      {objective?.title ?? item.completion_state}
+                      {' · '}
+                      <LocalizedMessage
+                        resolution={message(
+                          item.completion_state === 'met'
+                            ? 'conversation.roleplay.objective_met'
+                            : 'conversation.roleplay.objective_unmet',
+                        )}
+                      />
+                    </li>
+                  )
+                })}
               </ul>
               <p>
                 <LocalizedMessage
@@ -289,12 +615,20 @@ export function RoleplayJourney({
             </div>
           ) : null}
 
-          {nextStage !== null ? (
+          {nextStage !== null && (stage !== 'perform' || performed) ? (
             <div className="conversation-journey__controls">
               <button
                 disabled={state.kind === 'advancing'}
                 onClick={() => {
-                  void advance(session)
+                  if (session === undefined) {
+                    return
+                  }
+                  if (stage === 'observe') {
+                    playEnglish(session.id, selectedPedagogy.rehearseChunks)
+                  } else if (stage === 'rehearse') {
+                    stopSpeechPlayback()
+                  }
+                  void advance(session, resolvedCatalogId)
                 }}
                 type="button"
               >

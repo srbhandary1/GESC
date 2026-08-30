@@ -42,35 +42,28 @@ describe('Friend practice journey', () => {
 
     expect(
       screen.getByText(
-        'This is an AI practice partner, not a human. Feedback is advisory and never changes marks, mastery, or progress.',
+        'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Typed or approved transcript text is used for the current turn; only content-free digests are retained. Voice recording and transcript retention follow your consent choices.',
+        'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
       ),
     ).toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Swathi',
       }),
     )
     expect(
       await screen.findByText(
-        'I am an AI practice partner, not a human. My feedback is advisory.',
+        'I am Swathi, your AI English teacher. Feedback is advisory.',
       ),
     ).toHaveAttribute('lang', 'en-IN')
-    expect(screen.getByRole('heading', { name: 'Warm-up' })).toBeInTheDocument()
+    expect(screen.getByText('Hear an example')).toBeInTheDocument()
     await user.click(
-      screen.getByRole('button', { name: 'Continue to listen' }),
-    )
-    expect(screen.getByRole('heading', { name: 'Listen' })).toBeInTheDocument()
-    expect(
-      screen.getByText('I went to the market this morning.'),
-    ).toBeInTheDocument()
-    await user.click(
-      screen.getByRole('button', { name: 'Continue to talk' }),
+      screen.getByRole('button', { name: 'Type instead' }),
     )
 
     await user.type(
@@ -103,10 +96,10 @@ describe('Friend practice journey', () => {
       ),
     ).toHaveAttribute('lang', 'kn-IN')
     expect(
-      screen.getByText(
-        'The English text above is enough. Playback is optional.',
-      ),
-    ).toBeInTheDocument()
+      screen.getAllByText(
+        'Listen first. You can also read the English.',
+      ).length,
+    ).toBeGreaterThan(0)
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Say that again' }),
@@ -180,10 +173,6 @@ describe('Friend practice journey', () => {
         screen.getByRole('combobox', { name: 'Coaching mode' }),
       ).toHaveValue(expectedCoachingMode)
       await user.click(screen.getByRole('button', { name: startLabel }))
-      await user.click(
-        await screen.findByRole('button', { name: 'Continue to listen' }),
-      )
-
       expect(screen.getByText(expectedModelLine)).toBeInTheDocument()
       expect(api.startSession).toHaveBeenCalledWith(
         {
@@ -259,17 +248,14 @@ describe('Friend practice journey', () => {
       screen.getByRole('region', { name: 'Practice with your Friend' }),
     ).toHaveAttribute('data-demo-speech', 'browser')
     expect(
-      screen.queryByRole('button', { name: 'Set up optional voice practice' }),
+      screen.queryByRole('button', { name: 'Speak after you consent' }),
     ).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: 'Start speaking practice' }),
     )
     await user.click(
-      await screen.findByRole('button', { name: 'Continue to listen' }),
-    )
-    await user.click(
-      screen.getByRole('button', { name: 'Continue to talk' }),
+      screen.getByRole('button', { name: 'Type instead' }),
     )
     await user.type(
       await screen.findByRole('textbox', {
@@ -309,15 +295,114 @@ describe('Friend practice journey', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Swathi',
       }),
     )
 
     expect(
       await screen.findByRole('alert'),
     ).toHaveTextContent(
-      'The AI Friend is unavailable. Try again.',
+      'Swathi is unavailable. Try again.',
     )
+  })
+
+  it('uses a bound level-session without starting a second generic Friend', async () => {
+    const session = fakeSession()
+    const startSession = vi.fn()
+    const api: ConversationJourneyApi = {
+      startSession,
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        initialSession={session}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Talk with Swathi',
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Type instead' }),
+    ).toBeInTheDocument()
+    expect(startSession).not.toHaveBeenCalled()
+  })
+
+  it('asks the lesson question when a bound session opens', () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={session}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Can I use your pen?"
+      />,
+    )
+
+    expect(screen.getByText('Can I use your pen?')).toBeInTheDocument()
+    expect(
+      screen.queryByText('What did you do this morning?'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('speaks warmup through session guidance TTS, not the phone voice', async () => {
+    const session = fakeSession()
+    const synthesizeSpeech = vi.fn(async () => ({
+      playback_available: false,
+      rendering_mode: 'deterministic-fake-text-only' as const,
+      model_audio_base64: null,
+    }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+      synthesizeSpeech,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'session-command'}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Talk with Swathi' }),
+    )
+
+    await vi.waitFor(() => {
+      expect(synthesizeSpeech).toHaveBeenCalledWith(
+        session.id,
+        {
+          purpose: 'model_en',
+          text: 'What did you do this morning?',
+        },
+        expect.any(String),
+      )
+    })
   })
 })
 

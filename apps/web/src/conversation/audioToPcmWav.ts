@@ -1,6 +1,10 @@
 import type { CapturedAudio } from '../learner/BrowserAudioRecorder'
+import {
+  encodeMonoPcmWav,
+  PCM_WAV_SAMPLE_RATE,
+  resampleMono,
+} from '../shared/pcmWav'
 
-const TARGET_SAMPLE_RATE = 16_000
 const MAXIMUM_DURATION_MS = 120_000
 
 export async function audioToPcmWav(
@@ -12,6 +16,15 @@ export async function audioToPcmWav(
     capture.blob.size < 1
   ) {
     throw new Error('The recording is outside the accepted bounds.')
+  }
+
+  if (
+    (capture.blob.type === 'audio/wav' || capture.mimeType === 'audio/wav') &&
+    capture.blob.size >= 44
+  ) {
+    return capture.blob.type === 'audio/wav'
+      ? capture.blob
+      : new Blob([capture.blob], { type: 'audio/wav' })
   }
 
   const AudioContextConstructor =
@@ -33,72 +46,20 @@ export async function audioToPcmWav(
       await capture.blob.arrayBuffer(),
     )
     const sourceLength = decoded.length
-    const targetLength = Math.max(
-      1,
-      Math.round(decoded.duration * TARGET_SAMPLE_RATE),
-    )
-    const mono = new Float32Array(targetLength)
+    const mixed = new Float32Array(sourceLength)
 
-    for (let targetIndex = 0; targetIndex < targetLength; targetIndex += 1) {
-      const sourcePosition =
-        targetIndex * decoded.sampleRate / TARGET_SAMPLE_RATE
-      const leftIndex = Math.min(
-        sourceLength - 1,
-        Math.floor(sourcePosition),
-      )
-      const rightIndex = Math.min(sourceLength - 1, leftIndex + 1)
-      const fraction = sourcePosition - leftIndex
+    for (let index = 0; index < sourceLength; index += 1) {
       let sample = 0
-
       for (let channel = 0; channel < decoded.numberOfChannels; channel += 1) {
-        const values = decoded.getChannelData(channel)
-        sample +=
-          (values[leftIndex] ?? 0) * (1 - fraction) +
-          (values[rightIndex] ?? 0) * fraction
+        sample += decoded.getChannelData(channel)[index] ?? 0
       }
-
-      mono[targetIndex] = sample / decoded.numberOfChannels
+      mixed[index] = sample / decoded.numberOfChannels
     }
+
+    const mono = resampleMono(mixed, decoded.sampleRate, PCM_WAV_SAMPLE_RATE)
 
     return new Blob([encodeMonoPcmWav(mono)], { type: 'audio/wav' })
   } finally {
     await context.close()
-  }
-}
-
-function encodeMonoPcmWav(samples: Float32Array): ArrayBuffer {
-  const dataBytes = samples.length * 2
-  const buffer = new ArrayBuffer(44 + dataBytes)
-  const view = new DataView(buffer)
-
-  writeAscii(view, 0, 'RIFF')
-  view.setUint32(4, 36 + dataBytes, true)
-  writeAscii(view, 8, 'WAVE')
-  writeAscii(view, 12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, TARGET_SAMPLE_RATE, true)
-  view.setUint32(28, TARGET_SAMPLE_RATE * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeAscii(view, 36, 'data')
-  view.setUint32(40, dataBytes, true)
-
-  for (let index = 0; index < samples.length; index += 1) {
-    const bounded = Math.max(-1, Math.min(1, samples[index] ?? 0))
-    view.setInt16(
-      44 + index * 2,
-      bounded < 0 ? bounded * 0x8000 : bounded * 0x7fff,
-      true,
-    )
-  }
-
-  return buffer
-}
-
-function writeAscii(view: DataView, offset: number, value: string): void {
-  for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index))
   }
 }

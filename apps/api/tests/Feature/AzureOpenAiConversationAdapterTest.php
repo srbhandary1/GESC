@@ -188,6 +188,7 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
                 && $request->hasHeader('api-key', 'not-a-real-provider-key')
                 && ($payload['response_format']['type'] ?? null) === 'json_object'
                 && str_contains((string) ($payload['messages'][1]['content'] ?? ''), 'kn-IN')
+                && str_contains((string) ($payload['messages'][0]['content'] ?? ''), 'Speak only as Swathi')
                 && ! str_contains($request->body(), 'not-a-real-provider-key');
         });
     }

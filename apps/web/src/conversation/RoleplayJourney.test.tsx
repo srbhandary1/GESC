@@ -23,10 +23,11 @@ describe('synthetic Role-play journey', () => {
       .mockResolvedValueOnce(rehearse)
       .mockResolvedValueOnce(perform)
       .mockResolvedValueOnce(reflect)
+    const createTurn = vi.fn()
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => observe),
       advanceStage,
-      createTurn: vi.fn(),
+      createTurn,
       events: vi.fn(),
     }
     const createClientId = vi
@@ -34,6 +35,7 @@ describe('synthetic Role-play journey', () => {
       .mockReturnValueOnce('start-command')
       .mockReturnValueOnce('advance-1')
       .mockReturnValueOnce('advance-2')
+      .mockReturnValueOnce('perform-turn')
       .mockReturnValueOnce('advance-3')
     const user = userEvent.setup()
 
@@ -52,16 +54,21 @@ describe('synthetic Role-play journey', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('region', { name: 'Clinic reception Role-play' }),
+      screen.getByRole('region', { name: 'Role-play practice' }),
     ).toHaveAttribute('data-review-status', 'synthetic_unreviewed')
 
+    expect(
+      screen.getByLabelText('Choose a Role-play scenario'),
+    ).toBeInTheDocument()
+
     await user.click(
-      screen.getByRole('button', { name: 'Start Role-play' }),
+      screen.getByRole('button', { name: 'Start this situation' }),
     )
     expect(
-      await screen.findByRole('heading', { name: 'Observe' }),
+      await screen.findByRole('heading', { name: 'Perform' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Greet the receptionist')).toBeInTheDocument()
+    expect(screen.getByText('Hear an example')).toBeInTheDocument()
     expect(api.startSession).toHaveBeenCalledWith(
       {
         coaching_mode: 'gentle',
@@ -72,21 +79,26 @@ describe('synthetic Role-play journey', () => {
       'start-command',
     )
 
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-    expect(
-      await screen.findByRole('heading', { name: 'Rehearse' }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-    expect(
-      await screen.findByRole('heading', { name: 'Perform' }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Type instead' }))
+    await user.type(
+      screen.getByLabelText('Type one English practice turn'),
+      'Hello, I have an appointment.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    expect(createTurn).toHaveBeenCalledWith(
+      perform.id,
+      { prototype_utterance: 'Hello, I have an appointment.' },
+      'perform-turn',
+    )
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
     expect(
       await screen.findByRole('heading', { name: 'Reflect' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Advisory feedback')).toBeInTheDocument()
-    expect(screen.getByText('cccccccccccc')).toBeInTheDocument()
-    expect(screen.getByText('dddddddddddd')).toBeInTheDocument()
+    expect(screen.getByText('Greet the receptionist')).toBeInTheDocument()
+    expect(screen.getByText('Met')).toBeInTheDocument()
+    expect(screen.getByText('Not yet met')).toBeInTheDocument()
+    expect(screen.queryByText('cccccccccccc')).not.toBeInTheDocument()
     expect(advanceStage).toHaveBeenNthCalledWith(
       1,
       observe.id,
