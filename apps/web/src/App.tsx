@@ -49,6 +49,12 @@ import {
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
+import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
+import { ProgressDashboard } from './learner/ProgressDashboard'
+import { LevelPathPanel } from './learner/LevelPathPanel'
+import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
+import type { LevelSessionsApi } from './learner/LevelSessionsApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 import { LearnerLevelsSurface } from './learner/LearnerLevelsSurface'
 import type { LevelSessionsApi } from './learner/LevelSessionsApi'
@@ -686,6 +692,15 @@ function App({
             api={learnerJourneyApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
+          />
+        ) : canShowLevelProgress ? (
+          <ProgressDashboard
+            api={learnerJourneyApi}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onMissionRequested={() => {
+              window.location.hash = '#home'
+            }}
           />
         ) : canShowOperatorConsole ? (
           <OperatorConsole
