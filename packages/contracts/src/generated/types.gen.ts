@@ -158,6 +158,78 @@ export type LearnerHome = {
     next_mission: LearnerMissionSummary | null;
 };
 
+export type MeaningfulSpeakingStreak = {
+    count: number;
+    as_of_date: string;
+    timezone: string;
+};
+
+export type LearnerDueReview = {
+    id: Ulid;
+    enrollment_id: Ulid;
+    mission_id: Ulid;
+    objective_id: Ulid;
+    interval_days: number;
+    due_at: string;
+    timezone: string;
+    title: GovernedContent;
+};
+
+export type LearnerProgressDashboard = {
+    enrollment: ActiveLearnerEnrollment | null;
+    objectives: Array<ProgressObjectiveMastery>;
+    speaking_activity: ProgressSpeakingActivity;
+    attempt_improvement: ProgressAttemptImprovement;
+    delayed_review: ProgressDelayedReviewPerformance;
+    recurring_errors: ProgressRecurringErrors;
+};
+
+export type ProgressObjectiveMastery = {
+    objective_id: Ulid;
+    objective_key: string;
+    knowledge_state: 'mastered' | 'not_mastered';
+    spoken_state: 'unassessed';
+    best_knowledge_score: number;
+    mastered_at: string | null;
+    evidence_attempt_id: Ulid;
+};
+
+export type ProgressSpeakingActivity = {
+    meaningful_speaking_days_count: number;
+    completed_turn_count: number;
+    speaking_duration_ms: number;
+    speaking_minutes: number;
+    timezone: string;
+};
+
+export type ProgressAttemptImprovement = {
+    missions_attempted: number;
+    missions_passed_on_first_attempt: number;
+    missions_improved_on_retry: number;
+    missions_still_not_mastered: number;
+};
+
+export type ProgressDelayedReviewPerformance = {
+    scheduled_count: number;
+    due_count: number;
+    pending_count: number;
+    completed_count: number;
+    completed_on_time_count: number;
+    completed_late_count: number;
+};
+
+export type ProgressRecurringErrors = {
+    patterns: Array<ProgressRecurringErrorPattern>;
+};
+
+export type ProgressRecurringErrorPattern = {
+    error_category: string;
+    observation_count: number;
+    first_observed_at: string;
+    last_observed_at: string;
+    trend: 'reducing' | 'stable' | 'increasing';
+};
+
 export type CompleteLearnerOnboardingRequest = {
     adult_confirmed: true;
     goal_key: LearnerGoal;
@@ -1349,6 +1421,47 @@ export type GetLearnerHomeResponses = {
 };
 
 export type GetLearnerHomeResponse = GetLearnerHomeResponses[keyof GetLearnerHomeResponses];
+
+export type GetLearnerProgressDashboardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/progress-dashboard';
+};
+
+export type GetLearnerProgressDashboardErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerProgressDashboardError = GetLearnerProgressDashboardErrors[keyof GetLearnerProgressDashboardErrors];
+
+export type GetLearnerProgressDashboardResponses = {
+    /**
+     * Progress dashboard read model for the active enrollment.
+     */
+    200: LearnerProgressDashboard;
+};
+
+export type GetLearnerProgressDashboardResponse = GetLearnerProgressDashboardResponses[keyof GetLearnerProgressDashboardResponses];
 
 export type CompleteLearnerOnboardingData = {
     body: CompleteLearnerOnboardingRequest;

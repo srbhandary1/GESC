@@ -15,6 +15,9 @@ use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
+use App\Http\Controllers\LearnerProgressDashboardController;
+use App\Http\Controllers\LearnerTuitionRequestController;
+use App\Http\Controllers\LocalPasswordEstablishmentController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OperatorLessonPracticeController;
@@ -67,6 +70,10 @@ Route::prefix('v1')->group(function (): void {
     ])->group(function (): void {
         Route::get('/home', [LearnerHomeController::class, 'show'])
             ->name('api.v1.home.show');
+        Route::get(
+            '/me/progress-dashboard',
+            [LearnerProgressDashboardController::class, 'show'],
+        )->name('api.v1.me.progress-dashboard.show');
         Route::put(
             '/me/onboarding',
             [LearnerOnboardingController::class, 'update'],

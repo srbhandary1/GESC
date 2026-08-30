@@ -44,6 +44,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
 
         $requests = [
             fn (): TestResponse => $this->getJson('/api/v1/home'),
+            fn (): TestResponse => $this->getJson('/api/v1/me/progress-dashboard'),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
                 $idempotencyKey,

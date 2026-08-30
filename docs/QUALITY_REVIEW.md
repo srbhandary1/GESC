@@ -1,5 +1,449 @@
 # Quality review
 
+## DR-0038 B: Progress read-model API — 30 August 2026
+
+### Scope reviewed
+
+- `GET /api/v1/me/progress-dashboard` read model over existing
+  `mastery_states`, `meaningful_speaking_days`, `conversation_turns`,
+  `learner_attempts`, `delayed_review_occurrences`, and
+  `learner_error_patterns`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Organization-scoped queries | Pass | All reads filter `organization_id` + active enrollment |
+| No raw transcript exposure | Pass | Speaking activity uses turn counts and duration metadata only |
+| Deterministic marks only | Pass | Objectives sourced from `mastery_states`; no AI fields |
+| OpenAPI / contracts | Pass | Version 0.35.0; `pnpm run openapi:check` |
+| Feature auth + shape | Pass | `LearnerProgressDashboardTest` (SQLite) |
+| Cross-tenant isolation | Pass (CI) | `ProgressDashboardTenancyTest` (pgsql-guarded; not runnable on this host) |
+| PHPStan / Pint | Pass | 0 errors |
+
+### Known limitations
+
+- Progress UI not started; `#progress` still reuses Learn level path.
+- Integration test requires PostgreSQL (`phpunit.postgres.xml`); skipped locally without `pdo_pgsql`.
+- Recurring-error `trend` is a heuristic from pattern timestamps, not a time series.
+
+## DR-0038 A: daily loop — 30 August 2026
+
+### Scope reviewed
+
+- Meaningful-speaking-day streak and deterministic delayed-review scheduling on
+  `LearnerHomeService`, Home API fields, flagship authenticated Home UI, and
+  ADR-0028 PostgreSQL constraint coverage.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Meaningful-speaking-day predicate and projector | Pass | Unit/feature tests; org-scoped `insertOrIgnore`; no AI writes |
+| Streak reader and delayed-review scheduler | Pass | Home API returns `streak` and `due_review`; due review outranks mission in UI tests |
+| Cross-tenant isolation | Pass | PostgreSQL integration test (CI `verify`) |
+| Review occurrence requires mastery evidence | Pass | PostgreSQL integration test (CI `verify`) |
+| Idempotent mastery replay | Pass | Existing PR-006 lifecycle coverage |
+| OpenAPI / generated contracts | Pass | Contract validation in `make verify` |
+| Localization key parity | Pass | `pnpm run locale:check` in `make verify` |
+| Flagship Home UI | Pass | `LearnerJourney.test.tsx`; e2e learner journeys (21/21 Playwright) |
+| Full gate | Pass | GitHub Actions run [33317082476](https://github.com/srbhandary1/GESC/actions/runs/33317082476): `verify`, `android`, `operations`, `release-gate` at `9818fe2` |
+
+### Known limitations
+
+- Default review intervals `[1, 3, 7, 14]` in `config/review.php` remain
+  provisional pending named academic review (ADR-0028).
+- DR-0038 B (Progress §7.3) and C (Speak latency) are not started.
+- Kannada UI catalogue remains `pending-independent-review`.
+- Production/Play and curriculum publication remain unauthorized.
+
+## Guidance TTS cost ledger + Swathi identity — 29 August 2026
+
+### Scope reviewed
+
+- Live Speak/Learn turns failed after successful STT because guidance TTS cost-ledger rows were rejected by PostgreSQL CHECK.
+- Product owner required the on-screen teacher name Swathi instead of Maya.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Cost-ledger CHECK | Pass | `GuidanceTtsCostLedgerConstraintTest` 1 passed; live migrate `000250`; constraint includes `azure-speech-guidance` |
+| Friend prompts pin Swathi | Pass | `ConversationOrchestrationTest` 2 passed; live migrate `000260`; tutor body starts “You are Swathi” |
+| Azure output contract | Pass | `AzureOpenAiConversationAdapterTest` 6 passed |
+| Android events URL | Pass | `WebConversationJourneyApi` vitest; prefixes baked API origin |
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; catalogues `ui-*-2026-08-29.6`; Kannada still pending-independent-review |
+| Conversation unit tests | Pass | ConversationJourney + LevelPathPanel + events-URL tests: 18 passed |
+| Conversation e2e | Pass | Playwright `conversation-journey.spec.ts` 3 passed |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL (103 Gradle tasks); `adb install -r` Success on RMX3085; origin `https://demands-cashiers-bryan-quit.trycloudflare.com` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Lesson-aware model history (Swathi remembering the exact lesson question in the turn payload) remains a later checkpoint.
+- Role-play scene characters (Priya, Arun, receptionist, and others) stay scene names, not Swathi.
+- Illustration asset filenames remain `tutor-maya.png` unless a later checkpoint renames files.
+- Kannada UI catalogue remains `pending-independent-review`.
+- Device confirmation of a completed hold-to-talk turn (HTTP 201, spoken Swathi reply) is still needed after this install.
+
+## Android voice answers + lesson question after audio — 29 August 2026
+
+### Scope reviewed
+
+- Android hold-to-talk still failed after lesson audio because Capacitor dropped Blob/ArrayBuffer recordings.
+- After audio, Maya did not ask a lesson question; the learner had to speak first into a generic Friend session.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| File-part voice upload | Pass | `formDataWithFileParts` + Android adapter `fetch(url, { body: FormData })` + conversation API tests; vitest 37 passed; `tsc -b` |
+| Lesson opening question | Pass | `LevelPathPanel` uses a fallback-turn question (`Can I use your pen?`); `ConversationJourney` opening-line test |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL; `adb install -r` Success on RMX3085 against `https://demands-cashiers-bryan-quit.trycloudflare.com` |
+
+### Known limitations
+
+- Azure OpenAI from this Ubuntu host is reachable: dummy-key probe returned 401 (not VNet 403); a 2-token live smoke on `ge-conversation-southindia` returned HTTP 200. The remaining learner-path risk is in-app STT/upload and the lesson question loop, not this host’s IP allowlist.
+- Lesson-aware model history (Maya remembering the exact question in the turn payload) remains a later checkpoint; the opening line is shown and spoken client-side from the blueprint.
+
+## Android lesson-audio playback — 29 August 2026
+
+### Scope reviewed
+
+- Learn level-session audio on Android used a raw media element against a private `/api/v1` path and could not attach a Passport bearer.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Authenticated lesson-audio download | Pass | `WebLevelSessionsApi` path allowlist + Android private-media fetch |
+| Player uses blob URL when required | Pass | `LevelPathPanel` + `ModelAudioPlayer` + `WebLevelSessionsApi` vitest 11 passed; `tsc -b` |
+| Closed-beta install | Pass | `make android-closed-beta` BUILD SUCCESSFUL; `adb install -r` Success on RMX3085 |
+| Web cookie path unchanged | Pass | `downloadAudio` is wired only when `privateMediaRequiresFetch` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Whole-body blob buffering remains the bounded implementation (same as model audio). HTTP range delivery is still VIDEO-01.
+- Device confirmation of audible playback on RMX3085 is still needed after this install.
+
+## Five-destination nav + Indic STT port (D-0216 / D-0217) — 29 August 2026
+
+### Scope reviewed
+
+- DR-0037 B five-item learner nav with 1:1 last and institute contact.
+- Indic HTTP recorded-STT adapter behind the existing voice port; Azure remains live.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Nav destinations | Pass | `PRIMARY_DESTINATIONS` Home/Learn/Speak/Progress/tuition; `#practice` aliases Speak; design-system 10 passed |
+| 1:1 contact | Pass | `InstituteContact` fail-closed; empty env hides links; OpenAPI `institute_contact`; tuition panel test |
+| Indic STT framework | Pass | `IndicSpeechAdapterTest` + binding + InstituteContact PHPUnit 13 passed (`DB_CONNECTION=sqlite`) |
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; `ui-*-2026-08-29.5` |
+| Web unit | Pass | `apps/web` vitest 263 passed; `tsc -b` |
+| Conversation e2e | Pass | Playwright `conversation-journey.spec.ts` 3 passed |
+| OpenAPI | Pass | `openapi:check`; contract `0.33.0` |
+| PHPStan / Pint | Pass | Indic STT and institute-contact files clean |
+| Production/Play | Unchanged | Not authorized; live Indic STT not enabled |
+
+### Known limitations
+
+- Direct institute phone/WhatsApp/email are not committed; set `TUITION_CONTACT_*` when named.
+- Indic STT is not live. REST clip-length limits of a future vendor remain a later checkpoint.
+- Role-play stays `synthetic_unreviewed`.
+
+## Maya identity + disclosure copy — 29 August 2026
+
+### Scope reviewed
+
+- Pin Friend Talk prompts and Azure output contract to Maya.
+- Remove duplicate disclosure heading; rename learner copy from generic AI Friend to Maya.
+- Voice consent/upload copy remains present (ADR-0007).
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Localization hashes | Pass | `node scripts/validate-locales.mjs`; localization vitest 31 passed; `ui-*-2026-08-29.3`; Kannada still pending-independent-review |
+| Conversation unit tests | Pass | ConversationJourney + LevelPathPanel 11 passed |
+| Azure adapter contract | Pass | `AzureOpenAiConversationAdapterTest` 6 passed; OUTPUT_CONTRACT includes Maya |
+| Conversation orchestration | Pass | `ConversationOrchestrationTest` 2 passed against `global_english_test` after bootstrap isolation |
+| `make ai-eval` | Pass | Fake-provider eval 15 passed, 0 failed, suite_hash `5bf9a508d1aeaf3a329212e60cf957cc28404fabcf0d34f4f65ebb6e99223270` |
+| Production/Play | Unchanged | Not authorized |
+
+### Known limitations
+
+- Existing Talk-stage replies already stored as Swathi are unchanged; learners must start a new conversation.
+- Role-play scene characters (Priya, Arun, receptionist, and others) stay scene names, not Maya.
+- Kannada UI catalogue remains `pending-independent-review`.
+- `make e2e` / `make verify` were not re-run for the full suite. PostgreSQL integration tests must use `phpunit.postgres.xml` (now with `tests/bootstrap.postgres.php`).
+- Operator usernames `trainer` and `reviewer` were not in the 13 August dump and were not recreated.
+
+## Learner tutor UI + in-session teacher — 29 August 2026
+
+### Scope reviewed
+
+- Character-led animated learner shell (web + Capacitor Android).
+- Listen-then-live-teacher in the same level session.
+- Role-play scene cards; bilingual correction card styling.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Web unit/typecheck | Pass (this slice) | `@global-english/web` vitest 259 passed before the extra LevelPathPanel case; LevelPathPanel 4 passed after; `tsc -b` passed |
+| Localization hashes | Pass (tests) | `packages/localization` vitest 31 passed; catalogues `ui-*-2026-08-29.1` |
+| Design system | Pass | 9 tests; ApplicationFrame optional `className`; speak control class |
+| Production/Play | Unchanged | Not authorized |
+| Independent Kannada UI review | Unchanged | Pending |
+
+### Known limitations
+
+- Practice complete still requires the deterministic MCQ in the API.
+- Role-play remains `synthetic_unreviewed`.
+- Maya art is original generated illustration, not a licensed photo.
+- `make verify` / `make e2e` were not re-run for this slice.
+- Full-screen Android rebuild was not executed here; the WebView loads the same React bundle.
+
+## APP-0068 — Neural listen voice + playable recording — 14 August 2026
+
+
+### Scope reviewed
+
+- Replace device `speechSynthesis` for Conversation/Role-play model lines with session guidance TTS.
+- Capture PCM WAV so local review is audible.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Natural listen voice | Pass (this slice) | `GuidanceSpeechService` + Azure NeerjaNeural WAV; SSML `prosody rate="0.92"`; browser TTS is not the product path |
+| Local recording playback | Pass (this slice) | PCM ScriptProcessor capture encoded as 16 kHz WAV for review |
+| Tenancy | Pass (tests) | Cross-tenant session speech rejected; unauthenticated speech POST 401 |
+| Production STT/TTS gates | Unchanged | Fake/testing remains text-first without audio; live Azure stays soft-launch |
+
+### Known limitations
+
+- Human consented mic→transcript in the browser is still not a completed named-learner smoke.
+- Full `make verify` / `make e2e` were not re-run after this slice.
+- Neural voice is still Azure neural TTS, not a human recording (ADR-0011).
+
+## APP-0068 — Soft-launch voice-first learner STT — 14 August 2026
+
+### Scope reviewed
+
+- Voice-first Conversation/Role-play with type only on request.
+- Bounded Direct soft-launch STT on the APP-0064 Speech resource.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Type is on request | Pass (this slice) | Default `speak` input mode; Type instead; transcript correction typing hidden until requested |
+| Soft-launch STT DI | Pass (this slice) | `SoftLaunchRecordedAzureSpeechToTextProvider`; live preflight empty for Direct allowlist |
+| Live Azure STT | Pass (provider roundtrip) | Guidance TTS WAV transcribed; non-empty English; `market` present; 9936 bps |
+| Production STT | Unchanged, off | Gate rejects `production`; `.env.example` stays disabled |
+| Independent privacy firm | Not claimed | APO acting as consolidated reviewer; DR-0028 Phase B smoke not run |
+
+### Known limitations
+
+- Spend shares APP-0064 ₹500. No separate STT spend file.
+- Role-play remains `synthetic_unreviewed`.
+- Browser-microphone consent/upload by a named learner was not captured; the live check used a guidance-TTS fixture through the product STT adapter.
+- Full `make verify` / `make e2e` were not re-run after this slice.
+
+## APP-0067 — Named Kannada review of authored Levels 2–17 — 14 August 2026
+
+### Scope reviewed
+
+- Record `Level 2-17 Kannada approved.` against the APP-0065 authored pack.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Kannada lesson review | Pass (named owner review of agent-authored pack) | Exact statement; APP-0067; Direct revision 4; `docs/evidence/lpl-01/levels-2-17-kannada-review-result.json` |
+| Kannada UI catalogue | Not claimed | kn-IN still `pending-independent-review` |
+| Publication | Not claimed | Blocker: `curriculum_publication_gate` |
+| Role-play | Unchanged | Still `synthetic_unreviewed` |
+
+### Known limitations
+
+- Product owner reviewing agent-authored Kannada, not a commissioned linguist firm.
+
+## Honest listen-then-type copy + Kannada UI preview — 14 August 2026
+
+### Scope reviewed
+
+- Stop serving English chrome when Kannada is selected on invite-only soft-launch.
+- Stop advertising microphone / live speaking as available while replies are typed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Soft-launch UI policy | Pass (this slice) | `VITE_UI_TRANSLATION_PREVIEW=true` dist stamp; D-0030 preview notice; production remains `approved-only` |
+| Kannada catalogue independently approved | Not claimed | kn-IN still `pending-independent-review` |
+| Conversation/Role-play honesty | Pass (this slice) | Catalogue copy + voice panel `unavailable` status; STT gate unchanged |
+| Learner STT / `VOICE_UPLOAD_ENABLED` | Later enabled for invite-only Direct under APP-0068 | D-0178 / DR-0028; superseded in-scope by D-0212 |
+
+### Known limitations
+
+- Draft Kannada chrome is a review preview, not an independent translation approval.
+- Guidance TTS can still speak; learner microphone transcription is not on.
+- Role-play remains `synthetic_unreviewed`.
+- Full `make verify` / `make e2e` were not re-run after this honesty slice.
+
+## APP-0066 — Named English academic review of authored Levels 2–17 — 14 August 2026
+
+### Scope reviewed
+
+- Record the Accountable Product Owner statement `Levels 2–17 English approved`
+  against the APP-0065 authored pack.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| English academic review | Pass (named owner review of agent-authored pack) | Exact statement; APP-0066; blueprint `english_review_reference` |
+| Kannada independent review | Not claimed | `kannada_guidance.independent_review` remains false |
+| Publication | Not claimed | Blockers: `independent_kannada_review`, `curriculum_publication_gate` |
+| Role-play | Unchanged | Still `synthetic_unreviewed` |
+
+### Known limitations
+
+- This is the product owner reviewing agent-authored English, not a separately commissioned linguist firm.
+- Kannada carry-forward decision rows exist only so four-part audio can attach to the new hash.
+- Live Direct drafts are revision 3; evidence `docs/evidence/lpl-01/levels-2-17-english-review-result.json`.
+
+## APP-0065 — Authored levels, Role-play scripts, 1:1 request — 14 August 2026
+
+### Scope reviewed
+
+- Replace APP-0063 provisional Levels 2–17 lesson text with authored English + Kannada copy.
+- Give Role-play Observe/Rehearse/Perform authored scripts without changing `synthetic_unreviewed`.
+- Replace “hire a tutor” marketing with an org-scoped 1:1 tuition request.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Levels 2–17 not templates | Pass (this slice, in code and live Direct drafts) | `AuthoredFoundationLessons`; validator covers all 16 concepts; live replace evidence `docs/evidence/lpl-01/levels-2-17-authored-replace-result.json` (16 levels, revision 2) |
+| Independent bilingual review | English named under APP-0066; Kannada not claimed | `kannada_guidance.independent_review` is false; publication still gated |
+| Role-play scripts | Pass (this slice) | `RoleplayPedagogy` + `roleplayCatalog.ts`; UI still `data-review-status="synthetic_unreviewed"` |
+| 1:1 is a request | Pass (this slice) | `/me/tuition-requests` + operator queue; marketing copy updated |
+| Payments / calendar / hire | Out of scope | Explicitly excluded under DR-0036 |
+
+### Known limitations
+
+- Independent named review of the authored pack is still required before publication.
+- Named English review of Levels 2–17 is recorded under APP-0066; Kannada remains outstanding.
+- Role-play remains synthetic until specialist curriculum review.
+- Help, certificates, staff invite UI, privacy operator UI, and Content Studio pagination remain later checkpoints.
+- Full `make verify` / `make e2e` were not re-run after this slice. Host `php` in PATH has no `pdo_pgsql`; Postgres PHPUnit used Docker image `ge-php84-pgsql:local`.
+
+## Release-gate repair — 14 August 2026
+
+### Scope reviewed
+
+- TypeScript, ESLint, and unit failures that kept the web gate red.
+- Ordered four-session path (UI + API), bound AI Tutor handoff, Practice tab semantics, sign-in pattern/IDs/focus, missing operator confirm hint, Role-play learner turn, Home/Progress placeholders, Kannada fallback copy, learner guide OTP docs.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Session order | Pass (this slice) | `LevelPathPanel` locks later tabs; `LevelSessionDeliveryService` rejects `session_locked` |
+| Bound tutor handoff | Pass (this slice) | `ConversationJourney` `initialSession`; demo/API return a full session |
+| Practice tablist | Pass (this slice) | `role="tab"` / `aria-selected` / `tabpanel` |
+| Sign-in username pattern | Pass (this slice) | JS `/^[A-Za-z][A-Za-z0-9._-]{3,63}$/` plus escaped HTML pattern and `minLength={4}` |
+| Operator confirm hint | Pass (this slice) | `operator.password.confirm_hint` in all six catalogues |
+| Kannada approved | Not claimed | Still `pending-independent-review`; production notice updated |
+
+### Known limitations
+
+- Help, downloads, recording management, privacy/export, account deletion, certificate, trainer, and booking experiences remain later checkpoints.
+- Staff invite-to-first-login, privacy export/erasure UI, organization switching UI, Content Studio pagination, retry idempotency keys, and beginner-admin ULID/hash forms remain later operator work.
+- Role-play remains `synthetic_unreviewed` (scripts are now authored).
+- 1:1 tutor hiring/marketplace remains out of scope; waitlist requests are implemented under APP-0065.
+- Levels 2–17 lesson text is authored under APP-0065; independent bilingual review remains outstanding.
+- Full `make e2e` / all-controls demo were not re-run after this slice. Bootstrap guest/sign-in expectations were updated; remaining E2E files may still need a green pass on the host.
+- Level-session API lock tests were added in `LevelSessionDeliveryTest` but were not executed here: host PHP has no `pdo_pgsql` driver.
+
+## Learner marketing four-session path + pedagogy — 14 August 2026
+
+### Scope reviewed
+
+- Four-session path and pedagogy vs chat-only tutoring on the marketing home.
+- Marketing difference tiles (hybrid, 1:1 tuition, combined path).
+- Header Sign in / dedicated `#sign-in` page; logos split web vs Android.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Home has no login form | Pass | `MarketingLanding` has no `signInSlot`; App.test |
+| Path and pedagogy on home | Pass | `marketing.path.*` / `marketing.pedagogy.*`; App.test |
+| Level session HTTP idempotency | Pass | `createClientId` in `LevelPathPanel`; English-first lesson copy |
+| Licensed photos only | Pass | Unsplash files + `PHOTO_ATTRIBUTION.md` |
+| Web vs Android logo | Pass | Capacitor platform selects `logo-web` / `logo-android` |
+
+### Known limitations
+
+- 1:1 tutor hiring/marketplace is not implemented; waitlist requests are under APP-0065.
+- Conversation “not saved unless you choose” is policy copy on the home page; this slice does not add a new memory opt-in control.
+- Kannada catalogue remains pending independent language review.
+
+## Learner UI locale + chrome polish — 14 August 2026
+
+### Scope reviewed
+
+- Interface locale picker restricted to kn-IN / en-IN.
+- Marketing, practice switch, and level path localization.
+- Sign-in embedded in marketing join; typography scale reduced.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Only kn + en in learner picker | Pass | `INTERFACE_LOCALES`; App.test |
+| Marketing no longer hardcoded English | Pass | `MarketingLanding.tsx` + catalogue keys |
+| Bottom school-project sign-in removed on home | Pass | SessionSummary only via marketing `signInSlot` |
+| Catalogue parity maintained | Pass | 978 keys across all `*-IN.json`; governance hashes updated |
+
+### Known limitations
+
+- kn-IN remains `pending-independent-review` (preview policy shows Kannada; approved-only falls back to en-IN).
+- Concept labels / lesson content strings from the API may still be English.
+- Full visual QA on every authenticated surface not completed in this pass.
+
+## APP-0064 — Soft-launch guidance TTS + Role-play catalog
+
+### Scope reviewed
+
+- Soft-launch Azure Speech TTS DI for GuidanceTtsPolicy (`model_en`, `guidance_l1`)
+  under APP-0064 ₹500 evidence, separate from PR-009 speech-benchmark.
+- Text-first fallback on TTS failure; optional WAV base64 on turn speech payload.
+- Synthetic Role-play catalog expansion (clinic + 11 common scenarios) + UI picker.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Live multi-locale TTS gated by APP + kill-switch | Pass | `SoftLaunchGuidanceTtsConfiguration`; `.env.example` default false |
+| PR-009 benchmark gate unchanged | Pass | Benchmark `AzureSpeechConfiguration` / fixture voices untouched |
+| Text remains primary | Pass | Provider falls back to `TextFirstTextToSpeechProvider` |
+| Role-play catalog ≥10 additional scenarios | Pass | `conversation.roleplay_catalog` size 12; UI select |
+| Production/Play/STT not enabled | Pass | Soft-launch only binding; STT remains confirmed-text |
+
+### Known limitations
+
+- Guidance TTS spend evidence and secrets live outside the repository.
+- Role-play scenarios remain `synthetic_unreviewed` / `development_only`.
+- Ordinary learner STT and production promote remain unauthorized.
+
 ## PR-000 — Governance baseline
 
 ### Scope reviewed

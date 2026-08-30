@@ -2,7 +2,7 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.12.0
+  version: 0.35.0
   description: |
     Canonical API contract for the Global English platform. PR-015 adds an
     aggregate-only org-scoped pilot analytics summary on the operator surface
@@ -547,6 +547,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LearnerHome"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/progress-dashboard:
+    get:
+      operationId: getLearnerProgressDashboard
+      summary: Get the active learner's progress read model
+      description: |
+        Returns organization-scoped mastery, speaking activity, attempt
+        improvement, delayed-review performance and recurring-error trends
+        for the authenticated learner's active enrollment. Digest-only
+        conversation aggregates are returned; raw transcripts and advisory
+        AI values never appear as marks.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Progress dashboard read model for the active enrollment.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerProgressDashboard"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
@@ -2652,6 +2688,237 @@ components:
           oneOf:
             - $ref: "#/components/schemas/LearnerMissionSummary"
             - type: "null"
+    MeaningfulSpeakingStreak:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+        - as_of_date
+        - timezone
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        as_of_date:
+          type: string
+          format: date
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+    LearnerDueReview:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - enrollment_id
+        - mission_id
+        - objective_id
+        - interval_days
+        - due_at
+        - timezone
+        - title
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        mission_id:
+          $ref: "#/components/schemas/Ulid"
+        objective_id:
+          $ref: "#/components/schemas/Ulid"
+        interval_days:
+          type: integer
+          minimum: 1
+        due_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        title:
+          $ref: "#/components/schemas/GovernedContent"
+    LearnerProgressDashboard:
+      type: object
+      additionalProperties: false
+      required:
+        - enrollment
+        - objectives
+        - speaking_activity
+        - attempt_improvement
+        - delayed_review
+        - recurring_errors
+      properties:
+        enrollment:
+          oneOf:
+            - $ref: "#/components/schemas/ActiveLearnerEnrollment"
+            - type: "null"
+        objectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgressObjectiveMastery"
+        speaking_activity:
+          $ref: "#/components/schemas/ProgressSpeakingActivity"
+        attempt_improvement:
+          $ref: "#/components/schemas/ProgressAttemptImprovement"
+        delayed_review:
+          $ref: "#/components/schemas/ProgressDelayedReviewPerformance"
+        recurring_errors:
+          $ref: "#/components/schemas/ProgressRecurringErrors"
+    ProgressObjectiveMastery:
+      type: object
+      additionalProperties: false
+      required:
+        - objective_id
+        - objective_key
+        - knowledge_state
+        - spoken_state
+        - best_knowledge_score
+        - mastered_at
+        - evidence_attempt_id
+      properties:
+        objective_id:
+          $ref: "#/components/schemas/Ulid"
+        objective_key:
+          type: string
+          minLength: 1
+          maxLength: 100
+        knowledge_state:
+          type: string
+          enum:
+            - mastered
+            - not_mastered
+        spoken_state:
+          type: string
+          enum:
+            - unassessed
+        best_knowledge_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        mastered_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        evidence_attempt_id:
+          $ref: "#/components/schemas/Ulid"
+    ProgressSpeakingActivity:
+      type: object
+      additionalProperties: false
+      required:
+        - meaningful_speaking_days_count
+        - completed_turn_count
+        - speaking_duration_ms
+        - speaking_minutes
+        - timezone
+      properties:
+        meaningful_speaking_days_count:
+          type: integer
+          minimum: 0
+        completed_turn_count:
+          type: integer
+          minimum: 0
+        speaking_duration_ms:
+          type: integer
+          minimum: 0
+        speaking_minutes:
+          type: integer
+          minimum: 0
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+    ProgressAttemptImprovement:
+      type: object
+      additionalProperties: false
+      required:
+        - missions_attempted
+        - missions_passed_on_first_attempt
+        - missions_improved_on_retry
+        - missions_still_not_mastered
+      properties:
+        missions_attempted:
+          type: integer
+          minimum: 0
+        missions_passed_on_first_attempt:
+          type: integer
+          minimum: 0
+        missions_improved_on_retry:
+          type: integer
+          minimum: 0
+        missions_still_not_mastered:
+          type: integer
+          minimum: 0
+    ProgressDelayedReviewPerformance:
+      type: object
+      additionalProperties: false
+      required:
+        - scheduled_count
+        - due_count
+        - pending_count
+        - completed_count
+        - completed_on_time_count
+        - completed_late_count
+      properties:
+        scheduled_count:
+          type: integer
+          minimum: 0
+        due_count:
+          type: integer
+          minimum: 0
+        pending_count:
+          type: integer
+          minimum: 0
+        completed_count:
+          type: integer
+          minimum: 0
+        completed_on_time_count:
+          type: integer
+          minimum: 0
+        completed_late_count:
+          type: integer
+          minimum: 0
+    ProgressRecurringErrors:
+      type: object
+      additionalProperties: false
+      required:
+        - patterns
+      properties:
+        patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgressRecurringErrorPattern"
+    ProgressRecurringErrorPattern:
+      type: object
+      additionalProperties: false
+      required:
+        - error_category
+        - observation_count
+        - first_observed_at
+        - last_observed_at
+        - trend
+      properties:
+        error_category:
+          type: string
+          minLength: 1
+          maxLength: 64
+        observation_count:
+          type: integer
+          minimum: 1
+        first_observed_at:
+          type: string
+          format: date-time
+        last_observed_at:
+          type: string
+          format: date-time
+        trend:
+          type: string
+          enum:
+            - reducing
+            - stable
+            - increasing
     CompleteLearnerOnboardingRequest:
       type: object
       additionalProperties: false
