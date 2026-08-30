@@ -69,7 +69,6 @@ describe('web deterministic conversation API', () => {
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(Response.json(session, { status: 201 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(Response.json(turn, { status: 201 }))
       .mockResolvedValueOnce(
         new Response(
@@ -127,12 +126,50 @@ describe('web deterministic conversation API', () => {
       }),
     )
     expect(fetch).toHaveBeenNthCalledWith(
-      5,
+      4,
       turn.events_url,
       expect.objectContaining({
         credentials: 'include',
         headers: { Accept: 'text/event-stream' },
       }),
+    )
+  })
+
+  it('reuses a cached Sanctum token instead of fetching csrf-cookie again', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        Response.json({ id: 'session-1' }, { status: 201 }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ id: 'turn-1' }, { status: 201 }),
+      )
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await api.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'session-command',
+    )
+    await api.createTurn(
+      'session-1',
+      { prototype_utterance: 'Hello' },
+      'turn-command',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(3)
+    expect(fetch.mock.calls[0]?.[0]).toBe('/sanctum/csrf-cookie')
+    expect(fetch.mock.calls[1]?.[0]).toBe('/api/v1/conversation-sessions')
+    expect(fetch.mock.calls[2]?.[0]).toBe(
+      '/api/v1/conversation-sessions/session-1/turns',
     )
   })
 

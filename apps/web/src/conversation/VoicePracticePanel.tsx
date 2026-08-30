@@ -5,6 +5,7 @@ import type {
 import { useEffect, useRef, useState } from 'react'
 import {
   defaultAudioRecorder,
+  type AudioRecorder,
   type CapturedAudio,
 } from '../learner/BrowserAudioRecorder'
 import { RecordingTurn } from '../learner/RecordingTurn'
@@ -14,6 +15,12 @@ import type {
   VoiceConsents,
 } from './ConversationJourneyApi'
 import { audioToPcmWav } from './audioToPcmWav'
+import {
+  abandonSpeakLoop,
+  markSpeakLoop,
+  type SpeakLoopPhase,
+} from './speakLoopTimings'
+import { isAbortError } from '../shared/isAbortError'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
@@ -21,6 +28,10 @@ interface VoicePracticePanelProps {
   readonly locale: SupportedLocale
   readonly onPreferTyping?: () => void
   readonly onTranscriptSelected: (transcript: string) => void
+  readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
+  readonly onCancelInFlight?: () => void
+  readonly recorder?: AudioRecorder
+  readonly resetEpoch?: number
   readonly sessionId: string
   readonly text: (key: MessageKey) => string
 }
@@ -55,14 +66,39 @@ export function VoicePracticePanel({
   locale,
   onPreferTyping,
   onTranscriptSelected,
+  onLoopPhase,
+  onCancelInFlight,
+  recorder = defaultAudioRecorder,
+  resetEpoch = 0,
   sessionId,
   text,
 }: VoicePracticePanelProps) {
   const [state, setState] = useState<VoicePanelState>({ kind: 'checking' })
   const [correctedTranscript, setCorrectedTranscript] = useState('')
   const [correcting, setCorrecting] = useState(false)
+  const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
+  const [localResetEpoch, setLocalResetEpoch] = useState(0)
   const uploadCommand = useRef('')
   const reviewCommand = useRef('')
+  const uploadAbort = useRef<AbortController | null>(null)
+
+  const setPhase = (phase: SpeakLoopPhase) => {
+    setLoopPhase(phase)
+    onLoopPhase?.(phase)
+  }
+
+  const releaseHold = () => {
+    setLocalResetEpoch((epoch) => epoch + 1)
+    setPhase('waiting')
+  }
+
+  const cancelInFlight = () => {
+    uploadAbort.current?.abort()
+    uploadAbort.current = null
+    abandonSpeakLoop()
+    onCancelInFlight?.()
+    releaseHold()
+  }
 
   useEffect(() => {
     if (api.voiceConsents === undefined) {
@@ -173,18 +209,24 @@ export function VoicePracticePanel({
     listing: VoiceConsents,
     capture: CapturedAudio,
   ) => {
-    setState({ kind: 'loading' })
+    setPhase('processing')
+    uploadAbort.current?.abort()
+    const controller = new AbortController()
+    uploadAbort.current = controller
 
     try {
       if (uploadCommand.current === '') {
         uploadCommand.current = createClientId()
       }
       const wav = await audioToPcmWav(capture)
+      markSpeakLoop('wav_ready')
       const recording = await api.uploadVoiceRecording!(
         sessionId,
         wav,
         uploadCommand.current,
+        controller.signal,
       )
+      markSpeakLoop('upload_done')
 
       if (
         recording.status !== 'awaiting_learner_confirmation' ||
@@ -192,6 +234,7 @@ export function VoicePracticePanel({
         recording.transcript.trim() === ''
       ) {
         setState({ kind: 'error', listing })
+        releaseHold()
         return
       }
 
@@ -203,12 +246,19 @@ export function VoicePracticePanel({
         setCorrectedTranscript(recording.transcript)
         setCorrecting(false)
         setState({ kind: 'candidate', listing, recording })
+        releaseHold()
         return
       }
 
-      await acceptTranscript(listing, recording)
-    } catch {
+      await acceptTranscript(listing, recording, 'accept', controller.signal)
+    } catch (error) {
+      if (isAbortError(error) || controller.signal.aborted) {
+        releaseHold()
+        return
+      }
+
       setState({ kind: 'error', listing })
+      releaseHold()
     }
   }
 
@@ -235,6 +285,7 @@ export function VoicePracticePanel({
     listing: VoiceConsents,
     recording: SecureVoiceRecording,
     action: 'accept' | 'correct' = 'accept',
+    signal?: AbortSignal,
   ) => {
     if (reviewCommand.current === '') {
       reviewCommand.current = createClientId()
@@ -247,6 +298,7 @@ export function VoicePracticePanel({
           action === 'correct' ? correctedTranscript.trim() : null,
       },
       reviewCommand.current,
+      signal,
     )
 
     const selected =
@@ -255,6 +307,8 @@ export function VoicePracticePanel({
         : recording.transcript
 
     if (selected !== null && selected !== '') {
+      markSpeakLoop('transcript_ready')
+      setPhase('preparing')
       onTranscriptSelected(selected)
     }
 
@@ -367,6 +421,22 @@ export function VoicePracticePanel({
         <p role="status">{text('conversation.voice.processing')}</p>
       ) : null}
 
+      {state.kind === 'recording' && loopPhase !== 'waiting' ? (
+        <p role="status" data-speak-loop-phase={loopPhase}>
+          {text(
+            loopPhase === 'listening'
+              ? 'conversation.loop.listening'
+              : loopPhase === 'processing'
+                ? 'conversation.loop.processing'
+                : loopPhase === 'preparing'
+                  ? 'conversation.loop.preparing'
+                  : loopPhase === 'speaking'
+                    ? 'conversation.loop.speaking'
+                    : 'conversation.voice.processing',
+          )}
+        </p>
+      ) : null}
+
       {state.kind === 'consent' ? (
         <>
           <aside
@@ -390,6 +460,7 @@ export function VoicePracticePanel({
       {state.kind === 'recording' ? (
         <>
           <RecordingTurn
+            key={`${resetEpoch}-${localResetEpoch}`}
             captureMode="hold"
             createClientId={createClientId}
             labels={{
@@ -433,8 +504,18 @@ export function VoicePracticePanel({
               void uploadAndAccept(state.listing, capture)
             }}
             onCaptureChange={() => undefined}
+            onCancelInFlight={cancelInFlight}
             onContinueWithoutRecording={() => onPreferTyping?.()}
-            recorder={defaultAudioRecorder}
+            onHoldPhaseChange={(phase) => {
+              if (phase === 'listening') {
+                setPhase('listening')
+              } else if (phase === 'processing') {
+                setPhase('processing')
+              } else if (loopPhase !== 'preparing' && loopPhase !== 'speaking') {
+                setPhase('waiting')
+              }
+            }}
+            recorder={recorder}
             skipReviewPlayback
           />
           <details className="conversation-journey__consent-details">

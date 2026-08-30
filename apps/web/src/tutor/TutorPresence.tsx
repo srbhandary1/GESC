@@ -7,7 +7,12 @@ import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import './TutorPresence.css'
 
-export type TutorMood = 'idle' | 'listening' | 'speaking'
+export type TutorMood =
+  | 'idle'
+  | 'listening'
+  | 'processing'
+  | 'preparing'
+  | 'speaking'
 
 export interface TutorPresenceProps {
   readonly locale?: SupportedLocale
@@ -55,7 +60,11 @@ export function TutorPresence({
                   ? 'tutor.listening'
                   : mood === 'speaking'
                     ? 'tutor.speaking'
-                    : 'tutor.ready',
+                    : mood === 'processing'
+                      ? 'tutor.processing'
+                      : mood === 'preparing'
+                        ? 'tutor.preparing'
+                        : 'tutor.ready',
               )}
             />
           </span>

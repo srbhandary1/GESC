@@ -113,6 +113,34 @@ describe('media presentation controls', () => {
     expect(screen.queryByRole('button', { name: 'Pause recording' })).not.toBeInTheDocument()
   })
 
+  it('exposes cancel during hold processing so the request can be aborted', async () => {
+    const onRequestCancel = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+          holding: 'Listening…',
+          release: 'Release to send',
+        }}
+        onRequestCancel={onRequestCancel}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={vi.fn()}
+        onRequestStop={vi.fn()}
+        state="processing"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Cancel recording' }),
+    )
+    expect(onRequestCancel).toHaveBeenCalledOnce()
+  })
+
   it('announces blocked state without offering a capture control', () => {
     render(
       <RecordingControls

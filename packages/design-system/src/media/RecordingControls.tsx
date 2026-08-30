@@ -123,6 +123,7 @@ export function RecordingControls({
             <button
               aria-pressed={holdPressed}
               className="ge-button ge-button--primary ge-button--speak ge-button--hold-to-talk"
+              data-hold-state={state}
               disabled={state === 'processing'}
               onContextMenu={(event) => {
                 event.preventDefault()
@@ -169,6 +170,15 @@ export function RecordingControls({
             >
               {holdLabel}
             </button>
+            {isRecording || state === 'processing' ? (
+              <button
+                className="ge-button ge-button--quiet"
+                onClick={onRequestCancel}
+                type="button"
+              >
+                {labels.cancel}
+              </button>
+            ) : null}
           </div>
         )}
       </section>

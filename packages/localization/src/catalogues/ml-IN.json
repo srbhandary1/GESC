@@ -93,6 +93,10 @@
   "conversation.eyebrow": "Swathiയോടൊപ്പം മാർഗനിർദേശ സംസാരം",
   "conversation.failed": "ഈ ടേൺ പൂർത്തിയാക്കാനായില്ല.",
   "conversation.friend_label": "മായ",
+  "conversation.loop.listening": "കേൾക്കുന്നു",
+  "conversation.loop.preparing": "മറുപടി തയ്യാറാകുന്നു",
+  "conversation.loop.processing": "നിങ്ങളുടെ സംസാരം പ്രോസസ് ചെയ്യുന്നു",
+  "conversation.loop.speaking": "സ്വാതി സംസാരിക്കുന്നു",
   "conversation.memory.add": "Save memory fact",
   "conversation.memory.cancel": "Cancel",
   "conversation.memory.delete": "Delete fact",
@@ -1115,6 +1119,8 @@
   "tutor.greeting": "Hi — I am Swathi, your English teacher. Listen, then answer me out loud. I will explain mistakes in your language.",
   "tutor.listening": "I am listening",
   "tutor.name": "Swathi",
+  "tutor.preparing": "മറുപടി തയ്യാറാക്കുന്നു",
+  "tutor.processing": "നിങ്ങളുടെ സംസാരം മനസ്സിലാക്കുന്നു",
   "tutor.ready": "Ready when you are",
   "tutor.speaking": "I am speaking"
 }

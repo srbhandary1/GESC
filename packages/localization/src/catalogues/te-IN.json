@@ -93,6 +93,10 @@
   "conversation.eyebrow": "Swathiతో మార్గదర్శక సంభాషణ",
   "conversation.failed": "ఈ టర్న్ పూర్తి కాలేదు.",
   "conversation.friend_label": "మాయా",
+  "conversation.loop.listening": "వింటున్నాను",
+  "conversation.loop.preparing": "సమాధానం సిద్ధమవుతోంది",
+  "conversation.loop.processing": "మీ మాటను ప్రాసెస్ చేస్తున్నాను",
+  "conversation.loop.speaking": "స్వాతి మాట్లాడుతున్నారు",
   "conversation.memory.add": "Save memory fact",
   "conversation.memory.cancel": "Cancel",
   "conversation.memory.delete": "Delete fact",
@@ -1115,6 +1119,8 @@
   "tutor.greeting": "Hi — I am Swathi, your English teacher. Listen, then answer me out loud. I will explain mistakes in your language.",
   "tutor.listening": "I am listening",
   "tutor.name": "Swathi",
+  "tutor.preparing": "సమాధానం సిద్ధం చేస్తున్నాను",
+  "tutor.processing": "మీ మాటను ప్రాసెస్ చేస్తున్నాను",
   "tutor.ready": "Ready when you are",
   "tutor.speaking": "I am speaking"
 }

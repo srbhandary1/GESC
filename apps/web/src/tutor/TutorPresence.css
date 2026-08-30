@@ -65,6 +65,12 @@
   border-color: rgb(80 180 255 / 0.55);
 }
 
+.tutor-presence--processing .tutor-presence__orbit,
+.tutor-presence--preparing .tutor-presence__orbit {
+  border-color: rgb(196 164 90 / 0.7);
+  animation-duration: 1.6s;
+}
+
 .tutor-presence--speaking .tutor-presence__face {
   animation: tutor-speak 0.9s ease-in-out infinite;
 }

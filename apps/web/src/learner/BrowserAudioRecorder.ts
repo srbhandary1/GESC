@@ -1,11 +1,7 @@
-import {
-  concatenateFloat32,
-  encodeMonoPcmWav,
-  hasAudibleSpeech,
-  PCM_WAV_SAMPLE_RATE,
-  resampleMono,
-} from '../shared/pcmWav'
+import { markSpeakLoop } from '../conversation/speakLoopTimings'
+import { concatenateFloat32 } from '../shared/pcmWav'
 import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
+import { encodeAudiblePcmCapture } from './encodeAudiblePcmCapture'
 import { canonicalCaptureMimeType } from './LocalCaptureReceipt'
 
 export interface CapturedAudio {
@@ -14,11 +10,14 @@ export interface CapturedAudio {
   readonly mimeType: string
 }
 
+export type RecordingLevelListener = (rms: number) => void
+
 export interface AudioRecordingSession {
   pause(): void
   resume(): void
   stop(): Promise<CapturedAudio>
   cancel(): void
+  subscribeLevels?(listener: RecordingLevelListener): () => void
 }
 
 export interface AudioRecorder {
@@ -93,6 +92,7 @@ class BrowserAudioRecordingSession implements AudioRecordingSession {
   readonly #mediaChunks: Blob[] = []
   readonly #startedAt: number
   readonly #recorder: MediaRecorder | null
+  readonly #levelListeners = new Set<RecordingLevelListener>()
   #paused = false
   #cancelled = false
   #completion: Promise<CapturedAudio> | null = null
@@ -144,6 +144,21 @@ class BrowserAudioRecordingSession implements AudioRecordingSession {
 
     const input = event.inputBuffer.getChannelData(0)
     this.#pcmChunks.push(new Float32Array(input))
+
+    if (this.#levelListeners.size > 0) {
+      const rms = rootMeanSquare(input)
+      for (const listener of this.#levelListeners) {
+        listener(rms)
+      }
+    }
+  }
+
+  subscribeLevels(listener: RecordingLevelListener): () => void {
+    this.#levelListeners.add(listener)
+
+    return () => {
+      this.#levelListeners.delete(listener)
+    }
   }
 
   pause(): void {
@@ -178,8 +193,32 @@ class BrowserAudioRecordingSession implements AudioRecordingSession {
 
   async #finish(): Promise<CapturedAudio> {
     const sampleRate = this.#context.sampleRate
-    const mediaBlob = await this.#stopBackupRecorder()
     const pcm = concatenateFloat32(this.#pcmChunks)
+    const durationFallbackMs = Math.round(performance.now() - this.#startedAt)
+    const receiptMime =
+      canonicalCaptureMimeType(
+        this.#recorder?.mimeType ||
+          this.#mediaChunks[0]?.type ||
+          'audio/webm',
+      ) ?? 'audio/webm'
+
+    const pcmCapture = encodeAudiblePcmCapture(
+      pcm,
+      sampleRate,
+      receiptMime,
+      durationFallbackMs,
+    )
+    if (pcmCapture !== null) {
+      this.#teardown()
+      if (this.#cancelled) {
+        throw new RecordingUnavailableError()
+      }
+
+      markSpeakLoop('wav_ready')
+      return pcmCapture
+    }
+
+    const mediaBlob = await this.#stopBackupRecorder()
     this.#teardown()
 
     if (this.#cancelled) {
@@ -190,28 +229,11 @@ class BrowserAudioRecordingSession implements AudioRecordingSession {
       1,
       pcm.length > 0
         ? Math.round((pcm.length / sampleRate) * 1000)
-        : Math.round(performance.now() - this.#startedAt),
+        : durationFallbackMs,
     )
-    const receiptMime =
-      canonicalCaptureMimeType(
-        this.#recorder?.mimeType ||
-          this.#mediaChunks[0]?.type ||
-          'audio/webm',
-      ) ?? 'audio/webm'
-
-    if (pcm.length > 0 && hasAudibleSpeech(pcm)) {
-      const wav = encodeMonoPcmWav(
-        resampleMono(pcm, sampleRate, PCM_WAV_SAMPLE_RATE),
-      )
-
-      return {
-        blob: new Blob([wav], { type: 'audio/wav' }),
-        durationMs,
-        mimeType: receiptMime,
-      }
-    }
 
     if (mediaBlob !== null && mediaBlob.size > 0) {
+      markSpeakLoop('wav_ready')
       return {
         blob: mediaBlob,
         durationMs,
@@ -266,6 +288,7 @@ class BrowserAudioRecordingSession implements AudioRecordingSession {
 
   #teardown(): void {
     this.#processor.removeEventListener('audioprocess', this.#onAudioProcess)
+    this.#levelListeners.clear()
     try {
       this.#processor.disconnect()
       this.#source.disconnect()
@@ -399,6 +422,20 @@ function stopTracks(stream: MediaStream): void {
   for (const track of stream.getTracks()) {
     track.stop()
   }
+}
+
+function rootMeanSquare(samples: Float32Array): number {
+  if (samples.length === 0) {
+    return 0
+  }
+
+  let sum = 0
+  for (let index = 0; index < samples.length; index += 1) {
+    const sample = samples[index] ?? 0
+    sum += sample * sample
+  }
+
+  return Math.sqrt(sum / samples.length)
 }
 
 export const defaultAudioRecorder = new BrowserAudioRecorder()

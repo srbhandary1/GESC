@@ -381,6 +381,36 @@
   max-width: 32rem;
 }
 
+.learner-recording__waveform {
+  display: block;
+  width: min(100%, 15rem);
+  height: 3rem;
+  margin-inline: auto;
+  border-radius: var(--ge-radius-sm);
+  background: color-mix(in srgb, var(--ge-color-brass) 12%, var(--ge-color-surface));
+}
+
+.speak-loop-timings {
+  justify-self: end;
+  margin: 0;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px dashed color-mix(in srgb, var(--ge-color-brass) 45%, transparent);
+  border-radius: var(--ge-radius-sm);
+  background: rgb(7 22 17 / 0.45);
+  color: #d7e4dc;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.speak-loop-timings p,
+.speak-loop-timings ul {
+  margin: 0;
+}
+
+.speak-loop-timings ul {
+  padding-inline-start: 1.1rem;
+}
+
 .learner-notice {
   padding: var(--ge-space-3);
   border: 1px solid var(--ge-notice-border);

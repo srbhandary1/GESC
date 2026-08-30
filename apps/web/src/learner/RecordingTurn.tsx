@@ -5,6 +5,7 @@ import {
   type RecordingControlState,
 } from '@global-english/design-system'
 import { useEffect, useRef, useState } from 'react'
+import { beginSpeakLoop } from '../conversation/speakLoopTimings'
 import { audioToPcmWav } from '../conversation/audioToPcmWav'
 import {
   RecordingPermissionDeniedError,
@@ -14,6 +15,7 @@ import {
 } from './BrowserAudioRecorder'
 import type { LocalRecordingMetadata } from './LearnerJourneyApi'
 import { isValidLocalCapture, canonicalCaptureMimeType } from './LocalCaptureReceipt'
+import { LiveLevelMeter } from './LiveLevelMeter'
 
 export interface RecordingTurnLabels {
   readonly controls: RecordingControlLabels
@@ -25,6 +27,8 @@ export interface RecordingTurnLabels {
   readonly continueWithoutExplanation: string
 }
 
+export type HoldPhase = 'idle' | 'listening' | 'processing'
+
 interface RecordingTurnProps {
   readonly captureMode?: RecordingCaptureMode
   readonly createClientId: () => string
@@ -34,6 +38,8 @@ interface RecordingTurnProps {
     metadata: LocalRecordingMetadata | null,
   ) => void
   readonly onContinueWithoutRecording: () => void
+  readonly onCancelInFlight?: () => void
+  readonly onHoldPhaseChange?: (phase: HoldPhase) => void
   readonly recorder: AudioRecorder
   readonly skipReviewPlayback?: boolean
 }
@@ -51,6 +57,8 @@ export function RecordingTurn({
   onAudioCaptureChange,
   onCaptureChange,
   onContinueWithoutRecording,
+  onCancelInFlight,
+  onHoldPhaseChange,
   recorder,
   skipReviewPlayback = false,
 }: RecordingTurnProps) {
@@ -58,6 +66,9 @@ export function RecordingTurn({
     recorder.isSupported() ? 'ready' : 'blocked',
   )
   const [capture, setCapture] = useState<LocalCapture | null>(null)
+  const [liveSession, setLiveSession] = useState<AudioRecordingSession | null>(
+    null,
+  )
   const sessionRef = useRef<AudioRecordingSession | null>(null)
   const captureRef = useRef<LocalCapture | null>(null)
   const active = useRef(true)
@@ -100,6 +111,7 @@ export function RecordingTurn({
         !holdIntent.current
       ) {
         session.cancel()
+        setLiveSession(null)
         if (active.current && requestGeneration.current === generation) {
           setState(recorder.isSupported() ? 'ready' : 'blocked')
         }
@@ -107,13 +119,16 @@ export function RecordingTurn({
       }
 
       sessionRef.current = session
+      setLiveSession(session)
       setState('recording')
+      onHoldPhaseChange?.('listening')
     } catch (error) {
       if (!active.current || requestGeneration.current !== generation) {
         return
       }
 
       holdIntent.current = false
+      setLiveSession(null)
       setState(
         error instanceof RecordingPermissionDeniedError
           ? 'blocked'
@@ -132,7 +147,10 @@ export function RecordingTurn({
     }
 
     sessionRef.current = null
+    setLiveSession(null)
+    beginSpeakLoop()
     setState('processing')
+    onHoldPhaseChange?.('processing')
     const generation = requestGeneration.current
 
     try {
@@ -164,7 +182,6 @@ export function RecordingTurn({
       if (skipReviewPlayback) {
         onAudioCaptureChange?.(audio)
         onCaptureChange(metadata)
-        setState('ready')
         return
       }
 
@@ -196,7 +213,10 @@ export function RecordingTurn({
     requestGeneration.current += 1
     sessionRef.current?.cancel()
     sessionRef.current = null
+    setLiveSession(null)
     setState('ready')
+    onHoldPhaseChange?.('idle')
+    onCancelInFlight?.()
   }
 
   const retry = () => {
@@ -237,11 +257,15 @@ export function RecordingTurn({
         onRequestResume={() => {
           sessionRef.current?.resume()
           setState('recording')
+          onHoldPhaseChange?.('listening')
         }}
         onRequestStart={() => void start()}
         onRequestStop={() => void stop()}
         state={state}
       />
+      {state === 'recording' ? (
+        <LiveLevelMeter session={liveSession} />
+      ) : null}
 
       {capture === null ? null : (
         <section
