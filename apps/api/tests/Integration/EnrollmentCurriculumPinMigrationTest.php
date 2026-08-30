@@ -88,6 +88,7 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
     private function runEnrollmentPinMigration(string $direction): void
     {
         if ($direction === 'down') {
+            $this->runDailyMissionHomeMigration('down');
             $this->runLearnerAdministrationMigration('down');
             $this->runDeterministicLearningMigration('down');
         }
@@ -110,7 +111,29 @@ final class EnrollmentCurriculumPinMigrationTest extends TestCase
         if ($direction === 'up') {
             $this->runDeterministicLearningMigration('up');
             $this->runLearnerAdministrationMigration('up');
+            $this->runDailyMissionHomeMigration('up');
         }
+    }
+
+    /**
+     * @param  'down'|'up'  $direction
+     */
+    private function runDailyMissionHomeMigration(string $direction): void
+    {
+        $migration = require database_path(
+            'migrations/2026_08_30_000270_create_daily_mission_home_read_models.php',
+        );
+
+        if (
+            ! $migration instanceof Migration
+            || ! is_callable([$migration, $direction])
+        ) {
+            throw new RuntimeException(
+                'The ADR-0028 daily-mission migration is not executable.',
+            );
+        }
+
+        Closure::fromCallable([$migration, $direction])();
     }
 
     /**

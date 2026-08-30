@@ -583,6 +583,17 @@ final class CurriculumSchemaProtectionTest extends TenancyIntegrationTestCase
         }
         $mediaMigration->down();
 
+        $dailyMissionMigration = require database_path(
+            'migrations/2026_08_30_000270_create_daily_mission_home_read_models.php',
+        );
+        if (
+            ! $dailyMissionMigration instanceof Migration
+            || ! method_exists($dailyMissionMigration, 'down')
+        ) {
+            self::fail('The daily-mission migration must provide down().');
+        }
+        $dailyMissionMigration->down();
+
         $contentWorkspaceMigration = require database_path(
             'migrations/2026_08_09_000140_create_admin_content_workspace.php',
         );

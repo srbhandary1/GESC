@@ -263,7 +263,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 'speech.rendering_mode',
                 'deterministic-fake-text-only',
             )
-            ->assertJsonPath('usage.provider_attempts', 3)
+            ->assertJsonPath('usage.provider_attempts', 4)
             ->assertJsonPath('usage.estimated_cost_microunits', 0);
         $this->assertNoStore($turn);
         $turnId = $turn->json('id');
