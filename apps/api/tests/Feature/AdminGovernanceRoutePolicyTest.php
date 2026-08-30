@@ -29,6 +29,25 @@ final class AdminGovernanceRoutePolicyTest extends TestCase
         'DELETE',
     ];
 
+    /**
+     * Credential/recovery routes live outside the operator prefix. Within the
+     * operator API, only durable administrator-authority changes retain
+     * current-password confirmation under ADR-0023.
+     *
+     * @var list<string>
+     */
+    private const array PASSWORD_CONFIRMED_OPERATOR_ROUTES = [
+        'api.v1.operator.institution-invites.revocations.store',
+        'api.v1.operator.institution-invites.store',
+        'api.v1.operator.memberships.deactivations.store',
+        'api.v1.operator.memberships.reactivations.store',
+        'api.v1.operator.memberships.role-assignments.store',
+        'api.v1.operator.memberships.role-revocations.store',
+        'api.v1.operator.roles.retirements.store',
+        'api.v1.operator.roles.store',
+        'api.v1.operator.roles.updates.store',
+    ];
+
     public function test_every_operator_route_is_web_only_and_tenant_scoped(): void
     {
         $routes = $this->operatorRoutes();
@@ -54,8 +73,10 @@ final class AdminGovernanceRoutePolicyTest extends TestCase
         }
     }
 
-    public function test_every_operator_mutation_requires_fresh_password_confirmation(): void
+    public function test_only_administrator_authority_mutations_require_fresh_password_confirmation(): void
     {
+        $protected = [];
+
         foreach ($this->operatorRoutes() as $route) {
             if (
                 array_intersect(self::MUTATING_METHODS, $route->methods())
@@ -64,12 +85,33 @@ final class AdminGovernanceRoutePolicyTest extends TestCase
                 continue;
             }
 
-            self::assertContains(
+            $name = (string) $route->getName();
+            $requiresConfirmation = in_array(
                 'auth.password-confirmed',
                 $route->gatherMiddleware(),
-                sprintf('%s must require fresh password confirmation.', $route->uri()),
+                true,
+            );
+
+            if (in_array($name, self::PASSWORD_CONFIRMED_OPERATOR_ROUTES, true)) {
+                self::assertTrue(
+                    $requiresConfirmation,
+                    sprintf('%s must require fresh password confirmation.', $route->uri()),
+                );
+                $protected[] = $name;
+
+                continue;
+            }
+
+            self::assertFalse(
+                $requiresConfirmation,
+                sprintf('%s is routine role-authorized work and must not require repeated password confirmation.', $route->uri()),
             );
         }
+
+        sort($protected);
+        $expected = self::PASSWORD_CONFIRMED_OPERATOR_ROUTES;
+        sort($expected);
+        self::assertSame($expected, $protected);
     }
 
     public function test_operator_lifecycle_commands_do_not_use_http_delete(): void

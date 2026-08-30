@@ -28,7 +28,10 @@ final class ProblemDetailsFactory
     ): JsonResponse {
         return $this->make(
             request: $request,
-            status: $response->getStatusCode(),
+            status: $this->statusForException(
+                $response->getStatusCode(),
+                $exception,
+            ),
             sourceResponse: $response,
             exception: $exception,
         );
@@ -389,5 +392,19 @@ final class ProblemDetailsFactory
         }
 
         return false;
+    }
+
+    private function statusForException(
+        int $responseStatus,
+        ?Throwable $exception,
+    ): int {
+        if (
+            $this->hasCause($exception, FreshPrivilegedMfaRequired::class)
+            || $this->hasCause($exception, FreshPasswordConfirmationRequired::class)
+        ) {
+            return Response::HTTP_FORBIDDEN;
+        }
+
+        return $responseStatus;
     }
 }

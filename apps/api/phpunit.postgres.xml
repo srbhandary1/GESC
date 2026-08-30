@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.postgres.php"
          colors="true"
 >
     <testsuites>
@@ -32,6 +32,8 @@
         <env name="DB_DATABASE" value="global_english_test" force="true"/>
         <env name="DB_USERNAME" value="global_english_test" force="true"/>
         <env name="DB_PASSWORD" value="global_english_test" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DATABASE_URL" value="" force="true"/>
         <env name="DB_SSLMODE" value="disable" force="true"/>
         <env name="LARAVEL_STORAGE_PATH" value="/tmp/global-english-postgres-phpunit-storage" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>

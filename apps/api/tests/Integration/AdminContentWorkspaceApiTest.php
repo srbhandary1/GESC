@@ -6,7 +6,6 @@ namespace Tests\Integration;
 
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
-use App\Models\AuthenticationSession;
 use App\Models\Membership;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -67,15 +66,6 @@ final class AdminContentWorkspaceApiTest extends TenancyIntegrationTestCase
             'expected_version' => 0,
         ];
 
-        $this->postCommand(
-            '/api/v1/operator/content/programs',
-            $createBody,
-            (string) Str::ulid(),
-        )
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
-
-        $this->freshenCurrentWebSession($actor);
         $createKey = (string) Str::ulid();
         $created = $this->postCommand(
             '/api/v1/operator/content/programs',
@@ -384,21 +374,6 @@ final class AdminContentWorkspaceApiTest extends TenancyIntegrationTestCase
                 'membership_id' => $membership->getKey(),
             ])
             ->assertOk();
-    }
-
-    private function freshenCurrentWebSession(User $user): void
-    {
-        $session = AuthenticationSession::query()
-            ->where('user_id', $user->getKey())
-            ->whereNull('revoked_at')
-            ->orderByDesc('started_at')
-            ->orderByDesc('id')
-            ->firstOrFail();
-        $this->markTestAuthenticationSessionPrivileged(
-            (string) $session->getKey(),
-            $user,
-            now(),
-        );
     }
 
     /**

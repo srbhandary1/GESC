@@ -63,6 +63,9 @@ final readonly class PlatformOperationAuthorizer
         'password_changed',
         'username_changed',
         'password_recovered',
+        'account_setup_requested',
+        'account_setup_completed',
+        'recovery_contact_replaced',
         'password_cutover',
         'privacy_erasure',
     ];
@@ -91,16 +94,21 @@ final readonly class PlatformOperationAuthorizer
         'password_changed',
         'username_changed',
         'password_recovered',
+        'account_setup_requested',
+        'account_setup_completed',
+        'recovery_contact_replaced',
         'password_cutover',
         'privacy_erasure',
     ];
 
     /** @var array<string, list<string>> */
-    private const array PASSWORD_IDENTITY_RECOVERY_AUDIT = [
-        'authentication.password_recovery.case_opened' => ['case_opened'],
-        'authentication.password_recovery.approved' => ['case_approved'],
-        'authentication.password_recovery.scheduled' => ['delay_scheduled'],
-        'authentication.password_recovery.completed' => ['reset_issued'],
+    private const array ACCOUNT_RECOVERY_MANAGEMENT_AUDIT = [
+        'authentication.account_recovery.setup_requested' => [
+            'account_recovery.migration_setup',
+        ],
+        'authentication.account_recovery.contact_replaced' => [
+            'account_recovery.verified_contact_replacement',
+        ],
     ];
 
     /**
@@ -278,18 +286,18 @@ final readonly class PlatformOperationAuthorizer
         );
     }
 
-    public function authorizePasswordIdentityRecoveryAudit(
+    public function authorizeAccountRecoveryManagementAudit(
         string $action,
         string $reasonKey,
-        string $caseId,
+        string $managementEventId,
         string $actorUserId,
         ?string $correlationId = null,
     ): PlatformOperationAuthorization {
         if (
-            ! isset(self::PASSWORD_IDENTITY_RECOVERY_AUDIT[$action])
+            ! isset(self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$action])
             || ! in_array(
                 $reasonKey,
-                self::PASSWORD_IDENTITY_RECOVERY_AUDIT[$action],
+                self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$action],
                 true,
             )
         ) {
@@ -297,13 +305,13 @@ final readonly class PlatformOperationAuthorizer
         }
 
         return $this->issue(
-            capability: PlatformCapability::PasswordIdentityRecovery,
+            capability: PlatformCapability::AccountRecoveryManagement,
             reasonKey: $reasonKey,
             targetOrganizationId: null,
             actorUserId: $actorUserId,
             action: $action,
-            subjectType: 'privileged_password_recovery_case',
-            subjectId: $caseId,
+            subjectType: 'account_recovery_management_event',
+            subjectId: $managementEventId,
             correlationId: $correlationId,
         );
     }
@@ -389,15 +397,15 @@ final readonly class PlatformOperationAuthorizer
                 && $authorization->targetOrganizationId === null,
             PlatformCapability::PrivilegedMfaLifecycle => $this
                 ->privilegedMfaAuthorizationIsAllowed($authorization),
-            PlatformCapability::PasswordIdentityRecovery => isset(
-                self::PASSWORD_IDENTITY_RECOVERY_AUDIT[$authorization->action],
+            PlatformCapability::AccountRecoveryManagement => isset(
+                self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$authorization->action],
             )
                 && in_array(
                     $authorization->reasonKey,
-                    self::PASSWORD_IDENTITY_RECOVERY_AUDIT[$authorization->action],
+                    self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$authorization->action],
                     true,
                 )
-                && $authorization->subjectType === 'privileged_password_recovery_case'
+                && $authorization->subjectType === 'account_recovery_management_event'
                 && $authorization->targetOrganizationId === null
                 && $authorization->actorUserId !== null,
             PlatformCapability::ContentEmergencySuspend => $authorization
@@ -484,8 +492,8 @@ final readonly class PlatformOperationAuthorizer
                 ->contentEmergencyContextIsCurrent($authorization),
             PlatformCapability::AuthenticationSessionLifecycle,
             PlatformCapability::MobileCredentialLifecycle,
-            PlatformCapability::PrivilegedMfaLifecycle,
-            PlatformCapability::PasswordIdentityRecovery => false,
+            PlatformCapability::PrivilegedMfaLifecycle => false,
+            PlatformCapability::AccountRecoveryManagement => false,
         };
 
         if (! $allowed) {

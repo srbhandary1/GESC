@@ -157,8 +157,34 @@ if [[ "${CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED:-false}" == "true" ]]; 
   fi
 fi
 
-if [[ -f "${RUNTIME}/tunnel.url" ]]; then
-  pass "tunnel URL: $(cat "${RUNTIME}/tunnel.url")"
+if [[ -n "${GE_SOFT_LAUNCH_STABLE_HOST:-}" ]]; then
+  if [[ "${GE_SOFT_LAUNCH_STABLE_HOST}" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])$ ]] \
+    && [[ "${GE_SOFT_LAUNCH_STABLE_HOST}" == *.* ]]; then
+    pass "stable HTTPS hostname configured: ${GE_SOFT_LAUNCH_STABLE_HOST}"
+  else
+    bad "stable HTTPS hostname is malformed"
+  fi
+  if [[ "${APP_URL:-}" == "https://${GE_SOFT_LAUNCH_STABLE_HOST}" ]]; then
+    pass "APP_URL matches the stable HTTPS hostname"
+  else
+    bad "APP_URL does not match the stable HTTPS hostname"
+  fi
+  if [[ "${SESSION_SECURE_COOKIE:-false}" == "true" ]] \
+    && printf '%s' "${SANCTUM_STATEFUL_DOMAINS:-}" \
+      | tr ',' '\n' | grep -Fxq "${GE_SOFT_LAUNCH_STABLE_HOST}"; then
+    pass "stable host uses Secure cookies and same-origin Sanctum state"
+  else
+    bad "stable host session/Sanctum configuration is incomplete"
+  fi
+  if [[ -f "${RUNTIME}/env/Caddyfile.public" ]] \
+    && grep -Fq "${GE_SOFT_LAUNCH_STABLE_HOST} {" "${RUNTIME}/env/Caddyfile.public" \
+    && grep -Fq 'https_port 8443' "${RUNTIME}/env/Caddyfile.public"; then
+    pass "stable public Caddy edge generated"
+  else
+    bad "stable public Caddy edge is not generated; run make soft-launch-restart"
+  fi
+elif [[ -f "${RUNTIME}/tunnel.url" ]]; then
+  pass "temporary tunnel URL: $(cat "${RUNTIME}/tunnel.url")"
 else
   note "no active tunnel URL — run make soft-launch-tunnel for HTTPS/mic"
 fi

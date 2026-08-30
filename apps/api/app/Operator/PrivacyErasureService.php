@@ -14,6 +14,7 @@ use App\Operator\Exceptions\OperatorPrivacyRejected;
 use App\Tenancy\OrganizationContextManager;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use stdClass;
 
@@ -250,6 +251,18 @@ final readonly class PrivacyErasureService
                 'fact_text' => '[privacy-erased]',
                 'updated_at' => $now,
             ]);
+
+        if (Schema::hasTable('tuition_requests')) {
+            DB::table('tuition_requests')
+                ->where('organization_id', $organizationId)
+                ->where('membership_id', $membershipId)
+                ->update([
+                    'preferred_window' => '[privacy-erased]',
+                    'topic' => '[privacy-erased]',
+                    'notes' => null,
+                    'updated_at' => $now,
+                ]);
+        }
 
         DB::table('privacy_export_requests')
             ->where('organization_id', $organizationId)

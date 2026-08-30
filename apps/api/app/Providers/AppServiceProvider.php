@@ -7,15 +7,18 @@ namespace App\Providers;
 use App\Authentication\AuthenticationSecretDigester;
 use App\Authentication\Mfa\PrivilegedMfaVerifier;
 use App\Authentication\Mfa\Rfc6238PrivilegedMfaVerifier;
+use App\Authentication\Mobile\MobileOAuthClient;
 use App\Authentication\Otp\LocalFixedOtpCodeGenerator;
 use App\Authentication\Otp\LocalOtpDeliveryAdapter;
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
 use App\Authentication\Otp\SecureOtpCodeGenerator;
 use App\Authentication\Password\ConfiguredPasswordBlocklist;
+use App\Authentication\Password\FormerRecoveryContactNotifier;
 use App\Authentication\Password\PasswordBlocklist;
 use App\Authentication\Password\PasswordRecoveryDeliveryAdapter;
 use App\Authentication\Password\ProtectedLocalPasswordRecoveryDeliveryAdapter;
+use App\Authentication\Password\UnavailableFormerRecoveryContactNotifier;
 use App\Authentication\Password\UnavailablePasswordRecoveryDeliveryAdapter;
 use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\AuthenticationSessionService;
@@ -30,12 +33,15 @@ use App\Conversation\Providers\Disabled\DisabledTextToSpeechProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeConversationModelProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
+use App\Conversation\Providers\SoftLaunch\SoftLaunchGuidanceAzureTextToSpeechProvider;
+use App\Conversation\Providers\SoftLaunch\SoftLaunchRecordedAzureSpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Voice\LaravelVoiceSourceObjectStore;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
+use App\Conversation\Voice\Providers\Indic\IndicHttpSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Conversation\Voice\VoiceSourceObjectStore;
 use App\Curriculum\Commissioning\MediaTranscription\CurriculumMediaSourceReader;
@@ -43,6 +49,7 @@ use App\Curriculum\Commissioning\MediaTranscription\LaravelCurriculumMediaSource
 use App\Curriculum\Commissioning\MediaTranscription\LaravelMediaTranscriptionCandidateStore;
 use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionCandidateStore;
 use App\Health\DatabaseReadinessProbe;
+use App\Health\PasswordRecoveryDeliveryReadinessProbe;
 use App\Health\ReadinessChecker;
 use App\Health\RedisReadinessProbe;
 use App\Learning\Media\LaravelLessonVideoObjectStore;
@@ -67,6 +74,7 @@ use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 use LogicException;
@@ -78,6 +86,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        Passport::useClientModel(MobileOAuthClient::class);
         Passport::ignoreRoutes();
         Passport::$deviceCodeGrantEnabled = false;
 
@@ -102,6 +111,10 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind(PrivilegeClassifier::class, PlatformOrMembershipPrivilegeClassifier::class);
         $this->app->bind(PasswordBlocklist::class, ConfiguredPasswordBlocklist::class);
+        $this->app->bind(
+            FormerRecoveryContactNotifier::class,
+            UnavailableFormerRecoveryContactNotifier::class,
+        );
         $this->app->bind(PasswordRecoveryDeliveryAdapter::class, function (): PasswordRecoveryDeliveryAdapter {
             if ($this->app->environment('local')
                 && config('authentication.password.recovery_delivery_driver') === 'protected-local') {
@@ -180,13 +193,20 @@ class AppServiceProvider extends ServiceProvider
                 default => DisabledConversationModelProvider::class,
             },
         );
-        // Typed or learner-confirmed transcripts remain primary. Live Azure
-        // Speech DI retains its separate ADR/evidence gate, so the ordinary
-        // product reports an explicit text-first/on-device playback fallback.
+        // Typed or learner-confirmed transcripts remain primary. Soft-launch
+        // guidance TTS (APP-0064) may bind Azure Speech for GuidanceTtsPolicy
+        // voices; otherwise the product reports an explicit text-first fallback.
+        $guidanceTtsLive = $azureConversationEnabled
+            && $this->app->environment('soft-launch')
+            && filter_var(
+                config('conversation.guidance_tts.live_requests_enabled'),
+                FILTER_VALIDATE_BOOL,
+            );
         $this->app->bind(
             TextToSpeechProvider::class,
             match (true) {
                 $fakeConversationEnabled => DeterministicFakeTextToSpeechProvider::class,
+                $guidanceTtsLive => SoftLaunchGuidanceAzureTextToSpeechProvider::class,
                 $azureConversationEnabled => TextFirstTextToSpeechProvider::class,
                 default => DisabledTextToSpeechProvider::class,
             },
@@ -195,11 +215,23 @@ class AppServiceProvider extends ServiceProvider
             $this->app->environment('local')
             || $this->app->environment('testing')
         ) && config('voice.provider_driver') === 'deterministic-test';
+        $softLaunchVoiceEnabled = $this->app->environment('soft-launch')
+            && filter_var(config('voice.upload_enabled'), FILTER_VALIDATE_BOOL)
+            && config('voice.provider_driver') === 'azure';
+        $indicVoiceEnabled = (
+            $this->app->environment('local')
+            || $this->app->environment('testing')
+            || $this->app->environment('soft-launch')
+        ) && filter_var(config('voice.upload_enabled'), FILTER_VALIDATE_BOOL)
+            && config('voice.provider_driver') === 'indic';
         $this->app->bind(
             RecordedSpeechToTextProvider::class,
-            $testingVoiceEnabled
-                ? DeterministicTestingSpeechToTextProvider::class
-                : DisabledRecordedSpeechToTextProvider::class,
+            match (true) {
+                $testingVoiceEnabled => DeterministicTestingSpeechToTextProvider::class,
+                $softLaunchVoiceEnabled => SoftLaunchRecordedAzureSpeechToTextProvider::class,
+                $indicVoiceEnabled => IndicHttpSpeechToTextProvider::class,
+                default => DisabledRecordedSpeechToTextProvider::class,
+            },
         );
         $this->app->bind(
             VoiceSourceObjectStore::class,
@@ -218,6 +250,7 @@ class AppServiceProvider extends ServiceProvider
             fn (): ReadinessChecker => new ReadinessChecker(
                 $this->app->make(DatabaseReadinessProbe::class),
                 $this->app->make(RedisReadinessProbe::class),
+                $this->app->make(PasswordRecoveryDeliveryReadinessProbe::class),
             ),
         );
     }
@@ -227,6 +260,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $applicationUrl = config('app.url');
+
+        if (
+            is_string($applicationUrl)
+            && parse_url($applicationUrl, PHP_URL_SCHEME) === 'https'
+        ) {
+            URL::forceScheme('https');
+        }
+
         Passport::tokensExpireIn(new DateInterval(sprintf(
             'PT%dM',
             (int) config('authentication.mobile.access_token_minutes', 15),
@@ -339,6 +381,24 @@ class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perHour(5)->by($digester->digest('password-recovery-challenge', $challenge)),
                 Limit::perHour(10)->by($digester->digest('password-recovery-consume-ip', $ip)),
+            ];
+        });
+
+        RateLimiter::for('account-recovery-management', function (Request $request): array {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+            $actor = (string) ($request->user('web')?->getAuthIdentifier() ?? 'anonymous');
+            $target = (string) (
+                $request->route('userId')
+                ?? $request->input('target_user_id', 'unknown')
+            );
+
+            return [
+                Limit::perHour(5)->by(
+                    $digester->digest('account-recovery-management-actor', $actor),
+                ),
+                Limit::perHour(3)->by(
+                    $digester->digest('account-recovery-management-target', $target),
+                ),
             ];
         });
 

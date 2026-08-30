@@ -77,16 +77,6 @@ final class OrganizationAdministrationApiTest extends TenancyIntegrationTestCase
             'expected_version' => 0,
         ];
 
-        $this->postCommand(
-            '/api/v1/operator/branches',
-            $body,
-            (string) Str::ulid(),
-        )
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
-        $this->assertDatabaseCount('organization_administration_commands', 0);
-
-        $this->freshenCurrentWebSession($actor);
         $idempotencyKey = (string) Str::ulid();
         $created = $this->postCommand(
             '/api/v1/operator/branches',
@@ -248,7 +238,6 @@ final class OrganizationAdministrationApiTest extends TenancyIntegrationTestCase
         );
 
         $this->selectMembership($actorMembership);
-        $this->freshenCurrentWebSession($actor);
         $roles = $this->getJson('/api/v1/operator/roles')
             ->assertOk()
             ->assertJsonMissing(['injected.root' => 'injected.root']);
@@ -260,6 +249,25 @@ final class OrganizationAdministrationApiTest extends TenancyIntegrationTestCase
         self::assertNotContains('injected.root', $delegableKeys);
         $this->getJson('/api/v1/operator/roles?status=pending')
             ->assertUnprocessable();
+
+        $this->postCommand(
+            '/api/v1/operator/roles',
+            [
+                'key' => 'confirmation-required',
+                'name' => 'Confirmation Required',
+                'permission_keys' => ['roles.manage'],
+                'expected_version' => 0,
+            ],
+            (string) Str::ulid(),
+        )
+            ->assertForbidden()
+            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
+        $this->assertDatabaseMissing('roles', [
+            'organization_id' => $organization->getKey(),
+            'key' => 'confirmation-required',
+        ]);
+
+        $this->freshenCurrentWebSession($actor);
 
         $this->postCommand(
             '/api/v1/operator/roles',

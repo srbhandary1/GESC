@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install
 
 help:
 	@printf '%s\n' \
@@ -29,6 +29,7 @@ help:
 		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
 		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
 		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
+		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
 		'make soft-launch-status  Soft-launch process and health status' \
 		'make soft-launch-ready   Soft-launch readiness checklist' \
 		'make soft-launch-backup  Dump soft-launch Postgres to ~/ge-soft-launch/backups' \
@@ -41,6 +42,8 @@ help:
 		'make demo-e2e      Run the synthetic local-demo browser journey' \
 		'make demo-dist-e2e Run the browser journey against the built demo bundle' \
 		'make ai-eval       Run locked AI evaluation; speech complete when SPEECH_BENCHMARK_RUN_ID is set' \
+		'make ai-eval-review-export REVIEW_PATH=/abs/path.json  Export exact L1 review material' \
+		'make ai-eval-human-review REVIEW_PATH=/abs/path.json  Enforce complete independent review' \
 		'make openapi       Validate OpenAPI and check generated-client drift' \
 		'make release-contract Validate fail-closed CI release-gate structure' \
 		'make migrate       Apply local Laravel migrations' \
@@ -179,6 +182,16 @@ ai-eval:
 		echo 'speech benchmark skipped (set SPEECH_BENCHMARK_RUN_ID to include the PR-009 speech half)'; \
 	fi
 
+ai-eval-review-export:
+	@test -n "$(REVIEW_PATH)" || (printf '%s\n' 'Set REVIEW_PATH to an absolute outside-repository review JSON path.' && exit 1)
+	@case "$(REVIEW_PATH)" in /*) ;; *) printf '%s\n' 'REVIEW_PATH must be absolute.'; exit 1 ;; esac
+	cd $(API_DIR) && APP_ENV=local CONVERSATION_PROVIDER_DRIVER=fake CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=false $(PHP) artisan ai:evaluate --export-review="$(REVIEW_PATH)"
+
+ai-eval-human-review:
+	@test -n "$(REVIEW_PATH)" || (printf '%s\n' 'Set REVIEW_PATH to the absolute completed review JSON path.' && exit 1)
+	@case "$(REVIEW_PATH)" in /*) ;; *) printf '%s\n' 'REVIEW_PATH must be absolute.'; exit 1 ;; esac
+	cd $(API_DIR) && APP_ENV=local CONVERSATION_PROVIDER_DRIVER=fake CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=false $(PHP) artisan ai:evaluate --import-review="$(REVIEW_PATH)" --require-human-review
+
 openapi:
 	$(PNPM) run openapi:check
 
@@ -247,6 +260,10 @@ soft-launch-tunnel:
 soft-launch-tunnel-stop:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh tunnel-stop
+
+soft-launch-configure-stable:
+	@test -n "$(HOST)" || (printf '%s\n' 'Set HOST to the lowercase DNS hostname without a scheme, path or port.' && exit 1)
+	@GE_SOFT_LAUNCH_STABLE_HOST="$(HOST)" bash scripts/run-soft-launch.sh configure-stable-host
 
 soft-launch-health:
 	@chmod +x scripts/run-soft-launch.sh

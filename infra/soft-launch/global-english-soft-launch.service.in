@@ -5,12 +5,12 @@ Wants=network-online.target
 After=network-online.target docker.service
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
 WorkingDirectory=@PROJECT_ROOT@
-ExecStart=/usr/bin/make -C @PROJECT_ROOT@ soft-launch-start
-ExecStart=/usr/bin/make -C @PROJECT_ROOT@ soft-launch-tunnel
+ExecStart=@PROJECT_ROOT@/scripts/run-soft-launch.sh supervise
 ExecStop=-/usr/bin/make -C @PROJECT_ROOT@ soft-launch-stop
+Restart=on-failure
+RestartSec=5
 TimeoutStartSec=240
 TimeoutStopSec=90
 

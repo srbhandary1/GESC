@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Authentication\Mfa\ExpiredPrivilegedMfaEnrollmentPurger;
 use App\Authentication\Sessions\AuthenticationSessionCleanupWorker;
 use App\Conversation\Evaluation\AiEvaluationRunner;
+use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\RoleplayCatalogSeeder;
+use App\Conversation\Support\RoleplayCatalog;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
@@ -17,11 +20,16 @@ use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionCampaignRu
 use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionConfiguration;
 use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionRetentionService;
 use App\Curriculum\Commissioning\MediaTranscription\MediaTranscriptionSafeReportWriter;
+use App\Curriculum\LessonPractice\App0063LevelsCommissioner;
+use App\Curriculum\LessonPractice\App0065AuthoredLevelsReplacer;
+use App\Curriculum\LessonPractice\App0066EnglishReviewReplacer;
+use App\Curriculum\LessonPractice\App0067KannadaReviewReplacer;
 use App\Identity\LocalOperatorIdentityBootstrapper;
 use App\Learning\LevelVideos\LegacyLevelVideoCommissioner;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\User;
+use App\Operator\MediaLibrary\App0062LessonAudioIngestor;
 use App\Operator\MediaLibrary\MediaLibraryMaintenance;
 use App\Operator\OrganizationAdministration\OrganizationAdministrationMaintenance;
 use App\Tenancy\OrganizationAuthorization;
@@ -131,6 +139,251 @@ Artisan::command(
         return 0;
     },
 )->purpose('Create the exact approved local LPL pilot commissioning authority');
+
+Artisan::command(
+    'media:ingest-app0062-lesson-audio
+        {--username= : Operator username}
+        {--password= : Operator password}
+        {--inventory= : Absolute inventory JSON path}
+        {--staging-manifest= : Absolute staging hash manifest path}
+        {--program= : LPL pilot program ULID}
+        {--appointment= : Accepted rights-confirmer appointment ULID}
+        {--approval=APP-0062 : Exact approval reference}',
+    function (): int {
+        $username = $this->option('username');
+        $password = $this->option('password');
+        $inventory = $this->option('inventory');
+        $staging = $this->option('staging-manifest');
+        $program = $this->option('program');
+        $appointment = $this->option('appointment');
+        $approval = $this->option('approval');
+        if (
+            ! is_string($username) || $username === ''
+            || ! is_string($password) || $password === ''
+            || ! is_string($inventory) || ! is_file($inventory)
+            || ! is_string($staging) || ! is_file($staging)
+            || ! is_string($program) || ! Str::isUlid($program)
+            || ! is_string($appointment) || ! Str::isUlid($appointment)
+            || ! is_string($approval) || $approval !== 'APP-0062'
+        ) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0062_ingest_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0062LessonAudioIngestor::class)->ingest(
+                actorUsername: $username,
+                actorPassword: $password,
+                inventoryPath: $inventory,
+                stagingManifestPath: $staging,
+                programId: $program,
+                appointmentId: $appointment,
+                approvalReference: $approval,
+            );
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0062_ingest_rejected',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            'approval_reference' => $approval,
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return $result['failures'] === [] ? 0 : 1;
+    },
+)->purpose('Ingest APP-0062 exact teaching-audio hashes as private lesson_audio');
+
+Artisan::command(
+    'lesson-practice:commission-app0063-levels
+        {--inventory= : Path to levels-1-17 teaching-audio hash inventory JSON}
+        {--approval=APP-0063 : Must be APP-0063}',
+    function (): int {
+        $inventory = $this->option('inventory');
+        $approval = $this->option('approval');
+        if (
+            ! is_string($inventory) || ! is_file($inventory)
+            || ! is_string($approval) || $approval !== 'APP-0063'
+        ) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0063_commission_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0063LevelsCommissioner::class)
+                ->commission($inventory);
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0063_commission_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0063 private auto-commission Levels 2–17 blueprints/reviews/attachments');
+
+Artisan::command(
+    'lesson-practice:replace-app0065-authored-levels
+        {--approval=APP-0065 : Must be APP-0065}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0065') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0065_replace_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0065AuthoredLevelsReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0065_replace_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0065 replace Levels 2–17 provisional templates with authored lesson text');
+
+Artisan::command(
+    'lesson-practice:record-app0066-english-review
+        {--approval=APP-0066 : Must be APP-0066}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0066') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0066_review_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0066EnglishReviewReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0066_review_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0066 record named English academic review of authored Levels 2–17');
+
+Artisan::command(
+    'lesson-practice:record-app0067-kannada-review
+        {--approval=APP-0067 : Must be APP-0067}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0067') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0067_review_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0067KannadaReviewReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0067_review_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0067 record named Kannada review of authored Levels 2–17');
+
+Artisan::command(
+    'conversation:seed-roleplay-catalog {--organization= : Organization ULID; defaults to Direct}',
+    function (): int {
+        $organizationOption = $this->option('organization');
+        $organizationId = is_string($organizationOption) && $organizationOption !== ''
+            ? $organizationOption
+            : (string) DB::table('organizations')
+                ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+                ->value('id');
+
+        if ($organizationId === '' || ! Str::isUlid($organizationId)) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'roleplay_catalog_organization_missing',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $result = app(RoleplayCatalogSeeder::class)
+            ->seedOrganization($organizationId, now());
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            'organization_id' => $organizationId,
+            ...$result,
+            'catalog_size' => count(RoleplayCatalog::entries()),
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('Seed synthetic Role-play catalog personas/scenarios for an organization');
 
 Artisan::command(
     'lpl:transcribe-media
@@ -530,23 +783,37 @@ Artisan::command(
     })->purpose('Prepare, review, complete or purge the PR-009 speech benchmark');
 
 Artisan::command(
-    'ai:evaluate {--export-review=} {--import-review=} {--report=}',
+    'ai:evaluate
+        {--export-review=}
+        {--import-review=}
+        {--report=}
+        {--require-human-review : Fail unless every locked case has complete independent acceptance evidence}',
     function (): int {
         $export = $this->option('export-review');
         $import = $this->option('import-review');
         $reportPath = $this->option('report');
         $runner = app(AiEvaluationRunner::class);
-        $report = $runner->run(
-            exportReviewPath: is_string($export) && $export !== ''
-                ? $export
-                : null,
-            importReviewPath: is_string($import) && $import !== ''
-                ? $import
-                : null,
-            reportPath: is_string($reportPath) && $reportPath !== ''
-                ? $reportPath
-                : storage_path('app/ai-evaluation/latest-report.json'),
-        );
+        try {
+            $report = $runner->run(
+                exportReviewPath: is_string($export) && $export !== ''
+                    ? $export
+                    : null,
+                importReviewPath: is_string($import) && $import !== ''
+                    ? $import
+                    : null,
+                reportPath: is_string($reportPath) && $reportPath !== ''
+                    ? $reportPath
+                    : storage_path('app/ai-evaluation/latest-report.json'),
+                requireHumanReview: (bool) $this->option('require-human-review'),
+            );
+        } catch (ConversationOperationRejected) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'ai_evaluation_review_rejected',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
         $this->info(json_encode([
             'status' => $report['status'],
             'suite_hash' => $report['suite_hash'],

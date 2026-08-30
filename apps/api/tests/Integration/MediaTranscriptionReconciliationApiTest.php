@@ -80,11 +80,6 @@ final class MediaTranscriptionReconciliationApiTest extends TenancyIntegrationTe
             'expected_metadata_version' => 0,
         ];
 
-        $this->getJson($candidateUri)
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
-
-        $this->freshenCurrentWebSession($actor);
         $candidate = $this->getJson($candidateUri)
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, private')

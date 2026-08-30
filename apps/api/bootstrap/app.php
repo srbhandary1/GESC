@@ -24,6 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(
+            at: array_values(array_filter(array_map(
+                trim(...),
+                explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1')),
+            ))),
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
         $middleware->prepend(AssignCorrelationId::class);
         $middleware->statefulApi();
         $middleware->alias([

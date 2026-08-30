@@ -32,6 +32,14 @@ abstract class TenancyIntegrationTestCase extends TestCase
     {
         parent::setUp();
 
+        $connection = (string) config('database.default');
+        $database = (string) config('database.connections.'.$connection.'.database');
+        if ($connection === 'pgsql' && $database !== 'global_english_test') {
+            throw new RuntimeException(
+                'PostgreSQL integration tests must use global_english_test, not '.$database.'.',
+            );
+        }
+
         $this->seed(FoundationSeeder::class);
     }
 

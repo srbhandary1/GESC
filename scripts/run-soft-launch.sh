@@ -25,6 +25,8 @@ CADDYFILE="${ROOT_DIR}/infra/soft-launch/Caddyfile"
 PROXY_PORT="${GE_SOFT_LAUNCH_PROXY_PORT:-9080}"
 API_PORT="${GE_SOFT_LAUNCH_API_PORT:-8000}"
 PUBLIC_HTTP_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTP_PORT:-8080}"
+PUBLIC_HTTPS_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT:-8443}"
+REQUESTED_STABLE_HOST="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
 
 MODE="${1:-status}"
 
@@ -33,6 +35,22 @@ mkdir -p "${PID_DIR}" "${LOG_DIR}" "${RUNTIME_DIR}/env" "${RUNTIME_DIR}/backups"
 die() {
   printf '%s\n' "$*" >&2
   exit 1
+}
+
+validate_stable_host() {
+  local host="$1"
+  [[ "${host}" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])$ ]] \
+    && [[ "${host}" == *.* ]] \
+    || die "GE_SOFT_LAUNCH_STABLE_HOST must be a lowercase DNS hostname without a scheme, path or port."
+}
+
+stable_host_from_environment() {
+  source_soft_launch_env
+  local host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+  if [[ -n "${host}" ]]; then
+    validate_stable_host "${host}"
+  fi
+  printf '%s' "${host}"
 }
 
 require_php() {
@@ -78,13 +96,21 @@ ensure_services() {
 }
 
 ensure_web_dist() {
-  if [[ ! -f "${WEB_DIST}/index.html" ]]; then
+  # Invite-only soft-launch is an explicit review/pilot build (D-0030):
+  # show draft Kannada with the visible preview notice. Ordinary
+  # `pnpm --filter @global-english/web build` stays approved-only.
+  local stamp="${WEB_DIST}/.soft-launch-ui-preview"
+  if [[ ! -f "${WEB_DIST}/index.html" || ! -f "${stamp}" ]]; then
     require_php
     if [[ -x "${PNPM_BIN}" ]]; then
-      (cd "${ROOT_DIR}" && PATH="$(dirname "${NODE_BIN}"):${PATH}" "${PNPM_BIN}" --filter @global-english/web build)
+      (cd "${ROOT_DIR}" && PATH="$(dirname "${NODE_BIN}"):${PATH}" \
+        VITE_UI_TRANSLATION_PREVIEW=true \
+        "${PNPM_BIN}" --filter @global-english/web build)
     else
-      (cd "${ROOT_DIR}" && pnpm --filter @global-english/web build)
+      (cd "${ROOT_DIR}" && VITE_UI_TRANSLATION_PREVIEW=true \
+        pnpm --filter @global-english/web build)
     fi
+    printf 'preview\n' >"${stamp}"
   fi
   [[ -f "${WEB_DIST}/index.html" ]] || die "Web dist missing at ${WEB_DIST}"
 }
@@ -144,12 +170,20 @@ start_proxy() {
 }
 
 start_public_http() {
-  # Static-IP entry redirects authenticated use to the current HTTPS origin.
-  # Direct HTTP serving remains available only before an HTTPS origin exists.
+  # The static-IP edge either terminates stable public TLS or redirects HTTP to
+  # the current temporary HTTPS origin. It never serves authenticated HTTP
+  # once a public HTTPS origin exists.
   require_caddy
   stop_pidfile public-http
   ensure_web_dist
   source_soft_launch_env
+  local stable_host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+  local public_https_port="${GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT:-${PUBLIC_HTTPS_PORT}}"
+  if [[ -n "${stable_host}" ]]; then
+    validate_stable_host "${stable_host}"
+    [[ "${APP_URL:-}" == "https://${stable_host}" ]] \
+      || die "APP_URL must equal https://${stable_host} when the stable HTTPS edge is enabled."
+  fi
   # shellcheck disable=SC1090
   source "${PUBLIC_HTTP_CONFIGURATOR}"
   write_soft_launch_public_http_config \
@@ -157,13 +191,20 @@ start_public_http() {
     "${PUBLIC_HTTP_PORT}" \
     "${API_PORT}" \
     "${WEB_DIST}" \
-    "${APP_URL:-}"
+    "${APP_URL:-}" \
+    "${stable_host}" \
+    "${public_https_port}" \
+    "${PROXY_PORT}"
   nohup "${CADDY_BIN}" run --config "${RUNTIME_DIR}/env/Caddyfile.public" --adapter caddyfile \
     >"${LOG_DIR}/public-http.log" 2>&1 &
   echo $! >"${PID_DIR}/public-http.pid"
 }
 
 start_tunnel() {
+  local stable_host
+  stable_host="$(stable_host_from_environment)"
+  [[ -z "${stable_host}" ]] \
+    || die "Stable HTTPS is configured at https://${stable_host}; the rotating Quick Tunnel is disabled."
   if [[ ! -x "${CLOUDFLARED_BIN}" ]]; then
     if command -v cloudflared >/dev/null 2>&1; then
       CLOUDFLARED_BIN="$(command -v cloudflared)"
@@ -173,7 +214,9 @@ start_tunnel() {
   fi
   stop_pidfile tunnel
   rm -f "${RUNTIME_DIR}/tunnel.url"
-  nohup "${CLOUDFLARED_BIN}" tunnel --url "http://127.0.0.1:${PROXY_PORT}" \
+  # HTTP/2: Safari (especially iPhone) prefers HTTP/3/QUIC and otherwise
+  # shows “cannot connect to the server” when the Quick Tunnel QUIC path drops.
+  nohup "${CLOUDFLARED_BIN}" tunnel --protocol http2 --url "http://127.0.0.1:${PROXY_PORT}" \
     >"${LOG_DIR}/tunnel.log" 2>&1 &
   echo $! >"${PID_DIR}/tunnel.pid"
 
@@ -195,18 +238,42 @@ start_tunnel() {
 
 apply_public_origin() {
   local origin="$1"
+  persist_public_origin "${origin}" ""
+  start_api
+  start_worker
+  start_public_http
+  wait_health
+}
+
+persist_public_origin() {
+  local origin="$1"
+  local stable_host="${2:-}"
   local host
   host="$(printf '%s' "${origin}" | sed -E 's#https://##' | sed -E 's#/.*##')"
-  python3 - <<PY
+  python3 - "${ENV_FILE}" "${origin}" "${host}" "${stable_host}" \
+    "${PROXY_PORT}" "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}" <<'PY'
+import sys
 from pathlib import Path
-path = Path("${ENV_FILE}")
+
+path = Path(sys.argv[1])
+origin = sys.argv[2]
+host = sys.argv[3]
+stable_host = sys.argv[4]
+proxy_port = sys.argv[5]
+public_http_port = sys.argv[6]
+public_https_port = sys.argv[7]
 text = path.read_text(encoding="utf-8") if path.exists() else ""
 overrides = {
-    "APP_URL": "${origin}",
-    "SESSION_SECURE_COOKIE": "true",
+    "APP_URL": origin,
+    "SESSION_SECURE_COOKIE": "false",
+    "SESSION_COOKIE": "global_english_session",
     "SESSION_SAME_SITE": "lax",
-    "SANCTUM_STATEFUL_DOMAINS": "${host},127.0.0.1:${PROXY_PORT},127.0.0.1:${PUBLIC_HTTP_PORT},localhost:${PROXY_PORT}",
+    "SANCTUM_STATEFUL_DOMAINS": f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174",
 }
+if stable_host:
+    overrides["SESSION_SECURE_COOKIE"] = "true"
+    overrides["GE_SOFT_LAUNCH_STABLE_HOST"] = stable_host
+    overrides["GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT"] = public_https_port
 lines = []
 seen = set()
 for raw in text.splitlines():
@@ -225,10 +292,17 @@ for key, value in overrides.items():
 path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 path.chmod(0o600)
 PY
-  start_api
-  start_worker
-  start_public_http
-  wait_health
+}
+
+configure_stable_host() {
+  local stable_host="${REQUESTED_STABLE_HOST}"
+  [[ -n "${stable_host}" ]] \
+    || die "Set HOST, for example: make soft-launch-configure-stable HOST=ai.globalspokenenglish.com"
+  validate_stable_host "${stable_host}"
+  persist_public_origin "https://${stable_host}" "${stable_host}"
+  printf 'Configured stable HTTPS origin: https://%s\n' "${stable_host}"
+  printf 'Next: point public DNS to the static IP and map WAN 80/443 to this host:%s/%s, then run make soft-launch-restart.\n' \
+    "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
 }
 
 wait_health() {
@@ -244,6 +318,8 @@ wait_health() {
 }
 
 status() {
+  local stable_host
+  stable_host="$(stable_host_from_environment)"
   for name in api worker scheduler caddy public-http tunnel; do
     if pid_alive "${PID_DIR}/${name}.pid"; then
       printf '%-12s running (pid %s)\n' "${name}" "$(cat "${PID_DIR}/${name}.pid")"
@@ -253,6 +329,11 @@ status() {
   done
   if [[ -f "${RUNTIME_DIR}/tunnel.url" ]]; then
     printf 'tunnel url: %s\n' "$(cat "${RUNTIME_DIR}/tunnel.url")"
+  fi
+  if [[ -n "${stable_host}" ]]; then
+    printf 'stable url: https://%s\n' "${stable_host}"
+    printf 'edge mapping: WAN 80 -> LAN %s; WAN 443 -> LAN %s\n' \
+      "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
   fi
   if curl --silent --fail --max-time 2 "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null 2>&1; then
     printf 'health live: ok\n'
@@ -266,6 +347,7 @@ backup_db() {
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   local out="${RUNTIME_DIR}/backups/soft-launch-${stamp}.sql.gz"
   (
+    umask 077
     cd "${ROOT_DIR}"
     # shellcheck disable=SC1091
     set -a
@@ -275,6 +357,45 @@ backup_db() {
       | gzip -c >"${out}"
   )
   printf 'Wrote %s\n' "${out}"
+}
+
+supervise() {
+  local stopping=false
+  local health_failures=0
+  local name
+
+  trap 'stopping=true' INT TERM
+
+  "$0" start
+  local stable_host
+  stable_host="$(stable_host_from_environment)"
+  if [[ -z "${stable_host}" ]]; then
+    "$0" tunnel
+  fi
+
+  while [[ "${stopping}" == "false" ]]; do
+    for name in api worker scheduler caddy public-http; do
+      if ! pid_alive "${PID_DIR}/${name}.pid"; then
+        die "Soft-launch supervisor detected stopped process: ${name}"
+      fi
+    done
+    if [[ -z "${stable_host}" ]] && ! pid_alive "${PID_DIR}/tunnel.pid"; then
+      die "Soft-launch supervisor detected stopped process: tunnel"
+    fi
+
+    if curl --silent --fail --max-time 2 \
+      "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null 2>&1; then
+      health_failures=0
+    else
+      health_failures=$((health_failures + 1))
+      if (( health_failures >= 3 )); then
+        die "Soft-launch supervisor detected three consecutive health failures"
+      fi
+    fi
+
+    sleep 5 &
+    wait $! || true
+  done
 }
 
 case "${MODE}" in
@@ -289,9 +410,16 @@ case "${MODE}" in
     start_public_http
     wait_health
     status
-    printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
-    printf 'Static-IP entry: http://127.0.0.1:%s (redirects to HTTPS when configured)\n' \
-      "${PUBLIC_HTTP_PORT}"
+    stable_host="$(stable_host_from_environment)"
+    if [[ -n "${stable_host}" ]]; then
+      printf '\nPrimary HTTPS entry: https://%s\n' "${stable_host}"
+      printf 'Router mapping: WAN 80 -> this host:%s; WAN 443 -> this host:%s\n' \
+        "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
+    else
+      printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
+      printf 'Static-IP entry: http://127.0.0.1:%s (redirects to HTTPS when configured)\n' \
+        "${PUBLIC_HTTP_PORT}"
+    fi
     ;;
   stop)
     stop_pidfile tunnel
@@ -305,7 +433,8 @@ case "${MODE}" in
     ;;
   restart)
     restart_tunnel=false
-    if pid_alive "${PID_DIR}/tunnel.pid"; then
+    stable_host="$(stable_host_from_environment)"
+    if [[ -z "${stable_host}" ]] && pid_alive "${PID_DIR}/tunnel.pid"; then
       restart_tunnel=true
     fi
     "$0" stop
@@ -321,6 +450,9 @@ case "${MODE}" in
     stop_pidfile tunnel
     rm -f "${RUNTIME_DIR}/tunnel.url"
     ;;
+  configure-stable-host)
+    configure_stable_host
+    ;;
   status)
     status
     ;;
@@ -334,7 +466,10 @@ case "${MODE}" in
     curl --silent --show-error --fail "http://127.0.0.1:${PROXY_PORT}/api/v1/health/ready"
     printf '\n'
     ;;
+  supervise)
+    supervise
+    ;;
   *)
-    die "Usage: $0 {start|stop|restart|status|tunnel|tunnel-stop|health|backup}"
+    die "Usage: $0 {start|stop|restart|status|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
     ;;
 esac

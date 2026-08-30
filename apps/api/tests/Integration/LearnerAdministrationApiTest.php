@@ -6,7 +6,6 @@ namespace Tests\Integration;
 
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
-use App\Models\AuthenticationSession;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Role;
@@ -129,15 +128,6 @@ final class LearnerAdministrationApiTest extends TenancyIntegrationTestCase
             ->assertUnprocessable();
         $this->getJson('/api/v1/operator/learners/'.$foreignMembership->getKey())
             ->assertNotFound();
-
-        $this->postCommand(
-            '/api/v1/operator/learners/'.$learnerMembership->getKey().'/goal-corrections',
-            ['goal_key' => 'workplace-confidence', 'expected_version' => 1],
-            (string) Str::ulid(),
-        )
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
-        $this->freshenCurrentWebSession($actor);
 
         $goalKey = (string) Str::ulid();
         $corrected = $this->postCommand(
@@ -420,21 +410,6 @@ final class LearnerAdministrationApiTest extends TenancyIntegrationTestCase
                 'membership_id' => $membership->getKey(),
             ])
             ->assertOk();
-    }
-
-    private function freshenCurrentWebSession(User $user): void
-    {
-        $session = AuthenticationSession::query()
-            ->where('user_id', $user->getKey())
-            ->whereNull('revoked_at')
-            ->orderByDesc('started_at')
-            ->orderByDesc('id')
-            ->firstOrFail();
-        $this->markTestAuthenticationSessionPrivileged(
-            (string) $session->getKey(),
-            $user,
-            now(),
-        );
     }
 
     /**

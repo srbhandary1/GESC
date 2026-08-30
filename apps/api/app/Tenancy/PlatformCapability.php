@@ -10,6 +10,6 @@ enum PlatformCapability: string
     case AuthenticationSessionLifecycle = 'authentication.session.lifecycle';
     case MobileCredentialLifecycle = 'authentication.mobile_credential.lifecycle';
     case PrivilegedMfaLifecycle = 'authentication.privileged_mfa.lifecycle';
-    case PasswordIdentityRecovery = 'platform.identity_recovery.approve';
+    case AccountRecoveryManagement = 'platform.account_recovery.manage';
     case ContentEmergencySuspend = 'content.emergency-suspend';
 }

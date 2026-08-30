@@ -82,6 +82,7 @@ grep -Fq 'REPLACE_WITH_CURRENT_SUBSCRIPTION_EVIDENCE_ID' \
 
 redirect_config="$test_root/Caddyfile.redirect"
 direct_config="$test_root/Caddyfile.direct"
+stable_config="$test_root/Caddyfile.stable"
 bash -c '
   source "$1"
   write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
@@ -101,20 +102,104 @@ bash -c '
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$direct_config"
 grep -Fq 'root * /srv/web' "$direct_config"
 
+bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "https://ai.globalspokenenglish.com" "ai.globalspokenenglish.com" 8443 9080
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$stable_config"
+grep -Fq 'admin off' "$stable_config"
+grep -Fq 'http_port 8080' "$stable_config"
+grep -Fq 'https_port 8443' "$stable_config"
+grep -Fq 'redir * https://ai.globalspokenenglish.com{uri} 307' "$stable_config"
+grep -Fq 'ai.globalspokenenglish.com {' "$stable_config"
+grep -Fq 'reverse_proxy 127.0.0.1:9080' "$stable_config"
+grep -Fq 'Strict-Transport-Security "max-age=31536000"' "$stable_config"
+grep -Fq 'X-Content-Type-Options "nosniff"' "$stable_config"
+if grep -Eq 'tls internal|trycloudflare' "$stable_config"; then
+  printf '%s\n' 'stable public entry must use a public certificate and stable host only' >&2
+  exit 1
+fi
+
+if bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "https://wrong.example.test" "ai.globalspokenenglish.com" 8443 9080
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$test_root/Caddyfile.invalid" 2>/dev/null; then
+  printf '%s\n' 'stable public entry accepted a mismatched APP_URL' >&2
+  exit 1
+fi
+
 reconciliation_aid="$root_dir/apps/web/public/lpl01-reconciliation.html"
-grep -Fq 'Temporary controlled soft-launch commissioning aid.' "$reconciliation_aid"
-grep -Fq 'fresh-password-confirmed API' "$reconciliation_aid"
-if grep -Eq 'localhost-only|fresh-TOTP' "$reconciliation_aid"; then
-  printf '%s\n' 'reconciliation aid contains a stale access or authentication label' >&2
+if [ -e "$reconciliation_aid" ]; then
+  printf '%s\n' 'completed reconciliation aid must remain retired' >&2
   exit 1
 fi
 
 soft_launch_runner="$root_dir/scripts/run-soft-launch.sh"
+grep -Fq 'umask 077' "$soft_launch_runner"
 grep -Fq 'nohup "${PHP_BIN}" -S "127.0.0.1:${API_PORT}" "${API_ROUTER}"' \
   "$soft_launch_runner"
 if grep -Fq 'artisan serve' "$soft_launch_runner"; then
   printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
   exit 1
 fi
+grep -Fq 'the rotating Quick Tunnel is disabled' "$soft_launch_runner"
+grep -Fq 'WAN 80 -> this host:%s; WAN 443 -> this host:%s' "$soft_launch_runner"
+
+configured_runtime="$test_root/configured-runtime"
+mkdir -p "$configured_runtime/env"
+printf '%s\n' 'APP_ENV=soft-launch' > "$configured_runtime/env/soft-launch.env"
+GE_SOFT_LAUNCH_RUNTIME="$configured_runtime" \
+GE_SOFT_LAUNCH_STABLE_HOST=ai.globalspokenenglish.com \
+  bash "$soft_launch_runner" configure-stable-host >/dev/null
+grep -Fxq 'APP_URL=https://ai.globalspokenenglish.com' \
+  "$configured_runtime/env/soft-launch.env"
+grep -Fxq 'GE_SOFT_LAUNCH_STABLE_HOST=ai.globalspokenenglish.com' \
+  "$configured_runtime/env/soft-launch.env"
+grep -Fxq 'GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT=8443' \
+  "$configured_runtime/env/soft-launch.env"
+grep -Fq 'ai.globalspokenenglish.com,127.0.0.1:9080' \
+  "$configured_runtime/env/soft-launch.env"
+test "$(stat -c '%a' "$configured_runtime/env/soft-launch.env")" = 600
+
+soft_launch_caddyfile="$root_dir/infra/soft-launch/Caddyfile"
+grep -Fq 'handle /oauth/* {' "$soft_launch_caddyfile"
+grep -Fq 'handle /auth/mobile/* {' "$soft_launch_caddyfile"
+grep -Fq 'http://:9080 {' "$soft_launch_caddyfile"
+grep -Fq 'bind 127.0.0.1' "$soft_launch_caddyfile"
+grep -Fq 'header_up X-Forwarded-Proto https' "$soft_launch_caddyfile"
+grep -Fq '@credentialPages path /password-establishment.html /password-recovery.html' \
+  "$soft_launch_caddyfile"
+grep -Fq 'handle @credentialPages {' "$soft_launch_caddyfile"
+grep -Fq 'Cache-Control "no-store, max-age=0"' "$soft_launch_caddyfile"
+if grep -Eq 'reconciliationPage|lpl01-reconciliation|Referrer-Policy "same-origin"' \
+  "$soft_launch_caddyfile"; then
+  printf '%s\n' 'soft-launch proxy must not expose the retired reconciliation page' >&2
+  exit 1
+fi
+laravel_import_count="$(grep -Fc 'import laravel_backend' "$soft_launch_caddyfile")"
+if [ "$laravel_import_count" -lt 6 ]; then
+  printf '%s\n' 'soft-launch proxy must route API, Sanctum, OAuth, mobile authentication and health paths to Laravel' >&2
+  exit 1
+fi
+
+service_worker="$root_dir/apps/web/public/service-worker.js"
+offline_registration="$root_dir/apps/web/src/offline/registerOfflineShell.ts"
+grep -Fq "'global-english-public-shell-'" "$service_worker"
+grep -Fq "'/oauth/'" "$service_worker"
+grep -Fq "'/auth/mobile/'" "$service_worker"
+grep -Fq "'/oauth/'" "$offline_registration"
+grep -Fq "'/auth/mobile/'" "$offline_registration"
+grep -Fq "updateViaCache: 'none'" "$offline_registration"
+grep -Fq 'await registration.update()' "$offline_registration"
+grep -Fq 'OFFLINE_SHELL_VERSION' "$service_worker"
+grep -Fq "version: 'v5'" "$service_worker"
+grep -Fq "'/password-recovery.html'" "$service_worker"
+grep -Fq "'/password-establishment.html'" "$service_worker"
+
+soft_launch_unit="$root_dir/infra/soft-launch/global-english-soft-launch.service.in"
+grep -Fq 'Type=simple' "$soft_launch_unit"
+grep -Fq 'run-soft-launch.sh supervise' "$soft_launch_unit"
+grep -Fq 'Restart=on-failure' "$soft_launch_unit"
 
 printf '%s\n' 'Soft-launch environment contract passed.'

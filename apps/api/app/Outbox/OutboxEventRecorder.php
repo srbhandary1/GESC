@@ -17,6 +17,7 @@ final readonly class OutboxEventRecorder
     private const array SAFE_PAYLOAD_KEYS = [
         'authority_appointment_event_id',
         'authority_appointment_id',
+        'account_recovery_management_event_id',
         'cohort_id',
         'content_review_id',
         'curriculum_clone_id',
@@ -46,7 +47,6 @@ final readonly class OutboxEventRecorder
         'organization_id',
         'previous_publication_id',
         'program_id',
-        'privileged_password_recovery_case_id',
         'publication_event_id',
         'publication_id',
         'recipient_organization_id',

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountRecoveryManagementController;
 use App\Http\Controllers\AuthenticationSessionController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CurrentIdentityController;
@@ -9,26 +10,28 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
+use App\Http\Controllers\LearnerLevelSessionController;
 use App\Http\Controllers\LearnerLevelVideoController;
 use App\Http\Controllers\LearnerMediaController;
 use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
-use App\Http\Controllers\LocalExcludedPasswordRecoveryController;
+use App\Http\Controllers\LearnerTuitionRequestController;
 use App\Http\Controllers\LocalPasswordEstablishmentController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OperatorContentWorkspaceController;
 use App\Http\Controllers\OperatorLearnerAdministrationController;
+use App\Http\Controllers\OperatorLessonPracticeController;
 use App\Http\Controllers\OperatorMediaLibraryController;
 use App\Http\Controllers\OperatorMediaTranscriptionController;
 use App\Http\Controllers\OperatorOrganizationAdministrationController;
 use App\Http\Controllers\OperatorPrivacyController;
 use App\Http\Controllers\OperatorShellController;
+use App\Http\Controllers\OperatorTuitionRequestController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\PasswordAuthenticationController;
-use App\Http\Controllers\PlatformIdentityRecoveryController;
 use App\Http\Controllers\PrivilegedMfaController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -49,6 +52,9 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/password/sign-ins', [PasswordAuthenticationController::class, 'signIn'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-sign-ins'])
         ->name('api.v1.auth.password.sign-ins.store');
+    Route::post('/auth/password/invitation-enrollments', [PasswordAuthenticationController::class, 'enrollWithInvitation'])
+        ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-recoveries'])
+        ->name('api.v1.auth.password.invitation-enrollments.store');
     Route::get('/auth/password/mode', [PasswordAuthenticationController::class, 'mode'])
         ->middleware(RequireStatefulBrowserRequest::class)
         ->name('api.v1.auth.password.mode');
@@ -58,9 +64,9 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/password/recoveries', [PasswordAuthenticationController::class, 'recover'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-recoveries'])
         ->name('api.v1.auth.password.recoveries.store');
-    Route::post('/auth/password/establishment-recoveries', [PasswordAuthenticationController::class, 'establishRecovered'])
+    Route::post('/auth/password/setups', [PasswordAuthenticationController::class, 'completeSetup'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-recoveries'])
-        ->name('api.v1.auth.password.establishment-recoveries.store');
+        ->name('api.v1.auth.password.setups.store');
     Route::get('/local/password-establishment', [LocalPasswordEstablishmentController::class, 'pending'])
         ->middleware(RequireStatefulBrowserRequest::class)
         ->name('api.v1.local.password-establishment.show');
@@ -130,29 +136,13 @@ Route::prefix('v1')->group(function (): void {
 
     Route::prefix('platform')->middleware(['auth:web', 'auth.session', 'auth.password-confirmed'])
         ->group(function (): void {
-            Route::post('/identity-recovery-cases', [PlatformIdentityRecoveryController::class, 'store'])
-                ->name('api.v1.platform.identity-recovery-cases.store');
-            Route::post('/identity-recovery-cases/{caseId}/approvals', [PlatformIdentityRecoveryController::class, 'approve'])
-                ->whereUlid('caseId')
-                ->name('api.v1.platform.identity-recovery-cases.approvals.store');
-            Route::post('/identity-recovery-cases/{caseId}/complete', [PlatformIdentityRecoveryController::class, 'complete'])
-                ->whereUlid('caseId')
-                ->name('api.v1.platform.identity-recovery-cases.complete');
-        });
-
-    Route::prefix('local/excluded-password-recovery')
-        ->middleware(['auth:web', 'auth.session'])
-        ->group(function (): void {
-            Route::get('/status', [LocalExcludedPasswordRecoveryController::class, 'status'])
-                ->name('api.v1.local.excluded-password-recovery.status');
-            Route::middleware('auth.password-confirmed')->group(function (): void {
-                Route::post('/open', [LocalExcludedPasswordRecoveryController::class, 'open'])
-                    ->name('api.v1.local.excluded-password-recovery.open');
-                Route::post('/approve', [LocalExcludedPasswordRecoveryController::class, 'approve'])
-                    ->name('api.v1.local.excluded-password-recovery.approve');
-                Route::post('/complete', [LocalExcludedPasswordRecoveryController::class, 'complete'])
-                    ->name('api.v1.local.excluded-password-recovery.complete');
-            });
+            Route::post('/account-recovery/setups', [AccountRecoveryManagementController::class, 'requestSetup'])
+                ->middleware('throttle:account-recovery-management')
+                ->name('api.v1.platform.account-recovery.setups.store');
+            Route::put('/account-recovery/users/{userId}/contact', [AccountRecoveryManagementController::class, 'replaceContact'])
+                ->whereUlid('userId')
+                ->middleware('throttle:account-recovery-management')
+                ->name('api.v1.platform.account-recovery.users.contact.update');
         });
 
     Route::post('/auth/mobile/revoke', [MobileAuthenticationController::class, 'revoke'])
@@ -197,6 +187,14 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('fact')
             ->name('api.v1.me.ai-memory.destroy');
         Route::get(
+            '/me/tuition-requests',
+            [LearnerTuitionRequestController::class, 'index'],
+        )->name('api.v1.me.tuition-requests.index');
+        Route::post(
+            '/me/tuition-requests',
+            [LearnerTuitionRequestController::class, 'store'],
+        )->name('api.v1.me.tuition-requests.store');
+        Route::get(
             '/missions/{mission}',
             [LearnerMissionController::class, 'show'],
         )->whereUlid('mission')
@@ -239,6 +237,46 @@ Route::prefix('v1')->group(function (): void {
             [LearnerLevelVideoController::class, 'index'],
         )->name('api.v1.me.level-videos.index');
         Route::get(
+            '/me/levels',
+            [LearnerLevelSessionController::class, 'index'],
+        )->name('api.v1.me.levels.index');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions',
+            [LearnerLevelSessionController::class, 'sessions'],
+        )->whereNumber('levelNumber')
+            ->name('api.v1.me.levels.sessions.index');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions/{partId}',
+            [LearnerLevelSessionController::class, 'show'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.show');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions/{partId}/audio',
+            [LearnerLevelSessionController::class, 'audio'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.audio.show');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/completions',
+            [LearnerLevelSessionController::class, 'complete'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.completions.store');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/check-submissions',
+            [LearnerLevelSessionController::class, 'submitCheck'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.check-submissions.store');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/conversation-sessions',
+            [LearnerLevelSessionController::class, 'startConversation'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.me.levels.sessions.conversation-sessions.store');
+        Route::get(
             '/media-assets/{asset}/lesson-video',
             [LearnerLevelVideoController::class, 'show'],
         )->whereUlid('asset')
@@ -260,6 +298,12 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('session')
             ->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.turns.store');
+        Route::post(
+            '/conversation-sessions/{session}/speech',
+            [ConversationController::class, 'speak'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.speech.store');
         Route::get(
             '/conversation-turns/{turn}/events',
             [ConversationController::class, 'events'],
@@ -328,6 +372,15 @@ Route::prefix('v1')->group(function (): void {
             [OperatorLearnerAdministrationController::class, 'learners'],
         )->name('api.v1.operator.learners.index');
         Route::get(
+            '/operator/tuition-requests',
+            [OperatorTuitionRequestController::class, 'index'],
+        )->name('api.v1.operator.tuition-requests.index');
+        Route::post(
+            '/operator/tuition-requests/{tuitionRequest}/acknowledgements',
+            [OperatorTuitionRequestController::class, 'acknowledge'],
+        )->whereUlid('tuitionRequest')
+            ->name('api.v1.operator.tuition-requests.acknowledgements.store');
+        Route::get(
             '/operator/learners/{learner}',
             [OperatorLearnerAdministrationController::class, 'learner'],
         )->whereUlid('learner')
@@ -340,22 +393,22 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/learners/{learner}/enrollments',
             [OperatorLearnerAdministrationController::class, 'createEnrollment'],
-        )->whereUlid('learner')->middleware('auth.password-confirmed')
+        )->whereUlid('learner')
             ->name('api.v1.operator.learners.enrollments.store');
         Route::post(
             '/operator/learners/{learner}/goal-corrections',
             [OperatorLearnerAdministrationController::class, 'correctGoal'],
-        )->whereUlid('learner')->middleware('auth.password-confirmed')
+        )->whereUlid('learner')
             ->name('api.v1.operator.learners.goal-corrections.store');
         Route::post(
             '/operator/learners/{learner}/suspensions',
             [OperatorLearnerAdministrationController::class, 'suspendLearner'],
-        )->whereUlid('learner')->middleware('auth.password-confirmed')
+        )->whereUlid('learner')
             ->name('api.v1.operator.learners.suspensions.store');
         Route::post(
             '/operator/learners/{learner}/reactivations',
             [OperatorLearnerAdministrationController::class, 'reactivateLearner'],
-        )->whereUlid('learner')->middleware('auth.password-confirmed')
+        )->whereUlid('learner')
             ->name('api.v1.operator.learners.reactivations.store');
         Route::get(
             '/operator/learner-invitations',
@@ -364,27 +417,27 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/learner-invitations',
             [OperatorLearnerAdministrationController::class, 'issueInvitation'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.learner-invitations.store');
         Route::post(
             '/operator/learner-invitations/{invitation}/revocations',
             [OperatorLearnerAdministrationController::class, 'revokeInvitation'],
-        )->whereUlid('invitation')->middleware('auth.password-confirmed')
+        )->whereUlid('invitation')
             ->name('api.v1.operator.learner-invitations.revocations.store');
         Route::post(
             '/operator/enrollments/{enrollment}/cohort-changes',
             [OperatorLearnerAdministrationController::class, 'changeEnrollmentCohort'],
-        )->whereUlid('enrollment')->middleware('auth.password-confirmed')
+        )->whereUlid('enrollment')
             ->name('api.v1.operator.enrollments.cohort-changes.store');
         Route::post(
             '/operator/enrollments/{enrollment}/curriculum-activations',
             [OperatorLearnerAdministrationController::class, 'activateEnrollment'],
-        )->whereUlid('enrollment')->middleware('auth.password-confirmed')
+        )->whereUlid('enrollment')
             ->name('api.v1.operator.enrollments.curriculum-activations.store');
         Route::post(
             '/operator/enrollments/{enrollment}/withdrawals',
             [OperatorLearnerAdministrationController::class, 'withdrawEnrollment'],
-        )->whereUlid('enrollment')->middleware('auth.password-confirmed')
+        )->whereUlid('enrollment')
             ->name('api.v1.operator.enrollments.withdrawals.store');
         Route::get(
             '/operator/organization',
@@ -397,17 +450,17 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/branches',
             [OperatorOrganizationAdministrationController::class, 'createBranch'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.branches.store');
         Route::post(
             '/operator/branches/{branch}/updates',
             [OperatorOrganizationAdministrationController::class, 'updateBranch'],
-        )->whereUlid('branch')->middleware('auth.password-confirmed')
+        )->whereUlid('branch')
             ->name('api.v1.operator.branches.updates.store');
         Route::post(
             '/operator/branches/{branch}/archivals',
             [OperatorOrganizationAdministrationController::class, 'archiveBranch'],
-        )->whereUlid('branch')->middleware('auth.password-confirmed')
+        )->whereUlid('branch')
             ->name('api.v1.operator.branches.archivals.store');
         Route::get(
             '/operator/cohorts',
@@ -416,17 +469,17 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/cohorts',
             [OperatorOrganizationAdministrationController::class, 'createCohort'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.cohorts.store');
         Route::post(
             '/operator/cohorts/{cohort}/updates',
             [OperatorOrganizationAdministrationController::class, 'updateCohort'],
-        )->whereUlid('cohort')->middleware('auth.password-confirmed')
+        )->whereUlid('cohort')
             ->name('api.v1.operator.cohorts.updates.store');
         Route::post(
             '/operator/cohorts/{cohort}/archivals',
             [OperatorOrganizationAdministrationController::class, 'archiveCohort'],
-        )->whereUlid('cohort')->middleware('auth.password-confirmed')
+        )->whereUlid('cohort')
             ->name('api.v1.operator.cohorts.archivals.store');
         Route::get(
             '/operator/memberships',
@@ -492,12 +545,12 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/trainer-profiles/{membership}/cohort-assignments',
             [OperatorOrganizationAdministrationController::class, 'assignTrainerCohort'],
-        )->whereUlid('membership')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')
             ->name('api.v1.operator.trainer-profiles.cohort-assignments.store');
         Route::post(
             '/operator/trainer-profiles/{membership}/cohort-revocations',
             [OperatorOrganizationAdministrationController::class, 'revokeTrainerCohort'],
-        )->whereUlid('membership')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')
             ->name('api.v1.operator.trainer-profiles.cohort-revocations.store');
         Route::get(
             '/operator/trainer-profiles/{membership}/authority-appointments',
@@ -507,7 +560,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/trainer-profiles/{membership}/authority-appointments',
             [OperatorOrganizationAdministrationController::class, 'createAppointment'],
-        )->whereUlid('membership')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')
             ->name('api.v1.operator.trainer-profiles.authority-appointments.store');
         Route::get(
             '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}',
@@ -517,17 +570,17 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/acceptances',
             [OperatorOrganizationAdministrationController::class, 'acceptAppointment'],
-        )->whereUlid('membership')->whereUlid('appointment')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')->whereUlid('appointment')
             ->name('api.v1.operator.trainer-profiles.authority-appointments.acceptances.store');
         Route::post(
             '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/surrenders',
             [OperatorOrganizationAdministrationController::class, 'surrenderAppointment'],
-        )->whereUlid('membership')->whereUlid('appointment')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')->whereUlid('appointment')
             ->name('api.v1.operator.trainer-profiles.authority-appointments.surrenders.store');
         Route::post(
             '/operator/trainer-profiles/{membership}/authority-appointments/{appointment}/revocations',
             [OperatorOrganizationAdministrationController::class, 'revokeAppointment'],
-        )->whereUlid('membership')->whereUlid('appointment')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')->whereUlid('appointment')
             ->name('api.v1.operator.trainer-profiles.authority-appointments.revocations.store');
         Route::get(
             '/operator/membership-sessions/{membership}',
@@ -537,12 +590,31 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/membership-sessions/{membership}/revocations',
             [OperatorOrganizationAdministrationController::class, 'revokeMembershipSessions'],
-        )->whereUlid('membership')->middleware('auth.password-confirmed')
+        )->whereUlid('membership')
             ->name('api.v1.operator.membership-sessions.revocations.store');
         Route::get(
             '/operator/content/drafts',
             [OperatorContentController::class, 'drafts'],
         )->name('api.v1.operator.content.drafts.index');
+        Route::post(
+            '/operator/lesson-practice/blueprints',
+            [OperatorLessonPracticeController::class, 'store'],
+        )->name('api.v1.operator.lesson-practice.blueprints.store');
+        Route::get(
+            '/operator/lesson-practice/blueprints/{blueprint}',
+            [OperatorLessonPracticeController::class, 'show'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.show');
+        Route::post(
+            '/operator/lesson-practice/blueprints/{blueprint}/reviews',
+            [OperatorLessonPracticeController::class, 'storeReview'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.reviews.store');
+        Route::post(
+            '/operator/lesson-practice/blueprints/{blueprint}/attachments',
+            [OperatorLessonPracticeController::class, 'storeAttachments'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.attachments.store');
         Route::get(
             '/operator/content/workspaces',
             [OperatorContentWorkspaceController::class, 'workspaces'],
@@ -569,47 +641,47 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/content/programs',
             [OperatorContentWorkspaceController::class, 'createProgram'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.programs.store');
         Route::post(
             '/operator/content/programs/{program}/descriptor-corrections',
             [OperatorContentWorkspaceController::class, 'correctDescriptor'],
-        )->whereUlid('program')->middleware('auth.password-confirmed')
+        )->whereUlid('program')
             ->name('api.v1.operator.content.programs.descriptor-corrections.store');
         Route::post(
             '/operator/content/versions/{curriculumVersion}/successors',
             [OperatorContentWorkspaceController::class, 'createSuccessor'],
-        )->whereUlid('curriculumVersion')->middleware('auth.password-confirmed')
+        )->whereUlid('curriculumVersion')
             ->name('api.v1.operator.content.versions.successors.store');
         Route::post(
             '/operator/content/workspaces/{curriculumVersion}/graph-revisions',
             [OperatorContentWorkspaceController::class, 'saveGraph'],
-        )->whereUlid('curriculumVersion')->middleware('auth.password-confirmed')
+        )->whereUlid('curriculumVersion')
             ->name('api.v1.operator.content.workspaces.graph-revisions.store');
         Route::post(
             '/operator/content/workspaces/{curriculumVersion}/review-submissions',
             [OperatorContentWorkspaceController::class, 'submitReview'],
-        )->whereUlid('curriculumVersion')->middleware('auth.password-confirmed')
+        )->whereUlid('curriculumVersion')
             ->name('api.v1.operator.content.workspaces.review-submissions.store');
         Route::post(
             '/operator/content/workspaces/{curriculumVersion}/abandonments',
             [OperatorContentWorkspaceController::class, 'abandon'],
-        )->whereUlid('curriculumVersion')->middleware('auth.password-confirmed')
+        )->whereUlid('curriculumVersion')
             ->name('api.v1.operator.content.workspaces.abandonments.store');
         Route::post(
             '/operator/content/workspaces/{curriculumVersion}/documents',
             [OperatorContentWorkspaceController::class, 'createDocument'],
-        )->whereUlid('curriculumVersion')->middleware('auth.password-confirmed')
+        )->whereUlid('curriculumVersion')
             ->name('api.v1.operator.content.workspaces.documents.store');
         Route::post(
             '/operator/content/documents/{document}/english-revisions',
             [OperatorContentWorkspaceController::class, 'appendEnglish'],
-        )->whereUlid('document')->middleware('auth.password-confirmed')
+        )->whereUlid('document')
             ->name('api.v1.operator.content.documents.english-revisions.store');
         Route::post(
             '/operator/content/revisions/{revision}/kannada-variants',
             [OperatorContentWorkspaceController::class, 'appendKannada'],
-        )->whereUlid('revision')->middleware('auth.password-confirmed')
+        )->whereUlid('revision')
             ->name('api.v1.operator.content.revisions.kannada-variants.store');
         Route::get(
             '/operator/content/publications',
@@ -618,52 +690,52 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/content/reviews/structure',
             [OperatorContentWorkspaceController::class, 'reviewStructure'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.reviews.structure.store');
         Route::post(
             '/operator/content/reviews/english',
             [OperatorContentController::class, 'reviewEnglish'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.reviews.english.store');
         Route::post(
             '/operator/content/reviews/kannada',
             [OperatorContentController::class, 'reviewKannada'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.reviews.kannada.store');
         Route::post(
             '/operator/content/reviews/{review}/withdrawals',
             [OperatorContentWorkspaceController::class, 'withdrawReview'],
-        )->whereUlid('review')->middleware('auth.password-confirmed')
+        )->whereUlid('review')
             ->name('api.v1.operator.content.reviews.withdrawals.store');
         Route::post(
             '/operator/content/publications',
             [OperatorContentController::class, 'publish'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.publications.store');
         Route::post(
             '/operator/content/publication-schedules',
             [OperatorContentWorkspaceController::class, 'schedule'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.publication-schedules.store');
         Route::post(
             '/operator/content/publication-activations',
             [OperatorContentWorkspaceController::class, 'activate'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.publication-activations.store');
         Route::post(
             '/operator/content/publication-schedule-cancellations',
             [OperatorContentWorkspaceController::class, 'cancelSchedule'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.publication-schedule-cancellations.store');
         Route::post(
             '/operator/content/publication-retirements',
             [OperatorContentWorkspaceController::class, 'retire'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.publication-retirements.store');
         Route::post(
             '/operator/content/rollbacks',
             [OperatorContentController::class, 'rollback'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.content.rollbacks.store');
         Route::get(
             '/operator/media/manifest',
@@ -700,79 +772,77 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/media/uploads',
             [OperatorMediaLibraryController::class, 'startUpload'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.media.uploads.store');
         Route::post(
             '/operator/media/uploads/{upload}/parts',
             [OperatorMediaLibraryController::class, 'storePart'],
-        )->whereUlid('upload')->middleware('auth.password-confirmed')
+        )->whereUlid('upload')
             ->name('api.v1.operator.media.upload-parts.store');
         Route::post(
             '/operator/media/uploads/{upload}/finalizations',
             [OperatorMediaLibraryController::class, 'finalizeUpload'],
-        )->whereUlid('upload')->middleware('auth.password-confirmed')
+        )->whereUlid('upload')
             ->name('api.v1.operator.media.upload-finalizations.store');
         Route::post(
             '/operator/media/uploads/{upload}/acceptances',
             [OperatorMediaLibraryController::class, 'acceptUpload'],
-        )->whereUlid('upload')->middleware('auth.password-confirmed')
+        )->whereUlid('upload')
             ->name('api.v1.operator.media.upload-acceptances.store');
         Route::post(
             '/operator/media/uploads/{upload}/rejections',
             [OperatorMediaLibraryController::class, 'rejectUpload'],
-        )->whereUlid('upload')->middleware('auth.password-confirmed')
+        )->whereUlid('upload')
             ->name('api.v1.operator.media.upload-rejections.store');
         Route::post(
             '/operator/media/assets/{asset}/adoptions',
             [OperatorMediaLibraryController::class, 'adoptAsset'],
-        )->whereUlid('asset')->middleware('auth.password-confirmed')
+        )->whereUlid('asset')
             ->name('api.v1.operator.media.asset-adoptions.store');
         Route::post(
             '/operator/media/assets/{asset}/metadata-revisions',
             [OperatorMediaLibraryController::class, 'appendMetadata'],
-        )->whereUlid('asset')->middleware('auth.password-confirmed')
+        )->whereUlid('asset')
             ->name('api.v1.operator.media.metadata-revisions.store');
         Route::post(
             '/operator/media/metadata-revisions/{revision}/kannada-variants',
             [OperatorMediaLibraryController::class, 'appendKannada'],
-        )->whereUlid('revision')->middleware('auth.password-confirmed')
+        )->whereUlid('revision')
             ->name('api.v1.operator.media.metadata-variants.store');
         Route::post(
             '/operator/media/metadata-reviews',
             [OperatorMediaLibraryController::class, 'reviewMetadata'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.media.metadata-reviews.store');
         Route::post(
             '/operator/media/rights-decisions',
             [OperatorMediaLibraryController::class, 'rightsDecision'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.media.rights-decisions.store');
         Route::post(
             '/operator/media/assets/{asset}/attachments',
             [OperatorMediaLibraryController::class, 'attach'],
-        )->whereUlid('asset')->middleware('auth.password-confirmed')
+        )->whereUlid('asset')
             ->name('api.v1.operator.media.attachments.store');
         Route::post(
             '/operator/media/assets/{asset}/replacements',
             [OperatorMediaLibraryController::class, 'replace'],
-        )->whereUlid('asset')->middleware('auth.password-confirmed')
+        )->whereUlid('asset')
             ->name('api.v1.operator.media.replacements.store');
         Route::post(
             '/operator/media/assets/{asset}/retirements',
             [OperatorMediaLibraryController::class, 'retire'],
-        )->whereUlid('asset')->middleware('auth.password-confirmed')
+        )->whereUlid('asset')
             ->name('api.v1.operator.media.retirements.store');
         Route::get(
             '/operator/media/transcription-campaigns/{campaign}/assets/{campaignAsset}/candidate',
             [OperatorMediaTranscriptionController::class, 'candidate'],
         )->whereUlid('campaign')->whereUlid('campaignAsset')
-            ->middleware('auth.password-confirmed')
             ->name('api.v1.operator.media.transcription-candidates.show');
         Route::post(
             '/operator/media/transcription-campaigns/{campaign}/assets/{campaignAsset}/reconciliations',
             [OperatorMediaTranscriptionController::class, 'reconcile'],
         )->whereUlid('campaign')->whereUlid('campaignAsset')
-            ->middleware('auth.password-confirmed')
             ->name('api.v1.operator.media.transcription-reconciliations.store');
         Route::get(
             '/operator/audit-events',
@@ -789,7 +859,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/privacy/exports',
             [OperatorPrivacyController::class, 'createExport'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.privacy.exports.store');
         Route::get(
             '/operator/privacy/exports/{exportRequest}',
@@ -799,7 +869,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/privacy/erasures',
             [OperatorPrivacyController::class, 'createErasure'],
-        )->middleware('auth.password-confirmed')
+        )
             ->name('api.v1.operator.privacy.erasures.store');
         Route::get(
             '/operator/privacy/erasures/{erasureRequest}',

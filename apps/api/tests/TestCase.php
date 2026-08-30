@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Providers\AppServiceProvider;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -22,7 +23,24 @@ abstract class TestCase extends BaseTestCase
         $application = parent::createApplication();
         $config = $application->make(Repository::class);
 
+        // Keep conversation tests isolated from soft-launch developer .env.
+        $application->detectEnvironment(static fn (): string => 'testing');
+        $config->set([
+            'conversation.provider_driver' => 'fake',
+            'conversation.guidance_tts.live_requests_enabled' => false,
+            'conversation.azure_openai.live_requests_enabled' => false,
+            'voice.provider_driver' => 'deterministic-test',
+        ]);
+        (new AppServiceProvider($application))->register();
+
         if ($config->get('database.default') === 'pgsql') {
+            $database = (string) $config->get('database.connections.pgsql.database');
+            if ($database === 'global_english') {
+                throw new RuntimeException(
+                    'Refusing to boot tests against the live PostgreSQL database global_english.',
+                );
+            }
+
             // PostgreSQL HTTP integration tests always exercise the HTTPS
             // session contract, independently of developer-machine settings.
             $config->set([

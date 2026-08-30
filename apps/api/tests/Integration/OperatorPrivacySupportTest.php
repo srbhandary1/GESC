@@ -114,7 +114,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             )
             ->assertJsonPath(
                 'summary.inventory_version',
-                'learner-privacy-v3',
+                'learner-privacy-v5',
             )
             ->assertJsonPath(
                 'summary.scope.membership_id',
@@ -132,8 +132,11 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
         self::assertContains('password_recovery_challenges', $recordClasses);
         self::assertContains('privileged_password_recovery_cases', $recordClasses);
         self::assertContains('privileged_password_recovery_approvals', $recordClasses);
+        self::assertContains('account_recovery_management_events', $recordClasses);
+        self::assertContains('account_recovery_notification_events', $recordClasses);
         self::assertContains('password_security_events', $recordClasses);
         self::assertContains('learner_memory_facts', $recordClasses);
+        self::assertContains('tuition_requests', $recordClasses);
         self::assertContains('learner_profile_current_goals', $recordClasses);
         self::assertContains('learner_goal_corrections', $recordClasses);
         self::assertContains('organization_administration_events', $recordClasses);
@@ -178,7 +181,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             ->assertJsonPath('status', 'completed')
             ->assertJsonPath(
                 'outcome.inventory_version',
-                'learner-privacy-v3',
+                'learner-privacy-v5',
             )
             ->assertJsonPath('voice_recording_count', 0);
         $this->assertNoStore($erasure);

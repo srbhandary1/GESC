@@ -89,15 +89,6 @@ final class AdminMediaLibraryApiTest extends TenancyIntegrationTestCase
             'whole_object_hash' => $hash,
         ];
 
-        $this->postCommand(
-            '/api/v1/operator/media/uploads',
-            $startBody,
-            (string) Str::ulid(),
-        )
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.fresh_mfa_required');
-
-        $this->freshenCurrentWebSession($actor);
         $startKey = (string) Str::ulid();
         $started = $this->postCommand(
             '/api/v1/operator/media/uploads',

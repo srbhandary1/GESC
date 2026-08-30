@@ -17,11 +17,11 @@ return [
             )),
         ))),
     ],
-    'identity_recovery' => [
-        'actor_user_ids' => array_values(array_filter(array_map(
+    'account_recovery' => [
+        'manager_user_ids' => array_values(array_filter(array_map(
             trim(...),
             explode(',', (string) env(
-                'PLATFORM_IDENTITY_RECOVERY_ACTOR_USER_IDS',
+                'PLATFORM_ACCOUNT_RECOVERY_MANAGER_USER_IDS',
                 '',
             )),
         ))),

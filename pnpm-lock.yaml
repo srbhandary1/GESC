@@ -119,6 +119,9 @@ importers:
 
   packages/design-system:
     dependencies:
+      '@fontsource-variable/fraunces':
+        specifier: 5.2.6
+        version: 5.2.6
       '@fontsource-variable/noto-sans-devanagari':
         specifier: 5.3.0
         version: 5.3.0
@@ -376,6 +379,9 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@fontsource-variable/fraunces@5.2.6':
+    resolution: {integrity: sha512-r6ZYF7GDK2ANQBAXuuSUtoJslFzCTANlgfhDUnxlWHt/uHstAukqtRXaMcwVmmvzAo/KtuPo9zlPjkLxWYYEzw==}
 
   '@fontsource-variable/noto-sans-devanagari@5.3.0':
     resolution: {integrity: sha512-52XBcJS3jRvZ5ugFXJvdKgffXPYnN08LeodXkgCbepOdMKVRVTQu1yj071cq8S3zmUwT6w6XKKXRSQlQkwwNNg==}
@@ -2264,6 +2270,8 @@ snapshots:
       levn: 0.4.1
 
   '@exodus/bytes@1.15.1': {}
+
+  '@fontsource-variable/fraunces@5.2.6': {}
 
   '@fontsource-variable/noto-sans-devanagari@5.3.0': {}
 

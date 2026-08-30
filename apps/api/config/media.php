@@ -72,8 +72,8 @@ return [
     'clamav' => [
         'host' => env('MEDIA_CLAMAV_HOST', '127.0.0.1'),
         'port' => (int) env('MEDIA_CLAMAV_PORT', 3310),
-        'connect_timeout_seconds' => 2,
-        'read_timeout_seconds' => 30,
+        'connect_timeout_seconds' => (int) env('MEDIA_CLAMAV_CONNECT_TIMEOUT_SECONDS', 2),
+        'read_timeout_seconds' => (int) env('MEDIA_CLAMAV_READ_TIMEOUT_SECONDS', 120),
     ],
 
     'rights_attestation' => [
