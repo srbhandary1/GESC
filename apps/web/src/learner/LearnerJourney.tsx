@@ -684,120 +684,140 @@ export function LearnerJourney({
     )
   }
 
+  const home = state.home
+  const hasMission =
+    home.enrollment !== null && home.next_mission !== null
+  const dominantTitle =
+    home.due_review?.title ?? home.next_mission?.title ?? null
+  const estimatedMinutes = home.next_mission?.estimated_minutes ?? 0
+
   return (
     <section
       aria-labelledby="learner-home-title"
-      className="learner-stack"
+      className="learner-home learner-stack"
     >
-      <h2
-        className="learner-section-title"
-        id="learner-home-title"
-        ref={stateTitle}
-        tabIndex={-1}
-      >
-        <LocalizedMessage resolution={message('learner.home.title')} />
-      </h2>
-      <aside
-        aria-label={message('learner.home.streak_label').text}
-        className="learner-streak"
-      >
-        <LocalizedMessage
-          resolution={resolveInterfaceMessage(
-            state.home.streak.count === 1
-              ? 'learner.home.streak_one'
-              : 'learner.home.streak_many',
-            locale,
-            localizationPolicy,
-            { count: state.home.streak.count },
-          )}
-        />
-      </aside>
-      {state.home.enrollment === null ||
-      state.home.next_mission === null ? (
-        <p className="learner-card">
+      <header className="learner-home__header">
+        <h2
+          className="learner-home__title"
+          id="learner-home-title"
+          ref={stateTitle}
+          tabIndex={-1}
+        >
+          <LocalizedMessage resolution={message('learner.home.title')} />
+        </h2>
+        <aside
+          aria-label={message('learner.home.streak_label').text}
+          className="learner-home__streak"
+        >
           <LocalizedMessage
-            resolution={message('learner.home.no_mission')}
+            resolution={resolveInterfaceMessage(
+              homeStreakMessageKey(home.streak.count),
+              locale,
+              localizationPolicy,
+              { count: home.streak.count },
+            )}
           />
+        </aside>
+      </header>
+      {!hasMission ? (
+        <p className="learner-card learner-home__empty">
+          <LocalizedMessage resolution={message('learner.home.no_mission')} />
         </p>
       ) : (
         <section
           aria-labelledby="dominant-action-title"
-          className="learner-card"
+          className="learner-home__action"
         >
-          <p className="learner-eyebrow">
-            <LocalizedMessage
-              resolution={message(
-                state.home.due_review === null
-                  ? 'learner.home.next_mission'
-                  : 'learner.home.review_due',
-              )}
-            />
-          </p>
-          <h3
-            className="learner-card__title"
-            id="dominant-action-title"
+          <div
+            aria-hidden="true"
+            className="learner-home__action-orbit"
           >
-            <GovernedText
-              content={
-                state.home.due_review?.title ??
-                state.home.next_mission.title
-              }
-            />
-          </h3>
-          <p>
-            <LocalizedMessage
-              resolution={resolveInterfaceMessage(
-                'learner.home.estimated_minutes',
-                locale,
-                localizationPolicy,
-                {
-                  minutes: state.home.next_mission.estimated_minutes,
-                },
-              )}
-            />
-          </p>
-          {actionError ? (
-            <p role="alert">
+            <span className="learner-home__action-orbit-ring" />
+            <span className="learner-home__action-orbit-ring learner-home__action-orbit-ring--delay" />
+          </div>
+          <div className="learner-home__action-body">
+            <p className="learner-home__eyebrow">
               <LocalizedMessage
-                resolution={message('learner.error.message')}
+                resolution={message(
+                  home.due_review === null
+                    ? 'learner.home.todays_mission'
+                    : 'learner.home.review_due',
+                )}
               />
             </p>
-          ) : null}
-          <button
-            className="ge-button ge-button--primary"
-            disabled={busy}
-            onClick={() =>
-              void beginMission(
-                state.home,
-                state.home.due_review === null
-                  ? state.home.next_mission
-                  : {
-                      estimated_minutes:
-                        state.home.next_mission!.estimated_minutes,
-                      id: state.home.due_review.mission_id,
-                      title: state.home.due_review.title,
-                    },
-              )
-            }
-            type="button"
-          >
-            <LocalizedMessage
-              resolution={message(
-                busy
-                  ? 'learner.home.starting'
-                  : state.home.due_review === null
-                    ? 'learner.home.start_mission'
-                    : 'learner.home.start_review',
+            <h3
+              className="learner-home__action-title"
+              id="dominant-action-title"
+            >
+              {dominantTitle === null ? null : (
+                <GovernedText content={dominantTitle} />
               )}
-            />
-          </button>
+            </h3>
+            <p className="learner-home__guidance">
+              <MixedLanguageText
+                className="learner-home__guidance-text"
+                segments={[
+                  {
+                    locale: 'kn-IN',
+                    text: message('learner.home.guidance_kn').text,
+                  },
+                  {
+                    locale: 'en-IN',
+                    text: message('learner.home.guidance_en').text,
+                  },
+                ]}
+              />
+            </p>
+            <p className="learner-home__meta">
+              <LocalizedMessage
+                resolution={resolveInterfaceMessage(
+                  'learner.home.estimated_minutes',
+                  locale,
+                  localizationPolicy,
+                  { minutes: estimatedMinutes },
+                )}
+              />
+            </p>
+            {actionError ? (
+              <p
+                className="learner-home__error"
+                role="alert"
+              >
+                <LocalizedMessage
+                  resolution={message('learner.error.message')}
+                />
+              </p>
+            ) : null}
+            <button
+              className="ge-button ge-button--primary learner-home__continue"
+              disabled={busy}
+              onClick={() =>
+                void beginMission(
+                  home,
+                  home.due_review === null
+                    ? home.next_mission!
+                    : {
+                        estimated_minutes: home.next_mission!.estimated_minutes,
+                        id: home.due_review.mission_id,
+                        title: home.due_review.title,
+                      },
+                )
+              }
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message(
+                  busy ? 'learner.home.continuing' : 'learner.home.continue',
+                )}
+              />
+            </button>
+          </div>
         </section>
       )}
-      {state.home.enrollment === null ||
-      state.home.next_mission === null ? null : (
+      {!hasMission ? null : (
         <section
           aria-labelledby="offline-access-title"
-          className="learner-card learner-offline"
+          className="learner-card learner-home__sync learner-offline"
         >
           <h3
             className="learner-card__title"
@@ -812,15 +832,12 @@ export function LearnerJourney({
               resolution={message('learner.offline.warning')}
             />
           </p>
-          {!profileEnabled &&
-          offlineStatus !== 'unavailable' ? (
+          {!profileEnabled && offlineStatus !== 'unavailable' ? (
             <label className="learner-choice">
               <input
                 checked={personalDeviceConfirmed}
                 onChange={(event) =>
-                  setPersonalDeviceConfirmed(
-                    event.currentTarget.checked,
-                  )
+                  setPersonalDeviceConfirmed(event.currentTarget.checked)
                 }
                 type="checkbox"
               />
@@ -833,6 +850,7 @@ export function LearnerJourney({
           ) : null}
           <p
             aria-live="polite"
+            className="learner-home__sync-status"
             role="status"
           >
             <LocalizedMessage
@@ -849,7 +867,7 @@ export function LearnerJourney({
               offlineStatus === 'unavailable' ||
               (!profileEnabled && !personalDeviceConfirmed)
             }
-            onClick={() => void downloadOfflineMission(state.home)}
+            onClick={() => void downloadOfflineMission(home)}
             type="button"
           >
             <LocalizedMessage
@@ -862,10 +880,10 @@ export function LearnerJourney({
           </button>
         </section>
       )}
-      {state.home.enrollment === null ? null : (
+      {home.enrollment === null ? null : (
         <LevelVideosPanel
           api={api}
-          enrollmentId={state.home.enrollment.id}
+          enrollmentId={home.enrollment.id}
           locale={locale}
           localizationPolicy={localizationPolicy}
         />
@@ -1686,6 +1704,18 @@ function GovernedText({ content }: { readonly content: GovernedContent }) {
       segments={[{ locale: content.locale, text: content.text }]}
     />
   )
+}
+
+function homeStreakMessageKey(count: number): MessageKey {
+  if (count === 0) {
+    return 'learner.home.streak_zero'
+  }
+
+  if (count === 1) {
+    return 'learner.home.streak_one'
+  }
+
+  return 'learner.home.streak_many'
 }
 
 function goalMessageKey(goal: LearnerGoal): MessageKey {

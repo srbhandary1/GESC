@@ -110,7 +110,7 @@ describe('deterministic learner journey', () => {
     )
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     expect(
@@ -234,7 +234,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -359,7 +359,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -431,7 +431,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -538,7 +538,7 @@ describe('deterministic learner journey', () => {
     globalThis.dispatchEvent(new Event('offline'))
     await user.click(
       screen.getByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -679,7 +679,7 @@ describe('deterministic learner journey', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     ).toBeVisible()
     await vi.waitFor(() => {
@@ -692,6 +692,8 @@ describe('deterministic learner journey', () => {
 
   it('presents a due review before the next mission and keeps streak secondary', async () => {
     const user = userEvent.setup()
+    const longKnTitle =
+      'ಪರಿಚಯಗಳ ಮರುಅಭ್ಯಾಸ: ದಿನಚರಿ ಸಂಭಾಷಣೆಯಲ್ಲಿ ಸ್ವಯಂ ಪರಿಚಯ, ಕೆಲಸದ ಸ್ಥಳದಲ್ಲಿ ಸಹೋದ್ಯೋಗಿಗಳೊಂದಿಗೆ ಮಾತನಾಡುವುದು ಮತ್ತು ಅತಿಥಿಗಳನ್ನು ಸ್ವಾಗತಿಸುವುದು'
     const home = {
       ...completeHome(),
       due_review: {
@@ -702,7 +704,7 @@ describe('deterministic learner journey', () => {
         mission_id: ids.mission,
         objective_id: ids.objective,
         timezone: 'Asia/Kolkata',
-        title: content('en-IN', 'Review introductions'),
+        title: content('kn-IN', longKnTitle),
       },
     } satisfies LearnerHome
     const api = fakeApi(home)
@@ -715,14 +717,53 @@ describe('deterministic learner journey', () => {
       />,
     )
 
-    expect(await screen.findByText('Review introductions')).toBeVisible()
+    const dominantTitle = await screen.findByRole('heading', {
+      level: 3,
+      name: longKnTitle,
+    })
+    expect(dominantTitle.closest('.learner-home__action')).not.toBeNull()
+    expect(screen.getByText(longKnTitle)).toHaveAttribute('lang', 'kn-IN')
     expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
-    await user.click(screen.getByRole('button', {
-      name: t('learner.home.start_review'),
-    }))
-    expect(api.mission).toHaveBeenCalledWith(
-      ids.mission,
-      ids.enrollment,
+    expect(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    ).toHaveClass('learner-home__continue')
+    await user.click(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    )
+    expect(api.mission).toHaveBeenCalledWith(ids.mission, ids.enrollment)
+  })
+
+  it('shows neutral streak copy when the learner has not spoken yet', async () => {
+    const api = fakeApi({
+      ...completeHome(),
+      streak: {
+        as_of_date: '2026-08-30',
+        count: 0,
+        timezone: 'Asia/Kolkata',
+      },
+    })
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByText(t('learner.home.streak_zero')),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    ).toBeVisible()
+    expect(screen.getByText(t('learner.home.guidance_kn'))).toHaveAttribute(
+      'lang',
+      'kn-IN',
+    )
+    expect(screen.getByText(t('learner.home.guidance_en'))).toHaveAttribute(
+      'lang',
+      'en-IN',
     )
   })
 })
