@@ -91,7 +91,7 @@ return new class extends Migration
             );
             DB::unprepared(
                 <<<'SQL'
-CREATE FUNCTION enforce_deterministic_review_occurrence()
+CREATE OR REPLACE FUNCTION enforce_deterministic_review_occurrence()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
