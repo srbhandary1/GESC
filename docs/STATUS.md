@@ -24,7 +24,11 @@
 - **Two ADR-0028 test areas were missing and are now written:** active cross-tenant rejection, and proof that a review occurrence cannot be created without deterministic mastery evidence. Idempotency of replayed mastery events was already covered inside the PR-006 lifecycle test. Both new blocks are guarded to `pgsql` because they assert a Postgres trigger and composite foreign keys, so they are exercised only in CI.
 - `ConversationTurnService` gained only the projector hook. The guidance-TTS synthesis and second `ai_cost_ledger` row in that file are pre-existing 29 August work (migration `2026_08_29_000250` predates this slice); checkpoint A added no provider call and no spend.
 - Stale expectations in `ConversationFakeProviderTest` and `CurriculumPublicationLifecycleTest` were updated to match that pre-existing guidance-TTS behaviour. A pre-existing `storage/.../voice` permission denial still affects the curriculum lifecycle test.
-- Checkpoint A is **not accepted**. Acceptance requires PHP 8.4.x, a clean `make verify`, and the three missing test areas.
+- First CI run on PR [#3](https://github.com/srbhandary1/GESC/pull/3) (run 33308251724): `operations` pass, `android` pass, **`verify` fail**, `release-gate` fail as a dependant. `verify` stopped at PHPStan with 50 errors, at `Makefile:148`.
+- **PHPStan runs before `artisan test` and the PostgreSQL suite, so `verify` has still never reached any test phase.** The two new pgsql-guarded constraint tests remain unexecuted everywhere.
+- Checkpoint A's share of those errors is fixed: a `due_review` payload could be built with a null enrollment and would have thrown on reading its id; the speaking-date query now yields a list; nullsafe access was dropped where the guidance result is already proven non-null. PHPStan is 50 → 46 and no checkpoint A file reports an error.
+- **46 pre-existing static-analysis errors block the gate**, concentrated in `LevelSessionDeliveryService` (about 22, offsets read on `string` and `array{}`), plus `LessonPracticeAttachmentService`, `LessonPracticeBlueprintValidator`, `RoleplayCatalogSeeder`, `SoftLaunchGuidanceAzureTextToSpeechProvider`, `App0062LessonAudioIngestor`, `bootstrap/app.php` and `FoundationSeeder`. These predate checkpoint A and are untouched by it; clearing them is its own bounded checkpoint.
+- Checkpoint A is **not accepted**. Acceptance requires a clean `make verify`, which now depends on that backlog.
 
 ## DR-0038 acceptance: daily loop, Progress, Speak latency — 30 August 2026
 
