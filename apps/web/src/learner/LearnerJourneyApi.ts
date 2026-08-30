@@ -11,6 +11,7 @@ import type {
   LearnerMission as ContractLearnerMission,
   LearnerMissionResult as ContractLearnerMissionResult,
   LearnerProgress as ContractLearnerProgress,
+  LearnerProgressDashboard as ContractLearnerProgressDashboard,
   LocalCaptureReceipt,
   OfflineMissionBundle,
   RecordLearnerAttemptResponseRequest,
@@ -35,6 +36,7 @@ export type KnowledgeState = ContractKnowledgeState
 export type SpokenState = ContractSpokenState
 export type MissionResult = ContractLearnerMissionResult
 export type LearnerProgress = ContractLearnerProgress
+export type LearnerProgressDashboard = ContractLearnerProgressDashboard
 export type OfflineBundle = OfflineMissionBundle
 export type OfflineCompletionInput = CompleteOfflineMissionRequest
 export type LearnerLevelVideo = ContractLearnerLevelVideo
@@ -42,6 +44,8 @@ export type LearnerLevelVideoCatalog = ContractLearnerLevelVideoCatalog
 
 export interface LearnerJourneyApi {
   home(signal?: AbortSignal): Promise<LearnerHome>
+
+  progressDashboard(signal?: AbortSignal): Promise<LearnerProgressDashboard>
 
   updateOnboarding(
     input: OnboardingInput,

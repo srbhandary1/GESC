@@ -63,6 +63,10 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     return this.#json<LearnerHome>('/home', { signal })
   }
 
+  progressDashboard(signal?: AbortSignal): Promise<import('./LearnerJourneyApi').LearnerProgressDashboard> {
+    return this.#json<import('./LearnerJourneyApi').LearnerProgressDashboard>('/me/progress-dashboard', { signal })
+  }
+
   updateOnboarding(
     input: OnboardingInput,
     commandId: string,

@@ -870,6 +870,7 @@ function learnerApi(
     })),
     mission: vi.fn(unreachable),
     progress: vi.fn(unreachable),
+    progressDashboard: vi.fn(unreachable),
     recordResponse: vi.fn(unreachable),
     startAttempt: vi.fn(unreachable),
     submitAttempt: vi.fn(unreachable),

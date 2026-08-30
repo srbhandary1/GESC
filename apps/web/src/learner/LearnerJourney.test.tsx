@@ -788,6 +788,9 @@ function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
     progress: vi.fn(async () =>
       initialHome.onboarding.completed ? noSpeechProgress : progress,
     ),
+    progressDashboard: vi.fn(async () =>
+      Promise.reject(new Error('no progressDashboard stubbed')),
+    ),
   }
 
   return api

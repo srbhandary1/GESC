@@ -112,6 +112,36 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
     return demoHome()
   }
 
+  async progressDashboard(signal?: AbortSignal): Promise<import('../learner/LearnerJourneyApi').LearnerProgressDashboard> {
+    abortIfNeeded(signal)
+    return {
+      enrollment: { id: ids.enrollment, status: 'active' },
+      objectives: [],
+      speaking_activity: {
+        meaningful_speaking_days_count: 5,
+        completed_turn_count: 10,
+        speaking_duration_ms: 120000,
+        speaking_minutes: 2,
+        timezone: 'Asia/Kolkata',
+      },
+      attempt_improvement: {
+        missions_attempted: 2,
+        missions_passed_on_first_attempt: 1,
+        missions_improved_on_retry: 1,
+        missions_still_not_mastered: 0,
+      },
+      delayed_review: {
+        scheduled_count: 0,
+        due_count: 0,
+        pending_count: 0,
+        completed_count: 0,
+        completed_on_time_count: 0,
+        completed_late_count: 0,
+      },
+      recurring_errors: { patterns: [] },
+    }
+  }
+
   async updateOnboarding(
     _input: OnboardingInput,
     _commandId: string,

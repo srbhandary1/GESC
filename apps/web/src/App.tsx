@@ -47,6 +47,7 @@ import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
+import { ProgressDashboard } from './learner/ProgressDashboard'
 import { LevelPathPanel } from './learner/LevelPathPanel'
 import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
 import type { LevelSessionsApi } from './learner/LevelSessionsApi'
@@ -971,17 +972,12 @@ function App({
             localizationPolicy={localizationPolicy}
           />
         ) : canShowLevelProgress ? (
-          <LevelPathPanel
-            api={levelSessionsApi}
-            conversationApi={conversationApi}
-            createClientId={createClientId}
-            demoMode={demoMode}
+          <ProgressDashboard
+            api={learnerJourneyApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
-            onOpenRoleplay={() => {
-              setBoundConversation(null)
-              setSpeakMode('situation')
-              globalThis.location.hash = '#speak'
+            onMissionRequested={() => {
+              window.location.hash = '#home'
             }}
           />
         ) : canShowOperatorConsole ? (
