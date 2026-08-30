@@ -27,6 +27,7 @@ use App\Learning\Missions\DailyMissionReader;
 use App\Learning\Offline\OfflineCompletionService;
 use App\Learning\Offline\OfflineMissionBundleService;
 use App\Learning\Onboarding\LearnerOnboardingService;
+use App\Learning\Review\DelayedReviewScheduler;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\User;
@@ -967,6 +968,84 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
                 $secondResult['review']['due_at'],
             )->toIso8601String(),
         );
+        $masteryAttempt = DB::table('learner_attempts')
+            ->where('organization_id', $organization->getKey())
+            ->where('id', $second['id'])
+            ->firstOrFail();
+        $masteryAt = CarbonImmutable::parse((string) $masteryAttempt->submitted_at);
+        $scheduler = $this->app->make(
+            DelayedReviewScheduler::class,
+        );
+        $scheduler->reconcile($masteryAttempt, $masteryAt);
+        $scheduler->reconcile($masteryAttempt, $masteryAt);
+        self::assertSame(
+            count(config('review.interval_days')),
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', $organization->getKey())
+                ->where('source_attempt_id', $second['id'])
+                ->count(),
+            'A replayed mastery event must not duplicate review occurrences.',
+        );
+        self::assertSame(
+            0,
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', '!=', $organization->getKey())
+                ->where('learner_membership_id', $learnerMembership->getKey())
+                ->count(),
+        );
+
+        // ADR-0028: only deterministic mastery evidence may create a review
+        // occurrence. $first never reached mastery, so a row naming it as the
+        // source must be refused however the write is attempted.
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $organizationId = (string) $organization->getKey();
+            $unmasteredAttemptId = $first['id'];
+            $fabricatedOccurrence = [
+                'organization_id' => $organizationId,
+                'enrollment_id' => $enrollmentId,
+                'learner_membership_id' => (string) $learnerMembership->getKey(),
+                'learning_objective_id' => $mission->objectiveId,
+                'source_attempt_id' => $unmasteredAttemptId,
+                'curriculum_mission_id' => $mission->missionId,
+                'sequence' => 1,
+                'interval_days' => 1,
+                'rule_version' => 'provisional-v1',
+                'timezone' => 'Asia/Kolkata',
+                'due_at' => $masteryAt,
+                'completed_at' => null,
+                'completion_attempt_id' => null,
+                'created_at' => $masteryAt,
+                'updated_at' => $masteryAt,
+            ];
+
+            try {
+                // A nested transaction is a savepoint, so the expected
+                // constraint failure does not abort the test transaction.
+                DB::transaction(static function () use ($fabricatedOccurrence): void {
+                    DB::table('delayed_review_occurrences')->insert([
+                        'id' => (string) Str::ulid(),
+                        ...$fabricatedOccurrence,
+                    ]);
+                });
+                self::fail(
+                    'A review occurrence without mastery evidence must be refused.',
+                );
+            } catch (QueryException $exception) {
+                self::assertStringContainsString(
+                    'deterministic mastery evidence',
+                    $exception->getMessage(),
+                );
+            }
+
+            self::assertSame(
+                0,
+                DB::table('delayed_review_occurrences')
+                    ->where('organization_id', $organizationId)
+                    ->where('source_attempt_id', $unmasteredAttemptId)
+                    ->count(),
+                'The refused occurrence must leave no residue.',
+            );
+        }
         $this->assertDatabaseHas('item_responses', [
             'organization_id' => $organization->getKey(),
             'learner_attempt_id' => $second['id'],
