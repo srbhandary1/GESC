@@ -89,7 +89,9 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       name: message('learner.recording.start'),
     })
     .click()
-  await page.waitForTimeout(300)
+  // The PCM recorder needs real capture time: ~80ms settle plus 4096-frame
+  // ScriptProcessor buffers, so a short window yields no samples at all.
+  await page.waitForTimeout(1200)
   await page
     .getByRole('button', {
       name: message('learner.recording.stop'),
@@ -109,7 +111,9 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       name: message('learner.recording.start'),
     })
     .click()
-  await page.waitForTimeout(300)
+  // The PCM recorder needs real capture time: ~80ms settle plus 4096-frame
+  // ScriptProcessor buffers, so a short window yields no samples at all.
+  await page.waitForTimeout(1200)
   await page
     .getByRole('button', {
       name: message('learner.recording.stop'),

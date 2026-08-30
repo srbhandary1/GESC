@@ -12,6 +12,18 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
+    // The PCM recorder needs a real MediaStream feeding a real AudioContext.
+    // CI runners have no microphone, so recording journeys use Chromium's
+    // deterministic fake capture device (the flag is
+    // --use-fake-device-for-media-stream; the -capture variant does not exist).
+    launchOptions: {
+      args: [
+        '--use-fake-ui-for-media-stream',
+        '--use-fake-device-for-media-stream',
+        '--autoplay-policy=no-user-gesture-required',
+      ],
+    },
+    permissions: ['microphone'],
   },
   projects: [
     {

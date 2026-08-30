@@ -604,13 +604,20 @@ function App({
                   : 'shell-header-authentication'
               }
               href={showDedicatedSignIn ? '#home' : '#sign-in'}
-              onClick={() => {
+              onClick={(event) => {
+                // Own the navigation: React flushes this click's state update
+                // before the browser follows the link, so the toggled href
+                // would otherwise navigate to the *new* target.
+                event.preventDefault()
+
                 if (showDedicatedSignIn) {
+                  globalThis.location.hash = '#home'
                   setDestination('home')
                   setLocationHash('#home')
                   return
                 }
 
+                globalThis.location.hash = '#sign-in'
                 setDestination('home')
                 setLocationHash('#sign-in')
               }}
