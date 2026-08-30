@@ -30,13 +30,15 @@ final readonly class MeaningfulSpeakingStreakReader
             ? $timezone
             : 'Asia/Kolkata';
         $today = ($now ?? CarbonImmutable::now())->setTimezone($timezone)->startOfDay();
-        $dates = DB::table('meaningful_speaking_days')
-            ->where('organization_id', $organizationId)
-            ->where('learner_membership_id', $membershipId)
-            ->orderByDesc('speaking_date')
-            ->pluck('speaking_date')
-            ->map(static fn (mixed $date): string => (string) $date)
-            ->all();
+        $dates = array_values(
+            DB::table('meaningful_speaking_days')
+                ->where('organization_id', $organizationId)
+                ->where('learner_membership_id', $membershipId)
+                ->orderByDesc('speaking_date')
+                ->pluck('speaking_date')
+                ->map(static fn (mixed $date): string => (string) $date)
+                ->all(),
+        );
 
         return [
             'count' => $this->calculator->count(

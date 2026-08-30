@@ -131,7 +131,9 @@ final readonly class LearnerHomeService
                 ]
                 : null,
             'streak' => $streak,
-            'due_review' => $dueReview instanceof stdClass && $mission !== null
+            'due_review' => $dueReview instanceof stdClass
+                && $enrollment instanceof stdClass
+                && $mission !== null
                 ? [
                     'id' => $this->string($dueReview, 'id'),
                     'enrollment_id' => $this->string($enrollment, 'id'),

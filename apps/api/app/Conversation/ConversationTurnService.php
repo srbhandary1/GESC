@@ -859,9 +859,12 @@ final readonly class ConversationTurnService
         $modelAudio = $modelSpeech->audioBytes;
         $guidanceAudio = $guidanceSpeech?->audioBytes;
 
+        $guidancePlayback = $guidanceSpeech !== null
+            && $guidanceSpeech->playbackAvailable;
+
         return [
             'playback_available' => $modelSpeech->playbackAvailable
-                || ($guidanceSpeech?->playbackAvailable ?? false),
+                || $guidancePlayback,
             'rendering_mode' => $modelSpeech->renderingMode,
             'model_audio_base64' => is_string($modelAudio) && $modelAudio !== ''
                 ? base64_encode($modelAudio)
@@ -873,7 +876,7 @@ final readonly class ConversationTurnService
                 ? base64_encode($guidanceAudio)
                 : null,
             'guidance_audio_mime_type' => is_string($guidanceAudio) && $guidanceAudio !== ''
-                ? ($guidanceSpeech?->mimeType ?? 'audio/wav')
+                ? ($guidanceSpeech->mimeType ?? 'audio/wav')
                 : null,
         ];
     }
