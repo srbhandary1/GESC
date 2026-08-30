@@ -689,6 +689,42 @@ describe('deterministic learner journey', () => {
       expect(screen.queryByTestId('level-videos-panel')).not.toBeInTheDocument()
     })
   })
+
+  it('presents a due review before the next mission and keeps streak secondary', async () => {
+    const user = userEvent.setup()
+    const home = {
+      ...completeHome(),
+      due_review: {
+        due_at: '2026-08-30T03:30:00Z',
+        enrollment_id: ids.enrollment,
+        id: '01J00000000000000000000061',
+        interval_days: 3,
+        mission_id: ids.mission,
+        objective_id: ids.objective,
+        timezone: 'Asia/Kolkata',
+        title: content('en-IN', 'Review introductions'),
+      },
+    } satisfies LearnerHome
+    const api = fakeApi(home)
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByText('Review introductions')).toBeVisible()
+    expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
+    await user.click(screen.getByRole('button', {
+      name: t('learner.home.start_review'),
+    }))
+    expect(api.mission).toHaveBeenCalledWith(
+      ids.mission,
+      ids.enrollment,
+    )
+  })
 })
 
 function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
@@ -734,6 +770,7 @@ function fakeRecorder(): AudioRecorder {
 
 function incompleteHome(): LearnerHome {
   return {
+    due_review: null,
     enrollment: null,
     next_mission: null,
     onboarding: {
@@ -741,11 +778,17 @@ function incompleteHome(): LearnerHome {
       completed: false,
       goal_key: null,
     },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 0,
+      timezone: 'Asia/Kolkata',
+    },
   }
 }
 
 function completeHome(): LearnerHome {
   return {
+    due_review: null,
     enrollment: { id: ids.enrollment, status: 'active' },
     next_mission: {
       estimated_minutes: 5,
@@ -756,6 +799,11 @@ function completeHome(): LearnerHome {
       adult_confirmed: true,
       completed: true,
       goal_key: 'workplace-confidence',
+    },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 2,
+      timezone: 'Asia/Kolkata',
     },
   }
 }

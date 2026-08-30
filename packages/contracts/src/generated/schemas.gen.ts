@@ -2091,6 +2091,19 @@ export const PasswordSignInSchema = {
     }
 } as const;
 
+export const PasswordInvitationEnrollmentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
 export const PasswordEstablishmentSchema = {
     type: 'object',
     additionalProperties: false,
@@ -2189,7 +2202,7 @@ export const PasswordRecoveryCompletionSchema = {
     }
 } as const;
 
-export const ExcludedPasswordEstablishmentCompletionSchema = {
+export const PasswordSetupCompletionSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
@@ -2294,7 +2307,7 @@ export const NewPasswordSchema = {
     description: 'NFC-normalized 15-128 Unicode code points; server policy is authoritative.'
 } as const;
 
-export const PlatformIdentityRecoveryCaseRequestSchema = {
+export const PlatformAccountSetupRequestSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
@@ -2307,38 +2320,18 @@ export const PlatformIdentityRecoveryCaseRequestSchema = {
         },
         reason_key: {
             type: 'string',
-            const: 'identity_recovery.verified_support_case'
+            const: 'account_recovery.migration_setup'
         }
     }
 } as const;
 
-export const PlatformIdentityRecoveryEvidenceSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'evidence_reference'
-    ],
-    properties: {
-        evidence_reference: {
-            type: 'string',
-            minLength: 8,
-            maxLength: 160,
-            writeOnly: true
-        }
-    }
-} as const;
-
-export const PlatformIdentityRecoveryCaseSchema = {
+export const PlatformAccountSetupResultSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
         'id',
         'status',
-        'recovery_kind',
-        'version',
-        'not_before_at',
-        'expires_at',
-        'approval_count'
+        'expires_at'
     ],
     properties: {
         id: {
@@ -2346,35 +2339,60 @@ export const PlatformIdentityRecoveryCaseSchema = {
         },
         status: {
             type: 'string',
-            enum: [
-                'pending_approval',
-                'waiting_delay',
-                'completed'
-            ]
-        },
-        recovery_kind: {
-            type: 'string',
-            enum: [
-                'password_reset',
-                'excluded_credential_establishment'
-            ]
-        },
-        version: {
-            type: 'integer',
-            minimum: 1
-        },
-        not_before_at: {
-            type: 'string',
-            format: 'date-time'
+            const: 'delivered'
         },
         expires_at: {
             type: 'string',
             format: 'date-time'
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'contact_type',
+        'reason_key'
+    ],
+    properties: {
+        contact_type: {
+            type: 'string',
+            enum: [
+                'email',
+                'phone'
+            ]
         },
-        approval_count: {
-            type: 'integer',
-            minimum: 0,
-            maximum: 2
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.verified_contact_replacement'
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'notification_outcome'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'completed'
+        },
+        notification_outcome: {
+            type: 'string',
+            enum: [
+                'accepted',
+                'unavailable',
+                'not_possible'
+            ]
         }
     }
 } as const;
@@ -3195,6 +3213,8 @@ export const LearnerHomeSchema = {
     required: [
         'onboarding',
         'enrollment',
+        'streak',
+        'due_review',
         'next_mission'
     ],
     properties: {
@@ -3211,6 +3231,19 @@ export const LearnerHomeSchema = {
                 }
             ]
         },
+        streak: {
+            $ref: '#/components/schemas/MeaningfulSpeakingStreak'
+        },
+        due_review: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/LearnerDueReview'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
         next_mission: {
             oneOf: [
                 {
@@ -3220,6 +3253,76 @@ export const LearnerHomeSchema = {
                     type: 'null'
                 }
             ]
+        }
+    }
+} as const;
+
+export const MeaningfulSpeakingStreakSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'count',
+        'as_of_date',
+        'timezone'
+    ],
+    properties: {
+        count: {
+            type: 'integer',
+            minimum: 0
+        },
+        as_of_date: {
+            type: 'string',
+            format: 'date'
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const LearnerDueReviewSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'enrollment_id',
+        'mission_id',
+        'objective_id',
+        'interval_days',
+        'due_at',
+        'timezone',
+        'title'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        mission_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        interval_days: {
+            type: 'integer',
+            minimum: 1
+        },
+        due_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        title: {
+            $ref: '#/components/schemas/GovernedContent'
         }
     }
 } as const;
@@ -4373,6 +4476,30 @@ export const CreateConversationTurnRequestSchema = {
     }
 } as const;
 
+export const SynthesizeConversationSpeechRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'purpose',
+        'text'
+    ],
+    properties: {
+        purpose: {
+            type: 'string',
+            enum: [
+                'model_en',
+                'guidance_l1'
+            ]
+        },
+        text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 400,
+            description: 'One short model or guidance line. The server does not persist this\ntext. Soft-launch Azure neural TTS may return a WAV for playback.\n'
+        }
+    }
+} as const;
+
 export const ConversationSpeechResultSchema = {
     type: 'object',
     additionalProperties: false,
@@ -4382,14 +4509,49 @@ export const ConversationSpeechResultSchema = {
     ],
     properties: {
         playback_available: {
-            type: 'boolean',
-            const: false
+            type: 'boolean'
         },
         rendering_mode: {
             type: 'string',
             enum: [
                 'deterministic-fake-text-only',
-                'client-text-to-speech-fallback'
+                'client-text-to-speech-fallback',
+                'azure-soft-launch-guidance-wav',
+                'azure-private-wav'
+            ]
+        },
+        model_audio_base64: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Optional base64 WAV for the English model line when soft-launch\nguidance TTS is authorized. Null when playback falls back to text.\n'
+        },
+        model_audio_mime_type: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'audio/wav',
+                null
+            ]
+        },
+        guidance_audio_base64: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Optional base64 WAV for L1 guidance/correction when soft-launch\nguidance TTS is authorized.\n'
+        },
+        guidance_audio_mime_type: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'audio/wav',
+                null
             ]
         }
     }
@@ -4519,6 +4681,211 @@ export const LearnerAiMemoryListingSchema = {
             maxItems: 5,
             items: {
                 $ref: '#/components/schemas/LearnerAiMemoryFactListingItem'
+            }
+        }
+    }
+} as const;
+
+export const CreateLearnerTuitionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'preferred_window',
+        'topic'
+    ],
+    properties: {
+        preferred_window: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 120
+        },
+        topic: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 200
+        },
+        notes: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 500
+        }
+    }
+} as const;
+
+export const LearnerTuitionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'preferred_window',
+        'topic',
+        'notes',
+        'status',
+        'created_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        preferred_window: {
+            type: 'string'
+        },
+        topic: {
+            type: 'string'
+        },
+        notes: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'submitted',
+                'acknowledged'
+            ]
+        },
+        created_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const LearnerTuitionRequestListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'requests',
+        'institute_contact'
+    ],
+    properties: {
+        requests: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerTuitionRequest'
+            }
+        },
+        institute_contact: {
+            $ref: '#/components/schemas/InstituteContact'
+        }
+    }
+} as const;
+
+export const InstituteContactSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'phone',
+        'whatsapp',
+        'email'
+    ],
+    description: 'Governed institute contact for the 1:1 destination. Null fields are\nomitted from the learner UI. This is not an in-app call or booking.\n',
+    properties: {
+        phone: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'E.164 telephone number for a tel: link.'
+        },
+        whatsapp: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Digits only for a https://wa.me/ link.'
+        },
+        email: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'email'
+        }
+    }
+} as const;
+
+export const OperatorTuitionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'membership_id',
+        'display_name',
+        'preferred_window',
+        'topic',
+        'notes',
+        'status',
+        'created_at',
+        'acknowledged_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        display_name: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        preferred_window: {
+            type: 'string'
+        },
+        topic: {
+            type: 'string'
+        },
+        notes: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'submitted',
+                'acknowledged'
+            ]
+        },
+        created_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        acknowledged_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorTuitionRequestListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'requests'
+    ],
+    properties: {
+        requests: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorTuitionRequest'
             }
         }
     }
@@ -11187,7 +11554,6 @@ export const LearnerAdministrationProblemDetailsSchema = {
                         'problem.service_unavailable',
                         'problem.internal_error',
                         'problem.request_failed',
-                        'problem.fresh_mfa_required',
                         'problem.learner_administration.stale_state',
                         'problem.learner_administration.idempotency_conflict',
                         'problem.learner_administration.active_dependency',
@@ -11233,7 +11599,6 @@ export const ContentWorkspaceProblemDetailsSchema = {
                         'problem.service_unavailable',
                         'problem.internal_error',
                         'problem.request_failed',
-                        'problem.fresh_mfa_required',
                         'problem.content_workspace.not_found',
                         'problem.content_workspace.stale_version',
                         'problem.content_workspace.idempotency_conflict',
@@ -11281,7 +11646,6 @@ export const MediaLibraryProblemDetailsSchema = {
                         'problem.service_unavailable',
                         'problem.internal_error',
                         'problem.request_failed',
-                        'problem.fresh_mfa_required',
                         'problem.media_library.not_found',
                         'problem.media_library.stale_upload',
                         'problem.media_library.stale_metadata',
@@ -11323,6 +11687,30 @@ export const PasswordSignInWritableSchema = {
             minLength: 1,
             maxLength: 512,
             writeOnly: true
+        }
+    }
+} as const;
+
+export const PasswordInvitationEnrollmentWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'invitation_code',
+        'username',
+        'password'
+    ],
+    properties: {
+        invitation_code: {
+            type: 'string',
+            minLength: 12,
+            maxLength: 128,
+            writeOnly: true
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            $ref: '#/components/schemas/NewPassword'
         }
     }
 } as const;
@@ -11392,7 +11780,7 @@ export const PasswordRecoveryCompletionWritableSchema = {
     }
 } as const;
 
-export const ExcludedPasswordEstablishmentCompletionWritableSchema = {
+export const PasswordSetupCompletionWritableSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
@@ -11420,7 +11808,7 @@ export const ExcludedPasswordEstablishmentCompletionWritableSchema = {
     }
 } as const;
 
-export const PlatformIdentityRecoveryCaseRequestWritableSchema = {
+export const PlatformAccountSetupRequestWritableSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
@@ -11434,7 +11822,42 @@ export const PlatformIdentityRecoveryCaseRequestWritableSchema = {
         },
         reason_key: {
             type: 'string',
-            const: 'identity_recovery.verified_support_case'
+            const: 'account_recovery.migration_setup'
+        },
+        evidence_reference: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 160,
+            writeOnly: true
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'contact_type',
+        'contact',
+        'reason_key',
+        'evidence_reference'
+    ],
+    properties: {
+        contact_type: {
+            type: 'string',
+            enum: [
+                'email',
+                'phone'
+            ]
+        },
+        contact: {
+            type: 'string',
+            maxLength: 254,
+            writeOnly: true
+        },
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.verified_contact_replacement'
         },
         evidence_reference: {
             type: 'string',

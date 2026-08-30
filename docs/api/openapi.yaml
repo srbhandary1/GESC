@@ -2,7 +2,7 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.26.0
+  version: 0.34.0
   description: |
     Canonical API contract for the Global English platform. APP-0053 permits
     the non-production soft-launch conversation path to process typed or
@@ -16,18 +16,21 @@ info:
     attachment/replacement and retirement lifecycle. ADMIN-CONTENT-01 keeps
     the bounded current-organization Content Studio, typed graph-v2 and
     governed-text authoring, exact-head review queues, private preview and the
-    immediate/scheduled immutable publication lifecycle under fresh
-    password confirmation after cutover,
-    idempotency and optimistic concurrency. ADMIN-LEARNER-01 learner lifecycle,
+    immediate/scheduled immutable publication lifecycle under signed-in
+    role/permission authorization, idempotency and optimistic concurrency.
+    ADMIN-LEARNER-01 learner lifecycle,
     ADMIN-ORG-01 staff governance, ADMIN-SHELL-01 safe search/cursors,
     DR-0025 adds a protected private candidate read and atomic human
     reconciliation boundary for one governed LPL-01 transcription campaign.
-    AUTH-PASSWORD-01 adds platform-global username/password sign-in, same-
-    password privileged freshness, ordinary recovery, dual-operator delayed
-    privileged recovery and an explicit legacy-credential cutover.
-    APP-0057 adds marker-linked excluded-user evidence and a two-operator,
-    24-hour credential-establishment recovery for a listed username-less
-    cutover exclusion with a verified contact.
+    AUTH-PASSWORD-01 adds platform-global username/password sign-in, one-time
+    invitation enrollment with a self-chosen credential, ordinary recovery
+    and an explicit legacy-credential cutover. ADR-0022 replaces role-specific recovery with one role-neutral
+    recovery path, immediate verified-contact setup for listed username-less
+    accounts and one exact platform account-recovery manager capability.
+    ADR-0023 makes the signed-in session plus current organization role and
+    permission groups sufficient for routine operator work; current-password
+    confirmation is limited to credential, recovery-contact and administrator-
+    authority changes.
     PRIV-DSR-01 inventory,
     VIDEO-01 delivery and deterministic authoritative learning remain in
     force. Credentials, invitation digests, identity data, raw audio,
@@ -69,9 +72,12 @@ tags:
   - name: Operator
     description: |
       Tenant-scoped operator content, privacy, support and audit surfaces.
-      Every route is web-session-only. Every mutable route additionally
-      requires a fresh password-confirmation assertion after password-only
-      cutover; Passport bearers and stale assertions are denied.
+      Every route is web-session-only and rechecks selected organization,
+      role, permission and resource scope. Routine work uses the signed-in
+      session without password re-entry. Staff invitations, role-group
+      definitions, staff role assignment and staff membership lifecycle are
+      administrator-authority changes and additionally require current-
+      password confirmation. Passport bearers are denied.
 paths:
   /health/live:
     get:
@@ -300,6 +306,36 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /auth/password/invitation-enrollments:
+    post:
+      operationId: enrollWithPasswordInvitation
+      summary: Create one invited account with a self-chosen username and password
+      description: |
+        Stateful-browser setup only. The invitation is consumed in the same
+        transaction that creates the account, password credential, scoped
+        membership, optional role and optional enrollment. No session is
+        created; the new user signs in normally after setup.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordInvitationEnrollment"
+      responses:
+        "204":
+          description: The invited account and credential were created atomically.
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /auth/password/status:
     get:
       operationId: getPasswordAuthenticationStatus
@@ -461,10 +497,10 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
-  /auth/password/establishment-recoveries:
+  /auth/password/setups:
     post:
-      operationId: completeExcludedPasswordEstablishment
-      summary: Consume a governed excluded-user establishment token
+      operationId: completePasswordSetup
+      summary: Consume a governed one-time account-setup token
       tags: [Authentication]
       security: []
       requestBody:
@@ -472,7 +508,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExcludedPasswordEstablishmentCompletion"
+              $ref: "#/components/schemas/PasswordSetupCompletion"
       responses:
         "204":
           description: The target chose credentials and the one-time challenge was consumed.
@@ -480,10 +516,10 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
-  /platform/identity-recovery-cases:
+  /platform/account-recovery/setups:
     post:
-      operationId: openPlatformIdentityRecoveryCase
-      summary: Open a content-minimized privileged identity recovery case
+      operationId: requestPlatformAccountSetup
+      summary: Send immediate setup to a listed credential-unready account
       tags: [Authentication]
       security:
         - sanctumSession: []
@@ -492,66 +528,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlatformIdentityRecoveryCaseRequest"
+              $ref: "#/components/schemas/PlatformAccountSetupRequest"
       responses:
         "201":
-          description: The recovery case was opened.
+          description: The one-time setup token was delivered to the verified contact.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlatformIdentityRecoveryCase"
+                $ref: "#/components/schemas/PlatformAccountSetupResult"
+        "403":
+          $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
-  /platform/identity-recovery-cases/{case_id}/approvals:
-    post:
-      operationId: approvePlatformIdentityRecoveryCase
-      summary: Append one distinct platform-operator approval
+  /platform/account-recovery/users/{user_id}/contact:
+    put:
+      operationId: replacePlatformRecoveryContact
+      summary: Replace a lost verified recovery contact after external verification
       tags: [Authentication]
       security:
         - sanctumSession: []
       parameters:
-        - $ref: "#/components/parameters/IdentityRecoveryCaseId"
+        - name: user_id
+          in: path
+          required: true
+          description: Target platform-global user ULID.
+          schema:
+            $ref: "#/components/schemas/Ulid"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlatformIdentityRecoveryEvidence"
+              $ref: "#/components/schemas/PlatformRecoveryContactReplacement"
       responses:
         "200":
-          description: The immutable approval was appended.
+          description: The verified recovery contact was replaced and credentials were revoked.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlatformIdentityRecoveryCase"
-        "422":
+                $ref: "#/components/schemas/PlatformRecoveryContactReplacementResult"
+        "403":
           $ref: "#/components/responses/Problem"
-        default:
-          $ref: "#/components/responses/Problem"
-  /platform/identity-recovery-cases/{case_id}/complete:
-    post:
-      operationId: completePlatformIdentityRecoveryCase
-      summary: Issue recovery after two approvals and the 24-hour delay
-      tags: [Authentication]
-      security:
-        - sanctumSession: []
-      parameters:
-        - $ref: "#/components/parameters/IdentityRecoveryCaseId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PlatformIdentityRecoveryEvidence"
-      responses:
-        "200":
-          description: A short-lived token was issued to the verified contact.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PlatformIdentityRecoveryCase"
         "422":
           $ref: "#/components/responses/Problem"
         default:
@@ -1621,6 +1640,56 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/speech:
+    post:
+      operationId: synthesizeConversationSpeech
+      summary: Synthesize one bounded model or guidance line for a live session
+      description: |
+        Speaks one short English model line or L1 guidance line through the
+        project-owned guidance TTS port for a learner-owned active session.
+        Soft-launch returns an optional Azure neural WAV; text remains the
+        primary surface and failures fall back without audio. Persistent rows
+        do not store utterance text or audio bytes.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SynthesizeConversationSpeechRequest"
+      responses:
+        "200":
+          description: Guidance TTS returned playback metadata for this line.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSpeechResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /conversation-turns/{conversation_turn_id}/events:
     get:
       operationId: streamConversationTurnEvents
@@ -1816,6 +1885,95 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/tuition-requests:
+    get:
+      operationId: listLearnerTuitionRequests
+      summary: List the learner's 1:1 tuition requests
+      description: |
+        Returns org-scoped waitlist requests created by the authenticated
+        learner membership, plus governed institute contact links when
+        configured. This is not a booking, calendar, payment or in-app call
+        API.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: The learner's tuition requests.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequestListing"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createLearnerTuitionRequest
+      summary: Submit a 1:1 tuition waitlist request
+      description: |
+        Creates one org-scoped request for live speaking help. No payment,
+        trainer assignment or calendar booking is performed.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearnerTuitionRequest"
+      responses:
+        "201":
+          description: Tuition request created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequest"
+        "200":
+          description: Idempotent replay of the same create command.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequest"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -2226,6 +2384,254 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels:
+    get:
+      operationId: listLearnerLevels
+      summary: List data-driven level shells and availability
+      description: |
+        Returns Levels 1–N from configuration. A level is `available` only when
+        the selected organization has an attached four-part lesson-practice
+        blueprint for that level's concept key. Otherwise it is
+        `commissioning_pending`. No level count is hard-coded in domain code.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Level catalog for the selected organization context.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [levels]
+                additionalProperties: false
+                properties:
+                  levels:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - level_number
+                        - availability
+                        - session_part_ids
+                      additionalProperties: false
+                      properties:
+                        level_number:
+                          type: integer
+                          minimum: 1
+                        concept_key:
+                          type: [string, "null"]
+                        availability:
+                          type: string
+                          enum: [available, commissioning_pending]
+                        blueprint_id:
+                          type: [string, "null"]
+                        session_part_ids:
+                          type: array
+                          items:
+                            type: string
+                            enum:
+                              - introduction
+                              - practice
+                              - conversation
+                              - interaction
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/sessions/{partId}:
+    get:
+      operationId: showLearnerLevelSession
+      summary: Show one four-session level part for private pilot delivery
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+        - name: partId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - introduction
+              - practice
+              - conversation
+              - interaction
+      responses:
+        "200":
+          description: Session payload without authoritative check answers.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/sessions/{partId}/audio:
+    get:
+      operationId: streamLearnerLevelSessionAudio
+      summary: Stream attached lesson audio for one level session part
+      description: |
+        Streams the organization-scoped lesson_audio attachment for the
+        requested level part after membership authorization. Does not use
+        enrollment/mission media content gates; level-session delivery is
+        the authority for private pilot path audio.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+        - name: partId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - introduction
+              - practice
+              - conversation
+              - interaction
+      responses:
+        "200":
+          description: Inline lesson audio bytes with integrity headers.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            Content-Type:
+              schema:
+                type: string
+                example: audio/mpeg
+            X-Content-SHA256:
+              schema:
+                type: string
+                pattern: '^[0-9a-f]{64}$'
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/sessions/{partId}/conversation-sessions:
+    post:
+      operationId: startLearnerLevelSessionConversation
+      summary: Start a bound Confidence Conversation for a level session part
+      description: |
+        Starts an organization-scoped conversation session using the
+        level-part prototype binding. Local/testing uses the deterministic
+        fake provider; production remains fail-closed.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+        - name: partId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - introduction
+              - practice
+              - conversation
+              - interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idempotency_key
+                - ui_locale
+              properties:
+                idempotency_key:
+                  type: string
+                  maxLength: 120
+                ui_locale:
+                  type: string
+                  maxLength: 16
+      responses:
+        "201":
+          description: Conversation session created.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "200":
+          description: Idempotent replay of an existing conversation session.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "503":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -4175,6 +4581,73 @@ paths:
         "403":
           $ref: "#/components/responses/LearnerAdministrationProblem"
         "404":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        default:
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+  /operator/tuition-requests:
+    get:
+      operationId: listOperatorTuitionRequests
+      summary: List current-organization 1:1 tuition waitlist requests
+      description: |
+        Returns org-scoped learner tuition requests. Requires learners.read.
+        This is not a booking, calendar or payment API.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Organization tuition requests.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorTuitionRequestListing"
+        "401":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        "403":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        "404":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        default:
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+  /operator/tuition-requests/{tuitionRequest}/acknowledgements:
+    post:
+      operationId: acknowledgeOperatorTuitionRequest
+      summary: Mark a 1:1 tuition request as seen by staff
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: tuitionRequest
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Request acknowledged or idempotently replayed.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorTuitionRequest"
+        "401":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        "403":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        "404":
+          $ref: "#/components/responses/LearnerAdministrationProblem"
+        "409":
           $ref: "#/components/responses/LearnerAdministrationProblem"
         default:
           $ref: "#/components/responses/LearnerAdministrationProblem"
@@ -6811,7 +7284,7 @@ paths:
       summary: Read one short-lived governed transcription candidate
       description: |
         Returns the application-encrypted candidate only to a current-
-        organization web operator with media.metadata.manage and fresh password confirmation.
+        organization signed-in web operator with media.metadata.manage.
         The response is non-authoritative and must be checked against the
         complete exact audio before reconciliation.
       tags:
@@ -6856,8 +7329,8 @@ paths:
       summary: Reconcile one exact provider candidate through a human
       description: |
         Requires current-organization web authentication, selected membership,
-        fresh password confirmation, media.metadata.manage, optimistic version and candidate
-        digest. Confirmed or corrected outcomes atomically create an immutable
+        media.metadata.manage, optimistic version and candidate digest.
+        Confirmed or corrected outcomes atomically create an immutable
         English media-metadata revision; no outcome is academic approval.
       tags:
         - Operator
@@ -6929,13 +7402,6 @@ components:
       schema:
         type: string
         format: uuid
-    IdentityRecoveryCaseId:
-      name: case_id
-      in: path
-      required: true
-      description: Platform-owned privileged identity-recovery case ULID.
-      schema:
-        $ref: "#/components/schemas/Ulid"
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -7328,9 +7794,11 @@ components:
       name: __Host-global_english_session
       description: |
         Secure, HttpOnly same-origin session cookie. Browser JavaScript never
-        reads or persists this credential. After password-only cutover,
-        protected commands additionally require a password confirmation no
-        more than five minutes old and bound to the current credential version.
+        reads or persists this credential. Routine operator work relies on the
+        signed-in session plus command-time role/permission enforcement.
+        Credential, recovery-contact and administrator-authority changes may
+        additionally require current-password confirmation no more than five
+        minutes old and bound to the current credential version.
     passportOAuth:
       type: oauth2
       description: Android Authorization Code flow with S256 PKCE.
@@ -8761,6 +9229,20 @@ components:
           minLength: 1
           maxLength: 512
           writeOnly: true
+    PasswordInvitationEnrollment:
+      type: object
+      additionalProperties: false
+      required: [invitation_code, username, password]
+      properties:
+        invitation_code:
+          type: string
+          minLength: 12
+          maxLength: 128
+          writeOnly: true
+        username:
+          $ref: "#/components/schemas/GlobalUsername"
+        password:
+          $ref: "#/components/schemas/NewPassword"
     PasswordEstablishment:
       type: object
       additionalProperties: false
@@ -8835,7 +9317,7 @@ components:
           writeOnly: true
         new_password:
           $ref: "#/components/schemas/NewPassword"
-    ExcludedPasswordEstablishmentCompletion:
+    PasswordSetupCompletion:
       type: object
       additionalProperties: false
       required: [challenge_id, username, token, password]
@@ -8897,7 +9379,7 @@ components:
       maxLength: 128
       writeOnly: true
       description: NFC-normalized 15-128 Unicode code points; server policy is authoritative.
-    PlatformIdentityRecoveryCaseRequest:
+    PlatformAccountSetupRequest:
       type: object
       additionalProperties: false
       required: [target_user_id, reason_key, evidence_reference]
@@ -8906,48 +9388,58 @@ components:
           $ref: "#/components/schemas/Ulid"
         reason_key:
           type: string
-          const: identity_recovery.verified_support_case
+          const: account_recovery.migration_setup
         evidence_reference:
           type: string
           minLength: 8
           maxLength: 160
           writeOnly: true
-    PlatformIdentityRecoveryEvidence:
+    PlatformAccountSetupResult:
       type: object
       additionalProperties: false
-      required: [evidence_reference]
-      properties:
-        evidence_reference:
-          type: string
-          minLength: 8
-          maxLength: 160
-          writeOnly: true
-    PlatformIdentityRecoveryCase:
-      type: object
-      additionalProperties: false
-      required: [id, status, recovery_kind, version, not_before_at, expires_at, approval_count]
+      required: [id, status, expires_at]
       properties:
         id:
           $ref: "#/components/schemas/Ulid"
         status:
           type: string
-          enum: [pending_approval, waiting_delay, completed]
-        recovery_kind:
-          type: string
-          enum: [password_reset, excluded_credential_establishment]
-        version:
-          type: integer
-          minimum: 1
-        not_before_at:
-          type: string
-          format: date-time
+          const: delivered
         expires_at:
           type: string
           format: date-time
-        approval_count:
-          type: integer
-          minimum: 0
-          maximum: 2
+    PlatformRecoveryContactReplacement:
+      type: object
+      additionalProperties: false
+      required: [contact_type, contact, reason_key, evidence_reference]
+      properties:
+        contact_type:
+          type: string
+          enum: [email, phone]
+        contact:
+          type: string
+          maxLength: 254
+          writeOnly: true
+        reason_key:
+          type: string
+          const: account_recovery.verified_contact_replacement
+        evidence_reference:
+          type: string
+          minLength: 8
+          maxLength: 160
+          writeOnly: true
+    PlatformRecoveryContactReplacementResult:
+      type: object
+      additionalProperties: false
+      required: [id, status, notification_outcome]
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          const: completed
+        notification_outcome:
+          type: string
+          enum: [accepted, unavailable, not_possible]
     OtpChallenge:
       type: object
       additionalProperties: false
@@ -9513,6 +10005,8 @@ components:
       required:
         - onboarding
         - enrollment
+        - streak
+        - due_review
         - next_mission
       properties:
         onboarding:
@@ -9521,10 +10015,67 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ActiveLearnerEnrollment"
             - type: "null"
+        streak:
+          $ref: "#/components/schemas/MeaningfulSpeakingStreak"
+        due_review:
+          oneOf:
+            - $ref: "#/components/schemas/LearnerDueReview"
+            - type: "null"
         next_mission:
           oneOf:
             - $ref: "#/components/schemas/LearnerMissionSummary"
             - type: "null"
+    MeaningfulSpeakingStreak:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+        - as_of_date
+        - timezone
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        as_of_date:
+          type: string
+          format: date
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+    LearnerDueReview:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - enrollment_id
+        - mission_id
+        - objective_id
+        - interval_days
+        - due_at
+        - timezone
+        - title
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        mission_id:
+          $ref: "#/components/schemas/Ulid"
+        objective_id:
+          $ref: "#/components/schemas/Ulid"
+        interval_days:
+          type: integer
+          minimum: 1
+        due_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        title:
+          $ref: "#/components/schemas/GovernedContent"
     CompleteLearnerOnboardingRequest:
       type: object
       additionalProperties: false
@@ -10350,6 +10901,25 @@ components:
           description: |
             Typed text or a transcript explicitly accepted/corrected by the
             learner through the separate voice-recording review lifecycle.
+    SynthesizeConversationSpeechRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - text
+      properties:
+        purpose:
+          type: string
+          enum:
+            - model_en
+            - guidance_l1
+        text:
+          type: string
+          minLength: 1
+          maxLength: 400
+          description: |
+            One short model or guidance line. The server does not persist this
+            text. Soft-launch Azure neural TTS may return a WAV for playback.
     ConversationSpeechResult:
       type: object
       additionalProperties: false
@@ -10359,12 +10929,41 @@ components:
       properties:
         playback_available:
           type: boolean
-          const: false
         rendering_mode:
           type: string
           enum:
             - deterministic-fake-text-only
             - client-text-to-speech-fallback
+            - azure-soft-launch-guidance-wav
+            - azure-private-wav
+        model_audio_base64:
+          type:
+            - string
+            - 'null'
+          description: |
+            Optional base64 WAV for the English model line when soft-launch
+            guidance TTS is authorized. Null when playback falls back to text.
+        model_audio_mime_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - audio/wav
+            - null
+        guidance_audio_base64:
+          type:
+            - string
+            - 'null'
+          description: |
+            Optional base64 WAV for L1 guidance/correction when soft-launch
+            guidance TTS is authorized.
+        guidance_audio_mime_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - audio/wav
+            - null
     ConversationUsageSummary:
       type: object
       additionalProperties: false
@@ -10456,6 +11055,151 @@ components:
           maxItems: 5
           items:
             $ref: "#/components/schemas/LearnerAiMemoryFactListingItem"
+    CreateLearnerTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - preferred_window
+        - topic
+      properties:
+        preferred_window:
+          type: string
+          minLength: 3
+          maxLength: 120
+        topic:
+          type: string
+          minLength: 3
+          maxLength: 200
+        notes:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+    LearnerTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - preferred_window
+        - topic
+        - notes
+        - status
+        - created_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        preferred_window:
+          type: string
+        topic:
+          type: string
+        notes:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - submitted
+            - acknowledged
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    LearnerTuitionRequestListing:
+      type: object
+      additionalProperties: false
+      required:
+        - requests
+        - institute_contact
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerTuitionRequest"
+        institute_contact:
+          $ref: "#/components/schemas/InstituteContact"
+    InstituteContact:
+      type: object
+      additionalProperties: false
+      required:
+        - phone
+        - whatsapp
+        - email
+      description: |
+        Governed institute contact for the 1:1 destination. Null fields are
+        omitted from the learner UI. This is not an in-app call or booking.
+      properties:
+        phone:
+          type:
+            - string
+            - "null"
+          description: "E.164 telephone number for a tel: link."
+        whatsapp:
+          type:
+            - string
+            - "null"
+          description: "Digits only for a https://wa.me/ link."
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+    OperatorTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - membership_id
+        - display_name
+        - preferred_window
+        - topic
+        - notes
+        - status
+        - created_at
+        - acknowledged_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+        display_name:
+          type:
+            - string
+            - "null"
+        preferred_window:
+          type: string
+        topic:
+          type: string
+        notes:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - submitted
+            - acknowledged
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        acknowledged_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorTuitionRequestListing:
+      type: object
+      additionalProperties: false
+      required:
+        - requests
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorTuitionRequest"
     LearnerAiMemoryFactListingItem:
       type: object
       additionalProperties: false
@@ -14973,7 +15717,6 @@ components:
                 - problem.service_unavailable
                 - problem.internal_error
                 - problem.request_failed
-                - problem.fresh_mfa_required
                 - problem.learner_administration.stale_state
                 - problem.learner_administration.idempotency_conflict
                 - problem.learner_administration.active_dependency
@@ -15007,7 +15750,6 @@ components:
                 - problem.service_unavailable
                 - problem.internal_error
                 - problem.request_failed
-                - problem.fresh_mfa_required
                 - problem.content_workspace.not_found
                 - problem.content_workspace.stale_version
                 - problem.content_workspace.idempotency_conflict
@@ -15043,7 +15785,6 @@ components:
                 - problem.service_unavailable
                 - problem.internal_error
                 - problem.request_failed
-                - problem.fresh_mfa_required
                 - problem.media_library.not_found
                 - problem.media_library.stale_upload
                 - problem.media_library.stale_metadata

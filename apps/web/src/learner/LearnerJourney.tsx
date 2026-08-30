@@ -398,9 +398,11 @@ export function LearnerJourney({
     }
   }, [online, synchronizeOfflineCommands])
 
-  const beginMission = async (home: LearnerHome) => {
+  const beginMission = async (
+    home: LearnerHome,
+    summary = home.next_mission,
+  ) => {
     const enrollment = home.enrollment
-    const summary = home.next_mission
 
     if (enrollment === null || summary === null) {
       return
@@ -695,6 +697,21 @@ export function LearnerJourney({
       >
         <LocalizedMessage resolution={message('learner.home.title')} />
       </h2>
+      <aside
+        aria-label={message('learner.home.streak_label').text}
+        className="learner-streak"
+      >
+        <LocalizedMessage
+          resolution={resolveInterfaceMessage(
+            state.home.streak.count === 1
+              ? 'learner.home.streak_one'
+              : 'learner.home.streak_many',
+            locale,
+            localizationPolicy,
+            { count: state.home.streak.count },
+          )}
+        />
+      </aside>
       {state.home.enrollment === null ||
       state.home.next_mission === null ? (
         <p className="learner-card">
@@ -704,19 +721,28 @@ export function LearnerJourney({
         </p>
       ) : (
         <section
-          aria-labelledby="next-mission-title"
+          aria-labelledby="dominant-action-title"
           className="learner-card"
         >
           <p className="learner-eyebrow">
             <LocalizedMessage
-              resolution={message('learner.home.next_mission')}
+              resolution={message(
+                state.home.due_review === null
+                  ? 'learner.home.next_mission'
+                  : 'learner.home.review_due',
+              )}
             />
           </p>
           <h3
             className="learner-card__title"
-            id="next-mission-title"
+            id="dominant-action-title"
           >
-            <GovernedText content={state.home.next_mission.title} />
+            <GovernedText
+              content={
+                state.home.due_review?.title ??
+                state.home.next_mission.title
+              }
+            />
           </h3>
           <p>
             <LocalizedMessage
@@ -740,14 +766,28 @@ export function LearnerJourney({
           <button
             className="ge-button ge-button--primary"
             disabled={busy}
-            onClick={() => void beginMission(state.home)}
+            onClick={() =>
+              void beginMission(
+                state.home,
+                state.home.due_review === null
+                  ? state.home.next_mission
+                  : {
+                      estimated_minutes:
+                        state.home.next_mission!.estimated_minutes,
+                      id: state.home.due_review.mission_id,
+                      title: state.home.due_review.title,
+                    },
+              )
+            }
             type="button"
           >
             <LocalizedMessage
               resolution={message(
                 busy
                   ? 'learner.home.starting'
-                  : 'learner.home.start_mission',
+                  : state.home.due_review === null
+                    ? 'learner.home.start_mission'
+                    : 'learner.home.start_review',
               )}
             />
           </button>

@@ -408,6 +408,10 @@ export type PasswordSignIn = {
     username: GlobalUsername;
 };
 
+export type PasswordInvitationEnrollment = {
+    username: GlobalUsername;
+};
+
 export type PasswordEstablishment = {
     username: GlobalUsername;
 };
@@ -438,7 +442,7 @@ export type PasswordRecoveryCompletion = {
     username: GlobalUsername;
 };
 
-export type ExcludedPasswordEstablishmentCompletion = {
+export type PasswordSetupCompletion = {
     challenge_id: Ulid;
     username: GlobalUsername;
 };
@@ -465,23 +469,26 @@ export type GlobalUsername = string;
  */
 export type NewPassword = string;
 
-export type PlatformIdentityRecoveryCaseRequest = {
+export type PlatformAccountSetupRequest = {
     target_user_id: Ulid;
-    reason_key: 'identity_recovery.verified_support_case';
+    reason_key: 'account_recovery.migration_setup';
 };
 
-export type PlatformIdentityRecoveryEvidence = {
-    evidence_reference: string;
-};
-
-export type PlatformIdentityRecoveryCase = {
+export type PlatformAccountSetupResult = {
     id: Ulid;
-    status: 'pending_approval' | 'waiting_delay' | 'completed';
-    recovery_kind: 'password_reset' | 'excluded_credential_establishment';
-    version: number;
-    not_before_at: string;
+    status: 'delivered';
     expires_at: string;
-    approval_count: number;
+};
+
+export type PlatformRecoveryContactReplacement = {
+    contact_type: 'email' | 'phone';
+    reason_key: 'account_recovery.verified_contact_replacement';
+};
+
+export type PlatformRecoveryContactReplacementResult = {
+    id: Ulid;
+    status: 'completed';
+    notification_outcome: 'accepted' | 'unavailable' | 'not_possible';
 };
 
 export type OtpChallenge = {
@@ -693,7 +700,26 @@ export type LearnerMissionSummary = {
 export type LearnerHome = {
     onboarding: LearnerOnboardingState;
     enrollment: ActiveLearnerEnrollment | null;
+    streak: MeaningfulSpeakingStreak;
+    due_review: LearnerDueReview | null;
     next_mission: LearnerMissionSummary | null;
+};
+
+export type MeaningfulSpeakingStreak = {
+    count: number;
+    as_of_date: string;
+    timezone: string;
+};
+
+export type LearnerDueReview = {
+    id: Ulid;
+    enrollment_id: Ulid;
+    mission_id: Ulid;
+    objective_id: Ulid;
+    interval_days: number;
+    due_at: string;
+    timezone: string;
+    title: GovernedContent;
 };
 
 export type CompleteLearnerOnboardingRequest = {
@@ -981,9 +1007,33 @@ export type CreateConversationTurnRequest = {
     prototype_utterance: string;
 };
 
+export type SynthesizeConversationSpeechRequest = {
+    purpose: 'model_en' | 'guidance_l1';
+    /**
+     * One short model or guidance line. The server does not persist this
+     * text. Soft-launch Azure neural TTS may return a WAV for playback.
+     *
+     */
+    text: string;
+};
+
 export type ConversationSpeechResult = {
-    playback_available: false;
-    rendering_mode: 'deterministic-fake-text-only' | 'client-text-to-speech-fallback';
+    playback_available: boolean;
+    rendering_mode: 'deterministic-fake-text-only' | 'client-text-to-speech-fallback' | 'azure-soft-launch-guidance-wav' | 'azure-private-wav';
+    /**
+     * Optional base64 WAV for the English model line when soft-launch
+     * guidance TTS is authorized. Null when playback falls back to text.
+     *
+     */
+    model_audio_base64?: string | null;
+    model_audio_mime_type?: 'audio/wav' | null;
+    /**
+     * Optional base64 WAV for L1 guidance/correction when soft-launch
+     * guidance TTS is authorized.
+     *
+     */
+    guidance_audio_base64?: string | null;
+    guidance_audio_mime_type?: 'audio/wav' | null;
 };
 
 export type ConversationUsageSummary = {
@@ -1014,6 +1064,59 @@ export type LearnerAiMemoryFact = {
 
 export type LearnerAiMemoryListing = {
     facts: Array<LearnerAiMemoryFactListingItem>;
+};
+
+export type CreateLearnerTuitionRequest = {
+    preferred_window: string;
+    topic: string;
+    notes?: string | null;
+};
+
+export type LearnerTuitionRequest = {
+    id: Ulid;
+    preferred_window: string;
+    topic: string;
+    notes: string | null;
+    status: 'submitted' | 'acknowledged';
+    created_at: string | null;
+};
+
+export type LearnerTuitionRequestListing = {
+    requests: Array<LearnerTuitionRequest>;
+    institute_contact: InstituteContact;
+};
+
+/**
+ * Governed institute contact for the 1:1 destination. Null fields are
+ * omitted from the learner UI. This is not an in-app call or booking.
+ *
+ */
+export type InstituteContact = {
+    /**
+     * E.164 telephone number for a tel: link.
+     */
+    phone: string | null;
+    /**
+     * Digits only for a https://wa.me/ link.
+     */
+    whatsapp: string | null;
+    email: string | null;
+};
+
+export type OperatorTuitionRequest = {
+    id: Ulid;
+    membership_id: Ulid;
+    display_name: string | null;
+    preferred_window: string;
+    topic: string;
+    notes: string | null;
+    status: 'submitted' | 'acknowledged';
+    created_at: string | null;
+    acknowledged_at: string | null;
+};
+
+export type OperatorTuitionRequestListing = {
+    requests: Array<OperatorTuitionRequest>;
 };
 
 export type LearnerAiMemoryFactListingItem = {
@@ -2393,20 +2496,26 @@ export type OrganizationAdministrationProblemDetails = ProblemDetails & {
 };
 
 export type LearnerAdministrationProblemDetails = ProblemDetails & {
-    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.learner_administration.stale_state' | 'problem.learner_administration.idempotency_conflict' | 'problem.learner_administration.active_dependency' | 'problem.learner_administration.unsafe_role';
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.learner_administration.stale_state' | 'problem.learner_administration.idempotency_conflict' | 'problem.learner_administration.active_dependency' | 'problem.learner_administration.unsafe_role';
 };
 
 export type ContentWorkspaceProblemDetails = ProblemDetails & {
-    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.content_workspace.not_found' | 'problem.content_workspace.stale_version' | 'problem.content_workspace.idempotency_conflict' | 'problem.content_workspace.state_conflict' | 'problem.content_workspace.head_conflict' | 'problem.content_workspace.concurrent_change';
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.content_workspace.not_found' | 'problem.content_workspace.stale_version' | 'problem.content_workspace.idempotency_conflict' | 'problem.content_workspace.state_conflict' | 'problem.content_workspace.head_conflict' | 'problem.content_workspace.concurrent_change';
 };
 
 export type MediaLibraryProblemDetails = ProblemDetails & {
-    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.fresh_mfa_required' | 'problem.media_library.not_found' | 'problem.media_library.stale_upload' | 'problem.media_library.stale_metadata' | 'problem.media_library.stale_lifecycle' | 'problem.media_library.stale_workspace' | 'problem.media_library.idempotency_conflict' | 'problem.media_library.duplicate_use' | 'problem.media_library.storage_failure' | 'problem.media_library.concurrent_change';
+    message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.media_library.not_found' | 'problem.media_library.stale_upload' | 'problem.media_library.stale_metadata' | 'problem.media_library.stale_lifecycle' | 'problem.media_library.stale_workspace' | 'problem.media_library.idempotency_conflict' | 'problem.media_library.duplicate_use' | 'problem.media_library.storage_failure' | 'problem.media_library.concurrent_change';
 };
 
 export type PasswordSignInWritable = {
     username: GlobalUsername;
     password: string;
+};
+
+export type PasswordInvitationEnrollmentWritable = {
+    invitation_code: string;
+    username: GlobalUsername;
+    password: NewPassword;
 };
 
 export type PasswordEstablishmentWritable = {
@@ -2426,16 +2535,23 @@ export type PasswordRecoveryCompletionWritable = {
     new_password: NewPassword;
 };
 
-export type ExcludedPasswordEstablishmentCompletionWritable = {
+export type PasswordSetupCompletionWritable = {
     challenge_id: Ulid;
     username: GlobalUsername;
     token: string;
     password: NewPassword;
 };
 
-export type PlatformIdentityRecoveryCaseRequestWritable = {
+export type PlatformAccountSetupRequestWritable = {
     target_user_id: Ulid;
-    reason_key: 'identity_recovery.verified_support_case';
+    reason_key: 'account_recovery.migration_setup';
+    evidence_reference: string;
+};
+
+export type PlatformRecoveryContactReplacementWritable = {
+    contact_type: 'email' | 'phone';
+    contact: string;
+    reason_key: 'account_recovery.verified_contact_replacement';
     evidence_reference: string;
 };
 
@@ -2445,11 +2561,6 @@ export type PlatformIdentityRecoveryCaseRequestWritable = {
  *
  */
 export type CorrelationId = string;
-
-/**
- * Platform-owned privileged identity-recovery case ULID.
- */
-export type IdentityRecoveryCaseId = Ulid;
 
 /**
  * Opaque UUID or ULID identifying one replayable command.
@@ -2763,6 +2874,51 @@ export type SignInWithPasswordResponses = {
 
 export type SignInWithPasswordResponse = SignInWithPasswordResponses[keyof SignInWithPasswordResponses];
 
+export type EnrollWithPasswordInvitationData = {
+    body: PasswordInvitationEnrollmentWritable;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/password/invitation-enrollments';
+};
+
+export type EnrollWithPasswordInvitationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type EnrollWithPasswordInvitationError = EnrollWithPasswordInvitationErrors[keyof EnrollWithPasswordInvitationErrors];
+
+export type EnrollWithPasswordInvitationResponses = {
+    /**
+     * The invited account and credential were created atomically.
+     */
+    204: void;
+};
+
+export type EnrollWithPasswordInvitationResponse = EnrollWithPasswordInvitationResponses[keyof EnrollWithPasswordInvitationResponses];
+
 export type GetPasswordAuthenticationStatusData = {
     body?: never;
     path?: never;
@@ -2995,14 +3151,14 @@ export type CompletePasswordRecoveryResponses = {
 
 export type CompletePasswordRecoveryResponse = CompletePasswordRecoveryResponses[keyof CompletePasswordRecoveryResponses];
 
-export type CompleteExcludedPasswordEstablishmentData = {
-    body: ExcludedPasswordEstablishmentCompletionWritable;
+export type CompletePasswordSetupData = {
+    body: PasswordSetupCompletionWritable;
     path?: never;
     query?: never;
-    url: '/auth/password/establishment-recoveries';
+    url: '/auth/password/setups';
 };
 
-export type CompleteExcludedPasswordEstablishmentErrors = {
+export type CompletePasswordSetupErrors = {
     /**
      * The request could not be completed.
      */
@@ -3013,25 +3169,29 @@ export type CompleteExcludedPasswordEstablishmentErrors = {
     default: ProblemDetails;
 };
 
-export type CompleteExcludedPasswordEstablishmentError = CompleteExcludedPasswordEstablishmentErrors[keyof CompleteExcludedPasswordEstablishmentErrors];
+export type CompletePasswordSetupError = CompletePasswordSetupErrors[keyof CompletePasswordSetupErrors];
 
-export type CompleteExcludedPasswordEstablishmentResponses = {
+export type CompletePasswordSetupResponses = {
     /**
      * The target chose credentials and the one-time challenge was consumed.
      */
     204: void;
 };
 
-export type CompleteExcludedPasswordEstablishmentResponse = CompleteExcludedPasswordEstablishmentResponses[keyof CompleteExcludedPasswordEstablishmentResponses];
+export type CompletePasswordSetupResponse = CompletePasswordSetupResponses[keyof CompletePasswordSetupResponses];
 
-export type OpenPlatformIdentityRecoveryCaseData = {
-    body: PlatformIdentityRecoveryCaseRequestWritable;
+export type RequestPlatformAccountSetupData = {
+    body: PlatformAccountSetupRequestWritable;
     path?: never;
     query?: never;
-    url: '/platform/identity-recovery-cases';
+    url: '/platform/account-recovery/setups';
 };
 
-export type OpenPlatformIdentityRecoveryCaseErrors = {
+export type RequestPlatformAccountSetupErrors = {
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3042,30 +3202,34 @@ export type OpenPlatformIdentityRecoveryCaseErrors = {
     default: ProblemDetails;
 };
 
-export type OpenPlatformIdentityRecoveryCaseError = OpenPlatformIdentityRecoveryCaseErrors[keyof OpenPlatformIdentityRecoveryCaseErrors];
+export type RequestPlatformAccountSetupError = RequestPlatformAccountSetupErrors[keyof RequestPlatformAccountSetupErrors];
 
-export type OpenPlatformIdentityRecoveryCaseResponses = {
+export type RequestPlatformAccountSetupResponses = {
     /**
-     * The recovery case was opened.
+     * The one-time setup token was delivered to the verified contact.
      */
-    201: PlatformIdentityRecoveryCase;
+    201: PlatformAccountSetupResult;
 };
 
-export type OpenPlatformIdentityRecoveryCaseResponse = OpenPlatformIdentityRecoveryCaseResponses[keyof OpenPlatformIdentityRecoveryCaseResponses];
+export type RequestPlatformAccountSetupResponse = RequestPlatformAccountSetupResponses[keyof RequestPlatformAccountSetupResponses];
 
-export type ApprovePlatformIdentityRecoveryCaseData = {
-    body: PlatformIdentityRecoveryEvidence;
+export type ReplacePlatformRecoveryContactData = {
+    body: PlatformRecoveryContactReplacementWritable;
     path: {
         /**
-         * Platform-owned privileged identity-recovery case ULID.
+         * Target platform-global user ULID.
          */
-        case_id: Ulid;
+        user_id: Ulid;
     };
     query?: never;
-    url: '/platform/identity-recovery-cases/{case_id}/approvals';
+    url: '/platform/account-recovery/users/{user_id}/contact';
 };
 
-export type ApprovePlatformIdentityRecoveryCaseErrors = {
+export type ReplacePlatformRecoveryContactErrors = {
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -3076,50 +3240,16 @@ export type ApprovePlatformIdentityRecoveryCaseErrors = {
     default: ProblemDetails;
 };
 
-export type ApprovePlatformIdentityRecoveryCaseError = ApprovePlatformIdentityRecoveryCaseErrors[keyof ApprovePlatformIdentityRecoveryCaseErrors];
+export type ReplacePlatformRecoveryContactError = ReplacePlatformRecoveryContactErrors[keyof ReplacePlatformRecoveryContactErrors];
 
-export type ApprovePlatformIdentityRecoveryCaseResponses = {
+export type ReplacePlatformRecoveryContactResponses = {
     /**
-     * The immutable approval was appended.
+     * The verified recovery contact was replaced and credentials were revoked.
      */
-    200: PlatformIdentityRecoveryCase;
+    200: PlatformRecoveryContactReplacementResult;
 };
 
-export type ApprovePlatformIdentityRecoveryCaseResponse = ApprovePlatformIdentityRecoveryCaseResponses[keyof ApprovePlatformIdentityRecoveryCaseResponses];
-
-export type CompletePlatformIdentityRecoveryCaseData = {
-    body: PlatformIdentityRecoveryEvidence;
-    path: {
-        /**
-         * Platform-owned privileged identity-recovery case ULID.
-         */
-        case_id: Ulid;
-    };
-    query?: never;
-    url: '/platform/identity-recovery-cases/{case_id}/complete';
-};
-
-export type CompletePlatformIdentityRecoveryCaseErrors = {
-    /**
-     * The request could not be completed.
-     */
-    422: ProblemDetails;
-    /**
-     * The request could not be completed.
-     */
-    default: ProblemDetails;
-};
-
-export type CompletePlatformIdentityRecoveryCaseError = CompletePlatformIdentityRecoveryCaseErrors[keyof CompletePlatformIdentityRecoveryCaseErrors];
-
-export type CompletePlatformIdentityRecoveryCaseResponses = {
-    /**
-     * A short-lived token was issued to the verified contact.
-     */
-    200: PlatformIdentityRecoveryCase;
-};
-
-export type CompletePlatformIdentityRecoveryCaseResponse = CompletePlatformIdentityRecoveryCaseResponses[keyof CompletePlatformIdentityRecoveryCaseResponses];
+export type ReplacePlatformRecoveryContactResponse = ReplacePlatformRecoveryContactResponses[keyof ReplacePlatformRecoveryContactResponses];
 
 export type RequestOtpData = {
     body: OtpRequest;
@@ -4432,6 +4562,68 @@ export type CreateConversationTurnResponses = {
 
 export type CreateConversationTurnResponse = CreateConversationTurnResponses[keyof CreateConversationTurnResponses];
 
+export type SynthesizeConversationSpeechData = {
+    body: SynthesizeConversationSpeechRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/speech';
+};
+
+export type SynthesizeConversationSpeechErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SynthesizeConversationSpeechError = SynthesizeConversationSpeechErrors[keyof SynthesizeConversationSpeechErrors];
+
+export type SynthesizeConversationSpeechResponses = {
+    /**
+     * Guidance TTS returned playback metadata for this line.
+     */
+    200: ConversationSpeechResult;
+};
+
+export type SynthesizeConversationSpeechResponse = SynthesizeConversationSpeechResponses[keyof SynthesizeConversationSpeechResponses];
+
 export type StreamConversationTurnEventsData = {
     body?: never;
     headers?: {
@@ -4677,6 +4869,104 @@ export type UpdateLearnerAiMemoryFactResponses = {
 };
 
 export type UpdateLearnerAiMemoryFactResponse = UpdateLearnerAiMemoryFactResponses[keyof UpdateLearnerAiMemoryFactResponses];
+
+export type ListLearnerTuitionRequestsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/tuition-requests';
+};
+
+export type ListLearnerTuitionRequestsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListLearnerTuitionRequestsError = ListLearnerTuitionRequestsErrors[keyof ListLearnerTuitionRequestsErrors];
+
+export type ListLearnerTuitionRequestsResponses = {
+    /**
+     * The learner's tuition requests.
+     */
+    200: LearnerTuitionRequestListing;
+};
+
+export type ListLearnerTuitionRequestsResponse = ListLearnerTuitionRequestsResponses[keyof ListLearnerTuitionRequestsResponses];
+
+export type CreateLearnerTuitionRequestData = {
+    body: CreateLearnerTuitionRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/tuition-requests';
+};
+
+export type CreateLearnerTuitionRequestErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateLearnerTuitionRequestError = CreateLearnerTuitionRequestErrors[keyof CreateLearnerTuitionRequestErrors];
+
+export type CreateLearnerTuitionRequestResponses = {
+    /**
+     * Idempotent replay of the same create command.
+     */
+    200: LearnerTuitionRequest;
+    /**
+     * Tuition request created.
+     */
+    201: LearnerTuitionRequest;
+};
+
+export type CreateLearnerTuitionRequestResponse = CreateLearnerTuitionRequestResponses[keyof CreateLearnerTuitionRequestResponses];
 
 export type ListVoiceConsentsData = {
     body?: never;
@@ -5226,6 +5516,204 @@ export type StreamLearnerModelAudioResponses = {
 };
 
 export type StreamLearnerModelAudioResponse = StreamLearnerModelAudioResponses[keyof StreamLearnerModelAudioResponses];
+
+export type ListLearnerLevelsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/me/levels';
+};
+
+export type ListLearnerLevelsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListLearnerLevelsError = ListLearnerLevelsErrors[keyof ListLearnerLevelsErrors];
+
+export type ListLearnerLevelsResponses = {
+    /**
+     * Level catalog for the selected organization context.
+     */
+    200: {
+        levels: Array<{
+            level_number: number;
+            concept_key?: string | null;
+            availability: 'available' | 'commissioning_pending';
+            blueprint_id?: string | null;
+            session_part_ids: Array<'introduction' | 'practice' | 'conversation' | 'interaction'>;
+        }>;
+    };
+};
+
+export type ListLearnerLevelsResponse = ListLearnerLevelsResponses[keyof ListLearnerLevelsResponses];
+
+export type ShowLearnerLevelSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+        partId: 'introduction' | 'practice' | 'conversation' | 'interaction';
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/sessions/{partId}';
+};
+
+export type ShowLearnerLevelSessionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ShowLearnerLevelSessionError = ShowLearnerLevelSessionErrors[keyof ShowLearnerLevelSessionErrors];
+
+export type ShowLearnerLevelSessionResponses = {
+    /**
+     * Session payload without authoritative check answers.
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ShowLearnerLevelSessionResponse = ShowLearnerLevelSessionResponses[keyof ShowLearnerLevelSessionResponses];
+
+export type StreamLearnerLevelSessionAudioData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+        partId: 'introduction' | 'practice' | 'conversation' | 'interaction';
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/sessions/{partId}/audio';
+};
+
+export type StreamLearnerLevelSessionAudioErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StreamLearnerLevelSessionAudioError = StreamLearnerLevelSessionAudioErrors[keyof StreamLearnerLevelSessionAudioErrors];
+
+export type StreamLearnerLevelSessionAudioResponses = {
+    /**
+     * Inline lesson audio bytes with integrity headers.
+     */
+    200: Blob | File;
+};
+
+export type StreamLearnerLevelSessionAudioResponse = StreamLearnerLevelSessionAudioResponses[keyof StreamLearnerLevelSessionAudioResponses];
+
+export type StartLearnerLevelSessionConversationData = {
+    body: {
+        idempotency_key: string;
+        ui_locale: string;
+    };
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+        partId: 'introduction' | 'practice' | 'conversation' | 'interaction';
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/sessions/{partId}/conversation-sessions';
+};
+
+export type StartLearnerLevelSessionConversationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StartLearnerLevelSessionConversationError = StartLearnerLevelSessionConversationErrors[keyof StartLearnerLevelSessionConversationErrors];
+
+export type StartLearnerLevelSessionConversationResponses = {
+    /**
+     * Idempotent replay of an existing conversation session.
+     */
+    200: {
+        [key: string]: unknown;
+    };
+    /**
+     * Conversation session created.
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type StartLearnerLevelSessionConversationResponse = StartLearnerLevelSessionConversationResponses[keyof StartLearnerLevelSessionConversationResponses];
 
 export type ListLearnerLevelVideosData = {
     body?: never;
@@ -7434,6 +7922,106 @@ export type GetOperatorLearnerResponses = {
 };
 
 export type GetOperatorLearnerResponse = GetOperatorLearnerResponses[keyof GetOperatorLearnerResponses];
+
+export type ListOperatorTuitionRequestsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/tuition-requests';
+};
+
+export type ListOperatorTuitionRequestsErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type ListOperatorTuitionRequestsError = ListOperatorTuitionRequestsErrors[keyof ListOperatorTuitionRequestsErrors];
+
+export type ListOperatorTuitionRequestsResponses = {
+    /**
+     * Organization tuition requests.
+     */
+    200: OperatorTuitionRequestListing;
+};
+
+export type ListOperatorTuitionRequestsResponse = ListOperatorTuitionRequestsResponses[keyof ListOperatorTuitionRequestsResponses];
+
+export type AcknowledgeOperatorTuitionRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        tuitionRequest: Ulid;
+    };
+    query?: never;
+    url: '/operator/tuition-requests/{tuitionRequest}/acknowledgements';
+};
+
+export type AcknowledgeOperatorTuitionRequestErrors = {
+    /**
+     * The learner-administration request could not be completed.
+     */
+    401: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    403: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    404: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    409: LearnerAdministrationProblemDetails;
+    /**
+     * The learner-administration request could not be completed.
+     */
+    default: LearnerAdministrationProblemDetails;
+};
+
+export type AcknowledgeOperatorTuitionRequestError = AcknowledgeOperatorTuitionRequestErrors[keyof AcknowledgeOperatorTuitionRequestErrors];
+
+export type AcknowledgeOperatorTuitionRequestResponses = {
+    /**
+     * Request acknowledged or idempotently replayed.
+     */
+    200: OperatorTuitionRequest;
+};
+
+export type AcknowledgeOperatorTuitionRequestResponse = AcknowledgeOperatorTuitionRequestResponses[keyof AcknowledgeOperatorTuitionRequestResponses];
 
 export type CorrectOperatorLearnerGoalData = {
     body: CorrectOperatorLearnerGoalRequest;

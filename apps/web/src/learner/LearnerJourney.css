@@ -13,21 +13,53 @@
 
 .learner-card {
   min-width: 0;
-  padding: var(--ge-space-4);
-  border: 1px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  background: var(--ge-color-surface);
+  padding: clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
   overflow-wrap: anywhere;
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: learner-rise 520ms ease-out both;
+}
+
+.learner-stack > .learner-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.learner-stack > .learner-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.learner-stack > .learner-card:nth-child(4) {
+  animation-delay: 180ms;
 }
 
 .learner-card__title {
   margin-block-start: 0;
+  font-family: var(--ge-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ge-color-ink);
 }
 
 .learner-eyebrow {
   margin: 0 0 var(--ge-space-2);
-  color: var(--ge-color-action);
+  color: var(--ge-color-brass);
   font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.learner-streak {
+  justify-self: start;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px solid var(--ge-panel-border);
+  border-radius: 999px;
+  background: var(--ge-color-status);
+  color: var(--ge-color-ink);
   font-weight: 750;
 }
 
@@ -62,7 +94,7 @@
   padding: var(--ge-space-4);
 }
 
-.learner-onboarding form,
+.learner-onboardingform,
 .learner-fieldset {
   display: grid;
   min-width: 0;
@@ -71,13 +103,15 @@
 
 .learner-fieldset {
   padding: var(--ge-space-3);
-  border: 1px solid var(--ge-color-border);
+  border: 1px solid var(--ge-panel-border);
   border-radius: var(--ge-radius-sm);
+  background: color-mix(in srgb, var(--ge-color-surface) 80%, white);
 }
 
 .learner-fieldset legend {
   padding-inline: var(--ge-space-2);
   font-weight: 750;
+  color: var(--ge-color-ink);
 }
 
 .learner-choice {
@@ -89,6 +123,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--ge-space-3);
   border-radius: var(--ge-radius-sm);
+  transition: background-color 160ms ease;
 }
 
 .learner-choice:hover {
@@ -102,19 +137,34 @@
 }
 
 .learner-guidance {
-  padding: var(--ge-space-3);
-  border-inline-start: 0.25rem solid var(--ge-color-action);
-  background: var(--ge-color-status);
+  padding: var(--ge-space-4);
+  border-inline-start: 0.28rem solid var(--ge-color-brass);
+  border-radius: 0 var(--ge-radius-sm) var(--ge-radius-sm) 0;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ge-color-brass-soft) 16%, #0a1f18) 0%,
+      #071611 100%
+    );
+  color: #e8f2ec;
   font-size: var(--ge-font-size-lg);
 }
 
 .learner-model-text {
   margin-inline: 0;
   padding: var(--ge-space-4);
+  border: 1px solid var(--ge-panel-border);
   border-radius: var(--ge-radius-sm);
-  background: var(--ge-color-canvas);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ge-color-status) 70%, white),
+      var(--ge-color-surface)
+    );
+  color: var(--ge-color-ink);
+  font-family: var(--ge-font-family-display);
   font-size: var(--ge-font-size-lg);
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .learner-transcript {
@@ -142,8 +192,10 @@
 
 .learner-notice {
   padding: var(--ge-space-3);
+  border: 1px solid var(--ge-notice-border);
   border-radius: var(--ge-radius-sm);
-  background: #fff8dd;
+  background: var(--ge-notice-background);
+  color: var(--ge-color-ink);
 }
 
 .learner-offline,
@@ -160,6 +212,7 @@
 .learner-result__can-do {
   font-size: var(--ge-font-size-lg);
   font-weight: 750;
+  color: var(--ge-color-action);
 }
 
 .learner-definition-list {
@@ -177,6 +230,7 @@
 
 .learner-definition-list dt {
   font-weight: 750;
+  color: var(--ge-color-ink);
 }
 
 .learner-definition-list dd {
@@ -195,9 +249,20 @@
   border-block-start: 1px solid var(--ge-color-border);
 }
 
-@media (max-width: 30rem) {
-  .learner-definition-list > div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--ge-space-1);
+@keyframes learner-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learner-card {
+    animation: none;
   }
 }

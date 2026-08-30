@@ -19,7 +19,7 @@ use stdClass;
  */
 final class LearnerPrivacyInventory
 {
-    public const string VERSION = 'learner-privacy-v3';
+    public const string VERSION = 'learner-privacy-v5';
 
     /**
      * Membership-linked governance records are not creatable by an authorized
@@ -167,6 +167,14 @@ final class LearnerPrivacyInventory
                 ->values()
                 ->all()
             : [];
+        $accountRecoveryManagementEventIds = Schema::hasTable('account_recovery_management_events')
+            ? DB::table('account_recovery_management_events')
+                ->where('target_user_id', $userId)
+                ->pluck('id')
+                ->filter(static fn (mixed $value): bool => is_string($value))
+                ->values()
+                ->all()
+            : [];
         $groups = [
             $this->group(
                 'users',
@@ -286,6 +294,42 @@ final class LearnerPrivacyInventory
                     : DB::table('privileged_password_recovery_approvals')
                         ->whereIn('case_id', $privilegedRecoveryCaseIds)
                         ->count(),
+            ),
+            $this->group(
+                'account_recovery_management_events',
+                'global_authentication',
+                'included_safe_fields_without_actor_contact_or_evidence',
+                'retain_account_recovery_accountability',
+                'Actor, identity links and evidence digests remain restricted platform security evidence.',
+                Schema::hasTable('account_recovery_management_events')
+                    ? $this->rows(
+                        DB::table('account_recovery_management_events')
+                            ->where('target_user_id', $userId),
+                        [
+                            'id',
+                            'action',
+                            'reason_key',
+                            'occurred_at',
+                            'created_at',
+                            'updated_at',
+                        ],
+                    )
+                    : [],
+            ),
+            $this->group(
+                'account_recovery_notification_events',
+                'global_authentication',
+                'included_safe_fields_without_identity_link',
+                'retain_account_recovery_accountability',
+                'Former identity links remain restricted; notification outcome is retained.',
+                $accountRecoveryManagementEventIds === []
+                    || ! Schema::hasTable('account_recovery_notification_events')
+                    ? []
+                    : $this->rows(
+                        DB::table('account_recovery_notification_events')
+                            ->whereIn('management_event_id', $accountRecoveryManagementEventIds),
+                        ['id', 'outcome', 'occurred_at', 'created_at', 'updated_at'],
+                    ),
             ),
             $this->group(
                 'password_security_events',
@@ -624,6 +668,29 @@ final class LearnerPrivacyInventory
                 'retain_deterministic_progression_authority',
                 'Review scheduling is deterministically derived from retained attempt evidence.',
             ),
+            $this->directGroup(
+                'delayed_review_occurrences',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'enrollment_id',
+                    'learning_objective_id',
+                    'source_attempt_id',
+                    'curriculum_mission_id',
+                    'sequence',
+                    'interval_days',
+                    'rule_version',
+                    'timezone',
+                    'due_at',
+                    'completed_at',
+                    'completion_attempt_id',
+                    'created_at',
+                    'updated_at',
+                ],
+                'retain_deterministic_progression_authority',
+                'Delayed-review occurrences are deterministic authoritative schedules tied to retained attempt evidence.',
+            ),
             $this->actorCommandGroup(
                 'learning_commands',
                 $organizationId,
@@ -651,6 +718,20 @@ final class LearnerPrivacyInventory
                 ],
                 'retain_immutable_conversation_evidence',
                 'Session snapshots are immutable and contain no message bodies.',
+            ),
+            $this->directGroup(
+                'meaningful_speaking_days',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'speaking_date',
+                    'timezone',
+                    'source_turn_id',
+                    'created_at',
+                ],
+                'retain_deterministic_progression_authority',
+                'Meaningful speaking days are content-free derived records tied to immutable conversation turns.',
             ),
             $this->directGroup(
                 'conversation_turns',
@@ -765,6 +846,25 @@ final class LearnerPrivacyInventory
                 ],
                 'redact_fact_text_and_mark_deleted',
                 'Raw learner-authored memory is removable; only digest lifecycle evidence remains.',
+            ),
+            $this->directGroup(
+                'tuition_requests',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'preferred_window',
+                    'topic',
+                    'notes',
+                    'status',
+                    'created_at',
+                    'updated_at',
+                    'acknowledged_at',
+                ],
+                'redact_request_text_and_retain_lifecycle',
+                'Learner-authored tuition waitlist text is redacted on erasure; request lifecycle is retained.',
+                'id',
+                'membership_id',
             ),
             $this->directGroup(
                 'memory_events',
