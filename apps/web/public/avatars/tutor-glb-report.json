@@ -1,0 +1,76 @@
+[
+  {
+    "path": "apps/web/public/avatars/coach-female.glb",
+    "gender": "female",
+    "vertices": 4544,
+    "triangles": 7856,
+    "visemes": [
+      "viseme_sil",
+      "viseme_aa",
+      "viseme_E",
+      "viseme_I",
+      "viseme_O",
+      "viseme_U",
+      "viseme_PP",
+      "viseme_FF",
+      "viseme_TH",
+      "viseme_DD",
+      "jawOpen"
+    ],
+    "bones": [
+      "Hips",
+      "Spine",
+      "Spine1",
+      "Neck",
+      "Head",
+      "LeftShoulder",
+      "LeftArm",
+      "LeftForeArm",
+      "LeftHand",
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand"
+    ],
+    "bytes": 908304,
+    "lobby_path": "apps/web/public/avatars/female_tutor.glb",
+    "atlas": "apps/web/public/avatars/coach-female.png"
+  },
+  {
+    "path": "apps/web/public/avatars/coach-male.glb",
+    "gender": "male",
+    "vertices": 4040,
+    "triangles": 7008,
+    "visemes": [
+      "viseme_sil",
+      "viseme_aa",
+      "viseme_E",
+      "viseme_I",
+      "viseme_O",
+      "viseme_U",
+      "viseme_PP",
+      "viseme_FF",
+      "viseme_TH",
+      "viseme_DD",
+      "jawOpen"
+    ],
+    "bones": [
+      "Hips",
+      "Spine",
+      "Spine1",
+      "Neck",
+      "Head",
+      "LeftShoulder",
+      "LeftArm",
+      "LeftForeArm",
+      "LeftHand",
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand"
+    ],
+    "bytes": 808484,
+    "lobby_path": "apps/web/public/avatars/male_tutor.glb",
+    "atlas": "apps/web/public/avatars/coach-male.png"
+  }
+]

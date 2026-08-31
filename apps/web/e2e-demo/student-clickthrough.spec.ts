@@ -162,13 +162,13 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('Hear an example')).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
   const turnBox = page.getByRole('textbox', {
-    name: 'Type one English practice turn',
+    name: 'Type one English practice sentence',
   })
 
   const sendPracticeTurn = async (text: string) => {
     await turnBox.click()
     await turnBox.fill(text)
-    const send = page.getByRole('button', { name: 'Send turn' })
+    const send = page.getByRole('button', { name: 'Send practice' })
     await expect(send).toBeEnabled({ timeout: 5_000 })
     await send.click()
     await expect(
@@ -177,6 +177,7 @@ test('student click-through exercises every demo page and control', async ({
   }
 
   await sendPracticeTurn('I practise English after work.')
+  await page.getByRole('button', { name: 'More' }).last().click()
   await page.getByRole('button', { name: 'Hint in my language' }).click()
   await expect(
     page.getByText('Answer with one short English sentence', {
@@ -191,7 +192,7 @@ test('student click-through exercises every demo page and control', async ({
 
   // Second completed turn unlocks Finish practice (min turns = 2).
   await sendPracticeTurn('I spoke with my Friend again today.')
-  await page.getByRole('button', { name: 'Skip this turn' }).click()
+  await page.getByRole('button', { name: 'Skip this practice' }).click()
   await page.getByRole('button', { name: 'Finish practice' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
 
@@ -210,9 +211,9 @@ test('student click-through exercises every demo page and control', async ({
   })
   await page.getByRole('button', { name: 'Type instead' }).click()
   await page
-    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .getByRole('textbox', { name: 'Type one English practice sentence' })
     .fill('Hello, I have an appointment.')
-  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('button', { name: 'Send practice' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible({
     timeout: 10_000,

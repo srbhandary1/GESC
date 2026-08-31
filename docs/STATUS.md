@@ -4,15 +4,198 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | DR-0038 C: Speak hold-to-talk latency — **implemented locally** |
-| Status | Checkpoints A and B are accepted. A is verified on CI (D-0220). B Progress API+UI landed locally (`a5753fb`, `44e3339`). C Speak latency is implemented locally (D-0221): client timings, §7.4 states, abortable hold loop, PCM-first WAV, play-before-events. No new provider. Curriculum publication, Play, and independent Kannada UI review remain unauthorized. |
-| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.9 |
-| Updated date | 30 August 2026 |
+| Checkpoint | D-0262: Android Sign in must open system-browser PKCE |
+| Status | **D-0262 complete.** Android first-screen Sign in buttons did nothing: the hero no-op’d while session restore was still checking, failed PKCE had no visible error, and the homepage APK could ship with an empty native `BuildConfig.MOBILE_API_ORIGIN` so Custom Tabs rejected every authorize URL. Hero/header now start PKCE immediately; packaging fails closed without a baked origin; testers must install a newly published APK. |
+| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.11 |
+| Updated date | 31 August 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); Indic STT port built, Azure still live (ADR-0027); meaningful-speaking streak + delayed review (ADR-0028 / D-0220); Progress dashboard API+UI (`GET /api/v1/me/progress-dashboard`); Speak hold-to-talk latency pass (D-0221) |
-| Next required action | Review DR-0038 C on a live Azure Speak hold. Still open: on the reinstalled closed-beta APK, Learn → play Introduction audio, then hold-to-talk. Public HTTPS is `https://demands-cashiers-bryan-quit.trycloudflare.com` (Quick Tunnel; rotates). Soft-launch Speak hold loop on Vite (`http://127.0.0.1:5173/#speak`). Set `TUITION_CONTACT_*` when a Direct number is named. Indic STT stays off until a later driver switch. Production/Play remain unauthorized. |
+| Product code | Four-destination learner IA (ADR-0032). SVG tutors (D-0249 restored by D-0261); GLB/WebGL viseme stage remains config-gated. Indic STT (ADR-0027 / ADR-0030); streak + delayed review (ADR-0028); Progress inside Me; calmed ion theme (ADR-0032). |
+| Next required action | Testers uninstall the previous APK and install the D-0262 build (`make soft-launch-android-apk`). Independent human review of preview-locale catalogue strings remains outstanding. This does not authorize production/Play. |
 | Production/public release | Not authorized |
-| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged from APP-0068. |
+| Soft launch | Translation-preview web build. Live Azure OpenAI and guidance TTS; Sarvam Indic learner STT active for the Direct organization; SVG `InteractiveAvatar` coaches on all clients (GLB stage config-gated off). Public entry remains static-IP HTTP on port 8080; microphone recording uses optional HTTPS on port 8443. Android is a debug-signed Capacitor APK sideload, not Play. |
+
+## D-0262: Android Sign in must open system-browser PKCE — 31 August 2026
+
+- Accountable Product Owner report: tapping the several Sign in controls on the Android first screen still did nothing.
+- Android does not use the web password form. Those buttons must start Passport Authorization Code with S256 PKCE in Chrome Custom Tabs (D-0180 / D-0258). Three independent defects kept that from happening:
+  1. The marketing **Sign in to start** handler returned immediately while `session.status === 'checking'`, so early taps were discarded. The header Sign in control was also hidden until restore finished.
+  2. `scripts/publish-soft-launch-android-apk.sh` baked the origin into the Vite bundle, then ran Gradle in a second shell without `VITE_MOBILE_API_ORIGIN`. `BuildConfig.MOBILE_API_ORIGIN` was empty, so `GlobalEnglishSystemBrowserPlugin.open` rejected every authorize URL. The JS catch set the session to unavailable with no visible marketing error.
+  3. Android 11+ package visibility did not declare Custom Tabs / VIEW queries, so a device without a visible browser provider could fail the same way.
+- Change: hero and header start PKCE immediately; `#sign-in` shows the PKCE action during restore; a failed start shows `session.unavailable` on the hero. Gradle `assemble*`/`bundle*` fail closed unless the origin is on the D-0258 allowlist. The publish script exports the origin into Gradle. Manifest declares Custom Tabs queries.
+- Testers must install a newly published APK. The previous homepage binary can still contain an empty native origin.
+- Published this session: `make soft-launch-android-apk` produced `global-spoken-english.apk` (59,155,938 bytes) for `http://117.254.108.143:8080`. Native `BuildConfig.MOBILE_API_ORIGIN` and the packaged JS both contain that origin. Live `GET /downloads/global-spoken-english.apk` is 200 `application/octet-stream`.
+- No API, schema, consent or catalogue-approval change.
+
+## D-0261: SVG tutor gate, compact preview notice, PHP 8.4 pcntl image — 31 August 2026
+
+- Accountable Product Owner: the current GLB busts still fail the quality bar.
+- Restored D-0249: `apps/web/src/config/avatarConfig.json` `"tutorRenderer": "svg"`. GLB code path unchanged.
+- Preview notice (D-0030) is a collapsed disclosure; full text remains reachable. kn-IN and other preview locales are **not** marked approved.
+- Compact Home greeting CSS now actually wins over the 14rem art rule; mission Continue is in the first 360×780 viewport above the fixed nav.
+- PHP 8.4 test image: `scripts/php84-test.Dockerfile` / `make php84-test-image` (`pcntl`, `pdo_pgsql`, Composer 2.10.2). `make verify PHP=$PWD/scripts/run-php84.sh COMPOSER_CMD=$PWD/scripts/run-composer.sh` satisfies the toolchain pin. Postgres PHPUnit **325/325**.
+- Public shell cache `v17`. No API change. `make ai-eval` not required.
+
+## D-0260: UX simplification series — 31 August 2026
+
+- Client feedback (via the Accountable Product Owner): the mobile learner app is overwhelming — too much information, a lot of clutter, and confusing flow and navigation.
+- **D-0260.1 (docs only, complete).** First-time-user audit in `docs/UX_SIMPLIFICATION_AUDIT.md`. ADR-0032 accepted, **amending ADR-0026**: four destinations **Home · Learn · Speak · Me**. Master plan §7.1 is version 3.11.
+- **D-0260.2–.9 (product code, complete).** Calmed ion tokens (no grid overlay, one canvas gradient, muted `#b9b1d4` on `#13111f` remains **9.14:1**). Four-tab fixed bottom nav with inline SVG icons; Me hub absorbs Progress, 1:1, account security, locale and sign out; `#progress`/`#tuition`/`#one-to-one` deep-link into Me. Gated three-step onboarding (welcome / 18+ + goal / coach, same `POST /me/onboarding`). Home: compact greeting, mission/review card as the only primary action (ADR-0028 unchanged), offline and level videos collapsed. Learn: vertical session stepper, one part per screen, Ask AI Tutor navigates to `#speak`. Speak: compact coach header, collapsed practice settings, hold-to-talk centre, grouped role-play scenes. Progress/1:1 plain language inside Me; speaking minutes rendered. User-visible vocabulary: **mission** (Home), **level/session** (Learn), **practice** (Speak).
+- OpenAPI and generated client types were **not** regenerated for this series: no API contract changed.
+- `make ai-eval` was not run and is not required: no prompt, model, provider or orchestration change.
+- Mobile-width captures: `docs/ux-simplification/home-360.png`, `learn-stepper-360.png`, `speak-idle-360.png`, `speak-session-360.png`, `me-360.png`.
+- Determinism, consent (ADR-0007), personal-device enrollment (ADR-0006/0007), session unlock order (ADR-0025), streak advisory-only (ADR-0028), Sanctum/PKCE and tenancy are unchanged. kn-IN remains `pending-independent-review`.
+
+## D-0259: Mobile APK download must complete and resume — 31 August 2026
+
+- Accountable Product Owner report: the APK download on a phone paused by itself and could not be resumed.
+- Cause: the file is ~43 MB. Chrome on Android treats HTTP APKs as insecure/dangerous, and the homepage used an HTML `download` attribute (in-page blob fetch with no resume). Caddy also sent `Cache-Control: no-store` and `Content-Disposition: attachment` without a filename, so the system download manager could not keep a partial file.
+- Change: `/downloads/*` is excluded from gzip, sent as `Content-Type: application/octet-stream` with `X-Content-Type-Options: nosniff` and `filename="global-spoken-english.apk"`, and a short public cache so Range resume works. The homepage link is a normal GET (no `download` attribute). Service worker `v15`.
+- Testers cancel the paused job and start a new download after a hard refresh. Same-Wi-Fi testers must use `192.168.1.4`, not the WAN IP.
+- Verified: MarketingLanding 2/2; `scripts/test-soft-launch-environment.sh` passed; Caddyfile adapt OK; after `make soft-launch-restart`, live `GET /downloads/global-spoken-english.apk` is 200 `application/octet-stream` `filename="global-spoken-english.apk"` `public, max-age=300` `Accept-Ranges: bytes` `Content-Length: 44702838`; `Range: bytes=20000000-` returns 206.
+
+## D-0258: Android first-screen sign-in opens system-browser PKCE — 31 August 2026
+
+- Accountable Product Owner report: in the Android app, tapping Sign in did nothing; the first page showed several sign-in buttons and message links, all non-responsive.
+- Cause (two independent defects on the same first screen):
+  1. The native `GlobalEnglishSystemBrowserPlugin` required `https` for `/oauth/authorize`. D-0257 baked the APK to `http://117.254.108.143:8080`, so Custom Tabs rejected every authorize URL and the header catch set the session to unavailable without opening a browser.
+  2. Marketing hero CTAs were web hash links (`#sign-in`, `#how-it-works`) plus an APK download. Android does not use Sanctum password forms; `#sign-in` therefore showed no credential UI. Hash links also do not start PKCE.
+- Change: the plugin allowlist now matches `androidPkceEnvironment.ts` (HTTPS, emulator/loopback HTTP, invite-only IPv4 HTTP `:8080`). The Android marketing hero **Sign in to start** button calls `beginAuthorization()`. In-app APK download is hidden. **How it works** scrolls in-page. The dedicated `#sign-in` page also exposes the PKCE action.
+- Testers must install a newly published APK; the previous binary still contains the HTTPS-only plugin.
+- Verified: targeted web unit tests 29/29; Gradle `testDebugUnitTest assembleDebug` succeeded; `make soft-launch-android-apk` published `global-spoken-english.apk` for `http://117.254.108.143:8080`.
+
+## D-0257: Keep HTTP :8080, add :8443, homepage Android APK download — 31 August 2026
+
+
+- Accountable Product Owner questions: whether to close 8080 and open 8443; whether Android can be shared for external testing via `http://192.168.1.4:8080`; homepage should offer an APK until Play Store.
+- **Ports:** keep TCP **8080** (public HTTP, cookies, APK, Android API). Open TCP **8443** as well (browser microphone). Closing 8080 would break D-0248 sign-in and the APK origin.
+- **LAN vs WAN:** `192.168.1.4` is this host on Wi-Fi. External testers must use `http://117.254.108.143:8080`. Same-Wi-Fi testers must not use the public IP (hairpin NAT).
+- **Android:** production-path `com.globalenglish.app` debug APK, API origin `http://117.254.108.143:8080`. Capacitor WebView is `https://localhost`, so the microphone is a secure context even when the API is HTTP. Cleartext is allowlisted only for that IPv4:8080 pair plus loopback. Play AAB remains HTTPS-only.
+- Homepage CTA downloads `/downloads/global-spoken-english.apk`. Change `ANDROID_APP_DOWNLOAD_HREF` when Play replaces sideload. Service worker `v14` does not cache `/downloads/`.
+- Cache: public service worker `global-english-public-shell-v14`. Localization catalogues revision `.5`.
+- Verified: localization validate + 31/31; soft-launch env contract; targeted web tests 9/9; Playwright bootstrap+learner-journey 11/11; `make soft-launch-android-apk` produced a 15 MB debug APK aimed at `http://117.254.108.143:8080`; live `GET /downloads/global-spoken-english.apk` returns 200 `application/vnd.android.package-archive`.
+
+## D-0256: LAN/WAN HTTPS :8443 for browser microphone capture — 31 August 2026
+
+- Accountable Product Owner report: "Microphone recording is unavailable" on `http://192.168.1.4:8080/#learn`.
+- Cause: Chromium/Safari/Firefox do not expose `navigator.mediaDevices` on plain HTTP except loopback. `BrowserAudioRecorder.isSupported()` is correctly false; JavaScript cannot override that browser rule.
+- Change: keep D-0248 HTTP `:8080` as the public entry (non-Secure cookies, no redirect to HTTPS). Add a second Caddy site on `:8443` with `tls internal` serving the same SPA and API. `persist_public_origin` adds `{public_ip}:8443` and `{lan_ip}:8443` to `SANCTUM_STATEFUL_DOMAINS` while `SESSION_SECURE_COOKIE` stays `false`. On an insecure non-loopback page, Learn/Speak recording shows `learner.recording.blocked_insecure` and a link to `https://{host}:8443{path}{hash}`.
+- Cache: public service worker `global-english-public-shell-v13`. Localization catalogues revision `.4` for the two new recording keys.
+- The `:8443` certificate is Caddy's local CA, not a public certificate. Testers accept the browser warning once. HTTPS is a different origin from HTTP, so the session cookie does not carry over — sign in again on `:8443`.
+- WAN testers also need the inner router to forward TCP `8443` to this host, the same way `8080` is already forwarded.
+- Verified: localization validate (0 errors, 5 expected pending-review warnings) and 31/31 tests; `scripts/test-soft-launch-environment.sh` passed; web recording unit tests 36/36; Playwright `bootstrap`+`learner-journey` 11/11; live Chromium probe `http://192.168.1.4:8080/#learn` has `isSecureContext=false` / no `getUserMedia`, `https://192.168.1.4:8443/#learn` has `isSecureContext=true` / `getUserMedia` present; `make soft-launch-ready` 34 pass / 1 pre-existing WAN-forward warn / 0 fail.
+
+## D-0255: Authenticated workspace fills the application main column — 31 August 2026
+
+- Accountable Product Owner report: after sign-in, page contents are "not aligned to the width of the page on the screen."
+- Cause: D-0254 removed page-level caps in `LevelSessionJourney.css` / `ConversationJourney.css`, but `tutorExperience.css` (imported later) still enforced stale pre-ion caps: `.level-path, .level-session { max-width: 44rem; }` (~704px) and `.conversation-journey { max-width: 40rem; }`. On a 1440px viewport the shell column is ~1216px wide, so Learn content sat in a narrow left column with a large empty margin to the right — misaligned with the header and nav above.
+- Change: removed those two max-width overrides from `tutorExperience.css`; added `.shell-content:not(.shell-content--gate):not(.shell-content--landing)` workspace rules in `App.css` so authenticated destination roots (`.level-path`, `.speak-room`, `.progress-dashboard`, `.learner-stack`, `.operator-console`, etc.) explicitly fill the centred main column (`width: 100%; max-width: none`). Paragraph-level `max-width` inside panels is unchanged for readability.
+- Cache: public service worker `global-english-public-shell-v12`.
+- Verified: rebuilt `dist`; Playwright layout measurement shows `#learn` `.level-path` width 1216px matching `.shell-content` (was 704px); `#speak` `.speak-room` unchanged at 1216px; `pnpm exec playwright test e2e/bootstrap.spec.ts e2e/learner-journey.spec.ts` 11/11 pass.
+
+## D-0254: Post-theme bug sweep — duplicate avatar, sign-in grid leak, tab contrast, page width, account role — 31 August 2026
+
+- Accountable Product Owner report (five items in one message): (1) the sign-in tile had "items spread all over ... and not aligned"; (2) "tiles and items placed on all pages are narrowly placed and not wide and placed across the page"; (3) on `#learn`, clicking "Ask AI Tutor" launches "a duplicate avatar that speaks"; (4) on `#speak`, "Everyday talk text on the button is not visible as the button color is the same"; (5) "the account button on the top does not show the account type, profile etc."
+- **Duplicate avatar (`LevelPathPanel.tsx`).** The level-session "teacher stage" always rendered a static `TutorPresence` avatar. Clicking Ask AI Tutor/Open room set `boundSession`, which mounted `ConversationJourney` (embedded) directly below — and `ConversationJourney` renders its own `SwathiAvatar` with real audio/viseme sync. Two avatars were on screen at once, with the top one merely flipping to a cosmetic "speaking" mood while the live one actually spoke. Fix: the static `TutorPresence` now renders only while `!boundSession`; once the live conversation opens, its own avatar is the single avatar shown. `Ask AI Tutor`/`Open room`, Try role-play, and Complete controls are unchanged.
+- **Sign-in grid leak (`App.css`).** `.web-password-sign-in` gets a two-column split (`minmax(17rem,.9fr) minmax(25rem,1.1fr)`) at ≥52rem for its visual pane + form card. The *embedded* variant (used on the dedicated `#sign-in` page and the account panel) never renders the visual pane (`WebPasswordSignInPanel` returns `null` for it when `embedded`), but the media-query selector `.web-password-sign-in` still matched the embedded element too, since both classes sit on the same node. The result: the lone form card was auto-placed into the narrow first column, stranding it at roughly 40% width with a dead second column beside it — reading as "spread/misaligned." Fix: the two-column rule (and the visual-pane `display: grid`) is now scoped with `:not(.web-password-sign-in--embedded)`, and the embedded variant gets an explicit single-column `grid-template-columns` for defense in depth.
+- **Speak tab contrast (`tutorExperience.css`).** `App.css` styles the selected practice-mode pill as `background: var(--ge-color-action)` (cyan) with `color: var(--ge-color-action-text)` (near-black) — good contrast by design. `tutorExperience.css`, imported after `App.css`, still carried a pre-ion-theme override of the *identical selector* (`.shell-practice-switch button[aria-selected='true'] { background: linear-gradient(180deg, #1c1830, var(--ge-color-surface)); }`) plus a hard-coded container background, both predating the D-0250 token system. Same-specificity + later-in-bundle meant the stale rule won for `background` while the near-black `color` from `App.css` still applied — near-black text on a near-black gradient, i.e. invisible. Fix: removed the two stale declarations; the cyan-pill/dark-text selected state now renders as designed. Confirmed via computed-style check: selected tab background is `rgb(46,230,255)` with text `rgb(4,18,24)` (previously background stayed `rgba(0,0,0,0)` — fully transparent — while text stayed near-black).
+- **Page width (`design-system/tokens.css`, `LevelSessionJourney.css`, `ProgressDashboard.css`, `ConversationJourney.css`).** The shared shell caps main content at `--ge-content-width` (raised 72rem → 80rem), but several page-level containers carried their own *tighter* caps well inside that budget and were not centered, so they rendered as a narrow column hugging the left edge with a large empty margin to the right: `.level-path`/`.level-session` (Learn) at 48rem, `.progress-dashboard` at 800px, `.speak-room` at 64rem, `.conversation-journey` at 56rem. All four now stretch to `width: 100%` of the shell; their internal `auto-fit` grids (level list, progress summary/mastery grids) pick up more columns automatically. Paragraph-level text inside these containers keeps its own narrower `max-width` (unchanged) for readability.
+- **Account role (`App.tsx`, `App.css`, all six locale catalogues).** The header account menu showed only "Signed in." plus the organization name — never the membership type, and the API (`UserIdentitySummary`) intentionally exposes no username/profile field (ULID-only, by design, per the no-PII-in-session-payload posture). Added a `session.membership_type.{learner,trainer,organization_admin}` badge next to the status text, sourced from `current_membership.membership_type` (already present on the session payload, no API change). New keys added to `en-IN`/`kn-IN`/`ml-IN`/`ta-IN`/`te-IN`/`hi-IN` catalogues (English text for the non-`en-IN` locales, matching the existing untranslated precedent for `operator.people.membership_type.*` role labels); governance `catalogueHash`/`revision`/`sourceHash` recomputed for all six locales (`*.31.3`) and `pnpm --filter @global-english/localization run validate` passes. A user-visible display name/username is not available from the current API contract; surfacing one would require a backend contract change and is flagged as a follow-up, not attempted here.
+- **Superseded for microphone:** D-0256 adds optional HTTPS `:8443` for capture; HTTP `:8080` still cannot open the microphone.
+- Cache: public service worker `global-english-public-shell-v11`.
+- Verified: `pnpm run lint` (0 warnings) and `pnpm run typecheck` clean at the repo root; `pnpm --filter @global-english/web test` 323/324 (pre-existing D-0249 `avatarConfig.test.ts` SVG-vs-GLB failure only, unrelated); `pnpm --filter @global-english/design-system test` 11/11; `pnpm --filter @global-english/localization test` 31/31 and `run validate` clean; `pnpm --filter @global-english/web e2e` 22/22 (axe-clean shell unaffected by the width/contrast changes); preview dist rebuilt and the sign-in tile, Speak tabs, and header account badge confirmed via authenticated Playwright screenshots against the rebuilt `dist`.
+- Known limitations: the broader "make the whole theme more futuristic" feedback is open-ended and not fully addressed by this pass, which targeted the five concrete defects reported; a learner-facing username/profile display remains unavailable pending a backend contract change; the pre-existing `avatarConfig.test.ts` SVG/GLB assertion mismatch (D-0249) is untouched.
+
+## D-0253: Hero copy vignette replaces the blocking glass card — 31 August 2026
+
+- Accountable Product Owner report: after D-0252, "the huge tile blocks the scrolling image on the homepage."
+- Cause: D-0252 fixed the slideshow's own darkening, but replaced it with a bordered, backdrop-blurred glass "card" (`.marketing-hero__copy`) up to 44rem wide with 3.5rem padding, a visible border, and a heavy box-shadow — a large opaque rectangle sitting on top of the now-visible banner.
+- Change (`MarketingLanding.css` only): the card's border, box-shadow, and `backdrop-filter` are removed. `.marketing-hero__copy` is now a borderless `radial-gradient` vignette (darkest at the text center, transparent by ~80% out) with no hard rectangular edge, so the photo shows through immediately around and behind the text instead of being blocked by a tile. The title gained an added solid dark text-shadow layer (on top of the existing neon glow) and the lede gained its own text-shadow, since legibility can no longer lean on an opaque backdrop.
+- Cache: public service worker `global-english-public-shell-v10`.
+- Verified: `pnpm run e2e` 22/22 (axe-clean shell unaffected — no new contrast violations); preview dist rebuilt (`index-vPotzEc7.css`) and confirmed live at `http://192.168.1.4:8080` via screenshot at desktop and 390px widths — both show full faces/shoulders visible left and right of the text with no visible card edge.
+
+## D-0252: Marketing hero visibility and neon card polish — 31 August 2026
+
+- Accountable Product Owner report: the homepage slideshow behind the hero text was "barely visible" and the theme read as "a black page and nothing more" next to getsupernova.ai.
+- Cause: `.marketing-hero__media` rendered banner photos at 42% opacity, then `.marketing-hero__scrim` laid a near-opaque dark gradient (up to 0.94 alpha) over almost the whole frame, so the slideshow was doubly darkened.
+- Change (`MarketingLanding.css` only, no markup/copy change):
+  - Banner opacity raised to ~0.88 (0.8 on the ≤30rem breakpoint) with a duotone cyan/magenta filter instead of a flat dark wash.
+  - The old full-hero scrim is now a light top/bottom vignette (for header/button legibility) plus corner color glows; the middle of the frame stays bright.
+  - `.marketing-hero__copy` is now a glassmorphism spotlight card (blurred, bordered, glowing) that carries text contrast, so the image no longer needs to be darkened to keep the headline readable.
+  - Headline gets a neon cyan/magenta text-glow; the AI badge pulses gently (disabled under `prefers-reduced-motion`).
+  - `.marketing-section--light`/`--dark` gained a second corner glow (magenta/violet) instead of one flat radial, plus a thin gradient seam between sections so the page reads as one lit stage instead of stacked black panels.
+  - Path/pedagogy/why/showcase/benefit card hover states use a colored cyan glow shadow instead of a plain black shadow.
+- Cache: public service worker `global-english-public-shell-v9`.
+- Verified: `pnpm exec tsc -b`; ESLint 0 warnings; vitest 71/72 files (see known limitation); `pnpm run e2e` 22/22 (axe-clean shell unaffected); preview dist rebuilt (`index-DKTegzMa.css`) and confirmed live at `http://192.168.1.4:8080` with the new duotone hero visible.
+
+## D-0251: Guest learner hashes keep the marketing landing — 31 August 2026
+
+- Accountable Product Owner report: the “landing page” showed only `Spoken English learning` / Learn / the four-session description / the sign-in hint. That copy is the guest Learn chrome (`page.learn.*` + `session.sign_in_hint`), not a CSS-hidden marketing hero.
+- Cause: `showMarketingLanding` required `destination === 'home'`. A guest URL of `/#learn` (used on the earlier Cloudflare origin) unmounted `MarketingLanding` and left the empty gate.
+- Change: guests see `MarketingLanding` on every hash except `#sign-in`. After authentication, `#learn` and the other destinations still open the real learner journeys.
+- Cache: public service worker `global-english-public-shell-v8`.
+- Removed unused `InteractiveAvatar` import from `MarketingLanding` (hero coaches stay off the slideshow per the overlap instruction).
+
+## D-0250: Ion studio visual system — 31 August 2026
+
+- Accountable Product Owner instruction: abandon the existing academy green/cream theme and revamp every page, form, and button to a modern futuristic look. SuperNova branding is still not copied (D-0215). No governed localization copy changed.
+- **New token system** in `packages/design-system`: void indigo canvas (`#06050f`), electric cyan actions (`#2ee6ff` on `#041218`, 12.5:1), magenta accent (`#d61d6e` with white text 4.9:1), violet brass/eyebrow. `color-scheme: dark`. Geometric UI stack for display type. Glass panels, cyan focus rings, neon primary buttons.
+- **Surfaces restyled:** marketing landing (grid + orbs, all-dark bands, glass cards), sticky glass header/nav, sign-in split card, Home/Learn/Speak/Progress/1:1, coach selector, operator console, demo shell, error boundary, hold-to-talk glow, form inputs and submit buttons.
+- **Cache:** public service worker `global-english-public-shell-v7`.
+- Tutors stay SVG (`tutorRenderer: "svg"`). GLB path unchanged.
+- Verified: `pnpm --filter @global-english/web typecheck`; ESLint 0 warnings; vitest 72 files / 323 tests; `pnpm run e2e` 21/21 (axe-clean shell, 320-px/enlarged-text reflow, skip-link/sign-in); preview dist rebuilt (`index-DpkVkPmw.css`) and confirmed live at `http://192.168.1.4:8080` with `--ge-color-action: #2ee6ff` and ion frame classes. PHP/API untouched.
+
+## D-0249: Site-wide visual/UX enhancement pass; SVG tutors as the visual base — 31 August 2026
+
+- Accountable Product Owner instruction: analyze and enhance the whole website's pages, forms, buttons, flow, layouts, animations, and images, using getsupernova.ai as a quality reference. Per D-0215, SuperNova branding is not copied; only composition and motion quality were benchmarked. No governed copy changed — every visible string still resolves from the existing localization catalogues.
+- **Tutor visual regression found and fixed.** Live-browser inspection of the deployed `:8080` site showed both hero coaches painting as garbled dark blobs: the D-0247 procedural GLBs load and render, but the face atlas/UV mapping is wrong and the hard-coded close-up camera makes it worse. `avatarConfig.json` gained `"tutorRenderer": "svg"`; `InteractiveAvatar` only mounts `GltfTutorStage` when it is `gltf`, so every tutor surface (marketing hero, sign-in header, Home, Speak, coach selector) renders the reviewed SVG rig. The GLB code path, assets, and contract tests are unchanged and re-enable by config after a quality-passing bake.
+- **Marketing landing redesign** (`MarketingLanding.tsx/.css`): larger Fraunces display headline; animated aurora wash and banner slideshow behind the hero; coach duo on a lit "stage" with float animation; overlapping portrait cluster; gradient primary CTA with hover lift; IntersectionObserver scroll-reveal for below-the-fold sections (visible-by-default without JS, fully disabled under `prefers-reduced-motion`); the four-session method as 4-across numbered cards on wide screens; pedagogy cards with gradient top rules; hover lift/zoom on why/benefit/showcase cards; showcase screenshots in device-style frames; the "One path, two kinds of support" card image switched from the badly-cropping `club.jpg` banner to `guest.jpg` (contain).
+- **Shell polish** (design-system `components.css`): header backdrop gains saturation blur and a soft shadow; the active navigation destination is marked with an emerald underline + keyline instead of brass; nav links get a hover raise (disabled under reduced motion).
+- **Sign-in flow fix:** the "Use the HTTPS link to sign in…" alert and its `secureContext` check were removed from `WebPasswordSignInPanel` — under D-0248 the sanctioned origin is plain HTTP with non-Secure session cookies, so the warning was factually wrong and scared invitees away. Mobile hero banner strip also fixed (flex `align-items: stretch` at ≤30rem; it previously collapsed to zero width).
+- SVG rig hair gradient lightened (`#5b3a25 → #2e1d12`) so both coaches read clearly against the pale avatar frame; learner cards gained a subtle hover lift with a reduced-motion companion.
+- Verified: `pnpm typecheck` (all packages); `pnpm lint` (0 warnings); `apps/web` vitest 72 files / 323 tests passed; `pnpm --filter @global-english/web build`; `pnpm run e2e` 21/21 passed (includes axe-clean shell, 320-px/enlarged-text reflow, keyboard skip-link/sign-in); desktop + 390-px mobile screenshots of the deployed `:8080` site reviewed in-browser. PHP/API untouched, so `make verify`'s composer/PHP stages were not re-run.
+
+## D-0248: Static-IP HTTP public origin — 31 August 2026
+
+- Public origin is `http://117.254.108.143:8080`. `GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true` keeps Caddy serving the SPA and API on `:8080` instead of redirecting to a rotating tunnel, and the supervisor no longer starts or requires `cloudflared`.
+- `persist_public_origin` now parses `http://` hosts, writes `APP_URL` and `SANCTUM_STATEFUL_DOMAINS` for `117.254.108.143:8080`, and keeps `SESSION_SECURE_COOKIE=false`. Tailscale hostnames are no longer injected into Sanctum.
+- Public Caddy on `:8080` also routes `/oauth/*`, `/auth/mobile/*`, `/health/live` and `/health/ready` to Laravel so Android PKCE and health probes match the loopback proxy.
+- Browser microphone capture is not a secure context on this HTTP origin (except `localhost`). Speak/hold-to-talk from phones needs a later HTTPS hostname.
+- Verified: `scripts/test-soft-launch-environment.sh`; `make soft-launch-ready` 29 pass / 0 fail; local `http://127.0.0.1:8080` health 200 after service restart; Caddy bound on `*:8080`. Hairpin NAT timed out from this host to `117.254.108.143:8080` (expected on this LAN).
+
+## D-0247: Project-owned GLB tutors with viseme morph targets — 31 August 2026
+
+- Baked two original glTF 2.0 binary busts with `scripts/generate-tutor-glb.py`: `apps/web/public/avatars/coach-female.glb` (7856 tris, 4544 verts, ~887 KB) and `coach-male.glb` (7008 tris, 4040 verts, ~789 KB), each with a sibling 1024×1024 albedo PNG referenced by URI (so the WebGL loader does not create `blob:` object URLs). Each file has the humanoid bones `Hips`/`Spine`/`Spine1`/`Neck`/`Head` plus shoulders/arms/hands and morph targets named exactly `viseme_sil`, `viseme_aa`, `viseme_E`, `viseme_I`, `viseme_O`, `viseme_U`, `viseme_PP`, `viseme_FF`, `viseme_TH`, `viseme_DD`, `jawOpen`.
+- These are project-owned procedural meshes, not Ready Player Me, Mixamo, or photographic scans. A DCC artist can replace either `.glb` 1:1 if they keep those morph names, joint names, the triangle budget, and the single-atlas constraint.
+- WebGL path: `GltfTutorStage` dynamically imports Three.js `0.185.1` and `GLTFLoader`, drives morph influences from the existing Speak `mouth_shape` timeline, and nods/leans the `Head` bone for `AvatarGesture`. `import.meta.env.BASE_URL` is used so Capacitor's relative `./` demo base still resolves the assets.
+- Fallback: jsdom tests and WebViews without `WebGLRenderingContext` keep the SVG `InteractiveAvatar` rig. A GLB load failure calls back into that same SVG path. `CoachAvatar`'s independent `StaticCoachBadge` is unchanged.
+- Recorded as **D-0247**, amending [ADR-0031](adr/0031-selectable-realistic-ai-coaches.md) items 5–6.
+- Verified: `pnpm exec tsc -b`; ESLint on the new files; `pnpm exec vitest run` in `apps/web` (71 files / 321 tests, including GLB contract tests that parse the binary for viseme names, bones, triangle cap, and 1024 atlas); `pnpm run build`; `pnpm run e2e` (21/21). PHP/API was not touched.
+
+## D-0246: InteractiveAvatar SVG rig replaces the photographic coach everywhere — 31 August 2026
+
+- `InteractiveAvatar` (previously a standalone, unused component — see the entry below) is now the coach visual base across the app. `CoachAvatar.tsx` was rewritten to render it internally instead of a `<img>` portrait + separate SVG mouth overlay; `SwathiAvatar`, and every screen that already consumed `CoachAvatar`/`SwathiAvatar` (`ConversationJourney`'s Speak header), needed **no prop changes** — only `CoachAvatar`'s internals changed.
+- `TutorPresence` and `TutorHomeHero` (Home greeting card, Role-play header, Level-session teacher stage, sign-in header) now render `InteractiveAvatar` directly instead of a static `coach-{gender}-{neutral,speaking}.webp`/`-hero.webp` image plus hand-rolled orbit-ring `<span>`s; the ring, idle blink, and figcaption are now owned by `InteractiveAvatar` itself.
+- `CoachSelector`'s per-coach preview thumbnails and `MarketingLanding`'s hero coaches (female + male) now render small/hero `InteractiveAvatar` instances instead of static webp images.
+- Extended `InteractiveAvatar` itself (`apps/web/src/components/InteractiveAvatar.tsx`) to support this reuse:
+  - `coachGender: 'female' | 'male'` selects distinct hair silhouette, brow weight/shape, collar color, earrings (female only), and a light facial-hair accent (male only); skin, eyes, cheeks, nose, and the mouth rig are shared.
+  - `presence` (`idle`/`listening`/`processing`/`preparing`/`speaking`) drives a cosmetic two-ring ambient glow (reusing the color language of the previous `tutor-presence__orbit`) and, for `speaking`/real `isSpeaking`, a gentle breathing pulse — independent of the real viseme-driven mouth, which still only activates with real `audio`+`visemeTimestamps`.
+  - Sizing moved from the inner stage `<div>` to the outer `<figure>` itself (percentage-sized inner stage), so callers can override the rendered width with ordinary CSS by qualifying a parent-class selector (e.g. `.marketing-hero__coaches .marketing-hero__coach`) — a two-class selector reliably outweighs the component's own single-class Tailwind width utility regardless of stylesheet load order. `MarketingLanding.css` and `TutorPresence.css` were updated to this pattern (including their `prefers-reduced-motion` overrides, which needed the same selector specificity to keep winning).
+  - Every `animate-avatar-*`/ring/pulse utility now has a `motion-reduce:animate-none` companion, restoring the reduced-motion guarantee the old CSS provided explicitly.
+  - `caption` now accepts a `ReactNode` (not just `string`), so `CoachAvatar`/`TutorPresence` can still pass `<LocalizedMessage>` for the status line and keep the existing translation-fallback-reporting behavior (`useInterfaceFallbackReporting`, `data-message-review-status`) instead of a plain resolved string.
+- Hardened the error-boundary fallback: `CoachAvatarErrorBoundary`'s fallback is now a genuinely independent `StaticCoachBadge` (a plain initial-letter badge, no SVG rig, no viseme/contracts parsing) rather than a second `InteractiveAvatar` instance — re-rendering the same rig inside its own error boundary would not have been resilient to a systemic rig failure.
+- Removed the now-dead `CoachAvatar.css` and the six superseded `coach-{female,male}-{hero,neutral,speaking}.webp` portraits plus `COACH_ASSET_PROVENANCE.md` (confirmed unreferenced first).
+- Recorded as **D-0246**, amending [ADR-0031](adr/0031-selectable-realistic-ai-coaches.md) items 5–6 (see `docs/DECISIONS.md`). No change to coach selection, renaming, governed default names, prompts, provider contracts, marks, mastery, consent, retention, or tenancy.
+- Android note: the Android app is the same React/Vite bundle wrapped by Capacitor (no separate native avatar code), so this change ships to Android on the next `npx cap sync` + Android build; no native Android files were touched.
+- Verified: `pnpm run typecheck`, `pnpm run lint` (both zero warnings, full workspace), `pnpm run test` (full workspace: 358 tests passed across `packages/localization`, `packages/design-system`, and `apps/web`; `apps/web` alone: 69 files / 316 tests), `pnpm run build` (production Vite build succeeds; no new warnings beyond the pre-existing JS chunk-size advisory), and `pnpm run e2e` (all 21 Playwright journeys pass, including the axe-clean accessibility check and the Speak journey's mouth-rig/gesture assertions, updated to scope by test id/region now that the coach selector adds extra `InteractiveAvatar` instances to the Speak page). PHP/API was not touched in this checkpoint and was not re-run.
+
+## InteractiveAvatar SVG face rig + Tailwind CSS toolchain — 31 August 2026
+
+- Added a new, self-contained `InteractiveAvatar` component (`apps/web/src/components/InteractiveAvatar.tsx`) as an inline-SVG alternative face rig, separate from the existing photographic `CoachAvatar`. Head, eyes, eyebrows and mouth all live in one `viewBox="0 0 200 200"` coordinate space (no CSS-positioned overlay on a separate image), so the mouth cannot clip or drift from the face across viewport sizes.
+- The mouth is driven by a bespoke `requestAnimationFrame` viseme controller that samples a target `<audio>` element's `currentTime` each frame, maps provider viseme codes onto a small canonical shape set (`rest`/`closed`/`A`/`E`/`I`/`O`/`U`) via an always-total alias table, and republishes only on change. Missing/empty viseme metadata or a `null` audio element resolves to `rest` with no console errors — the idle-blink loop (a `scaleY` blink on each eye, plus an idle head sway) runs unconditionally, so the fallback is always visually present.
+- Gesture playback reuses the existing `AvatarGesture` contract (`ENCOURAGING_NOD` → nod, `ATTENTIVE_LEAN` → tilt, `WARM_SMILE` → smile), triggering a hardware-accelerated CSS `transform` keyframe animation once per gesture pulse and auto-returning to idle after the animation duration.
+- **New toolchain dependency:** added `tailwindcss` and `@tailwindcss/vite` (both pinned exactly, `4.3.3`) to `apps/web`, wired via the official Vite plugin. The Tailwind entry stylesheet (`apps/web/src/styles/tailwind.css`) intentionally imports only the `theme` and `utilities` layers — **not** `preflight` (Tailwind's global browser-default reset) — so the existing hand-built design-system CSS and all other component stylesheets are unaffected. Utility classes are opt-in per component. Custom gesture/blink/sway keyframes are declared in the same file via `@theme`.
+- `InteractiveAvatar` is not yet imported by any screen; it ships fully implemented and tested as a standalone component pending a follow-up decision on whether/where it replaces or supplements `CoachAvatar`.
+- Verified: `pnpm exec tsc -b` (typecheck), `pnpm run lint` (full workspace, zero warnings), `pnpm exec vitest run` (apps/web full suite: 316 tests passed, up from 309), and `pnpm run build` (production Vite build succeeds; CSS bundle 137 kB / 22 kB gzip, no new build warnings beyond the pre-existing JS chunk-size advisory). No PHP, API, contract, or OpenAPI surface changed.
 
 ## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
 

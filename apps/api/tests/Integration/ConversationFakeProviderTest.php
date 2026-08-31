@@ -20,6 +20,8 @@ use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextRequest;
 use App\Conversation\Providers\SpeechToTextResult;
 use App\Conversation\Providers\TextToSpeechProvider;
+use App\Conversation\Providers\TextToSpeechRequest;
+use App\Conversation\Providers\TextToSpeechResult;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -623,6 +625,72 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         } catch (ConversationOperationRejected) {
             $this->addToAssertionCount(1);
         }
+    }
+
+    public function test_session_speech_returns_content_free_avatar_animation(): void
+    {
+        $this->app->instance(
+            TextToSpeechProvider::class,
+            new class implements TextToSpeechProvider
+            {
+                public function synthesize(
+                    TextToSpeechRequest $request,
+                ): TextToSpeechResult {
+                    return new TextToSpeechResult(
+                        playbackAvailable: true,
+                        renderingMode: 'azure-soft-launch-guidance-wav',
+                        providerUsage: new ProviderUsage(
+                            providerKey: 'deterministic-fake',
+                            modelVersion: 'fake-tts-v1',
+                            latencyMilliseconds: 3,
+                            inputUnits: strlen($request->text),
+                            outputUnits: 4,
+                            estimatedCostMicrounits: 0,
+                        ),
+                        audioBytes: 'RIFF',
+                        mimeType: 'audio/wav',
+                        visemeTimestamps: [
+                            ['mouth_shape' => 'rest', 'timestamp_ms' => 0],
+                            ['mouth_shape' => 'open', 'timestamp_ms' => 80],
+                        ],
+                    );
+                }
+            },
+        );
+        [$learner, , $context] = $this->learner();
+        $session = $this->contexts()->run(
+            $context,
+            fn (): array => $this->app->make(
+                ConversationSessionService::class,
+            )->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'everyday-friend-prototype',
+                coachingMode: 'gentle',
+                uiLocale: 'en-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $result = $this->contexts()->run(
+            $context,
+            fn (): array => $this->app->make(
+                GuidanceSpeechService::class,
+            )->synthesize(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                text: 'Would you like to practise?',
+                purpose: 'model_en',
+            ),
+        );
+
+        $this->assertSame([
+            'viseme_timestamps' => [
+                ['mouth_shape' => 'rest', 'timestamp_ms' => 0],
+                ['mouth_shape' => 'open', 'timestamp_ms' => 80],
+            ],
+            'avatar_gesture_trigger' => 'ATTENTIVE_LEAN',
+        ], $result['animation_payload']);
     }
 
     /**

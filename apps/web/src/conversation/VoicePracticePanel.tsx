@@ -21,6 +21,7 @@ import {
   type SpeakLoopPhase,
 } from './speakLoopTimings'
 import { isAbortError } from '../shared/isAbortError'
+import { lanHttpsRecordingHref } from '../learner/secureRecordingOrigin'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
@@ -86,6 +87,9 @@ export function VoicePracticePanel({
     setLoopPhase(phase)
     onLoopPhase?.(phase)
   }
+
+  const securePageHref =
+    typeof window === 'undefined' ? null : lanHttpsRecordingHref(window.location)
 
   const releaseHold = () => {
     setLocalResetEpoch((epoch) => epoch + 1)
@@ -465,7 +469,9 @@ export function VoicePracticePanel({
             createClientId={createClientId}
             labels={{
               controls: {
-                blocked: text('learner.recording.blocked'),
+                blocked: securePageHref
+                  ? text('learner.recording.blocked_insecure')
+                  : text('learner.recording.blocked'),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
                 hold: text('learner.recording.hold'),
@@ -516,6 +522,8 @@ export function VoicePracticePanel({
               }
             }}
             recorder={recorder}
+            securePageHref={securePageHref ?? undefined}
+            securePageLabel={text('learner.recording.open_secure_page')}
             skipReviewPlayback
           />
           <details className="conversation-journey__consent-details">

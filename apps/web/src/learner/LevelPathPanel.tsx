@@ -138,6 +138,8 @@ export interface LevelPathPanelProps {
   onBack?: () => void
   onOpenSpeakingPractice?: (session: FriendSession) => void
   onOpenRoleplay?: () => void
+  onLevelChange?: (levelNumber: number | null) => void
+  initialLevelNumber?: number | null
   conversationApi?: ConversationJourneyApi
   createClientId?: () => string
   demoMode?: boolean
@@ -153,12 +155,19 @@ export function LevelPathPanel({
   conversationApi,
   createClientId = createRandomClientId,
   demoMode = false,
+  initialLevelNumber = null,
+  onLevelChange,
 }: LevelPathPanelProps) {
   const message = (key: MessageKey, parameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
   const [levels, setLevels] = useState<LevelSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(
+    initialLevelNumber,
+  )
+  const [sessionsDone, setSessionsDone] = useState<
+    Readonly<Record<number, number>>
+  >({})
 
   useEffect(() => {
     const controller = new AbortController()
@@ -181,6 +190,43 @@ export function LevelPathPanel({
     }
   }, [api])
 
+  useEffect(() => {
+    const readyLevels = (levels ?? []).filter(
+      (level) => level.availability === 'available',
+    )
+    if (readyLevels.length === 0) {
+      return
+    }
+
+    const controller = new AbortController()
+    void Promise.all(
+      readyLevels.map((level) =>
+        api.listSessions(level.level_number, controller.signal).then(
+          (payload) => ({
+            level: level.level_number,
+            done: payload.sessions.filter((session) => session.completed)
+              .length,
+          }),
+        ),
+      ),
+    )
+      .then((rows) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        setSessionsDone(
+          Object.fromEntries(rows.map((row) => [row.level, row.done])),
+        )
+      })
+      .catch(() => {
+        /* list cards still work without a completion count */
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [api, levels])
+
   if (selectedLevel !== null) {
     return (
       <LevelSessionJourney
@@ -188,7 +234,10 @@ export function LevelPathPanel({
         levelNumber={selectedLevel}
         locale={locale}
         localizationPolicy={localizationPolicy}
-        onBack={() => setSelectedLevel(null)}
+        onBack={() => {
+          setSelectedLevel(null)
+          onLevelChange?.(null)
+        }}
         onOpenSpeakingPractice={onOpenSpeakingPractice}
         onOpenRoleplay={onOpenRoleplay}
         conversationApi={conversationApi}
@@ -251,7 +300,10 @@ export function LevelPathPanel({
                   <button
                     type="button"
                     className="level-path__item"
-                    onClick={() => setSelectedLevel(level.level_number)}
+                    onClick={() => {
+                      setSelectedLevel(level.level_number)
+                      onLevelChange?.(level.level_number)
+                    }}
                   >
                     <span className="level-path__item-index" aria-hidden="true">
                       {level.level_number}
@@ -265,6 +317,13 @@ export function LevelPathPanel({
                         />
                       </strong>
                       <span>{concept}</span>
+                      <span className="level-path__item-progress">
+                        <LocalizedMessage
+                          resolution={message('level.path.sessions_done', {
+                            done: String(sessionsDone[level.level_number] ?? 0),
+                          })}
+                        />
+                      </span>
                     </span>
                     <span className="level-path__item-action">
                       <LocalizedMessage
@@ -344,7 +403,7 @@ function LevelSessionJourney({
 }: LevelSessionJourneyProps) {
   const message = (key: MessageKey, parameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
-  const [partId, setPartId] = useState<SessionPartId>('introduction')
+  const [viewingPart, setViewingPart] = useState<SessionPartId | null>(null)
   const [detail, setDetail] = useState<LevelSessionDetail | null>(null)
   const [completions, setCompletions] = useState<Record<SessionPartId, boolean>>(
     {
@@ -397,9 +456,13 @@ function LevelSessionJourney({
   }, [api, levelNumber])
 
   useEffect(() => {
+    if (viewingPart === null) {
+      return
+    }
+
     const controller = new AbortController()
     api
-      .sessionDetail(levelNumber, partId, controller.signal)
+      .sessionDetail(levelNumber, viewingPart, controller.signal)
       .then((payload) => {
         if (controller.signal.aborted) {
           return
@@ -420,8 +483,9 @@ function LevelSessionJourney({
     return () => {
       controller.abort()
     }
-  }, [api, levelNumber, partId])
+  }, [api, levelNumber, viewingPart])
 
+  const partId = viewingPart
   const visibleDetail = detail?.part_id === partId ? detail : null
 
   function selectPart(part: SessionPartId) {
@@ -429,7 +493,7 @@ function LevelSessionJourney({
       setError('session_locked')
       return
     }
-    setPartId(part)
+    setViewingPart(part)
     setCheckResult(null)
     setConversationNote(null)
     setAnswers({})
@@ -442,6 +506,9 @@ function LevelSessionJourney({
   }
 
   async function complete() {
+    if (partId === null) {
+      return
+    }
     if (partId === 'introduction' && visibleDetail?.audio_stream_path && !audioHeard) {
       setError('listen_required')
       return
@@ -478,6 +545,9 @@ function LevelSessionJourney({
   }
 
   async function submitCheck() {
+    if (partId === null) {
+      return
+    }
     setBusy(true)
     try {
       const result = await api.submitCheck(
@@ -495,6 +565,9 @@ function LevelSessionJourney({
   }
 
   async function startTalk() {
+    if (partId === null) {
+      return
+    }
     setBusy(true)
     try {
       const session = await api.startConversation(
@@ -527,7 +600,7 @@ function LevelSessionJourney({
   function handleLessonAudioEnded() {
     setAudioHeard(true)
     setLessonPlaying(false)
-    if (!autoStarted.current) {
+    if (!autoStarted.current && onOpenSpeakingPractice === undefined) {
       autoStarted.current = true
       void startTalk()
     }
@@ -558,33 +631,67 @@ function LevelSessionJourney({
         </p>
       </header>
 
+      {viewingPart === null ? (
       <nav
         aria-label={message('level.path.sessions_nav').text}
-        className="level-session__nav"
+        className="level-session__nav level-session__stepper"
       >
         {PARTS.map((part) => {
           const unlocked = isPartUnlocked(part, completions)
+          const done = completions[part]
+          const current =
+            unlocked &&
+            !done &&
+            (part === 'introduction' ||
+              completions[PART_PREREQUISITE[part] ?? 'introduction'])
           return (
             <button
               key={part}
               type="button"
-              aria-current={part === partId ? 'true' : undefined}
+              aria-current={viewingPart === part ? 'true' : undefined}
               aria-disabled={unlocked ? undefined : 'true'}
               className={[
-                'level-session__tab',
-                part === partId ? 'level-session__tab--active' : '',
-                completions[part] ? 'level-session__tab--done' : '',
-                unlocked ? '' : 'level-session__tab--locked',
+                'level-session__step',
+                viewingPart === part ? 'level-session__step--active' : '',
+                done ? 'level-session__step--done' : '',
+                current ? 'level-session__step--current' : '',
+                unlocked ? '' : 'level-session__step--locked',
               ]
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => selectPart(part)}
             >
-              <LocalizedMessage resolution={message(PART_MESSAGE_KEYS[part])} />
+              <span>
+                <LocalizedMessage resolution={message(PART_MESSAGE_KEYS[part])} />
+              </span>
+              <span className="level-session__step-status">
+                <LocalizedMessage
+                  resolution={message(
+                    done
+                      ? 'level.path.completed'
+                      : unlocked
+                        ? 'level.path.ready'
+                        : 'level.path.locked',
+                  )}
+                />
+              </span>
             </button>
           )
         })}
       </nav>
+      ) : (
+        <button
+          type="button"
+          className="level-session__back"
+          onClick={() => {
+            setViewingPart(null)
+            setBoundSession(null)
+            setError(null)
+          }}
+        >
+          <LocalizedMessage resolution={message('level.path.part_back')} />
+        </button>
+      )}
 
       {error === 'session_locked' ? (
         <p className="level-session__status" role="alert">
@@ -777,18 +884,14 @@ function LevelSessionJourney({
           ) : null}
 
           <div className="level-session__panel level-session__teacher-stage">
-            <TutorPresence
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              mood={
-                lessonPlaying
-                  ? 'listening'
-                  : boundSession
-                    ? 'speaking'
-                    : 'idle'
-              }
-              size="lg"
-            />
+            {boundSession ? null : (
+              <TutorPresence
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                mood={lessonPlaying ? 'listening' : 'idle'}
+                size="lg"
+              />
+            )}
             <div className="level-session__actions">
               <button
                 type="button"
@@ -834,7 +937,7 @@ function LevelSessionJourney({
             {conversationNote ? (
               <p className="level-session__note">{conversationNote}</p>
             ) : null}
-            {boundSession && conversationApi ? (
+            {boundSession && conversationApi && onOpenSpeakingPractice === undefined ? (
               <ConversationJourney
                 api={conversationApi}
                 createClientId={createClientId}
@@ -849,7 +952,7 @@ function LevelSessionJourney({
             ) : null}
           </div>
         </>
-      ) : error === null ? (
+      ) : viewingPart !== null && error === null ? (
         <p className="level-session__status">
           <LocalizedMessage resolution={message('level.path.session_loading')} />
         </p>

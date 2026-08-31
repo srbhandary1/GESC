@@ -6,6 +6,7 @@ import {
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { CoachPreferenceProvider } from '../coach/CoachPreferenceContext'
 import type {
   AudioRecorder,
   AudioRecordingSession,
@@ -63,6 +64,37 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+async function completeOnboarding(
+  user: ReturnType<typeof userEvent.setup>,
+  goalKey: MessageKey = 'learner.onboarding.goal_workplace',
+) {
+  await user.click(
+    await screen.findByRole('button', {
+      name: t('learner.onboarding.next'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('checkbox', {
+      name: t('learner.onboarding.adult_confirmation'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('radio', {
+      name: t(goalKey),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.next'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+}
+
 describe('deterministic learner journey', () => {
   it('onboards, records locally, retries, submits and renders server authority', async () => {
     const user = userEvent.setup()
@@ -70,36 +102,24 @@ describe('deterministic learner journey', () => {
     const recorder = fakeRecorder()
 
     render(
+      <CoachPreferenceProvider>
       <LearnerJourney
         api={api}
         audioRecorder={recorder}
         createClientId={() => ids.capture}
         locale={DEFAULT_LOCALE}
         localizationPolicy="development-preview"
-      />,
+      />
+      </CoachPreferenceProvider>,
     )
 
     expect(
       await screen.findByRole('heading', {
-        name: t('learner.onboarding.title'),
+        name: t('learner.onboarding.step_welcome'),
       }),
     ).toHaveFocus()
 
-    await user.click(
-      screen.getByRole('checkbox', {
-        name: t('learner.onboarding.adult_confirmation'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('button', {
-        name: t('learner.onboarding.continue'),
-      }),
-    )
+    await completeOnboarding(user)
 
     expect(api.updateOnboarding).toHaveBeenCalledWith(
       {
@@ -283,21 +303,33 @@ describe('deterministic learner journey', () => {
     } satisfies LearnerJourneyApi
 
     render(
+      <CoachPreferenceProvider>
       <LearnerJourney
         api={api}
         locale={DEFAULT_LOCALE}
         localizationPolicy="development-preview"
-      />,
+      />
+      </CoachPreferenceProvider>,
     )
 
     await user.click(
-      await screen.findByRole('checkbox', {
+      await screen.findByRole('button', {
+        name: t('learner.onboarding.next'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('checkbox', {
         name: t('learner.onboarding.adult_confirmation'),
       }),
     )
     await user.click(
       screen.getByRole('radio', {
         name: t('learner.onboarding.goal_workplace'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.next'),
       }),
     )
     const submit = screen.getByRole('button', {
@@ -308,6 +340,11 @@ describe('deterministic learner journey', () => {
     expect(
       await screen.findByText(t('learner.onboarding.error')),
     ).toBeVisible()
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.back'),
+      }),
+    )
     const travelGoal = screen.getByRole('radio', {
       name: t('learner.onboarding.goal_travel'),
     })
@@ -319,7 +356,16 @@ describe('deterministic learner journey', () => {
       }),
     ).toBeChecked()
 
-    await user.click(submit)
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.next'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.continue'),
+      }),
+    )
     await screen.findByRole('heading', {
       name: t('learner.home.title'),
     })
@@ -514,6 +560,9 @@ describe('deterministic learner journey', () => {
     )
 
     await user.click(
+      await screen.findByText(t('learner.home.offline_summary')),
+    )
+    await user.click(
       await screen.findByRole('checkbox', {
         name: t('learner.offline.personal_confirmation'),
       }),
@@ -646,6 +695,9 @@ describe('deterministic learner journey', () => {
       />,
     )
 
+    await user.click(
+      (await screen.findAllByText(t('learner.level_videos.title')))[0]!,
+    )
     expect(await screen.findByTestId('lesson-video-element')).toBeVisible()
     expect(screen.getByTestId('level-videos-panel')).toBeVisible()
     expect(
@@ -723,7 +775,15 @@ describe('deterministic learner journey', () => {
     })
     expect(dominantTitle.closest('.learner-home__action')).not.toBeNull()
     expect(screen.getByText(longKnTitle)).toHaveAttribute('lang', 'kn-IN')
-    expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
+    expect(
+      screen.getByText(
+        resolveMessage('learner.home.streak_many', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { count: 2 },
+        }).text,
+      ),
+    ).toBeVisible()
     expect(
       screen.getByRole('button', { name: t('learner.home.continue') }),
     ).toHaveClass('learner-home__continue')

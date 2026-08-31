@@ -1,10 +1,11 @@
 const CACHE_PREFIX = 'global-english-public-shell-'
-const CACHE_NAME = `${CACHE_PREFIX}v5`
+const CACHE_NAME = `${CACHE_PREFIX}v17`
 const FORBIDDEN_PATH_PREFIXES = [
   '/api/',
   '/sanctum/',
   '/oauth/',
   '/auth/mobile/',
+  '/downloads/',
   '/password-establishment.html',
   '/password-recovery.html',
 ]
@@ -40,7 +41,7 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'GET_OFFLINE_SHELL_VERSION') {
     event.source?.postMessage({
       type: 'OFFLINE_SHELL_VERSION',
-      version: 'v5',
+      version: 'v17',
     })
     return
   }

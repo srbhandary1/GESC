@@ -4,6 +4,10 @@ import type {
   SupportedLocale,
 } from '@global-english/localization'
 import { useState } from 'react'
+import { InteractiveAvatar } from '../components/InteractiveAvatar'
+import { CoachSelector } from '../coach/CoachSelector'
+import { coachDisplayName } from '../coach/coachPreferences'
+import { useCoachPreference } from '../coach/coachPreferenceContextValue'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
@@ -36,11 +40,54 @@ export function SpeakRoom({
   initialSession,
 }: SpeakRoomProps) {
   const [mode, setMode] = useState<SpeakMode>(initialMode)
+  const [coachSheetOpen, setCoachSheetOpen] = useState(false)
+  const { preference } = useCoachPreference()
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const displayName = coachDisplayName(
+    preference,
+    message('coach.female.name').text,
+    message('coach.male.name').text,
+  )
 
   return (
     <div className="speak-room">
+      <div className="speak-room__coach-header">
+        <InteractiveAvatar
+          coachGender={preference.gender}
+          name={displayName}
+          showName={false}
+          size="sm"
+        />
+        <p className="speak-room__coach-name">{displayName}</p>
+        <button
+          className="ge-button speak-room__change-coach"
+          onClick={() => setCoachSheetOpen(true)}
+          type="button"
+        >
+          <LocalizedMessage resolution={message('conversation.change_coach')} />
+        </button>
+      </div>
+      {coachSheetOpen ? (
+        <div
+          aria-labelledby="coach-selector-title"
+          aria-modal="true"
+          className="speak-room__coach-sheet"
+          role="dialog"
+        >
+          <CoachSelector
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+          <button
+            className="ge-button"
+            onClick={() => setCoachSheetOpen(false)}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.onboarding.back')} />
+          </button>
+        </div>
+      ) : null}
       <div
         aria-label={message('shell.practice.speak').text}
         className="shell-practice-switch speak-room__modes"

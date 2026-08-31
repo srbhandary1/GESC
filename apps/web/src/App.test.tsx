@@ -67,11 +67,14 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('nav.learn') }),
     ).toHaveAttribute('href', '#learn')
     expect(
-      screen.getByRole('link', { name: text('nav.tuition') }),
-    ).toHaveAttribute('href', '#tuition')
+      screen.getByRole('link', { name: text('nav.me') }),
+    ).toHaveAttribute('href', '#me')
     expect(
-      screen.getByRole('link', { name: text('nav.progress') }),
-    ).toHaveAttribute('href', '#progress')
+      screen.queryByRole('link', { name: text('nav.tuition') }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: text('nav.progress') }),
+    ).not.toBeInTheDocument()
     expect(
       screen.getByText('Global English Local Demo'),
     ).toBeInTheDocument()
@@ -246,6 +249,26 @@ describe('localized application shell', () => {
       DEFAULT_LOCALE,
     )
     expect(authentication.current).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the marketing landing for a guest who opens a learner destination', async () => {
+    window.history.replaceState(null, '', '/#learn')
+
+    render(<App authentication={anonymousAuthentication()} />)
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', {
+        level: 1,
+        name: text('page.learn.title'),
+      }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(text('session.sign_in_hint'))).toBeNull()
   })
 
   it('lets a guest close the dedicated sign-in page back to the marketing home', async () => {
@@ -464,6 +487,7 @@ describe('localized application shell', () => {
       logout: vi.fn(async () => undefined),
     }
 
+    window.history.replaceState(null, '', '/#me')
     render(<App authentication={authentication} />)
 
     const organization = await screen.findByText(organizationName)
@@ -506,9 +530,22 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: text('learner.onboarding.title'),
+        name: text('learner.onboarding.step_welcome'),
       }),
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', {
+        name: text('shell.navigation_label'),
+      }),
+    ).not.toBeInTheDocument()
+    const preview = screen.getByRole('complementary', {
+      name: text('localization.preview_label'),
+    })
+    expect(preview).toHaveAttribute(
+      'data-review-status',
+      'pending-independent-review',
+    )
+    expect(preview.querySelector('details')).not.toHaveAttribute('open')
     expect(home).toHaveBeenCalledOnce()
   })
 
@@ -692,6 +729,103 @@ describe('localized application shell', () => {
     await user.click(signIn)
 
     expect(beginAuthorization).toHaveBeenCalledOnce()
+  })
+
+  it('starts Android PKCE from the marketing sign-in call to action', async () => {
+    const user = userEvent.setup()
+    const beginAuthorization = vi.fn(async () => undefined)
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      beginAuthorization,
+      completeAuthorization: vi.fn(),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
+      refresh: vi.fn(async () => undefined),
+    }
+
+    render(<App authentication={authentication} />)
+
+    const heroSignIn = await screen.findByRole('button', {
+      name: text('marketing.hero.cta_sign_in'),
+    })
+    expect(heroSignIn).not.toHaveAttribute('href')
+    expect(
+      screen.queryByRole('link', { name: text('marketing.hero.cta_android') }),
+    ).not.toBeInTheDocument()
+
+    await user.click(heroSignIn)
+
+    expect(beginAuthorization).toHaveBeenCalledOnce()
+  })
+
+  it('starts Android PKCE from the hero before session restore finishes', async () => {
+    const user = userEvent.setup()
+    const beginAuthorization = vi.fn(async () => undefined)
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      beginAuthorization,
+      completeAuthorization: vi.fn(),
+      current: vi.fn(
+        () => new Promise<AuthenticationSnapshot>(() => undefined),
+      ),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
+      refresh: vi.fn(async () => undefined),
+    }
+
+    render(<App authentication={authentication} />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: text('marketing.hero.cta_sign_in'),
+      }),
+    )
+
+    expect(beginAuthorization).toHaveBeenCalledOnce()
+    expect(
+      screen.getByRole('button', {
+        name: text('session.android_sign_in'),
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows a visible Android sign-in failure on the marketing landing', async () => {
+    const user = userEvent.setup()
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      beginAuthorization: vi.fn(async () => {
+        throw new Error('authorization url is not allowed')
+      }),
+      completeAuthorization: vi.fn(),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
+      refresh: vi.fn(async () => undefined),
+    }
+
+    render(<App authentication={authentication} />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: text('marketing.hero.cta_sign_in'),
+      }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      text('session.unavailable'),
+    )
   })
 })
 

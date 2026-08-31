@@ -35,9 +35,19 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
 
   await expect(
     page.getByRole('heading', {
-      name: message('learner.onboarding.title'),
+      name: message('learner.onboarding.step_welcome'),
     }),
   ).toBeFocused()
+  await expect(
+    page.getByRole('navigation', {
+      name: message('shell.navigation_label'),
+    }),
+  ).toHaveCount(0)
+  await page
+    .getByRole('button', {
+      name: message('learner.onboarding.next'),
+    })
+    .click()
   await page
     .getByRole('checkbox', {
       name: message('learner.onboarding.adult_confirmation'),
@@ -50,9 +60,55 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     .check()
   await page
     .getByRole('button', {
+      name: message('learner.onboarding.next'),
+    })
+    .click()
+  await page
+    .getByRole('button', {
       name: message('learner.onboarding.continue'),
     })
     .click()
+
+  await expect(
+    page.getByRole('navigation', {
+      name: message('shell.navigation_label'),
+    }),
+  ).toBeVisible()
+  await page.setViewportSize({ width: 360, height: 780 })
+  for (const link of await page.locator('.ge-primary-navigation__link').all()) {
+    const box = await link.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(48)
+    expect(box!.width).toBeGreaterThanOrEqual(48)
+  }
+  const continueControl = page.getByRole('button', {
+    name: message('learner.home.continue'),
+  })
+  await expect(continueControl).toBeVisible()
+  const continueBox = await continueControl.boundingBox()
+  expect(continueBox).not.toBeNull()
+  expect(continueBox!.y).toBeGreaterThanOrEqual(0)
+  expect(continueBox!.y + continueBox!.height).toBeLessThanOrEqual(704)
+  await page.screenshot({
+    path: '../../docs/ux-simplification/home-360.png',
+  })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  await expect(
+    page.getByRole('button', {
+      name: message('learner.home.continue'),
+    }),
+  ).toBeVisible()
+  const homeOverflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth + 1,
+  )
+  expect(homeOverflow).toBe(false)
+  await page.evaluate(() => {
+    document.documentElement.style.removeProperty('font-size')
+  })
 
   await page
     .getByRole('button', {
@@ -240,7 +296,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       }),
     )
     .toMatchObject({
-      cacheKeys: ['global-english-public-shell-v5'],
+      cacheKeys: ['global-english-public-shell-v17'],
       serviceWorkerRegistrations: 1,
     })
   const cachedUrls = await page.evaluate(async () => {
@@ -326,6 +382,9 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   const api = await mockLearnerApi(page, true)
 
   await page.goto('/#home')
+  await page
+    .getByText(message('learner.home.offline_summary'))
+    .click()
   await page
     .getByRole('checkbox', {
       name: message('learner.offline.personal_confirmation'),
@@ -505,6 +564,38 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   ).toHaveCount(0)
 })
 
+test('opens the Learn session stepper at mobile width', async ({ page }) => {
+  await mockLearnerApi(page, true)
+  await page.setViewportSize({ width: 360, height: 780 })
+  await page.goto('/#learn')
+  await page
+    .getByRole('button', {
+      name: /ಮಟ್ಟ 1|Level 1/i,
+    })
+    .click()
+  await expect(page.locator('[data-destination="learn"]')).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  const introductionStep = page.getByRole('button', {
+    name: message('level.path.part.introduction'),
+  })
+  const practiceStep = page.getByRole('button', {
+    name: message('level.path.part.practice'),
+  })
+  await expect(introductionStep).toBeVisible()
+  await expect(practiceStep).toBeVisible()
+  const introductionBox = await introductionStep.boundingBox()
+  const practiceBox = await practiceStep.boundingBox()
+  expect(introductionBox).not.toBeNull()
+  expect(practiceBox).not.toBeNull()
+  expect(practiceBox!.y).toBeGreaterThan(introductionBox!.y)
+  expect(Math.abs(practiceBox!.x - introductionBox!.x)).toBeLessThan(8)
+  await page.screenshot({
+    path: '../../docs/ux-simplification/learn-stepper-360.png',
+  })
+})
+
 interface MockApiState {
   commandIds: Array<string | null>
   modelAudioRequests: Array<{
@@ -588,6 +679,62 @@ async function mockLearnerApi(
       state.commandIds.push(request.headers()['idempotency-key'] ?? null)
       onboarded = true
       await json(route, home(true))
+      return
+    }
+
+    if (path === '/api/v1/me/levels') {
+      await json(route, {
+        levels: [
+          {
+            availability: 'available',
+            blueprint_id: '01J10000000000000000000020',
+            concept_key: 'can',
+            level_number: 1,
+            session_part_ids: [
+              'introduction',
+              'practice',
+              'conversation',
+              'interaction',
+            ],
+          },
+        ],
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/levels/1/sessions') {
+      await json(route, {
+        blueprint_content_hash: 'a'.repeat(64),
+        blueprint_id: '01J10000000000000000000020',
+        concept_key: 'can',
+        level_number: 1,
+        sessions: [
+          {
+            completed: false,
+            media_asset_id: '01J10000000000000000000021',
+            part_id: 'introduction',
+            part_order: 1,
+          },
+          {
+            completed: false,
+            media_asset_id: '01J10000000000000000000022',
+            part_id: 'practice',
+            part_order: 2,
+          },
+          {
+            completed: false,
+            media_asset_id: '01J10000000000000000000023',
+            part_id: 'conversation',
+            part_order: 3,
+          },
+          {
+            completed: false,
+            media_asset_id: '01J10000000000000000000024',
+            part_id: 'interaction',
+            part_order: 4,
+          },
+        ],
+      })
       return
     }
 

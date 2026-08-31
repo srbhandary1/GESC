@@ -35,13 +35,15 @@ class RuntimeSecureStore implements NativeSecureCredentialStore {
   }
 }
 
+const TEST_CLIENT_ID = '019fdd3f-4bba-720b-9e4e-a771ecccdd7f'
+
 describe('createDefaultAuthentication', () => {
   it('wires Android PKCE when the Capacitor Android runtime is active', () => {
     const authentication = createDefaultAuthentication({
       isNativeAndroid: true,
       env: {
         VITE_MOBILE_API_ORIGIN: 'https://api.global-english.test',
-        VITE_MOBILE_OAUTH_CLIENT_ID: 'public-android-client',
+        VITE_MOBILE_OAUTH_CLIENT_ID: TEST_CLIENT_ID,
       },
     })
 
@@ -83,7 +85,7 @@ describe('createDefaultAuthentication', () => {
     const runtime = createDefaultAuthenticationRuntime({
       env: {
         VITE_MOBILE_API_ORIGIN: 'https://api.global-english.test',
-        VITE_MOBILE_OAUTH_CLIENT_ID: 'public-android-client',
+        VITE_MOBILE_OAUTH_CLIENT_ID: TEST_CLIENT_ID,
       },
       fetch: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const request = new Request(input, init)

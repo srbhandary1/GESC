@@ -42,6 +42,8 @@ interface RecordingTurnProps {
   readonly onHoldPhaseChange?: (phase: HoldPhase) => void
   readonly recorder: AudioRecorder
   readonly skipReviewPlayback?: boolean
+  readonly securePageHref?: string
+  readonly securePageLabel?: string
 }
 
 interface LocalCapture {
@@ -61,6 +63,8 @@ export function RecordingTurn({
   onHoldPhaseChange,
   recorder,
   skipReviewPlayback = false,
+  securePageHref,
+  securePageLabel,
 }: RecordingTurnProps) {
   const [state, setState] = useState<RecordingControlState>(
     recorder.isSupported() ? 'ready' : 'blocked',
@@ -298,6 +302,13 @@ export function RecordingTurn({
             >
               {labels.retry}
             </button>
+          ) : null}
+          {state === 'blocked' &&
+          securePageHref !== undefined &&
+          securePageLabel !== undefined ? (
+            <p>
+              <a href={securePageHref}>{securePageLabel}</a>
+            </p>
           ) : null}
           <p>{labels.continueWithoutExplanation}</p>
           <button

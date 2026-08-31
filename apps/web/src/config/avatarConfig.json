@@ -1,0 +1,16 @@
+{
+  "defaultTeacherId": "female",
+  "tutorRenderer": "svg",
+  "avatars": {
+    "female": {
+      "id": "female",
+      "glb": "/avatars/female_tutor.glb",
+      "atlas": "/avatars/coach-female.png"
+    },
+    "male": {
+      "id": "male",
+      "glb": "/avatars/male_tutor.glb",
+      "atlas": "/avatars/coach-male.png"
+    }
+  }
+}

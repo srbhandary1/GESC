@@ -30,6 +30,7 @@ abstract class TestCase extends BaseTestCase
             'conversation.guidance_tts.live_requests_enabled' => false,
             'conversation.azure_openai.live_requests_enabled' => false,
             'voice.provider_driver' => 'deterministic-test',
+            'voice.allowed_organization_ids' => [],
         ]);
         (new AppServiceProvider($application))->register();
 

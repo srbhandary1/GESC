@@ -20,6 +20,33 @@ import { TutorPresence } from '../tutor/TutorPresence'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
 import './ConversationJourney.css'
 
+const ROLEPLAY_GROUPS: ReadonlyArray<{
+  readonly key: MessageKey
+  readonly ids: readonly string[]
+}> = [
+  {
+    key: 'conversation.roleplay.group.daily',
+    ids: ['restaurant-order', 'grocery-shop', 'school-parent-meeting'],
+  },
+  {
+    key: 'conversation.roleplay.group.work',
+    ids: ['job-interview', 'office-meeting'],
+  },
+  {
+    key: 'conversation.roleplay.group.travel',
+    ids: ['hotel-checkin', 'airport-checkin', 'bus-train-ticket'],
+  },
+  {
+    key: 'conversation.roleplay.group.services',
+    ids: [
+      'clinic-reception',
+      'bank-counter',
+      'phone-customer-support',
+      'doctor-appointment',
+    ],
+  },
+]
+
 function defaultRoleplayEntry(): RoleplayCatalogEntry {
   const entry = ROLEPLAY_CATALOG[0]
   if (entry === undefined) {
@@ -301,42 +328,68 @@ export function RoleplayJourney({
       </header>
 
       <div className="conversation-journey__notice">
-        <h2>
-          <LocalizedMessage
-            resolution={message('conversation.roleplay.disclosure_title')}
-          />
-        </h2>
-        <p>
-          <LocalizedMessage
-            resolution={message('conversation.roleplay.prototype_notice')}
-          />
-        </p>
-        <p>
-          <LocalizedMessage
-            resolution={message('conversation.roleplay.privacy_notice')}
-          />
-        </p>
+        <details>
+          <summary>
+            <LocalizedMessage
+              resolution={message('conversation.roleplay.disclosure_title')}
+            />
+            {' '}
+            <span>
+              <LocalizedMessage
+                resolution={message('conversation.more_actions')}
+              />
+            </span>
+          </summary>
+          <p>
+            <LocalizedMessage
+              resolution={message('conversation.roleplay.prototype_notice')}
+            />
+          </p>
+          <p>
+            <LocalizedMessage
+              resolution={message('conversation.roleplay.privacy_notice')}
+            />
+          </p>
+        </details>
       </div>
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
         <div className="conversation-journey__start">
-          <ul className="roleplay-scenes">
-            {ROLEPLAY_CATALOG.map((entry) => (
-              <li key={entry.id}>
-                <button
-                  aria-pressed={selected.id === entry.id}
-                  disabled={state.kind === 'starting'}
-                  onClick={() => setSelected(entry)}
-                  type="button"
-                >
-                  <span aria-hidden="true" className="roleplay-scenes__icon">
-                    {ROLEPLAY_SCENE_ICONS[entry.id] ?? '🎭'}
-                  </span>
-                  {entry.displayName}
-                </button>
-              </li>
+          <div className="roleplay-groups">
+            {ROLEPLAY_GROUPS.map((group) => (
+              <details key={group.key}>
+                <summary>
+                  <LocalizedMessage resolution={message(group.key)} />
+                </summary>
+                <ul className="roleplay-scenes">
+                  {group.ids.map((id) => {
+                    const entry = ROLEPLAY_CATALOG.find((item) => item.id === id)
+                    if (entry === undefined) {
+                      return null
+                    }
+                    return (
+                      <li key={entry.id}>
+                        <button
+                          aria-pressed={selected.id === entry.id}
+                          disabled={state.kind === 'starting'}
+                          onClick={() => setSelected(entry)}
+                          type="button"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="roleplay-scenes__icon"
+                          >
+                            {ROLEPLAY_SCENE_ICONS[entry.id] ?? '🎭'}
+                          </span>
+                          {entry.displayName}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </details>
             ))}
-          </ul>
+          </div>
           <label
             className="visually-hidden"
             htmlFor="roleplay-scenario"

@@ -1,5 +1,812 @@
 # Quality review
 
+## D-0262: Android Sign in must open system-browser PKCE — 31 August 2026
+
+### Scope reviewed
+
+- Android guests still sign in with Passport Authorization Code + S256 PKCE
+  in the system browser (ADR-0002 / D-0180 / D-0258). The web password form
+  is not used inside the Capacitor WebView.
+- Hero **Sign in to start** and the header **Sign in with secure browser**
+  now call `beginAuthorization()` even while `session.status === 'checking'`.
+  A rejected Custom Tabs open shows `session.unavailable` on the marketing
+  hero (`role="alert"`) instead of a silent catch.
+- `apps/web/android-app/app/build.gradle` fails closed on `assemble*` /
+  `bundle*` when `VITE_MOBILE_API_ORIGIN` is missing or off the D-0258
+  allowlist. `scripts/publish-soft-launch-android-apk.sh` exports that
+  origin into Gradle so `BuildConfig.MOBILE_API_ORIGIN` cannot ship empty.
+- Android 11+ `<queries>` for Custom Tabs and `http`/`https` VIEW are
+  declared. No OpenAPI change. `make ai-eval` not required. Catalogues
+  were not stamped approved.
+
+### Verification actually run
+
+| Check | Result |
+|---|---|
+| web vitest | **339/339** |
+| Targeted Android sign-in tests (App, MarketingLanding, native contract) | 28/28 |
+| `make soft-launch-android-apk` | pass: `global-spoken-english.apk` 59,155,938 bytes; `BuildConfig.MOBILE_API_ORIGIN=http://117.254.108.143:8080` |
+| Live `GET /downloads/global-spoken-english.apk` | 200 `application/octet-stream` `filename="global-spoken-english.apk"` |
+| localization / design-system | not re-run (no catalogue or token change) |
+| OpenAPI / `make ai-eval` | not required |
+| Physical device Custom Tabs | not run on this host (no phone attached) |
+
+### Residual risk
+
+- Testers on a pre-D-0262 APK still have a binary whose native origin may be
+  empty. They must uninstall and install the newly published APK.
+- Physical-device Custom Tabs evidence remains external; this host does not
+  attach a phone.
+- kn-IN remains `pending-independent-review`.
+
+## D-0261: SVG tutor gate, compact preview notice, PHP 8.4 pcntl image — 31 August 2026
+
+### Scope reviewed
+
+- **D-0249 restored.** `avatarConfig.json` `tutorRenderer` is `"svg"`.
+  The GLB/WebGL path stays code-complete. The Accountable Product Owner
+  confirmed the current busts still fail the quality bar. `avatarConfig.test.ts`
+  now passes (`tutorRendererMode() === 'svg'`). Web vitest **334/334**.
+- **Preview notice layout, not approval.** D-0030/D-0210 still require a
+  visible preview notice on `VITE_UI_TRANSLATION_PREVIEW=true`. The notice
+  is a collapsed `<details>` (label in `<summary>`, full text inside).
+  Catalogues stay `pending-independent-review`; this agent did not stamp
+  `approved`. At 360×780, Playwright asserts the mission Continue control
+  is in the first viewport above the fixed nav (bottom ≤ 704px).
+- **PHP 8.4 verify image.** `scripts/php84-test.Dockerfile` installs
+  `pcntl` and `pdo_pgsql` and copies Composer 2.10.2. `make php84-test-image`
+  tags `ge-php84-pgsql:local`. `scripts/run-php84.sh` /
+  `scripts/run-composer.sh` plus `PHP=` / `COMPOSER_CMD=` on `make verify`
+  satisfy `scripts/check-toolchain.sh` (now honours `PHP`/`PNPM`/`NODE`).
+  Pins are unchanged (Node 24.18.1, PHP 8.4.x, Composer 2.10.2).
+- OpenAPI was not regenerated. `make ai-eval` not required.
+
+### Verification actually run
+
+| Check | Result |
+|---|---|
+| `make check-toolchain` with PHP/Composer wrappers | pass (PHP 8.4.24 warning vs pin 8.4.23) |
+| Pint, PHPStan | pass |
+| `artisan test` (SQLite, PHP 8.4.24 image) | 229 passed |
+| `phpunit.postgres.xml` | **325 passed**, 4550 assertions (pcntl concurrency tests included) |
+| lint, typecheck | pass |
+| web vitest | **334/334** (avatarConfig SVG gate included) |
+| localization / design-system | 31/31, 11/11 |
+| locale:check | 6 catalogues, 5 pending-review warnings |
+| openapi:check, release:check, pnpm audit | pass |
+| Playwright | **23/23** |
+| `scripts/test-soft-launch-environment.sh` | pass (expects shell `v17`) |
+
+### Residual risk
+
+- kn-IN / ml-IN / ta-IN / te-IN / hi-IN remain
+  `pending-independent-review`. Independent named translator + reviewer
+  required before production chrome can drop the preview notice.
+- Host `php` is still 8.5.4; `make verify` without `PHP=`/`COMPOSER_CMD=`
+  still fails `check-toolchain`. `pnpm install` on this workspace can
+  hit EACCES when `node_modules` is root-owned from Docker installs.
+- GLB remains gated until a bake passes visual review.
+
+## D-0260.2–.9: UX simplification implementation and closeout — 31 August 2026
+
+### Scope reviewed
+
+- Product implementation of ADR-0032 / the D-0260 series after the
+  docs-only D-0260.1 audit. No OpenAPI, migration, tenancy, consent or
+  deterministic-mark change. Generated client types were **not**
+  regenerated (`pnpm run openapi:check` confirmed the existing OpenAPI
+  source and generated contracts still match). `make ai-eval` is not
+  in scope: no prompt, model, provider or orchestration change.
+- **Theme (D-0260.2).** `tokens.css` / `base.css` / `components.css`: body
+  grid overlay removed; one subtle canvas gradient; glow/shadow tokens
+  reduced. `--ge-color-text-muted` remains `#b9b1d4` on
+  `--ge-color-surface` `#13111f` = **9.14:1** (WCAG 2.2 AA and AAA for
+  normal text). Semantic type scale tokens (`caption` / `body` /
+  `title` / `display`) added; Fraunces remains the display family.
+- **Nav + Me (D-0260.3).** `PRIMARY_DESTINATIONS` is home, learn, speak,
+  me. Inline SVG icons (`aria-hidden`) with visible labels. Mobile
+  (`max-width: 48rem`) fixed bottom tab bar with safe-area padding and
+  48px targets; desktop keeps the top-of-content grid. `MeHub` hosts
+  account summary, Progress, collapsed 1:1, account security,
+  locale, sign out. Learner header is logo + Account → `#me`.
+- **Onboarding (D-0260.4).** While `home.onboarding.completed` is false,
+  `PrimaryNavigation` is hidden and a three-step flow runs (welcome /
+  18+ + goal / coach). `POST /me/onboarding` is unchanged and fires on
+  the last step. Coach rename stays out of this stage.
+- **Home (D-0260.5).** Compact greeting strip; mission/review card is the
+  only primary action; ADR-0028 review-due priority unchanged. Offline
+  enrollment is a collapsed “Save for offline” disclosure (checkbox
+  still required before enrollment). Level videos start collapsed.
+- **Learn (D-0260.6).** Vertical session stepper; one part full-screen
+  with Back; PART_PREREQUISITE unlock order unchanged. Ask AI Tutor /
+  free-speech navigates to `#speak` instead of embedding
+  `ConversationJourney`. A late CSS bug (`.level-session__nav` 2-column
+  override at `max-width: 40rem`) was corrected so the stepper stays one
+  column; e2e asserts stacked bounding boxes at 360px.
+- **Speak (D-0260.7).** Compact coach header + Change sheet; practice
+  type/mode in collapsed “Practice settings”; AI disclosure one-liner
+  + More; in-session Type instead / Finish + More overflow; memory and
+  turn history behind disclosures; role-play scenes grouped Daily life /
+  Work / Travel / Services. Recording consent in `VoicePracticePanel`
+  is unchanged.
+- **Progress / 1:1 (D-0260.8).** Catalogue labels only: “Days you
+  practised speaking”, “Reviews done on time / finished late”;
+  `speaking_minutes` rendered; mastery lists grouped; 1:1 contacts
+  visible with the waitlist form expanding on demand. Empty Progress
+  CTA is “Start today's mission” → `#home`.
+- **Terminology + a11y (D-0260.9).** User-visible Speak “turn/stage”
+  copy mapped to **practice** via catalogues revision
+  `ui-*-2026-08-31.8`. Main has `padding-block-end: calc(4.75rem + env(safe-area-inset-bottom))`
+  so the fixed nav does not cover content. Playwright at 360px
+  asserts 48px nav targets and 200% zoom without horizontal overflow on
+  the mission Continue control and the Hold to talk heading. Bootstrap
+  axe-clean shell still passes.
+
+### Verification actually run
+
+Host `make verify` cannot execute as a single command: this machine is
+Node 22.22.1 / PHP 8.5.4 / Composer 2.9.5, and the repo toolchain is
+Node 24.18.1 / PHP 8.4.x / Composer 2.10.2. Equivalent pieces were run
+in Docker (`node:24.18.1-bookworm-slim`, `ge-php84-pgsql:local`,
+`mcr.microsoft.com/playwright:v1.62.0-noble`):
+
+| Check | Result |
+|---|---|
+| `pnpm run lint` | 0 errors |
+| `pnpm run typecheck` | pass |
+| `pnpm run locale:check` | 6 catalogues, 5 expected pending-independent-review warnings |
+| localization tests | 31/31 |
+| design-system tests | 11/11 |
+| web vitest | 333 passed, **1 failed** (`avatarConfig.test.ts` expects SVG; runtime is `'gltf'` — pre-existing D-0249, not this series) |
+| PHP Pint `--test` | pass (744 files) |
+| PHPStan | 0 errors (717) |
+| `artisan test` (SQLite) | 229 passed (2368 assertions) |
+| `phpunit.postgres.xml` | 28 failed / 2 risky — all concurrent ADMIN-ORG tests: image lacks `pcntl`; not introduced by this UI series |
+| Playwright default suite | **23/23** after `testIgnore` of live-web and mobile-android live specs; conversation + learner re-run **7/7** after the stepper CSS fix |
+| `openapi:check` | pass; generated types match; **no D-0260 API change** |
+| `release:check` | fail-closed contract pass |
+| `scripts/test-soft-launch-environment.sh` | pass |
+| `pnpm audit --audit-level=high` | no known vulnerabilities |
+| `composer validate --strict` | `composer.json` is valid |
+| `composer audit --locked` | packagist timed out from this host (curl error 28); not treated as a product defect |
+| `make ai-eval` | not run (not required) |
+
+Mobile captures (Playwright, 360×780): `docs/ux-simplification/home-360.png`,
+`learn-stepper-360.png`, `speak-idle-360.png`, `speak-session-360.png`,
+`me-360.png`.
+
+### Residual risk
+
+- kn-IN / ml-IN / ta-IN / te-IN / hi-IN strings remain
+  `pending-independent-review` (D-0030 / D-0210). Soft launch runs
+  `VITE_UI_TRANSLATION_PREVIEW=true`, so the translation-preview banner
+  still occupies first-screen space on Home/Learn at 360px and can
+  push the mission card below the fold until that banner is gone.
+- PostgreSQL PHPUnit concurrency tests still need a PHP image with
+  `pcntl`; this closeout used SQLite artisan success plus the known
+  `pcntl` gap. Host `make verify` remains blocked on toolchain pin.
+- The pre-existing `avatarConfig.test.ts` SVG-vs-GLB failure (D-0249)
+  is untouched.
+- Progress is one tap deeper (inside Me); `#progress` / `#tuition`
+  aliases remain for muscle memory.
+- Public shell cache is `v16`. Testers who still hold `v5`–`v15`
+  need a refresh/reinstall to pick up the new HTML shell.
+
+## D-0260.1: UX simplification audit and ADR-0032 — 31 August 2026
+
+### Scope reviewed
+
+- Docs-only checkpoint. No TypeScript, CSS, OpenAPI, or migration change was
+  required. Learner screens were read in `apps/web` (marketing landing,
+  sign-in, `LearnerJourney` onboarding and Home/mission, `LevelPathPanel`,
+  `SpeakRoom` / `ConversationJourney` / `RoleplayJourney`,
+  `ProgressDashboard`, `TuitionRequestPanel`, `App.tsx` hash parser and
+  header) against master-plan §7.1, ADR-0026 and ADR-0028.
+- Client complaint (overwhelm, clutter, confusing navigation) maps to three
+  overlapping listen/speak products, a leaky onboarding gate, a five-item
+  mobile nav with a cryptic "1:1" tab, and ion-theme visual noise (grid +
+  layered glows).
+- ADR-0032 accepted, amending ADR-0026 and master-plan §7.1 to four
+  destinations (Home · Learn · Speak · Me) and a calmed ion theme. `#progress`
+  / `#tuition` / `#one-to-one` remain deep links. `#practice` still aliases
+  Speak.
+- Muted token contrast was computed, not guessed: `#b9b1d4` on `#13111f`
+  is 9.14:1 (WCAG 2.2 AA and AAA for normal text). D-0260.2 must preserve
+  ≥4.5:1 and must not darken muted text.
+- Streak/review determinism (ADR-0028), session unlock order (ADR-0025),
+  recording consent (ADR-0007), Sanctum/PKCE (ADR-0002), and tenancy are
+  unchanged. No new personal-data category.
+
+### Residual risk
+
+- Superseded by D-0260.2–.9 closeout above: the four-tab IA, calmed
+  theme, gated onboarding and density reductions are now in product code.
+  Remaining risk is Kannada independent review and the translation-preview
+  banner occupying first-screen space at 360px.
+
+## D-0259: Mobile APK download must complete and resume — 31 August 2026
+
+### Scope reviewed
+
+- Live `GET /downloads/global-spoken-english.apk` was ~43 MB with
+  `Cache-Control: no-store`, `Content-Disposition: attachment` (no filename),
+  and `Content-Type: application/vnd.android.package-archive` on HTTP :8080.
+- Chrome on Android pauses HTTP APKs as insecure and cannot resume a
+  `no-store` / in-page `download` blob fetch.
+- Caddy `/downloads/*` now: gzip matcher excludes that path,
+  `application/octet-stream`, `nosniff`, named filename,
+  `public, max-age=300, must-revalidate`. Range/206 remains from
+  `file_server`. Service worker still excludes `/downloads/`. Homepage
+  link has no `download` attribute.
+
+### Residual risk
+
+- The file is still ~43 MB on cellular; a dropped connection needs a new
+  Range resume from the system download manager.
+- Same-Wi-Fi testers must not use the WAN IP (hairpin NAT).
+- Chrome may still warn on HTTP; the file installs from Files after save
+  because the name ends in `.apk`.
+
+## D-0258: Android first-screen sign-in opens system-browser PKCE — 31 August 2026
+
+
+### Scope reviewed
+
+- Native Custom Tabs plugin previously required `"https".equals(uri.getScheme())`,
+  which rejected every D-0257 authorize URL on `http://<IPv4>:8080`.
+- Allowlist now matches `androidPkceEnvironment.ts`: HTTPS; HTTP for
+  `10.0.2.2` / `127.0.0.1` / `localhost`; HTTP IPv4 port 8080 only. Path must
+  remain `/oauth/authorize` on the baked origin.
+- Android marketing hero Sign in calls `beginAuthorization()`; APK download
+  is web-only. How it works uses in-page scroll rather than hash navigation.
+- Credentials stay in the system browser (ADR-0002). No WebView password form.
+
+### Residual risk
+
+- Existing sideloaded APKs still contain the HTTPS-only plugin until reinstall.
+- HTTP Custom Tabs on the invite-only static IP has the same transport-risk
+  class as D-0248 web cookies. Play bundles remain HTTPS-only.
+
+## D-0257: Keep HTTP :8080, add :8443, homepage Android APK download — 31 August 2026
+
+
+### Scope reviewed
+
+- Router posture: keep TCP 8080; open 8443 in addition. Closing 8080 would
+  break D-0248 cookies and the Android API origin.
+- `androidPkceEnvironment.ts` allows `http://<IPv4>:8080` only; hostnames
+  remain HTTPS-only. Play `android-release-bundle` still requires `https://`.
+- `network_security_config.xml` permits cleartext to `192.168.1.4` and
+  `117.254.108.143`.
+- Marketing homepage CTA downloads `/downloads/global-spoken-english.apk`.
+  Service worker `v14` and Caddy exclude/serve that path without caching.
+- APK is not committed; `make soft-launch-android-apk` publishes it.
+
+### Residual risk
+
+- Debug-signed sideload, not Play App Signing.
+- Android tokens travel over HTTP on the invite-only static IP (same class of
+  limitation as D-0248 web cookies).
+- Same-Wi-Fi testers must use `192.168.1.4` for the website; the APK talks to
+  the WAN IP, so phones on that Wi-Fi should use mobile data or accept hairpin
+  NAT failure.
+
+## D-0256: LAN/WAN HTTPS :8443 for browser microphone capture — 31 August 2026
+
+### Scope reviewed
+
+- Direct Caddy generator emits `http://:8080` (scheme-qualified so it is
+  not a TLS catch-all) plus named `https://<ip>:8443` sites with
+  `tls internal` and `auto_https disable_redirects`. A hostname-less
+  `:8080` plus internal TLS catch-all is rejected by Caddy
+  (`automation policy ... in conflict`). Hosts include loopback, the
+  WAN static IP, and the detected LAN IPv4 so certificates match the
+  URL testers open. Stable-host Caddyfiles still must not use internal
+  TLS.
+- `scripts/run-soft-launch.sh`: `persist_public_origin` appends
+  `{public_ip}:8443` and `{lan_ip}:8443` to `SANCTUM_STATEFUL_DOMAINS`;
+  `SESSION_SECURE_COOKIE` stays `false` on the HTTP public origin.
+- `apps/web/src/learner/secureRecordingOrigin.ts`: maps
+  `http://{lan-or-wan-ip}:8080/#learn` to `https://{host}:8443/#learn`;
+  loopback HTTP and existing HTTPS return no link.
+- `RecordingTurn`, `VoicePracticePanel`, `LearnerJourney`: blocked capture on
+  an insecure non-loopback origin shows `learner.recording.blocked_insecure`
+  and an "Open the secure page to record" link.
+- Localization: `learner.recording.blocked_insecure` and
+  `learner.recording.open_secure_page` in all six catalogues; governance
+  hashes/revisions bumped to `ui-*-2026-08-31.4`.
+- Service worker cache bumped to `v13`.
+- No API/contract change; HTTP public entry and cookie policy unchanged.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| HTTP `:8080` still served (no HTTPS redirect) | Pass | Live `http://192.168.1.4:8080/api/v1/health/live` 200; Caddyfile is `http://:8080 {` with `reverse_proxy`/`file_server`, no `redir` |
+| HTTPS `:8443` uses local CA only on the IP edge | Pass | Live named sites `https://127.0.0.1:8443, https://117.254.108.143:8443, https://192.168.1.4:8443 { tls internal }`; stable-host config still fails if internal TLS appears |
+| Sanctum includes `:8443` hosts | Pass | Live env includes `192.168.1.4:8443` and `117.254.108.143:8443` |
+| Browser exposes microphone API only on HTTPS | Pass | Chromium probe: HTTP LAN origin `isSecureContext=false`, `getUserMedia` missing; HTTPS `:8443` `isSecureContext=true`, `getUserMedia` present |
+| Insecure-origin UI links to HTTPS | Pass | `secureRecordingOrigin.test.ts`; `RecordingTurn.test.tsx` link assertion |
+| Loopback HTTP does not nag for HTTPS | Pass | `lanHttpsRecordingHref` returns null for `127.0.0.1` |
+| Localization governance | Pass | `pnpm --filter @global-english/localization run validate` — 0 errors, 5 expected pending-review warnings |
+
+### Residual risk
+
+- Testers must accept an untrusted/local-CA certificate once.
+- HTTP and HTTPS are different origins; the `:8080` session cookie is not
+  sent to `:8443`. Sign in again on the HTTPS page.
+- WAN microphone also needs TCP `8443` forwarded to this host.
+
+## D-0254: Post-theme bug sweep — duplicate avatar, sign-in grid leak, tab contrast, page width, account role — 31 August 2026
+
+### Scope reviewed
+
+- `LevelPathPanel.tsx`: `TutorPresence` in the teacher-stage panel now renders
+  only while `!boundSession`.
+- `App.css`: `.web-password-sign-in` two-column desktop rule scoped with
+  `:not(.web-password-sign-in--embedded)`; explicit single-column
+  `grid-template-columns` added to the embedded variant; new
+  `.shell-account-menu__role` badge style.
+- `tutorExperience.css`: removed the stale `.shell-practice-switch` and
+  `.shell-practice-switch button[aria-selected='true']` background overrides.
+- `packages/design-system/src/styles/tokens.css`: `--ge-content-width`
+  72rem → 80rem.
+- `LevelSessionJourney.css`, `ProgressDashboard.css`,
+  `ConversationJourney.css` (`.speak-room`, `.conversation-journey`): removed
+  page-level `max-width` caps narrower than the shell; changed to
+  `width: 100%`.
+- `App.tsx`: added `membershipTypeMessageKey()` and rendered the badge in the
+  header account menu.
+- `en-IN`/`kn-IN`/`ml-IN`/`ta-IN`/`te-IN`/`hi-IN` catalogues: added
+  `session.membership_type.{learner,trainer,organization_admin}`;
+  `governance.json` hashes/revisions recomputed for all six locales.
+- Service worker cache bumped to `v11`; `learner-journey.spec.ts` and
+  `test-soft-launch-environment.sh` updated to match.
+- No API/contract change; no governed lesson/prompt copy changed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Learn: no duplicate avatar after "Ask AI Tutor" | Pass | `LevelPathPanel.test.tsx` 5/5; code path confirms only one avatar (the live `SwathiAvatar` in `ConversationJourney`) renders once `boundSession` is set |
+| Sign-in tile fields/buttons aligned, no dead column | Pass | Authenticated-mock Playwright screenshot at 1440×900 and 1024×800: single centered column, full-width inputs/buttons |
+| Speak "Everyday talk" selected-tab text visible | Pass | Computed style before: `background: rgba(0,0,0,0)`, `color: rgb(4,18,24)` (invisible); after: `background: rgb(46,230,255)`, `color: rgb(4,18,24)` (cyan pill, dark text) |
+| Learn/Speak/Progress tiles fill the widened shell | Pass | `.level-path`/`.level-session`/`.progress-dashboard`/`.speak-room`/`.conversation-journey` now `width: 100%`; screenshots show full-width coach selector and level cards instead of a narrow left column |
+| Header account menu shows account type | Pass | Screenshot shows a `LEARNER` badge next to "Signed in." and the organization name |
+| No regression: unit/typecheck/lint | Pass | `pnpm run lint` 0 warnings; `pnpm run typecheck` clean; `apps/web` vitest 323/324 (pre-existing D-0249 failure only); `design-system` 11/11; `localization` 31/31 |
+| No regression: localization governance | Pass | `pnpm --filter @global-english/localization run validate` — 0 errors, 5 expected `pending-independent-review` warnings |
+| No regression: e2e / accessibility | Pass | Playwright 22/22, including the axe-clean shell check, unaffected by the width and contrast changes |
+| Public shell cache | Pass | `service-worker.js` `v11`; `learner-journey.spec.ts` and `test-soft-launch-environment.sh` updated and passing |
+
+### Known limitations
+
+- The broader "make the whole theme more futuristic" feedback is
+  open-ended; this pass fixed the five concrete defects reported and did
+  not attempt a further full re-skin.
+- Learner-facing username/profile display remains unavailable: the current
+  `/api/v1/me` contract (`UserIdentitySummary`) intentionally exposes only a
+  ULID, no display name. Showing one would require a backend contract
+  change and is flagged as a follow-up, not attempted here.
+- The "Microphone recording is unavailable" copy on `#learn`/`#speak` is
+  expected under D-0248 (plain-HTTP origin, not a secure context off
+  localhost) and was left unchanged; it requires an HTTPS soft-launch
+  origin to lift, which is a separate infrastructure decision.
+- Same pre-existing `avatarConfig.test.ts` failure noted under D-0252/D-0253,
+  unrelated to this change and not touched here.
+
+## D-0253: Hero copy vignette replaces the blocking glass card — 31 August 2026
+
+### Scope reviewed
+
+- `.marketing-hero__copy`: removed border, box-shadow, and backdrop-filter;
+  replaced the bordered glass card background with a borderless radial
+  vignette. Added a solid text-shadow layer to the title and a new
+  text-shadow on the lede.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| No hard-edged tile blocking the image | Pass | Border/box-shadow/backdrop-filter removed; live screenshot shows faces/shoulders unobstructed left and right of the text |
+| Text still legible over a brighter, unblurred image | Pass | axe-clean shell e2e still 0/0 violations after the change |
+| Reduced motion unaffected | Pass | No animation/transition added to the vignette |
+| Public shell cache | Pass | `service-worker.js` `v10`; e2e + `test-soft-launch-environment.sh` updated |
+| Web e2e | Pass | Playwright 22/22 |
+| Live `:8080` shows the fix | Pass | `index-vPotzEc7.css`; desktop and 390px screenshots reviewed |
+
+### Known limitations
+
+- Same pre-existing `avatarConfig.test.ts` failure noted under D-0252,
+  unrelated to this CSS-only change and not touched here.
+
+## D-0252: Marketing hero visibility and neon card polish — 31 August 2026
+
+### Scope reviewed
+
+- Hero slideshow opacity/scrim, hero copy panel, headline glow, badge
+  animation, section corner glows and seams, card hover glow states.
+- No governed copy, layout structure, or navigation changed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Slideshow visibly the hero background, not near-black | Pass | `.marketing-hero__media` opacity 0.42 → 0.88; live screenshot at `192.168.1.4:8080` shows full-color banner photo |
+| Headline still legible over a brighter image | Pass | Glass spotlight card (blur + border + shadow) behind copy; axe-clean shell e2e still 0/0 violations |
+| Reduced motion still honored | Pass | Badge pulse added to the existing `prefers-reduced-motion` disable list |
+| Section bands no longer read as flat black panels | Pass | Second corner glow per band + gradient seam; full-page scroll screenshot reviewed |
+| Public shell cache | Pass | `service-worker.js` `v9`; e2e + `test-soft-launch-environment.sh` updated |
+| Web unit / type / lint / e2e | Pass (with one pre-existing, unrelated failure — see limitations) | typecheck; eslint 0 warnings; vitest 323/324; Playwright 22/22 |
+| Live `:8080` serves the new hero | Pass | `index-DKTegzMa.css`; screenshot confirms duotone banner + glass card |
+
+### Known limitations
+
+- `src/config/avatarConfig.test.ts` fails (`tutorRenderer` is `"gltf"` in
+  `avatarConfig.json`, test expects the D-0249 `"svg"` hold). This predates
+  this checkpoint, is unrelated to the hero/CSS change, and was not touched
+  here; it needs its own decision (re-affirm SVG per D-0249, or accept GLB
+  after a fresh visual bake) before `avatarConfig.test.ts` is green again.
+- PHP/API untouched, so `make verify`'s composer/PHP stages were not
+  re-run for this checkpoint.
+
+## D-0251: Guest learner hashes keep the marketing landing — 31 August 2026
+
+### Scope reviewed
+
+- Guest `/#learn` (and other learner hashes) previously replaced the
+  marketing site with the empty Learn stub the owner reported as a blank
+  landing.
+- Dedicated `#sign-in` is unchanged.
+- Public service-worker cache bump to `v8`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Guest `#learn` shows marketing hero | Pass | `App.test.tsx` + `bootstrap.spec.ts` |
+| Guest Learn stub no longer visible | Pass | `page.learn.title` and `session.sign_in_hint` asserted absent |
+| `#sign-in` still dedicated | Pass | Existing close-to-home unit test unchanged |
+| Public shell cache | Pass | `service-worker.js` `v8`; e2e + `test-soft-launch-environment.sh` updated |
+
+### Known limitations
+
+- After sign-in, `#learn` still opens the level path (intended deep link).
+- Live `:8080` needs a dist rebuild and a hard refresh so `v8` replaces `v7`.
+
+## D-0250: Ion studio visual system — 31 August 2026
+
+### Scope reviewed
+
+- Complete replacement of the academy green/cream visual system with a
+  dark ion studio theme across design-system tokens, guest marketing,
+  sign-in, learner destinations, operator chrome, demo shell, forms,
+  and buttons.
+- Contrast of primary cyan (`#2ee6ff` / `#041218`) and muted text
+  (`#b9b1d4` on `#13111f`).
+- Service-worker cache bump to `v7`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Existing emerald/cream theme abandoned | Pass | `tokens.css` canvas `#06050f`, action `#2ee6ff`; marketing sections no longer `#f3eee3` |
+| SuperNova branding not copied (D-0215) | Pass | Distinct cyan/magenta/indigo; GSE logos and catalogues unchanged |
+| Governed copy unchanged | Pass | Marketing and chrome still resolve from existing catalogues |
+| Reduced-motion still honored | Pass | Design-system global reduce; marketing orbs hidden at ≤30rem and in reduce block |
+| Public shell cache | Pass | `service-worker.js` `v7`; e2e + `test-soft-launch-environment.sh` updated |
+| Web unit / type / lint / e2e | Pass | vitest 72/323; typecheck; eslint 0 warnings; Playwright 21/21 |
+| Live `:8080` serves ion tokens | Pass | `index-DpkVkPmw.css`; computed `--ge-color-action: #2ee6ff`; canvas `rgb(6, 5, 15)` |
+
+### Known limitations
+
+- Logo PNGs still carry a light plate; a transparent/inverted mark would
+  sit cleaner on the dark header.
+- PHP/API untouched, so `make verify`'s composer/PHP stages were not
+  re-run for this checkpoint.
+
+## D-0249: Site-wide visual/UX enhancement; SVG tutors as visual base — 31 August 2026
+
+### Scope reviewed
+
+- Deployed-site visual audit of the marketing landing, sign-in flow, and
+  tutor avatar rendering in a real Chromium browser (desktop and 390-px
+  mobile emulation) against the owner's getsupernova.ai quality benchmark.
+- Tutor renderer gate (`avatarConfig.tutorRenderer`), landing redesign,
+  shell/navigation polish, sign-in HTTP-warning removal, learner-card
+  hover motion.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| GLB busts render a garbled dark face texture in a live browser | Confirmed (defect) | In-page three.js probe screenshots at correct framing; deployed hero canvases |
+| Tutor surfaces fall back to the reviewed SVG rig via config | Pass | `avatarConfig.test.ts` D-0249 guard; hero screenshot shows SVG coaches |
+| GLB code path and contract tests preserved for re-enable | Pass | `tutorGltf.test.ts` unchanged; `GltfTutorStage` untouched |
+| No governed copy changed; all strings resolve from existing catalogues | Pass | `MarketingLanding` uses the same message keys; `pnpm lint` + vitest |
+| Scroll reveal is progressive and reduced-motion safe | Pass | Sections visible without IntersectionObserver; `prefers-reduced-motion` guard in hook and CSS |
+| Sign-in works without the stale HTTPS warning on the D-0248 origin | Pass | Updated `WebPasswordSignInPanel.test.tsx`; live `#sign-in` screenshot |
+| Mobile hero banner strip renders at ≤30rem | Pass | Was 0×0 (flex centering collapse); now 358×184 in emulation |
+| Accessibility, reflow, and keyboard journeys | Pass | `pnpm run e2e` 21/21: axe-clean shell, 320-px/enlarged-text reflow, keyboard skip-link/sign-in |
+| Unit + type + lint + build | Pass | vitest 72 files / 323 tests; `pnpm typecheck`; `pnpm lint` 0 warnings; web build |
+
+### Known limitations
+
+- The procedural GLB atlas/UV defect in `scripts/generate-tutor-glb.py`
+  is documented but not fixed; realistic 3D coaches need a new bake or a
+  DCC-authored asset that passes visual review before `tutorRenderer`
+  returns to `gltf`.
+- PHP/API code was untouched, so `make verify`'s composer/PHP stages were
+  not re-run for this checkpoint.
+- Marketing imagery still comes from the existing licensed photo set; no
+  new imagery was commissioned.
+
+## D-0248: Static-IP HTTP public origin — 31 August 2026
+
+### Scope reviewed
+
+- Soft-launch public origin cutover from Tailscale / rotating Cloudflare
+  Quick Tunnel to WAN `http://117.254.108.143:8080`.
+- Supervisor must not start or require `cloudflared` while
+  `GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true`.
+- `APP_URL`, Sanctum stateful domains, and non-Secure cookies must match
+  the HTTP origin.
+- Public Caddy `:8080` must serve the SPA and proxy API, Sanctum, OAuth,
+  mobile auth, and health paths.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| HTTP origin persistence writes APP_URL and Sanctum for `117.254.108.143:8080` | Pass | `scripts/test-soft-launch-environment.sh` `configure-public-http` |
+| Tailscale / trycloudflare hosts are not injected | Pass | same contract test |
+| `SERVE_PUBLIC_HTTP` does not redirect `:8080` to an HTTPS tunnel | Pass | Caddy generator contract |
+| Public HTTP Caddy routes `/oauth/*` and `/auth/mobile/*` | Pass | `scripts/lib/soft-launch-public-http.sh` |
+| Public HTTP health/live on `:8080` | Pass | `make soft-launch-ready` 29 pass / 0 fail |
+| Caddy listens on all interfaces `:8080` | Pass | `ss`: `*:8080` |
+| Supervisor does not start `cloudflared` | Pass | `make soft-launch-status` reports `tunnel stopped`; no tunnel URL file |
+| WAN hairpin from this host | Fail (expected) | `http://117.254.108.143:8080` timed out from the Ubuntu host; testers must use a device outside this LAN |
+
+### Known limitations
+
+- Hairpin NAT may prevent this host from opening its own WAN IP.
+- Browser `getUserMedia` is blocked on plain HTTP except localhost, so
+  Speak/hold-to-talk from phones needs a later HTTPS hostname.
+- Android APKs previously pinned to a trycloudflare or Tailscale origin
+  must be rebuilt.
+
+## D-0247 / ADR-0031 amendment: Project-owned GLB tutors with viseme morph targets — 31 August 2026
+
+### Scope reviewed
+
+- Original male/female glTF busts with the required viseme morph-target
+  names, a humanoid skeleton, a single 1024 atlas, and a triangle count
+  under 20 000.
+- Three.js WebGL loader on `InteractiveAvatar` with SVG fallback when
+  WebGL constructors are absent (jsdom) or the GLB fails to mount.
+- Mapping from existing Speak `mouth_shape` strings (canonical letters and
+  Azure envelope labels) onto the GLB morph keys.
+- No change to coach selection, renaming, prompts, STT/TTS providers,
+  marks, mastery, consent, retention, or tenancy.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Female/male GLB viseme names, bones, triangle cap, 1024 atlas | Pass | `tutorGltf.test.ts` |
+| Mouth-shape → morph-target mapping, including unknown → `viseme_sil` | Pass | `visemeTargets.test.ts` |
+| jsdom keeps the SVG rig (no WebGL constructors) | Pass | `InteractiveAvatar.test.tsx`; `webglAvailable()` is false |
+| Existing coach/Speak unit coverage | Pass | `CoachAvatar.test.tsx`, `SwathiAvatar.test.tsx`, `ConversationJourney.test.tsx` |
+| Client suite | Pass | Vitest `apps/web`: 71 files / 321 tests |
+| Typecheck, lint | Pass | `tsc -b`; ESLint zero warnings on new avatar files |
+| Production build | Pass | `pnpm run build`; Three.js/GLTFLoader code-split; `dist/avatars/coach-*.glb` copied |
+| Critical browser journeys | Pass | `pnpm run e2e`: 21/21 Chromium journeys |
+
+### Known limitations
+
+- The baked busts are stylized procedural geometry, not Pixar- or
+  Ready-Player-Me-quality hero sculpts. They are production-structured
+  (correct viseme keys, skeleton, budget) and replaceable 1:1 by a DCC
+  artist without loader changes.
+- Live WebGL lip-sync still needs an authenticated Speak visual check.
+- Android was not compiled in this session; Capacitor will pick up the
+  same `public/avatars/*.glb` files on the next web dist copy.
+
+## D-0246 / ADR-0031 amendment: Coach visual base is the InteractiveAvatar SVG rig — 31 August 2026
+
+### Scope reviewed
+
+- Replacement of the photographic coach presentation (portrait `<img>` +
+  separately positioned SVG mouth overlay) with the project-owned inline-SVG
+  `InteractiveAvatar` face rig, everywhere the coach appears: Landing hero,
+  Home (`TutorPresence`/`TutorHomeHero`), coach selector thumbnails, Speak,
+  and Role-play.
+- `InteractiveAvatar` extensions needed for this reuse: `coachGender`
+  male/female art, cosmetic `presence` ring/pulse, figure-level sizing so
+  external CSS can still override rendered width, `motion-reduce` companions
+  on every animation utility, and a `ReactNode` caption so the existing
+  localization fallback-reporting behavior is preserved.
+- Error-boundary fallback hardening (`StaticCoachBadge`): confirmed the
+  fallback path shares no code with the rig it is protecting against.
+- Removal of the six superseded coach portrait assets and their provenance
+  note, confirmed unreferenced elsewhere (offline precache, other tests,
+  e2e specs) before deletion.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| CoachAvatar renders the SVG rig with correct gender art and gesture/mouth attributes | Pass | `CoachAvatar.test.tsx` |
+| SwathiAvatar compatibility path (no prop changes needed by callers) | Pass | `SwathiAvatar.test.tsx` |
+| Error boundary falls back to an independent static badge, not the rig itself | Pass | `SwathiAvatar.error.test.tsx` (mocks `normalizeVisemeTimestamps` to throw synchronously during render) |
+| Reply animation reaches the rig on the Speak journey | Pass | `ConversationJourney.test.tsx` |
+| Reduced-motion coverage restored for every new/reused animation | Pass | manual review of `motion-reduce:animate-none` companions in `InteractiveAvatar.tsx` |
+| CSS override specificity (marketing hero, tutor home hero art, coach selector thumbnail) wins regardless of stylesheet load order | Pass | manual review: two-class selectors qualifying a parent class, applied consistently including `prefers-reduced-motion` blocks |
+| Client suite | Pass | Vitest: workspace 3 projects, 358 tests (`apps/web` 69 files / 316 tests, up from 309) |
+| Typecheck, lint | Pass | `tsc -b` (root + all packages); ESLint full workspace, zero warnings |
+| Localization governance | Pass | `pnpm run locale:check`, unchanged catalogues |
+| Production build | Pass | `pnpm run build`; no new warnings beyond the pre-existing JS chunk-size advisory |
+| Critical browser journeys | Pass | `pnpm run e2e`: 21/21 Chromium journeys, including the axe-clean accessibility check and the updated Speak mouth-rig/gesture assertions (rescoped to a named region/test id now that the coach selector adds extra rig instances to the page) |
+| Dead asset cleanup | Pass | confirmed no remaining references before deleting `coach-{female,male}-{hero,neutral,speaking}.webp` and `COACH_ASSET_PROVENANCE.md` |
+
+### Known limitations
+
+- The rig is a stylized/illustrated SVG face, not a photograph; visual style
+  is a deliberate trade-off for guaranteed mouth-overlay alignment across
+  viewports and no third-party image licensing dependency. Human design
+  review of the art (proportions, gender-distinguishing accents) is still
+  recommended before external release.
+- PHP/API was not touched or re-verified in this checkpoint (frontend-only
+  change); the full pinned-toolchain `make verify` (Pint/PHPStan/PHPUnit/
+  Artisan) was not re-run since no backend file changed.
+- Android build was not compiled in this session (no Android toolchain
+  invoked); the change ships to Android on the next `npx cap sync` + build
+  since the Android app wraps the same web bundle with no native avatar code.
+
+## D-0245 / ADR-0031: Selectable realistic AI coaches — 31 August 2026
+
+### Scope reviewed
+
+- Governance amendment from fixed Swathi-only presentation to selectable
+  female/male coaches with governed defaults Swathi and Arjun.
+- Original project-owned realistic portrait assets and provenance note.
+- Device-local coach selection and bounded display-name preference.
+- Realistic coach avatar with existing content-free mouth timing, decorative
+  gestures, and static portrait fallback.
+- Landing, Home, Speak, and Role-play visual consistency.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Coach defaults and bounded rename | Pass | `coachPreferences.test.ts` |
+| Coach selector and privacy note | Pass | `CoachSelector.test.tsx` |
+| Female/male realistic portrait selection | Pass | `CoachAvatar.test.tsx` |
+| Existing SwathiAvatar compatibility path | Pass | `SwathiAvatar.test.tsx` and error-boundary test |
+| Reply animation reaches selected coach | Pass | `ConversationJourney.test.tsx` |
+| Client suite | Pass | Vitest: 68 files, 309 tests |
+| Typecheck, lint, localization governance | Pass | `tsc -b`; ESLint; catalogue hashes `ui-*-2026-08-31.2` |
+| Pending catalogues no longer introduce Maya | Pass | hi/ta/te/ml coach-facing strings aligned to Swathi; localization tests 31 passed |
+| Full repository verification | Pass | Absolute pinned toolchain `make verify`, exit 0 |
+| Critical browser journeys | Pass | `make e2e`: PostgreSQL 4 tests / 103 assertions; Playwright 21 Chromium journeys |
+| Live runtime readiness | Pass | Soft-launch restart; readiness 25 pass, 0 warn, 0 fail |
+
+### Known limitations
+
+- Coach display-name preference is intentionally session-scoped React state;
+  it is not synced across devices and does not alter governed prompts.
+- Generated portraits are original synthetic project assets, not photographs
+  of identified people; visual quality should receive human design review
+  before external release.
+- Authenticated live Speak playback still requires manual visual inspection
+  after sign-in.
+
+## D-0244 / ADR-0029 amendment: Integrated Swathi animation — 31 August 2026
+
+### Scope reviewed
+
+- Idle SVG Swathi rig on Speak with the static portrait retained only as an
+  error-boundary fallback.
+- Provider-viseme preference plus local, bounded PCM-envelope mouth cues for
+  ordinary Azure REST WAV responses.
+- OpenAPI/generated contract transport and per-reply client state binding.
+- Deterministic decorative lean, nod, and smile triggers synchronized with
+  the active reply audio element.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Live Azure WAV produces animation timing | Pass | Synthetic non-learner response: 238,090 audio bytes, 28 mouth cues, rest at both boundaries |
+| PCM cue extraction is deterministic and bounded | Pass | `AzureWavVisemeExtractorTest`: 8 tests, 21 assertions |
+| Session speech emits content-free payload and question gesture | Pass | PostgreSQL `ConversationFakeProviderTest` targeted integration |
+| Idle and valid-payload SVG rendering; error fallback | Pass | `SwathiAvatar` tests |
+| Reply payload reaches the Speak avatar | Pass | `ConversationJourney.test.tsx` |
+| Standalone speech forwards payload and audio element | Pass | `speakSessionSpeech.test.ts` |
+| Client suite and typecheck | Pass | Vitest: 65 files, 303 tests; `tsc -b` |
+| OpenAPI and generated types | Pass | Redocly/policy/generation drift check |
+| Translation-preview bundle and soft-launch restart | Pass | Vite production build; live/ready healthy |
+| Full repository verification | Pass | Absolute pinned toolchain `make verify`, exit 0 |
+| Critical browser journeys | Pass | `make e2e`: PostgreSQL reconciliation 4 tests / 103 assertions; Playwright 21 Chromium journeys |
+
+### Known limitations
+
+- PCM-envelope cues synchronize mouth openness, not phoneme identity. They are
+  decorative and are never pronunciation or mastery evidence.
+- An authenticated visual Speak playback check remains required because the
+  public landing page does not bypass learner authentication.
+- The current Cloudflare Quick Tunnel URL rotates on restart.
+
+## D-0243 / ADR-0030: Production-capable Indic STT binding — 31 August 2026
+
+### Scope reviewed
+
+- Production DI binding for the existing project-owned Indic HTTP recorded-STT
+  adapter.
+- Production voice feature gate with explicit upload and organization
+  allowlisting.
+- Sarvam handover defaults: HTTPS endpoint, exact host,
+  `api-subscription-key`, `saaras:v3`, and translate-to-English mode.
+- Existing external mode-0600 secret, redirect refusal, TLS, timeout, response
+  size, consent, retention, deletion, and privacy-safe provider-run controls.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Production binds only with upload + `indic` | Pass | `ConversationProviderBindingTest` |
+| Disabled upload keeps production STT disabled | Pass | `ConversationProviderBindingTest` |
+| Production organization allowlist remains mandatory | Pass | `VoiceFeatureGateTest` |
+| Complete production provider preflight is accepted | Pass | `IndicSpeechAdapterTest` |
+| Unsafe endpoint or repository-local secret fails closed | Pass | `IndicSpeechAdapterTest` |
+| Interaction identifier is absent from provider multipart | Pass | `IndicSpeechAdapterTest` |
+| Workstation runtime resolves Indic provider with empty preflight errors | Pass | Live container resolution: `IndicHttpSpeechToTextProvider`; preflight `[]` |
+| Synthetic live provider smoke | Pass | Azure-generated non-learner WAV held in memory; Sarvam returned 29 characters through `saaras:v3`; only transcript SHA-256 and counts were printed |
+| Public and internal health | Pass | `/health/live` and `/health/ready` after restart |
+| Full workstation readiness | Pass | `scripts/check-soft-launch-readiness.sh`: 25 pass, 0 warn, 0 fail, including active Indic configuration, secret, preflight, and binding checks |
+| Repository verification | Pass | Absolute pinned PHP 8.4 / Node toolchain: `make verify`, exit 0 |
+
+### Known limitations
+
+- The workstation soft-launch handover runtime is active; no separate remote
+  production target is configured.
+- The credential used for activation was exposed in the operator conversation
+  and must be revoked and replaced before handover.
+- Live Sarvam learner quality, deletion, and contractual evidence are not
+  established by the synthetic smoke and remain pre-handover work.
+- There is no automatic Azure STT failover; avoiding undeclared secondary
+  disclosure is intentional. Azure remains the independent tutor TTS/viseme
+  path.
+
+## DR-0041 / D-0240: Client viseme overlay — 30 August 2026
+
+### Scope reviewed
+
+- Hand-written viseme contract (`VisemeTimestamp`, `AvatarGesture`,
+  `AnimationPayload`) and sanitizers.
+- `useVisemePlayer` `requestAnimationFrame` clock against
+  `HTMLAudioElement.currentTime`.
+- SVG `SwathiAvatar` with scoped error boundary falling back to
+  `TutorPresence`.
+- Speak journey passes the live reply audio element; no TTS provider change.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Empty payload keeps Phase 1 portrait | Pass | `SwathiAvatar.test.tsx` |
+| Valid visemes render SVG mouth rig | Pass | `SwathiAvatar.test.tsx` |
+| Renderer throw falls back to portrait | Pass | `SwathiAvatar.error.test.tsx` |
+| Clock selects viseme by timestamp | Pass | `useVisemePlayer.test.ts`; `visemeContracts.test.ts` |
+| No new provider / no learner-audio viseme path | Pass | ADR-0029; Azure path unchanged |
+
+### Known limitations
+
+- Superseded by D-0244: turns now include local PCM-derived mouth cues when
+  Azure REST does not supply provider visemes.
+- The repository has no Tailwind toolchain; gesture motion uses design-system
+  CSS transforms equivalent to rotate/translate/scale utilities.
+- ElevenLabs remains unauthorized (D-0217 / DR-0038 E).
+
 ## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
 
 ### Scope reviewed

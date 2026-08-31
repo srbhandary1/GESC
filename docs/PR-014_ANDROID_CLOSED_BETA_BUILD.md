@@ -32,8 +32,8 @@ WebView cannot use same-origin relative `/api` routes, so set:
 
 ```bash
 export VITE_MOBILE_API_ORIGIN='https://your-closed-beta-api.example'
+export VITE_MOBILE_OAUTH_CLIENT_ID='019fdd3f-4bba-720b-9e4e-a771ecccdd7f'
 # optional overrides:
-# export VITE_MOBILE_OAUTH_CLIENT_ID='public-android-client'
 # export VITE_MOBILE_OAUTH_AUTHORIZE_URL=...
 # export VITE_MOBILE_OAUTH_TOKEN_URL=...
 ```
@@ -43,8 +43,14 @@ The redirect is fixed to `com.globalenglish.app:/oauth/callback`; any different
 Authorization/token endpoint overrides must stay on the configured API origin
 and may not include credentials, query strings or fragments. The API origin
 must use HTTPS, except `http://10.0.2.2`, loopback or `localhost` for local
-device/emulator development. Missing or unsafe configuration never falls back
+device/emulator development, and invite-only static IPv4 HTTP on port 8080
+(`http://117.254.108.143:8080` / `http://192.168.1.4:8080`) under D-0257 /
+D-0258. The native Custom Tabs plugin uses that same origin allowlist; it
+must not require HTTPS when the baked origin is invite-only HTTP `:8080`.
+Missing or unsafe configuration never falls back
 to Sanctum cookie authentication inside the WebView.
+
+Play `make android-release-bundle` still requires an `https://` API origin.
 
 Never embed provider secrets, OTP credentials or Passport private keys in the
 Android package.
@@ -59,11 +65,18 @@ Equivalent steps:
 
 ```bash
 cd apps/web
-VITE_MOBILE_API_ORIGIN="$VITE_MOBILE_API_ORIGIN" pnpm build
+VITE_MOBILE_API_ORIGIN="$VITE_MOBILE_API_ORIGIN" \
+  VITE_MOBILE_OAUTH_CLIENT_ID="$VITE_MOBILE_OAUTH_CLIENT_ID" pnpm build
 CAPACITOR_APP=production pnpm exec cap sync android
 cd android-app
-./gradlew assembleDebug
+VITE_MOBILE_API_ORIGIN="$VITE_MOBILE_API_ORIGIN" ./gradlew assembleDebug
 ```
+
+The native Custom Tabs plugin pins `BuildConfig.MOBILE_API_ORIGIN` from
+`VITE_MOBILE_API_ORIGIN`. Debug `assemble*` / `bundle*` tasks fail closed when
+that origin is missing or not on the same allowlist as
+`androidPkceEnvironment.ts`. An empty native origin makes every in-app Sign in
+tap reject without opening a browser.
 
 Artifact:
 

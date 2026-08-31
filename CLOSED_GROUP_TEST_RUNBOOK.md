@@ -10,33 +10,29 @@
 Web URL:
 
 ```text
-https://award-bite-monica-seafood.trycloudflare.com
+http://117.254.108.143:8080
 ```
 
-The Ubuntu user service owns the API, queue worker, scheduler, web proxy,
-port-8080 redirect and Cloudflare Quick Tunnel. Check it from the repository
-root:
+The Ubuntu user service owns the API, queue worker, scheduler and the
+port-8080 public HTTP listener. Check it from the repository root:
 
 ```text
 make soft-launch-status
 make soft-launch-ready
-cat ~/ge-soft-launch/tunnel.url
 systemctl --user status global-english-soft-launch.service --no-pager
 ```
 
 The expected authentication mode is `password_only`. Do not enable legacy OTP,
 TOTP, Google sign-in or Facebook sign-in for this test.
 
-### Quick-Tunnel limitation
+### Static-IP HTTP limitation
 
-The current `trycloudflare.com` URL is temporary. The soft-launch runner writes
-the newly assigned HTTPS URL to `~/ge-soft-launch/tunnel.url`, updates the web
-session origin and restarts the affected services whenever the tunnel starts.
-That keeps Web aligned automatically, but an APK is intentionally pinned to the
-HTTPS origin used at build time. If the tunnel hostname changes, stop testing
-with the old APK, rebuild with the new HTTPS URL, verify the package, and
-redistribute it. Never replace the APK origin with
-`http://117.254.108.143:8080`.
+This origin is plain HTTP on the WAN static IP. Sign-in cookies are issued
+without the Secure flag so the browser session can work. Browser microphone
+capture is not a secure context on this URL, so Speak/hold-to-talk will not
+work from phones or remote browsers until a stable HTTPS hostname is enabled.
+An APK must be rebuilt against this origin before testers use Android; do not
+keep a previous `trycloudflare.com` or Tailscale pin.
 
 ## 2. APK artifact and controlled distribution
 

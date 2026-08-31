@@ -16,7 +16,7 @@ final readonly class VoiceFeatureGate
             throw new VoiceOperationRejected;
         }
 
-        if (! $this->app->environment('local', 'testing', 'soft-launch')) {
+        if (! $this->app->environment('local', 'testing', 'soft-launch', 'production')) {
             throw new VoiceOperationRejected;
         }
 

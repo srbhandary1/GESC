@@ -27,7 +27,7 @@
   padding: var(--ge-space-3) var(--ge-space-4);
   border: 1px solid var(--ge-color-border);
   border-radius: var(--ge-radius-sm);
-  background: #fff8dd;
+  background: var(--ge-notice-background);
   color: var(--ge-color-text);
   overflow-wrap: anywhere;
 }

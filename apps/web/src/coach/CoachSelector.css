@@ -1,0 +1,124 @@
+.coach-selector {
+  display: grid;
+  gap: var(--ge-space-4);
+  padding: clamp(var(--ge-space-4), 3vw, var(--ge-space-5));
+  border: 1px solid color-mix(in srgb, var(--ge-color-brass) 24%, var(--ge-color-border));
+  border-radius: var(--ge-radius-lg);
+  background:
+    radial-gradient(circle at 90% 0%, rgb(214 29 110 / 0.16), transparent 34%),
+    var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.coach-selector__header {
+  display: grid;
+  gap: var(--ge-space-1);
+}
+
+.coach-selector__eyebrow {
+  margin: 0;
+  color: var(--ge-color-brass);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+}
+
+.coach-selector__header h2 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+  color: var(--ge-color-ink);
+}
+
+.coach-selector__choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ge-space-3);
+}
+
+.coach-selector__choice {
+  display: grid;
+  justify-items: center;
+  gap: var(--ge-space-2);
+  min-height: var(--ge-target-minimum);
+  padding: var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.coach-selector__choice:hover,
+.coach-selector__choice--selected {
+  border-color: var(--ge-color-action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ge-color-action) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Compound selector deliberately outweighs the InteractiveAvatar figure's
+   own Tailwind width utility class (single-class specificity), so this
+   thumbnail's fixed width wins regardless of stylesheet load order. The
+   circular frame, border, and shadow are drawn by InteractiveAvatar
+   itself. */
+.coach-selector__choice .coach-selector__image {
+  width: 4.5rem;
+}
+
+.coach-selector__rename {
+  display: grid;
+  gap: var(--ge-space-2);
+  color: var(--ge-color-text);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 700;
+}
+
+.coach-selector__rename input {
+  min-height: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-text);
+  font: inherit;
+}
+
+.coach-selector__rename input:focus {
+  border-color: var(--ge-color-brass);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--ge-color-brass) 28%, transparent);
+  outline: none;
+}
+
+.coach-selector__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.coach-selector__actions button {
+  min-height: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-4);
+  border: 1px solid var(--ge-color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ge-color-action);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.coach-selector__note {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: var(--ge-line-height-ui);
+}
+
+@media (max-width: 30rem) {
+  .coach-selector__choices {
+    grid-template-columns: 1fr;
+  }
+}

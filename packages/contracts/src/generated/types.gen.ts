@@ -1089,6 +1089,23 @@ export type ConversationSpeechResult = {
      */
     guidance_audio_base64?: string | null;
     guidance_audio_mime_type?: 'audio/wav' | null;
+    /**
+     * Content-free mouth-shape timing for the matching model audio and
+     * one deterministic local avatar gesture. Null when audio animation
+     * is unavailable.
+     *
+     */
+    animation_payload?: ConversationAnimationPayload | null;
+};
+
+export type ConversationAnimationPayload = {
+    viseme_timestamps: Array<ConversationVisemeTimestamp>;
+    avatar_gesture_trigger: 'ENCOURAGING_NOD' | 'WARM_SMILE' | 'ATTENTIVE_LEAN' | null;
+};
+
+export type ConversationVisemeTimestamp = {
+    mouth_shape: string;
+    timestamp_ms: number;
 };
 
 export type ConversationUsageSummary = {

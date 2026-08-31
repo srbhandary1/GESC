@@ -22,7 +22,7 @@ return new class extends Migration
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     private function swathiBodies(): array
     {

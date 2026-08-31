@@ -30,20 +30,44 @@ test('completes the disclosed voice-first AI conversation journey', async ({
   await mockConversationApi(page, requests)
 
   await page.goto('/#speak')
+  await page.goto('/#me')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await page.setViewportSize({ width: 360, height: 780 })
+  await expect(page.locator('[data-destination="me"]')).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await page.screenshot({
+    path: '../../docs/ux-simplification/me-360.png',
+  })
+  await page.goto('/#speak')
 
-  await expect(
-    page.getByText(
-      'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
-    ),
-  ).toBeVisible()
+  await page.setViewportSize({ width: 360, height: 780 })
+  await expect(page.locator('[data-destination="speak"]')).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await page.screenshot({
+    path: '../../docs/ux-simplification/speak-idle-360.png',
+  })
+
+  await page.getByText('About Swathi').click()
   await expect(
     page.getByText(
       'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
     ),
   ).toBeVisible()
+  const conversationRegion = page.getByRole('region', {
+    name: 'Speak with Swathi',
+  })
+  await expect(
+    conversationRegion.getByTestId('interactive-avatar-mouth'),
+  ).toBeVisible()
+  await expect(
+    conversationRegion.locator('[data-mouth-shape]').first(),
+  ).toHaveAttribute('data-mouth-shape', 'rest')
 
   await page
     .getByRole('button', { name: 'Talk with Swathi' })
@@ -54,19 +78,37 @@ test('completes the disclosed voice-first AI conversation journey', async ({
     ),
   ).toBeVisible()
   await expect(page.getByText('Hear an example')).toBeVisible()
+  await page.screenshot({
+    path: '../../docs/ux-simplification/speak-session-360.png',
+  })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+  await expect(
+    page.getByRole('heading', { name: 'Hold to talk' }),
+  ).toBeVisible()
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth + 1,
+  )
+  expect(overflow).toBe(false)
+  await page.evaluate(() => {
+    document.documentElement.style.removeProperty('font-size')
+  })
   await page.getByRole('button', { name: 'Type instead' }).click()
 
   await page
-    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .getByRole('textbox', { name: 'Type one English practice sentence' })
     .fill('I practise English after work.')
-  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('button', { name: 'Send practice' }).click()
 
   await expect(
     page.getByText(
       'Thank you for sharing that. What would you like to talk about next?',
     ),
   ).toBeVisible()
-  await expect(page.getByText('Turn completed')).toBeVisible()
+  await expect(page.getByText('Practice completed')).toBeVisible()
 
   expect(
     requests.every(({ url }) => new URL(url).hostname === '127.0.0.1'),
@@ -104,10 +146,11 @@ test('shows separate optional voice purposes before microphone capture', async (
     url: string
   }> = []
   await mockConversationApi(page, requests)
-  await page.goto('/#speak')
+  await page.goto('/#me')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await page.goto('/#speak')
   await page
     .getByRole('button', { name: 'Talk with Swathi' })
     .click()
@@ -147,18 +190,19 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   }> = []
   await mockConversationApi(page, requests)
 
-  await page.goto('/#speak')
+  await page.goto('/#me')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await page.goto('/#speak')
   await page.getByRole('tab', { name: 'A situation' }).click()
   await page.getByRole('button', { name: 'Start this situation' }).click()
   await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
   await page
-    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .getByRole('textbox', { name: 'Type one English practice sentence' })
     .fill('Hello, I have an appointment.')
-  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('button', { name: 'Send practice' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
   await expect(
@@ -233,6 +277,63 @@ async function mockConversationApi(
         },
         memberships: [],
         user: { id: ids.user },
+      })
+      return
+    }
+
+    if (path === '/api/v1/home') {
+      await json(route, {
+        due_review: null,
+        enrollment: null,
+        next_mission: null,
+        onboarding: {
+          adult_confirmed: true,
+          completed: true,
+          goal_key: 'everyday-conversation',
+        },
+        streak: {
+          as_of_date: '2026-08-31',
+          count: 0,
+          timezone: 'Asia/Kolkata',
+        },
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/progress-dashboard') {
+      await json(route, {
+        attempt_improvement: {
+          missions_attempted: 0,
+          missions_improved_on_retry: 0,
+          missions_passed_on_first_attempt: 0,
+          missions_still_not_mastered: 0,
+        },
+        delayed_review: {
+          completed_count: 0,
+          completed_late_count: 0,
+          completed_on_time_count: 0,
+          due_count: 0,
+          pending_count: 0,
+          scheduled_count: 0,
+        },
+        enrollment: null,
+        objectives: [],
+        recurring_errors: { patterns: [] },
+        speaking_activity: {
+          completed_turn_count: 0,
+          meaningful_speaking_days_count: 0,
+          speaking_duration_ms: 0,
+          speaking_minutes: 0,
+          timezone: 'Asia/Kolkata',
+        },
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/tuition-requests') {
+      await json(route, {
+        institute_contact: { email: null, phone: null, whatsapp: null },
+        requests: [],
       })
       return
     }

@@ -1,0 +1,37 @@
+.me-hub {
+  display: grid;
+  gap: var(--ge-space-5);
+  width: 100%;
+}
+
+.me-hub__section {
+  min-width: 0;
+  padding: var(--ge-space-5);
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.me-hub__section-title {
+  margin: 0 0 var(--ge-space-4);
+  font-family: var(--ge-font-family-display);
+  font-size: var(--ge-font-size-title);
+  line-height: 1.3;
+}
+
+.me-hub__section--security > summary {
+  cursor: pointer;
+  min-block-size: var(--ge-target-minimum);
+  display: flex;
+  align-items: center;
+}
+
+.me-hub__section--sign-out {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.me-hub__sign-out {
+  min-block-size: var(--ge-target-minimum);
+}

@@ -295,6 +295,7 @@ final readonly class ConversationTurnService
                 $speech = $this->speechPayload(
                     $textToSpeechResult,
                     $guidanceSpeechResult,
+                    $modelResult->assistantReply,
                 );
                 $state = $this->transition(
                     organizationId: $context->organizationId,
@@ -757,13 +758,14 @@ final readonly class ConversationTurnService
             speech: $this->speechPayload(
                 $textToSpeechResult,
                 $guidanceSpeechResult,
+                $modelResult->assistantReply,
             ),
             replayed: $replayed,
         );
     }
 
     /**
-     * @param  array<string, bool|string|null>|null  $speech
+     * @param  array<string, mixed>|null  $speech
      * @return array<string, mixed>
      */
     private function result(
@@ -849,12 +851,14 @@ final readonly class ConversationTurnService
      *   model_audio_base64: ?string,
      *   model_audio_mime_type: ?string,
      *   guidance_audio_base64: ?string,
-     *   guidance_audio_mime_type: ?string
+     *   guidance_audio_mime_type: ?string,
+     *   animation_payload: ?array<string, mixed>
      * }
      */
     private function speechPayload(
         TextToSpeechResult $modelSpeech,
         ?TextToSpeechResult $guidanceSpeech,
+        string $assistantReply,
     ): array {
         $modelAudio = $modelSpeech->audioBytes;
         $guidanceAudio = $guidanceSpeech?->audioBytes;
@@ -878,6 +882,39 @@ final readonly class ConversationTurnService
             'guidance_audio_mime_type' => is_string($guidanceAudio) && $guidanceAudio !== ''
                 ? ($guidanceSpeech->mimeType ?? 'audio/wav')
                 : null,
+            'animation_payload' => $this->animationPayload(
+                $modelSpeech,
+                $assistantReply,
+            ),
+        ];
+    }
+
+    /**
+     * @return array{
+     *   viseme_timestamps: list<array{mouth_shape: string, timestamp_ms: int}>,
+     *   avatar_gesture_trigger: string
+     * }|null
+     */
+    private function animationPayload(
+        TextToSpeechResult $speech,
+        string $assistantReply,
+    ): ?array {
+        if (
+            ! is_string($speech->audioBytes)
+            || $speech->audioBytes === ''
+            || $speech->visemeTimestamps === []
+        ) {
+            return null;
+        }
+
+        return [
+            'viseme_timestamps' => $speech->visemeTimestamps,
+            'avatar_gesture_trigger' => str_ends_with(
+                trim($assistantReply),
+                '?',
+            )
+                ? 'ATTENTIVE_LEAN'
+                : 'WARM_SMILE',
         ];
     }
 

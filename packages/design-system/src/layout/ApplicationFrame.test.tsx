@@ -7,8 +7,7 @@ const navigationLinks = {
   home: { href: '/home', label: 'ಮುಖಪುಟ' },
   learn: { href: '/learn', label: 'ಕಲಿಯಿರಿ' },
   speak: { href: '/speak', label: 'ಮಾತನಾಡಿ' },
-  progress: { href: '/progress', label: 'ಪ್ರಗತಿ' },
-  tuition: { href: '/tuition', label: '1:1' },
+  me: { href: '/me', label: 'ನಾನು' },
 } as const
 
 afterEach(() => {
@@ -37,7 +36,7 @@ describe('ApplicationFrame', () => {
     expect(
       screen.getByRole('navigation', { name: 'ಮುಖ್ಯ ನ್ಯಾವಿಗೇಶನ್' }),
     ).toBeVisible()
-    expect(screen.getAllByRole('link')).toHaveLength(6)
+    expect(screen.getAllByRole('link')).toHaveLength(5)
     expect(screen.getByRole('link', { name: 'ಮಾತನಾಡಿ' })).toHaveAttribute(
       'aria-current',
       'page',

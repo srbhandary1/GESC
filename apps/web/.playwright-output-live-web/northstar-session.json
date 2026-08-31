@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6InJOOHlOWDYyYXUzcUpJektMeDNmSHc9PSIsInZhbHVlIjoiTlNnSUNteS9JVjIrTmFLN0s0V0c0bXN5VjhVenFRMCtsZHoxbGhNYkNWOUwyVW02YVhDZXZpTyswYVlKa2U0RHk0UUZISEdndlR6MURyRGlEbTc3Q3VrUERuelVYa0ZTbWM2ZUVDUUVMUS9JMWtBQ05ZMU91STl4bVQzK2JURW8iLCJtYWMiOiI1NjRkYzg3MjJmNjQxYzc0NjMxYzM0YmU2ZjI4YTg3OTJjNWNlYzE5MjdlMzU2MDRhYTVlMzZjMjNlNjNiYjI5IiwidGFnIjoiIn0%3D",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1788183827.611578,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "global_english_session",
+      "value": "eyJpdiI6Ik1zUlN6NHdDS1J5OFZURzNvdk5oZlE9PSIsInZhbHVlIjoiUkR6eHZzdjY4RUZScDJRbWdRVEt0RUVDQUM3dE9mNXBpb0taUnVOeThjUzdmdUZuVEplREhmQzhLWEt0RE5pNm5tcU1OT0JVYzA0M05DNXNYTU90bWtoc1ZPYlFYTUZDSHdrT2l4NFh0Q2N3cnl5VE9FQ1N2cjhPanN0bVJSTVIiLCJtYWMiOiIzODQzMjY2MjkxYjk2OWM1MDhjNjAzNWM3NmRiYWNmOWI0YWU0NWJjMTQxNTcyMzRmMjQ2MGNkYTRlZjFhMzQ5IiwidGFnIjoiIn0%3D",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1788183827.611667,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

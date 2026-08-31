@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Ubuntu invite-only soft launch runtime (APP-0053).
-# Serves the real web dist + Laravel API behind loopback Caddy and an optional
-# Cloudflare HTTPS tunnel. Does not use the synthetic demo bundle.
+# Serves the real web dist + Laravel API behind loopback Caddy and a public
+# static-IP HTTP listener. A Cloudflare HTTPS tunnel is optional and is not
+# started when GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true. Does not use the
+# synthetic demo bundle.
 
 set -euo pipefail
 
@@ -27,6 +29,7 @@ API_PORT="${GE_SOFT_LAUNCH_API_PORT:-8000}"
 PUBLIC_HTTP_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTP_PORT:-8080}"
 PUBLIC_HTTPS_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT:-8443}"
 REQUESTED_STABLE_HOST="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+STATIC_IP_HTTP_ORIGIN_DEFAULT="http://117.254.108.143:8080"
 
 MODE="${1:-status}"
 
@@ -169,10 +172,23 @@ start_proxy() {
   echo $! >"${PID_DIR}/caddy.pid"
 }
 
+rotating_quick_tunnel_enabled() {
+  source_soft_launch_env
+  local stable_host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+  if [[ -n "${stable_host}" ]]; then
+    validate_stable_host "${stable_host}"
+  fi
+  [[ -z "${stable_host}" && "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" != "true" ]]
+}
+
+static_ip_http_origin() {
+  printf '%s' "${GE_SOFT_LAUNCH_PUBLIC_ORIGIN:-${STATIC_IP_HTTP_ORIGIN_DEFAULT}}"
+}
+
 start_public_http() {
-  # The static-IP edge either terminates stable public TLS or redirects HTTP to
-  # the current temporary HTTPS origin. It never serves authenticated HTTP
-  # once a public HTTPS origin exists.
+  # The static-IP edge serves authenticated HTTP when
+  # GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true, terminates stable public TLS, or
+  # otherwise redirects HTTP to a temporary HTTPS origin.
   require_caddy
   stop_pidfile public-http
   ensure_web_dist
@@ -194,17 +210,22 @@ start_public_http() {
     "${APP_URL:-}" \
     "${stable_host}" \
     "${public_https_port}" \
-    "${PROXY_PORT}"
+    "${PROXY_PORT}" \
+    "$(detect_lan_ipv4 || true)"
   nohup "${CADDY_BIN}" run --config "${RUNTIME_DIR}/env/Caddyfile.public" --adapter caddyfile \
     >"${LOG_DIR}/public-http.log" 2>&1 &
   echo $! >"${PID_DIR}/public-http.pid"
 }
 
 start_tunnel() {
-  local stable_host
-  stable_host="$(stable_host_from_environment)"
-  [[ -z "${stable_host}" ]] \
-    || die "Stable HTTPS is configured at https://${stable_host}; the rotating Quick Tunnel is disabled."
+  source_soft_launch_env
+  local stable_host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+  if [[ -n "${stable_host}" ]]; then
+    die "Stable HTTPS is configured at https://${stable_host}; the rotating Quick Tunnel is disabled."
+  fi
+  if [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+    die "Static-IP HTTP origin is enabled; the rotating Quick Tunnel is disabled."
+  fi
   if [[ ! -x "${CLOUDFLARED_BIN}" ]]; then
     if command -v cloudflared >/dev/null 2>&1; then
       CLOUDFLARED_BIN="$(command -v cloudflared)"
@@ -245,13 +266,24 @@ apply_public_origin() {
   wait_health
 }
 
+detect_lan_ipv4() {
+  ip -4 route get 1.1.1.1 2>/dev/null \
+    | awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit }}'
+}
+
 persist_public_origin() {
   local origin="$1"
   local stable_host="${2:-}"
   local host
-  host="$(printf '%s' "${origin}" | sed -E 's#https://##' | sed -E 's#/.*##')"
+  local lan_host=""
+  local lan_ipv4
+  host="$(printf '%s' "${origin}" | sed -E 's#^https?://##' | sed -E 's#/.*##')"
+  lan_ipv4="$(detect_lan_ipv4 || true)"
+  if [[ "${lan_ipv4}" =~ ^((192\.168\.)|(10\.)|(172\.(1[6-9]|2[0-9]|3[0-1])\.)) ]]; then
+    lan_host="${lan_ipv4}:${PUBLIC_HTTP_PORT}"
+  fi
   python3 - "${ENV_FILE}" "${origin}" "${host}" "${stable_host}" \
-    "${PROXY_PORT}" "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}" <<'PY'
+    "${PROXY_PORT}" "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}" "${lan_host}" <<'PY'
 import sys
 from pathlib import Path
 
@@ -262,18 +294,42 @@ stable_host = sys.argv[4]
 proxy_port = sys.argv[5]
 public_http_port = sys.argv[6]
 public_https_port = sys.argv[7]
+lan_host = sys.argv[8] if len(sys.argv) > 8 else ""
 text = path.read_text(encoding="utf-8") if path.exists() else ""
+sanctum = (
+    f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},"
+    f"localhost:{proxy_port},127.0.0.1:5173,localhost:5173,"
+    f"127.0.0.1:5174,localhost:5174"
+)
+parts = sanctum.split(",")
+
+def add_host(value: str) -> None:
+    if value and value not in parts:
+        parts.append(value)
+
+if lan_host:
+    add_host(lan_host)
+    add_host(f"{lan_host.rsplit(':', 1)[0]}:{public_https_port}")
+
+public_name = host.rsplit(":", 1)[0]
+if public_name.replace(".", "").isdigit():
+    add_host(f"{public_name}:{public_https_port}")
+
+sanctum = ",".join(parts)
 overrides = {
     "APP_URL": origin,
     "SESSION_SECURE_COOKIE": "false",
     "SESSION_COOKIE": "global_english_session",
     "SESSION_SAME_SITE": "lax",
-    "SANCTUM_STATEFUL_DOMAINS": f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174",
+    "SANCTUM_STATEFUL_DOMAINS": sanctum,
 }
 if stable_host:
     overrides["SESSION_SECURE_COOKIE"] = "true"
     overrides["GE_SOFT_LAUNCH_STABLE_HOST"] = stable_host
     overrides["GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT"] = public_https_port
+elif origin.startswith("http://"):
+    overrides["GE_SOFT_LAUNCH_PUBLIC_ORIGIN"] = origin
+    overrides["GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP"] = "true"
 lines = []
 seen = set()
 for raw in text.splitlines():
@@ -292,6 +348,14 @@ for key, value in overrides.items():
 path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 path.chmod(0o600)
 PY
+}
+
+configure_public_http() {
+  local origin="${GE_SOFT_LAUNCH_PUBLIC_ORIGIN:-${STATIC_IP_HTTP_ORIGIN_DEFAULT}}"
+  [[ "${origin}" =~ ^http://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]] \
+    || die "GE_SOFT_LAUNCH_PUBLIC_ORIGIN must be http://IPv4:port"
+  persist_public_origin "${origin}" ""
+  printf 'Configured static-IP HTTP origin: %s\n' "${origin}"
 }
 
 configure_stable_host() {
@@ -318,8 +382,11 @@ wait_health() {
 }
 
 status() {
-  local stable_host
-  stable_host="$(stable_host_from_environment)"
+  source_soft_launch_env
+  local stable_host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
+  if [[ -n "${stable_host}" ]]; then
+    validate_stable_host "${stable_host}"
+  fi
   for name in api worker scheduler caddy public-http tunnel; do
     if pid_alive "${PID_DIR}/${name}.pid"; then
       printf '%-12s running (pid %s)\n' "${name}" "$(cat "${PID_DIR}/${name}.pid")"
@@ -334,6 +401,19 @@ status() {
     printf 'stable url: https://%s\n' "${stable_host}"
     printf 'edge mapping: WAN 80 -> LAN %s; WAN 443 -> LAN %s\n' \
       "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
+  elif [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+    printf 'public url: %s\n' "$(static_ip_http_origin)"
+    printf 'edge mapping: WAN %s -> this host:%s; WAN %s -> this host:%s\n' \
+      "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTP_PORT}" \
+      "${PUBLIC_HTTPS_PORT}" "${PUBLIC_HTTPS_PORT}"
+    lan_ipv4="$(detect_lan_ipv4 || true)"
+    if [[ -n "${lan_ipv4}" ]]; then
+      printf 'LAN url: http://%s:%s\n' "${lan_ipv4}" "${PUBLIC_HTTP_PORT}"
+      printf 'LAN HTTPS url (microphone): https://%s:%s\n' \
+        "${lan_ipv4}" "${PUBLIC_HTTPS_PORT}"
+    fi
+    printf 'WAN HTTPS url (microphone): https://117.254.108.143:%s\n' \
+      "${PUBLIC_HTTPS_PORT}"
   fi
   if curl --silent --fail --max-time 2 "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null 2>&1; then
     printf 'health live: ok\n'
@@ -367,9 +447,7 @@ supervise() {
   trap 'stopping=true' INT TERM
 
   "$0" start
-  local stable_host
-  stable_host="$(stable_host_from_environment)"
-  if [[ -z "${stable_host}" ]]; then
+  if rotating_quick_tunnel_enabled; then
     "$0" tunnel
   fi
 
@@ -379,7 +457,7 @@ supervise() {
         die "Soft-launch supervisor detected stopped process: ${name}"
       fi
     done
-    if [[ -z "${stable_host}" ]] && ! pid_alive "${PID_DIR}/tunnel.pid"; then
+    if rotating_quick_tunnel_enabled && ! pid_alive "${PID_DIR}/tunnel.pid"; then
       die "Soft-launch supervisor detected stopped process: tunnel"
     fi
 
@@ -402,6 +480,12 @@ case "${MODE}" in
   start)
     ensure_services
     source_soft_launch_env
+    if [[ -z "${GE_SOFT_LAUNCH_STABLE_HOST:-}" && "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+      stop_pidfile tunnel
+      rm -f "${RUNTIME_DIR}/tunnel.url"
+      persist_public_origin "$(static_ip_http_origin)" ""
+      source_soft_launch_env
+    fi
     ensure_web_dist
     start_api
     start_worker
@@ -415,6 +499,11 @@ case "${MODE}" in
       printf '\nPrimary HTTPS entry: https://%s\n' "${stable_host}"
       printf 'Router mapping: WAN 80 -> this host:%s; WAN 443 -> this host:%s\n' \
         "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
+    elif [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+      printf '\nPrimary public entry: %s\n' "$(static_ip_http_origin)"
+      printf 'Router mapping: WAN %s -> this host:%s; WAN %s -> this host:%s (microphone HTTPS)\n' \
+        "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTP_PORT}" \
+        "${PUBLIC_HTTPS_PORT}" "${PUBLIC_HTTPS_PORT}"
     else
       printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
       printf 'Static-IP entry: http://127.0.0.1:%s (redirects to HTTPS when configured)\n' \
@@ -433,8 +522,7 @@ case "${MODE}" in
     ;;
   restart)
     restart_tunnel=false
-    stable_host="$(stable_host_from_environment)"
-    if [[ -z "${stable_host}" ]] && pid_alive "${PID_DIR}/tunnel.pid"; then
+    if rotating_quick_tunnel_enabled && pid_alive "${PID_DIR}/tunnel.pid"; then
       restart_tunnel=true
     fi
     "$0" stop
@@ -453,6 +541,9 @@ case "${MODE}" in
   configure-stable-host)
     configure_stable_host
     ;;
+  configure-public-http)
+    configure_public_http
+    ;;
   status)
     status
     ;;
@@ -470,6 +561,6 @@ case "${MODE}" in
     supervise
     ;;
   *)
-    die "Usage: $0 {start|stop|restart|status|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
+    die "Usage: $0 {start|stop|restart|status|tunnel|tunnel-stop|configure-stable-host|configure-public-http|health|backup|supervise}"
     ;;
 esac

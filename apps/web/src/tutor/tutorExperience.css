@@ -1,45 +1,10 @@
 .ge-application-frame--tutor {
-  --ge-tutor-night: #071018;
-  --ge-tutor-glow: rgb(227 28 35 / 0.22);
+  --ge-tutor-night: var(--ge-color-canvas);
+  --ge-tutor-glow: rgb(46 230 255 / 0.1);
 }
 
-.ge-application-frame--tutor::before,
-.ge-application-frame--tutor::after {
-  content: '';
-  position: fixed;
-  z-index: -1;
-  pointer-events: none;
-  border-radius: 50%;
-  filter: blur(48px);
-}
-
-.ge-application-frame--tutor::before {
-  inset-block-start: -8rem;
-  inset-inline-end: -6rem;
-  width: min(70vw, 28rem);
-  height: min(70vw, 28rem);
-  background: radial-gradient(circle, rgb(227 28 35 / 0.28), transparent 68%);
-  animation: tutor-orb 14s ease-in-out infinite;
-}
-
-.ge-application-frame--tutor::after {
-  inset-block-end: 10%;
-  inset-inline-start: -8rem;
-  width: min(80vw, 32rem);
-  height: min(80vw, 32rem);
-  background: radial-gradient(circle, rgb(15 122 58 / 0.26), transparent 70%);
-  animation: tutor-orb 18s ease-in-out infinite reverse;
-}
-
-@keyframes tutor-orb {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(4%, 6%) scale(1.08);
-  }
-}
+/* Calmed ion (ADR-0032): the animated background orbs were removed as
+   visual noise behind learner content. */
 
 @keyframes tutor-float {
   0%,
@@ -64,11 +29,11 @@
 
 .ge-application-frame--tutor .ge-application-frame__header {
   border-block-end-color: rgb(255 255 255 / 0.08);
-  background: rgb(247 250 252 / 0.78);
+  background: rgb(10 8 22 / 0.78);
 }
 
 .ge-application-frame--tutor .ge-primary-navigation {
-  background: rgb(247 250 252 / 0.82);
+  background: rgb(10 8 22 / 0.82);
 }
 
 .ge-application-frame--tutor .ge-primary-navigation__link {
@@ -78,45 +43,24 @@
   font-size: 0.78rem;
 }
 
-.ge-application-frame--tutor .ge-primary-navigation__link::before {
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.ge-application-frame--tutor .ge-primary-navigation__link[data-destination='home']::before {
-  content: '🏠';
-}
-
-.ge-application-frame--tutor .ge-primary-navigation__link[data-destination='learn']::before {
-  content: '🎧';
-}
-
-.ge-application-frame--tutor .ge-primary-navigation__link[data-destination='speak']::before {
-  content: '🗣️';
-}
-
-.ge-application-frame--tutor .ge-primary-navigation__link[data-destination='progress']::before {
-  content: '✨';
-}
-
-.ge-application-frame--tutor .ge-primary-navigation__link[data-destination='tuition']::before {
-  content: '👤';
+.ge-application-frame--tutor .ge-primary-navigation__icon {
+  inline-size: 1.35rem;
+  block-size: 1.35rem;
 }
 
 .ge-application-frame--tutor .ge-primary-navigation__link[aria-current='page'] {
-  background: linear-gradient(180deg, #12352c, #0a1f18);
-  color: #f8f4e8;
-  box-shadow: 0 10px 22px rgb(7 22 17 / 0.2);
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
 }
 
 .ge-application-frame--tutor .ge-button--primary,
 .ge-application-frame--tutor .level-session__primary,
 .ge-application-frame--tutor .marketing-button--primary {
   border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ff5a62, var(--ge-color-accent));
-  color: #fff;
-  box-shadow: 0 12px 24px rgb(227 28 35 / 0.28);
+  border-radius: var(--ge-radius-sm);
+  background: linear-gradient(180deg, var(--ge-color-action-hover), var(--ge-color-action));
+  color: var(--ge-color-action-text);
+  box-shadow: 0 4px 12px rgb(2 1 10 / 0.35);
 }
 
 .ge-application-frame--tutor .ge-button--speak {
@@ -125,8 +69,8 @@
   border-radius: 50%;
   font-size: 0.85rem;
   box-shadow:
-    0 0 0 0.55rem rgb(227 28 35 / 0.16),
-    0 16px 32px rgb(227 28 35 / 0.32);
+    0 0 0 0.55rem rgb(46 230 255 / 0.18),
+    0 16px 32px rgb(46 230 255 / 0.32);
   animation: tutor-mic 2.2s ease-in-out infinite;
 }
 
@@ -145,18 +89,14 @@
   0%,
   100% {
     box-shadow:
-      0 0 0 0.45rem rgb(227 28 35 / 0.14),
-      0 16px 32px rgb(227 28 35 / 0.3);
+      0 0 0 0.45rem rgb(46 230 255 / 0.16),
+      0 16px 32px rgb(46 230 255 / 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 0.85rem rgb(227 28 35 / 0.08),
-      0 16px 32px rgb(227 28 35 / 0.3);
+      0 0 0 0.85rem rgb(46 230 255 / 0.1),
+      0 16px 32px rgb(46 230 255 / 0.3);
   }
-}
-
-.conversation-journey {
-  max-width: 40rem;
 }
 
 .conversation-journey--embedded,
@@ -174,8 +114,8 @@
 .conversation-journey--embedded .conversation-journey__heading,
 .conversation-journey[data-mode='roleplay'] .conversation-journey__heading {
   background:
-    radial-gradient(circle at 80% 0%, rgb(227 28 35 / 0.35), transparent 42%),
-    linear-gradient(165deg, #08151f 0%, #12352c 70%, #1b1233 100%);
+    radial-gradient(circle at 80% 0%, rgb(214 29 110 / 0.35), transparent 42%),
+    linear-gradient(165deg, var(--ge-color-canvas-deep) 0%, var(--ge-color-surface-elevated) 70%, #1b1233 100%);
 }
 
 .conversation-journey__chat {
@@ -207,24 +147,24 @@
 .conversation-journey__bubble--you {
   justify-self: end;
   border-end-end-radius: 0.35rem;
-  background: linear-gradient(180deg, #1d4d3f, #12352c);
-  color: #f4f8f5;
+  background: linear-gradient(180deg, rgb(46 230 255 / 0.22), var(--ge-color-surface-elevated));
+  color: var(--ge-color-text);
 }
 
 .conversation-journey__bubble--teacher {
   justify-self: start;
   border-end-start-radius: 0.35rem;
-  background: #fff;
+  background: var(--ge-color-surface-elevated);
   color: var(--ge-color-ink);
   box-shadow: var(--ge-shadow-panel);
 }
 
 .conversation-journey__correction {
-  border: 0;
+  border: 1px solid rgb(196 181 255 / 0.28);
   border-radius: 1.15rem;
   background:
-    linear-gradient(180deg, #fff7dc, #fff);
-  box-shadow: 0 12px 28px rgb(143 111 40 / 0.16);
+    linear-gradient(180deg, rgb(196 181 255 / 0.16), var(--ge-color-surface));
+  box-shadow: 0 12px 28px rgb(196 181 255 / 0.16);
   animation: tutor-card-in 520ms ease-out both;
 }
 
@@ -252,8 +192,7 @@
   padding: 0.85rem 0.6rem;
   border: 1px solid transparent;
   border-radius: 1.15rem;
-  background:
-    linear-gradient(165deg, #fff, color-mix(in srgb, var(--ge-color-status) 55%, white));
+  background: var(--ge-panel-background);
   color: var(--ge-color-ink);
   font: inherit;
   font-weight: 700;
@@ -272,17 +211,12 @@
 
 .roleplay-scenes button[aria-pressed='true'] {
   border-color: var(--ge-color-accent);
-  box-shadow: 0 14px 28px rgb(227 28 35 / 0.18);
+  box-shadow: 0 14px 28px rgb(214 29 110 / 0.18);
 }
 
 .roleplay-scenes__icon {
   font-size: 1.85rem;
   line-height: 1;
-}
-
-.level-path,
-.level-session {
-  max-width: 44rem;
 }
 
 .level-path__list {
@@ -298,9 +232,9 @@
   border: 0;
   border-radius: 1.4rem;
   background:
-    radial-gradient(circle at 80% 0%, rgb(227 28 35 / 0.16), transparent 46%),
-    linear-gradient(180deg, #fff, #f3f7f4);
-  box-shadow: 0 16px 32px rgb(7 22 17 / 0.1);
+    radial-gradient(circle at 80% 0%, rgb(214 29 110 / 0.16), transparent 46%),
+    var(--ge-panel-background);
+  box-shadow: 0 16px 32px rgb(2 1 10 / 0.1);
 }
 
 .level-path__item:hover {
@@ -310,8 +244,8 @@
 .level-path__item-index {
   width: 3rem;
   height: 3rem;
-  background: linear-gradient(180deg, #1d4d3f, #0a1f18);
-  box-shadow: 0 8px 16px rgb(10 31 24 / 0.28);
+  background: linear-gradient(180deg, #1c1830, var(--ge-color-surface));
+  box-shadow: 0 8px 16px rgb(2 1 10 / 0.28);
 }
 
 .level-path__item-action {
@@ -322,7 +256,7 @@
   gap: 0.45rem;
   padding: 0.35rem;
   border-radius: 1.15rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(28 24 52 / 0.78);
   box-shadow: var(--ge-shadow-panel);
 }
 
@@ -333,8 +267,8 @@
 }
 
 .level-session__tab--active {
-  background: linear-gradient(180deg, #1d4d3f, #0a1f18);
-  box-shadow: 0 10px 18px rgb(10 31 24 / 0.22);
+  background: linear-gradient(180deg, #1c1830, var(--ge-color-surface));
+  box-shadow: 0 10px 18px rgb(2 1 10 / 0.22);
 }
 
 .level-session__audio {
@@ -349,7 +283,7 @@
   inset-block-end: 0.7rem;
   height: 0.35rem;
   border-radius: 999px;
-  background: linear-gradient(90deg, #0f7a3a, #e31c23, #c4a45a);
+  background: linear-gradient(90deg, #2ee6ff, #d61d6e, #c4b5ff);
   opacity: 0.35;
 }
 
@@ -375,14 +309,6 @@
   text-align: center;
 }
 
-.shell-practice-switch {
-  background: rgb(255 255 255 / 0.78);
-}
-
-.shell-practice-switch button[aria-selected='true'] {
-  background: linear-gradient(180deg, #1d4d3f, #0a1f18);
-}
-
 .marketing-hero__tutor {
   position: absolute;
   z-index: 2;
@@ -406,25 +332,39 @@
 }
 
 @media (max-width: 48rem) {
+  /* Fixed, safe-area-aware bottom tab bar (ADR-0032). */
   .ge-application-frame--tutor .ge-primary-navigation {
-    position: sticky;
+    position: fixed;
+    inset-inline: 0;
     inset-block-end: 0;
     z-index: 30;
-    border-block-start: 1px solid rgb(183 197 188 / 0.45);
+    border-block-start: 1px solid var(--ge-color-border);
     border-block-end: 0;
     padding-block-end: env(safe-area-inset-bottom);
-    background: rgb(247 250 252 / 0.94);
+    background: rgb(10 8 22 / 0.94);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
   .ge-application-frame--tutor .ge-primary-navigation__list {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     padding-block: 0.35rem 0.45rem;
   }
 
+  .ge-application-frame--tutor .ge-primary-navigation__link {
+    flex-direction: column;
+    gap: 0.15rem;
+    padding-inline: 0.2rem;
+  }
+
+  .ge-application-frame--tutor .ge-primary-navigation__label {
+    font-size: var(--ge-font-size-caption);
+    line-height: 1.15;
+  }
+
+  /* Keep content clear of the fixed bottom bar. */
   .ge-application-frame--tutor .ge-application-frame__main {
-    padding-block-end: 1.25rem;
+    padding-block-end: calc(4.75rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -439,8 +379,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ge-application-frame--tutor::before,
-  .ge-application-frame--tutor::after,
   .ge-button--speak,
   .marketing-hero__tutor,
   .level-session__audio.is-playing::after {

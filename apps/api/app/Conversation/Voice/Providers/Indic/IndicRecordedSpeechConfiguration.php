@@ -9,8 +9,9 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 
 /**
- * Optional cheaper Indic recorded-STT driver (ADR-0027). Soft-launch stays
- * on Azure until VOICE_PROVIDER_DRIVER=indic is set with a reviewed secret.
+ * Optional Indic recorded-STT driver (ADR-0027 / ADR-0030). Every live
+ * environment remains fail-closed until the driver, upload flag, endpoint
+ * allowlist, and reviewed external secret are all configured.
  */
 final readonly class IndicRecordedSpeechConfiguration
 {
@@ -23,6 +24,7 @@ final readonly class IndicRecordedSpeechConfiguration
         'local',
         'testing',
         'soft-launch',
+        'production',
     ];
 
     public function __construct(

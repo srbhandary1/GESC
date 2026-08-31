@@ -11,6 +11,7 @@ import {
   useState,
   type FormEvent,
 } from 'react'
+import { CoachSelector } from '../coach/CoachSelector'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import type {
@@ -23,6 +24,7 @@ import {
   defaultAudioRecorder,
   type AudioRecorder,
 } from './BrowserAudioRecorder'
+import { lanHttpsRecordingHref } from './secureRecordingOrigin'
 import type {
   AttemptResponseInput,
   GovernedContent,
@@ -58,6 +60,7 @@ export interface LearnerJourneyProps {
   readonly offlineBinding?: OfflineProfileBinding | null
   readonly offlineStore?: OfflineLearningStore
   readonly resumeBundle?: StoredOfflineBundle
+  readonly onOnboardingStatus?: (completed: boolean) => void
 }
 
 interface OfflineMissionSession {
@@ -110,6 +113,7 @@ export function LearnerJourney({
   offlineBinding = null,
   offlineStore = browserOfflineLearningStore,
   resumeBundle,
+  onOnboardingStatus,
 }: LearnerJourneyProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [busy, setBusy] = useState(false)
@@ -233,6 +237,23 @@ export function LearnerJourney({
       controller.abort()
     }
   }, [activateOfflineBundle, api, resumeBundle])
+
+  useEffect(() => {
+    if (onOnboardingStatus === undefined) {
+      return
+    }
+
+    if (state.kind === 'loading' || state.kind === 'error') {
+      return
+    }
+
+    if (state.kind === 'ready') {
+      onOnboardingStatus(state.home.onboarding.completed)
+      return
+    }
+
+    onOnboardingStatus(true)
+  }, [onOnboardingStatus, state])
 
   useEffect(() => {
     let active = true
@@ -698,7 +719,7 @@ export function LearnerJourney({
     >
       <header className="learner-home__header">
         <h2
-          className="learner-home__title"
+          className="learner-home__title visually-hidden"
           id="learner-home-title"
           ref={stateTitle}
           tabIndex={-1}
@@ -815,10 +836,12 @@ export function LearnerJourney({
         </section>
       )}
       {!hasMission ? null : (
-        <section
-          aria-labelledby="offline-access-title"
-          className="learner-card learner-home__sync learner-offline"
-        >
+        <details className="learner-card learner-home__sync learner-offline">
+          <summary className="learner-home__offline-summary">
+            <LocalizedMessage
+              resolution={message('learner.home.offline_summary')}
+            />
+          </summary>
           <h3
             className="learner-card__title"
             id="offline-access-title"
@@ -878,15 +901,22 @@ export function LearnerJourney({
               )}
             />
           </button>
-        </section>
+        </details>
       )}
       {home.enrollment === null ? null : (
-        <LevelVideosPanel
-          api={api}
-          enrollmentId={home.enrollment.id}
-          locale={locale}
-          localizationPolicy={localizationPolicy}
-        />
+        <details className="learner-home__videos">
+          <summary>
+            <LocalizedMessage
+              resolution={message('learner.level_videos.title')}
+            />
+          </summary>
+          <LevelVideosPanel
+            api={api}
+            enrollmentId={home.enrollment.id}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        </details>
       )}
     </section>
   )
@@ -909,6 +939,7 @@ function OnboardingForm({
   onComplete,
   titleRef,
 }: OnboardingFormProps) {
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [adultConfirmed, setAdultConfirmed] = useState(false)
   const [goal, setGoal] = useState<LearnerGoal | null>(null)
   const [busy, setBusy] = useState(false)
@@ -919,14 +950,35 @@ function OnboardingForm({
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [step, titleRef])
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (step === 1) {
+      setStep(2)
+      return
+    }
+
+    if (step === 2) {
+      if (!adultConfirmed || goal === null) {
+        setError(true)
+        return
+      }
+
+      setError(false)
+      setStep(3)
+      return
+    }
 
     let input = pendingInput.current
 
     if (input === null) {
       if (!adultConfirmed || goal === null) {
         setError(true)
+        setStep(2)
         return
       }
 
@@ -941,9 +993,7 @@ function OnboardingForm({
     setError(false)
 
     try {
-      onComplete(
-        await api.updateOnboarding(input, commandId.current),
-      )
+      onComplete(await api.updateOnboarding(input, commandId.current))
       pendingInput.current = null
       setCommandLocked(false)
       commandId.current = createClientId()
@@ -954,66 +1004,85 @@ function OnboardingForm({
     }
   }
 
+  const stepTitleKey =
+    step === 1
+      ? 'learner.onboarding.step_welcome'
+      : step === 2
+        ? 'learner.onboarding.step_goal'
+        : 'learner.onboarding.step_coach'
+
   return (
     <section
       aria-labelledby="onboarding-title"
       className="learner-card learner-onboarding"
     >
-      <h2
-        id="onboarding-title"
-        ref={titleRef}
-        tabIndex={-1}
-      >
+      <p className="learner-onboarding__progress" role="status">
         <LocalizedMessage
-          resolution={message('learner.onboarding.title')}
-        />
-      </h2>
-      <p>
-        <LocalizedMessage
-          resolution={message('learner.onboarding.introduction')}
+          resolution={resolveInterfaceMessage(
+            'learner.onboarding.step_indicator',
+            locale,
+            localizationPolicy,
+            { current: String(step), total: '3' },
+          )}
         />
       </p>
+      <h2 id="onboarding-title" ref={titleRef} tabIndex={-1}>
+        <LocalizedMessage resolution={message(stepTitleKey)} />
+      </h2>
       <form onSubmit={(event) => void submit(event)}>
-        <label className="learner-choice learner-choice--confirmation">
-          <input
-            checked={adultConfirmed}
-            disabled={busy || commandLocked}
-            onChange={(event) =>
-              setAdultConfirmed(event.currentTarget.checked)
-            }
-            type="checkbox"
-          />
-          <LocalizedMessage
-            resolution={message('learner.onboarding.adult_confirmation')}
-          />
-        </label>
-
-        <fieldset className="learner-fieldset">
-          <legend>
+        {step === 1 ? (
+          <p>
             <LocalizedMessage
-              resolution={message('learner.onboarding.goal_legend')}
+              resolution={message('learner.onboarding.welcome_body')}
             />
-          </legend>
-          {LEARNER_GOALS.map((candidate) => (
-            <label
-              className="learner-choice"
-              key={candidate}
-            >
+          </p>
+        ) : null}
+        {step === 2 ? (
+          <>
+            <label className="learner-choice learner-choice--confirmation">
               <input
-                checked={goal === candidate}
+                checked={adultConfirmed}
                 disabled={busy || commandLocked}
-                name="learner-goal"
-                onChange={() => setGoal(candidate)}
-                type="radio"
-                value={candidate}
+                onChange={(event) =>
+                  setAdultConfirmed(event.currentTarget.checked)
+                }
+                type="checkbox"
               />
               <LocalizedMessage
-                resolution={message(goalMessageKey(candidate))}
+                resolution={message('learner.onboarding.adult_confirmation')}
               />
             </label>
-          ))}
-        </fieldset>
-
+            <fieldset className="learner-fieldset">
+              <legend>
+                <LocalizedMessage
+                  resolution={message('learner.onboarding.goal_legend')}
+                />
+              </legend>
+              {LEARNER_GOALS.map((candidate) => (
+                <label className="learner-choice" key={candidate}>
+                  <input
+                    checked={goal === candidate}
+                    disabled={busy || commandLocked}
+                    name="learner-goal"
+                    onChange={() => setGoal(candidate)}
+                    type="radio"
+                    value={candidate}
+                  />
+                  <LocalizedMessage
+                    resolution={message(goalMessageKey(candidate))}
+                  />
+                </label>
+              ))}
+            </fieldset>
+          </>
+        ) : null}
+        {step === 3 ? (
+          <CoachSelector
+            hideRename
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : null}
         {error ? (
           <p role="alert">
             <LocalizedMessage
@@ -1021,19 +1090,38 @@ function OnboardingForm({
             />
           </p>
         ) : null}
-        <button
-          className="ge-button ge-button--primary"
-          disabled={busy}
-          type="submit"
-        >
-          <LocalizedMessage
-            resolution={message(
-              busy
-                ? 'learner.onboarding.saving'
-                : 'learner.onboarding.continue',
-            )}
-          />
-        </button>
+        <div className="learner-onboarding__actions">
+          {step > 1 ? (
+            <button
+              className="ge-button"
+              disabled={busy}
+              onClick={() => {
+                setError(false)
+                setStep(step === 3 ? 2 : 1)
+              }}
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message('learner.onboarding.back')}
+              />
+            </button>
+          ) : null}
+          <button
+            className="ge-button ge-button--primary"
+            disabled={busy}
+            type="submit"
+          >
+            <LocalizedMessage
+              resolution={message(
+                busy
+                  ? 'learner.onboarding.saving'
+                  : step === 3
+                    ? 'learner.onboarding.continue'
+                    : 'learner.onboarding.next',
+              )}
+            />
+          </button>
+        </div>
       </form>
     </section>
   )
@@ -1086,6 +1174,8 @@ function MissionExperience({
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
   const text = (key: MessageKey) => message(key).text
+  const securePageHref =
+    typeof window === 'undefined' ? null : lanHttpsRecordingHref(window.location)
   const stepTitle = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -1312,7 +1402,9 @@ function MissionExperience({
                 recording: text('learner.recording.recording'),
                 paused: text('learner.recording.paused'),
                 processing: text('learner.recording.processing'),
-                blocked: text('learner.recording.blocked'),
+                blocked: securePageHref
+                  ? text('learner.recording.blocked_insecure')
+                  : text('learner.recording.blocked'),
                 error: text('learner.recording.error'),
               },
               playbackLabel: text('learner.recording.playback_label'),
@@ -1334,6 +1426,8 @@ function MissionExperience({
               setStep('check')
             }}
             recorder={audioRecorder}
+            securePageHref={securePageHref ?? undefined}
+            securePageLabel={text('learner.recording.open_secure_page')}
           />
           <button
             className="ge-button ge-button--primary"

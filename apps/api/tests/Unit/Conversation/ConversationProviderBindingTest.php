@@ -115,4 +115,32 @@ final class ConversationProviderBindingTest extends TestCase
             $this->app->make(RecordedSpeechToTextProvider::class),
         );
     }
+
+    public function test_production_binds_indic_recorded_stt_when_explicitly_enabled(): void
+    {
+        $this->app->detectEnvironment(static fn (): string => 'production');
+        config()->set('voice.upload_enabled', true);
+        config()->set('voice.provider_driver', 'indic');
+
+        (new AppServiceProvider($this->app))->register();
+
+        $this->assertInstanceOf(
+            IndicHttpSpeechToTextProvider::class,
+            $this->app->make(RecordedSpeechToTextProvider::class),
+        );
+    }
+
+    public function test_production_keeps_recorded_stt_disabled_without_upload_flag(): void
+    {
+        $this->app->detectEnvironment(static fn (): string => 'production');
+        config()->set('voice.upload_enabled', false);
+        config()->set('voice.provider_driver', 'indic');
+
+        (new AppServiceProvider($this->app))->register();
+
+        $this->assertInstanceOf(
+            DisabledRecordedSpeechToTextProvider::class,
+            $this->app->make(RecordedSpeechToTextProvider::class),
+        );
+    }
 }

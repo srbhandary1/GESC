@@ -21,6 +21,11 @@ to allow an **optional** recorded-STT driver. It does not replace the locked
 PR-009 Azure Speech synthetic benchmark, does not authorize live Indic STT on
 soft-launch, and does not authorize production/Play.
 
+Production binding restrictions in decisions 4 and 6 were narrowly amended by
+[ADR-0030](0030-production-indic-recorded-stt-binding.md) / D-0243 on
+31 August 2026. All endpoint, external-secret, consent, retention, deletion,
+and organization-allowlist controls remain in force.
+
 ## Context
 
 Hold-to-talk uploads use `RecordedSpeechToTextProvider`. Soft-launch Direct is

@@ -1,0 +1,108 @@
+/*
+ * Scoped Tailwind CSS entry point.
+ *
+ * We intentionally import only the `theme` and `utilities` layers and skip
+ * `tailwindcss/preflight.css` (the global browser-default reset). The rest
+ * of this app ships a hand-built design-system stylesheet
+ * (`@global-english/design-system/styles.css`) and many component-scoped
+ * CSS files; loading Tailwind's preflight reset globally would silently
+ * change margins, headings, form controls, etc. across the entire site.
+ * Utility classes (e.g. `flex`, `rounded-full`, `animate-*`) remain fully
+ * available to any component that opts in, such as `InteractiveAvatar`.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+  --animate-avatar-blink: avatar-blink 4.2s ease-in-out infinite;
+  --animate-avatar-nod: avatar-nod 900ms ease-in-out;
+  --animate-avatar-tilt: avatar-tilt 900ms ease-in-out;
+  --animate-avatar-smile: avatar-smile 700ms ease-in-out;
+  --animate-avatar-idle-sway: avatar-idle-sway 5.5s ease-in-out infinite;
+  --animate-avatar-ring: avatar-ring-pulse 2.4s ease-out infinite;
+  --animate-avatar-speak-pulse: avatar-speak-pulse 900ms ease-in-out infinite;
+
+  @keyframes avatar-blink {
+    0%,
+    92%,
+    100% {
+      transform: scaleY(1);
+    }
+    96% {
+      transform: scaleY(0.05);
+    }
+  }
+
+  @keyframes avatar-nod {
+    0% {
+      transform: rotate(0deg) translateY(0);
+    }
+    30% {
+      transform: rotate(4deg) translateY(2px);
+    }
+    60% {
+      transform: rotate(-2deg) translateY(-1px);
+    }
+    100% {
+      transform: rotate(0deg) translateY(0);
+    }
+  }
+
+  @keyframes avatar-tilt {
+    0% {
+      transform: rotate(0deg);
+    }
+    35% {
+      transform: rotate(-6deg);
+    }
+    70% {
+      transform: rotate(3deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes avatar-smile {
+    0% {
+      transform: scaleX(1) scaleY(1);
+    }
+    50% {
+      transform: scaleX(1.08) scaleY(1.12);
+    }
+    100% {
+      transform: scaleX(1) scaleY(1);
+    }
+  }
+
+  @keyframes avatar-idle-sway {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  @keyframes avatar-ring-pulse {
+    from {
+      transform: scale(0.92);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(1.28);
+      opacity: 0;
+    }
+  }
+
+  @keyframes avatar-speak-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.045);
+    }
+  }
+}

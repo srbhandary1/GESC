@@ -146,6 +146,10 @@ export function TuitionRequestPanel({
           </ul>
         </div>
       ) : null}
+      <details>
+        <summary>
+          <LocalizedMessage resolution={message('tuition.form_open')} />
+        </summary>
       <form className="learner-stack" onSubmit={(event) => void onSubmit(event)}>
         <label htmlFor="tuition-window">
           <LocalizedMessage resolution={message('tuition.preferred_window')} />
@@ -226,6 +230,7 @@ export function TuitionRequestPanel({
           ))}
         </ul>
       )}
+      </details>
     </section>
   )
 }

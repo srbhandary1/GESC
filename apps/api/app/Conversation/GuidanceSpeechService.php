@@ -32,7 +32,8 @@ final readonly class GuidanceSpeechService
      *   model_audio_base64: ?string,
      *   model_audio_mime_type: ?string,
      *   guidance_audio_base64: ?string,
-     *   guidance_audio_mime_type: ?string
+     *   guidance_audio_mime_type: ?string,
+     *   animation_payload: ?array<string, mixed>
      * }
      */
     public function synthesize(
@@ -81,7 +82,7 @@ final readonly class GuidanceSpeechService
         ));
         $this->usagePolicy->assertAllowed('tts', $result->usage());
 
-        return $this->payload($result, $purpose);
+        return $this->payload($result, $purpose, $utterance);
     }
 
     /**
@@ -91,15 +92,31 @@ final readonly class GuidanceSpeechService
      *   model_audio_base64: ?string,
      *   model_audio_mime_type: ?string,
      *   guidance_audio_base64: ?string,
-     *   guidance_audio_mime_type: ?string
+     *   guidance_audio_mime_type: ?string,
+     *   animation_payload: ?array<string, mixed>
      * }
      */
-    private function payload(TextToSpeechResult $result, string $purpose): array
-    {
+    private function payload(
+        TextToSpeechResult $result,
+        string $purpose,
+        string $utterance,
+    ): array {
         $audio = $result->audioBytes;
         $hasAudio = is_string($audio) && $audio !== '';
         $encoded = $hasAudio ? base64_encode($audio) : null;
         $mime = $hasAudio ? ($result->mimeType ?? 'audio/wav') : null;
+
+        // Build animation payload if visemes are available
+        $animationPayload = null;
+        if ($hasAudio && ! empty($result->visemeTimestamps)) {
+            $animationPayload = [
+                'viseme_timestamps' => $result->visemeTimestamps,
+                'avatar_gesture_trigger' => $this->gestureFor(
+                    $purpose,
+                    $utterance,
+                ),
+            ];
+        }
 
         return [
             'playback_available' => $result->playbackAvailable,
@@ -116,7 +133,19 @@ final readonly class GuidanceSpeechService
             'guidance_audio_mime_type' => $purpose === GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1
                 ? $mime
                 : null,
+            'animation_payload' => $animationPayload,
         ];
+    }
+
+    private function gestureFor(string $purpose, string $utterance): string
+    {
+        if (str_ends_with($utterance, '?')) {
+            return 'ATTENTIVE_LEAN';
+        }
+
+        return $purpose === GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1
+            ? 'ENCOURAGING_NOD'
+            : 'WARM_SMILE';
     }
 
     private function session(

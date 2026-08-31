@@ -56,6 +56,7 @@ describe('tuition request panel', () => {
       'href',
       'mailto:direct@global-english.test',
     )
+    await user.click(screen.getByText('Request 1:1 help'))
     await user.type(
       screen.getByLabelText('Preferred time window'),
       'Weekday evenings',

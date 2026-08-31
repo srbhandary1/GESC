@@ -1,5 +1,5 @@
 #root {
   min-height: 100vh;
-  color: #0f241c;
-  background: #f7f5fc;
+  color: inherit;
+  background: transparent;
 }

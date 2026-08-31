@@ -13,7 +13,15 @@ describe('speakSessionSpeech', () => {
   })
 
   it('plays neural WAV from the session speech port', async () => {
+    const animationPayload = {
+      avatar_gesture_trigger: 'WARM_SMILE' as const,
+      viseme_timestamps: [
+        { mouth_shape: 'rest', timestamp_ms: 0 },
+        { mouth_shape: 'open', timestamp_ms: 80 },
+      ],
+    }
     const synthesizeSpeech = vi.fn(async () => ({
+      animation_payload: animationPayload,
       model_audio_base64: 'QQ==',
       model_audio_mime_type: 'audio/wav' as const,
       playback_available: true,
@@ -25,10 +33,14 @@ describe('speakSessionSpeech', () => {
       events: vi.fn(),
       synthesizeSpeech,
     } as unknown as ConversationJourneyApi
+    const onAnimationPayload = vi.fn()
+    const onAudioElement = vi.fn()
 
     await speakSessionSpeech({
       api,
       locale: 'en-IN',
+      onAnimationPayload,
+      onAudioElement,
       purpose: 'model_en',
       sessionId: '01J00000000000000000000001',
       text: 'I went to the market this morning.',
@@ -42,7 +54,10 @@ describe('speakSessionSpeech', () => {
       },
       expect.any(String),
     )
-    expect(playBase64Audio).toHaveBeenCalledWith('QQ==', 'audio/wav')
+    expect(onAnimationPayload).toHaveBeenCalledWith(animationPayload)
+    expect(playBase64Audio).toHaveBeenCalledWith('QQ==', 'audio/wav', {
+      onElement: onAudioElement,
+    })
   })
 
   it('stays silent when the speech port has no audio', async () => {

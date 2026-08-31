@@ -46,6 +46,14 @@ EOF
     return
   fi
 
+  local requested_public_origin="${public_origin}"
+
+  # Static-IP / WAN access: serve the SPA and API on :8080 instead of
+  # bouncing to a rotating HTTPS tunnel the remote client cannot use.
+  if [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+    public_origin=""
+  fi
+
   if [[ "${public_origin}" =~ ^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?$ ]]; then
     cat >"${target_file}" <<EOF
 {
@@ -59,18 +67,135 @@ EOF
     return
   fi
 
+  local extra_https_hosts="${9:-}"
+  local https_site_labels=""
+  local https_name
+  local https_seen=" "
+  append_https_site_label() {
+    local ip_name="$1"
+    if [[ ! "${ip_name}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+      return 0
+    fi
+    if [[ "${https_seen}" == *" ${ip_name} "* ]]; then
+      return 0
+    fi
+    https_seen+="${ip_name} "
+    if [[ -n "${https_site_labels}" ]]; then
+      https_site_labels+=", "
+    fi
+    https_site_labels+="https://${ip_name}:${public_https_port}"
+  }
+  append_https_site_label "127.0.0.1"
+  if [[ "${requested_public_origin}" =~ ^http://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
+    append_https_site_label "$(printf '%s' "${requested_public_origin}" | sed -E 's#^http://##' | sed -E 's/:.*//')"
+  fi
+  if [[ -n "${extra_https_hosts}" ]]; then
+    IFS=',' read -ra extra_https_host_array <<< "${extra_https_hosts}"
+    for https_name in "${extra_https_host_array[@]}"; do
+      append_https_site_label "${https_name}"
+    done
+  fi
+  [[ -n "${https_site_labels}" ]] || https_site_labels="https://127.0.0.1:${public_https_port}"
+
+  # D-0256: keep authenticated HTTP on :8080 (D-0248 cookies) and add a
+  # same-app HTTPS listener on named :8443 addresses with Caddy's local
+  # CA so browsers expose getUserMedia on LAN/WAN IP origins. The HTTP
+  # site must be scheme-qualified (`http://:8080`); a hostname-less
+  # `:8080` plus `:8443 { tls internal }` conflicts Caddy's default TLS
+  # automation policy. `auto_https disable_redirects` lets Caddy issue
+  # internal certificates without binding :80 or redirecting :8080.
+  # Certificates are not publicly trusted; learners accept the browser
+  # warning once. `skip_install_trust` avoids mutating the host trust store.
   cat >"${target_file}" <<EOF
 {
 	admin off
-	auto_https off
+	auto_https disable_redirects
+	skip_install_trust
 }
-:${public_port} {
-	encode gzip
+http://:${public_port} {
+	@notDownloads not path /downloads/*
+	encode @notDownloads gzip
 	handle /api/* {
 		reverse_proxy 127.0.0.1:${api_port}
 	}
 	handle /sanctum/* {
 		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /oauth/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /auth/mobile/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /health/live {
+		rewrite * /api/v1/health/live
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /health/ready {
+		rewrite * /api/v1/health/ready
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	@credentialPages path /password-establishment.html /password-recovery.html
+	handle @credentialPages {
+		header Cache-Control "no-store, max-age=0"
+		header Referrer-Policy "no-referrer"
+		header X-Robots-Tag "noindex, nofollow"
+		root * ${web_dist}
+		file_server
+	}
+	handle /downloads/* {
+		header Cache-Control "public, max-age=300, must-revalidate"
+		header Content-Type "application/octet-stream"
+		header Content-Disposition "attachment; filename=\"global-spoken-english.apk\""
+		header X-Content-Type-Options "nosniff"
+		root * ${web_dist}
+		file_server
+	}
+	handle {
+		root * ${web_dist}
+		try_files {path} /index.html
+		file_server
+	}
+}
+${https_site_labels} {
+	tls internal
+	@notDownloads not path /downloads/*
+	encode @notDownloads gzip
+	handle /api/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /sanctum/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /oauth/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /auth/mobile/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /health/live {
+		rewrite * /api/v1/health/live
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /health/ready {
+		rewrite * /api/v1/health/ready
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	@credentialPages path /password-establishment.html /password-recovery.html
+	handle @credentialPages {
+		header Cache-Control "no-store, max-age=0"
+		header Referrer-Policy "no-referrer"
+		header X-Robots-Tag "noindex, nofollow"
+		root * ${web_dist}
+		file_server
+	}
+	handle /downloads/* {
+		header Cache-Control "public, max-age=300, must-revalidate"
+		header Content-Type "application/octet-stream"
+		header Content-Disposition "attachment; filename=\"global-spoken-english.apk\""
+		header X-Content-Type-Options "nosniff"
+		root * ${web_dist}
+		file_server
 	}
 	handle {
 		root * ${web_dist}

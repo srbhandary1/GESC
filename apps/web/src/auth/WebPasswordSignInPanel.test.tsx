@@ -131,7 +131,7 @@ describe('web password sign-in panel', () => {
     expect(localStorageWrite).not.toHaveBeenCalled()
   })
 
-  it('explains that plain HTTP cannot complete sign-in', () => {
+  it('does not warn away plain-HTTP sign-in on the sanctioned static-IP origin (D-0248)', () => {
     vi.stubGlobal('location', {
       hostname: '117.254.108.143',
       protocol: 'http:',
@@ -145,11 +145,9 @@ describe('web password sign-in panel', () => {
       />,
     )
 
-    expect(
-      screen.getByRole('alert'),
-    ).toHaveTextContent(
-      'Use the HTTPS link to sign in. This page is plain HTTP, so the browser cannot keep a sign-in cookie.',
-    )
+    // The soft-launch origin issues non-Secure session cookies, so the
+    // retired "use the HTTPS link" alert must not scare invitees away.
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })
 

@@ -4810,6 +4810,69 @@ export const ConversationSpeechResultSchema = {
                 'audio/wav',
                 null
             ]
+        },
+        animation_payload: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ConversationAnimationPayload'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Content-free mouth-shape timing for the matching model audio and\none deterministic local avatar gesture. Null when audio animation\nis unavailable.\n'
+        }
+    }
+} as const;
+
+export const ConversationAnimationPayloadSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'viseme_timestamps',
+        'avatar_gesture_trigger'
+    ],
+    properties: {
+        viseme_timestamps: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 1000,
+            items: {
+                $ref: '#/components/schemas/ConversationVisemeTimestamp'
+            }
+        },
+        avatar_gesture_trigger: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'ENCOURAGING_NOD',
+                'WARM_SMILE',
+                'ATTENTIVE_LEAN',
+                null
+            ]
+        }
+    }
+} as const;
+
+export const ConversationVisemeTimestampSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'mouth_shape',
+        'timestamp_ms'
+    ],
+    properties: {
+        mouth_shape: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 32
+        },
+        timestamp_ms: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 60000
         }
     }
 } as const;

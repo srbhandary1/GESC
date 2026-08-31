@@ -22,6 +22,7 @@
         <env name="CONVERSATION_PROVIDER_DRIVER" value="fake" force="true"/>
         <env name="VOICE_UPLOAD_ENABLED" value="true" force="true"/>
         <env name="VOICE_PROVIDER_DRIVER" value="deterministic-test" force="true"/>
+        <env name="VOICE_ALLOWED_ORGANIZATION_IDS" value="" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>
@@ -39,6 +40,7 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="database" force="true"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000,::1" force="true"/>
         <env name="SESSION_COOKIE" value="__Host-global_english_session" force="true"/>
         <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
         <env name="PULSE_ENABLED" value="false" force="true"/>

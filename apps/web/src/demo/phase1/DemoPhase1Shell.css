@@ -5,7 +5,7 @@
 
 .phase1-shell__eyebrow {
   margin: 0;
-  color: var(--ge-color-action, #0b6b4a);
+  color: var(--ge-color-action, #2ee6ff);
   font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
@@ -57,7 +57,7 @@
 }
 
 .phase1-shell__nav-link[aria-current='page'] {
-  border-color: var(--ge-color-action, #0b6b4a);
+  border-color: var(--ge-color-action, #2ee6ff);
   background: #0c1f18;
   color: #f4faf7;
 }
@@ -102,7 +102,7 @@
 }
 
 .phase1-card__hint {
-  color: var(--ge-color-action, #0b6b4a);
+  color: var(--ge-color-action, #2ee6ff);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -238,13 +238,13 @@
   align-items: flex-start;
   padding: 0.55rem 0.7rem;
   border-radius: 0.65rem;
-  background: #f3f6f4;
+  background: var(--ge-color-surface);
 }
 
 .phase1-quiz-result {
   margin: 0;
   font-weight: 700;
-  color: var(--ge-color-action, #0b6b4a);
+  color: var(--ge-color-action, #2ee6ff);
 }
 
 .phase1-levels {
@@ -267,7 +267,7 @@
 
 .phase1-level[data-status='current'],
 .phase1-level[aria-current='true'] {
-  border-color: #0b6b4a;
+  border-color: #2ee6ff;
   background: #e5f3ec;
 }
 
@@ -288,7 +288,7 @@
 .phase1-rooms li {
   padding: 1rem;
   border-radius: 1rem;
-  background: #f3f6f4;
+  background: var(--ge-color-surface);
 }
 
 .phase1-rooms li[data-available='false'] {
@@ -310,7 +310,7 @@
 
 .phase1-notices__meta {
   margin: 0 0 0.35rem;
-  color: var(--ge-color-action, #0b6b4a);
+  color: var(--ge-color-action, #2ee6ff);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;

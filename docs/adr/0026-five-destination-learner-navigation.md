@@ -18,7 +18,16 @@ approval_reference: Exact human instruction in the active Cursor conversation ac
 Accepted on 29 August 2026. This ADR resolves
 [DR-0037](../DR-0037_VOICE_LOOP_NAV_AND_TUITION_PLACEMENT_REQUEST.md) option B
 and amends master-plan §7.1. Recorded as D-0216. The Speak-room teacher name
-was later amended by D-0218 (Swathi).
+was later amended by D-0218 (Swathi). Selectable coaches later amended item 3
+([ADR-0031](0031-selectable-realistic-ai-coaches.md) / D-0245).
+
+**Amended on 31 August 2026 by
+[ADR-0032](0032-four-destination-navigation-and-calm-ion-theme.md) (D-0260).**
+The primary destination list is now `Home · Learn · Speak · Me`. Items 2–3
+(Learn and Speak definitions), item 5 (1:1 is a waitlist, not a call) and
+item 6 (`#practice` aliases Speak) remain in force as restated by ADR-0032.
+Progress and 1:1 become sections of Me; `#progress` / `#tuition` /
+`#one-to-one` deep-link into those sections.
 
 ## Context
 
@@ -36,9 +45,10 @@ under Home.
 
 2. **Learn** is the four-session level path (Introduction → Practice →
    Conversation → Interaction).
-3. **Speak** is one speaking room (everyday Swathi talk and a situation picker).
-   Confidence Conversation and Role-play are not sibling primary destinations
-   or Practice tabs.
+3. **Speak** is one speaking room (everyday selected-coach talk and a
+   situation picker). Confidence Conversation and Role-play are not sibling
+   primary destinations or Practice tabs. D-0245 later replaced the fixed
+   Swathi-only presentation with selectable female/male realistic coaches.
 4. **Home** keeps today’s recommended learner journey. It does not host the
    1:1 form.
 5. **1:1** is the existing org-scoped waitlist request plus governed institute

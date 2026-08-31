@@ -20,6 +20,8 @@ final readonly class AzureTextToSpeechProvider implements TextToSpeechProvider
         private AzureSpeechConfiguration $configuration,
         private AzureSpeechHttpBoundary $http,
         private PcmWavInspector $wavInspector,
+        private AzureVisemeExtractor $visemeExtractor,
+        private AzureWavVisemeExtractor $wavExtractor,
     ) {}
 
     public function synthesize(
@@ -119,6 +121,17 @@ final readonly class AzureTextToSpeechProvider implements TextToSpeechProvider
             throw $this->http->failure('provider_malformed_response', $latency);
         }
 
+        // Extract viseme data from response if available
+        $visemeTimestamps = $this->visemeExtractor->extractFromResponse(
+            $audio,
+            $response->headers(),
+        );
+
+        // If header-based extraction didn't yield visemes, try WAV RIFF chunk extraction
+        if (empty($visemeTimestamps)) {
+            $visemeTimestamps = $this->wavExtractor->extractFromWavStream($audio);
+        }
+
         return new TextToSpeechResult(
             playbackAvailable: true,
             renderingMode: 'azure-private-wav',
@@ -135,6 +148,7 @@ final readonly class AzureTextToSpeechProvider implements TextToSpeechProvider
             audioBytes: $audio,
             mimeType: 'audio/wav',
             responseMetadataSha256: $this->metadataHash($response->headers()),
+            visemeTimestamps: $visemeTimestamps,
         );
     }
 

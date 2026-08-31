@@ -3,6 +3,9 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
+import { InteractiveAvatar } from '../components/InteractiveAvatar'
+import { coachDisplayName } from '../coach/coachPreferences'
+import { useCoachPreference } from '../coach/coachPreferenceContextValue'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import './TutorPresence.css'
@@ -22,6 +25,21 @@ export interface TutorPresenceProps {
   readonly showName?: boolean
 }
 
+function statusMessageKey(mood: TutorMood): MessageKey {
+  switch (mood) {
+    case 'listening':
+      return 'tutor.listening'
+    case 'speaking':
+      return 'tutor.speaking'
+    case 'processing':
+      return 'tutor.processing'
+    case 'preparing':
+      return 'tutor.preparing'
+    default:
+      return 'tutor.ready'
+  }
+}
+
 export function TutorPresence({
   locale = 'kn-IN',
   localizationPolicy = 'approved-only',
@@ -29,48 +47,25 @@ export function TutorPresence({
   size = 'md',
   showName = true,
 }: TutorPresenceProps) {
+  const { preference } = useCoachPreference()
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
-  const portrait =
-    mood === 'speaking' ? '/tutor/tutor-maya-speak.png' : '/tutor/tutor-maya.png'
+  const displayName = coachDisplayName(
+    preference,
+    message('coach.female.name').text,
+    message('coach.male.name').text,
+  )
 
   return (
-    <figure
-      className={`tutor-presence tutor-presence--${size} tutor-presence--${mood}`}
-      data-mood={mood}
-    >
-      <span className="tutor-presence__orbit" aria-hidden="true" />
-      <span className="tutor-presence__orbit tutor-presence__orbit--delay" aria-hidden="true" />
-      <img
-        alt=""
-        className="tutor-presence__face"
-        height={size === 'hero' ? 320 : 160}
-        src={portrait}
-        width={size === 'hero' ? 320 : 160}
-      />
-      {showName ? (
-        <figcaption className="tutor-presence__caption">
-          <strong>
-            <LocalizedMessage resolution={message('tutor.name')} />
-          </strong>
-          <span>
-            <LocalizedMessage
-              resolution={message(
-                mood === 'listening'
-                  ? 'tutor.listening'
-                  : mood === 'speaking'
-                    ? 'tutor.speaking'
-                    : mood === 'processing'
-                      ? 'tutor.processing'
-                      : mood === 'preparing'
-                        ? 'tutor.preparing'
-                        : 'tutor.ready',
-              )}
-            />
-          </span>
-        </figcaption>
-      ) : null}
-    </figure>
+    <InteractiveAvatar
+      caption={showName ? <LocalizedMessage resolution={message(statusMessageKey(mood))} /> : null}
+      coachGender={preference.gender}
+      locale={locale}
+      name={displayName}
+      presence={mood}
+      showName={showName}
+      size={size}
+    />
   )
 }
 
@@ -81,38 +76,34 @@ export function TutorHomeHero({
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
 }) {
+  const { preference } = useCoachPreference()
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const displayName = coachDisplayName(
+    preference,
+    message('coach.female.name').text,
+    message('coach.male.name').text,
+  )
 
   return (
     <section
-      className="tutor-home-hero"
+      className="tutor-home-hero tutor-home-hero--compact"
       aria-labelledby="tutor-home-hero-title"
       lang={locale}
     >
+      <div className="tutor-home-hero__art" aria-hidden="true">
+        <InteractiveAvatar
+          coachGender={preference.gender}
+          showName={false}
+          size="sm"
+        />
+      </div>
       <div className="tutor-home-hero__copy">
-        <p className="tutor-home-hero__eyebrow">
-          <LocalizedMessage resolution={message('tutor.name')} />
-        </p>
+        <p className="tutor-home-hero__eyebrow">{displayName}</p>
         <h2 id="tutor-home-hero-title">
           <LocalizedMessage resolution={message('tutor.greeting')} />
         </h2>
-        <p>
-          <LocalizedMessage
-            resolution={message('level.path.talk_after_listen')}
-          />
-        </p>
-        <a className="tutor-home-hero__cta" href="#learn">
-          <LocalizedMessage resolution={message('page.home.continue_practice')} />
-        </a>
       </div>
-      <img
-        alt=""
-        className="tutor-home-hero__art"
-        height={420}
-        src="/tutor/tutor-maya-hero.png"
-        width={320}
-      />
     </section>
   )
 }

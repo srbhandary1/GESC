@@ -58,7 +58,7 @@ describe('ProgressDashboard', () => {
       expect(screen.getByRole('button')).toBeDefined()
     })
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Your progress will appear here')
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Your progress will appear here')
 
     await user.click(screen.getByRole('button'))
     expect(onMissionRequested).toHaveBeenCalled()
@@ -126,7 +126,7 @@ describe('ProgressDashboard', () => {
     render(<ProgressDashboard api={api} locale="en-IN" onMissionRequested={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1 })).toBeDefined()
+      expect(screen.getByLabelText('Summary statistics')).toBeDefined()
     })
 
     const summarySection = screen.getByLabelText('Summary statistics')

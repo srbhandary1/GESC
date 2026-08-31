@@ -81,6 +81,26 @@ test('creates one invited password account without browser persistence', async (
   ).toEqual({ local: [], session: [] })
 })
 
+test('keeps the marketing landing when a guest opens a learner hash', async ({
+  page,
+}) => {
+  await page.goto('/#learn')
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: message('marketing.hero.title'),
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: message('page.learn.title'),
+    }),
+  ).toHaveCount(0)
+  await expect(page.getByText(message('session.sign_in_hint'))).toHaveCount(0)
+})
+
 test('renders an axe-clean Kannada-first semantic shell', async ({
   page,
 }) => {
@@ -130,10 +150,11 @@ test('supports skip-link and sign-in from the keyboard', async ({
 }) => {
   await page.goto('/')
 
-  await page.keyboard.press('Tab')
   const skipLink = page.getByRole('link', {
     name: message('shell.skip_to_content'),
   })
+  await expect(skipLink).toBeAttached()
+  await page.keyboard.press('Tab')
 
   await expect(skipLink).toBeFocused()
   await expect(skipLink).toBeVisible()

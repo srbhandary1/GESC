@@ -21,3 +21,4 @@ node_modules/
 
 *.log
 /artifacts/
+/apps/web/public/downloads/*.apk

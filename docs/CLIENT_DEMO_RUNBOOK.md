@@ -95,10 +95,10 @@ Confirmed from the ISP router UI:
 | Router | DIGISOL `DG-GR6011` at `192.168.3.1` |
 | Public/WAN IPv4 | `117.254.108.143` (PPPoE / VID 567) |
 | Digisol LAN DHCP client seen | `R6220` → `192.168.3.2` |
-| Demo host | Ubuntu server `Real-Studioz` at `192.168.1.3` behind Netgear `R6220` (`192.168.1.1`) |
+| Demo host | Ubuntu server `Real-Studioz` at `192.168.1.4` behind Netgear `R6220` (`192.168.1.1`) |
 
 That means there are **two NATs**. Digisol alone cannot reach `Real-Studioz`
-at `192.168.1.3`. You must either flatten the network or forward on both
+at `192.168.1.4`. You must either flatten the network or forward on both
 routers.
 
 #### Option 1 — Recommended for a client meeting: skip port-forward
@@ -135,7 +135,7 @@ Fill the **Virtual Server Configuration** dialog exactly like this:
 
 Click **Add**, then confirm the row appears in the Virtual Server table.
 
-Common mistake: putting `Real-Studioz` (`192.168.1.3`) in Digisol **Server IP
+Common mistake: putting `Real-Studioz` (`192.168.1.4`) in Digisol **Server IP
 Address**. Digisol cannot route to `192.168.1.x` directly; it only sees
 `192.168.3.2`.
 
@@ -144,7 +144,7 @@ Address**. Digisol cannot route to `192.168.1.x` directly; it only sees
 Do **not** stay on **Setup → LAN Setup** for the forward itself. Use:
 
 1. **ADVANCED → Setup → LAN Setup → Address Reservation → Add**
-   - Reserve `Real-Studioz` as `192.168.1.3` (current DHCP lease), Apply.
+   - Reserve `Real-Studioz` as `192.168.1.4` (current DHCP lease), Apply.
 2. **ADVANCED → Advanced Setup → Port Forwarding / Port Triggering**
    - Choose **Port Forwarding** (not Port Triggering).
    - **Add Custom Service** (or Add).
@@ -156,7 +156,7 @@ Do **not** stay on **Setup → LAN Setup** for the forward itself. Use:
 | Service Type / Protocol | TCP |
 | External Starting Port | `8080` |
 | External Ending Port | `8080` |
-| Internal IP address | `192.168.1.3` (`Real-Studioz`) |
+| Internal IP address | `192.168.1.4` (`Real-Studioz`) |
 | Internal Starting Port | `8080` (if shown) |
 
 3. Apply / Save. Confirm the rule is listed as enabled.
@@ -227,12 +227,13 @@ Verified working local rules (still may fail from the internet):
 | Router | Rule |
 |---|---|
 | Digisol Advance NAT Virtual Server | TCP `8080` → `192.168.3.2` (`R6220`), Source Port `8080` |
-| Netgear R6220 Port Forwarding | TCP `8080` → `192.168.1.3` (`Real-Studioz`) |
+| Netgear R6220 Port Forwarding | TCP `8080` → `192.168.1.4` (`Real-Studioz`) |
 
-If `make demo-client` serves locally/`192.168.1.3:8080` but
-`http://117.254.108.143:8080` times out from mobile data, the ISP or Digisol
-WAN firewall is almost certainly dropping inbound TCP `8080`. Double-NAT
-hairpin tests from inside the LAN are also unreliable.
+If `make demo-client` serves locally/`192.168.1.4:8080` but
+`http://117.254.108.143:8080` times out from mobile data, the inner Netgear
+rule may still point at a previous lease (`192.168.1.3`), or the ISP/Digisol
+WAN firewall is dropping inbound TCP `8080`. Double-NAT hairpin tests from
+inside the LAN are also unreliable.
 
 When that happens, use `make demo-client-tunnel` for client review instead of
 fighting the carrier. Optional Digisol checks if you must keep static IP:

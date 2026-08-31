@@ -7,7 +7,8 @@ export interface AndroidPkceEnvironment {
 }
 
 const DEFAULT_REDIRECT_URI = 'com.globalenglish.app:/oauth/callback'
-const DEFAULT_CLIENT_ID = 'public-android-client'
+const OAUTH_CLIENT_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu
 
 /**
  * Closed-beta Android OAuth endpoints are build-time configuration.
@@ -36,10 +37,15 @@ export function resolveAndroidPkceEnvironment(
   const redirectUri =
     read(env, 'VITE_MOBILE_OAUTH_REDIRECT_URI') ?? DEFAULT_REDIRECT_URI
 
+  const clientId = normalizeOAuthClientId(
+    read(env, 'VITE_MOBILE_OAUTH_CLIENT_ID'),
+  )
+
   if (
     authorizationEndpoint === null ||
     tokenEndpoint === null ||
-    redirectUri !== DEFAULT_REDIRECT_URI
+    redirectUri !== DEFAULT_REDIRECT_URI ||
+    clientId === null
   ) {
     return null
   }
@@ -47,10 +53,41 @@ export function resolveAndroidPkceEnvironment(
   return {
     apiBaseUrl: `${origin}/api/v1`,
     authorizationEndpoint,
-    clientId: read(env, 'VITE_MOBILE_OAUTH_CLIENT_ID') ?? DEFAULT_CLIENT_ID,
+    clientId,
     redirectUri,
     tokenEndpoint,
   }
+}
+
+function normalizeOAuthClientId(value: string | undefined): string | null {
+  if (value === undefined) {
+    return null
+  }
+
+  return OAUTH_CLIENT_ID.test(value) ? value : null
+}
+
+const LOCAL_HTTP_HOSTS = new Set(['10.0.2.2', '127.0.0.1', 'localhost'])
+const IPV4_HOST =
+  /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/
+
+function isAllowedMobileApiOrigin(url: URL): boolean {
+  if (url.protocol === 'https:') {
+    return true
+  }
+
+  if (url.protocol !== 'http:') {
+    return false
+  }
+
+  if (LOCAL_HTTP_HOSTS.has(url.hostname)) {
+    return true
+  }
+
+  // D-0248 / D-0257: invite-only static-IP HTTP on :8080. Hostnames stay
+  // HTTPS-only so a mis-set http://api.example cannot ship in an APK.
+  const port = url.port === '' ? '80' : url.port
+  return port === '8080' && IPV4_HOST.test(url.hostname)
 }
 
 function read(
@@ -71,11 +108,9 @@ function normalizeApiOrigin(value: string | undefined): string | null {
 
   try {
     const url = new URL(value)
-    const localHttpHosts = new Set(['10.0.2.2', '127.0.0.1', 'localhost'])
 
     if (
-      (url.protocol !== 'https:' &&
-        !(url.protocol === 'http:' && localHttpHosts.has(url.hostname))) ||
+      !isAllowedMobileApiOrigin(url) ||
       url.username !== '' ||
       url.password !== '' ||
       (url.pathname !== '' && url.pathname !== '/') ||

@@ -1,99 +1,3 @@
-.tutor-presence {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  justify-items: center;
-  gap: 0.65rem;
-  margin: 0;
-}
-
-.tutor-presence__face {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 7.5rem;
-  height: 7.5rem;
-  object-fit: cover;
-  object-position: center 12%;
-  border-radius: 50%;
-  border: 3px solid rgb(255 255 255 / 0.88);
-  box-shadow:
-    0 0 0 6px rgb(227 28 35 / 0.18),
-    0 18px 40px rgb(7 16 24 / 0.28);
-  background: #123;
-  animation: tutor-float 4.8s ease-in-out infinite;
-}
-
-.tutor-presence--sm .tutor-presence__face {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-width: 2px;
-}
-
-.tutor-presence--lg .tutor-presence__face,
-.tutor-presence--hero .tutor-presence__face {
-  width: min(11.5rem, 42vw);
-  height: min(11.5rem, 42vw);
-}
-
-.tutor-presence--hero .tutor-presence__face {
-  width: min(14rem, 58vw);
-  height: min(14rem, 58vw);
-}
-
-.tutor-presence__orbit {
-  position: absolute;
-  inset: 8% 8% auto 8%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 2px solid rgb(196 164 90 / 0.45);
-  animation: tutor-pulse 2.4s ease-out infinite;
-  pointer-events: none;
-}
-
-.tutor-presence__orbit--delay {
-  animation-delay: 0.8s;
-  border-color: rgb(15 122 58 / 0.4);
-}
-
-.tutor-presence--speaking .tutor-presence__orbit {
-  border-color: rgb(227 28 35 / 0.55);
-  animation-duration: 1.1s;
-}
-
-.tutor-presence--listening .tutor-presence__orbit {
-  border-color: rgb(80 180 255 / 0.55);
-}
-
-.tutor-presence--processing .tutor-presence__orbit,
-.tutor-presence--preparing .tutor-presence__orbit {
-  border-color: rgb(196 164 90 / 0.7);
-  animation-duration: 1.6s;
-}
-
-.tutor-presence--speaking .tutor-presence__face {
-  animation: tutor-speak 0.9s ease-in-out infinite;
-}
-
-.tutor-presence__caption {
-  display: grid;
-  justify-items: center;
-  gap: 0.1rem;
-  text-align: center;
-}
-
-.tutor-presence__caption strong {
-  font-family: var(--ge-font-family-display);
-  font-size: 1.05rem;
-  color: var(--ge-color-ink);
-}
-
-.tutor-presence__caption span {
-  color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
-  font-weight: 650;
-}
-
 .tutor-home-hero {
   position: relative;
   overflow: hidden;
@@ -104,13 +8,41 @@
   min-height: 16rem;
   padding: clamp(1rem, 3vw, 1.6rem) clamp(1rem, 3vw, 1.75rem) 0;
   border-radius: 1.75rem;
-  color: #f7fbff;
+  color: var(--ge-color-ink);
   background:
-    radial-gradient(circle at 88% 18%, rgb(227 28 35 / 0.38), transparent 42%),
-    radial-gradient(circle at 12% 80%, rgb(15 122 58 / 0.45), transparent 46%),
-    linear-gradient(155deg, #08151f 0%, #0d2a28 48%, #1a1030 100%);
-  box-shadow: 0 22px 50px rgb(8 21 31 / 0.28);
+    radial-gradient(circle at 88% 18%, rgb(214 29 110 / 0.38), transparent 42%),
+    radial-gradient(circle at 12% 80%, rgb(46 230 255 / 0.45), transparent 46%),
+    linear-gradient(155deg, var(--ge-color-canvas-deep) 0%, var(--ge-color-surface) 48%, #1a1030 100%);
+  box-shadow: 0 22px 50px rgb(2 1 10 / 0.28);
   animation: tutor-card-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tutor-home-hero--compact {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  gap: var(--ge-space-3);
+  padding: var(--ge-space-3) var(--ge-space-4);
+}
+
+.tutor-home-hero.tutor-home-hero--compact .tutor-home-hero__art,
+.tutor-home-hero--compact .tutor-home-hero__art {
+  flex: 0 0 auto;
+  order: 0;
+  justify-self: start;
+  width: 3.5rem;
+  filter: none;
+  animation: none;
+}
+
+.tutor-home-hero--compact .tutor-home-hero__copy {
+  padding-block-end: 0;
+  gap: var(--ge-space-1);
+}
+
+.tutor-home-hero--compact h2 {
+  font-size: var(--ge-font-size-body);
+  line-height: 1.35;
 }
 
 .tutor-home-hero__copy {
@@ -125,7 +57,7 @@
   padding: 0.28rem 0.7rem;
   border-radius: 999px;
   background: rgb(255 255 255 / 0.12);
-  color: #f8e7a6;
+  color: var(--ge-color-action);
   font-size: var(--ge-font-size-sm);
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -156,20 +88,19 @@
   width: fit-content;
   padding-inline: 1.25rem;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ff4d57, var(--ge-color-accent));
-  color: #fff;
+  background: linear-gradient(180deg, var(--ge-color-action-hover), var(--ge-color-action));
+  color: var(--ge-color-action-text);
   font-weight: 750;
   text-decoration: none;
-  box-shadow: 0 14px 28px rgb(227 28 35 / 0.35);
+  box-shadow: 0 14px 28px rgb(46 230 255 / 0.35);
 }
 
-.tutor-home-hero__art {
+/* Compound selector deliberately outweighs the InteractiveAvatar figure's
+   own Tailwind width utility class (single-class specificity), so this
+   hero slot's fluid width wins regardless of stylesheet load order. */
+.tutor-home-hero .tutor-home-hero__art {
   justify-self: end;
-  width: min(100%, 16rem);
-  height: auto;
-  max-height: 18rem;
-  object-fit: contain;
-  object-position: bottom center;
+  width: min(100%, 15rem);
   filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.35));
   animation: tutor-float 5.2s ease-in-out infinite;
 }
@@ -181,27 +112,6 @@
   }
   50% {
     transform: translateY(-0.45rem);
-  }
-}
-
-@keyframes tutor-pulse {
-  from {
-    transform: scale(0.92);
-    opacity: 0.7;
-  }
-  to {
-    transform: scale(1.28);
-    opacity: 0;
-  }
-}
-
-@keyframes tutor-speak {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.045);
   }
 }
 
@@ -222,18 +132,22 @@
     min-height: 0;
   }
 
-  .tutor-home-hero__art {
+  .tutor-home-hero .tutor-home-hero__art {
     order: -1;
     justify-self: center;
-    max-height: 14rem;
+    width: min(60vw, 14rem);
+  }
+
+  .tutor-home-hero.tutor-home-hero--compact .tutor-home-hero__art {
+    order: 0;
+    justify-self: start;
+    width: 3.5rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tutor-presence__face,
-  .tutor-presence__orbit,
   .tutor-home-hero,
-  .tutor-home-hero__art {
+  .tutor-home-hero .tutor-home-hero__art {
     animation: none;
   }
 }

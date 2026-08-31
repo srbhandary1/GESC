@@ -12,6 +12,42 @@ def mobileApiOrigin = System.getenv('VITE_MOBILE_API_ORIGIN')?.trim() ?: ''
 def mobileApiOriginLiteral = mobileApiOrigin
     .replace('\\', '\\\\')
     .replace('"', '\\"')
+ext.isAllowedMobileApiOrigin = { String origin ->
+    try {
+        def uri = URI.create(origin)
+        if (uri.userInfo != null) {
+            return false
+        }
+
+        def path = uri.path ?: ''
+        if (path != '' && path != '/') {
+            return false
+        }
+        if (uri.query != null || uri.fragment != null) {
+            return false
+        }
+
+        def host = uri.host
+        if (host == null || host.isEmpty()) {
+            return false
+        }
+        if (uri.scheme == 'https') {
+            return true
+        }
+        if (uri.scheme != 'http') {
+            return false
+        }
+        if (['10.0.2.2', '127.0.0.1', 'localhost'].contains(host)) {
+            return true
+        }
+
+        def port = uri.port == -1 ? 80 : uri.port
+        def ipv4Host = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/
+        return port == 8080 && host ==~ ipv4Host
+    } catch (Exception ignored) {
+        return false
+    }
+}
 
 if (!releaseSigningPresent && !releaseSigningAbsent) {
     throw new GradleException('Android release signing is incomplete. Set all four GE_ANDROID_UPLOAD_* variables or unset all of them.')
@@ -79,9 +115,21 @@ gradle.taskGraph.whenReady { graph ->
     def releaseRequested = graph.allTasks.any { task ->
         task.project == project && task.name.toLowerCase().contains('release')
     }
+    def packagingRequested = graph.allTasks.any { task ->
+        task.project == project && (
+            task.name.toLowerCase().contains('assemble') ||
+            task.name.toLowerCase().contains('bundle')
+        )
+    }
 
     if (releaseRequested && !releaseSigningPresent) {
         throw new GradleException('Release APK/AAB creation requires the four GE_ANDROID_UPLOAD_* signing variables. Debug builds remain available without them.')
+    }
+
+    // Production APK packaging requires a baked API origin so Custom Tabs
+    // cannot ship with an empty BuildConfig.MOBILE_API_ORIGIN (D-0262).
+    if (packagingRequested && !isAllowedMobileApiOrigin(mobileApiOrigin)) {
+        throw new GradleException('Set VITE_MOBILE_API_ORIGIN to the absolute API origin reachable from the device before assemble/bundle. An empty origin makes every Sign in tap fail closed in Custom Tabs.')
     }
 }
 

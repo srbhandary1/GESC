@@ -14,7 +14,7 @@ drivers; unlimited Azure spend
 | Confidence Conversation + Role-play coaching | Live Azure when evidence/secret enabled |
 | Operator People / Learners / Content / Media / MFA | Real |
 | OTP | Mailpit/operator-relayed for ≤7 days of owner-known invitees; then SMS required |
-| Public entry | Cloudflare HTTPS tunnel primary; router-forwarded static-IP HTTP `:8080` secondary |
+| Public entry | Router-forwarded static-IP HTTP `http://117.254.108.143:8080`. Tailscale and the rotating Cloudflare Quick Tunnel are not used. |
 
 ## Deferred
 
@@ -55,12 +55,10 @@ Authorize live Confidence Conversation Azure OpenAI up to ₹10000
 
 ```bash
 make soft-launch-start      # compose services + API + worker + scheduler + Caddy
-make soft-launch-tunnel     # HTTPS URL for phones / mic
 make soft-launch-status
 make soft-launch-health
 make soft-launch-ready      # readiness checklist
 make soft-launch-backup
-make soft-launch-tunnel-stop
 make soft-launch-stop
 ```
 
@@ -83,29 +81,86 @@ not copied into the unit.
 The runner starts PHP's repository-pinned Laravel development-server router
 directly and records that exact process ID. Do not start a separate
 `artisan serve` on port `8000`: its parent/child process can outlive a stale PID
-record, retain an obsolete tunnel origin and prevent managed restart. A healthy
-`make soft-launch-status` must report `api`, worker, scheduler, both Caddy
-listeners and tunnel as running.
+record, retain an obsolete origin and prevent managed restart. A healthy
+`make soft-launch-status` must report `api`, worker, scheduler and both Caddy
+listeners as running. The Cloudflare Quick Tunnel stays stopped while
+`GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true`.
 
-Share only the printed `https://*.trycloudflare.com` URL with invitees.
-`make soft-launch-restart` recreates the Cloudflare tunnel when it was active;
-the hostname normally changes, so share only the newly printed URL. An explicit
-stop removes the stale tunnel URL record.
-
-Optional text-only static IP after dual-NAT forward:
+Share this URL with invitees:
 
 ```text
 http://117.254.108.143:8080
 ```
 
-Port `8080` is the configured Ubuntu listener and router-forward target. When
-an HTTPS soft-launch origin is configured, opening the static-IP URL redirects
-the same path and query to that current HTTPS origin. This makes `:8080` a safe
-entry point without sending usernames, passwords or session cookies over plain
-HTTP. Direct HTTP serving remains only a pre-tunnel diagnostic fallback and
-must not be used to sign in. A later stable HTTPS hostname may point to this
-Ubuntu service without changing the existing
-`https://www.globalspokenenglish.com` site.
+Port `8080` is the configured Ubuntu listener and router-forward target.
+`APP_URL` and `SANCTUM_STATEFUL_DOMAINS` must match that origin, and
+`SESSION_SECURE_COOKIE` must stay `false` so browser cookies work on plain
+HTTP.
+
+This host is currently `192.168.1.4` (it used to be `192.168.1.3`). Dual-NAT
+forwards that still send WAN TCP `8080` to `192.168.1.3` will hang until the
+inner Netgear `R6220` rule is updated:
+
+1. `http://192.168.1.1` → **ADVANCED → Advanced Setup → Port Forwarding**
+2. Edit the TCP `8080` service so **Internal IP** is `192.168.1.4`
+3. Reserve `192.168.1.4` for this Ubuntu MAC `e4:1f:d5:53:3c:89` so DHCP
+   does not move it again
+
+Same-Wi-Fi testers must not use the public IP (hairpin NAT times out). Use:
+
+```text
+http://192.168.1.4:8080
+```
+
+Testers on mobile data use `http://117.254.108.143:8080` only after the inner
+forward targets `192.168.1.4`.
+
+Browser microphone capture requires a secure context. Keep using HTTP `:8080`
+for typed sign-in and the rest of the learner loop. To record speech, open
+the same app on local-CA HTTPS (accept the certificate warning once, then
+sign in again — it is a different origin):
+
+```text
+https://192.168.1.4:8443
+```
+
+Mobile-data testers also need WAN TCP `8443` forwarded to this host, then:
+
+```text
+https://117.254.108.143:8443
+```
+
+`localhost` HTTP already allows the microphone. Do not start
+`make soft-launch-tunnel`: it is disabled while static-IP HTTP is the public
+origin. A later stable HTTPS hostname may still point to this Ubuntu service
+without changing the existing `https://www.globalspokenenglish.com` site.
+
+### Router ports (keep both)
+
+Do **not** close WAN/LAN TCP `8080` in favour of `8443`. HTTP `:8080` is still
+the public entry (sign-in cookies, typed practice, APK download). Open TCP
+`8443` **in addition** so browsers can record speech.
+
+| WAN TCP | Inner host | Purpose |
+|---|---|---|
+| `8080` | `192.168.1.4:8080` | Public HTTP app, APK download, Android API |
+| `8443` | `192.168.1.4:8443` | Browser microphone (local-CA HTTPS) |
+
+`192.168.1.4` is the LAN address. External testers use
+`http://117.254.108.143:8080` (and `https://117.254.108.143:8443` for browser
+mic). Same-Wi-Fi testers must use `192.168.1.4` because hairpin NAT to the
+public IP times out.
+
+### Android APK download
+
+The marketing homepage offers `/downloads/global-spoken-english.apk`. Rebuild
+and publish with `make soft-launch-android-apk`. The packaged API origin is
+`http://117.254.108.143:8080` so phones on mobile data can reach the API.
+The build also bakes the Passport public client UUID
+(`GE_SOFT_LAUNCH_ANDROID_OAUTH_CLIENT_ID`, default
+`019fdd3f-4bba-720b-9e4e-a771ecccdd7f`). A placeholder client name such as
+`public-android-client` is rejected by the server and breaks Android sign-in.
+This is a debug-signed sideload APK, not Play.
 
 ## Enable live Azure tutoring (kill-switched)
 

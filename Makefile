@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install soft-launch-android-apk mobile-android-e2e live-web-e2e php84-test-image
 
 help:
 	@printf '%s\n' \
@@ -28,12 +28,13 @@ help:
 		'make android-release-bundle Build a signed production-path Android App Bundle' \
 		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
 		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
-		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
+		'make soft-launch-tunnel  Optional Cloudflare HTTPS tunnel (disabled when static-IP HTTP is on)' \
 		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
 		'make soft-launch-status  Soft-launch process and health status' \
 		'make soft-launch-ready   Soft-launch readiness checklist' \
 		'make soft-launch-backup  Dump soft-launch Postgres to ~/ge-soft-launch/backups' \
 		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
+		'make soft-launch-android-apk  Build invite-only APK and publish homepage download' \
 		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
 		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
@@ -51,10 +52,14 @@ help:
 		'make build         Build the API configuration and React production bundle' \
 		'make load-soak     PH-06 health load/soak harness (requires reachable API)' \
 		'make backup-restore-drill  PH-07 non-production Postgres dump/restore drill' \
-		'make staged-deploy-dry-run PH-09 build + staged deploy dry-run evidence'
+		'make staged-deploy-dry-run PH-09 build + staged deploy dry-run evidence' \
+		'make php84-test-image  Build ge-php84-pgsql:local (PHP 8.4, pcntl, pdo_pgsql, Composer 2.10.2)'
+
+php84-test-image:
+	docker build -t ge-php84-pgsql:local -f scripts/php84-test.Dockerfile scripts
 
 check-toolchain:
-	@sh scripts/check-toolchain.sh
+	@PHP="$(PHP)" PNPM="$(PNPM)" NODE="$(NODE)" sh scripts/check-toolchain.sh
 	@$(COMPOSER_CMD) --version --no-ansi | grep -q 'Composer version $(COMPOSER_VERSION) '
 
 bootstrap: check-toolchain
@@ -130,7 +135,19 @@ android-closed-beta:
 	@test -n "$${VITE_MOBILE_API_ORIGIN}" || (printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the absolute API origin reachable from the device (see docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md).' && exit 1)
 	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
-	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest assembleDebug
+	cd $(WEB_DIR)/android-app && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" ./gradlew --no-daemon testDebugUnitTest assembleDebug
+
+soft-launch-android-apk:
+	@chmod +x scripts/publish-soft-launch-android-apk.sh
+	@bash scripts/publish-soft-launch-android-apk.sh
+
+mobile-android-e2e:
+	@chmod +x scripts/mobile-android-e2e.sh
+	@bash scripts/mobile-android-e2e.sh
+
+live-web-e2e:
+	@chmod +x scripts/live-web-e2e.sh
+	@bash scripts/live-web-e2e.sh
 
 # Fail-closed Play/closed-track bundle. Signing secrets are accepted only from
 # process environment and the keystore must live outside this repository.
@@ -139,7 +156,7 @@ android-release-bundle:
 	@test -n "$${GE_ANDROID_UPLOAD_STORE_FILE}" && test -n "$${GE_ANDROID_UPLOAD_STORE_PASSWORD}" && test -n "$${GE_ANDROID_UPLOAD_KEY_ALIAS}" && test -n "$${GE_ANDROID_UPLOAD_KEY_PASSWORD}" || (printf '%s\n' 'Set all four GE_ANDROID_UPLOAD_* signing variables from the protected operator secret source.'; exit 1)
 	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
-	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest bundleRelease
+	cd $(WEB_DIR)/android-app && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" ./gradlew --no-daemon testDebugUnitTest bundleRelease
 
 verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) validate --strict --no-check-all --no-check-publish

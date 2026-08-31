@@ -81,10 +81,10 @@ describe('synthetic Role-play journey', () => {
 
     await user.click(screen.getByRole('button', { name: 'Type instead' }))
     await user.type(
-      screen.getByLabelText('Type one English practice turn'),
+      screen.getByLabelText('Type one English practice sentence'),
       'Hello, I have an appointment.',
     )
-    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    await user.click(screen.getByRole('button', { name: 'Send practice' }))
     expect(createTurn).toHaveBeenCalledWith(
       perform.id,
       { prototype_utterance: 'Hello, I have an appointment.' },

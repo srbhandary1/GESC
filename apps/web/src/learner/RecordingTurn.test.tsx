@@ -119,6 +119,30 @@ describe('RecordingTurn privacy boundaries', () => {
     ).toBe(true)
   })
 
+  it('links to the LAN HTTPS origin when capture is blocked on plain HTTP', () => {
+    const recorder: AudioRecorder = {
+      isSupported: () => false,
+      start: vi.fn(),
+    }
+
+    render(
+      <RecordingTurn
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={labels}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        securePageHref="https://192.168.1.4:8443/#learn"
+        securePageLabel="Open the secure page to record"
+      />,
+    )
+
+    expect(
+      screen.getByRole('link', { name: 'Open the secure page to record' }),
+    ).toHaveAttribute('href', 'https://192.168.1.4:8443/#learn')
+    expect(screen.getByText(labels.controls.blocked)).toBeInTheDocument()
+  })
+
   it('cancels a recording session that resolves after unmount', async () => {
     let resolveStart:
       | ((session: AudioRecordingSession) => void)

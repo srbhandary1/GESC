@@ -49,16 +49,19 @@ return [
         'maximum_json_response_bytes' => 1024 * 1024,
     ],
     /*
-     | Optional Indic HTTP STT (translate-to-English). Off until
-     | VOICE_PROVIDER_DRIVER=indic with a secret file outside the repo.
-     | Compatible with Sarvam-style REST; no vendor SDK in domain code.
+     | Sarvam-compatible Indic HTTP STT (translate-to-English). Live requests
+     | remain off unless uploads, the indic driver, an organization allowlist,
+     | and a mode-0600 secret file outside the repository are configured.
      */
     'indic' => [
-        'transcribe_url' => env('VOICE_INDIC_TRANSCRIBE_URL', ''),
-        'allowed_host' => env('VOICE_INDIC_ALLOWED_HOST', ''),
+        'transcribe_url' => env(
+            'VOICE_INDIC_TRANSCRIBE_URL',
+            'https://api.sarvam.ai/speech-to-text',
+        ),
+        'allowed_host' => env('VOICE_INDIC_ALLOWED_HOST', 'api.sarvam.ai'),
         'secret_file' => env('VOICE_INDIC_SECRET_FILE', ''),
         'auth_header' => env('VOICE_INDIC_AUTH_HEADER', 'api-subscription-key'),
-        'model' => env('VOICE_INDIC_MODEL', ''),
+        'model' => env('VOICE_INDIC_MODEL', 'saaras:v3'),
         'mode' => env('VOICE_INDIC_MODE', 'translate'),
         'language_code' => env('VOICE_INDIC_LANGUAGE_CODE', 'unknown'),
         'output_language' => env('VOICE_INDIC_OUTPUT_LANGUAGE', 'en-IN'),

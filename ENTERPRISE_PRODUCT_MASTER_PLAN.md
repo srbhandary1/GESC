@@ -1,6 +1,6 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.9"
+version: "3.11"
 status: "Canonical implementation baseline"
 prepared: "14 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
@@ -632,15 +632,20 @@ If the delivery team must research, author, adapt, record, review and validate t
 
 ### 7.1 Mobile navigation
 
-Use five primary destinations, with 1:1 last:
+Use four primary destinations
+([ADR-0032](docs/adr/0032-four-destination-navigation-and-calm-ion-theme.md),
+amending ADR-0026):
 
 - **Home** — today’s recommended lesson journey
 - **Learn** — the four-session level path (Introduction → Practice → Conversation → Interaction)
-- **Speak** — one speaking room (everyday talk with Swathi and a situation picker)
-- **Progress**
-- **1:1** — waitlist request plus institute contact links; not an in-app call, booking or payment
+- **Speak** — one speaking room (everyday talk with the selected coach and a situation picker)
+- **Me** — account summary, the Progress dashboard, the 1:1 tuition waitlist plus institute contact links (not an in-app call, booking or payment), account security, interface locale and sign out
 
-Account, privacy, downloads, help and settings are available through the profile/menu area. Backend module boundaries must not become learner navigation.
+`#progress`, `#tuition` and `#one-to-one` deep-link into the corresponding Me sections; `#practice` remains an alias of Speak. On mobile widths the navigation is a fixed, safe-area-aware bottom tab bar with SVG icons and visible text labels.
+
+Account, privacy, downloads, help and settings are available through the Me destination. Backend module boundaries must not become learner navigation.
+
+Presentation follows the calmed ion theme (ADR-0032): the dark ion identity is retained without a background grid overlay, with at most one subtle canvas gradient, flat elevated panels, and muted text at WCAG 2.2 AA contrast.
 
 ### 7.2 Home
 
@@ -1231,6 +1236,13 @@ Sequence:
 2. production routing and cost optimization;
 3. open-weight benchmark using the same locked evaluation suite;
 4. on-prem packaging only after quality and concurrency thresholds pass.
+
+ADR-0030 / D-0243 permits the existing project-owned Indic HTTP recorded-STT
+adapter to be selected in the Laravel production environment. Selection stays
+disabled by default and requires explicit upload enablement, organization
+allowlisting, exact HTTPS host validation, and an owner-controlled mode-0600
+secret outside the repository. This is provider routing capability, not a
+production promotion or Play release.
 
 ---
 

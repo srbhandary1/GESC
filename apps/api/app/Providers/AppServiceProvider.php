@@ -222,6 +222,7 @@ class AppServiceProvider extends ServiceProvider
             $this->app->environment('local')
             || $this->app->environment('testing')
             || $this->app->environment('soft-launch')
+            || $this->app->environment('production')
         ) && filter_var(config('voice.upload_enabled'), FILTER_VALIDATE_BOOL)
             && config('voice.provider_driver') === 'indic';
         $this->app->bind(

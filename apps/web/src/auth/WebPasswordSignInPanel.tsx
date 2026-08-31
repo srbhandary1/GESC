@@ -42,16 +42,6 @@ export function WebPasswordSignInPanel({
   const [legacySetup, setLegacySetup] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
-  const [secureContext] = useState(() => {
-    if (typeof window === 'undefined') {
-      return true
-    }
-
-    const host = window.location.hostname
-    const loopback = host === '127.0.0.1' || host === 'localhost' || host === '::1'
-
-    return window.location.protocol === 'https:' || loopback
-  })
 
   useEffect(() => {
     let active = true
@@ -177,6 +167,16 @@ export function WebPasswordSignInPanel({
     >
       {embedded ? null : (
         <div aria-hidden="true" className="web-password-sign-in__visual">
+          <img
+            alt=""
+            className="web-password-sign-in__visual-photo"
+            src="/marketing/banners/banner-2.jpg"
+          />
+          <img
+            alt=""
+            className="web-password-sign-in__visual-logo"
+            src="/marketing/brand/logo-hero.png"
+          />
           <span className="web-password-sign-in__brand-mark">GSE</span>
           <span className="web-password-sign-in__visual-ring" />
         </div>
@@ -204,14 +204,9 @@ export function WebPasswordSignInPanel({
           </p>
         </>
       )}
-      {!secureContext ? (
-        <p className="web-otp-sign-in__error" role="alert">
-          <LocalizedMessage
-            resolution={message('auth.password.https_required')}
-          />
-        </p>
-      ) : null}
-
+      {/* D-0248: the sanctioned soft-launch origin is plain HTTP with
+          non-Secure session cookies, so the old "use the HTTPS link"
+          warning no longer applies and was removed. */}
       {mode === 'credential_migration' ? (
         <button onClick={() => setLegacySetup(true)} type="button">
           <LocalizedMessage

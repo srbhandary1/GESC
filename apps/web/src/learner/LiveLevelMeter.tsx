@@ -59,7 +59,7 @@ function drawLevelBars(canvas: HTMLCanvasElement, bars: readonly number[]): void
     const barHeight = Math.max(4, value * height)
     const x = index * (barWidth + gap)
     const y = height - barHeight
-    context.fillStyle = 'rgb(196 164 90)'
+    context.fillStyle = 'rgb(46 230 255)'
     context.fillRect(x, y, barWidth, barHeight)
   }
 }

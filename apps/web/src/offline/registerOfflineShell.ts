@@ -5,6 +5,7 @@ const AUTHENTICATED_PATH_PREFIXES = [
   '/sanctum/',
   '/oauth/',
   '/auth/mobile/',
+  '/downloads/',
 ] as const
 
 export async function registerOfflineShell(): Promise<void> {

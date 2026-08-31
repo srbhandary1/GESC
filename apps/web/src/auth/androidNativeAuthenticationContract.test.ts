@@ -57,7 +57,7 @@ describe('production Android native authentication contract', () => {
     expect(manifest).not.toContain('com.globalenglish.demo:/oauth/callback')
   })
 
-  it('opens only the configured HTTPS authorization path from the foreground activity', () => {
+  it('opens only the configured authorization path from the foreground activity', () => {
     const source = readFileSync(
       resolve(
         androidMain,
@@ -68,10 +68,43 @@ describe('production Android native authentication contract', () => {
 
     expect(source).toContain('BuildConfig.MOBILE_API_ORIGIN')
     expect(source).toContain('Activity activity = getActivity()')
-    expect(source).toContain('"https".equals(uri.getScheme())')
+    expect(source).toContain('isAllowedAuthorizationUrl')
+    expect(source).toContain('isAllowedMobileApiOrigin')
     expect(source).toContain('"/oauth/authorize".equals(uri.getPath())')
+    expect(source).toContain('port == 8080')
     expect(source).toContain('customTabsIntent.launchUrl(activity, uri)')
+    expect(source).not.toContain('!"https".equals(uri.getScheme())')
     expect(source).not.toContain('Intent.FLAG_ACTIVITY_NEW_TASK')
     expect(source).not.toContain('launchUrl(getContext(), uri)')
+  })
+
+  it('fails APK packaging closed when the native API origin is missing', () => {
+    const gradle = readFileSync(
+      resolve(androidMain, '../../build.gradle'),
+      'utf8',
+    )
+    const publish = readFileSync(
+      resolve(
+        authDirectory,
+        '../../../../scripts/publish-soft-launch-android-apk.sh',
+      ),
+      'utf8',
+    )
+
+    expect(gradle).toContain('packagingRequested')
+    expect(gradle).toContain('isAllowedMobileApiOrigin(mobileApiOrigin)')
+    expect(gradle).toContain('empty origin makes every Sign in tap fail closed')
+    expect(publish).toContain('export VITE_MOBILE_API_ORIGIN="${ORIGIN}"')
+    expect(publish).toContain('export VITE_MOBILE_OAUTH_CLIENT_ID="${OAUTH_CLIENT_ID}"')
+  })
+
+  it('declares Custom Tabs package visibility for Android 11+', () => {
+    const manifest = readFileSync(
+      resolve(androidMain, 'AndroidManifest.xml'),
+      'utf8',
+    )
+
+    expect(manifest).toContain('android.support.customtabs.action.CustomTabsService')
+    expect(manifest).toContain('android.intent.category.BROWSABLE')
   })
 })

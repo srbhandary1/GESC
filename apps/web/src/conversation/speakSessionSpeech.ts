@@ -1,4 +1,5 @@
 import type {
+  ConversationAnimationPayload,
   ConversationSpeechResult,
   SynthesizeConversationSpeechRequest,
 } from '@global-english/contracts'
@@ -16,6 +17,10 @@ export async function speakSessionSpeech(options: {
   readonly purpose: SynthesizeConversationSpeechRequest['purpose']
   readonly sessionId: string
   readonly text: string
+  readonly onAnimationPayload?: (
+    payload: ConversationAnimationPayload | null,
+  ) => void
+  readonly onAudioElement?: (audio: HTMLAudioElement) => void
 }): Promise<void> {
   const trimmed = options.text.trim()
   if (trimmed === '') {
@@ -42,13 +47,19 @@ export async function speakSessionSpeech(options: {
       { purpose: options.purpose, text: chunk },
       createClientId(),
     )
-    await playSpeechAudio(speech, options.purpose)
+    options.onAnimationPayload?.(speech.animation_payload ?? null)
+    await playSpeechAudio(
+      speech,
+      options.purpose,
+      options.onAudioElement,
+    )
   }
 }
 
 async function playSpeechAudio(
   speech: ConversationSpeechResult,
   purpose: SynthesizeConversationSpeechRequest['purpose'],
+  onAudioElement?: (audio: HTMLAudioElement) => void,
 ): Promise<void> {
   const audio =
     purpose === 'guidance_l1'
@@ -63,7 +74,9 @@ async function playSpeechAudio(
     return
   }
 
-  await playBase64Audio(audio, mimeType ?? 'audio/wav')
+  await playBase64Audio(audio, mimeType ?? 'audio/wav', {
+    onElement: onAudioElement,
+  })
 }
 
 function splitSpeechChunks(text: string): string[] {

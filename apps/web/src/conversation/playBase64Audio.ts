@@ -6,6 +6,7 @@ import {
 export interface PlayBase64AudioOptions {
   readonly signal?: AbortSignal
   readonly onStarted?: () => void
+  readonly onElement?: (audio: HTMLAudioElement) => void
 }
 
 export async function playBase64Audio(
@@ -23,6 +24,7 @@ export async function playBase64Audio(
   const blob = new Blob([copy], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const audio = new Audio()
+  options.onElement?.(audio)
   registerSpeechAudio(audio)
   audio.preload = 'auto'
   audio.src = url

@@ -1,9 +1,11 @@
 .marketing-landing {
   display: grid;
   min-width: 0;
-  gap: clamp(1.75rem, 4vw, 2.75rem);
-  width: min(100%, var(--ge-content-width));
-  margin-inline: auto;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  overflow-x: clip;
   overflow-wrap: anywhere;
 }
 
@@ -13,17 +15,22 @@
   min-width: 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Hero — full-bleed cinematic stage                                   */
+/* ------------------------------------------------------------------ */
+
 .marketing-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-block-size: min(74vh, 36rem);
-  display: grid;
-  align-items: end;
-  color: #f4f8f5;
-  border-radius: var(--ge-radius-lg);
-  background: #04120d;
-  box-shadow: var(--ge-shadow-soft);
+  min-block-size: max(32rem, calc(100svh - 4.75rem));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ge-color-text);
+  border-radius: 0;
+  background: var(--ge-color-canvas);
+  box-shadow: none;
   animation: marketing-hero-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -31,6 +38,8 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  opacity: 0.88;
+  pointer-events: none;
 }
 
 .marketing-hero__slide {
@@ -41,11 +50,11 @@
   object-fit: cover;
   object-position: center 28%;
   opacity: 0;
-  transform: scale(1.02);
-  filter: saturate(1.08) contrast(1.04);
+  transform: scale(1.06);
+  filter: saturate(1.2) contrast(1.12) brightness(0.94);
   transition:
     opacity 900ms ease,
-    transform 8s ease;
+    transform 12s ease;
 }
 
 .marketing-hero__slide--active {
@@ -53,122 +62,436 @@
   transform: scale(1);
 }
 
+/* Duotone tint so every banner reads as one cyan/magenta cinematic set
+   instead of raw stock-photo color, then only enough vertical darkening
+   to keep the header and actions legible — the middle of the frame stays
+   bright so the slideshow is the visible hero, not a black backdrop. */
 .marketing-hero__scrim {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
+    radial-gradient(ellipse 60% 50% at 82% 12%, rgb(46 230 255 / 0.22), transparent 46%),
+    radial-gradient(ellipse 55% 45% at 6% 92%, rgb(214 29 110 / 0.2), transparent 50%),
     linear-gradient(
-      112deg,
-      rgb(4 18 13 / 0.88) 0%,
-      rgb(4 18 13 / 0.58) 38%,
-      rgb(4 18 13 / 0.16) 62%,
-      transparent 100%
-    ),
-    linear-gradient(180deg, transparent 52%, rgb(4 18 13 / 0.55) 100%);
+      180deg,
+      rgb(6 5 15 / 0.65) 0%,
+      rgb(6 5 15 / 0.08) 26%,
+      rgb(6 5 15 / 0.1) 62%,
+      rgb(6 5 15 / 0.72) 100%
+    );
+  mix-blend-mode: normal;
 }
 
+/* Slow drifting color wash that gives the hero a living, premium feel
+   on top of the now much more visible slideshow imagery. */
+.marketing-hero__aurora {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(ellipse 42% 34% at 24% 30%, rgb(46 230 255 / 0.32), transparent 70%),
+    radial-gradient(ellipse 36% 30% at 78% 22%, rgb(196 181 255 / 0.22), transparent 72%),
+    radial-gradient(ellipse 40% 36% at 62% 84%, rgb(214 29 110 / 0.2), transparent 70%);
+  filter: blur(46px);
+  mix-blend-mode: screen;
+  animation: marketing-aurora 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.marketing-hero__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(46 230 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(46 230 255 / 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 70% 40%, #000 10%, transparent 72%);
+}
+
+.marketing-hero__orbs {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.marketing-hero__orbs span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+.marketing-hero__orbs span:first-child {
+  inset-block-start: 18%;
+  inset-inline-end: 14%;
+  width: 9rem;
+  height: 9rem;
+  background: radial-gradient(circle, rgb(46 230 255 / 0.35), transparent 68%);
+  animation: marketing-aurora 12s ease-in-out infinite alternate;
+}
+
+.marketing-hero__orbs span:last-child {
+  inset-block-end: 16%;
+  inset-inline-end: 28%;
+  width: 5.5rem;
+  height: 5.5rem;
+  background: radial-gradient(circle, rgb(214 29 110 / 0.4), transparent 68%);
+  animation: marketing-aurora 9s ease-in-out infinite alternate-reverse;
+}
+
+.marketing-hero__logo {
+  display: block;
+  width: auto;
+  height: clamp(2.4rem, 6vw, 3.2rem);
+  object-fit: contain;
+  object-position: left center;
+  margin-block-end: var(--ge-space-2);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+/* A soft radial vignette — not a bordered card — carries text contrast so
+   the slideshow keeps showing through around and behind the copy instead
+   of being blocked by a hard-edged tile. */
 .marketing-hero__copy {
   position: relative;
   z-index: 1;
   display: grid;
+  justify-items: center;
+  text-align: center;
   gap: var(--ge-space-3);
-  max-inline-size: min(100%, 30rem);
-  padding: clamp(1.25rem, 4vw, 2.25rem);
+  min-width: 0;
+  max-inline-size: min(100%, 42rem);
+  margin-inline: clamp(1rem, 4vw, 2rem);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: radial-gradient(
+    ellipse 88% 82% at 50% 45%,
+    rgb(6 5 15 / 0.58) 0%,
+    rgb(6 5 15 / 0.32) 52%,
+    transparent 80%
+  );
   animation: marketing-rise 780ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
 
-.marketing-hero__badge,
-.marketing-join__eyebrow {
+.marketing-hero__badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.45rem;
   width: fit-content;
   margin: 0;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid rgb(196 164 90 / 0.45);
+  padding: 0.35rem 0.85rem;
+  border: 1px solid rgb(46 230 255 / 0.45);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
-  color: #f8f4e8;
+  background: rgb(6 5 15 / 0.5);
+  color: var(--ge-color-ink);
   font-size: var(--ge-font-size-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: marketing-badge-glow 3.2s ease-in-out infinite;
+}
+
+.marketing-hero__badge::before {
+  content: '';
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #2ee6ff, #d61d6e);
+  box-shadow: 0 0 0.65rem rgb(46 230 255 / 0.65);
 }
 
 .marketing-hero__title {
   margin: 0;
   font-family: var(--ge-font-family-display);
-  font-size: clamp(1.35rem, 4.2vw, 1.95rem);
-  font-weight: 650;
-  line-height: 1.2;
-  color: #f8f4e8;
+  font-size: clamp(2.35rem, 6.4vw, 4.35rem);
+  font-weight: 680;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: var(--ge-color-ink);
   outline: none;
   text-wrap: balance;
+  text-shadow:
+    0 0 22px rgb(46 230 255 / 0.4),
+    0 0 52px rgb(214 29 110 / 0.22),
+    0 2px 6px rgb(0 0 0 / 0.85),
+    0 14px 32px rgb(0 0 0 / 0.65);
 }
 
 .marketing-hero__lede {
   margin: 0;
-  max-inline-size: 30rem;
-  font-size: var(--ge-font-size-md);
+  max-inline-size: 38rem;
+  font-size: var(--ge-font-size-xl);
   line-height: var(--ge-line-height-ui);
-  color: #d7e6de;
+  color: var(--ge-color-text-muted);
+  text-shadow: 0 2px 10px rgb(0 0 0 / 0.85);
 }
 
 .marketing-hero__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--ge-space-3);
-  margin-block-start: var(--ge-space-2);
+  margin-block-start: var(--ge-space-3);
+}
+
+.marketing-hero__error {
+  max-width: 36rem;
+  margin-block-start: var(--ge-space-3);
+  margin-inline: auto;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgb(214 29 110 / 0.55);
+  border-radius: var(--ge-radius-sm);
+  background: rgb(6 5 15 / 0.72);
+  color: var(--ge-color-ink);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 650;
+  line-height: 1.4;
+  text-shadow: 0 1px 8px rgb(4 8 24 / 0.85);
+}
+
+.marketing-hero__android-help {
+  max-width: 36rem;
+  margin-block-start: var(--ge-space-3);
+  margin-inline: auto;
+  color: var(--ge-color-text-muted, rgb(210 230 240 / 0.88));
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.45;
+  text-shadow: 0 1px 8px rgb(4 8 24 / 0.85);
 }
 
 .marketing-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-block-size: var(--ge-target-minimum);
-  padding-inline: var(--ge-space-5);
+  min-block-size: max(var(--ge-target-minimum), 3rem);
+  padding-inline: clamp(var(--ge-space-5), 3vw, var(--ge-space-6));
+  border: 0;
   border-radius: 999px;
+  font: inherit;
   font-size: var(--ge-font-size-md);
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
+  appearance: none;
   transition:
-    transform 180ms ease,
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease;
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .marketing-button--primary {
-  background: var(--ge-color-accent);
-  color: #ffffff;
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--ge-color-accent) 30%, transparent);
+  background: linear-gradient(
+    165deg,
+    var(--ge-color-action-hover) 0%,
+    var(--ge-color-action) 55%,
+    #12c8e0 100%
+  );
+  color: var(--ge-color-action-text);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35) inset,
+    0 0 0 1px rgb(46 230 255 / 0.4),
+    0 12px 32px rgb(46 230 255 / 0.38);
 }
 
 .marketing-button--primary:hover {
-  transform: translateY(-1px);
-  background: var(--ge-color-accent-hover);
+  transform: translateY(-2px);
+  background: var(--ge-color-action-hover);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.4) inset,
+    0 18px 40px rgb(46 230 255 / 0.48);
+}
+
+.marketing-button--primary:active {
+  transform: translateY(0);
 }
 
 .marketing-button--ghost {
-  border: 1px solid rgb(248 244 232 / 0.35);
-  color: #f4f8f5;
-  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(46 230 255 / 0.38);
+  color: var(--ge-color-text);
+  background: rgb(255 255 255 / 0.06);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .marketing-button--ghost:hover {
-  background: rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.16);
+  transform: translateY(-2px);
 }
 
+.marketing-hero__portraits {
+  display: flex;
+  align-items: center;
+  margin: var(--ge-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-hero__portraits li + li {
+  margin-inline-start: -0.9rem;
+}
+
+.marketing-hero__portrait {
+  display: block;
+  width: 3.4rem;
+  height: 3.4rem;
+  object-fit: contain;
+  background: rgb(255 255 255 / 0.94);
+  border: 2px solid rgb(248 244 232 / 0.9);
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgb(2 1 10 / 0.28);
+}
+
+.marketing-hero__coaches {
+  display: none;
+}
+
+.marketing-hero__device {
+  position: absolute;
+  inset-block-end: 12%;
+  inset-inline-end: 6%;
+  width: min(58%, 22rem);
+  max-height: 70%;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 48px rgb(0 0 0 / 0.45));
+  opacity: 0.92;
+}
+
+.marketing-hero__stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: clamp(0.25rem, 1.5vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.5rem) 0;
+}
+
+/* Soft halo behind the coach duo so the figures sit on a lit stage
+   instead of floating on the dark background. */
+.marketing-hero__stage::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 -18%;
+  block-size: 78%;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgb(196 181 255 / 0.32) 0%,
+      rgb(46 230 255 / 0.16) 46%,
+      transparent 74%
+    );
+  filter: blur(10px);
+}
+
+/* Compound selectors deliberately outweigh the InteractiveAvatar figure's
+   own Tailwind width utility class (single-class specificity), so these
+   hero widths win regardless of stylesheet load order. */
+.marketing-hero__stage .marketing-hero__coach {
+  position: relative;
+  display: flex;
+  width: clamp(8.5rem, 18vw, 14rem);
+  filter: drop-shadow(0 1.25rem 1.75rem rgb(0 0 0 / 0.34));
+  animation: tutor-float 5.2s ease-in-out infinite;
+}
+
+.marketing-hero__stage .marketing-hero__coach--male {
+  width: clamp(7.25rem, 15vw, 12rem);
+  margin-inline-start: clamp(-2.5rem, -3vw, -0.75rem);
+  animation-delay: 700ms;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sections and scroll reveal                                          */
+/* ------------------------------------------------------------------ */
+
 .marketing-section {
+  position: relative;
   display: grid;
-  gap: var(--ge-space-4);
-  padding-inline: clamp(0.25rem, 2vw, 0.5rem);
-  animation: marketing-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  gap: clamp(var(--ge-space-4), 3vw, var(--ge-space-5));
+  width: 100%;
+  padding-block: clamp(2.5rem, 6vw, 4.75rem);
+  padding-inline: clamp(1rem, 5vw, 4.5rem);
+}
+
+/* Thin gradient seam between full-bleed sections so the page reads as
+   one lit stage instead of stacked black panels. */
+.marketing-section::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 8%;
+  block-size: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(46 230 255 / 0.3) 50%,
+    transparent
+  );
 }
 
 .marketing-section > * {
   min-width: 0;
+  width: min(100%, 72rem);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.marketing-section--light {
+  background:
+    radial-gradient(ellipse 70% 50% at 8% 0%, rgb(46 230 255 / 0.16), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 96% 100%, rgb(214 29 110 / 0.12), transparent 60%),
+    #0e0b1c;
+  color: var(--ge-color-ink);
+}
+
+.marketing-section--dark {
+  background:
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(46 230 255 / 0.2), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 4% 96%, rgb(196 181 255 / 0.14), transparent 58%),
+    var(--ge-color-canvas-deep);
+  color: var(--ge-color-text);
+}
+
+.marketing-section--dark .marketing-section__header h2 {
+  color: var(--ge-color-ink);
+}
+
+.marketing-section--dark .marketing-section__header p {
+  color: var(--ge-color-text-muted);
+}
+
+.marketing-footer {
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--ge-color-canvas);
+}
+
+.marketing-footer__logo {
+  display: block;
+  width: auto;
+  height: clamp(2.4rem, 6vw, 3.4rem);
+  object-fit: contain;
+}
+
+/* Applied only when IntersectionObserver is available and the visitor
+   accepts motion; content is fully visible in every other case. */
+.marketing-reveal--pending {
+  opacity: 0;
+  transform: translateY(1rem);
+}
+
+.marketing-reveal--in {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 640ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .marketing-section__header {
@@ -181,13 +504,22 @@
   max-inline-size: 44rem;
 }
 
+.marketing-section__header--centered {
+  max-inline-size: 44rem;
+  justify-items: center;
+  margin-inline: auto;
+  text-align: center;
+}
+
 .marketing-section__header h2 {
   margin: 0;
   font-family: var(--ge-font-family-display);
-  font-size: clamp(1.2rem, 2.6vw, 1.65rem);
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.4rem, 3.2vw, 2.05rem);
+  font-weight: 660;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
   color: var(--ge-color-ink);
+  text-wrap: balance;
 }
 
 .marketing-section__header p {
@@ -197,15 +529,22 @@
   line-height: var(--ge-line-height-ui);
 }
 
+/* ------------------------------------------------------------------ */
+/* The four-session method                                             */
+/* ------------------------------------------------------------------ */
+
 .marketing-path {
+  position: relative;
   display: grid;
   gap: var(--ge-space-3);
   margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: marketing-path;
 }
 
 .marketing-path__item {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--ge-space-3);
@@ -213,25 +552,40 @@
   padding: var(--ge-space-4);
   border: 1px solid color-mix(in srgb, var(--ge-color-border) 80%, transparent);
   border-radius: var(--ge-radius-md);
-  background:
-    linear-gradient(
-      165deg,
-      rgb(255 255 255 / 0.98),
-      rgb(247 250 248 / 0.92)
-    );
+  background: var(--ge-panel-background);
   box-shadow: var(--ge-shadow-panel);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+}
+
+.marketing-path__item:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--ge-color-action) 45%, var(--ge-color-border));
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 0 0 1px rgb(46 230 255 / 0.16),
+    0 20px 44px rgb(46 230 255 / 0.14);
 }
 
 .marketing-path__index {
   display: grid;
   place-items: center;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ge-color-action) 12%, white);
-  color: var(--ge-color-action);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ge-color-action) 88%, white),
+    var(--ge-color-action-hover)
+  );
+  color: var(--ge-color-action-text);
   font-weight: 750;
-  font-size: var(--ge-font-size-sm);
+  font-size: var(--ge-font-size-md);
+  box-shadow:
+    0 0 0 0.3rem color-mix(in srgb, var(--ge-color-action) 14%, transparent),
+    0 8px 18px color-mix(in srgb, var(--ge-color-action) 30%, transparent);
 }
 
 .marketing-path__body {
@@ -272,6 +626,10 @@
   line-height: var(--ge-line-height-ui);
 }
 
+/* ------------------------------------------------------------------ */
+/* Pedagogy cards                                                      */
+/* ------------------------------------------------------------------ */
+
 .marketing-pedagogy {
   display: grid;
   gap: var(--ge-space-3);
@@ -281,13 +639,46 @@
 }
 
 .marketing-pedagogy__item {
+  position: relative;
   display: grid;
   gap: var(--ge-space-2);
+  overflow: hidden;
   padding: var(--ge-space-4);
   border: 1px solid color-mix(in srgb, var(--ge-color-border) 80%, transparent);
   border-radius: var(--ge-radius-md);
   background: var(--ge-color-surface-elevated);
   box-shadow: var(--ge-shadow-panel);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease;
+}
+
+.marketing-pedagogy__item::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 0.22rem;
+  background: linear-gradient(
+    90deg,
+    var(--ge-color-action) 0%,
+    var(--ge-color-brass-soft) 60%,
+    transparent 100%
+  );
+  opacity: 0.65;
+  transition: opacity 240ms ease;
+}
+
+.marketing-pedagogy__item:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 0 0 1px rgb(46 230 255 / 0.16),
+    0 18px 40px rgb(46 230 255 / 0.14);
+}
+
+.marketing-pedagogy__item:hover::before {
+  opacity: 1;
 }
 
 .marketing-pedagogy__item h3 {
@@ -317,6 +708,22 @@
     grid-column: 1 / -1;
   }
 }
+
+@media (min-width: 64rem) {
+  .marketing-path {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .marketing-path__item {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    justify-items: start;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Why / benefits / showcase cards                                     */
+/* ------------------------------------------------------------------ */
 
 .marketing-why__copy h3 {
   margin: 0 0 var(--ge-space-2);
@@ -359,17 +766,20 @@
   border-radius: var(--ge-radius-md);
   background: var(--ge-color-surface-elevated);
   box-shadow: var(--ge-shadow-panel);
-  animation: marketing-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease;
 }
 
-.marketing-why__item:nth-child(2),
-.marketing-showcase__item:nth-child(2) {
-  animation-delay: 60ms;
-}
-
-.marketing-why__item:nth-child(3),
-.marketing-showcase__item:nth-child(3) {
-  animation-delay: 120ms;
+.marketing-why__item:hover,
+.marketing-showcase__item:hover,
+.marketing-benefit:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--ge-color-action) 40%, var(--ge-color-border));
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 0 0 1px rgb(46 230 255 / 0.16),
+    0 20px 44px rgb(46 230 255 / 0.14);
 }
 
 .marketing-why__media,
@@ -379,28 +789,8 @@
   min-block-size: 6.5rem;
   padding: var(--ge-space-3);
   background:
-    radial-gradient(circle at 50% 0%, rgb(15 122 58 / 0.08), transparent 55%),
-    color-mix(in srgb, var(--ge-color-surface) 92%, white);
-}
-
-.marketing-hero__portraits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ge-space-3);
-  margin: var(--ge-space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.marketing-hero__portrait {
-  display: block;
-  width: 4.75rem;
-  height: 4.75rem;
-  object-fit: contain;
-  background: rgb(255 255 255 / 0.92);
-  border: 2px solid rgb(248 244 232 / 0.85);
-  border-radius: 999px;
-  box-shadow: 0 8px 20px rgb(7 22 17 / 0.22);
+    radial-gradient(circle at 50% 0%, rgb(46 230 255 / 0.08), transparent 55%),
+    color-mix(in srgb, var(--ge-color-surface) 88%, var(--ge-color-canvas));
 }
 
 .marketing-why__image {
@@ -409,6 +799,38 @@
   max-width: 100%;
   max-block-size: 7.5rem;
   object-fit: contain;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.marketing-why__item:hover .marketing-why__image {
+  transform: scale(1.04);
+}
+
+.marketing-showcase__frame {
+  position: relative;
+  margin: var(--ge-space-3) var(--ge-space-3) 0;
+  border: 1px solid color-mix(in srgb, var(--ge-color-border) 85%, transparent);
+  border-radius: calc(var(--ge-radius-md) - 0.25rem);
+  background:
+    linear-gradient(180deg, rgb(2 1 10 / 0.06) 0%, transparent 22%),
+    color-mix(in srgb, var(--ge-color-surface) 88%, var(--ge-color-canvas));
+  box-shadow: 
+    0 1px 0 rgb(255 255 255 / 0.85) inset,
+    0 12px 24px rgb(2 1 10 / 0.08);
+  overflow: hidden;
+}
+
+/* Device-style top bar on the showcase frames. */
+.marketing-showcase__frame::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0.45rem;
+  inset-inline-start: 50%;
+  inline-size: 2.4rem;
+  block-size: 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ge-color-border) 70%, transparent);
+  transform: translateX(-50%);
 }
 
 .marketing-showcase__image {
@@ -417,6 +839,11 @@
   max-width: 100%;
   max-block-size: 7rem;
   object-fit: contain;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.marketing-showcase__item:hover .marketing-showcase__image {
+  transform: scale(1.04);
 }
 
 .marketing-why__copy {
@@ -442,26 +869,20 @@
   border-radius: var(--ge-radius-md);
   background: var(--ge-color-surface-elevated);
   box-shadow: var(--ge-shadow-panel);
-  animation: marketing-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.marketing-benefit:nth-child(2) {
-  animation-delay: 60ms;
-}
-
-.marketing-benefit:nth-child(3) {
-  animation-delay: 120ms;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease;
 }
 
 .marketing-benefit__media {
   overflow: hidden;
   aspect-ratio: 16 / 10;
-  background: #0b1a14;
+  background: var(--ge-color-surface);
 }
 
 .marketing-benefit__media--contain {
   background:
-    radial-gradient(circle at 50% 20%, #fff8e8 0%, #f3efe4 62%, #e7e0d2 100%);
+    radial-gradient(circle at 50% 20%, rgb(46 230 255 / 0.14) 0%, var(--ge-color-surface) 62%, var(--ge-color-canvas) 100%);
 }
 
 .marketing-benefit__media--contain .marketing-benefit__image {
@@ -475,6 +896,11 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.marketing-benefit:hover .marketing-benefit__image {
+  transform: scale(1.05);
 }
 
 .marketing-benefit__copy {
@@ -497,132 +923,9 @@
   line-height: var(--ge-line-height-ui);
 }
 
-.marketing-join {
-  display: flex;
-  justify-content: center;
-  padding: clamp(var(--ge-space-4), 4vw, var(--ge-space-6)) 0;
-  animation: marketing-rise 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.marketing-join__card {
-  display: grid;
-  gap: var(--ge-space-4);
-  width: min(100%, 26rem);
-  padding: clamp(var(--ge-space-4), 4vw, var(--ge-space-5));
-  border: 1px solid color-mix(in srgb, var(--ge-color-action) 18%, var(--ge-color-border));
-  border-radius: calc(var(--ge-radius-lg) + 0.15rem);
-  background:
-    linear-gradient(
-      165deg,
-      rgb(255 255 255 / 0.98) 0%,
-      rgb(247 250 248 / 0.94) 100%
-    );
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.8) inset,
-    0 18px 40px rgb(7 22 17 / 0.08),
-    0 0 0 1px rgb(15 122 58 / 0.04);
-  backdrop-filter: blur(14px);
-}
-
-.marketing-join__header {
-  display: grid;
-  gap: var(--ge-space-2);
-}
-
-.marketing-join__eyebrow {
-  color: var(--ge-color-action);
-  background: color-mix(in srgb, var(--ge-color-action) 8%, white);
-  border-color: color-mix(in srgb, var(--ge-color-action) 24%, var(--ge-color-border));
-}
-
-.marketing-join__header h2 {
-  margin: 0;
-  font-family: var(--ge-font-family-display);
-  font-size: clamp(1.15rem, 2.8vw, 1.45rem);
-  font-weight: 650;
-  line-height: 1.25;
-  color: var(--ge-color-ink);
-}
-
-.marketing-join__lede {
-  margin: 0;
-  color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
-  line-height: var(--ge-line-height-ui);
-}
-
-.marketing-join__panel {
-  width: 100%;
-  margin: 0;
-}
-
-.marketing-join__panel .web-password-sign-in,
-.marketing-join__panel .web-password-sign-in--embedded {
-  margin: 0;
-  border: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-.marketing-join__panel .web-password-sign-in__visual {
-  display: none;
-}
-
-.marketing-join__panel .web-password-sign-in__card {
-  gap: var(--ge-space-3);
-  padding: 0;
-}
-
-.marketing-join__panel .shell-session,
-.marketing-join__panel .shell-session--sign-in,
-.marketing-join__panel .shell-session--embedded {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.marketing-join__panel .shell-session__title,
-.marketing-join__panel .shell-session__status--embedded {
-  margin: 0;
-  padding: 0.35rem 0.55rem;
-  border-radius: 0.65rem;
-  background: color-mix(in srgb, var(--ge-color-brass-soft) 16%, white);
-  color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
-  line-height: 1.4;
-}
-
-.marketing-join__panel .web-otp-sign-in__form {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  gap: var(--ge-space-3);
-}
-
-.marketing-join__panel .web-otp-sign-in__form label {
-  font-size: var(--ge-font-size-sm);
-  font-weight: 650;
-}
-
-.marketing-join__panel .web-otp-sign-in__form input:not([type='checkbox']) {
-  min-block-size: 2.65rem;
-  border-radius: 0.75rem;
-  border-color: color-mix(in srgb, var(--ge-color-border) 85%, transparent);
-  background: rgb(255 255 255 / 0.92);
-}
-
-.marketing-join__panel .web-otp-sign-in__form button[type='submit'] {
-  margin-block-start: var(--ge-space-1);
-  border-radius: 999px;
-  background: var(--ge-color-action);
-}
-
-.marketing-join__panel .web-otp-sign-in__form button[type='button'] {
-  font-size: var(--ge-font-size-sm);
-}
+/* ------------------------------------------------------------------ */
+/* Keyframes                                                           */
+/* ------------------------------------------------------------------ */
 
 @keyframes marketing-hero-in {
   from {
@@ -648,25 +951,82 @@
   }
 }
 
+@keyframes marketing-aurora {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(3%, 3%, 0) scale(1.08);
+  }
+}
+
+@keyframes marketing-badge-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(46 230 255 / 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0.9rem 0.05rem rgb(46 230 255 / 0.28);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 48rem) {
+  .marketing-hero {
+    align-items: center;
+    min-block-size: max(28rem, 86svh);
+  }
+
+  .marketing-hero__device {
+    display: none;
+  }
+
+  .marketing-hero__coaches {
+    justify-self: center;
+    order: 2;
+    padding-block-end: var(--ge-space-3);
+  }
+
+  .marketing-hero__stage .marketing-hero__coach {
+    width: min(38vw, 9.5rem);
+  }
+
+  .marketing-hero__stage .marketing-hero__coach--male {
+    width: min(34vw, 8.5rem);
+  }
+}
+
 @media (max-width: 30rem) {
   .marketing-hero {
-    display: flex;
-    flex-direction: column;
-    min-block-size: auto;
+    min-block-size: max(32rem, 90svh);
     overflow: hidden;
-    color: var(--ge-color-ink);
-    background: var(--ge-color-surface-elevated);
+    color: var(--ge-color-text);
+    background: var(--ge-color-canvas);
   }
 
   .marketing-hero__media {
-    position: relative;
-    inset: auto;
-    flex: 0 0 auto;
-    aspect-ratio: 16 / 10;
-    max-block-size: 11.5rem;
-    /* At enlarged text sizes the rem block-size grows and the aspect ratio
-       would push the width past the viewport; the inline cap wins instead. */
-    max-inline-size: 100%;
+    position: absolute;
+    inset: 0;
+    max-block-size: 100%;
+    opacity: 0.8;
+  }
+
+  .marketing-hero__coaches {
+    display: none;
+  }
+
+  .marketing-hero__aurora {
+    display: none;
+  }
+
+  .marketing-hero__grid,
+  .marketing-hero__orbs {
+    display: none;
   }
 
   .marketing-hero__slide {
@@ -677,31 +1037,26 @@
   .marketing-hero__scrim {
     background: linear-gradient(
       180deg,
-      transparent 35%,
-      rgb(4 18 13 / 0.22) 100%
+      rgb(6 5 15 / 0.5) 0%,
+      transparent 30%,
+      transparent 62%,
+      rgb(6 5 15 / 0.65) 100%
     );
   }
 
   .marketing-hero__copy {
     position: relative;
     z-index: 1;
-    flex: 1 1 auto;
+    min-width: 0;
     max-inline-size: none;
-    margin: 0;
-    padding: var(--ge-space-4);
-    background:
-      linear-gradient(
-        165deg,
-        rgb(255 255 255 / 0.98),
-        rgb(247 250 248 / 0.94)
-      );
+    margin-inline: 0.5rem;
+    padding: clamp(1.25rem, 5vw, 1.75rem);
     animation: none;
   }
 
-  .marketing-hero__badge {
-    color: var(--ge-color-action);
-    background: color-mix(in srgb, var(--ge-color-action) 8%, white);
-    border-color: color-mix(in srgb, var(--ge-color-action) 24%, var(--ge-color-border));
+  .marketing-section {
+    padding-inline: 12px;
+    padding-block: 24px;
   }
 
   .marketing-hero__title {
@@ -710,12 +1065,6 @@
 
   .marketing-hero__lede {
     color: var(--ge-color-text-muted);
-  }
-
-  .marketing-button--ghost {
-    border-color: color-mix(in srgb, var(--ge-color-border) 80%, transparent);
-    color: var(--ge-color-ink);
-    background: rgb(255 255 255 / 0.72);
   }
 
   /* Single column with px padding so 400% enlarged text still fits 320px:
@@ -735,17 +1084,32 @@
 @media (prefers-reduced-motion: reduce) {
   .marketing-hero,
   .marketing-hero__copy,
+  .marketing-hero__badge,
   .marketing-hero__slide,
+  .marketing-hero__aurora,
+  .marketing-hero__grid,
+  .marketing-hero__orbs,
+  .marketing-hero__orbs span,
+  .marketing-hero__stage .marketing-hero__coach,
   .marketing-section,
   .marketing-why__item,
+  .marketing-why__image,
   .marketing-showcase__item,
+  .marketing-showcase__image,
   .marketing-benefit,
+  .marketing-benefit__image,
   .marketing-path__item,
   .marketing-pedagogy__item,
-  .marketing-join,
+  .marketing-reveal--in,
   .marketing-button {
     animation: none;
     transition: none;
+    transform: none;
+  }
+
+  .marketing-reveal--pending {
+    opacity: 1;
+    transform: none;
   }
 
   .marketing-hero__slide {

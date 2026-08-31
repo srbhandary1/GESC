@@ -72,12 +72,12 @@ describe('Friend practice journey', () => {
 
     await user.type(
       screen.getByRole('textbox', {
-        name: 'Type one English practice turn',
+        name: 'Type one English practice sentence',
       }),
       'I practise English after work.',
     )
     await user.click(
-      screen.getByRole('button', { name: 'Send turn' }),
+      screen.getByRole('button', { name: 'Send practice' }),
     )
 
     expect(
@@ -104,12 +104,12 @@ describe('Friend practice journey', () => {
         'Listen first. You can also read the English.',
       ).length,
     ).toBeGreaterThan(0)
-    expect(screen.getByText('Turn completed')).toBeInTheDocument()
+    expect(screen.getByText('Practice completed')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Say that again' }),
+      screen.getByRole('button', { name: 'Say that again', hidden: true }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Hint in my language' }),
+      screen.getByRole('button', { name: 'Hint in my language', hidden: true }),
     ).toBeInTheDocument()
     expect(api.startSession).toHaveBeenCalledWith(
       {
@@ -267,17 +267,17 @@ describe('Friend practice journey', () => {
     )
     await user.type(
       await screen.findByRole('textbox', {
-        name: 'Type one English practice turn',
+        name: 'Type one English practice sentence',
       }),
       'I practise English after work.',
     )
-    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    await user.click(screen.getByRole('button', { name: 'Send practice' }))
 
     expect(
       await screen.findByRole('button', { name: 'Play Friend reply' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Speak your turn' }),
+      screen.getByRole('button', { name: 'Speak your practice' }),
     ).toBeInTheDocument()
     await vi.waitFor(() => {
       expect(speak).toHaveBeenCalled()
@@ -339,7 +339,7 @@ describe('Friend practice journey', () => {
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole('textbox', {
-        name: 'Type one English practice turn',
+        name: 'Type one English practice sentence',
       }),
     ).not.toBeInTheDocument()
     expect(
@@ -424,6 +424,13 @@ describe('Friend practice journey', () => {
     const turn: FriendTurn = {
       ...fakeTurn(session.id),
       speech: {
+        animation_payload: {
+          avatar_gesture_trigger: 'WARM_SMILE',
+          viseme_timestamps: [
+            { mouth_shape: 'rest', timestamp_ms: 0 },
+            { mouth_shape: 'open', timestamp_ms: 80 },
+          ],
+        },
         playback_available: true,
         rendering_mode: 'azure-soft-launch-guidance-wav',
         model_audio_base64: 'QQ==',
@@ -444,7 +451,7 @@ describe('Friend practice journey', () => {
     }
     const user = userEvent.setup()
 
-    render(
+    const { container } = render(
       <ConversationJourney
         api={api}
         createClientId={vi
@@ -465,18 +472,25 @@ describe('Friend practice journey', () => {
     )
     await user.type(
       screen.getByRole('textbox', {
-        name: 'Type one English practice turn',
+        name: 'Type one English practice sentence',
       }),
       'I practise English after work.',
     )
-    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    await user.click(screen.getByRole('button', { name: 'Send practice' }))
 
     await vi.waitFor(() => {
       expect(play).toHaveBeenCalled()
     })
-    expect(screen.queryByText('Turn completed')).not.toBeInTheDocument()
+    expect(container.querySelector('[data-gesture]')).toHaveAttribute(
+      'data-gesture',
+      'WARM_SMILE',
+    )
+    expect(
+      container.querySelector('[data-testid="interactive-avatar-mouth"]'),
+    ).not.toBeNull()
+    expect(screen.queryByText('Practice completed')).not.toBeInTheDocument()
     releaseEvents(events)
-    expect(await screen.findByText('Turn completed')).toBeInTheDocument()
+    expect(await screen.findByText('Practice completed')).toBeInTheDocument()
     expect(play).toHaveBeenCalledWith(
       'QQ==',
       'audio/wav',

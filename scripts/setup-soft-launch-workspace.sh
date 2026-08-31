@@ -151,7 +151,7 @@ Repository: ${ROOT_DIR}
 2. Paste API key into ${SECRET} (mode 0600)
 3. Set CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=true in soft-launch.env
    only after LIVE_AUTHORIZATION.txt contains the ₹10000 phrase
-4. make soft-launch-start && make soft-launch-tunnel
+4. make soft-launch-start
 5. Publish one pathway and invite learners (see docs/SOFT_LAUNCH_UBUNTU_RUNBOOK.md)
 
 Kill switch: set CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=false and

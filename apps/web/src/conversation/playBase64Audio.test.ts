@@ -4,6 +4,7 @@ import { decodeBase64ToBytes, playBase64Audio } from './playBase64Audio'
 describe('playBase64Audio', () => {
   it('notifies onStarted as soon as playback begins', async () => {
     const onStarted = vi.fn()
+    const onElement = vi.fn()
     class FakeAudio {
       paused = true
       src = ''
@@ -34,8 +35,9 @@ describe('playBase64Audio', () => {
       value: vi.fn(),
     })
 
-    await playBase64Audio('QQ==', 'audio/wav', { onStarted })
+    await playBase64Audio('QQ==', 'audio/wav', { onStarted, onElement })
     expect(onStarted).toHaveBeenCalledOnce()
+    expect(onElement).toHaveBeenCalledOnce()
     vi.unstubAllGlobals()
   })
 

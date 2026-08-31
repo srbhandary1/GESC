@@ -24,6 +24,8 @@ $forced = [
     'CONVERSATION_GUIDANCE_TTS_LIVE_REQUESTS_ENABLED' => 'false',
     'VOICE_UPLOAD_ENABLED' => 'true',
     'VOICE_PROVIDER_DRIVER' => 'deterministic-test',
+    'VOICE_ALLOWED_ORGANIZATION_IDS' => '',
+    'SANCTUM_STATEFUL_DOMAINS' => 'localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000,::1',
 ];
 
 foreach ($forced as $name => $value) {

@@ -37,7 +37,21 @@ final class VoiceFeatureGateTest extends TestCase
             ->requireEnabled('01KYS97G7MX374P303XJHDXT99');
     }
 
-    public function test_production_rejects_even_when_upload_flag_is_on(): void
+    public function test_production_allows_allowlisted_organization_when_upload_is_enabled(): void
+    {
+        $this->app->detectEnvironment(static fn (): string => 'production');
+        config()->set('voice.upload_enabled', true);
+        config()->set('voice.allowed_organization_ids', [
+            '01KYS97G7MX374P303XJHDXT72',
+        ]);
+
+        $this->app->make(VoiceFeatureGate::class)
+            ->requireEnabled('01KYS97G7MX374P303XJHDXT72');
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_production_rejects_unknown_organization(): void
     {
         $this->app->detectEnvironment(static fn (): string => 'production');
         config()->set('voice.upload_enabled', true);
@@ -47,6 +61,6 @@ final class VoiceFeatureGateTest extends TestCase
 
         $this->expectException(VoiceOperationRejected::class);
         $this->app->make(VoiceFeatureGate::class)
-            ->requireEnabled('01KYS97G7MX374P303XJHDXT72');
+            ->requireEnabled('01KYS97G7MX374P303XJHDXT99');
     }
 }

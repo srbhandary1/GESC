@@ -2,16 +2,20 @@
 
 set -eu
 
+node_bin="${NODE:-node}"
+pnpm_bin="${PNPM:-pnpm}"
+php_bin="${PHP:-php}"
+
 expected_node="$(cat .node-version)"
-actual_node="$(node --version | sed 's/^v//')"
+actual_node="$("$node_bin" --version | sed 's/^v//')"
 
 if [ "$actual_node" != "$expected_node" ]; then
     echo "Node.js $expected_node is required; found $actual_node." >&2
     exit 1
 fi
 
-expected_pnpm="$(node -p "require('./package.json').packageManager.split('@').at(-1)")"
-actual_pnpm="$(pnpm --version)"
+expected_pnpm="$("$node_bin" -p "require('./package.json').packageManager.split('@').at(-1)")"
+actual_pnpm="$("$pnpm_bin" --version)"
 
 if [ "$actual_pnpm" != "$expected_pnpm" ]; then
     echo "pnpm $expected_pnpm is required; found $actual_pnpm." >&2
@@ -20,7 +24,7 @@ fi
 
 expected_php="$(cat .php-version)"
 expected_php_series="$(printf '%s' "$expected_php" | cut -d. -f1-2)"
-actual_php="$(php -r 'echo PHP_VERSION;')"
+actual_php="$("$php_bin" -r 'echo PHP_VERSION;')"
 actual_php_series="$(printf '%s' "$actual_php" | cut -d. -f1-2)"
 
 if [ "$actual_php_series" != "$expected_php_series" ]; then

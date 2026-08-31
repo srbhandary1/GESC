@@ -13,6 +13,8 @@ use App\Conversation\Providers\TextToSpeechResult;
 use App\Conversation\Support\GuidanceTtsPolicy;
 use App\Conversation\Support\GuidanceTtsSsml;
 use App\Conversation\Voice\PcmWavInspector;
+use App\Conversation\Voice\Providers\Azure\AzureVisemeExtractor;
+use App\Conversation\Voice\Providers\Azure\AzureWavVisemeExtractor;
 use App\Conversation\Voice\VoiceOperationRejected;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
@@ -30,6 +32,8 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
         private SoftLaunchGuidanceTtsConfiguration $configuration,
         private Factory $http,
         private PcmWavInspector $wavInspector,
+        private AzureVisemeExtractor $visemeExtractor,
+        private AzureWavVisemeExtractor $wavExtractor,
         private TextFirstTextToSpeechProvider $textFirst,
     ) {}
 
@@ -176,6 +180,17 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
 
         $characters = mb_strlen($text);
 
+        // Extract viseme data from response if available
+        $visemeTimestamps = $this->visemeExtractor->extractFromResponse(
+            $audio,
+            $response->headers(),
+        );
+
+        // If header-based extraction didn't yield visemes, try WAV RIFF chunk extraction
+        if (empty($visemeTimestamps)) {
+            $visemeTimestamps = $this->wavExtractor->extractFromWavStream($audio);
+        }
+
         return new TextToSpeechResult(
             playbackAvailable: true,
             renderingMode: 'azure-soft-launch-guidance-wav',
@@ -191,6 +206,7 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
             ),
             audioBytes: $audio,
             mimeType: 'audio/wav',
+            visemeTimestamps: $visemeTimestamps,
         );
     }
 

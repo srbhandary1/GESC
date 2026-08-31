@@ -1,0 +1,106 @@
+.swathi-avatar {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.swathi-avatar__rig {
+  position: relative;
+  z-index: 1;
+  width: 7.5rem;
+  height: 7.5rem;
+  overflow: visible;
+  border-radius: 50%;
+  border: 3px solid rgb(255 255 255 / 0.88);
+  box-shadow:
+    0 0 0 6px rgb(46 230 255 / 0.22),
+    0 18px 40px rgb(7 16 24 / 0.28);
+  background: #1a2830;
+  transform-origin: 50% 20%;
+  animation: tutor-float 4.8s ease-in-out infinite;
+}
+
+.swathi-avatar--sm .swathi-avatar__rig {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-width: 2px;
+}
+
+.swathi-avatar--lg .swathi-avatar__rig,
+.swathi-avatar--hero .swathi-avatar__rig {
+  width: min(11.5rem, 42vw);
+  height: min(11.5rem, 42vw);
+}
+
+.swathi-avatar--hero .swathi-avatar__rig {
+  width: min(14rem, 58vw);
+  height: min(14rem, 58vw);
+}
+
+.swathi-avatar__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.swathi-avatar__mouth {
+  transition: d 80ms linear;
+}
+
+.swathi-avatar--ENCOURAGING_NOD .swathi-avatar__head {
+  animation: swathi-nod 720ms ease-in-out 1;
+}
+
+.swathi-avatar--WARM_SMILE .swathi-avatar__expression {
+  animation: swathi-smile 800ms ease-in-out 1;
+}
+
+.swathi-avatar--ATTENTIVE_LEAN .swathi-avatar__rig {
+  animation: swathi-lean 900ms ease-in-out 1;
+}
+
+@keyframes swathi-nod {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  40% {
+    transform: rotate(8deg) translateY(4px);
+  }
+}
+
+@keyframes swathi-smile {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes swathi-lean {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  45% {
+    transform: translateX(6%) rotate(6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swathi-avatar__rig,
+  .swathi-avatar--ENCOURAGING_NOD .swathi-avatar__head,
+  .swathi-avatar--WARM_SMILE .swathi-avatar__expression,
+  .swathi-avatar--ATTENTIVE_LEAN .swathi-avatar__rig {
+    animation: none;
+  }
+
+  .swathi-avatar__mouth {
+    transition: none;
+  }
+}

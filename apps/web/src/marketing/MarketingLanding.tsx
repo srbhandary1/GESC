@@ -1,12 +1,16 @@
 import type { MessageKey, SupportedLocale } from '@global-english/localization'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
+import { ANDROID_APP_DOWNLOAD_HREF } from './androidAppDownload'
 import './MarketingLanding.css'
 
 export interface MarketingLandingProps {
   readonly locale: SupportedLocale
   readonly message: (key: MessageKey) => InterfaceMessageResolution
+  readonly nativeApp?: boolean
+  readonly onNativeSignIn?: () => void
+  readonly authorizationUnavailable?: boolean
 }
 
 const banners = [
@@ -51,15 +55,9 @@ const differenceCards = [
   {
     title: 'marketing.benefit.together.title',
     body: 'marketing.benefit.together.body',
-    image: '/marketing/features/club.jpg',
-    fit: 'cover',
+    image: '/marketing/features/guest.jpg',
+    fit: 'contain',
   },
-] as const
-
-const academyPortraits = [
-  '/marketing/features/trainer.png',
-  '/marketing/features/mobile-learner.png',
-  '/marketing/features/highlight.png',
 ] as const
 
 const pathSessions = [
@@ -127,12 +125,74 @@ const showcase = [
   },
 ] as const
 
+/**
+ * Progressive scroll-reveal for the below-the-fold marketing sections.
+ *
+ * Sections are fully visible by default (no-JS, jsdom, and legacy
+ * browsers keep working); when IntersectionObserver exists and the
+ * visitor accepts motion, sections are marked pending before first paint
+ * and transitioned in as they enter the viewport.
+ */
+function useSectionReveal(containerRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const container = containerRef.current
+    if (
+      container === null ||
+      typeof IntersectionObserver === 'undefined' ||
+      (typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    ) {
+      return undefined
+    }
+
+    const sections = Array.from(
+      container.querySelectorAll<HTMLElement>('.marketing-section'),
+    )
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('marketing-reveal--in')
+            observer.unobserve(entry.target)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
+    )
+
+    for (const section of sections) {
+      // Anything already on screen (or above the fold after a hash jump)
+      // stays visible instead of animating from hidden.
+      const rect = section.getBoundingClientRect()
+      if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
+        section.classList.add('marketing-reveal--in')
+        continue
+      }
+      section.classList.add('marketing-reveal--pending')
+      observer.observe(section)
+    }
+
+    return () => {
+      observer.disconnect()
+      for (const section of sections) {
+        section.classList.remove('marketing-reveal--pending')
+      }
+    }
+  }, [containerRef])
+}
+
 export function MarketingLanding({
   locale,
   message,
+  nativeApp = false,
+  onNativeSignIn,
+  authorizationUnavailable = false,
 }: MarketingLandingProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
   const [reduceMotion, setReduceMotion] = useState(false)
+
+  useSectionReveal(containerRef)
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') {
@@ -165,7 +225,7 @@ export function MarketingLanding({
   }, [reduceMotion])
 
   return (
-    <div className="marketing-landing" lang={locale}>
+    <div className="marketing-landing" lang={locale} ref={containerRef}>
       <section className="marketing-hero" aria-labelledby="marketing-hero-title">
         <div className="marketing-hero__media" aria-hidden="true">
           {banners.map((src, index) => (
@@ -181,14 +241,13 @@ export function MarketingLanding({
             />
           ))}
           <div className="marketing-hero__scrim" />
+          <div className="marketing-hero__aurora" />
+          <div className="marketing-hero__grid" />
+          <div className="marketing-hero__orbs" aria-hidden="true">
+            <span />
+            <span />
+          </div>
         </div>
-        <img
-          alt=""
-          className="marketing-hero__tutor"
-          height={420}
-          src="/tutor/tutor-maya-hero.png"
-          width={320}
-        />
         <div className="marketing-hero__copy">
           <p className="marketing-hero__badge">
             <LocalizedMessage resolution={message('marketing.hero.badge')} />
@@ -204,33 +263,74 @@ export function MarketingLanding({
             <LocalizedMessage resolution={message('marketing.hero.lede')} />
           </p>
           <div className="marketing-hero__actions">
-            <a className="marketing-button marketing-button--primary" href="#sign-in">
-              <LocalizedMessage
-                resolution={message('marketing.hero.cta_sign_in')}
-              />
-            </a>
-            <a className="marketing-button marketing-button--ghost" href="#how-it-works">
+            {onNativeSignIn === undefined ? (
+              <a
+                className="marketing-button marketing-button--primary"
+                href="#sign-in"
+              >
+                <LocalizedMessage
+                  resolution={message('marketing.hero.cta_sign_in')}
+                />
+              </a>
+            ) : (
+              <button
+                className="marketing-button marketing-button--primary"
+                onClick={onNativeSignIn}
+                type="button"
+              >
+                <LocalizedMessage
+                  resolution={message('marketing.hero.cta_sign_in')}
+                />
+              </button>
+            )}
+            <a
+              className="marketing-button marketing-button--ghost"
+              href="#how-it-works"
+              onClick={(event) => {
+                event.preventDefault()
+                document
+                  .getElementById('how-it-works')
+                  ?.scrollIntoView({ block: 'start' })
+              }}
+            >
               <LocalizedMessage
                 resolution={message('marketing.hero.cta_learn')}
               />
             </a>
+            {nativeApp || onNativeSignIn !== undefined ? null : (
+              <a
+                className="marketing-button marketing-button--ghost"
+                href={ANDROID_APP_DOWNLOAD_HREF}
+              >
+                <LocalizedMessage
+                  resolution={message('marketing.hero.cta_android')}
+                />
+              </a>
+            )}
           </div>
-          <ul className="marketing-hero__portraits" aria-hidden="true">
-            {academyPortraits.map((src) => (
-              <li key={src}>
-                <img alt="" className="marketing-hero__portrait" src={src} />
-              </li>
-            ))}
-          </ul>
+          {authorizationUnavailable ? (
+            <p className="marketing-hero__error" role="alert">
+              <LocalizedMessage
+                resolution={message('session.unavailable')}
+              />
+            </p>
+          ) : null}
+          {nativeApp || onNativeSignIn !== undefined ? null : (
+            <p className="marketing-hero__android-help">
+              <LocalizedMessage
+                resolution={message('marketing.android.download_help')}
+              />
+            </p>
+          )}
         </div>
       </section>
 
       <section
-        className="marketing-section marketing-section--how"
+        className="marketing-section marketing-section--how marketing-section--light"
         id="how-it-works"
         aria-labelledby="marketing-how-title"
       >
-        <div className="marketing-section__header marketing-section__header--wide">
+        <div className="marketing-section__header marketing-section__header--centered">
           <h2 id="marketing-how-title">
             <LocalizedMessage resolution={message('marketing.section.how')} />
           </h2>
@@ -285,7 +385,7 @@ export function MarketingLanding({
       </section>
 
       <section
-        className="marketing-section"
+        className="marketing-section marketing-section--dark"
         aria-labelledby="marketing-pedagogy-title"
       >
         <div className="marketing-section__header marketing-section__header--wide">
@@ -315,7 +415,7 @@ export function MarketingLanding({
       </section>
 
       <section
-        className="marketing-section"
+        className="marketing-section marketing-section--light"
         aria-labelledby="marketing-why-title"
       >
         <div className="marketing-section__header">
@@ -343,7 +443,7 @@ export function MarketingLanding({
       </section>
 
       <section
-        className="marketing-section"
+        className="marketing-section marketing-section--dark"
         aria-labelledby="marketing-difference-title"
       >
         <div className="marketing-section__header">
@@ -384,10 +484,10 @@ export function MarketingLanding({
       </section>
 
       <section
-        className="marketing-section"
+        className="marketing-section marketing-section--light"
         aria-labelledby="marketing-showcase-title"
       >
-        <div className="marketing-section__header">
+        <div className="marketing-section__header marketing-section__header--centered">
           <h2 id="marketing-showcase-title">
             <LocalizedMessage
               resolution={message('marketing.showcase.title')}
@@ -412,6 +512,13 @@ export function MarketingLanding({
           ))}
         </ul>
       </section>
+      <footer className="marketing-footer">
+        <img
+          alt=""
+          className="marketing-footer__logo"
+          src="/marketing/brand/logo-footer.png"
+        />
+      </footer>
     </div>
   )
 }

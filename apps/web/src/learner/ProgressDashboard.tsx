@@ -78,9 +78,9 @@ export function ProgressDashboard({
   if (!hasActivity) {
     return (
       <div className="progress-dashboard progress-dashboard--empty">
-        <h1 className="progress-dashboard__title">
+        <h2 className="progress-dashboard__title">
           <LocalizedMessage resolution={msg('learner.progress.empty.title')} />
-        </h1>
+        </h2>
         <p className="progress-dashboard__empty-message">
           <LocalizedMessage resolution={msg('learner.progress.empty.message')} />
         </p>
@@ -105,14 +105,6 @@ export function ProgressDashboard({
 
   return (
     <div className="progress-dashboard">
-      <header className="progress-dashboard__header">
-        <h1 className="progress-dashboard__title" tabIndex={0}>
-          <LocalizedMessage
-            resolution={msg('page.progress.title')}
-          />
-        </h1>
-      </header>
-
       <section className="progress-dashboard__section progress-dashboard__summary" aria-label="Summary statistics">
         <div className="progress-dashboard__stat" tabIndex={0}>
           <span className="progress-dashboard__stat-value">{data.speaking_activity.meaningful_speaking_days_count}</span>
@@ -130,6 +122,12 @@ export function ProgressDashboard({
           <span className="progress-dashboard__stat-value">{data.delayed_review.completed_late_count}</span>
           <span className="progress-dashboard__stat-label">
             <LocalizedMessage resolution={msg('learner.progress.delayed_review_late', { count: String(data.delayed_review.completed_late_count) })} />
+          </span>
+        </div>
+        <div className="progress-dashboard__stat" tabIndex={0}>
+          <span className="progress-dashboard__stat-value">{data.speaking_activity.speaking_minutes}</span>
+          <span className="progress-dashboard__stat-label">
+            <LocalizedMessage resolution={msg('learner.progress.speaking_minutes', { minutes: String(data.speaking_activity.speaking_minutes) })} />
           </span>
         </div>
         {(data.delayed_review.due_count > 0 || data.delayed_review.pending_count > 0) && (
@@ -175,9 +173,17 @@ export function ProgressDashboard({
             <LocalizedMessage resolution={msg('learner.progress.mastery.title')} />
           </h2>
           <div className="progress-dashboard__mastery-grid">
-            {Array.from(objectivesByKey.entries()).map(([key, objectives]) => (
-              <div key={key} className="progress-dashboard__mastery-group">
-                <h3 className="progress-dashboard__mastery-concept" tabIndex={0}>{conceptLabel(key)}</h3>
+            {Array.from(objectivesByKey.entries()).map(([key, objectives]) => {
+              const needsPractice = objectives.some(
+                (obj) => obj.knowledge_state !== 'mastered',
+              )
+              return (
+              <details
+                key={key}
+                className="progress-dashboard__mastery-group"
+                open={needsPractice}
+              >
+                <summary className="progress-dashboard__mastery-concept" tabIndex={0}>{conceptLabel(key)}</summary>
                 <ul className="progress-dashboard__mastery-list" aria-label={conceptLabel(key) ?? 'Objectives'}>
                   {objectives.map(obj => (
                     <li
@@ -194,8 +200,9 @@ export function ProgressDashboard({
                     </li>
                   ))}
                 </ul>
-              </div>
-            ))}
+              </details>
+              )
+            })}
           </div>
         </section>
       )}

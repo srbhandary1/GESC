@@ -27,4 +27,18 @@ describe('Capacitor Android dual-tree configuration', () => {
       /const productionConfig[\s\S]*appId:\s*'com\.globalenglish\.app'[\s\S]*webDir:\s*'dist'/u,
     )
   })
+
+  it('permits cleartext to the invite-only static IPv4 origins', () => {
+    const xml = readFileSync(
+      resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../android-app/app/src/main/res/xml/network_security_config.xml',
+      ),
+      'utf8',
+    )
+
+    expect(xml).toContain('117.254.108.143')
+    expect(xml).toContain('192.168.1.4')
+    expect(xml).toContain('cleartextTrafficPermitted="true"')
+  })
 })

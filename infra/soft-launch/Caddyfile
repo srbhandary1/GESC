@@ -1,5 +1,6 @@
 # Soft-launch reverse proxy (loopback only).
-# Public HTTPS entry is via Cloudflare tunnel to :9080.
+# Public HTTP entry is the separate Caddy process on :8080. This listener
+# remains the origin for an optional Cloudflare tunnel.
 
 {
 	auto_https off
@@ -15,7 +16,8 @@
 
 http://:9080 {
 	bind 127.0.0.1
-	encode gzip
+	@notDownloads not path /downloads/*
+	encode @notDownloads gzip
 
 	handle /api/* {
 		import laravel_backend
@@ -44,6 +46,15 @@ http://:9080 {
 	handle /health/ready {
 		rewrite * /api/v1/health/ready
 		import laravel_backend
+	}
+
+	handle /downloads/* {
+		header Cache-Control "public, max-age=300, must-revalidate"
+		header Content-Type "application/octet-stream"
+		header Content-Disposition "attachment; filename=\"global-spoken-english.apk\""
+		header X-Content-Type-Options "nosniff"
+		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
+		file_server
 	}
 
 	@credentialPages path /password-establishment.html /password-recovery.html

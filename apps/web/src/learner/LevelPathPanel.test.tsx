@@ -114,6 +114,7 @@ describe('LevelPathPanel', () => {
     expect(screen.queryByText('Commissioning pending')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Level 1/i }))
+    await user.click(screen.getByRole('button', { name: /Introduction/i }))
     await waitFor(() => {
       expect(
         screen.getByRole('heading', { name: 'Introduction' }),
@@ -217,6 +218,7 @@ describe('LevelPathPanel', () => {
     )
 
     await user.click(await screen.findByRole('button', { name: /ಮಟ್ಟ 1/ }))
+    await user.click(await screen.findByRole('button', { name: /ಪರಿಚಯ/ }))
     await waitFor(() => {
       expect(document.querySelector('.level-session__kannada')).toHaveTextContent(
         'ಕನ್ನಡ ವಿವರಣೆ',
@@ -308,13 +310,15 @@ describe('LevelPathPanel', () => {
 
     render(<LevelPathPanel api={api} locale="en-IN" />)
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
-    await screen.findByRole('heading', { name: 'Introduction' })
+    expect(
+      await screen.findByRole('button', { name: /Introduction/i }),
+    ).toBeInTheDocument()
 
     const callsBeforeConversation = sessionDetail.mock.calls.length
-    await user.click(screen.getByRole('button', { name: 'Conversation' }))
+    await user.click(screen.getByRole('button', { name: /Conversation/i }))
     expect(
-      screen.getByText('Complete the previous session before opening this one.'),
-    ).toBeInTheDocument()
+      screen.getByRole('alert'),
+    ).toHaveTextContent('Complete the previous session before opening this one.')
     expect(sessionDetail.mock.calls).toHaveLength(callsBeforeConversation)
   })
 
@@ -387,6 +391,7 @@ describe('LevelPathPanel', () => {
 
     const { unmount } = render(<LevelPathPanel api={api} locale="en-IN" />)
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Introduction/i }))
     await waitFor(() => {
       expect(downloadAudio).toHaveBeenCalledWith(
         '/api/v1/me/levels/1/sessions/introduction/audio',
@@ -500,6 +505,7 @@ describe('LevelPathPanel', () => {
       />,
     )
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Introduction/i }))
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
     expect(api.startConversation).toHaveBeenCalled()
     expect(

@@ -25,8 +25,9 @@
         <env name="CONVERSATION_PROVIDER_DRIVER" value="fake" force="true"/>
         <env name="CONVERSATION_GUIDANCE_TTS_LIVE_REQUESTS_ENABLED" value="false" force="true"/>
         <env name="CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED" value="false" force="true"/>
-        <env name="VOICE_UPLOAD_ENABLED" value="true"/>
-        <env name="VOICE_PROVIDER_DRIVER" value="deterministic-test"/>
+        <env name="VOICE_UPLOAD_ENABLED" value="true" force="true"/>
+        <env name="VOICE_PROVIDER_DRIVER" value="deterministic-test" force="true"/>
+        <env name="VOICE_ALLOWED_ORGANIZATION_IDS" value="" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
@@ -37,6 +38,7 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000,::1" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

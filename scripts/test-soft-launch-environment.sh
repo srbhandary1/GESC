@@ -101,6 +101,42 @@ bash -c '
 ' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$direct_config"
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$direct_config"
 grep -Fq 'root * /srv/web' "$direct_config"
+grep -Fq 'handle /oauth/* {' "$direct_config"
+grep -Fq 'handle /auth/mobile/* {' "$direct_config"
+grep -Fq 'http://:8080 {' "$direct_config"
+grep -Fq 'https://127.0.0.1:8443' "$direct_config"
+grep -Fq 'https://117.254.108.143:8443' "$direct_config"
+grep -Fq 'tls internal' "$direct_config"
+grep -Fq 'skip_install_trust' "$direct_config"
+grep -Fq 'auto_https disable_redirects' "$direct_config"
+grep -Fq 'handle /downloads/* {' "$direct_config"
+grep -Fq '@notDownloads not path /downloads/*' "$direct_config"
+grep -Fq 'filename=\"global-spoken-english.apk\"' "$direct_config"
+grep -Fq 'application/octet-stream' "$direct_config"
+grep -Fq 'public, max-age=300, must-revalidate' "$direct_config"
+
+https_ignored_config="$test_root/Caddyfile.https-ignored"
+GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "https://ignored-tunnel.example.test"
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$https_ignored_config"
+grep -Fq 'reverse_proxy 127.0.0.1:8000' "$https_ignored_config"
+if grep -Fq 'redir * https://ignored-tunnel.example.test' "$https_ignored_config"; then
+  printf '%s\n' 'SERVE_PUBLIC_HTTP must not redirect :8080 to a rotating tunnel' >&2
+  exit 1
+fi
+
+served_http_config="$test_root/Caddyfile.served-http"
+GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "http://117.254.108.143:8080" "" 8443 9080 "192.168.1.4"
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$served_http_config"
+grep -Fq 'https://127.0.0.1:8443' "$served_http_config"
+grep -Fq 'https://117.254.108.143:8443' "$served_http_config"
+grep -Fq 'https://192.168.1.4:8443' "$served_http_config"
+grep -Fq 'tls internal' "$served_http_config"
 
 bash -c '
   source "$1"
@@ -115,7 +151,7 @@ grep -Fq 'ai.globalspokenenglish.com {' "$stable_config"
 grep -Fq 'reverse_proxy 127.0.0.1:9080' "$stable_config"
 grep -Fq 'Strict-Transport-Security "max-age=31536000"' "$stable_config"
 grep -Fq 'X-Content-Type-Options "nosniff"' "$stable_config"
-if grep -Eq 'tls internal|trycloudflare' "$stable_config"; then
+if grep -Eq 'tls internal|issuer internal|trycloudflare' "$stable_config"; then
   printf '%s\n' 'stable public entry must use a public certificate and stable host only' >&2
   exit 1
 fi
@@ -145,6 +181,8 @@ if grep -Fq 'artisan serve' "$soft_launch_runner"; then
 fi
 grep -Fq 'the rotating Quick Tunnel is disabled' "$soft_launch_runner"
 grep -Fq 'WAN 80 -> this host:%s; WAN 443 -> this host:%s' "$soft_launch_runner"
+grep -Fq 'Static-IP HTTP origin is enabled' "$soft_launch_runner"
+grep -Fq 'Primary public entry' "$soft_launch_runner"
 
 configured_runtime="$test_root/configured-runtime"
 mkdir -p "$configured_runtime/env"
@@ -161,6 +199,39 @@ grep -Fxq 'GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT=8443' \
 grep -Fq 'ai.globalspokenenglish.com,127.0.0.1:9080' \
   "$configured_runtime/env/soft-launch.env"
 test "$(stat -c '%a' "$configured_runtime/env/soft-launch.env")" = 600
+
+static_runtime="$test_root/static-runtime"
+mkdir -p "$static_runtime/env"
+printf '%s\n' 'APP_ENV=soft-launch' > "$static_runtime/env/soft-launch.env"
+GE_SOFT_LAUNCH_RUNTIME="$static_runtime" \
+  bash "$soft_launch_runner" configure-public-http >/dev/null
+grep -Fxq 'APP_URL=http://117.254.108.143:8080' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fxq 'GE_SOFT_LAUNCH_PUBLIC_ORIGIN=http://117.254.108.143:8080' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fxq 'GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fxq 'SESSION_SECURE_COOKIE=false' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fq '117.254.108.143:8080,127.0.0.1:9080' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fq '117.254.108.143:8443' \
+  "$static_runtime/env/soft-launch.env"
+grep -Fq 'detect_lan_ipv4' "$soft_launch_runner"
+if grep -Eq 'trycloudflare|taila69adf|100\.89\.51\.18' \
+  "$static_runtime/env/soft-launch.env"; then
+  printf '%s\n' 'static-IP HTTP origin must not pin Tailscale or a rotating tunnel' >&2
+  exit 1
+fi
+test "$(stat -c '%a' "$static_runtime/env/soft-launch.env")" = 600
+tunnel_err="$(
+  GE_SOFT_LAUNCH_RUNTIME="$static_runtime" bash "$soft_launch_runner" tunnel 2>&1 || true
+)"
+if ! printf '%s' "$tunnel_err" | grep -Fq 'Static-IP HTTP origin is enabled'; then
+  printf '%s\n' 'tunnel must refuse to start when static-IP HTTP origin is enabled' >&2
+  printf '%s\n' "$tunnel_err" >&2
+  exit 1
+fi
 
 soft_launch_caddyfile="$root_dir/infra/soft-launch/Caddyfile"
 grep -Fq 'handle /oauth/* {' "$soft_launch_caddyfile"
@@ -190,10 +261,12 @@ grep -Fq "'/oauth/'" "$service_worker"
 grep -Fq "'/auth/mobile/'" "$service_worker"
 grep -Fq "'/oauth/'" "$offline_registration"
 grep -Fq "'/auth/mobile/'" "$offline_registration"
+grep -Fq "'/downloads/'" "$offline_registration"
 grep -Fq "updateViaCache: 'none'" "$offline_registration"
 grep -Fq 'await registration.update()' "$offline_registration"
 grep -Fq 'OFFLINE_SHELL_VERSION' "$service_worker"
-grep -Fq "version: 'v5'" "$service_worker"
+grep -Fq "version: 'v17'" "$service_worker"
+grep -Fq "'/downloads/'" "$service_worker"
 grep -Fq "'/password-recovery.html'" "$service_worker"
 grep -Fq "'/password-establishment.html'" "$service_worker"
 

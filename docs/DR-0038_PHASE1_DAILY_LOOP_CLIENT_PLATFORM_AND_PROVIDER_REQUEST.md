@@ -40,6 +40,104 @@ recorded here as a product brief. It is not self-executing: seven of its
 provisions conflict with the canonical baseline and each needed an explicit
 accept or reject before implementation.
 
+## Reconciled product brief — 30 August 2026
+
+After APP-0069, the product owner supplied a second brief, "Master Planning
+Brief: Global Spoken English – Phase 1 (Reconciled)", which supersedes the
+original Master Orchestration Specification as the product-input brief for this
+request. Unlike the original, it **confirms** the decisions recorded above
+rather than conflicting with them: React PWA plus Capacitor 8 with Flutter
+deferred, Swathi, generic level modelling with Levels 2–17 authored content
+retained, no attendance percentage, Notice Board deferred, ElevenLabs deferred
+pending the costed comparison, no legacy-site scraper, and subscriptions out of
+scope. Those items are already decided under APP-0069 / D-0219 and are not
+re-decided here; the brief is recorded as confirmation, not as new authority.
+
+Its role framing ("Master Systems Architect" issuing hand-off prompts for
+secondary coding models) defers to the existing ADR / decision-request /
+APO-evidence path and drops compute profiles, resolving the orchestration
+conflict the original specification had. That framing has no standing in this
+repository's working method beyond that deference.
+
+The brief adds three things worth adopting and contains one line that must be
+corrected.
+
+### Adopted: north-star framing
+
+The brief states the primary measurable outcome of Phase 1 as **meaningful
+speaking days plus delayed-review performance**. This is consistent with master
+plan §3.3 and ADR-0028 and is recorded as the product owner's framing of the
+accepted checkpoints.
+
+### Adopted: claim-grounding rules for product and marketing language
+
+Nothing in this request previously governed marketing claims. The brief's
+grounding rules are adopted as normative for any product or marketing copy:
+claim only what is true or near-term.
+
+Defensible now or near-term:
+
+- Owned institute curriculum audio + deterministic, auditable marks
+- Dual-track remediation (English immersion + Kannada structural explanation)
+- Offline deterministic path
+- Real human trainer path via tuition queue
+- Meaningful speaking streak + delayed review
+
+Do not claim until built:
+
+- Local Rive/Lottie lip-sync + viseme-driven gestures
+- ELSA-grade syllable-by-syllable phonetic colour mapping inside conversation
+- Full school-style attendance % + 150–155 monthly scoreboard as primary metric
+- Programmatic locking of all levels as a current behaviour
+
+### Adopted: strict checkpoint sequence
+
+The brief fixes the order already implied by APP-0069 and makes it explicit:
+**A** (Daily Mission Home) then **B** (Progress dashboard) then **C** (Speak
+latency pass), and no further product-brief item may be considered until all
+three are accepted and verified. This matches the `AGENTS.md` prohibition on
+implementing later checkpoints opportunistically and is adopted as binding for
+this request's scope.
+
+Status note: checkpoint A is implemented and **verified** on branch
+`codex/confidence-conversation` at `9818fe2`. CI run
+[33317082476](https://github.com/srbhandary1/GESC/actions/runs/33317082476)
+passed `make verify`; acceptance is recorded as D-0220 (see `STATUS.md`,
+"Checkpoint A verified"). Checkpoint B is next.
+
+### Corrected: the brief's Sarvam line is not authority for a driver flip
+
+The brief states that "Sarvam STT may be enabled via existing
+`VOICE_PROVIDER_DRIVER=indic` when keys are present (config checkpoint only)".
+That overstates the recorded position and is corrected here so it cannot be
+cited later:
+
+- **E above is not accepted.** The driver flip stays governed by D-0217.
+- ADR-0027 §6 requires that live Indic enablement pass a **spend,
+  DPA/subprocessor, and organization-allowlist review** — keys alone are not
+  sufficient.
+- The voice consent notice promises learners that their audio and transcripts
+  "are not used for training or human review" (`apps/api/config/voice.php`).
+  That promise must be contractually true of any new processor before learner
+  audio reaches it.
+
+What may proceed without further approval: local-only validation of the adapter
+with the owner's own voice, within the ADR-0027 boundaries (secret file outside
+git, HTTPS allowlisted host, production never binds the driver). Live learner
+enablement stays blocked on the D-0217 / ADR-0027 §6 reviews.
+
+### Minor factual correction
+
+The brief repeats this document's "1,092 locale keys" figure for the Swathi
+identity surface. The `en-IN` catalogue holds **1,097** keys as of 30 August
+2026 (six locale catalogues in `packages/localization/src/catalogues/`); the
+1,092 figure below predates later additions. The point stands either way.
+
+The brief's remaining sections restate the accepted A/B/C definitions, the
+rejection table, the dual-payload remediation rules and the `make verify` /
+`make e2e` requirements already recorded in this document, APP-0069, D-0219 and
+ADR-0028, and are not duplicated here.
+
 ## Request
 
 The product owner asked for an app that is better than SuperNova AI Spoken

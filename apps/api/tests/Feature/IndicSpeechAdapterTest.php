@@ -105,6 +105,17 @@ final class IndicSpeechAdapterTest extends TestCase
         $this->assertContains('secret_file_invalid', $errors);
     }
 
+    public function test_production_preflight_accepts_complete_fail_closed_configuration(): void
+    {
+        $this->app->detectEnvironment(static fn (): string => 'production');
+        $this->configureAuthorizedBoundary();
+
+        $errors = $this->app->make(IndicRecordedSpeechConfiguration::class)
+            ->preflightErrors();
+
+        $this->assertSame([], $errors);
+    }
+
     private function configureAuthorizedBoundary(): void
     {
         $secretPath = sys_get_temp_dir().'/indic-stt-'.Str::random(20).'.key';
