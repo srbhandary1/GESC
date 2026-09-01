@@ -4,15 +4,22 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Wave 2A: Speak 25s cap, Indic STT ledger/policy, Azure failover, Sarvam consent |
-| Status | Implemented locally. ADR-0027 Wave 2A amendment. Speak stays on Azure until Wave 6. Indic driver is not enabled. |
+| Checkpoint | Wave 3: vendor host inventory (Azure + Sarvam secrets, dummy pay) |
+| Status | Host inventory recorded. Azure OpenAI South India and Azure Speech Central India hosts respond over TLS. Secrets are mode `0600` outside git. Dummy checkout, Indic off, `APP_ENV=soft-launch`. Sarvam dashboard (rotate, DPA, monthly cap) and named spend SMS remain APO. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
 | Updated date | 1 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Wave 3 vendor accounts in parallel if needed; do **not** set `VOICE_PROVIDER_DRIVER=indic` until Wave 6; do **not** set `APP_ENV=production`. Wave 2B is only before renaming the env to production. |
+| Next required action | Wave 4 backup/observe/rollback. APO: rotate Sarvam key; billing alert; name spend SMS. Do **not** set `VOICE_PROVIDER_DRIVER=indic` until Wave 6; do **not** set `APP_ENV=production`. |
 | Production/public release | Not authorized |
 | Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged (Azure). |
+
+## Wave 3: vendor host inventory — 1 September 2026
+
+- Azure OpenAI: `$HOME/ge-conversation-model/secrets/azure-openai.secret` mode 0600; kill switch `CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED`; cap ₹500 (APP-0022).
+- Azure Speech: `$HOME/ge-speech-benchmark/secrets/azure-speech.secret` mode 0600; voices Neerja + Sapna; cap ₹500 (APP-0064) until 2026-09-14.
+- Sarvam: `$HOME/ge-indic-stt/secrets/sarvam.secret` mode 0600. Driver not flipped. Rotate + DPA + monthly cap still open.
+- Payments dummy. Google/Facebook unset until Wave 5. Play Console not opened (`com.globalenglish.app`).
 
 ## Wave 2A: Indic STT prerequisites — 1 September 2026
 

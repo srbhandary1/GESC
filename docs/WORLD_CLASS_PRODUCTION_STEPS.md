@@ -76,15 +76,17 @@ Do **not** do Wave 12 until all of these are coded. Today:
 
 ## Wave 3 — Accounts, vendors, spend (parallel with Wave 2)
 
-- [ ] **3.1** Azure OpenAI: confirm South India deployment still serves; key in `~/ge-conversation-model/secrets/azure-openai.secret`; live kill switch understood (`CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED` or current equivalent).
-- [ ] **3.2** Azure Speech: keep for TTS + STT failover. Confirm Central India resource, key file, TTS voices `en-IN-NeerjaNeural` + `kn-IN-SapnaNeural`.
-- [ ] **3.3** Sarvam: create project, billing alert, DPA/no-training, API key file `~/ge-speech/secrets/sarvam.secret` (or similar, mode 0600). Note monthly INR cap: `________________`.
-- [ ] **3.4** Razorpay/Cashfree: account, GSTIN, webhook secret, test vs live keys. Webhook URL will be `https://<host>/api/v1/...` (exact path after adapter exists).
-- [ ] **3.5** Google / Facebook (optional): production client IDs, redirect URIs on the **stable** origin. Do not enable until Wave 5 origin is frozen.
-- [ ] **3.6** Play Console: app `com.globalenglish.app`, signing key custody, Data safety draft (mic, audio, Sarvam, Azure).
-- [ ] **3.7** Spend caps written: Azure chat ₹/day `____`, Azure speech ₹/day `____`, Sarvam ₹/day `____`. Who gets the SMS when hit: `________________`.
+Host inventory recorded 1 September 2026 on this Ubuntu workstation. No secret values, transcripts, or learner data were copied into git or chat. Indic STT remains off. `APP_ENV` remains `soft-launch`.
 
-**Exit:** every secret exists on the Ubuntu host at mode 0600. None in git. Caps written.
+- [x] **3.1** Azure OpenAI South India is the live Turn Model. Host `ge-conversation-southindia.openai.azure.com` returned HTTP 200 over TLS at 2026-09-01T16:04:14Z (no API key sent). Secret file `$HOME/ge-conversation-model/secrets/azure-openai.secret` is a regular file, owner uid 1000, mode `0600`, outside the repository. Soft-launch env: `CONVERSATION_PROVIDER_DRIVER=azure-openai-dev`, deployment `gpt-4-1-mini-southindia`, API version `2024-10-21`, **kill switch** `CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED` (currently `true`). Set that to `false` and restart the API/worker to stop chat spend. Authorized hard ceiling **₹500** (APP-0022).
+- [x] **3.2** Azure Speech Central India is TTS and recorded-STT (live now, Indic failover later). Host `ge-speech-centralindia.cognitiveservices.azure.com` returned HTTP 200 over TLS at the same instant (no key sent). Secret `$HOME/ge-speech-benchmark/secrets/azure-speech.secret` mode `0600`, outside git. Voices remain `en-IN-NeerjaNeural` and `kn-IN-SapnaNeural` (`GuidanceTtsPolicy`). Kill switches: `CONVERSATION_GUIDANCE_TTS_LIVE_REQUESTS_ENABLED=false` stops TTS; `VOICE_UPLOAD_ENABLED=false` or `VOICE_PROVIDER_DRIVER=disabled` stops learner STT. Authorized hard ceiling **₹500** (APP-0064), shared with learner STT (APP-0068). APP-0064 spend-approval `valid_until` is **2026-09-14** — renew before then.
+- [x] **3.3** Sarvam key on disk: `$HOME/ge-indic-stt/secrets/sarvam.secret` (mode `0600`, outside git). That Wave 0 path is canonical; `~/ge-speech/secrets/sarvam.secret` was **not** created (do not duplicate the key). `VOICE_INDIC_SECRET_FILE` is unset; `VOICE_PROVIDER_DRIVER=azure`. **Still APO dashboard work:** rotate the key (it was pasted in chat); billing alert; DPA/no-training; monthly INR cap (not invented here).
+- [x] **3.4** Payments stay **dummy** through the first public week (Wave 0.4 / Wave 8). `PAYMENT_DRIVER` is unset → `DummyPaymentProvider`. No Razorpay/Cashfree keys. Real GSTIN remains the operator tax-page placeholder. Webhook path does not exist until Wave 2.9 / Wave 8.
+- [x] **3.5** Google/Facebook client IDs are **unset**. Do not add production redirect URIs until Wave 5 freezes `https://ai.globalspokenenglish.com`.
+- [x] **3.6** Android application id is `com.globalenglish.app`. Play Console, signing-key custody, and Data safety draft are **operator dashboard work** (Wave 10). Not opened in this session.
+- [x] **3.7** Authorized hard ceilings written (not new daily SMS alerts): Azure chat **₹500** (APP-0022); Azure speech **₹500** (APP-0064, includes STT). Sarvam daily/monthly cap: **not set**. Named SMS recipient: **not set** — use Azure Cost Management email to the subscription owner until you name a phone.
+
+**Exit (host):** Azure OpenAI, Azure Speech, and Sarvam secret files exist at mode `0600` outside git. Dummy checkout unchanged. **Not exit-complete for dashboard leftovers:** Sarvam rotate + DPA + monthly cap; named spend SMS; Play Console; Razorpay (Wave 8).
 
 ---
 
@@ -283,8 +285,8 @@ Do not start because you are excited. Start because Wave 11 stayed green.
 
 ## First action tomorrow morning
 
-1. Tick Wave 0.  
-2. Backup + deploy uncommitted entitlements (Wave 1).  
-3. Start Wave 2.1–2.6 (clip cap, ledger, failover, Sarvam secret, consent).  
-4. Do **not** flip `VOICE_PROVIDER_DRIVER=indic` until 2A is deployed.  
+1. Wave 0–2A and the Wave 3 **host** inventory are done.  
+2. APO: rotate the Sarvam key; set a Sarvam billing alert and monthly cap; name who gets spend SMS.  
+3. Next engineering wave is **Wave 4** (backup, observe, rollback).  
+4. Do **not** flip `VOICE_PROVIDER_DRIVER=indic` until Wave 6.  
 5. Do **not** set `APP_ENV=production`.
