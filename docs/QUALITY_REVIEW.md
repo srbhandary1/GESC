@@ -1,5 +1,37 @@
 # Quality review
 
+## Wave 5: stable host + legal pages — 1 September 2026
+
+### Scope reviewed
+
+- Whether `ai.globalspokenenglish.com` and WAN 80/443 can be cut over.
+- Public privacy and account-deletion URLs for Play.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| DNS A for `ai.globalspokenenglish.com` | Fail | `dig @1.1.1.1` empty |
+| Cloudflare API token on host | Absent | No token files; not invented |
+| WAN 80 → Caddy | Fail | Public IPv4 port 80 returned a router login HTML page |
+| WAN 443 | Fail | Connection refused |
+| WAN 8080/8443 | Fail | Timeout |
+| LAN IPv4 | `192.168.1.4` | DHCP on `wlo1` |
+| `configure-stable` / tunnel-stop | Not run | Would take down the working tunnel |
+| Privacy page | Pass | `GET /privacy.html` HTTP 200 on loopback; names Sarvam + Azure |
+| Account-deletion page | Pass | `GET /account-deletion.html` HTTP 200; no invented inbox |
+| In-app links | Pass | Vitest `App.test.tsx` 16 passed |
+| Soft-launch contract | Pass | `scripts/test-soft-launch-environment.sh` |
+| Localization | Pass | `packages/localization` 31 tests; revision `ui-*-2026-09-01.4` |
+| Android rebuild / sideload | Not run | No stable origin; `adb devices` empty |
+| `APP_ENV=production` | Not set | Remains `soft-launch` |
+
+### Known limitations
+
+- `/privacy` and `/account-deletion` redirects need a Caddy reload (next stack restart). `.html` URLs work now.
+- Play listing still needs the pages on the stable HTTPS origin after 5.3.
+- `make verify` still blocked on this host (PHP 8.5.4 vs 8.4.23; no system `pdo_pgsql`; Node v22 vs 24.18.1).
+
 ## Wave 4: backup, observe, rollback — 1 September 2026
 
 ### Scope reviewed

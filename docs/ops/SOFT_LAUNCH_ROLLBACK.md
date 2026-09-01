@@ -1,7 +1,8 @@
 # Soft-launch rollback card (Wave 4)
 
 **Scope:** Invite-only Ubuntu soft-launch on this workstation. Not Play,
-not `APP_ENV=production`, not a public DNS cutover (Wave 5).
+not `APP_ENV=production`. Wave 5.9 legal pages are on the current origin.
+The public DNS cutover (5.1–5.8) is still blocked.
 
 **Logging rule:** Never paste transcripts, audio, secrets, OTP codes, or
 learner rows into chat or tickets.
@@ -15,7 +16,7 @@ learner rows into chat or tickets.
 | `APP_ENV` | `soft-launch` |
 | Speak STT driver on disk | `VOICE_PROVIDER_DRIVER=indic` (ahead of the Wave 6 staff checklist) |
 | Payments | Dummy (`PAYMENT_DRIVER` unset) |
-| Public host | Cloudflare Quick Tunnel still in use; Wave 5 replaces it |
+| Public host | Cloudflare Quick Tunnel still in use. Do not stop it until `make soft-launch-stable-prereq` passes. Privacy URLs: `/privacy.html`, `/account-deletion.html` |
 
 ## Previous Android APK (keep until Wave 5 rebuild)
 

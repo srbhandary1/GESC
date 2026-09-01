@@ -221,3 +221,9 @@ credentials or object keys into tickets, logs, analytics or audit reasons.
   remain production work.
 - Consolidated development review is not independent privacy/security/tenancy
   review or production authorization.
+- Public Play-style URLs (Wave 5.9): `/privacy.html` and `/account-deletion.html`
+  (also `/privacy` and `/account-deletion` after the next Caddy reload). They
+  describe Sarvam STT with Azure Speech failover plus Azure reply/TTS. They do
+  not collect new personal data and do not invent a public inbox. Erasure stays
+  the existing operator privacy command. The stable hostname
+  `https://ai.globalspokenenglish.com` is not yet the origin.

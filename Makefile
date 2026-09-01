@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-systemd-install
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install
 
 help:
 	@printf '%s\n' \
@@ -36,6 +36,7 @@ help:
 		'make soft-launch-restore-drill  Restore latest gzip dump into a temporary database' \
 		'make soft-launch-observe  Content-free API/queue/provider-5xx check' \
 		'make soft-launch-observe-install Install the per-minute user observe timer' \
+		'make soft-launch-stable-prereq  Fail-closed DNS/TLS check for ai.globalspokenenglish.com' \
 		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
 		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
 		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
@@ -263,6 +264,10 @@ soft-launch-observe:
 soft-launch-observe-install:
 	@chmod +x scripts/install-soft-launch-observe-timer.sh scripts/soft-launch-observe.sh
 	@bash scripts/install-soft-launch-observe-timer.sh
+
+soft-launch-stable-prereq:
+	@chmod +x scripts/check-stable-host-prerequisites.sh
+	@bash scripts/check-stable-host-prerequisites.sh
 
 soft-launch-systemd-install:
 	@chmod +x scripts/install-soft-launch-systemd.sh

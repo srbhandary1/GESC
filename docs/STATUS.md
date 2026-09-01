@@ -4,15 +4,23 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Wave 4: backup, observe, rollback |
-| Status | Gzip dump encrypted; temp-DB restore proved (live not overwritten). Worker/scheduler up. Health/ready green. Rollback card lists APK, git SHA, and `VOICE_PROVIDER_DRIVER=azure`. Observe timer writes content-free counts. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | Wave 5: stable host (blocked on DNS/router); privacy URLs shipped |
+| Status | `ai.globalspokenenglish.com` has no A record. WAN 80 is a router login page; 443 not forwarded. Configure-stable and tunnel-stop were not run. Public `/privacy.html` and `/account-deletion.html` are live on the loopback origin. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
 | Updated date | 1 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Wave 5 stable host (`ai.globalspokenenglish.com`) + APK rebuild. Copy encrypted dump off this NVMe. APO: rotate Sarvam key; billing alert; name spend SMS. Wave 6 staff Indic tests still open. Do **not** set `APP_ENV=production`. |
+| Next required action | APO: Cloudflare DNS-only `ai` A record + router 80/443 → `192.168.1.4:8080/8443`. Then `make soft-launch-stable-prereq` and 5.3–5.8. Do **not** set `APP_ENV=production`. |
 | Production/public release | Not authorized |
 | Soft launch | Translation-preview web build. Live Azure OpenAI and guidance TTS. Gitignored env already has `VOICE_PROVIDER_DRIVER=indic`; Wave 6 staff tests remain open. |
+
+## Wave 5: stable host (in progress) — 1 September 2026
+
+- DNS: no A record for `ai.globalspokenenglish.com`. No Cloudflare token on disk.
+- Router: WAN 80 is not this app; WAN 443 not forwarded. LAN `192.168.1.4`.
+- `make soft-launch-configure-stable` and tunnel-stop **not** run.
+- 5.9: `/privacy.html` and `/account-deletion.html` plus in-app Legal links. Operator erasure API unchanged.
+- Android APK not rebuilt. No adb device.
 
 ## Wave 4: backup, observe, rollback — 1 September 2026
 

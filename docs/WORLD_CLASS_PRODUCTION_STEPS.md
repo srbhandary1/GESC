@@ -106,24 +106,19 @@ Completed 1 September 2026 on this host. Live database was not overwritten. Indi
 
 ## Wave 5 — Stable public host (stop the tunnel)
 
-- [ ] **5.1** Cloudflare DNS: `A` record for `ai.globalspokenenglish.com` (or chosen host) → the Ubuntu public IPv4. No chat-paste of Cloudflare tokens.
-- [ ] **5.2** Router: 443/80 to the box as the runbook requires.
-- [ ] **5.3** `make soft-launch-configure-stable HOST=ai.globalspokenenglish.com` (or the real host).
-- [ ] **5.4** Caddy TLS + HTTPS redirect + HSTS. Stop Cloudflare Quick Tunnel (`make soft-launch-tunnel-stop`).
-- [ ] **5.5** `APP_URL` and Sanctum/session origin = that HTTPS origin. Trusted proxies if behind Cloudflare.
-- [ ] **5.6** CORS / cookie `Secure` / `SameSite` work on that origin. Sign in on a phone browser (not only laptop).
-- [ ] **5.7** Rebuild Android:
+Started 1 September 2026. **Not exit-complete.** `make soft-launch-configure-stable` and tunnel-stop were **not** run: they would take down the working Quick Tunnel before DNS and WAN 80/443 exist.
 
-  ```text
-  export VITE_MOBILE_API_ORIGIN='https://ai.globalspokenenglish.com'
-  make android-closed-beta
-  ```
+- [ ] **5.1** Cloudflare DNS: `ai.globalspokenenglish.com` has **no A record** (checked 2026-09-01T16:37Z via 1.1.1.1). Domain NS is Cloudflare. No Cloudflare API token is on this host. Create a **DNS-only** `ai` A record to this workstation’s public IPv4. Do not paste tokens in chat.
+- [ ] **5.2** Router: WAN **80** on the public IPv4 currently returns a **router/login HTML page**, not Caddy. WAN **443** refuses. WAN 8080/8443 time out. This host’s LAN address is **`192.168.1.4`**. Map WAN 80 → `192.168.1.4:8080` and WAN 443 → `192.168.1.4:8443` (reserve that DHCP lease).
+- [ ] **5.3** After 5.1–5.2 pass `make soft-launch-stable-prereq`, then `make soft-launch-configure-stable HOST=ai.globalspokenenglish.com` and restart. Not run.
+- [ ] **5.4** Caddy TLS/HSTS is generated only after 5.3. Quick Tunnel still running on purpose.
+- [ ] **5.5** `APP_URL` still the rotating tunnel origin. Sanctum Secure-cookie stays false until the stable host is configured.
+- [ ] **5.6** Phone-on-Jio sign-in not possible until HTTPS on `ai.globalspokenenglish.com` exists. No adb device attached.
+- [ ] **5.7** Android rebuild blocked until 5.1–5.6. Do not pin a new APK to the tunnel.
+- [ ] **5.8** Sideload blocked: `adb devices` empty.
+- [x] **5.9** Public privacy + account-deletion pages: `/privacy.html` and `/account-deletion.html` (also `/privacy`, `/account-deletion` after Caddy reload). In-app footer links. Operator erasure API already exists; this page tells learners to ask their institute admin. Copied into current `dist` so loopback already serves them (HTTP 200).
 
-  Update `network_security_config.xml` if you still need any cleartext (prefer none).
-- [ ] **5.8** Sideload the new APK. Confirm it does **not** open the old tunnel host. Uninstall old APKs.
-- [ ] **5.9** Publish a one-line privacy policy + account-deletion page on that origin (Play needs a public URL). Wire in-app deletion if not already.
-
-**Exit:** Jio phone, not on your Wi-Fi, opens the HTTPS site, signs in, and the new APK talks to the same host.
+**Exit:** not met. Next: APO creates the DNS A record and router maps, then engineering runs 5.3–5.8.
 
 ---
 
@@ -287,8 +282,8 @@ Do not start because you are excited. Start because Wave 11 stayed green.
 
 ## First action tomorrow morning
 
-1. Wave 0–4 are done on this host (Wave 3 dashboard leftovers still APO).  
-2. APO: rotate the Sarvam key; set a Sarvam billing alert and monthly cap; name who gets spend SMS; copy the encrypted backup off this NVMe.  
-3. Next engineering wave is **Wave 5** (stable HTTPS host + APK rebuild).  
-4. Wave 6 staff Indic tests are still required even though this host’s env already has `VOICE_PROVIDER_DRIVER=indic`.  
-5. Do **not** set `APP_ENV=production`.
+1. Wave 0–4 are done. Wave 5 **legal pages** are in the tree; **DNS and router are not**.  
+2. APO: in Cloudflare, grey-cloud `ai` A record to this box’s public IPv4. On the router, stop WAN 80 serving the login page; forward 80→`192.168.1.4:8080` and 443→`192.168.1.4:8443`.  
+3. Then engineering: `make soft-launch-stable-prereq` must pass, then 5.3–5.8.  
+4. Rotate the Sarvam key; copy the encrypted backup off this NVMe.  
+5. Do **not** set `APP_ENV=production`. Do not stop the Quick Tunnel until 5.3.

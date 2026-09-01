@@ -53,6 +53,7 @@ import {
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { LegalLinks } from './legal/LegalLinks'
 import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import { ProgressDashboard } from './learner/ProgressDashboard'
@@ -838,14 +839,24 @@ function App({
           </p>
         )}
 
-        {demoMode || session.status !== 'authenticated' ? null : (
-          <SessionSummary
-            authentication={authentication}
-            message={message}
-            onSessionChange={setSession}
-            session={session}
-          />
-        )}
+        {demoMode || showMarketingLanding || showDedicatedSignIn
+          ? null
+          : showAuthenticatedAccountPanel
+            ? (
+                <SessionSummary
+                  accountSecurityOpen={accountSecurityVisible}
+                  authentication={authentication}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  message={message}
+                  onAccountSecurityOpenChange={setAccountSecurityOpen}
+                  onSessionChange={setSession}
+                  session={session}
+                />
+              )
+            : null}
+
+        {demoMode ? null : <LegalLinks message={message} />}
       </div>
     </ApplicationFrame>
     </div>

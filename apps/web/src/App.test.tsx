@@ -252,6 +252,43 @@ describe('localized application shell', () => {
     ).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', {
+        level: 2,
+        name: text('marketing.section.how'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: text('marketing.path.1.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: text('marketing.section.pedagogy'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: text('marketing.benefit.hybrid.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: text('marketing.benefit.tuition.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: text('legal.privacy') }),
+    ).toHaveAttribute('href', '/privacy.html')
+    expect(
+      screen.getByRole('link', { name: text('legal.account_deletion') }),
+    ).toHaveAttribute('href', '/account-deletion.html')
+    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+    expect(
+      screen.getByRole('heading', {
         level: 1,
         name: text('shell.splash.tagline'),
       }),
