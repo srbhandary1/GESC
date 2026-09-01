@@ -25,24 +25,17 @@ Recorded 1 September 2026 from APO answers in the active session.
 
 ## Wave 1 — Land the uncommitted product (before any cutover)
 
-The working tree already has Direct subscriptions, courtesy Premium, federated sign-in, Android in-app password. If this is not committed, reviewed, and deployed, the live host will not match what you think you built.
+Completed 1 September 2026 on this host. Commit `2c9dc14`. System PHP has no `pdo_pgsql`; migrations and artisan used a throwaway `php:8.4-cli-bookworm` container with `pdo_pgsql` on host networking.
 
-- [x] **1.1** Inventory on this host (1 September 2026): branch `codex/confidence-conversation`, 81 modified + 43 untracked paths covering federated/password auth, Direct entitlements/billing, OpenAPI 0.39, locales, ADRs 0033–0036, and world-class production docs. Host PHP 8.5.4 has **no** `pdo_pgsql`; toolchain PHP 8.4.23 also has **no** `pdo_pgsql`. Postgres is up in Docker (`127.0.0.1:5432`).
-- [ ] **1.2** Commit only after you review: no secrets, no `.env`, no learner data.
-- [x] **1.3** Backup taken **before** migrate: `~/ge-soft-launch/backups/soft-launch-20260901T151339Z.sql.gz`. Deploy of this commit to a second machine is still pending if the live API is not this working tree.
-- [ ] **1.4** Run migrations on that database (`php artisan migrate` against soft-launch Postgres). Includes federated identities + Direct entitlements if not applied.
-- [ ] **1.5** Seed / catalog: Direct plans `demo` / `monthly_modules` / `monthly_modules_roleplay` (Premium) exist for the Direct org.
-- [x] **1.6** GSTIN stays dummy `29AAAAA0000A1Z5` until Wave 8 (Wave 0.4).
-- [ ] **1.7** Dry-run then grant courtesy Premium on **this** database:
+- [x] **1.1** Inventory: branch `codex/confidence-conversation`; 154 files in the Wave 1 commit (federated/password auth, Direct entitlements, OpenAPI, locales, ADRs 0033–0036, world-class docs).
+- [x] **1.2** Commit `2c9dc14` — no `.env`, no Sarvam secret, no learner data.
+- [x] **1.3** Backup `~/ge-soft-launch/backups/soft-launch-20260901T151339Z.sql.gz`. Soft-launch restarted on this working tree (API/worker/scheduler/Caddy; `health live: ok`; Vite `dist` rebuilt). Tunnel still stopped. Android APK rebuild is Wave 5.
+- [x] **1.4** Migrations applied: `2026_09_01_000280_create_federated_identities`, `2026_09_01_000290_create_direct_entitlements`.
+- [x] **1.5** Catalogue present: `demo` (Two-day demo), `monthly_modules` (Modules, ₹350), `monthly_modules_roleplay` (Premium, ₹500).
+- [x] **1.6** GSTIN stays dummy placeholder (18%) until Wave 8.
+- [x] **1.7** Courtesy Premium: dry-run 5 granted / 0 skipped; live grant 5 granted / 0 skipped; replay 0 granted / 5 skipped. Counts only — no usernames recorded here.
 
-  ```text
-  php artisan entitlements:grant-courtesy-premium --dry-run
-  php artisan entitlements:grant-courtesy-premium
-  ```
-
-  Record counts only (considered / granted / skipped). No usernames in tickets.
-
-**Exit:** live DB has entitlement schema, Premium catalogue, courtesy grants applied or dry-run counts you accept. Web `#` subscription + operator entitlements match that API.
+**Exit:** live DB has entitlement schema, Premium catalogue, and 5 Direct learners on courtesy Premium. Soft-launch API is running the committed tree. **Wave 1 complete.** Next is Wave 2A (clip length, ledger, failover — do not flip Indic STT yet).
 
 ---
 
