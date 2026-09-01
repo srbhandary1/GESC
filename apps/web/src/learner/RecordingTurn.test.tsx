@@ -1,10 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   AudioRecorder,
   AudioRecordingSession,
 } from './BrowserAudioRecorder'
+import { HOLD_MAXIMUM_DURATION_MS } from '../conversation/holdToTalkLimit'
 import {
   RecordingTurn,
   type RecordingTurnLabels,
@@ -49,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
@@ -320,6 +322,99 @@ describe('RecordingTurn privacy boundaries', () => {
     await screen.findByRole('button', { name: labels.controls.cancel })
     await user.click(screen.getByRole('button', { name: labels.controls.cancel }))
     expect(onCancelInFlight).toHaveBeenCalledOnce()
+  })
+
+  it('hold-to-talk auto-stops at the 25 second Speak cap', async () => {
+    vi.useFakeTimers()
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: HOLD_MAXIMUM_DURATION_MS,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const onAudioCaptureChange = vi.fn()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          holdRemaining: '{seconds} seconds left',
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={onAudioCaptureChange}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    await act(async () => {
+      fireEvent.pointerDown(
+        screen.getByRole('button', { name: 'Hold to talk' }),
+        { button: 0 },
+      )
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Release to send' }),
+    ).toBeVisible()
+    expect(screen.getByText('25 seconds left')).toBeVisible()
+
+    await act(async () => {
+      vi.advanceTimersByTime(HOLD_MAXIMUM_DURATION_MS)
+    })
+
+    expect(session.stop).toHaveBeenCalledOnce()
+    expect(onAudioCaptureChange).toHaveBeenCalled()
+  })
+
+  it('tap recording does not auto-stop at the Speak hold cap', async () => {
+    vi.useFakeTimers()
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    renderTurn(recorder)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: labels.controls.start }))
+    })
+
+    expect(
+      screen.getByRole('button', { name: labels.controls.stop }),
+    ).toBeVisible()
+
+    await act(async () => {
+      vi.advanceTimersByTime(HOLD_MAXIMUM_DURATION_MS)
+    })
+
+    expect(session.stop).not.toHaveBeenCalled()
   })
 })
 

@@ -150,7 +150,11 @@ final readonly class IndicRecordedSpeechConfiguration
 
     public function modelVersion(): string
     {
-        return $this->model();
+        $model = $this->model();
+
+        return $model === ''
+            ? 'indic-http-stt-v1:unconfigured'
+            : 'indic-http-stt-v1:'.$model;
     }
 
     public function providerKey(): string
@@ -249,7 +253,7 @@ final readonly class IndicRecordedSpeechConfiguration
         return new ConversationProviderException(
             safeCode: $safeCode,
             providerKey: self::PROVIDER_KEY,
-            modelVersion: $this->model() === '' ? 'unconfigured' : $this->model(),
+            modelVersion: $this->modelVersion(),
         );
     }
 

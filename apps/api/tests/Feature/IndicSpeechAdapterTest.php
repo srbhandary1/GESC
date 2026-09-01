@@ -76,6 +76,10 @@ final class IndicSpeechAdapterTest extends TestCase
         $this->assertSame('I practise English after work.', $result->transcript);
         $this->assertSame(8700, $result->confidenceBps);
         $this->assertSame('indic-http-stt', $result->usage->providerKey);
+        $this->assertSame(
+            'indic-http-stt-v1:indic-translate-test',
+            $result->usage->modelVersion,
+        );
         Http::assertSent(function (Request $request): bool {
             $body = $request->body();
 

@@ -516,7 +516,7 @@ function voiceConsents() {
       history_optional: true,
       notice:
         'Implementation draft: audio is uploaded privately and deleted after transcription.',
-      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_revision: 'voice-processing-notice-2026-09-01',
       notice_sha256: 'c'.repeat(64),
       policy_version: 'recording-policy-v1',
       purposes: [

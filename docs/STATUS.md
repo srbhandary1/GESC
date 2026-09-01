@@ -4,15 +4,23 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | D-0267: Premium flagship and courtesy month for Direct learners |
-| Status | Implemented locally. DR-0046 Option A accepted (APP-0073 / ADR-0036). Premium is the recommended ₹500 plan; Modules stays ₹350 without Role-play. Current Direct learners can receive one complimentary Premium month. Old-website students are not imported. Production/Play and live payment credentials remain unauthorized. |
+| Checkpoint | Wave 2A: Speak 25s cap, Indic STT ledger/policy, Azure failover, Sarvam consent |
+| Status | Implemented locally. ADR-0027 Wave 2A amendment. Speak stays on Azure until Wave 6. Indic driver is not enabled. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
 | Updated date | 1 September 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036) |
-| Next required action | Run `php artisan entitlements:grant-courtesy-premium` on the soft-launch database after deploy, then replace the dummy GSTIN. Live payment credentials and production/Play remain unauthorized. |
+| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
+| Next required action | Wave 3 vendor accounts in parallel if needed; do **not** set `VOICE_PROVIDER_DRIVER=indic` until Wave 6; do **not** set `APP_ENV=production`. Wave 2B is only before renaming the env to production. |
 | Production/public release | Not authorized |
-| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged. |
+| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged (Azure). |
+
+## Wave 2A: Indic STT prerequisites — 1 September 2026
+
+- 25-second hold-to-talk and recorded-STT cap. Learn tap-to-record stays 120 seconds.
+- `ai_cost_ledger` CHECK and `ConversationProviderUsagePolicy` allow `indic-http-stt` (`indic-http-stt-v1:`) and Azure Fast Transcription failover `azure-speech-soft-launch-stt`.
+- `IndicWithAzureFailoverSpeechToTextProvider` retries once on Azure after Indic HTTP/connection/transport failure.
+- Consent notices name Sarvam as the transcription processor and Azure as failover (`voice-processing-notice-2026-09-01`).
+- Indic remains off. Secret path is documented in `.env.example` comments only.
 
 ## D-0267: Premium flagship and courtesy month — 1 September 2026
 

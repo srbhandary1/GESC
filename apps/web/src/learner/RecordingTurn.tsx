@@ -4,6 +4,7 @@ import {
   type RecordingControlState,
 } from '@global-english/design-system'
 import { useEffect, useRef, useState } from 'react'
+import { HOLD_MAXIMUM_DURATION_MS } from '../conversation/holdToTalkLimit'
 import { beginSpeakLoop } from '../conversation/speakLoopTimings'
 import { audioToPcmWav } from '../conversation/audioToPcmWav'
 import {
@@ -24,6 +25,7 @@ export interface RecordingTurnLabels {
   readonly permissionExplanation: string
   readonly continueWithout: string
   readonly continueWithoutExplanation: string
+  readonly holdRemaining?: string
 }
 
 export type HoldPhase = 'idle' | 'listening' | 'processing'
@@ -68,6 +70,9 @@ export function RecordingTurn({
   const captureRef = useRef<LocalCapture | null>(null)
   const active = useRef(true)
   const requestGeneration = useRef(0)
+  const holdIntent = useRef(false)
+  const stopRef = useRef<() => Promise<void>>(async () => undefined)
+  const [holdElapsedMs, setHoldElapsedMs] = useState(0)
 
   useEffect(() => {
     active.current = true
@@ -83,6 +88,25 @@ export function RecordingTurn({
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (captureMode !== 'hold' || state !== 'recording') {
+      return
+    }
+
+    const startedAt = Date.now()
+    const tick = window.setInterval(() => {
+      setHoldElapsedMs(Date.now() - startedAt)
+    }, 250)
+    const limit = window.setTimeout(() => {
+      void stopRef.current()
+    }, HOLD_MAXIMUM_DURATION_MS)
+
+    return () => {
+      window.clearInterval(tick)
+      window.clearTimeout(limit)
+    }
+  }, [captureMode, state])
 
   const start = async () => {
     clearCapture()
@@ -104,6 +128,7 @@ export function RecordingTurn({
 
       sessionRef.current = session
       setLiveSession(session)
+      setHoldElapsedMs(0)
       setState('recording')
       onHoldPhaseChange?.('listening')
     } catch (error) {
@@ -187,6 +212,10 @@ export function RecordingTurn({
     }
   }
 
+  useEffect(() => {
+    stopRef.current = stop
+  })
+
   const cancel = () => {
     requestGeneration.current += 1
     sessionRef.current?.cancel()
@@ -211,6 +240,18 @@ export function RecordingTurn({
     onAudioCaptureChange?.(null)
     onCaptureChange(null)
   }
+
+  const remainingHoldSeconds = Math.max(
+    0,
+    Math.ceil((HOLD_MAXIMUM_DURATION_MS - holdElapsedMs) / 1000),
+  )
+  const holdRemainingText =
+    labels.holdRemaining === undefined
+      ? null
+      : labels.holdRemaining.replaceAll(
+          '{seconds}',
+          String(remainingHoldSeconds),
+        )
 
   return (
     <section
@@ -242,6 +283,11 @@ export function RecordingTurn({
       />
       {state === 'recording' ? (
         <LiveLevelMeter session={liveSession} />
+      ) : null}
+      {state === 'recording' &&
+      captureMode === 'hold' &&
+      holdRemainingText !== null ? (
+        <p role="status">{holdRemainingText}</p>
       ) : null}
 
       {capture === null ? null : (

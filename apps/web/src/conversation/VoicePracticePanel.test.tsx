@@ -19,28 +19,45 @@ describe('secure voice practice consent boundary', () => {
       createTurn: vi.fn(),
       deleteVoiceRecording: vi.fn(),
       events: vi.fn(),
-      grantVoiceConsent: vi.fn(async (input) => ({
-        effective_at: '2026-07-31T12:00:00Z',
-        id: '01J00000000000000000000010',
-        notice_revision: 'voice-processing-notice-2026-07-31',
-        notice_sha256: 'a'.repeat(64),
-        policy_version: 'recording-policy-v1',
-        purpose: input.purpose,
-        replayed: false,
-        requested_locale: input.requested_locale,
-        resolved_locale: 'en-IN' as const,
-        state: 'granted' as const,
-      })),
+      grantVoiceConsent: vi.fn(async (input) => {
+        currentListing =
+          input.purpose === 'voice_upload_and_transcription'
+            ? uploadGranted
+            : bothGranted
+
+        return {
+          effective_at: '2026-07-31T12:00:00Z',
+          id: '01J00000000000000000000010',
+          notice_revision: 'voice-processing-notice-2026-09-01',
+          notice_sha256: 'a'.repeat(64),
+          policy_version: 'recording-policy-v1',
+          purpose: input.purpose,
+          replayed: false,
+          requested_locale: input.requested_locale,
+          resolved_locale: 'en-IN' as const,
+          state: 'granted' as const,
+        }
+      }),
       reviewVoiceTranscript: vi.fn(),
       startSession: vi.fn(),
       uploadVoiceRecording: vi.fn(),
-      voiceConsents: vi
-        .fn()
-        .mockResolvedValueOnce(initial)
-        .mockResolvedValueOnce(uploadGranted)
-        .mockResolvedValueOnce(bothGranted)
-        .mockResolvedValueOnce(uploadGranted),
-      withdrawVoiceConsent: vi.fn(),
+      voiceConsents: vi.fn(async () => currentListing),
+      withdrawVoiceConsent: vi.fn(async (purpose, input) => {
+        currentListing = uploadGranted
+
+        return {
+          effective_at: '2026-07-31T12:00:00Z',
+          id: '01J00000000000000000000011',
+          notice_revision: 'voice-processing-notice-2026-09-01',
+          notice_sha256: 'a'.repeat(64),
+          policy_version: 'recording-policy-v1',
+          purpose,
+          replayed: false,
+          requested_locale: input.requested_locale,
+          resolved_locale: 'en-IN' as const,
+          state: 'withdrawn' as const,
+        }
+      }),
     }
     const user = userEvent.setup()
 
@@ -292,7 +309,7 @@ function listing(
       history_optional: true,
       notice:
         'Implementation draft: audio is uploaded privately and deleted after transcription.',
-      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_revision: 'voice-processing-notice-2026-09-01',
       notice_sha256: 'a'.repeat(64),
       policy_version: 'recording-policy-v1',
       purposes: [

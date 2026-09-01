@@ -464,6 +464,7 @@ export function VoicePracticePanel({
               playbackHelp: text('conversation.voice.playback_help'),
               playbackLabel: text('learner.recording.playback_label'),
               retry: text('learner.recording.retry'),
+              holdRemaining: text('conversation.voice.hold_remaining'),
             }}
             onAudioCaptureChange={(capture) =>
               setState({

@@ -15,7 +15,9 @@ approval_reference: Exact human instruction in the active Cursor conversation to
 
 ## Status
 
-Accepted on 29 August 2026. Recorded as D-0217. This ADR amends
+Accepted on 29 August 2026. Recorded as D-0217. Wave 2A amendment
+1 September 2026 (25-second clip cap, Azure STT failover, ledger/policy
+allowlist, Sarvam named in consent). This ADR amends
 [ADR-0008](0008-azure-speech-development-provider-and-benchmark-policy.md) only
 to allow an **optional** recorded-STT driver. It does not replace the locked
 PR-009 Azure Speech synthetic benchmark, does not authorize live Indic STT on
@@ -74,6 +76,19 @@ Rejected. Architecture rules require project-owned HTTP mapping.
 - REST clip limits (for example 30s on some Indic APIs) may require a later
   batch/websocket checkpoint for long recordings.
 
+## Amendment — Wave 2A (1 September 2026)
+
+Recorded Speak clips are capped at 25 seconds (`voice.maximum_duration_ms`;
+hold-to-talk auto-stops in the client). Learn tap-to-record stays 120 seconds.
+`IndicWithAzureFailoverSpeechToTextProvider` retries once on Azure Fast
+Transcription after a transient Indic HTTP/connection/transport failure.
+`ai_cost_ledger` and `ConversationProviderUsagePolicy` allow `indic-http-stt`
+with model prefix `indic-http-stt-v1:` and failover key
+`azure-speech-soft-launch-stt`. Consent notices name Sarvam as the
+transcription processor and Azure as failover. Soft-launch remains Azure
+until `VOICE_PROVIDER_DRIVER=indic` (Wave 6). This does not amend the master
+plan or authorize production/Play.
+
 ## Security, privacy and tenancy impact
 
 - No credentials in git. Fail closed without a valid secret file.
@@ -84,7 +99,9 @@ Rejected. Architecture rules require project-owned HTTP mapping.
 
 ## Authoritative records and consistency impact
 
-No schema change. Provider usage records `indic-http-stt`.
+Provider usage records `indic-http-stt` with model prefix `indic-http-stt-v1:`.
+Wave 2A extends the PostgreSQL `ai_cost_ledger` CHECK for that key and for
+Azure recorded-STT failover.
 
 ## API, client and operational impact
 
