@@ -23,7 +23,10 @@ import {
 } from '@global-english/contracts'
 import {
   AuthenticationUnavailableError,
+  parseFederatedProviderAvailability,
   type AuthenticationSnapshot,
+  type FederatedProvider,
+  type FederatedProviderAvailability,
   type WebSessionAuthentication,
 } from './AuthenticationAdapter'
 
@@ -128,6 +131,71 @@ export class WebSessionAuthenticationAdapter
         password,
       },
     )
+  }
+
+  async federatedProviders(): Promise<FederatedProviderAvailability> {
+    return this.#federatedAvailability('/auth/social/providers')
+  }
+
+  async beginFederatedSignIn(provider: FederatedProvider): Promise<void> {
+    assignFederatedLocation(`/oauth/social/${provider}/authorize`)
+  }
+
+  async federatedLinks(): Promise<FederatedProviderAvailability> {
+    return this.#federatedAvailability('/auth/social/links')
+  }
+
+  async beginFederatedLink(provider: FederatedProvider): Promise<void> {
+    assignFederatedLocation(
+      `/oauth/social/${provider}/authorize?intent=link`,
+    )
+  }
+
+  async unlinkFederated(provider: FederatedProvider): Promise<void> {
+    const response = await this.#fetch(
+      `${this.#baseUrl ?? ''}/auth/social/${provider}/links`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          ...(await this.#csrfHeaders()),
+        },
+      },
+    )
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
+  async #federatedAvailability(
+    path: string,
+  ): Promise<FederatedProviderAvailability> {
+    const response = await this.#fetch(`${this.#baseUrl ?? ''}${path}`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const availability = parseFederatedProviderAvailability(body)
+
+    if (availability === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return availability
   }
 
   async passwordStatus(): Promise<import('./AuthenticationAdapter').PasswordAuthenticationStatus> {
@@ -467,4 +535,12 @@ function readCookieValue(
   }
 
   return undefined
+}
+
+function assignFederatedLocation(path: string): void {
+  if (typeof window === 'undefined') {
+    throw new AuthenticationUnavailableError()
+  }
+
+  window.location.assign(path)
 }

@@ -19,6 +19,16 @@ approval_reference: Codex task 019fae0d-d5d2-7e32-b2c2-ced466b4b0cb
 Accepted on 2026-07-30 under
 [APP-0001](../APPROVALS.md#app-0001).
 This ADR resolves DR-0001.
+Amended on 2026-09-01 by
+[ADR-0033](0033-android-in-app-password-sign-in.md): Android **first issue** is
+a first-party in-app password sign-in. Token lifetimes, rotation, reuse-revoke,
+installation binding and native secure storage are unchanged. Passport
+Authorization Code with S256 PKCE remains available and unused for guest
+password sign-in.
+Amended on 2026-09-01 by
+[ADR-0034](0034-federated-google-facebook-sign-in.md): linked Google or Facebook
+may issue the same web session or Android token family. Android federated
+authorization uses origin-pinned Custom Tabs; the password form stays in-app.
 
 ## Context
 
@@ -51,8 +61,18 @@ an existing identity.
 
 ### Android OAuth tokens
 
-- Use the system browser and Passport Authorization Code flow with S256 PKCE as
-  a public client. Do not use an embedded credential form or a client secret.
+- First issue uses a first-party in-app username/password form (ADR-0033).
+  Linked Google or Facebook may also issue that family (ADR-0034).
+  The server issues the Passport access and rotating refresh family for the
+  approved public Android client. Do not use a client secret. Do not enable
+  `grant_type=password` on `/oauth/token`.
+- Passport Authorization Code with S256 PKCE remains implemented for the
+  public client. Guest **password** sign-in does not open the system browser.
+  Guest **Google/Facebook** sign-in opens origin-pinned Custom Tabs on
+  `/oauth/social/{provider}/authorize` because the IdP forbids WebView OAuth.
+- Validate registered redirect URIs and OAuth state when the PKCE authorize
+  journey is used. Add nonce validation when an identity protocol layered on
+  that flow requires it.
 - Validate registered redirect URIs and OAuth state. Add nonce validation when
   an identity protocol layered on the flow requires it.
 - Access tokens have a 15-minute lifetime.
@@ -188,8 +208,8 @@ production alert integrations.
 
 ## Master-plan amendment
 
-This ADR does not amend the master plan. It supplies the exact policy required
-by master-plan §§11.2, 15, 18 and 26.
+This ADR did not amend the master plan when accepted. [ADR-0033](0033-android-in-app-password-sign-in.md)
+amends master-plan §11.2 in a later accepted change.
 
 ## Approval evidence
 

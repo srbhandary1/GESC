@@ -38,6 +38,20 @@ with the old APK, rebuild with the new HTTPS URL, verify the package, and
 redistribute it. Never replace the APK origin with
 `http://117.254.108.143:8080`.
 
+### D-0263 in-app login APK (1 September 2026)
+
+The Cloudflare Quick Tunnel was **stopped** when this checkpoint was packed.
+The published in-app-login APK is therefore pinned to the staff LAN HTTP
+origin that the current on-device tester binary already uses. Prefer an HTTPS
+rebuild when a tunnel hostname is available. Old APKs still open Chrome for
+sign-in; install this file to type username and password inside the app.
+
+```text
+/home/srbhandary/ge-soft-launch/artifacts/closed-group/global-spoken-english-in-app-login-20260901.apk
+```
+
+SHA-256: `aa94cacc3f4e244a9a258aee4f62e345f92bac6654ff3c22140678282213cca0`
+
 ## 2. APK artifact and controlled distribution
 
 Persistent host path:

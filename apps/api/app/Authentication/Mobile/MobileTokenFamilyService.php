@@ -244,7 +244,7 @@ final readonly class MobileTokenFamilyService
             throw new RuntimeException('The issued OAuth refresh-token record is unavailable.');
         }
 
-        if ($grantType === 'authorization_code') {
+        if (in_array($grantType, ['authorization_code', 'password_sign_in', 'federated_sign_in'], true)) {
             /** @var MobileTokenFamily $family */
             $family = MobileTokenFamily::query()->forceCreate([
                 'user_id' => $accessTokenRecord->user_id,

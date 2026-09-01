@@ -19,7 +19,7 @@ use stdClass;
  */
 final class LearnerPrivacyInventory
 {
-    public const string VERSION = 'learner-privacy-v5';
+    public const string VERSION = 'learner-privacy-v7';
 
     /**
      * Membership-linked governance records are not creatable by an authorized
@@ -246,6 +246,71 @@ final class LearnerPrivacyInventory
                 'Password hashes and hashing metadata are authentication credentials and are never exported.',
                 Schema::hasTable('password_credentials')
                     ? DB::table('password_credentials')->where('user_id', $userId)->count()
+                    : 0,
+            ),
+            $this->countOnlyGroup(
+                'federated_identities',
+                'global_authentication',
+                'count_only_secret_bearing',
+                'retain_global_security_authority',
+                'Federated identity subject digests are authentication credentials and are never exported.',
+                Schema::hasTable('federated_identities')
+                    ? DB::table('federated_identities')->where('user_id', $userId)->count()
+                    : 0,
+            ),
+            $this->group(
+                'learner_entitlements',
+                'organization_membership',
+                'included_safe_fields_without_plan_snapshot',
+                'retain_entitlement_evidence',
+                'Subscription grants are commercial access records; plan snapshots stay in the operator catalogue.',
+                Schema::hasTable('learner_entitlements')
+                    ? $this->rows(
+                        $this->tenantMembershipQuery('learner_entitlements', $organizationId, 'learner_membership_id', $membershipId),
+                        [
+                            'id',
+                            'plan_id',
+                            'status',
+                            'source',
+                            'starts_at',
+                            'first_sign_in_at',
+                            'expires_at',
+                            'live_ai_seconds_used',
+                            'created_at',
+                            'updated_at',
+                        ],
+                    )
+                    : [],
+            ),
+            $this->countOnlyGroup(
+                'subscription_checkouts',
+                'organization_membership',
+                'count_only_secret_bearing',
+                'retain_payment_evidence_without_secrets',
+                'Checkout provider references are payment evidence and are not exported.',
+                Schema::hasTable('subscription_checkouts')
+                    ? DB::table('subscription_checkouts')
+                        ->where('organization_id', $organizationId)
+                        ->where('learner_membership_id', $membershipId)
+                        ->count()
+                    : 0,
+            ),
+            $this->countOnlyGroup(
+                'live_ai_meter_charges',
+                'organization_membership',
+                'count_only',
+                'retain_entitlement_meter',
+                'Live-AI charge keys are metering evidence without audio or transcripts.',
+                Schema::hasTable('live_ai_meter_charges') && Schema::hasTable('learner_entitlements')
+                    ? DB::table('live_ai_meter_charges')
+                        ->whereIn(
+                            'entitlement_id',
+                            DB::table('learner_entitlements')
+                                ->where('organization_id', $organizationId)
+                                ->where('learner_membership_id', $membershipId)
+                                ->pluck('id'),
+                        )
+                        ->count()
                     : 0,
             ),
             $this->countOnlyGroup(

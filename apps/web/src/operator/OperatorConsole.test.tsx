@@ -12,6 +12,7 @@ import type {
 } from './OperatorConsoleApi'
 import type { OperatorOrganizationApi } from './OperatorOrganizationApi'
 import type { OperatorLearnerApi } from './OperatorLearnerApi'
+import type { OperatorEntitlementApi } from './OperatorEntitlementApi'
 import type { OperatorContentStudioApi } from './OperatorContentStudioApi'
 import type { OperatorMediaLibraryApi } from './OperatorMediaLibraryApi'
 
@@ -170,6 +171,46 @@ describe('operator console', () => {
       .not.toBeInTheDocument()
     expect(listLearners).toHaveBeenCalledOnce()
     expect(listInvitations).not.toHaveBeenCalled()
+  })
+
+  it('renders the Subscriptions workspace from the overview manifest', async () => {
+    const workspace = vi.fn(async () => ({
+      tax: {
+        gst_registered: true,
+        gstin: '29AAAAA0000A1Z5',
+        gst_rate_bps: 1800,
+        gstin_is_placeholder: true,
+        version: 1,
+      },
+      plans: [],
+      courtesy_premium: { granted_memberships: 0 },
+    }))
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: ['overview', 'entitlements'] as const,
+        organization: organization(),
+        panels: ['entitlement_plans'] as const,
+        search_available: false,
+      })),
+    })
+
+    render(
+      <OperatorConsole
+        api={api}
+        entitlementApi={{ workspace } as unknown as OperatorEntitlementApi}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('link', { name: 'Subscriptions' }),
+    ).toHaveAttribute('href', '#operator-entitlements')
+    expect(
+      await screen.findByRole('heading', { name: 'Subscriptions' }),
+    ).toBeInTheDocument()
+    expect(workspace).toHaveBeenCalledOnce()
   })
 
   it('renders the manifest People workspace and suppresses unavailable global search', async () => {

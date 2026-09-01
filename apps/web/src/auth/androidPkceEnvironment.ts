@@ -72,10 +72,18 @@ function normalizeApiOrigin(value: string | undefined): string | null {
   try {
     const url = new URL(value)
     const localHttpHosts = new Set(['10.0.2.2', '127.0.0.1', 'localhost'])
+    // Staff LAN closed-beta may publish HTTP on port 8080. Other remote HTTP
+    // origins stay fail-closed.
+    const ipv4Literal =
+      /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/u
+    const httpPort = url.port === '' ? '80' : url.port
+    const allowedHttp =
+      localHttpHosts.has(url.hostname) ||
+      (httpPort === '8080' && ipv4Literal.test(url.hostname))
 
     if (
       (url.protocol !== 'https:' &&
-        !(url.protocol === 'http:' && localHttpHosts.has(url.hostname))) ||
+        !(url.protocol === 'http:' && allowedHttp)) ||
       url.username !== '' ||
       url.password !== '' ||
       (url.pathname !== '' && url.pathname !== '/') ||

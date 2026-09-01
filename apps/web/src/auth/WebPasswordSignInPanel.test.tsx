@@ -131,6 +131,34 @@ describe('web password sign-in panel', () => {
     expect(localStorageWrite).not.toHaveBeenCalled()
   })
 
+  it('offers Google and Facebook beside the password form', async () => {
+    const user = userEvent.setup()
+    const authentication = webAuthentication()
+    vi.mocked(authentication.federatedProviders).mockResolvedValue({
+      google: true,
+      facebook: true,
+    })
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('button', { name: 'Continue with Google' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Continue with Facebook' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Username')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Continue with Google' }))
+    expect(authentication.beginFederatedSignIn).toHaveBeenCalledWith('google')
+    expect(authentication.signIn).not.toHaveBeenCalled()
+  })
+
   it('explains that plain HTTP cannot complete sign-in', () => {
     vi.stubGlobal('location', {
       hostname: '117.254.108.143',
@@ -168,6 +196,14 @@ function webAuthentication(): WebSessionAuthentication {
     createPrivilegedMfaChallenge: vi.fn(),
     current: vi.fn(async () => ({ status: 'anonymous' as const })),
     enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
     establishPassword: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     passwordStatus: vi.fn(),

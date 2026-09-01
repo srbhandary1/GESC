@@ -29,12 +29,24 @@ describe('bindAndroidPkceDeepLink', () => {
     const authentication = {
       transport: 'passport-pkce',
       authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
       beginAuthorization: vi.fn(),
       completeAuthorization,
       current: vi.fn(),
+      enrollWithInvitation: vi.fn(),
+      federatedProviders: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedSignIn: vi.fn(async () => undefined),
+      federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+      beginFederatedLink: vi.fn(async () => undefined),
+      unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(),
       onAuthenticationInvalidated: vi.fn(() => () => undefined),
       refresh: vi.fn(),
+      requestPasswordRecovery: vi.fn(),
+      signIn: vi.fn(),
     } satisfies AndroidPkceAuthentication
 
     let listener: ((event: { url: string }) => void) | undefined
@@ -85,12 +97,24 @@ describe('bindAndroidPkceDeepLink', () => {
     const authentication = {
       transport: 'passport-pkce',
       authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
       beginAuthorization: vi.fn(),
       completeAuthorization,
       current: vi.fn(),
+      enrollWithInvitation: vi.fn(),
+      federatedProviders: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedSignIn: vi.fn(async () => undefined),
+      federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+      beginFederatedLink: vi.fn(async () => undefined),
+      unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(),
       onAuthenticationInvalidated: vi.fn(() => () => undefined),
       refresh: vi.fn(),
+      requestPasswordRecovery: vi.fn(),
+      signIn: vi.fn(),
     } satisfies AndroidPkceAuthentication
 
     const dispose = await bindAndroidPkceDeepLink(

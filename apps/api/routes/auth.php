@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\FederatedAuthenticationController;
 use App\Http\Controllers\MobileAuthorizationLoginController;
 use App\Http\Middleware\EnforceMobileOAuthPolicy;
 use App\Http\Middleware\EnforcePassportAuthenticationSession;
@@ -47,6 +48,14 @@ Route::middleware(['web', ProtectAuthenticationPageResponse::class])->group(func
     Route::delete('/oauth/authorize', [DenyAuthorizationController::class, 'deny'])
         ->middleware(EnforcePassportAuthenticationSession::class)
         ->name('passport.authorizations.deny');
+    Route::get('/oauth/social/{provider}/authorize', [FederatedAuthenticationController::class, 'authorize'])
+        ->middleware('throttle:password-sign-ins')
+        ->whereIn('provider', ['google', 'facebook'])
+        ->name('auth.social.authorize');
+    Route::get('/oauth/social/{provider}/callback', [FederatedAuthenticationController::class, 'callback'])
+        ->middleware('throttle:password-sign-ins')
+        ->whereIn('provider', ['google', 'facebook'])
+        ->name('auth.social.callback');
 });
 
 Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])

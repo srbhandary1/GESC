@@ -9,6 +9,7 @@ use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextRequest;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -30,6 +31,7 @@ final readonly class VoiceRecordingService
         private PcmWavInspector $wav,
         private RecordedSpeechToTextProvider $speechToText,
         private VoiceDeletionService $deletions,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -56,6 +58,11 @@ final readonly class VoiceRecordingService
         }
 
         $metadata = $this->wav->inspect($audioBytes);
+        $this->entitlements->consumeLiveAi(
+            $learner,
+            $idempotencyKey,
+            max(1, (int) ceil($metadata->durationMs / 1000)),
+        );
         $digest = hash('sha256', $audioBytes);
         $fingerprint = $this->commands->fingerprint([
             'audio_sha256' => $digest,

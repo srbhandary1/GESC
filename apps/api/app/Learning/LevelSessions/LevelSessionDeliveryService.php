@@ -7,6 +7,7 @@ namespace App\Learning\LevelSessions;
 use App\Conversation\ConversationSessionService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Models\LessonPracticeBlueprint;
 use App\Models\LessonPracticeMedia;
@@ -19,17 +20,19 @@ final class LevelSessionDeliveryService
 {
     public function __construct(
         private readonly ConversationSessionService $conversations,
+        private readonly EntitlementAccess $entitlements,
     ) {}
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function listLevels(OrganizationContext $context): array
+    public function listLevels(OrganizationContext $context, User $actor): array
     {
         $count = (int) config('level_sessions.level_count', 17);
         $concepts = config('level_sessions.level_concepts', []);
         $parts = config('level_sessions.session_part_ids', []);
         $levels = [];
+        $snapshot = $this->entitlementSnapshot($actor);
 
         for ($number = 1; $number <= $count; $number++) {
             $concept = $concepts[$number] ?? null;
@@ -46,6 +49,7 @@ final class LevelSessionDeliveryService
                 'availability' => $availability,
                 'blueprint_id' => $blueprint?->getKey(),
                 'session_part_ids' => $parts,
+                'entitlement_access' => $this->entitlements->levelAccess($snapshot, $number),
             ];
         }
 
@@ -60,7 +64,7 @@ final class LevelSessionDeliveryService
         User $learner,
         int $levelNumber,
     ): array {
-        $blueprint = $this->requireAvailableBlueprint($context, $levelNumber);
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $completions = DB::table('level_session_completions')
             ->where('organization_id', $context->organizationId)
             ->where('user_id', $learner->getKey())
@@ -102,7 +106,7 @@ final class LevelSessionDeliveryService
         int $levelNumber,
         string $partId,
     ): array {
-        $blueprint = $this->requireAvailableBlueprint($context, $levelNumber);
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $this->assertPartId($partId);
         $media = LessonPracticeMedia::query()
             ->where('organization_id', $context->organizationId)
@@ -203,7 +207,7 @@ final class LevelSessionDeliveryService
         }
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
 
-        $blueprint = $this->requireAvailableBlueprint($context, $levelNumber);
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $canonical = $blueprint->canonical_json;
         $check = is_array($canonical['check'] ?? null) ? $canonical['check'] : [];
         $items = is_array($check['items'] ?? null) ? $check['items'] : [];
@@ -311,7 +315,7 @@ final class LevelSessionDeliveryService
         $this->assertPartId($partId);
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
         $this->assertPracticeCheckPassed($context, $learner, $levelNumber, $partId);
-        $blueprint = $this->requireAvailableBlueprint($context, $levelNumber);
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $media = LessonPracticeMedia::query()
             ->where('organization_id', $context->organizationId)
             ->where('blueprint_id', $blueprint->getKey())
@@ -381,7 +385,7 @@ final class LevelSessionDeliveryService
     ): array {
         $this->assertPartId($partId);
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
-        $this->requireAvailableBlueprint($context, $levelNumber);
+        $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $binding = config('level_sessions.conversation_bindings.'.$partId);
         if (! is_array($binding)) {
             throw new LearningOperationRejected('conversation_unbound');
@@ -410,8 +414,10 @@ final class LevelSessionDeliveryService
 
     private function requireAvailableBlueprint(
         OrganizationContext $context,
+        User $learner,
         int $levelNumber,
     ): LessonPracticeBlueprint {
+        $this->entitlements->assertLevel($learner, $levelNumber);
         $concepts = config('level_sessions.level_concepts', []);
         $concept = $concepts[$levelNumber] ?? null;
         if (! is_string($concept)) {
@@ -538,5 +544,20 @@ final class LevelSessionDeliveryService
             ],
             default => [],
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function entitlementSnapshot(User $actor): array
+    {
+        try {
+            return $this->entitlements->snapshot($actor);
+        } catch (LearningOperationRejected) {
+            return [
+                'applies' => false,
+                'max_level_number' => null,
+            ];
+        }
     }
 }

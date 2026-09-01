@@ -101,6 +101,37 @@ final class MobileTokenFamilyTest extends TestCase
         ]);
     }
 
+    public function test_password_sign_in_grant_creates_a_token_family(): void
+    {
+        $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        $client = Client::query()->create([
+            'name' => 'Global English Android password family client',
+            'secret' => null,
+            'provider' => 'users',
+            'redirect_uris' => ['com.globalenglish.app:/oauth/callback'],
+            'grant_types' => ['authorization_code', 'refresh_token'],
+            'revoked' => false,
+        ]);
+        $installationId = (string) Str::ulid();
+        $service = $this->app->make(MobileTokenFamilyService::class);
+        [$accessTokenId] = $this->insertPassportPair($user, $client);
+
+        $service->trackIssuedTokens(
+            'password_sign_in',
+            $installationId,
+            $this->encodedAccessToken($accessTokenId),
+            'password-sign-in-refresh-secret',
+            null,
+        );
+
+        $refreshToken = $service->lockRefreshToken('password-sign-in-refresh-secret');
+        self::assertInstanceOf(MobileRefreshToken::class, $refreshToken);
+        self::assertTrue($service->validateRefresh($refreshToken, $installationId));
+        $family = MobileTokenFamily::query()->findOrFail($refreshToken->family_id);
+        self::assertSame((string) $user->getKey(), $family->user_id);
+        self::assertSame(1, MobileTokenFamily::query()->count());
+    }
+
     public function test_refresh_tracking_rejects_missing_passport_records(): void
     {
         $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);

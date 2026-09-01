@@ -51,6 +51,21 @@ describe('WebSessionAuthenticationAdapter', () => {
     })
   })
 
+  it('starts Google sign-in on the first-party authorize path', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { assign })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: vi.fn() as typeof fetch,
+      readCookie: () => '',
+    })
+
+    await adapter.beginFederatedSignIn('google')
+
+    expect(assign).toHaveBeenCalledWith('/oauth/social/google/authorize')
+    vi.unstubAllGlobals()
+  })
+
   it('uses CSRF-protected cookie requests without browser credential storage', async () => {
     const requests: Request[] = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

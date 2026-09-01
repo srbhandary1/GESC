@@ -8,8 +8,12 @@ import {
 } from '@global-english/contracts'
 import {
   AuthenticationUnavailableError,
+  parseFederatedProviderAvailability,
   type AndroidPkceAuthentication,
   type AuthenticationSnapshot,
+  type FederatedProvider,
+  type FederatedProviderAvailability,
+  type PasswordAuthenticationStatus,
 } from './AuthenticationAdapter'
 import { formDataWithFileParts } from './formDataWithFileParts'
 
@@ -64,6 +68,317 @@ export class AndroidPkceAuthenticationAdapter
   constructor(options: AndroidPkceAuthenticationOptions) {
     this.#options = options
     this.#fetch = options.fetch ?? globalThis.fetch
+  }
+
+  async signIn(username: string, password: string): Promise<void> {
+    const credentialGeneration = this.#credentialGeneration
+    const installationId =
+      await this.#options.secureStore.getOrCreateInstallationId()
+
+    try {
+      const response = await this.#fetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/password/sign-ins`,
+        {
+          body: JSON.stringify({
+            client_id: this.#options.clientId,
+            installation_id: installationId,
+            password,
+            username,
+          }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        },
+      )
+
+      if (!response.ok) {
+        throw new AuthenticationUnavailableError()
+      }
+
+      const tokens = parseTokenResponse(await response.json())
+
+      if (tokens === null) {
+        throw new AuthenticationUnavailableError()
+      }
+
+      await this.#acceptTokens(tokens, credentialGeneration)
+    } catch (error) {
+      if (error instanceof AuthenticationUnavailableError) {
+        throw error
+      }
+
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
+  async authenticationMode(): Promise<PasswordAuthenticationStatus['mode']> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/password/mode`,
+        {
+          credentials: 'omit',
+          headers: { Accept: 'application/json' },
+          method: 'GET',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const mode =
+      body !== null &&
+      typeof body === 'object' &&
+      'mode' in body &&
+      typeof body.mode === 'string'
+        ? body.mode
+        : null
+
+    if (
+      mode !== 'legacy_otp' &&
+      mode !== 'credential_migration' &&
+      mode !== 'password_only'
+    ) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return mode
+  }
+
+  async requestPasswordRecovery(username: string): Promise<void> {
+    await this.#passwordJson(
+      '/auth/mobile/password/recovery-requests',
+      { username },
+      202,
+    )
+  }
+
+  async enrollWithInvitation(
+    invitationCode: string,
+    username: string,
+    password: string,
+  ): Promise<void> {
+    await this.#passwordJson(
+      '/auth/mobile/password/invitation-enrollments',
+      {
+        invitation_code: invitationCode,
+        password,
+        username,
+      },
+      204,
+    )
+  }
+
+  async federatedProviders(): Promise<FederatedProviderAvailability> {
+    return this.#federatedAvailability('/auth/mobile/social/providers')
+  }
+
+  async beginFederatedSignIn(provider: FederatedProvider): Promise<void> {
+    const installationId =
+      await this.#options.secureStore.getOrCreateInstallationId()
+    const authorizationUrl = await this.#federatedAuthorizationUrl(
+      provider,
+      installationId,
+    )
+    await this.#options.systemBrowser.open(authorizationUrl)
+  }
+
+  async federatedLinks(): Promise<FederatedProviderAvailability> {
+    let response: Response
+
+    try {
+      response = await this.authenticatedFetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/social/links`,
+        {
+          credentials: 'omit',
+          headers: { Accept: 'application/json' },
+          method: 'GET',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return this.#readFederatedAvailability(response)
+  }
+
+  async beginFederatedLink(provider: FederatedProvider): Promise<void> {
+    const installationId =
+      await this.#options.secureStore.getOrCreateInstallationId()
+    let response: Response
+
+    try {
+      response = await this.authenticatedFetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/social/${provider}/link-starts`,
+        {
+          body: JSON.stringify({
+            client_id: this.#options.clientId,
+            installation_id: installationId,
+          }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const authorizationUrl =
+      body !== null &&
+      typeof body === 'object' &&
+      'authorization_url' in body &&
+      typeof body.authorization_url === 'string'
+        ? body.authorization_url
+        : null
+
+    if (authorizationUrl === null || authorizationUrl === '') {
+      throw new AuthenticationUnavailableError()
+    }
+
+    await this.#options.systemBrowser.open(authorizationUrl)
+  }
+
+  async unlinkFederated(provider: FederatedProvider): Promise<void> {
+    let response: Response
+
+    try {
+      response = await this.authenticatedFetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/social/${provider}/links`,
+        {
+          credentials: 'omit',
+          headers: { Accept: 'application/json' },
+          method: 'DELETE',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
+  async #federatedAuthorizationUrl(
+    provider: FederatedProvider,
+    installationId: string,
+  ): Promise<string> {
+    let response: Response
+
+    try {
+      const url = new URL(
+        `${this.#options.apiBaseUrl}/auth/mobile/social/${provider}/authorization`,
+      )
+      url.searchParams.set('client_id', this.#options.clientId)
+      url.searchParams.set('installation_id', installationId)
+      response = await this.#fetch(url, {
+        credentials: 'omit',
+        headers: { Accept: 'application/json' },
+        method: 'GET',
+      })
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const authorizationUrl =
+      body !== null &&
+      typeof body === 'object' &&
+      'authorization_url' in body &&
+      typeof body.authorization_url === 'string'
+        ? body.authorization_url
+        : null
+
+    if (authorizationUrl === null || authorizationUrl === '') {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return authorizationUrl
+  }
+
+  async #federatedAvailability(
+    path: string,
+  ): Promise<FederatedProviderAvailability> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(`${this.#options.apiBaseUrl}${path}`, {
+        credentials: 'omit',
+        headers: { Accept: 'application/json' },
+        method: 'GET',
+      })
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return this.#readFederatedAvailability(response)
+  }
+
+  async #readFederatedAvailability(
+    response: Response,
+  ): Promise<FederatedProviderAvailability> {
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const availability = parseFederatedProviderAvailability(body)
+
+    if (availability === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return availability
   }
 
   async beginAuthorization(): Promise<void> {
@@ -121,14 +436,35 @@ export class AndroidPkceAuthenticationAdapter
 
     const returnedState = callback.searchParams.get('state')
     const code = callback.searchParams.get('code')
+    const ticket = callback.searchParams.get('social_ticket')
+    const oauthError = callback.searchParams.get('error')
+
+    if (
+      !matchesRedirectTarget(callback, expectedRedirect) ||
+      callback.searchParams.getAll('state').length !== 1 ||
+      returnedState === null ||
+      oauthError !== null ||
+      callback.searchParams.getAll('error').length > 0 ||
+      (ticket !== null && code !== null)
+    ) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (ticket !== null) {
+      if (
+        callback.searchParams.getAll('social_ticket').length !== 1 ||
+        ticket === ''
+      ) {
+        throw new AuthenticationUnavailableError()
+      }
+
+      return this.#completeFederatedTicket(ticket, credentialGeneration)
+    }
 
     // Validate shape before consuming pending authorization so raced Custom
     // Tab / delayed native redeliveries cannot destroy a still-valid verifier.
     if (
-      !matchesRedirectTarget(callback, expectedRedirect) ||
-      callback.searchParams.getAll('state').length !== 1 ||
       callback.searchParams.getAll('code').length !== 1 ||
-      returnedState === null ||
       code === null
     ) {
       throw new AuthenticationUnavailableError()
@@ -167,6 +503,53 @@ export class AndroidPkceAuthenticationAdapter
       return await this.current()
     } catch {
       await this.#clearAuthentication()
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
+  async #completeFederatedTicket(
+    ticket: string,
+    credentialGeneration: number,
+  ): Promise<AuthenticationSnapshot> {
+    const installationId =
+      await this.#options.secureStore.getOrCreateInstallationId()
+
+    try {
+      const response = await this.#fetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/social/sign-ins`,
+        {
+          body: JSON.stringify({
+            client_id: this.#options.clientId,
+            installation_id: installationId,
+            ticket,
+          }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        },
+      )
+
+      if (!response.ok) {
+        throw new AuthenticationUnavailableError()
+      }
+
+      const tokens = parseTokenResponse(await response.json())
+
+      if (tokens === null) {
+        throw new AuthenticationUnavailableError()
+      }
+
+      await this.#acceptTokens(tokens, credentialGeneration)
+
+      return await this.current()
+    } catch (error) {
+      if (error instanceof AuthenticationUnavailableError) {
+        throw error
+      }
+
       throw new AuthenticationUnavailableError()
     }
   }
@@ -586,6 +969,32 @@ export class AndroidPkceAuthenticationAdapter
       } catch {
         // Session invalidation must not be reversed by a UI-listener failure.
       }
+    }
+  }
+
+  async #passwordJson(
+    path: string,
+    body: Readonly<Record<string, string>>,
+    expectedStatus: 202 | 204,
+  ): Promise<void> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(`${this.#options.apiBaseUrl}${path}`, {
+        body: JSON.stringify(body),
+        credentials: 'omit',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      })
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (response.status !== expectedStatus) {
+      throw new AuthenticationUnavailableError()
     }
   }
 

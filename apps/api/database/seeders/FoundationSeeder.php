@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Conversation\RoleplayCatalogSeeder;
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\CurriculumGraphProjector;
+use App\Entitlements\DirectCatalogSeeder;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Tenancy\PermissionCatalogue;
@@ -69,6 +70,12 @@ final class FoundationSeeder extends Seeder
                 'support.diagnostics.read',
                 'privacy.export.request',
                 'privacy.erasure.request',
+                'entitlement_plans.read',
+                'entitlement_plans.manage',
+                'entitlements.read',
+                'entitlements.grant',
+                'entitlements.adjust',
+                'entitlements.revoke',
             ],
         ],
         Role::DIRECT_CONTENT_REVIEWER_KEY => [
@@ -193,6 +200,10 @@ final class FoundationSeeder extends Seeder
             (new RoleplayCatalogSeeder)->seedOrganization(
                 $organizationId,
                 $now,
+            );
+            (new DirectCatalogSeeder)->seed(
+                $organizationId,
+                $now->toIso8601String(),
             );
         });
     }

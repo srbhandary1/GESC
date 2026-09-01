@@ -35,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
         );
         $middleware->prepend(AssignCorrelationId::class);
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/auth/mobile/password/*',
+            'api/v1/auth/mobile/social/*',
+        ]);
         $middleware->alias([
             'auth.first-party' => AuthenticateFirstParty::class,
             'auth.session' => EnforceAuthenticationSession::class,

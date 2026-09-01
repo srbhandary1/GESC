@@ -1,10 +1,12 @@
 # Android authenticated request lifecycle
 
-**Checkpoint:** AND-AUTH-01
+**Checkpoint:** AND-AUTH-01, amended by D-0263 / ADR-0033 and D-0264 / ADR-0034
 **Authority:** [ADR-0002](adr/0002-authentication-session-token-and-recovery-policy.md),
 [ADR-0012](adr/0012-android-native-secure-credential-store.md),
-[ADR-0021](adr/0021-username-password-only-authentication.md), D-0110, D-0122
-and D-0164
+[ADR-0021](adr/0021-username-password-only-authentication.md),
+[ADR-0033](adr/0033-android-in-app-password-sign-in.md),
+[ADR-0034](adr/0034-federated-google-facebook-sign-in.md), D-0110, D-0122,
+D-0164, D-0263 and D-0264
 **Package:** `com.globalenglish.app`
 
 ## Runtime boundary
@@ -12,19 +14,25 @@ and D-0164
 | Runtime | Authentication | API transport | CSRF |
 |---|---|---|---|
 | Web/PWA | Sanctum cookie session | ordinary same-origin fetch | Sanctum cookie + `X-XSRF-TOKEN` |
-| Production Android | Passport Authorization Code + S256 PKCE | project-owned authenticated fetch | none; cookies are omitted |
+| Production Android | First-party in-app password or linked Google/Facebook; Passport token family | project-owned authenticated fetch | none; cookies are omitted |
 | Android with missing/unsafe mobile configuration | unavailable, fail closed | requests reject | no cookie fallback |
 
-In `password_only` mode, the server-controlled system-browser authorization
-page collects username and password. The Capacitor/WebView application never
-receives either value. OTP fields and invitation codes are absent from routine
-Android sign-in, while the OAuth authorize/token, S256 PKCE, state, redirect,
-installation and rotating refresh-family contracts remain unchanged.
+In `password_only` mode, Android guests type username and password on `#sign-in`
+inside the Capacitor WebView, or continue with Google/Facebook if that IdP
+subject is already linked. Password POSTs
+`/api/v1/auth/mobile/password/sign-ins` over CapacitorHttp. Federated sign-in
+opens origin-pinned Custom Tabs to `/oauth/social/{provider}/authorize` and
+exchanges a single-use ticket at `/api/v1/auth/mobile/social/sign-ins`. The
+password is not stored. Access tokens stay memory-only. Refresh and the
+installation ULID stay in EncryptedSharedPreferences. `/oauth/token` still
+rejects `grant_type=password`. Passport authorize/token PKCE remains implemented
+and is unused for guest password sign-in. OTP fields are absent from routine
+Android sign-in.
 
 The Android transport is shared by learner, conversation, operator and SSE
 clients. Private model audio, level-session lesson audio and lesson video also
-pass through it before the UI receives a blob URL. OAuth authorization and token
-exchange remain separate unauthenticated protocol endpoints.
+pass through it before the UI receives a blob URL. Token refresh and
+revocation remain unauthenticated protocol endpoints except for bearer logout.
 
 ## Request and refresh rules
 
@@ -74,7 +82,7 @@ guard prevents a late refresh from restoring credentials after logout.
 | Pending PKCE state + verifier | encrypted native preferences until atomic take | prohibited |
 | Access token | JavaScript process memory only | prohibited |
 | OAuth callback code | transient native/WebView process memory only | prohibited |
-| Username and password | server-controlled system-browser request memory only | prohibited |
+| Username and password | transient WebView and native HTTP request memory only (ADR-0033); never persisted | prohibited |
 
 The native plugin accepts only the three persistent keys above, uses Android
 Keystore-backed `EncryptedSharedPreferences`, commits credential mutations
@@ -97,11 +105,12 @@ before production-scale video acceptance.
 
 ## Verification and remaining evidence
 
-Automated coverage includes the password-only system-browser form and retired
-legacy OTP contract, cold restoration, refresh coalescing, exact body
-replay, terminal/transient failures, late-refresh logout races, origin/path
-rejection, callback duplication, atomic native take, fail-closed configuration,
-authenticated audio/video object URLs and shell invalidation. PostgreSQL mobile
+Automated coverage includes first-party mobile password issuance and refresh,
+the in-app `#sign-in` form, retired `/oauth/token` password grant, cold
+restoration, refresh coalescing, exact body replay, terminal/transient
+failures, late-refresh logout races, origin/path rejection, callback
+duplication, atomic native take, fail-closed configuration, authenticated
+audio/video object URLs and shell invalidation. PostgreSQL mobile
 token-family/replay tests and Android Gradle unit/build tasks also pass.
 
 Physical DM-01/DM-02 lifecycle and negative-storage inspection are not claimed:

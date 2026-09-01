@@ -26,8 +26,13 @@ import type {
   AuthenticationSnapshot,
   WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
+import {
+  isFederatedAccountAuthentication,
+  isPasswordFormAuthentication,
+} from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
@@ -49,6 +54,8 @@ import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import { ProgressDashboard } from './learner/ProgressDashboard'
 import { LevelPathPanel } from './learner/LevelPathPanel'
+import { SubscriptionPanel } from './subscriptions/SubscriptionPanel'
+import type { LearnerEntitlement } from './subscriptions/LearnerSubscriptionApi'
 import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
 import type { LevelSessionsApi } from './learner/LevelSessionsApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
@@ -189,6 +196,9 @@ function App({
     useState<SupportedLocale | null>(null)
   const [speakMode, setSpeakMode] = useState<'everyday' | 'situation'>(
     'everyday',
+  )
+  const [entitlement, setEntitlement] = useState<LearnerEntitlement | null>(
+    null,
   )
   const [boundConversation, setBoundConversation] =
     useState<FriendSession | null>(null)
@@ -549,45 +559,33 @@ function App({
       hidePrimaryNavigation={isOperatorSession || isGuestSession}
       headerActions={
         <div className="shell-header-actions">
-          {androidAuthentication === null || session.status === 'checking' ? null : (
+          {androidAuthentication !== null &&
+          session.status === 'authenticated' ? (
             <>
-              {session.status === 'authenticated' ? (
-                <p className="shell-account-menu__status" role="status">
-                  <LocalizedMessage
-                    resolution={message(sessionMessageKey(session))}
-                  />
-                </p>
-              ) : null}
+              <p className="shell-account-menu__status" role="status">
+                <LocalizedMessage
+                  resolution={message(sessionMessageKey(session))}
+                />
+              </p>
               <button
-              className="shell-header-authentication"
-              type="button"
-              onClick={() => {
-                if (session.status === 'authenticated') {
+                className="shell-header-authentication"
+                type="button"
+                onClick={() => {
                   void androidAuthentication
                     .logout()
                     .then(() => setSession({ status: 'anonymous' }))
                     .catch(() => setSession({ status: 'unavailable' }))
-
-                  return
-                }
-
-                void androidAuthentication.beginAuthorization().catch(() => {
-                  setSession({ status: 'unavailable' })
-                })
-              }}
-            >
-              <LocalizedMessage
-                resolution={message(
-                  session.status === 'authenticated'
-                    ? 'session.android_sign_out'
-                    : 'session.android_sign_in',
-                )}
-              />
-            </button>
+                }}
+              >
+                <LocalizedMessage
+                  resolution={message('session.android_sign_out')}
+                />
+              </button>
             </>
-          )}
+          ) : null}
           {!demoMode &&
-          authentication.transport === 'sanctum-cookie' &&
+          (authentication.transport === 'sanctum-cookie' ||
+            androidAuthentication !== null) &&
           (session.status === 'anonymous' ||
             session.status === 'unavailable') ? (
             <>
@@ -918,6 +916,11 @@ function App({
               locale={locale}
               localizationPolicy={localizationPolicy}
             />
+            <SubscriptionPanel
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onChange={setEntitlement}
+            />
             <LearnerJourney
               api={learnerJourneyApi}
               audioRecorder={audioRecorder}
@@ -930,30 +933,51 @@ function App({
             />
           </div>
         ) : canLearnPath ? (
-          <LevelPathPanel
-            api={levelSessionsApi}
-            conversationApi={conversationApi}
-            createClientId={createClientId}
-            demoMode={demoMode}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            onOpenRoleplay={() => {
-              setBoundConversation(null)
-              setSpeakMode('situation')
-              globalThis.location.hash = '#speak'
-            }}
-          />
+          <>
+            {!demoMode ? (
+              <SubscriptionPanel
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                onChange={setEntitlement}
+              />
+            ) : null}
+            <LevelPathPanel
+              api={levelSessionsApi}
+              conversationApi={conversationApi}
+              createClientId={createClientId}
+              demoMode={demoMode}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onOpenRoleplay={() => {
+                setBoundConversation(null)
+                setSpeakMode('situation')
+                globalThis.location.hash = '#speak'
+              }}
+            />
+          </>
         ) : canSpeak ? (
-          <SpeakRoom
-            api={conversationApi}
-            createClientId={createClientId}
-            demoMode={demoMode}
-            initialMode={speakMode}
-            initialSession={boundConversation ?? undefined}
-            key={`speak-${speakMode}-${boundConversation?.id ?? 'unbound'}`}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-          />
+          <>
+            {!demoMode ? (
+              <SubscriptionPanel
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                onChange={setEntitlement}
+              />
+            ) : null}
+            <SpeakRoom
+              allowsRoleplay={
+                demoMode || entitlement?.allows_roleplay === true
+              }
+              api={conversationApi}
+              createClientId={createClientId}
+              demoMode={demoMode}
+              initialMode={speakMode}
+              initialSession={boundConversation ?? undefined}
+              key={`speak-${speakMode}-${boundConversation?.id ?? 'unbound'}`}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+            />
+          </>
         ) : canTuition ? (
           <TuitionRequestPanel
             api={
@@ -1086,12 +1110,15 @@ function SessionSummary({
   const webAuth = isWebSessionAuthentication(authentication)
     ? authentication
     : null
+  const passwordAuth = isPasswordFormAuthentication(authentication)
+    ? authentication
+    : null
   const isAuthenticated = session.status === 'authenticated'
 
   return (
     <section
       className={`shell-session${
-        webAuth !== null && !isAuthenticated ? ' shell-session--sign-in' : ''
+        passwordAuth !== null && !isAuthenticated ? ' shell-session--sign-in' : ''
       }${isAuthenticated ? ' shell-session--account' : ''}${
         embedded ? ' shell-session--embedded' : ''
       }`}
@@ -1139,9 +1166,9 @@ function SessionSummary({
           </span>
         </div>
       ) : null}
-      {webAuth !== null && !isAuthenticated ? (
+      {passwordAuth !== null && !isAuthenticated ? (
         <WebPasswordSignInPanel
-          authentication={webAuth}
+          authentication={passwordAuth}
           embedded={embedded}
           message={message}
           onAuthenticated={onSessionChange}
@@ -1156,6 +1183,15 @@ function SessionSummary({
             onAccountSecurityOpenChange(false)
             onSessionChange({ status: 'anonymous' })
           }}
+        />
+      ) : null}
+      {webAuth === null &&
+      isAuthenticated &&
+      isFederatedAccountAuthentication(authentication) &&
+      isPasswordFormAuthentication(authentication) ? (
+        <FederatedAccountsPanel
+          authentication={authentication}
+          message={message}
         />
       ) : null}
     </section>
@@ -1192,7 +1228,12 @@ function isWebSessionAuthentication(
     typeof candidate.verifyOtp === 'function' &&
     typeof candidate.sessions === 'function' &&
     typeof candidate.revokeSession === 'function' &&
-    typeof candidate.revokeAllSessions === 'function'
+    typeof candidate.revokeAllSessions === 'function' &&
+    typeof candidate.federatedProviders === 'function' &&
+    typeof candidate.beginFederatedSignIn === 'function' &&
+    typeof candidate.federatedLinks === 'function' &&
+    typeof candidate.beginFederatedLink === 'function' &&
+    typeof candidate.unlinkFederated === 'function'
   )
 }
 

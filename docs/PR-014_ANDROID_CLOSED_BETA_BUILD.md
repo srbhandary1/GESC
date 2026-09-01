@@ -42,9 +42,11 @@ The redirect is fixed to `com.globalenglish.app:/oauth/callback`; any different
 `VITE_MOBILE_OAUTH_REDIRECT_URI` makes Android authentication fail closed.
 Authorization/token endpoint overrides must stay on the configured API origin
 and may not include credentials, query strings or fragments. The API origin
-must use HTTPS, except `http://10.0.2.2`, loopback or `localhost` for local
-device/emulator development. Missing or unsafe configuration never falls back
-to Sanctum cookie authentication inside the WebView.
+must use HTTPS, except `http://10.0.2.2`, loopback, `localhost`, or an IPv4
+literal on port `8080` for staff LAN closed-beta. Missing or unsafe
+configuration never falls back to Sanctum cookie authentication inside the
+WebView. Android cleartext also requires the host in
+`apps/web/android-app/app/src/main/res/xml/network_security_config.xml`.
 
 Never embed provider secrets, OTP credentials or Passport private keys in the
 Android package.

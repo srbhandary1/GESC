@@ -9,6 +9,7 @@ use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
 use App\Conversation\Providers\TextToSpeechResult;
 use App\Conversation\Support\GuidanceTtsPolicy;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
@@ -23,6 +24,7 @@ final readonly class GuidanceSpeechService
         private LearnerAuthority $authority,
         private ConversationProviderUsagePolicy $usagePolicy,
         private TextToSpeechProvider $textToSpeech,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -68,6 +70,11 @@ final readonly class GuidanceSpeechService
             organizationId: $context->organizationId,
             membershipId: $membershipId,
             sessionId: $sessionId,
+        );
+        $this->entitlements->consumeLiveAi(
+            $learner,
+            hash('sha256', $sessionId."\0".$purpose."\0".$utterance),
+            (int) config('billing.live_ai_speech_seconds', 5),
         );
         $result = $this->textToSpeech->synthesize(new TextToSpeechRequest(
             interactionId: (string) Str::ulid(),

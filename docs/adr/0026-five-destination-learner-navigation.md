@@ -47,7 +47,9 @@ under Home.
    in-app call.
 6. `#practice` remains a hash alias of Speak so existing bookmarks work.
 7. This does not authorize in-app video, WebRTC, Stripe, Play Billing, or
-   production/Play. D-0218 amends the teacher name in item 3 to Swathi.
+   production/Play. ADR-0035 authorizes Direct in-app checkout through a
+   project-owned payment port; Play Billing and Stripe remain excluded.
+   D-0218 amends the teacher name in item 3 to Swathi.
 
 ## Alternatives considered
 

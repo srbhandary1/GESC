@@ -55,10 +55,13 @@ cutover in section 10.
 
 AUTH-PASSWORD-01 does not add:
 
-- social login, SAML, OIDC federation, passkeys, PINs, security questions or
-  device fingerprinting;
+- SAML, passkeys, PINs, security questions or device fingerprinting;
 - shared organization credentials, administrator-readable passwords or
   permanent default passwords;
+
+Google and Facebook extra sign-in for already-enrolled users is authorized
+separately by ADR-0034 / APP-0071 and is outside this specification's original
+exclusion of social login.
 - tenant-controlled global identity search, username assignment or password
   reset;
 - embedded Android/WebView credential collection or password storage on the

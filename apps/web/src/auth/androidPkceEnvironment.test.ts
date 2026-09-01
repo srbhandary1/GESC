@@ -24,6 +24,8 @@ describe('resolveAndroidPkceEnvironment', () => {
     for (const env of [
       { VITE_MOBILE_API_ORIGIN: '/api' },
       { VITE_MOBILE_API_ORIGIN: 'http://api.example.test' },
+      { VITE_MOBILE_API_ORIGIN: 'http://192.168.1.4:8000' },
+      { VITE_MOBILE_API_ORIGIN: 'http://117.254.108.143' },
       { VITE_MOBILE_API_ORIGIN: 'https://api.example.test/prefix' },
       {
         VITE_MOBILE_API_ORIGIN: 'https://api.example.test',
@@ -44,5 +46,10 @@ describe('resolveAndroidPkceEnvironment', () => {
         VITE_MOBILE_API_ORIGIN: 'http://10.0.2.2:8000',
       })?.apiBaseUrl,
     ).toBe('http://10.0.2.2:8000/api/v1')
+    expect(
+      resolveAndroidPkceEnvironment({
+        VITE_MOBILE_API_ORIGIN: 'http://117.254.108.143:8080',
+      })?.apiBaseUrl,
+    ).toBe('http://117.254.108.143:8080/api/v1')
   })
 })

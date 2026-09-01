@@ -149,7 +149,7 @@ prerequisites for a broader operator surface.
 | 13 | ADMIN-COMMS-01 | Deliver versioned default templates, targeted notices/messages, text and governed media, preview, scheduling, delivery/read history, withdrawal and retention controls | Pending |
 | 14 | ADMIN-CONVERSATION-01 | Deliver moderated conversation-group membership, publish lifecycle, retained group history, reporting/blocking and trainer moderation under the approved privacy boundary | Pending |
 | 15 | ADMIN-CMS-01 | Deliver separate in-app post and public-blog workflows with revisions, SEO metadata, licensed media, preview, scheduling, rollback and public cache/accessibility behaviour | Pending |
-| 16 | ADMIN-ENT-01 | Deliver plan catalogue, manual/external-payment entitlement grants, effective/expiry periods, immutable adjustments and learner status. Payment collection/provider integration remains a separately selected adapter | Pending |
+| 16 | ADMIN-ENT-01 | Deliver plan catalogue, dummy in-app checkout, GST settings, demo meter and operator grants for Direct. Live payment-provider credentials remain separately gated | Implemented |
 | 17 | ADMIN-CONFIG-01 | Deliver typed, validated organization/platform settings, operational links and feature flags; secrets and credentials remain outside operator-readable storage | Pending |
 | 18 | ADMIN-ACCEPT-01 | Close parity matrix, end-to-end operator journeys, accessibility, tenant/adversarial security, privacy, load, backup/restore, runbooks and migration rehearsal. Production data import and deployment remain separately authorized | Pending |
 

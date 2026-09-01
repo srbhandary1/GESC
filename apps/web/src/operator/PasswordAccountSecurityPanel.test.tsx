@@ -230,6 +230,14 @@ function webAuthentication(
     createPrivilegedMfaChallenge: vi.fn(),
     current: vi.fn(async () => ({ status: 'anonymous' as const })),
     enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
     establishPassword: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     passwordStatus: vi.fn(async () => ({

@@ -24,6 +24,7 @@ export interface SpeakRoomProps {
   readonly demoMode?: boolean
   readonly initialMode?: SpeakMode
   readonly initialSession?: FriendSession
+  readonly allowsRoleplay?: boolean
 }
 
 export function SpeakRoom({
@@ -34,8 +35,12 @@ export function SpeakRoom({
   demoMode = false,
   initialMode = 'everyday',
   initialSession,
+  allowsRoleplay = true,
 }: SpeakRoomProps) {
-  const [mode, setMode] = useState<SpeakMode>(initialMode)
+  const [requestedMode, setRequestedMode] = useState<SpeakMode>(
+    allowsRoleplay ? initialMode : 'everyday',
+  )
+  const mode: SpeakMode = allowsRoleplay ? requestedMode : 'everyday'
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
@@ -53,14 +58,18 @@ export function SpeakRoom({
           ] as const
         ).map((tab) => {
           const selected = mode === tab.id
+          const locked = tab.id === 'situation' && !allowsRoleplay
           return (
             <button
               aria-controls={`speak-panel-${tab.id}`}
               aria-selected={selected}
+              disabled={locked}
               id={`speak-tab-${tab.id}`}
               key={tab.id}
               onClick={() => {
-                setMode(tab.id)
+                if (!locked) {
+                  setRequestedMode(tab.id)
+                }
               }}
               role="tab"
               tabIndex={selected ? 0 : -1}
@@ -71,6 +80,13 @@ export function SpeakRoom({
           )
         })}
       </div>
+      {!allowsRoleplay ? (
+        <p className="speak-room__upgrade">
+          <LocalizedMessage
+            resolution={message('subscription.roleplay_locked')}
+          />
+        </p>
+      ) : null}
       <div
         aria-labelledby={`speak-tab-${mode}`}
         id={`speak-panel-${mode}`}
@@ -83,7 +99,7 @@ export function SpeakRoom({
             locale={locale}
             localizationPolicy={localizationPolicy}
             onBack={() => {
-              setMode('everyday')
+              setRequestedMode('everyday')
             }}
           />
         ) : (

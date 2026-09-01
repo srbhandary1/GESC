@@ -4,15 +4,53 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | DR-0038 C: Speak hold-to-talk latency — **implemented locally** |
-| Status | Checkpoints A and B are accepted. A is verified on CI (D-0220). B Progress API+UI landed locally (`a5753fb`, `44e3339`). C Speak latency is implemented locally (D-0221): client timings, §7.4 states, abortable hold loop, PCM-first WAV, play-before-events. No new provider. Curriculum publication, Play, and independent Kannada UI review remain unauthorized. |
-| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.9 |
-| Updated date | 30 August 2026 |
+| Checkpoint | D-0267: Premium flagship and courtesy month for Direct learners |
+| Status | Implemented locally. DR-0046 Option A accepted (APP-0073 / ADR-0036). Premium is the recommended ₹500 plan; Modules stays ₹350 without Role-play. Current Direct learners can receive one complimentary Premium month. Old-website students are not imported. Production/Play and live payment credentials remain unauthorized. |
+| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
+| Updated date | 1 September 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); Indic STT port built, Azure still live (ADR-0027); meaningful-speaking streak + delayed review (ADR-0028 / D-0220); Progress dashboard API+UI (`GET /api/v1/me/progress-dashboard`); Speak hold-to-talk latency pass (D-0221) |
-| Next required action | Review DR-0038 C on a live Azure Speak hold. Still open: on the reinstalled closed-beta APK, Learn → play Introduction audio, then hold-to-talk. Public HTTPS is `https://demands-cashiers-bryan-quit.trycloudflare.com` (Quick Tunnel; rotates). Soft-launch Speak hold loop on Vite (`http://127.0.0.1:5173/#speak`). Set `TUITION_CONTACT_*` when a Direct number is named. Indic STT stays off until a later driver switch. Production/Play remain unauthorized. |
+| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036) |
+| Next required action | Run `php artisan entitlements:grant-courtesy-premium` on the soft-launch database after deploy, then replace the dummy GSTIN. Live payment credentials and production/Play remain unauthorized. |
 | Production/public release | Not authorized |
-| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged from APP-0068. |
+| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged. |
+
+## D-0267: Premium flagship and courtesy month — 1 September 2026
+
+- Decision artefacts: DR-0046 Option A, ADR-0036, APP-0073, master plan 3.13. OpenAPI **0.39.0**.
+- Premium (`monthly_modules_roleplay`) is the recommended Direct paid SKU. Modules stays ₹350 without Role-play.
+- Operators and `php artisan entitlements:grant-courtesy-premium` grant one complimentary Premium month to current Direct learners. Idempotent. Institutional orgs 404.
+- Old-website students, passwords and progress are not imported. CSV filter matches usernames already in this tenant.
+
+## D-0266: Direct subscriptions, GST and dummy in-app checkout — 1 September 2026
+
+- Decision artefacts: DR-0045 Option C, ADR-0035, ADMIN-ENT-01, APP-0072, master plan 3.12. OpenAPI **0.38.0**. Privacy inventory `learner-privacy-v7`.
+- Direct only. Institutional orgs stay invite-based and unmetered.
+- Demo: Level 1–2, 48 hours from first sign-in, inclusive 300-second live-AI cap. ₹350 unlocks all levels without Role-play. ₹500 adds Role-play.
+- Dummy GSTIN `29AAAAA0000A1Z5` / 18% until replaced on the operator tax page. Checkout stores the GST snapshot; later GSTIN changes do not rewrite it.
+- Operator Subscriptions page: GSTIN, plans, grants, demo clock/meter restart, sign-in throttle clear, revoke. Marks and evidence are not wiped.
+
+## DR-0045: Direct subscription commercial contract — 1 September 2026
+
+- Catalogue: [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md). DR-0045 Option C recorded then implemented as D-0266.
+- Confirmed: first 2 modules = Level 1 and Level 2; demo = 48 hours from first sign-in; prices GST exclusive.
+- Demo is free, with one inclusive **5-minute (300s)** cap across speech, Role-play and AI chats. Dummy GSTIN `29AAAAA0000A1Z5` / 18% until the owner replaces it on the admin tax page.
+- Implemented in this checkpoint (schema, meter, dummy checkout, learner paywall, operator page). Play Billing remains unauthorized.
+
+## D-0264: Google and Facebook extra sign-in — 1 September 2026
+
+- Decision artefacts: DR-0044, ADR-0034, master plan 3.11, APP-0071. OpenAPI **0.37.0**.
+- Social never creates accounts. Linked Google/Facebook issue the same web session or Passport family (`federated_sign_in`).
+- Android federated authorization uses origin-pinned Custom Tabs. Password stays in-app. Tokens are exchanged from a single-use ticket, not the custom-scheme URL.
+- Verified: SQLite `FederatedSignInTest` 6/6 (85 assertions), web typecheck, `openapi:check`, 72 focused web tests, Pint and PHPStan 0 on new PHP. PostgreSQL not run on this host (no `pdo_pgsql`). Closed-beta APK not rebuilt.
+
+## D-0263: In-app Android username/password login — 1 September 2026
+
+- Decision artefacts: DR-0043, ADR-0033, master plan 3.10, APP-0070. OpenAPI **0.36.0**.
+- First-party mobile password, mode, recovery and invitation routes. Family grant name `password_sign_in`.
+- Android adapter posts those routes over CapacitorHttp and stores only the refresh token in EncryptedSharedPreferences.
+- Guest header and marketing Sign in go to `#sign-in`. Custom Tabs is unused for guest sign-in.
+- Verified: SQLite `MobilePasswordSignInTest` 7/7, `MobileOAuthPolicyTest` 9/9, web typecheck, `openapi:check`, 53 focused web tests, Pint and PHPStan 0 on new PHP. PostgreSQL not run on this host (no `pdo_pgsql`).
+- Closed-beta APK: `make android-closed-beta` BUILD SUCCESSFUL (103 tasks). Artifact `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-in-app-login-20260901.apk`, SHA-256 `aa94cacc3f4e244a9a258aee4f62e345f92bac6654ff3c22140678282213cca0`. Old binaries still open Chrome.
 
 ## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
 

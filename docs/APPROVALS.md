@@ -3157,6 +3157,175 @@ Accepted interpretation for this approval only:
 - Credentials and spend evidence stay outside the repository.
 - Not production promote, not Google Play, not live STT DI.
 
+<a id="app-0070"></a>
+
+## APP-0070 — DR-0043 Option B: in-app Android username/password sign-in
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-01 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Free-text product-owner instruction and Option B selection in the active Cursor conversation |
+| Related request | [DR-0043](DR-0043_ANDROID_IN_APP_PASSWORD_SIGN_IN_REQUEST.md) |
+| Related decision | [D-0263](DECISIONS.md) |
+| Related ADR | [ADR-0033](adr/0033-android-in-app-password-sign-in.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — §§1.1, 11, 11.2, 32 and PR-003, via ADR-0033 |
+
+### Exact human statement
+
+```text
+I want the login form within the app.
+```
+
+The Accountable Product Owner then selected DR-0043 **Option B** (in-app
+username/password form; Chrome is not opened; tokens remain in
+EncryptedSharedPreferences) and authorized implementation of that plan.
+
+### Accepted scope
+
+- In-app Android username/password form on `#sign-in`.
+- First-party `POST /api/v1/auth/mobile/password/sign-ins` issuing the existing
+  Passport token family. Refresh remains `refresh_token`.
+- `/oauth/token` continues to reject `grant_type=password`.
+- Web/PWA Sanctum cookies unchanged.
+- PKCE and Custom Tabs unused for guest sign-in; endpoints remain.
+
+### Conditions and limitations
+
+- The password is typed in the Capacitor WebView. A Kotlin Activity is out of
+  scope.
+- Independent security, privacy and tenancy review remains mandatory before
+  production.
+- No production or Google Play authorization.
+
+<a id="app-0071"></a>
+
+## APP-0071 — DR-0044 Option B: Google and Facebook extra sign-in
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-01 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Free-text product-owner instruction in the active Cursor conversation |
+| Related request | [DR-0044](DR-0044_FEDERATED_GOOGLE_FACEBOOK_SIGN_IN_REQUEST.md) |
+| Related decision | [D-0264](DECISIONS.md) |
+| Related ADR | [ADR-0034](adr/0034-federated-google-facebook-sign-in.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — §§1.1, 7.2, 11, 11.2, 32 and PR-003, via ADR-0034 |
+
+### Exact human statement
+
+```text
+DR is accepted and ADR-0021 / the master plan should be amended in the same checkpoint.Add Google and/or Facebook as extra ways to sign in, still issuing the same web session / Android token family.
+```
+
+### Accepted scope
+
+- Google and Facebook as extra sign-in methods for already-enrolled users.
+- Same Sanctum web session and Android Passport token family as password sign-in.
+- Username/password remains enrollment and privileged-freshness.
+- Social never creates accounts. No production or Google Play authorization.
+
+### Conditions and limitations
+
+- Live Google/Facebook require operator-registered OAuth clients in environment
+  configuration. Missing configuration fails closed.
+- Android federated authorization uses origin-pinned Custom Tabs on a
+  first-party `/oauth/social/{provider}/authorize` path (IdP policy). The
+  password form stays in-app.
+- Independent security, privacy and tenancy review remains mandatory before
+  production.
+
+<a id="app-0073"></a>
+
+## APP-0073 — DR-0046 Option A: Premium flagship and courtesy month
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-01 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Free-text product-owner instruction in the active Cursor conversation |
+| Related request | [DR-0046](DR-0046_PREMIUM_COURTESY_GRANT_REQUEST.md) |
+| Related decision | [D-0267](DECISIONS.md) |
+| Related ADR | [ADR-0036](adr/0036-premium-courtesy-month.md) |
+| Related specification | [ADMIN-ENT-01](ADMIN-ENT-01_SPEC.md); [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — §§16.5, 31, 32, via ADR-0036 |
+
+### Exact human statement
+
+```text
+Implement the best model you can think of. Migrate all existing students into a 1 month premium plan.
+```
+
+### Accepted scope
+
+- Premium as the recommended Direct paid SKU; Modules remains ₹350 without Role-play.
+- One complimentary Premium month for current Direct learner memberships.
+- No import of the previous website’s students, passwords or progress.
+- No production, Google Play, or live payment credentials.
+
+### Conditions and limitations
+
+- Courtesy grants apply only to `platform_direct` memberships already in this database.
+- CSV username filter matches existing usernames only; email logins from the old site cannot become usernames here.
+- Independent security, privacy and tenancy review remains mandatory before production.
+
+<a id="app-0072"></a>
+
+## APP-0072 — DR-0045 Option C: Direct subscriptions, GST and dummy in-app checkout
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-01 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Free-text product-owner instruction in the active Cursor conversation |
+| Related request | [DR-0045](DR-0045_LEARNER_SUBSCRIPTION_TIERS_REQUEST.md) |
+| Related decision | [D-0266](DECISIONS.md) |
+| Related ADR | [ADR-0035](adr/0035-direct-learner-subscriptions.md) |
+| Related specification | [ADMIN-ENT-01](ADMIN-ENT-01_SPEC.md); [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — §§8.3, 9.2, 16.5, 31, 32, via ADR-0035 |
+
+### Exact human statement
+
+```text
+Build it all. You have the blanket approval.
+```
+
+Preceded by recorded commercial answers: first 2 modules = Level 1 and Level 2; demo = 48 hours from first sign-in; GST exclusive; demo free with one inclusive 5-minute cap; dummy GST now, owner updates via admin page; in-app checkout in the same slice.
+
+### Accepted scope
+
+- Direct plan catalogue, GST settings, entitlements, demo meter and dummy in-app checkout.
+- Operator Subscriptions page for GSTIN/plans/grants/demo clock/meter/lockout clear.
+- Learner paywall and remaining-seconds display.
+- No production, Google Play, or live payment credentials.
+
+### Conditions and limitations
+
+- Dummy GSTIN `29AAAAA0000A1Z5` / 18% is invalid for live filing until replaced.
+- Payment port `dummy` completes in-process; `disabled` and production fail closed.
+- Independent security, privacy and tenancy review remains mandatory before
+  production.
+
 <a id="app-0069"></a>
 
 ## APP-0069 — DR-0038 A/B/C: daily loop, Progress dashboard, Speak latency

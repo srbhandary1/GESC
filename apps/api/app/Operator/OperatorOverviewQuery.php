@@ -55,6 +55,10 @@ final readonly class OperatorOverviewQuery
             $navigation[] = 'learners';
         }
 
+        if ($access['entitlement_panels'] !== []) {
+            $navigation[] = 'entitlements';
+        }
+
         if ($access['content'] || $access['media']) {
             $navigation[] = 'learning';
         }
@@ -91,6 +95,7 @@ final readonly class OperatorOverviewQuery
 
         array_push($panels, ...$access['people_panels']);
         array_push($panels, ...$access['learner_panels']);
+        array_push($panels, ...$access['entitlement_panels']);
 
         return [
             'generated_at' => now()->toIso8601String(),

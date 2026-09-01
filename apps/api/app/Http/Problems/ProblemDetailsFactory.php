@@ -6,9 +6,12 @@ namespace App\Http\Problems;
 
 use App\Authentication\Mfa\FreshPrivilegedMfaRequired;
 use App\Authentication\Password\FreshPasswordConfirmationRequired;
+use App\Entitlements\Exceptions\EntitlementDenied;
 use App\Observability\CorrelationId;
 use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceConflict;
 use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceRejected;
+use App\Operator\EntitlementAdministration\Exceptions\EntitlementAdministrationConflict;
+use App\Operator\EntitlementAdministration\Exceptions\EntitlementAdministrationRejected;
 use App\Operator\LearnerAdministration\Exceptions\LearnerAdministrationConflict;
 use App\Operator\MediaLibrary\Exceptions\MediaLibraryConflict;
 use App\Operator\MediaLibrary\Exceptions\MediaLibraryRejected;
@@ -105,6 +108,67 @@ final class ProblemDetailsFactory
      */
     private function definition(int $status, ?Throwable $exception = null): array
     {
+        if ($exception instanceof EntitlementDenied) {
+            return match ($exception->messageKey) {
+                EntitlementDenied::LEVEL_LOCKED => [
+                    'type' => 'urn:global-english:problem:entitlement-level-locked',
+                    'title' => 'Level requires an upgrade',
+                    'detail' => 'This level is not included in the current plan.',
+                    'message_key' => EntitlementDenied::LEVEL_LOCKED,
+                ],
+                EntitlementDenied::ROLEPLAY_LOCKED => [
+                    'type' => 'urn:global-english:problem:entitlement-roleplay-locked',
+                    'title' => 'Role-play requires an upgrade',
+                    'detail' => 'Role-play is not included in the current plan.',
+                    'message_key' => EntitlementDenied::ROLEPLAY_LOCKED,
+                ],
+                EntitlementDenied::DEMO_AI_EXHAUSTED => [
+                    'type' => 'urn:global-english:problem:entitlement-demo-ai-exhausted',
+                    'title' => 'Demo speaking time used',
+                    'detail' => 'The free demo live-AI allowance is used up.',
+                    'message_key' => EntitlementDenied::DEMO_AI_EXHAUSTED,
+                ],
+                EntitlementDenied::EXPIRED => [
+                    'type' => 'urn:global-english:problem:entitlement-expired',
+                    'title' => 'Subscription expired',
+                    'detail' => 'The current plan is no longer active.',
+                    'message_key' => EntitlementDenied::EXPIRED,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:entitlement-checkout-unavailable',
+                    'title' => 'Checkout unavailable',
+                    'detail' => 'The payment could not be completed.',
+                    'message_key' => EntitlementDenied::CHECKOUT_UNAVAILABLE,
+                ],
+            };
+        }
+
+        if ($exception instanceof EntitlementAdministrationRejected) {
+            return [
+                'type' => 'urn:global-english:problem:entitlement-not-found',
+                'title' => 'Resource not found',
+                'detail' => 'The requested resource could not be found.',
+                'message_key' => EntitlementAdministrationRejected::NOT_FOUND,
+            ];
+        }
+
+        if ($exception instanceof EntitlementAdministrationConflict) {
+            return match ($exception->messageKey) {
+                EntitlementAdministrationConflict::IDEMPOTENCY => [
+                    'type' => 'urn:global-english:problem:entitlement-idempotency-conflict',
+                    'title' => 'Idempotency conflict',
+                    'detail' => 'The idempotency key is already bound to another request.',
+                    'message_key' => EntitlementAdministrationConflict::IDEMPOTENCY,
+                ],
+                default => [
+                    'type' => 'urn:global-english:problem:entitlement-stale-state',
+                    'title' => 'Resource state changed',
+                    'detail' => 'Reload the resource and retry the request.',
+                    'message_key' => EntitlementAdministrationConflict::STALE,
+                ],
+            };
+        }
+
         if ($exception instanceof MediaLibraryConflict) {
             return match ($exception->messageKey) {
                 MediaLibraryConflict::IDEMPOTENCY => [

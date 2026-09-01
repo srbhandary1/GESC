@@ -77,6 +77,7 @@ export type OperatorNavigationKey =
   | 'safety'
   | 'people'
   | 'learners'
+  | 'entitlements'
 
 export type OperatorPanelKey =
   | 'pilot_analytics'
@@ -88,6 +89,8 @@ export type OperatorPanelKey =
   | 'audit'
   | OperatorOrganizationPanelKey
   | OperatorLearnerPanelKey
+  | 'entitlement_plans'
+  | 'entitlement_directory'
 
 export interface OperatorOverview {
   readonly generated_at: string

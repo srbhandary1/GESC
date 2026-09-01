@@ -2,9 +2,19 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.35.0
+  version: 0.39.0
   description: |
-    Canonical API contract for the Global English platform. APP-0053 permits
+    Canonical API contract for the Global English platform. ADR-0036 adds
+    the Premium flagship Direct plan and one complimentary Premium month for
+    current Direct learners. ADR-0035 adds
+    Direct learner subscriptions, GST-exclusive dummy checkout and operator
+    entitlement administration. ADR-0034 adds
+    Google and Facebook as extra sign-in methods for already-enrolled users
+    that issue the same Sanctum session or Android Passport family.
+    ADR-0033 adds
+    first-party Android username/password sign-in that issues the existing
+    Passport token family without enabling the public password grant.
+    APP-0053 permits
     the non-production soft-launch conversation path to process typed or
     learner-confirmed transcripts with Azure OpenAI while reporting an
     explicit text-first/on-device playback fallback. ADR-0016 extends
@@ -226,6 +236,136 @@ paths:
               $ref: "#/components/headers/NoStore"
         "400":
           $ref: "#/components/responses/OAuthProblem"
+  /oauth/social/{provider}/authorize:
+    get:
+      operationId: beginFederatedAuthorization
+      summary: Begin first-party Google or Facebook authorization
+      description: |
+        Browser and origin-pinned Android Custom Tabs entry. Guest sign-in
+        succeeds only for an already linked IdP subject. Linking uses
+        `intent=link` with an authenticated web session or Android link-start.
+      tags: [Authentication]
+      servers:
+        - url: /
+          description: First-party federated authorization endpoint.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+        - name: intent
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [sign_in, link]
+            default: sign_in
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: installation_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Ulid"
+        - name: link_request
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 20
+            maxLength: 128
+      responses:
+        "200":
+          description: Unused. Successful federated authorization always redirects.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            text/html:
+              schema:
+                type: string
+        "302":
+          description: Redirect to Google or Facebook, or back to sign-in.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri-reference
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+  /oauth/social/{provider}/callback:
+    get:
+      operationId: completeFederatedAuthorization
+      summary: Complete first-party Google or Facebook authorization
+      description: |
+        Exchanges the IdP code on the API origin. Web starts the same Sanctum
+        session as password sign-in. Android receives a single-use ticket in
+        the custom-scheme URL; tokens are never placed in that URL.
+      tags: [Authentication]
+      servers:
+        - url: /
+          description: First-party federated callback endpoint.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unused. Successful federated callback always redirects.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            text/html:
+              schema:
+                type: string
+        "302":
+          description: Redirect to the web app or the Android custom-scheme callback.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri-reference
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
   /oauth/token:
     post:
       operationId: exchangeMobileToken
@@ -279,6 +419,371 @@ paths:
           $ref: "#/components/responses/OAuthProblem"
         default:
           $ref: "#/components/responses/OAuthProblem"
+  /auth/mobile/password/sign-ins:
+    post:
+      operationId: signInWithMobilePassword
+      summary: Issue a Passport token family with username and password
+      description: |
+        Android-only first-party endpoint. Verifies the same username/password
+        credential as web sign-in, then issues a Passport access token and
+        rotating refresh family for the approved public Android client and
+        `mobile:api`. No web session cookie is created. The public
+        `/oauth/token` password grant remains rejected.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobilePasswordSignIn"
+      responses:
+        "200":
+          description: A new access token and single-use refresh credential.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileTokenResponse"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/password/invitation-enrollments:
+    post:
+      operationId: enrollWithMobilePasswordInvitation
+      summary: Create one invited account with a self-chosen username and password
+      description: |
+        Android in-app invitation enrollment. The invitation is consumed in the
+        same transaction that creates the account, password credential, scoped
+        membership, optional role and optional enrollment. No session or token
+        family is created; the new user signs in normally after setup.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordInvitationEnrollment"
+      responses:
+        "204":
+          description: The invited account and credential were created atomically.
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/password/mode:
+    get:
+      operationId: getMobileAuthenticationMode
+      summary: Get the safe global authentication migration mode for Android
+      tags: [Authentication]
+      security: []
+      responses:
+        "200":
+          description: The current global authentication mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationModeResponse"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/password/recovery-requests:
+    post:
+      operationId: requestMobilePasswordRecovery
+      summary: Request enumeration-safe ordinary password recovery from Android
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordRecoveryRequest"
+      responses:
+        "202":
+          description: The request was accepted regardless of account state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericRecoveryResponse"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/social/providers:
+    get:
+      operationId: getFederatedProviders
+      summary: Get whether Google and Facebook sign-in are configured
+      tags: [Authentication]
+      security: []
+      responses:
+        "200":
+          description: Provider availability for the current deployment.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedProviderAvailability"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/providers:
+    get:
+      operationId: getMobileFederatedProviders
+      summary: Get whether Google and Facebook sign-in are configured for Android
+      tags: [Authentication]
+      security: []
+      responses:
+        "200":
+          description: Provider availability for the current deployment.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedProviderAvailability"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/{provider}/authorization:
+    get:
+      operationId: getMobileFederatedAuthorization
+      summary: Get the origin-pinned Custom Tabs URL for Android federated sign-in
+      tags: [Authentication]
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: installation_id
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: First-party authorization URL for Custom Tabs.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileFederatedAuthorizationResponse"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/sign-ins:
+    post:
+      operationId: signInWithMobileFederatedTicket
+      summary: Exchange a single-use federated ticket for a Passport family
+      description: |
+        Android-only. The Custom Tabs callback carries `social_ticket`, not
+        tokens. This POST issues the same family as password sign-in with
+        grant name `federated_sign_in`. `/oauth/token` still rejects
+        `grant_type=password`.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileFederatedSignIn"
+      responses:
+        "200":
+          description: A new access token and single-use refresh credential.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileTokenResponse"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/{provider}/link-starts:
+    post:
+      operationId: startMobileFederatedLink
+      summary: Start Android Google or Facebook linking for the signed-in user
+      tags: [Authentication]
+      security:
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileFederatedLinkStart"
+      responses:
+        "200":
+          description: First-party authorization URL for Custom Tabs.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileFederatedAuthorizationResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/links:
+    get:
+      operationId: getMobileFederatedLinks
+      summary: List linked Google and Facebook accounts for the Android user
+      tags: [Authentication]
+      security:
+        - passportOAuth:
+            - mobile:api
+      responses:
+        "200":
+          description: Linked providers for the authenticated user.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedProviderAvailability"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mobile/social/{provider}/links:
+    delete:
+      operationId: unlinkMobileFederatedProvider
+      summary: Disconnect Google or Facebook from the Android user
+      tags: [Authentication]
+      security:
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+      responses:
+        "204":
+          description: The provider is no longer linked.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/social/links:
+    get:
+      operationId: getFederatedLinks
+      summary: List linked Google and Facebook accounts for the web user
+      tags: [Authentication]
+      security:
+        - sanctumSession: []
+      responses:
+        "200":
+          description: Linked providers for the authenticated user.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedProviderAvailability"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/social/{provider}/links:
+    delete:
+      operationId: unlinkFederatedProvider
+      summary: Disconnect Google or Facebook from the web user
+      tags: [Authentication]
+      security:
+        - sanctumSession: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook]
+      responses:
+        "204":
+          description: The provider is no longer linked.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /auth/password/sign-ins:
     post:
       operationId: signInWithPassword
@@ -1168,6 +1673,118 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/entitlement:
+    get:
+      operationId: getLearnerEntitlement
+      summary: Get the authenticated learner's current Direct entitlement
+      description: |
+        Direct learners receive an auto-demo on first read. Institutional
+        organizations return `applies=false` and are not paywalled.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Current entitlement snapshot.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerEntitlement"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/subscription-plans:
+    get:
+      operationId: listLearnerSubscriptionPlans
+      summary: List GST-inclusive Direct subscription offers
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Active plans with current GST.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerSubscriptionCatalogue"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/subscription-checkouts:
+    post:
+      operationId: createLearnerSubscriptionCheckout
+      summary: Complete dummy in-app checkout for a paid Direct plan
+      description: |
+        Completes in-process with the dummy payment driver. Production and
+        `disabled` fail closed. Replay uses the same Idempotency-Key.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearnerSubscriptionCheckoutRequest"
+      responses:
+        "201":
+          description: Checkout completed and entitlement granted.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerSubscriptionCheckout"
+        "200":
+          description: Exact checkout replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerSubscriptionCheckout"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -2461,6 +3078,7 @@ paths:
                         - level_number
                         - availability
                         - session_part_ids
+                        - entitlement_access
                       additionalProperties: false
                       properties:
                         level_number:
@@ -2471,6 +3089,9 @@ paths:
                         availability:
                           type: string
                           enum: [available, commissioning_pending]
+                        entitlement_access:
+                          type: string
+                          enum: [allowed, upgrade_required]
                         blueprint_id:
                           type: [string, "null"]
                         session_part_ids:
@@ -2904,6 +3525,415 @@ paths:
         "403":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/entitlement-workspace:
+    get:
+      operationId: getOperatorEntitlementWorkspace
+      summary: Get current-organization GST settings and plan catalogue
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Tax settings and organization-owned plans.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementWorkspace"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/tax-settings/updates:
+    post:
+      operationId: updateOperatorTaxSettings
+      summary: Replace current-organization GSTIN and GST rate
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOperatorTaxSettingsRequest"
+      responses:
+        "200":
+          description: Tax settings updated or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/entitlement-plans/{plan}/updates:
+    post:
+      operationId: updateOperatorEntitlementPlan
+      summary: Update one organization-owned subscription plan
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: plan
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOperatorEntitlementPlanRequest"
+      responses:
+        "200":
+          description: Plan updated or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/learners/{learner}/entitlements:
+    get:
+      operationId: listOperatorLearnerEntitlements
+      summary: List entitlements for one current-organization learner
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: learner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Bounded entitlement history for the learner membership.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorLearnerEntitlementListing"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/learners/{learner}/entitlement-grants:
+    post:
+      operationId: grantOperatorLearnerEntitlement
+      summary: Grant a subscription plan to a current-organization learner
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: learner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantOperatorLearnerEntitlementRequest"
+      responses:
+        "201":
+          description: Entitlement granted.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "200":
+          description: Exact grant replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/courtesy-premium-grants:
+    post:
+      operationId: grantOperatorCourtesyPremium
+      summary: Grant one complimentary Premium month to current Direct learners
+      description: |
+        Direct only. Replaces demo or Modules with one calendar month of
+        Premium. Learners who already received this courtesy grant, or who
+        already have Premium covering the next month, are skipped. This does
+        not import accounts from the previous website.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Courtesy Premium grants applied or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/learners/{learner}/signin-throttle-clears:
+    post:
+      operationId: clearOperatorLearnerSignInThrottle
+      summary: Clear username sign-in throttle for one learner
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: learner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Throttle cleared or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/entitlements/{entitlement}/demo-clock-restarts:
+    post:
+      operationId: restartOperatorEntitlementDemoClock
+      summary: Restart a demo entitlement 48-hour clock
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: entitlement
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Demo clock restarted or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/entitlements/{entitlement}/demo-meter-restarts:
+    post:
+      operationId: restartOperatorEntitlementDemoMeter
+      summary: Restart a demo entitlement live-AI meter
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: entitlement
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Demo meter restarted or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/entitlements/{entitlement}/revocations:
+    post:
+      operationId: revokeOperatorEntitlement
+      summary: Revoke a current-organization learner entitlement
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: entitlement
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Entitlement revoked or exact replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorEntitlementCommandResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -9265,6 +10295,65 @@ components:
           minLength: 1
           maxLength: 512
           writeOnly: true
+    MobilePasswordSignIn:
+      type: object
+      additionalProperties: false
+      required: [username, password, installation_id, client_id]
+      properties:
+        username:
+          $ref: "#/components/schemas/GlobalUsername"
+        password:
+          type: string
+          minLength: 1
+          maxLength: 512
+          writeOnly: true
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+        client_id:
+          type: string
+          format: uuid
+    FederatedProviderAvailability:
+      type: object
+      additionalProperties: false
+      required: [google, facebook]
+      properties:
+        google:
+          type: boolean
+        facebook:
+          type: boolean
+    MobileFederatedAuthorizationResponse:
+      type: object
+      additionalProperties: false
+      required: [authorization_url]
+      properties:
+        authorization_url:
+          type: string
+          format: uri
+    MobileFederatedSignIn:
+      type: object
+      additionalProperties: false
+      required: [ticket, installation_id, client_id]
+      properties:
+        ticket:
+          type: string
+          minLength: 20
+          maxLength: 128
+          writeOnly: true
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+        client_id:
+          type: string
+          format: uuid
+    MobileFederatedLinkStart:
+      type: object
+      additionalProperties: false
+      required: [installation_id, client_id]
+      properties:
+        installation_id:
+          $ref: "#/components/schemas/Ulid"
+        client_id:
+          type: string
+          format: uuid
     PasswordInvitationEnrollment:
       type: object
       additionalProperties: false
@@ -10139,6 +11228,410 @@ components:
           $ref: "#/components/schemas/ProgressDelayedReviewPerformance"
         recurring_errors:
           $ref: "#/components/schemas/ProgressRecurringErrors"
+    LearnerEntitlement:
+      type: object
+      additionalProperties: false
+      required:
+        - applies
+        - entitlement_id
+        - plan_code
+        - plan_name
+        - status
+        - source
+        - allows_roleplay
+        - max_level_number
+        - is_demo
+        - starts_at
+        - first_sign_in_at
+        - expires_at
+        - live_ai_seconds_used
+        - live_ai_cap_seconds
+        - live_ai_seconds_remaining
+        - gstin_is_placeholder
+      properties:
+        applies:
+          type: boolean
+        entitlement_id:
+          type: [string, "null"]
+        plan_code:
+          type: [string, "null"]
+        plan_name:
+          type: [string, "null"]
+        status:
+          type: string
+        source:
+          type: [string, "null"]
+        allows_roleplay:
+          type: boolean
+        max_level_number:
+          type: [integer, "null"]
+        is_demo:
+          type: boolean
+        starts_at:
+          type: [string, "null"]
+          format: date-time
+        first_sign_in_at:
+          type: [string, "null"]
+          format: date-time
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+        live_ai_seconds_used:
+          type: integer
+          minimum: 0
+        live_ai_cap_seconds:
+          type: [integer, "null"]
+        live_ai_seconds_remaining:
+          type: [integer, "null"]
+        gstin_is_placeholder:
+          type: boolean
+    LearnerSubscriptionCatalogue:
+      type: object
+      additionalProperties: false
+      required:
+        - gstin_is_placeholder
+        - gst_registered
+        - plans
+      properties:
+        gstin_is_placeholder:
+          type: boolean
+        gst_registered:
+          type: boolean
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerSubscriptionPlanOffer"
+    LearnerSubscriptionPlanOffer:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - code
+        - name
+        - amount_ex_gst_paise
+        - gst_paise
+        - total_paise
+        - gst_rate_bps
+        - allows_roleplay
+        - max_level_number
+        - live_ai_cap_seconds
+        - is_demo
+        - checkout_required
+        - recommended
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        code:
+          type: string
+        name:
+          type: string
+        amount_ex_gst_paise:
+          type: integer
+          minimum: 0
+        gst_paise:
+          type: integer
+          minimum: 0
+        total_paise:
+          type: integer
+          minimum: 0
+        gst_rate_bps:
+          type: integer
+          minimum: 0
+        allows_roleplay:
+          type: boolean
+        max_level_number:
+          type: [integer, "null"]
+        live_ai_cap_seconds:
+          type: [integer, "null"]
+        is_demo:
+          type: boolean
+        checkout_required:
+          type: boolean
+        recommended:
+          type: boolean
+    CreateLearnerSubscriptionCheckoutRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - plan_id
+      properties:
+        plan_id:
+          $ref: "#/components/schemas/Ulid"
+    LearnerSubscriptionCheckout:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - plan_id
+        - amount_ex_gst_paise
+        - gst_paise
+        - total_paise
+        - gstin_is_placeholder
+        - entitlement_id
+        - replayed
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        plan_id:
+          $ref: "#/components/schemas/Ulid"
+        amount_ex_gst_paise:
+          type: integer
+          minimum: 0
+        gst_paise:
+          type: integer
+          minimum: 0
+        total_paise:
+          type: integer
+          minimum: 0
+        gstin_is_placeholder:
+          type: boolean
+        entitlement_id:
+          type: [string, "null"]
+        replayed:
+          type: boolean
+    OperatorEntitlementWorkspace:
+      type: object
+      additionalProperties: false
+      required:
+        - tax
+        - plans
+        - courtesy_premium
+      properties:
+        tax:
+          $ref: "#/components/schemas/OperatorTaxSettings"
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorEntitlementPlan"
+        courtesy_premium:
+          type: object
+          additionalProperties: false
+          required:
+            - granted_memberships
+          properties:
+            granted_memberships:
+              type: integer
+              minimum: 0
+    OperatorTaxSettings:
+      type: object
+      additionalProperties: false
+      required:
+        - gst_registered
+        - gstin
+        - gst_rate_bps
+        - gstin_is_placeholder
+        - version
+      properties:
+        gst_registered:
+          type: boolean
+        gstin:
+          type: string
+          minLength: 15
+          maxLength: 15
+        gst_rate_bps:
+          type: integer
+          minimum: 0
+          maximum: 5000
+        gstin_is_placeholder:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    OperatorEntitlementPlan:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - code
+        - name
+        - amount_ex_gst_paise
+        - gst_paise
+        - total_paise
+        - billing_period
+        - duration_value
+        - allows_roleplay
+        - max_level_number
+        - live_ai_cap_seconds
+        - is_demo
+        - status
+        - version
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        code:
+          type: string
+        name:
+          type: string
+        amount_ex_gst_paise:
+          type: integer
+          minimum: 0
+        gst_paise:
+          type: integer
+          minimum: 0
+        total_paise:
+          type: integer
+          minimum: 0
+        billing_period:
+          type: string
+          enum: [hours, calendar_month]
+        duration_value:
+          type: integer
+          minimum: 1
+        allows_roleplay:
+          type: boolean
+        max_level_number:
+          type: [integer, "null"]
+        live_ai_cap_seconds:
+          type: [integer, "null"]
+        is_demo:
+          type: boolean
+        status:
+          type: string
+          enum: [active, retired]
+        version:
+          type: integer
+          minimum: 1
+    OperatorLearnerEntitlementListing:
+      type: object
+      additionalProperties: false
+      required:
+        - learner_membership_id
+        - entitlements
+      properties:
+        learner_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        entitlements:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorLearnerEntitlement"
+    OperatorLearnerEntitlement:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - plan_code
+        - status
+        - source
+        - starts_at
+        - first_sign_in_at
+        - expires_at
+        - live_ai_seconds_used
+        - version
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        plan_code:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        starts_at:
+          type: string
+        first_sign_in_at:
+          type: [string, "null"]
+        expires_at:
+          type: [string, "null"]
+        live_ai_seconds_used:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+    UpdateOperatorTaxSettingsRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - gst_registered
+        - gstin
+        - gst_rate_bps
+        - expected_version
+      properties:
+        gst_registered:
+          type: boolean
+        gstin:
+          type: string
+          minLength: 15
+          maxLength: 15
+        gst_rate_bps:
+          type: integer
+          minimum: 0
+          maximum: 5000
+        expected_version:
+          type: integer
+          minimum: 1
+    UpdateOperatorEntitlementPlanRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - amount_ex_gst_paise
+        - duration_value
+        - allows_roleplay
+        - status
+        - expected_version
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        amount_ex_gst_paise:
+          type: integer
+          minimum: 0
+        duration_value:
+          type: integer
+          minimum: 1
+        allows_roleplay:
+          type: boolean
+        max_level_number:
+          type: [integer, "null"]
+        live_ai_cap_seconds:
+          type: [integer, "null"]
+        status:
+          type: string
+          enum: [active, retired]
+        expected_version:
+          type: integer
+          minimum: 1
+    GrantOperatorLearnerEntitlementRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - plan_id
+      properties:
+        plan_id:
+          $ref: "#/components/schemas/Ulid"
+    OperatorEntitlementCommandResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - replayed
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          required:
+            - result_type
+            - result_id
+            - completed_at
+          properties:
+            result_type:
+              type: string
+            result_id:
+              type: string
+            completed_at:
+              type: string
+              format: date-time
+            workspace:
+              type: object
+              additionalProperties: true
+        replayed:
+          type: boolean
     ProgressObjectiveMastery:
       type: object
       additionalProperties: false
@@ -11987,7 +13480,7 @@ components:
         navigation:
           type: array
           minItems: 1
-          maxItems: 6
+          maxItems: 7
           uniqueItems: true
           items:
             type: string
@@ -11995,19 +13488,21 @@ components:
               - overview
               - learning
               - learners
+              - entitlements
               - people
               - operations
               - safety
         panels:
           type: array
           minItems: 1
-          maxItems: 17
+          maxItems: 21
           uniqueItems: true
           items:
             type: string
             enum:
               - pilot_analytics
               - content_studio
+              - media_library
               - review_queue
               - publish_status
               - support_diagnostics
@@ -12024,6 +13519,8 @@ components:
               - learner_directory
               - learner_enrollments
               - learner_invitations
+              - entitlement_plans
+              - entitlement_directory
         search_available:
           type: boolean
           description: Whether at least one existing safe global-search source is authorized.

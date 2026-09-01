@@ -2,12 +2,12 @@
 
 **Checkpoint:** PRIV-DSR-01
 
-**Inventory version:** `learner-privacy-v5`
+**Inventory version:** `learner-privacy-v7`
 
 **Scope:** one learner membership in one organization
 
 **Authority:** master plan §§15, 16 and 18; ADR-0002, ADR-0003,
-ADR-0004, ADR-0006, ADR-0007, ADR-0014 and ADR-0021
+ADR-0004, ADR-0006, ADR-0007, ADR-0014, ADR-0021 and ADR-0034
 
 ## Boundary
 
@@ -49,6 +49,10 @@ authorization boundary; it does not make the record public or mutable.
 | `sessions` | Global `user_id` | Count only; storage key, payload, IP and user agent excluded | Delete server session storage |
 | `authentication_sessions` | Global `user_id` | Safe lifecycle metadata; storage digest/ciphertext and password/MFA assertion detail excluded | Revoke all active sessions, clear freshness and retain lifecycle evidence |
 | `password_credentials` | Global `user_id` | Count only; password hash and hashing metadata excluded | Retain as global authentication authority; no organization-scoped operator can export, erase or reset it |
+| `federated_identities` | Global `user_id` | Provider and lifecycle timestamps; subject digest excluded | Retain as global authentication authority; unlinking is a signed-in user action, not tenant erasure |
+| `learner_entitlements` | `learner_membership_id` | Plan id, status, source, windows, used seconds; plan snapshot excluded | Retain commercial grant evidence |
+| `subscription_checkouts` | `learner_membership_id` | Count only; provider references excluded | Retain payment evidence without secrets |
+| `live_ai_meter_charges` | via entitlement | Count only | Retain meter evidence without audio |
 | `password_recovery_challenges` | Global `user_id` when eligible | Count only; lookup/token digests and delivery metadata excluded | Retain through short security expiry/cleanup; successful organization erasure revokes sessions but does not create a recovery bypass |
 | `password_cutover_exclusions` | Exact excluded global `user_id`, global cutover marker and configured recovery owner | Count only; manifest digest and owner relationship remain restricted platform evidence | Retain append-only cutover and recovery accountability; it cannot be changed through tenant administration or learner erasure |
 | `privileged_password_recovery_cases` | Target global `user_id` | Safe historical reason/status/version/times; external evidence reference/digest excluded | Retain superseded/completed historical accountability outside tenant administration; no active route advances it |

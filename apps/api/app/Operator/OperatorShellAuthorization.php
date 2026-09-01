@@ -25,6 +25,7 @@ final readonly class OperatorShellAuthorization
      *     support: bool,
      *     people_panels: list<string>,
      *     learner_panels: list<string>,
+     *     entitlement_panels: list<string>,
      *     search_available: bool
      * }
      */
@@ -135,6 +136,22 @@ final readonly class OperatorShellAuthorization
             $learnerPanels[] = 'learner_invitations';
         }
 
+        $entitlementPanels = [];
+
+        if ($this->authorization->allows(
+            $actor,
+            'entitlement_plans.read',
+        )) {
+            $entitlementPanels[] = 'entitlement_plans';
+        }
+
+        if ($this->authorization->allows(
+            $actor,
+            'entitlements.read',
+        )) {
+            $entitlementPanels[] = 'entitlement_directory';
+        }
+
         if (
             ! $content
             && ! $media
@@ -142,6 +159,7 @@ final readonly class OperatorShellAuthorization
             && ! $support
             && $peoplePanels === []
             && $learnerPanels === []
+            && $entitlementPanels === []
         ) {
             throw new OperatorShellRejected;
         }
@@ -153,6 +171,7 @@ final readonly class OperatorShellAuthorization
             'support' => $support,
             'people_panels' => $peoplePanels,
             'learner_panels' => $learnerPanels,
+            'entitlement_panels' => $entitlementPanels,
             'search_available' => $content || $audit || $support,
         ];
     }

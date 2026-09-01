@@ -8,6 +8,7 @@ import type {
   PasswordAuthenticationStatus,
   WebSessionAuthentication,
 } from '../auth/AuthenticationAdapter'
+import { FederatedAccountsPanel } from '../auth/FederatedAccountsPanel'
 import {
   resolveInterfaceMessage,
   type InterfaceMessageResolution,
@@ -407,6 +408,10 @@ export function PasswordAccountSecurityPanel({
           </li>
         ))}
       </ul>
+      <FederatedAccountsPanel
+        authentication={authentication}
+        message={message}
+      />
     </section>
   )
 }

@@ -53,6 +53,12 @@ final class PermissionCatalogue
         'support.diagnostics.read' => 'List organization-scoped support diagnostics digests without learner content bodies.',
         'privacy.export.request' => 'Request organization-scoped learner identifier exports without audio or transcripts.',
         'privacy.erasure.request' => 'Request organization-scoped learner account-erasure and retention workflows.',
+        'entitlement_plans.read' => 'View the current-organization subscription plan catalogue and GST settings.',
+        'entitlement_plans.manage' => 'Change subscription plan catalogue and GST settings.',
+        'entitlements.read' => 'View current-organization learner subscription grants.',
+        'entitlements.grant' => 'Grant a subscription plan to a current-organization learner.',
+        'entitlements.adjust' => 'Adjust, restart or unlock a current-organization learner subscription.',
+        'entitlements.revoke' => 'Revoke a current-organization learner subscription grant.',
     ];
 
     /**

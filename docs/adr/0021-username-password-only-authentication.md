@@ -22,6 +22,10 @@ Accepted on 11 August 2026 under
 [DR-0026](../DR-0026_PASSWORD_ONLY_AUTHENTICATION_REQUEST.md) by accepting
 Option B exactly as written. The approved pre-resolution request has SHA-256
 `847486461ffbf92610427744539bea5a3fd607b2988d8aea8a9ff54fbcd0576d`.
+Amended on 1 September 2026 by
+[ADR-0034](0034-federated-google-facebook-sign-in.md): Google and Facebook are
+extra sign-in methods for already-enrolled users. Username/password remains
+the enrollment credential and the only privileged freshness factor.
 
 Acceptance authorizes this ADR, its same-change master-plan amendment and the
 bounded AUTH-PASSWORD-01 specification. It does not directly authorize runtime
@@ -53,10 +57,12 @@ Implement the complete normative contract in DR-0026 Option B.
   lower-case ASCII form matching `^[a-z][a-z0-9._-]{3,63}$`. It remains
   independent of memberships, mobile number, display name and immutable user
   ID.
-- Every role uses that username and one password as its only routine
-  authentication factor. Invitations authorize enrollment or staff authority,
-  not continuing authentication, and no shared or retrievable default password
-  exists.
+- Every role uses that username and one password as its enrollment credential
+  and privileged-freshness factor. Invitations authorize enrollment or staff
+  authority, not continuing authentication, and no shared or retrievable
+  default password exists. After enrollment, Google and Facebook may sign
+  in the same user when that IdP subject is linked (ADR-0034). They never
+  create accounts or satisfy password confirmation.
 - Passwords contain 15–128 Unicode code points, accept ordinary Unicode and
   spaces, use NFC consistently, are never silently truncated and have no
   composition or periodic-rotation rule.
@@ -70,9 +76,13 @@ Implement the complete normative contract in DR-0026 Option B.
 ### Transport, sessions and privileged freshness
 
 - Web/PWA retains Secure, HttpOnly, same-origin Sanctum cookie sessions and
-  CSRF protection. Android retains Passport Authorization Code with S256 PKCE
-  in the system browser, short-lived access tokens, rotating refresh families
-  and reviewed native secure storage.
+  CSRF protection. Android first issue is a first-party in-app
+  username/password form that issues the Passport token family (ADR-0033).
+  Linked Google or Facebook sign-in issues that same web session or Passport
+  family (ADR-0034). Refresh remains Passport `refresh_token`. Access tokens
+  stay short-lived, refresh families rotate, and credentials stay only in
+  reviewed native secure storage. `/oauth/token` still rejects
+  `grant_type=password`.
 - Login responses and materially observable behavior are enumeration-safe and
   throttled across normalized account, source/network and global abuse keys.
 - The existing session lifetimes, listing/revocation, Android installation
@@ -196,8 +206,9 @@ change and advances it to version 3.3. It changes:
 
 The new baseline is username/password-only for every role, with fresh
 same-password confirmation for sensitive privileged actions. Sanctum,
-Passport PKCE, secure storage, session/token lifecycles and tenant
-authorization remain unchanged.
+Passport token-family transport, secure storage, session/token lifecycles
+and tenant authorization remain. ADR-0033 later replaced Android first
+issue (system-browser PKCE) with an in-app password form.
 
 ## Approval evidence
 

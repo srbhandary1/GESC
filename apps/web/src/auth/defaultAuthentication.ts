@@ -47,6 +47,42 @@ class UnavailableAndroidAuthenticationAdapter
     throw new AuthenticationUnavailableError()
   }
 
+  async signIn(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async authenticationMode(): Promise<never> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async requestPasswordRecovery(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async enrollWithInvitation(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async federatedProviders(): Promise<never> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async beginFederatedSignIn(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async federatedLinks(): Promise<never> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async beginFederatedLink(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
+  async unlinkFederated(): Promise<void> {
+    throw new AuthenticationUnavailableError()
+  }
+
   async completeAuthorization(): Promise<never> {
     throw new AuthenticationUnavailableError()
   }

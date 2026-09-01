@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Authentication\AuthenticationSecretDigester;
+use App\Authentication\Federated\DisabledFederatedIdentityProvider;
+use App\Authentication\Federated\FakeFederatedIdentityProvider;
+use App\Authentication\Federated\FederatedIdentityProvider;
+use App\Authentication\Federated\HttpOidcFederatedIdentityProvider;
 use App\Authentication\Mfa\PrivilegedMfaVerifier;
 use App\Authentication\Mfa\Rfc6238PrivilegedMfaVerifier;
 use App\Authentication\Mobile\MobileOAuthClient;
+use App\Authentication\Mobile\MobilePasswordAuthorizationServerFactory;
+use App\Authentication\Mobile\MobilePasswordTokenIssuer;
 use App\Authentication\Otp\LocalFixedOtpCodeGenerator;
 use App\Authentication\Otp\LocalOtpDeliveryAdapter;
 use App\Authentication\Otp\OtpCodeGenerator;
@@ -24,6 +30,9 @@ use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Authentication\Sessions\PlatformOrMembershipPrivilegeClassifier;
 use App\Authentication\Sessions\PrivilegeClassifier;
+use App\Billing\DisabledPaymentProvider;
+use App\Billing\DummyPaymentProvider;
+use App\Billing\PaymentProvider;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
 use App\Conversation\Providers\ConfirmedTextSpeechToTextProvider;
 use App\Conversation\Providers\ConversationModelProvider;
@@ -77,6 +86,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use League\OAuth2\Server\AuthorizationServer;
 use LogicException;
 
 class AppServiceProvider extends ServiceProvider
@@ -89,12 +99,39 @@ class AppServiceProvider extends ServiceProvider
         Passport::useClientModel(MobileOAuthClient::class);
         Passport::ignoreRoutes();
         Passport::$deviceCodeGrantEnabled = false;
+        $this->app->when(MobilePasswordTokenIssuer::class)
+            ->needs(AuthorizationServer::class)
+            ->give(fn (): AuthorizationServer => $this->app
+                ->make(MobilePasswordAuthorizationServerFactory::class)
+                ->make());
 
         $this->app->scoped(
             OrganizationContextManager::class,
             static fn (): OrganizationContextManager => new OrganizationContextManager,
         );
 
+        $this->app->bind(FederatedIdentityProvider::class, function (): FederatedIdentityProvider {
+            $driver = (string) config('authentication.federated.driver', 'oidc');
+
+            if ($this->app->environment('production') && $driver === 'fake') {
+                return new DisabledFederatedIdentityProvider;
+            }
+
+            if ($this->app->environment('testing') || $driver === 'fake') {
+                return new FakeFederatedIdentityProvider;
+            }
+
+            return $this->app->make(HttpOidcFederatedIdentityProvider::class);
+        });
+        $this->app->bind(PaymentProvider::class, function (): PaymentProvider {
+            $driver = (string) config('billing.driver', 'dummy');
+
+            if ($this->app->environment('production') || $driver === 'disabled') {
+                return new DisabledPaymentProvider;
+            }
+
+            return new DummyPaymentProvider;
+        });
         $this->app->bind(OtpCodeGenerator::class, function (): OtpCodeGenerator {
             $localCode = config('authentication.otp.local_fixed_code');
 

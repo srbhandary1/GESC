@@ -19,6 +19,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_URL" value="https://localhost" force="true"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000" force="true"/>
         <env name="APP_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtdGVzdC1rZXktMDAwMDAwMDA="/>
         <env name="AUTH_IDENTITY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtaWRlbnRpdHktdGVzdC1rZXk="/>
         <env name="OFFLINE_BUNDLE_SIGNING_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtb2ZmbGluZS10ZXN0LWtleS12MQ=="/>

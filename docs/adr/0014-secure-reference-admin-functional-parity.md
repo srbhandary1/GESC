@@ -71,8 +71,11 @@ are normative and incorporated into this ADR. In particular:
    localization and rights authority remains mandatory.
 6. `Prime` maps to a deterministic entitlement with a plan, effective period,
    source and immutable grant/adjustment/revocation evidence. Manual and
-   externally reconciled entitlements are allowed; checkout, accounting,
-   payment providers, webhook secrets and provider spend are not authorized.
+   externally reconciled entitlements are allowed. ADR-0035 additionally
+   authorizes Direct in-app checkout through a project-owned
+   `PaymentProvider` port with dummy capture in non-production. Accounting
+   packages, webhook secrets, Play Billing, live provider spend and
+   production payment credentials are not authorized.
 7. A live class is only a timezone-aware facilitated-session schedule with a
    validated external meeting link. This decision adds no conferencing
    service, recording authority or attendance-to-mastery implication.

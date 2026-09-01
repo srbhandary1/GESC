@@ -2091,6 +2091,95 @@ export const PasswordSignInSchema = {
     }
 } as const;
 
+export const MobilePasswordSignInSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const FederatedProviderAvailabilitySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'google',
+        'facebook'
+    ],
+    properties: {
+        google: {
+            type: 'boolean'
+        },
+        facebook: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const MobileFederatedAuthorizationResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'authorization_url'
+    ],
+    properties: {
+        authorization_url: {
+            type: 'string',
+            format: 'uri'
+        }
+    }
+} as const;
+
+export const MobileFederatedSignInSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const MobileFederatedLinkStartSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
 export const PasswordInvitationEnrollmentSchema = {
     type: 'object',
     additionalProperties: false,
@@ -3366,6 +3455,638 @@ export const LearnerProgressDashboardSchema = {
         },
         recurring_errors: {
             $ref: '#/components/schemas/ProgressRecurringErrors'
+        }
+    }
+} as const;
+
+export const LearnerEntitlementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'applies',
+        'entitlement_id',
+        'plan_code',
+        'plan_name',
+        'status',
+        'source',
+        'allows_roleplay',
+        'max_level_number',
+        'is_demo',
+        'starts_at',
+        'first_sign_in_at',
+        'expires_at',
+        'live_ai_seconds_used',
+        'live_ai_cap_seconds',
+        'live_ai_seconds_remaining',
+        'gstin_is_placeholder'
+    ],
+    properties: {
+        applies: {
+            type: 'boolean'
+        },
+        entitlement_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        plan_code: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        plan_name: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string'
+        },
+        source: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        starts_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        first_sign_in_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        expires_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        live_ai_seconds_used: {
+            type: 'integer',
+            minimum: 0
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_seconds_remaining: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionCatalogueSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gstin_is_placeholder',
+        'gst_registered',
+        'plans'
+    ],
+    properties: {
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        gst_registered: {
+            type: 'boolean'
+        },
+        plans: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerSubscriptionPlanOffer'
+            }
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionPlanOfferSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'code',
+        'name',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'gst_rate_bps',
+        'allows_roleplay',
+        'max_level_number',
+        'live_ai_cap_seconds',
+        'is_demo',
+        'checkout_required',
+        'recommended'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        code: {
+            type: 'string'
+        },
+        name: {
+            type: 'string'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        checkout_required: {
+            type: 'boolean'
+        },
+        recommended: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const CreateLearnerSubscriptionCheckoutRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'plan_id'
+    ],
+    properties: {
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionCheckoutSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'plan_id',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'gstin_is_placeholder',
+        'entitlement_id',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'completed',
+                'failed'
+            ]
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        entitlement_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorEntitlementWorkspaceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'tax',
+        'plans',
+        'courtesy_premium'
+    ],
+    properties: {
+        tax: {
+            $ref: '#/components/schemas/OperatorTaxSettings'
+        },
+        plans: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorEntitlementPlan'
+            }
+        },
+        courtesy_premium: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'granted_memberships'
+            ],
+            properties: {
+                granted_memberships: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        }
+    }
+} as const;
+
+export const OperatorTaxSettingsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gst_registered',
+        'gstin',
+        'gst_rate_bps',
+        'gstin_is_placeholder',
+        'version'
+    ],
+    properties: {
+        gst_registered: {
+            type: 'boolean'
+        },
+        gstin: {
+            type: 'string',
+            minLength: 15,
+            maxLength: 15
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 5000
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorEntitlementPlanSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'code',
+        'name',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'billing_period',
+        'duration_value',
+        'allows_roleplay',
+        'max_level_number',
+        'live_ai_cap_seconds',
+        'is_demo',
+        'status',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        code: {
+            type: 'string'
+        },
+        name: {
+            type: 'string'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        billing_period: {
+            type: 'string',
+            enum: [
+                'hours',
+                'calendar_month'
+            ]
+        },
+        duration_value: {
+            type: 'integer',
+            minimum: 1
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'retired'
+            ]
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorLearnerEntitlementListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'learner_membership_id',
+        'entitlements'
+    ],
+    properties: {
+        learner_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        entitlements: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerEntitlement'
+            }
+        }
+    }
+} as const;
+
+export const OperatorLearnerEntitlementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'plan_code',
+        'status',
+        'source',
+        'starts_at',
+        'first_sign_in_at',
+        'expires_at',
+        'live_ai_seconds_used',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        plan_code: {
+            type: 'string'
+        },
+        status: {
+            type: 'string'
+        },
+        source: {
+            type: 'string'
+        },
+        starts_at: {
+            type: 'string'
+        },
+        first_sign_in_at: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        expires_at: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        live_ai_seconds_used: {
+            type: 'integer',
+            minimum: 0
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const UpdateOperatorTaxSettingsRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gst_registered',
+        'gstin',
+        'gst_rate_bps',
+        'expected_version'
+    ],
+    properties: {
+        gst_registered: {
+            type: 'boolean'
+        },
+        gstin: {
+            type: 'string',
+            minLength: 15,
+            maxLength: 15
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 5000
+        },
+        expected_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const UpdateOperatorEntitlementPlanRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'name',
+        'amount_ex_gst_paise',
+        'duration_value',
+        'allows_roleplay',
+        'status',
+        'expected_version'
+    ],
+    properties: {
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        duration_value: {
+            type: 'integer',
+            minimum: 1
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'retired'
+            ]
+        },
+        expected_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const GrantOperatorLearnerEntitlementRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'plan_id'
+    ],
+    properties: {
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OperatorEntitlementCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            type: 'object',
+            additionalProperties: true,
+            required: [
+                'result_type',
+                'result_id',
+                'completed_at'
+            ],
+            properties: {
+                result_type: {
+                    type: 'string'
+                },
+                result_id: {
+                    type: 'string'
+                },
+                completed_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                workspace: {
+                    type: 'object',
+                    additionalProperties: true
+                }
+            }
+        },
+        replayed: {
+            type: 'boolean'
         }
     }
 } as const;
@@ -5919,7 +6640,7 @@ export const OperatorOverviewSchema = {
         navigation: {
             type: 'array',
             minItems: 1,
-            maxItems: 6,
+            maxItems: 7,
             uniqueItems: true,
             items: {
                 type: 'string',
@@ -5927,6 +6648,7 @@ export const OperatorOverviewSchema = {
                     'overview',
                     'learning',
                     'learners',
+                    'entitlements',
                     'people',
                     'operations',
                     'safety'
@@ -5936,13 +6658,14 @@ export const OperatorOverviewSchema = {
         panels: {
             type: 'array',
             minItems: 1,
-            maxItems: 17,
+            maxItems: 21,
             uniqueItems: true,
             items: {
                 type: 'string',
                 enum: [
                     'pilot_analytics',
                     'content_studio',
+                    'media_library',
                     'review_queue',
                     'publish_status',
                     'support_diagnostics',
@@ -5958,7 +6681,9 @@ export const OperatorOverviewSchema = {
                     'membership_sessions',
                     'learner_directory',
                     'learner_enrollments',
-                    'learner_invitations'
+                    'learner_invitations',
+                    'entitlement_plans',
+                    'entitlement_directory'
                 ]
             }
         },
@@ -11944,6 +12669,60 @@ export const PasswordSignInWritableSchema = {
             minLength: 1,
             maxLength: 512,
             writeOnly: true
+        }
+    }
+} as const;
+
+export const MobilePasswordSignInWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'password',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const MobileFederatedSignInWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'ticket',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        ticket: {
+            type: 'string',
+            minLength: 20,
+            maxLength: 128,
+            writeOnly: true
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
         }
     }
 } as const;

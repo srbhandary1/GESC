@@ -121,7 +121,7 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
         $delivery = app(LevelSessionDeliveryService::class);
         $levels = $this->contexts()->run(
             $learnerContext,
-            fn (): array => $delivery->listLevels($learnerContext),
+            fn (): array => $delivery->listLevels($learnerContext, $learner),
         );
         self::assertSame('available', $levels[0]['availability']);
         self::assertSame('can', $levels[0]['concept_key']);
@@ -216,7 +216,7 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
         $delivery = app(LevelSessionDeliveryService::class);
         $levels = $this->contexts()->run(
             $context,
-            fn (): array => $delivery->listLevels($context),
+            fn (): array => $delivery->listLevels($context, $learner),
         );
         self::assertSame('commissioning_pending', $levels[0]['availability']);
     }

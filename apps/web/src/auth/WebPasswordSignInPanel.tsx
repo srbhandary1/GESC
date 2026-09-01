@@ -1,7 +1,11 @@
 import type { MessageKey } from '@global-english/localization'
 import { useEffect, useState, type FormEvent } from 'react'
 import type {
+  AuthenticationAdapter,
   AuthenticationSnapshot,
+  FederatedProvider,
+  FederatedProviderAvailability,
+  PasswordFormAuthentication,
   WebSessionAuthentication,
 } from './AuthenticationAdapter'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
@@ -9,7 +13,7 @@ import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { WebOtpSignInPanel } from './WebOtpSignInPanel'
 
 interface WebPasswordSignInPanelProps {
-  readonly authentication: WebSessionAuthentication
+  readonly authentication: AuthenticationAdapter & PasswordFormAuthentication
   readonly embedded?: boolean
   readonly message: (key: MessageKey) => InterfaceMessageResolution
   readonly onAuthenticated: (snapshot: AuthenticationSnapshot) => void
@@ -42,6 +46,10 @@ export function WebPasswordSignInPanel({
   const [legacySetup, setLegacySetup] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
+  const [providers, setProviders] = useState<FederatedProviderAvailability>({
+    google: false,
+    facebook: false,
+  })
   const [secureContext] = useState(() => {
     if (typeof window === 'undefined') {
       return true
@@ -61,6 +69,11 @@ export function WebPasswordSignInPanel({
       .then((nextMode) => active && setMode(nextMode))
       .catch(() => active && setError(true))
 
+    authentication
+      .federatedProviders()
+      .then((nextProviders) => active && setProviders(nextProviders))
+      .catch(() => undefined)
+
     return () => {
       active = false
     }
@@ -75,6 +88,14 @@ export function WebPasswordSignInPanel({
   }, [embedded, mode, legacySetup])
 
   if (mode === 'legacy_otp' || legacySetup) {
+    if (authentication.transport !== 'sanctum-cookie') {
+      return (
+        <p className="web-otp-sign-in__error" role="alert">
+          <LocalizedMessage resolution={message('auth.password.error')} />
+        </p>
+      )
+    }
+
     return (
       <>
         {legacySetup ? (
@@ -85,12 +106,21 @@ export function WebPasswordSignInPanel({
           </button>
         ) : null}
         <WebOtpSignInPanel
-          authentication={authentication}
+          authentication={authentication as WebSessionAuthentication}
           message={message}
           onAuthenticated={onAuthenticated}
         />
       </>
     )
+  }
+
+  const beginFederated = (provider: FederatedProvider) => {
+    setBusy(true)
+    setError(false)
+    void authentication
+      .beginFederatedSignIn(provider)
+      .catch(() => setError(true))
+      .finally(() => setBusy(false))
   }
 
   const signIn = (event: FormEvent<HTMLFormElement>) => {
@@ -378,6 +408,34 @@ export function WebPasswordSignInPanel({
           </button>
         ) : null}
       </form>
+
+      {!recovery && !invitationSetup && (providers.google || providers.facebook) ? (
+        <div className="web-password-sign-in__social">
+          <p>
+            <LocalizedMessage resolution={message('auth.social.or')} />
+          </p>
+          {providers.google ? (
+            <button
+              disabled={busy}
+              onClick={() => beginFederated('google')}
+              type="button"
+            >
+              <LocalizedMessage resolution={message('auth.social.google')} />
+            </button>
+          ) : null}
+          {providers.facebook ? (
+            <button
+              disabled={busy}
+              onClick={() => beginFederated('facebook')}
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message('auth.social.facebook')}
+              />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {recoverySent ? (
         <p role="status">

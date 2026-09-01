@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountRecoveryManagementController;
 use App\Http\Controllers\AuthenticationSessionController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CurrentIdentityController;
+use App\Http\Controllers\FederatedAuthenticationController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
@@ -18,11 +19,14 @@ use App\Http\Controllers\LearnerMissionController;
 use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\LearnerProgressDashboardController;
+use App\Http\Controllers\LearnerSubscriptionController;
 use App\Http\Controllers\LearnerTuitionRequestController;
 use App\Http\Controllers\LocalPasswordEstablishmentController;
 use App\Http\Controllers\MobileAuthenticationController;
+use App\Http\Controllers\MobilePasswordAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OperatorContentWorkspaceController;
+use App\Http\Controllers\OperatorEntitlementAdministrationController;
 use App\Http\Controllers\OperatorLearnerAdministrationController;
 use App\Http\Controllers\OperatorLessonPracticeController;
 use App\Http\Controllers\OperatorMediaLibraryController;
@@ -62,6 +66,28 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/password/recovery-requests', [PasswordAuthenticationController::class, 'requestRecovery'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-recovery-requests'])
         ->name('api.v1.auth.password.recovery-requests.store');
+    Route::post('/auth/mobile/password/sign-ins', [MobilePasswordAuthenticationController::class, 'signIn'])
+        ->middleware('throttle:password-sign-ins')
+        ->name('api.v1.auth.mobile.password.sign-ins.store');
+    Route::post('/auth/mobile/password/invitation-enrollments', [PasswordAuthenticationController::class, 'enrollWithInvitation'])
+        ->middleware('throttle:password-recoveries')
+        ->name('api.v1.auth.mobile.password.invitation-enrollments.store');
+    Route::get('/auth/mobile/password/mode', [PasswordAuthenticationController::class, 'mode'])
+        ->name('api.v1.auth.mobile.password.mode');
+    Route::post('/auth/mobile/password/recovery-requests', [PasswordAuthenticationController::class, 'requestRecovery'])
+        ->middleware('throttle:password-recovery-requests')
+        ->name('api.v1.auth.mobile.password.recovery-requests.store');
+    Route::get('/auth/social/providers', [FederatedAuthenticationController::class, 'providers'])
+        ->name('api.v1.auth.social.providers');
+    Route::get('/auth/mobile/social/providers', [FederatedAuthenticationController::class, 'providers'])
+        ->name('api.v1.auth.mobile.social.providers');
+    Route::get('/auth/mobile/social/{provider}/authorization', [FederatedAuthenticationController::class, 'mobileAuthorization'])
+        ->middleware('throttle:password-sign-ins')
+        ->whereIn('provider', ['google', 'facebook'])
+        ->name('api.v1.auth.mobile.social.authorization');
+    Route::post('/auth/mobile/social/sign-ins', [FederatedAuthenticationController::class, 'mobileSignIn'])
+        ->middleware('throttle:password-sign-ins')
+        ->name('api.v1.auth.mobile.social.sign-ins.store');
     Route::post('/auth/password/recoveries', [PasswordAuthenticationController::class, 'recover'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-recoveries'])
         ->name('api.v1.auth.password.recoveries.store');
@@ -90,6 +116,11 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/auth/username', [PasswordAuthenticationController::class, 'changeUsername'])
             ->middleware('throttle:password-confirmations')
             ->name('api.v1.auth.username.update');
+        Route::get('/auth/social/links', [FederatedAuthenticationController::class, 'links'])
+            ->name('api.v1.auth.social.links.index');
+        Route::delete('/auth/social/{provider}/links', [FederatedAuthenticationController::class, 'unlink'])
+            ->whereIn('provider', ['google', 'facebook'])
+            ->name('api.v1.auth.social.links.destroy');
         Route::post('/auth/logout', [AuthenticationSessionController::class, 'logout'])
             ->name('api.v1.auth.logout');
         Route::get('/auth/sessions', [AuthenticationSessionController::class, 'index'])
@@ -157,6 +188,21 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.me.organization-context.update');
         Route::post('/institution-invites/accept', [InstitutionInviteController::class, 'accept'])
             ->name('api.v1.institution-invites.accept');
+        Route::post(
+            '/auth/mobile/social/{provider}/link-starts',
+            [FederatedAuthenticationController::class, 'mobileLinkStart'],
+        )
+            ->middleware('throttle:password-sign-ins')
+            ->whereIn('provider', ['google', 'facebook'])
+            ->name('api.v1.auth.mobile.social.link-starts.store');
+        Route::get('/auth/mobile/social/links', [FederatedAuthenticationController::class, 'links'])
+            ->name('api.v1.auth.mobile.social.links.index');
+        Route::delete(
+            '/auth/mobile/social/{provider}/links',
+            [FederatedAuthenticationController::class, 'unlink'],
+        )
+            ->whereIn('provider', ['google', 'facebook'])
+            ->name('api.v1.auth.mobile.social.links.destroy');
     });
 
     Route::middleware([
@@ -169,6 +215,18 @@ Route::prefix('v1')->group(function (): void {
             '/me/progress-dashboard',
             [LearnerProgressDashboardController::class, 'show'],
         )->name('api.v1.me.progress-dashboard.show');
+        Route::get(
+            '/me/entitlement',
+            [LearnerSubscriptionController::class, 'show'],
+        )->name('api.v1.me.entitlement.show');
+        Route::get(
+            '/me/subscription-plans',
+            [LearnerSubscriptionController::class, 'plans'],
+        )->name('api.v1.me.subscription-plans.index');
+        Route::post(
+            '/me/subscription-checkouts',
+            [LearnerSubscriptionController::class, 'checkout'],
+        )->name('api.v1.me.subscription-checkouts.store');
         Route::put(
             '/me/onboarding',
             [LearnerOnboardingController::class, 'update'],
@@ -368,6 +426,53 @@ Route::prefix('v1')->group(function (): void {
             '/operator/overview',
             [OperatorShellController::class, 'overview'],
         )->name('api.v1.operator.overview.show');
+        Route::get(
+            '/operator/entitlement-workspace',
+            [OperatorEntitlementAdministrationController::class, 'workspace'],
+        )->name('api.v1.operator.entitlement-workspace.show');
+        Route::post(
+            '/operator/tax-settings/updates',
+            [OperatorEntitlementAdministrationController::class, 'updateTax'],
+        )->name('api.v1.operator.tax-settings.updates.store');
+        Route::post(
+            '/operator/entitlement-plans/{plan}/updates',
+            [OperatorEntitlementAdministrationController::class, 'updatePlan'],
+        )->whereUlid('plan')
+            ->name('api.v1.operator.entitlement-plans.updates.store');
+        Route::get(
+            '/operator/learners/{learner}/entitlements',
+            [OperatorEntitlementAdministrationController::class, 'learner'],
+        )->whereUlid('learner')
+            ->name('api.v1.operator.learners.entitlements.show');
+        Route::post(
+            '/operator/learners/{learner}/entitlement-grants',
+            [OperatorEntitlementAdministrationController::class, 'grant'],
+        )->whereUlid('learner')
+            ->name('api.v1.operator.learners.entitlement-grants.store');
+        Route::post(
+            '/operator/courtesy-premium-grants',
+            [OperatorEntitlementAdministrationController::class, 'grantCourtesyPremium'],
+        )->name('api.v1.operator.courtesy-premium-grants.store');
+        Route::post(
+            '/operator/learners/{learner}/signin-throttle-clears',
+            [OperatorEntitlementAdministrationController::class, 'clearThrottle'],
+        )->whereUlid('learner')
+            ->name('api.v1.operator.learners.signin-throttle-clears.store');
+        Route::post(
+            '/operator/entitlements/{entitlement}/demo-clock-restarts',
+            [OperatorEntitlementAdministrationController::class, 'restartClock'],
+        )->whereUlid('entitlement')
+            ->name('api.v1.operator.entitlements.demo-clock-restarts.store');
+        Route::post(
+            '/operator/entitlements/{entitlement}/demo-meter-restarts',
+            [OperatorEntitlementAdministrationController::class, 'restartMeter'],
+        )->whereUlid('entitlement')
+            ->name('api.v1.operator.entitlements.demo-meter-restarts.store');
+        Route::post(
+            '/operator/entitlements/{entitlement}/revocations',
+            [OperatorEntitlementAdministrationController::class, 'revoke'],
+        )->whereUlid('entitlement')
+            ->name('api.v1.operator.entitlements.revocations.store');
         Route::get(
             '/operator/search',
             [OperatorShellController::class, 'search'],

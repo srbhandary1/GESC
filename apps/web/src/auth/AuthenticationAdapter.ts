@@ -26,9 +26,14 @@ export interface AuthenticationAdapter {
   logout(): Promise<void>
 }
 
-export interface WebSessionAuthentication extends AuthenticationAdapter {
-  readonly transport: 'sanctum-cookie'
+export interface PasswordAuthenticationStatus {
+  readonly username: string | null
+  readonly credential_ready: boolean
+  readonly mode: 'legacy_otp' | 'credential_migration' | 'password_only'
+  readonly password_confirmed_at: string | null
+}
 
+export interface PasswordFormAuthentication {
   signIn(username: string, password: string): Promise<void>
 
   authenticationMode(): Promise<PasswordAuthenticationStatus['mode']>
@@ -40,6 +45,32 @@ export interface WebSessionAuthentication extends AuthenticationAdapter {
     username: string,
     password: string,
   ): Promise<void>
+
+  federatedProviders(): Promise<FederatedProviderAvailability>
+
+  beginFederatedSignIn(provider: FederatedProvider): Promise<void>
+}
+
+export type FederatedProvider = 'google' | 'facebook'
+
+export interface FederatedProviderAvailability {
+  readonly google: boolean
+  readonly facebook: boolean
+}
+
+export interface FederatedAccountAuthentication {
+  federatedLinks(): Promise<FederatedProviderAvailability>
+
+  beginFederatedLink(provider: FederatedProvider): Promise<void>
+
+  unlinkFederated(provider: FederatedProvider): Promise<void>
+}
+
+export interface WebSessionAuthentication
+  extends AuthenticationAdapter,
+    PasswordFormAuthentication,
+    FederatedAccountAuthentication {
+  readonly transport: 'sanctum-cookie'
 
   passwordStatus(): Promise<PasswordAuthenticationStatus>
 
@@ -92,14 +123,10 @@ export interface WebSessionAuthentication extends AuthenticationAdapter {
   revokePrivilegedMfaFactor(): Promise<void>
 }
 
-export interface PasswordAuthenticationStatus {
-  readonly username: string | null
-  readonly credential_ready: boolean
-  readonly mode: 'legacy_otp' | 'credential_migration' | 'password_only'
-  readonly password_confirmed_at: string | null
-}
-
-export interface AndroidPkceAuthentication extends AuthenticationAdapter {
+export interface AndroidPkceAuthentication
+  extends AuthenticationAdapter,
+    PasswordFormAuthentication,
+    FederatedAccountAuthentication {
   readonly transport: 'passport-pkce'
 
   /**
@@ -116,6 +143,53 @@ export interface AndroidPkceAuthentication extends AuthenticationAdapter {
   refresh(): Promise<void>
 
   onAuthenticationInvalidated(listener: () => void): () => void
+}
+
+export function isPasswordFormAuthentication(
+  authentication: AuthenticationAdapter,
+): authentication is AuthenticationAdapter & PasswordFormAuthentication {
+  const candidate = authentication as Partial<PasswordFormAuthentication>
+
+  return (
+    typeof candidate.signIn === 'function' &&
+    typeof candidate.authenticationMode === 'function' &&
+    typeof candidate.requestPasswordRecovery === 'function' &&
+    typeof candidate.enrollWithInvitation === 'function' &&
+    typeof candidate.federatedProviders === 'function' &&
+    typeof candidate.beginFederatedSignIn === 'function'
+  )
+}
+
+export function isFederatedAccountAuthentication(
+  authentication: AuthenticationAdapter,
+): authentication is AuthenticationAdapter & FederatedAccountAuthentication {
+  const candidate = authentication as Partial<FederatedAccountAuthentication>
+
+  return (
+    typeof candidate.federatedLinks === 'function' &&
+    typeof candidate.beginFederatedLink === 'function' &&
+    typeof candidate.unlinkFederated === 'function'
+  )
+}
+
+export function parseFederatedProviderAvailability(
+  value: unknown,
+): FederatedProviderAvailability | null {
+  if (value === null || typeof value !== 'object') {
+    return null
+  }
+
+  const candidate = value as Record<string, unknown>
+
+  if (
+    Object.keys(candidate).length !== 2 ||
+    typeof candidate.google !== 'boolean' ||
+    typeof candidate.facebook !== 'boolean'
+  ) {
+    return null
+  }
+
+  return { google: candidate.google, facebook: candidate.facebook }
 }
 
 export class AuthenticationUnavailableError extends Error {

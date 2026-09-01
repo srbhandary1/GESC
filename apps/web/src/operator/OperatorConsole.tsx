@@ -43,6 +43,11 @@ import {
   type OperatorLearnerApi,
   type OperatorLearnerPanelKey,
 } from './OperatorLearnerApi'
+import { OperatorEntitlementAdministration } from './OperatorEntitlementAdministration'
+import {
+  defaultOperatorEntitlementApi,
+  type OperatorEntitlementApi,
+} from './OperatorEntitlementApi'
 import { OperatorContentStudio } from './OperatorContentStudio'
 import {
   defaultOperatorContentStudioApi,
@@ -66,6 +71,7 @@ export interface OperatorConsoleProps {
   mfaAuthentication?: WebSessionAuthentication
   onCredentialsRevoked?: () => void
   organizationApi?: OperatorOrganizationApi
+  entitlementApi?: OperatorEntitlementApi
 }
 
 type MessageResolver = (key: MessageKey) => InterfaceMessageResolution
@@ -104,6 +110,10 @@ const navigationMetadata: Readonly<
   learners: {
     anchor: 'operator-learners',
     label: 'operator.navigation.learners',
+  },
+  entitlements: {
+    anchor: 'operator-entitlements',
+    label: 'operator.navigation.entitlements',
   },
 }
 
@@ -212,6 +222,7 @@ export function OperatorConsole({
   mediaApi = defaultOperatorMediaLibraryApi,
   localizationPolicy,
   organizationApi = defaultOperatorOrganizationApi,
+  entitlementApi = defaultOperatorEntitlementApi,
 }: OperatorConsoleProps) {
   const message: MessageResolver = (key) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
@@ -376,6 +387,15 @@ export function OperatorConsole({
                   (panel): panel is OperatorLearnerPanelKey =>
                     learnerPanelKeys.has(panel),
                 )}
+              />
+            ) : null}
+
+            {overview.state.value.navigation.includes('entitlements') ? (
+              <OperatorEntitlementAdministration
+                api={entitlementApi}
+                createCommandId={createCommandId}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
               />
             ) : null}
 

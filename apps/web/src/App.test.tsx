@@ -620,6 +620,7 @@ describe('localized application shell', () => {
     const authentication: AndroidPkceAuthentication = {
       transport: 'passport-pkce',
       authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
       beginAuthorization: vi.fn(async () => undefined),
       completeAuthorization: vi.fn(
         async (): Promise<AuthenticationSnapshot> => ({
@@ -636,6 +637,15 @@ describe('localized application shell', () => {
           },
         }),
       ),
+      enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(async () => undefined),
       onAuthenticationInvalidated: vi.fn((listener) => {
         invalidate = listener
@@ -643,6 +653,8 @@ describe('localized application shell', () => {
         return () => undefined
       }),
       refresh: vi.fn(async () => undefined),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      signIn: vi.fn(async () => undefined),
     }
 
     render(<App authentication={authentication} />)
@@ -653,18 +665,24 @@ describe('localized application shell', () => {
     act(() => invalidate())
 
     expect(
-      await screen.findByRole('button', {
+      await screen.findByRole('link', {
+        name: text('session.label'),
+      }),
+    ).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.queryByRole('button', {
         name: text('session.android_sign_in'),
       }),
-    ).toBeInTheDocument()
+    ).not.toBeInTheDocument()
   })
 
-  it('offers one plain Android sign-in action in the application header', async () => {
+  it('opens the in-app Android password form from the header Sign in link', async () => {
     const user = userEvent.setup()
     const beginAuthorization = vi.fn(async () => undefined)
     const authentication: AndroidPkceAuthentication = {
       transport: 'passport-pkce',
       authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
       beginAuthorization,
       completeAuthorization: vi.fn(),
       current: vi.fn(
@@ -672,26 +690,41 @@ describe('localized application shell', () => {
           status: 'anonymous',
         }),
       ),
+      enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(async () => undefined),
       onAuthenticationInvalidated: vi.fn(() => () => undefined),
       refresh: vi.fn(async () => undefined),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      signIn: vi.fn(async () => undefined),
     }
 
     render(<App authentication={authentication} />)
 
-    const signIn = await screen.findByRole('button', {
-      name: text('session.android_sign_in'),
+    const signIn = await screen.findByRole('link', {
+      name: text('session.label'),
     })
     expect(signIn.closest('header')).toBeInTheDocument()
+    expect(signIn).toHaveAttribute('href', '#sign-in')
     expect(
-      screen.getAllByRole('button', {
+      screen.queryByRole('button', {
         name: text('session.android_sign_in'),
       }),
-    ).toHaveLength(1)
+    ).not.toBeInTheDocument()
 
     await user.click(signIn)
 
-    expect(beginAuthorization).toHaveBeenCalledOnce()
+    expect(
+      await screen.findByLabelText(text('auth.password.username')),
+    ).toBeInTheDocument()
+    expect(beginAuthorization).not.toHaveBeenCalled()
   })
 })
 
@@ -779,6 +812,14 @@ function webMembershipAuthentication(): WebSessionAuthentication {
       }),
     ),
     enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
     establishPassword: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     passwordStatus: vi.fn(async () => ({
