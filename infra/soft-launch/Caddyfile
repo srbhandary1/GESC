@@ -55,6 +55,19 @@ http://:9080 {
 		file_server
 	}
 
+	redir /privacy /privacy.html 308
+	redir /account-deletion /account-deletion.html 308
+	handle /privacy.html {
+		header Cache-Control "public, max-age=300"
+		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
+		file_server
+	}
+	handle /account-deletion.html {
+		header Cache-Control "public, max-age=300"
+		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
+		file_server
+	}
+
 	handle {
 		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
 		try_files {path} /index.html

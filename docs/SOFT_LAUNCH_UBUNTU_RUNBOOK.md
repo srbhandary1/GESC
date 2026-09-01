@@ -277,13 +277,19 @@ management-plane commands.
 
 The approved product hostname is `ai.globalspokenenglish.com`. In Cloudflare
 DNS create one **DNS-only** A record named `ai` pointing to the current static
-public IPv4 address. Do not change the apex or `www` records. Reserve
-`192.168.1.3` for this host and configure these TCP router mappings:
+public IPv4 address. Do not change the apex or `www` records. This workstation’s
+current LAN IPv4 is `192.168.1.4` (reserve that DHCP lease; an older note used
+`192.168.1.3`). Configure these TCP router mappings:
 
 | WAN | LAN target |
 |---|---|
-| `80` | `192.168.1.3:8080` |
-| `443` | `192.168.1.3:8443` |
+| `80` | `192.168.1.4:8080` |
+| `443` | `192.168.1.4:8443` |
+
+On 1 September 2026, WAN 80 on the public IPv4 still served a router login page,
+WAN 443 refused, and `ai.globalspokenenglish.com` had no A record. Do **not**
+run `configure-stable` or stop the Quick Tunnel until
+`make soft-launch-stable-prereq` passes.
 
 Caddy's `http_port`/`https_port` settings deliberately use unprivileged local
 ports; clients still use ordinary public ports 80/443. If UFW is active, allow

@@ -226,6 +226,12 @@ describe('localized application shell', () => {
         name: text('marketing.benefit.tuition.title'),
       }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: text('legal.privacy') }),
+    ).toHaveAttribute('href', '/privacy.html')
+    expect(
+      screen.getByRole('link', { name: text('legal.account_deletion') }),
+    ).toHaveAttribute('href', '/account-deletion.html')
     expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
     expect(
       screen.getByRole('heading', {

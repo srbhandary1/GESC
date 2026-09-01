@@ -50,6 +50,7 @@ import { MarketingLanding } from './marketing/MarketingLanding'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { LegalLinks } from './legal/LegalLinks'
 import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import { ProgressDashboard } from './learner/ProgressDashboard'
@@ -1062,6 +1063,8 @@ function App({
                 />
               )
             : null}
+
+        {demoMode ? null : <LegalLinks message={message} />}
       </div>
     </ApplicationFrame>
     </div>

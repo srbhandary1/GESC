@@ -58,6 +58,20 @@
   flex-wrap: wrap;
 }
 
+.shell-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-block-start: 1.5rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--ge-color-border, #ccd4dc);
+  font-size: 0.95rem;
+}
+
+.shell-legal a {
+  color: inherit;
+}
+
 .shell-header-authentication {
   display: inline-flex;
   align-items: center;
