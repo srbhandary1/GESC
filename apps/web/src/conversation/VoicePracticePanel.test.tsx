@@ -29,7 +29,7 @@ describe('secure voice practice consent boundary', () => {
         return {
           effective_at: '2026-07-31T12:00:00Z',
           id: '01J00000000000000000000010',
-          notice_revision: 'voice-processing-notice-2026-07-31',
+          notice_revision: 'voice-processing-notice-2026-09-01',
           notice_sha256: 'a'.repeat(64),
           policy_version: 'recording-policy-v1',
           purpose: input.purpose,
@@ -49,7 +49,7 @@ describe('secure voice practice consent boundary', () => {
         return {
           effective_at: '2026-07-31T12:00:00Z',
           id: '01J00000000000000000000011',
-          notice_revision: 'voice-processing-notice-2026-07-31',
+          notice_revision: 'voice-processing-notice-2026-09-01',
           notice_sha256: 'a'.repeat(64),
           policy_version: 'recording-policy-v1',
           purpose,
@@ -292,7 +292,7 @@ function listing(
       history_optional: true,
       notice:
         'Implementation draft: audio is uploaded privately and deleted after transcription.',
-      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_revision: 'voice-processing-notice-2026-09-01',
       notice_sha256: 'a'.repeat(64),
       policy_version: 'recording-policy-v1',
       purposes: [

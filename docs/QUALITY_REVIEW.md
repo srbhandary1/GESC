@@ -1,5 +1,38 @@
 # Quality review
 
+## Wave 2A: Indic STT prerequisites — 1 September 2026
+
+### Scope reviewed
+
+- 25-second Speak hold-to-talk and recorded-STT cap; Learn capture stays 120 seconds.
+- Cost-ledger CHECK and conversation usage policy for Indic STT and Azure STT failover.
+- One Azure Fast Transcription retry after transient Indic HTTP/connection/transport failure.
+- Consent notices name Sarvam then Azure failover. Indic driver remains off.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| 25s WAV inspector | Pass | Feature `PcmWavInspectorTest` — SQLite artisan test filter, 33 tests / 61 assertions with the Wave 2A PHP suite |
+| Indic HTTP fake (translate) | Pass | Feature `IndicSpeechAdapterTest` plus `indic-http-stt-v1:` model version |
+| Failover | Pass | Feature `IndicWithAzureFailoverSpeechToTextProviderTest` |
+| Usage policy | Pass | Unit `ConversationProviderUsagePolicyTest` |
+| Binding wraps Indic with Azure failover | Pass | Unit `ConversationProviderBindingTest::test_testing_binds_indic_recorded_stt_when_authorized` |
+| Azure STT preflight allows indic driver | Pass | Feature `SoftLaunchRecordedSpeechConfigurationTest` |
+| Hold-to-talk 25s auto-stop; Learn tap uncapped at 25s | Pass | Vitest `RecordingTurn.test.tsx` 20 passed; `VoicePracticePanel.test.tsx` 4 passed |
+| Localization | Pass | `pnpm --filter @global-english/localization run test` — 3 files / 31 passed. Catalogue revision `ui-*-2026-09-01.3`, 1163 keys |
+| Web lint / typecheck | Pass | eslint on touched files; `tsc -b` |
+| PHPStan | Pass | 0 errors on Wave 2A PHP |
+| PostgreSQL ledger CHECK | Pass | Docker `php:8.4-cli-bookworm` + `pdo_pgsql`: migrate `000300` on soft-launch DB; `IndicSttCostLedgerConstraintTest` 1 test / 4 assertions |
+| Indic live on soft-launch | Not done | `VOICE_PROVIDER_DRIVER` unchanged |
+| Closed-beta APK | Not rebuilt | Wave 5 |
+
+### Known limitations
+
+- Recorded STT still writes `voice_provider_runs`, not `ai_cost_ledger`. The CHECK is in place so Wave 6 ledger inserts cannot 500.
+- Kannada UI catalogue remains `pending-independent-review`.
+- `make verify` still blocked on this host (PHP 8.5.4 vs pinned 8.4.23; no `pdo_pgsql` in system PHP; Node v22 vs 24.18.1).
+
 ## D-0267: Premium flagship and courtesy month — 1 September 2026
 
 ### Scope reviewed

@@ -11,7 +11,7 @@ use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
-use App\Conversation\Voice\Providers\Indic\IndicHttpSpeechToTextProvider;
+use App\Conversation\Voice\Providers\Indic\IndicWithAzureFailoverSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Providers\AppServiceProvider;
 use Tests\TestCase;
@@ -111,7 +111,7 @@ final class ConversationProviderBindingTest extends TestCase
         (new AppServiceProvider($this->app))->register();
 
         $this->assertInstanceOf(
-            IndicHttpSpeechToTextProvider::class,
+            IndicWithAzureFailoverSpeechToTextProvider::class,
             $this->app->make(RecordedSpeechToTextProvider::class),
         );
     }

@@ -61,9 +61,19 @@ final readonly class ConversationProviderUsagePolicy
         ProviderUsage $usage,
     ): bool {
         return match ($stage) {
-            'stt' => $usage->providerKey === 'project-confirmed-text'
+            'stt' => (
+                $usage->providerKey === 'project-confirmed-text'
                 && $usage->modelVersion === 'confirmed-text-v1'
-                && $usage->estimatedCostMicrounits === 0,
+                && $usage->estimatedCostMicrounits === 0
+            ) || (
+                $usage->providerKey === 'indic-http-stt'
+                && str_starts_with($usage->modelVersion, 'indic-http-stt-v1:')
+                && $usage->estimatedCostMicrounits >= 0
+            ) || (
+                $usage->providerKey === 'azure-speech-soft-launch-stt'
+                && $usage->modelVersion === 'fast-transcription-2025-10-15-provider-managed'
+                && $usage->estimatedCostMicrounits >= 0
+            ),
             'model' => $usage->providerKey === 'azure-openai'
                 && $usage->estimatedCostMicrounits >= 0,
             'tts' => (

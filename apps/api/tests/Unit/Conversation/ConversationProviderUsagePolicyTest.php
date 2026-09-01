@@ -59,6 +59,18 @@ final class ConversationProviderUsagePolicyTest extends TestCase
             'soft-launch-guidance-tts-v1:kn-IN-SapnaNeural',
             12,
         ];
+        yield 'indic recorded speech' => [
+            'stt',
+            'indic-http-stt',
+            'indic-http-stt-v1:saaras:v3',
+            0,
+        ];
+        yield 'azure recorded speech failover' => [
+            'stt',
+            'azure-speech-soft-launch-stt',
+            'fast-transcription-2025-10-15-provider-managed',
+            0,
+        ];
     }
 
     public function test_soft_launch_rejects_fake_or_cross_stage_usage(): void
@@ -70,6 +82,7 @@ final class ConversationProviderUsagePolicyTest extends TestCase
         foreach ([
             ['model', 'deterministic-fake', 'fake-model-v1'],
             ['stt', 'azure-openai', 'confidence-model-v1'],
+            ['stt', 'indic-http-stt', 'saaras:v3'],
             ['tts', 'azure-speech', 'realtime-en-IN-neural'],
         ] as [$stage, $provider, $model]) {
             try {

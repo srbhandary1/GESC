@@ -49,7 +49,8 @@ final readonly class SoftLaunchRecordedSpeechConfiguration
             $errors[] = 'live_requests_not_authorized';
         }
 
-        if ($this->string('voice.provider_driver') !== 'azure') {
+        $driver = $this->string('voice.provider_driver');
+        if (! in_array($driver, ['azure', 'indic'], true)) {
             $errors[] = 'provider_driver_invalid';
         }
 

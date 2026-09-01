@@ -51,6 +51,7 @@ use App\Conversation\Voice\LaravelVoiceSourceObjectStore;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\Indic\IndicHttpSpeechToTextProvider;
+use App\Conversation\Voice\Providers\Indic\IndicWithAzureFailoverSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Conversation\Voice\VoiceSourceObjectStore;
 use App\Curriculum\Commissioning\MediaTranscription\CurriculumMediaSourceReader;
@@ -263,11 +264,35 @@ class AppServiceProvider extends ServiceProvider
             && config('voice.provider_driver') === 'indic';
         $this->app->bind(
             RecordedSpeechToTextProvider::class,
-            match (true) {
-                $testingVoiceEnabled => DeterministicTestingSpeechToTextProvider::class,
-                $softLaunchVoiceEnabled => SoftLaunchRecordedAzureSpeechToTextProvider::class,
-                $indicVoiceEnabled => IndicHttpSpeechToTextProvider::class,
-                default => DisabledRecordedSpeechToTextProvider::class,
+            function () use (
+                $testingVoiceEnabled,
+                $softLaunchVoiceEnabled,
+                $indicVoiceEnabled,
+            ): RecordedSpeechToTextProvider {
+                if ($testingVoiceEnabled) {
+                    return $this->app->make(
+                        DeterministicTestingSpeechToTextProvider::class,
+                    );
+                }
+
+                if ($softLaunchVoiceEnabled) {
+                    return $this->app->make(
+                        SoftLaunchRecordedAzureSpeechToTextProvider::class,
+                    );
+                }
+
+                if ($indicVoiceEnabled) {
+                    return new IndicWithAzureFailoverSpeechToTextProvider(
+                        $this->app->make(IndicHttpSpeechToTextProvider::class),
+                        $this->app->make(
+                            SoftLaunchRecordedAzureSpeechToTextProvider::class,
+                        ),
+                    );
+                }
+
+                return $this->app->make(
+                    DisabledRecordedSpeechToTextProvider::class,
+                );
             },
         );
         $this->app->bind(

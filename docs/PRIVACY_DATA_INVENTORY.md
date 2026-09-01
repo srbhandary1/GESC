@@ -95,6 +95,11 @@ authorization boundary; it does not make the record public or mutable.
 | `outbox_events`, `processed_events` | Known target aggregate chain | Safe delivery state; outbox payload excluded | Retain durable-work and replay evidence |
 | `client_offline_records` | Encrypted learner binding on device | Not server enumerable | Server credentials are revoked; client authentication/logout lifecycle must purge the protected profile. Lost/offline devices cannot be remotely inspected or wiped by this API |
 
+Speak recorded audio is transcribed by Azure Speech on the current
+soft-launch. After Indic enablement, Sarvam is the primary transcription
+processor and Azure Fast Transcription is one failover. Consent notices name
+both. Audio and transcripts are not used for vendor training.
+
 ### Structurally membership-linked governance records
 
 Authorized learner flows cannot create these records, but the foundation

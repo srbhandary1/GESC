@@ -45,13 +45,15 @@ These are **missing in the current app**. Flipping env vars without them will 50
 
 ### 2A — Must have for Indic STT go-live
 
-- [ ] **2.1** **Utterance length:** cap hold-to-talk at ~25 seconds **or** chunk/stream to Sarvam (REST ~30s). Current max is 120s. If you skip this, long holds fail with no useful error.
-- [ ] **2.2** **Cost ledger CHECK:** allow `provider_key = indic-http-stt` (and the model-version prefix you will actually write). Same class of bug as `azure-speech-guidance` (HTTP 500, turn rolled back).
-- [ ] **2.3** **Usage policy:** `ConversationProviderUsagePolicy` must allow Indic STT stage/key in soft-launch (and later production).
-- [ ] **2.4** **Failover:** if Sarvam times out / 5xx, retry once on Azure Fast Transcription. If you skip this, one Sarvam outage kills Speak.
-- [ ] **2.5** **Secrets:** `VOICE_INDIC_SECRET_FILE` mode `0600` outside git; never commit the key. Host allowlist `api.sarvam.ai` only.
-- [ ] **2.6** **Consent copy:** voice notice names Sarvam as transcription processor (en-IN + kn-IN). Update `config/voice.php` notice revision.
-- [ ] **2.7** Tests: HTTP fake for Sarvam translate; ledger constraint test; failover test; 25s cap or chunk test. PostgreSQL integration on CI or Ubuntu.
+Completed 1 September 2026 on this host. Speak remains on Azure. Indic is not enabled.
+
+- [x] **2.1** **Utterance length:** hold-to-talk auto-stops at 25 seconds. Server `voice.maximum_duration_ms` is 25_000. Learn tap-to-record stays 120 seconds (`learning.capture.maximum_duration_ms`).
+- [x] **2.2** **Cost ledger CHECK:** migration `2026_09_01_000300_allow_indic_stt_cost_ledger` allows `indic-http-stt` (`indic-http-stt-v1:`) and `azure-speech-soft-launch-stt`.
+- [x] **2.3** **Usage policy:** `ConversationProviderUsagePolicy` allows those STT keys under soft-launch `azure-openai-dev`.
+- [x] **2.4** **Failover:** `IndicWithAzureFailoverSpeechToTextProvider` retries once on Azure Fast Transcription after Indic HTTP/connection/transport failure. Not for malformed/unauthorized/input errors.
+- [x] **2.5** **Secrets:** documented in `apps/api/.env.example` comments (`$HOME/ge-indic-stt/secrets/sarvam.secret`, `api.sarvam.ai`). Driver not flipped.
+- [x] **2.6** **Consent copy:** `config/voice.php` en-IN + kn-IN name Sarvam then Azure failover. Revision `voice-processing-notice-2026-09-01`.
+- [x] **2.7** Tests: Indic HTTP fake; ledger constraint test; failover tests; 25s inspector and hold auto-stop. PostgreSQL CHECK: docker `php:8.4-cli-bookworm` + `pdo_pgsql` applied `2026_09_01_000300_allow_indic_stt_cost_ledger` and `IndicSttCostLedgerConstraintTest` 1/1.
 
 ### 2B — Must have before `APP_ENV=production` (Wave 12, not now)
 
@@ -67,7 +69,7 @@ Do **not** do Wave 12 until all of these are coded. Today:
 - [ ] **2.9** Razorpay (or chosen) adapter behind `PaymentProvider`. Production must not stay dummy. Dummy only for staff/`local`.
 - [ ] **2.10** Heavy Model router (optional for first public week; required before you claim “all LLMs”). Same JSON contract. Daily INR ceiling.
 
-**Exit for 2A:** merge + deploy to **soft-launch**. Speak still on Azure until Wave 6.  
+**Exit for 2A:** code merged on this branch; CHECK migrated on the soft-launch DB. Speak still on Azure until Wave 6.  
 **Exit for 2B:** not required for first public URL; required before renaming the env to `production`.
 
 ---
