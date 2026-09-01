@@ -355,9 +355,13 @@ Do not use `make demo` or `dist-demo` as the soft-launch product.
 
 ```bash
 make soft-launch-backup
+make soft-launch-restore-drill   # temporary database only; does not overwrite live
+make soft-launch-observe        # API / queue / provider 5xx counts
 ```
 
-Backups land in `~/ge-soft-launch/backups/`. For incidents use
+Plaintext dumps land in `~/ge-soft-launch/backups/` (mode `0600`). Encrypted
+copies go to `$HOME/ge-offsite-backups/`. Rollback card:
+[ops/SOFT_LAUNCH_ROLLBACK.md](ops/SOFT_LAUNCH_ROLLBACK.md). For incidents use
 [ops/INCIDENT_SUPPORT_RUNBOOK.md](ops/INCIDENT_SUPPORT_RUNBOOK.md) without
 pasting raw audio, transcripts or credentials.
 

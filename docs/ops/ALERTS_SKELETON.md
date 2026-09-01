@@ -27,6 +27,24 @@ routing and production SRE contract remain pending.
 - Staff invitation codes/digests, credential IDs or ADMIN-ORG target IDs
 - Full learner profiles
 
+## Soft-launch local observe (Wave 4)
+
+User systemd timer `global-english-soft-launch-observe.timer` runs
+`scripts/soft-launch-observe.sh` every minute. It records **counts only** in
+`~/ge-soft-launch/alerts/observe.jsonl` and the user journal (`ge-soft-launch-observe`).
+
+| Signal | Threshold |
+|---|---|
+| API down | `/health/live` fails twice in a row |
+| Queue stuck | worker or scheduler pid dead, Redis unreachable, or Redis `*queues*` LLEN ≥ 25 |
+| Provider 5xx | ≥ 3 non-health `http.request_completed` status 5xx **or** ≥ 3 `provider_http_failure` / connection / transport failures in 5 minutes of `laravel.log` |
+
+Optional delivery (gitignored runtime, not invented here):
+`GE_SOFT_LAUNCH_ALERT_MAILTO` (if `mail` exists) or `GE_SOFT_LAUNCH_ALERT_COMMAND`.
+Named SMS/Telegram recipients remain APO.
+
+Rollback: [SOFT_LAUNCH_ROLLBACK.md](SOFT_LAUNCH_ROLLBACK.md).
+
 ## Implemented repository signals
 
 - `voice:deletion-status` emits aggregate counts/ages only and exits non-zero

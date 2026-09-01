@@ -32,6 +32,24 @@ GE_SOFT_LAUNCH_ENV="${SOFT_ENV}" \
 GE_SOFT_LAUNCH_CONVERSATION_ENV="${CONVERSATION_ENV}" \
   load_soft_launch_environment
 
+pidfile_alive() {
+  local pid_file="$1"
+  [[ -f "${pid_file}" ]] || return 1
+  local pid
+  pid="$(cat "${pid_file}")"
+  [[ "${pid}" =~ ^[1-9][0-9]*$ ]] || return 1
+  kill -0 "${pid}" 2>/dev/null
+}
+
+PID_DIR="${RUNTIME}/run"
+for name in api worker scheduler caddy public-http; do
+  if pidfile_alive "${PID_DIR}/${name}.pid"; then
+    pass "${name} process is running"
+  else
+    bad "${name} process is not running"
+  fi
+done
+
 if curl --silent --fail --max-time 3 "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null; then
   pass "proxy health/live"
 else

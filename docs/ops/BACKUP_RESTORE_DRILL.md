@@ -97,6 +97,24 @@ or learner identifiers.
 CI must create fresh clean-commit evidence; this local result is not attached
 to a committed release candidate.
 
+## Soft-launch gzip dump (Wave 4)
+
+The live invite-only database is also dumped by `make soft-launch-backup` to
+`~/ge-soft-launch/backups/soft-launch-YYYYMMDDTHHMMSSZ.sql.gz` (mode `0600`),
+then wrapped with AES-256-CBC (`pbkdf2`, 200000 iterations). Ciphertext is
+copied to `$HOME/ge-offsite-backups/` (override with
+`GE_SOFT_LAUNCH_OFFSITE_BACKUP_DIR`). The passphrase file is
+`$HOME/ge-soft-launch/secrets/backup.pass` (mode `0600`, outside git).
+
+`make soft-launch-restore-drill` restores that gzip into a **temporary**
+database, compares migration/schema/deletion aggregates with live, then drops
+the temp database. It never `DROP`s `POSTGRES_DB`.
+
+This host currently has a single NVMe volume. The encrypted copy is therefore
+same-machine until you copy the `.enc` file to USB or another box.
+
+Incident restore procedure: [SOFT_LAUNCH_ROLLBACK.md](SOFT_LAUNCH_ROLLBACK.md).
+
 ## Limitations
 
 - The RPO value remains a planning target. This logical drill does not test

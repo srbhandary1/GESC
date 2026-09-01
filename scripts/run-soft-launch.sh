@@ -356,6 +356,9 @@ backup_db() {
     docker compose exec -T postgres pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" \
       | gzip -c >"${out}"
   )
+  chmod 600 "${out}"
+  gzip -t "${out}"
+  bash "${ROOT_DIR}/scripts/soft-launch-encrypt-backup.sh" "${out}"
   printf 'Wrote %s\n' "${out}"
 }
 

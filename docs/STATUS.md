@@ -4,15 +4,23 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Wave 3: vendor host inventory (Azure + Sarvam secrets, dummy pay) |
-| Status | Host inventory recorded. Azure OpenAI South India and Azure Speech Central India hosts respond over TLS. Secrets are mode `0600` outside git. Dummy checkout, Indic off, `APP_ENV=soft-launch`. Sarvam dashboard (rotate, DPA, monthly cap) and named spend SMS remain APO. |
+| Checkpoint | Wave 4: backup, observe, rollback |
+| Status | Gzip dump encrypted; temp-DB restore proved (live not overwritten). Worker/scheduler up. Health/ready green. Rollback card lists APK, git SHA, and `VOICE_PROVIDER_DRIVER=azure`. Observe timer writes content-free counts. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
 | Updated date | 1 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Wave 4 backup/observe/rollback. APO: rotate Sarvam key; billing alert; name spend SMS. Do **not** set `VOICE_PROVIDER_DRIVER=indic` until Wave 6; do **not** set `APP_ENV=production`. |
+| Next required action | Wave 5 stable host (`ai.globalspokenenglish.com`) + APK rebuild. Copy encrypted dump off this NVMe. APO: rotate Sarvam key; billing alert; name spend SMS. Wave 6 staff Indic tests still open. Do **not** set `APP_ENV=production`. |
 | Production/public release | Not authorized |
-| Soft launch | Translation-preview web build. Live Azure OpenAI, guidance TTS, and Direct learner STT unchanged (Azure). |
+| Soft launch | Translation-preview web build. Live Azure OpenAI and guidance TTS. Gitignored env already has `VOICE_PROVIDER_DRIVER=indic`; Wave 6 staff tests remain open. |
+
+## Wave 4: backup, observe, rollback — 1 September 2026
+
+- Gzip dump `~/ge-soft-launch/backups/soft-launch-20260901T162027Z.sql.gz` mode 0600; encrypted copy in `~/ge-offsite-backups/`. Temp-DB restore RTO 2s; live DB not overwritten. REL-01 drill also passed.
+- `global-english-soft-launch.service` active; worker and scheduler running. Health live/ready ok. Readiness 24/0/0.
+- Rollback: [ops/SOFT_LAUNCH_ROLLBACK.md](ops/SOFT_LAUNCH_ROLLBACK.md). STT: `VOICE_PROVIDER_DRIVER=azure`. Previous APK in-app-login-20260901.
+- Observe timer every minute; JSONL counts only. This host’s env already has `VOICE_PROVIDER_DRIVER=indic`; Wave 6 staff tests remain open.
+- Dummy payments, `APP_ENV=soft-launch`, Quick Tunnel still in use (Wave 5).
 
 ## Wave 3: vendor host inventory — 1 September 2026
 

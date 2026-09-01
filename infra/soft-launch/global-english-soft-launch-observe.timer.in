@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Global English soft-launch observe every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=15s
+Persistent=true
+Unit=global-english-soft-launch-observe.service
+
+[Install]
+WantedBy=timers.target

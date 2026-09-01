@@ -92,13 +92,15 @@ Host inventory recorded 1 September 2026 on this Ubuntu workstation. No secret v
 
 ## Wave 4 — Backup, observe, rollback
 
-- [ ] **4.1** `make soft-launch-backup`. Store dump off-box (encrypted). Test restore once if not done recently (`docs/ops/BACKUP_RESTORE_DRILL.md`).
-- [ ] **4.2** Confirm queue worker + scheduler are running (`systemctl --user status global-english-soft-launch.service`).
-- [ ] **4.3** Health: `make soft-launch-health` and `make soft-launch-ready`.
-- [ ] **4.4** Write rollback: previous APK path, previous git SHA, “set `VOICE_PROVIDER_DRIVER=azure`” as STT rollback.
-- [ ] **4.5** Alerts: at least “API down”, “queue stuck”, “provider 5xx rate”. Even a Telegram/email to you is better than nothing. See `docs/ops/INCIDENT_SUPPORT_RUNBOOK.md`. **Never paste transcripts or keys into chat.**
+Completed 1 September 2026 on this host. Live database was not overwritten. Indic was **not** flipped as a Wave 6 cutover in this wave; the gitignored env already had `VOICE_PROVIDER_DRIVER=indic` (ahead of Wave 6 staff tests). `APP_ENV` remains `soft-launch`.
 
-**Exit:** you can restore yesterday’s DB and roll STT back with one env change.
+- [x] **4.1** `make soft-launch-backup` wrote `~/ge-soft-launch/backups/soft-launch-20260901T162027Z.sql.gz` (mode `0600`, 462785 bytes, SHA-256 `8bfc83d57c6deb9e4cc4a825ec4cb647649469fca96072c56738d417ba3e84ad`). AES-256-CBC ciphertext `~/ge-offsite-backups/soft-launch-20260901T162027Z.sql.gz.enc` (mode `0600`, SHA-256 `6437e45efd1533be6f78a79cd4b8d98becbb0e79b7f4a78b6c96223ae5a0a364`). Passphrase file mode `0600` outside git. Gzip restore drill into a temporary database: passed, RTO 2s, `live_database_overwritten=false` (`artifacts/ops/soft-launch-restore-drill-20260901T162031Z.json`). REL-01 custom-format drill also passed, RTO 2s (`artifacts/ops/backup-restore-20260901T162039Z.json`). Single NVMe — copy the `.enc` file to USB/another machine when you can.
+- [x] **4.2** `global-english-soft-launch.service` enabled and active. Worker and scheduler pids running (linger yes).
+- [x] **4.3** `make soft-launch-health` live ok / ready ready. `make soft-launch-ready` 24 pass / 0 warn / 0 fail.
+- [x] **4.4** Rollback card: [ops/SOFT_LAUNCH_ROLLBACK.md](ops/SOFT_LAUNCH_ROLLBACK.md). Previous APK `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-in-app-login-20260901.apk` SHA-256 `aa94cacc3f4e244a9a258aee4f62e345f92bac6654ff3c22140678282213cca0`. Git SHA `114305dd9658edf515fcea90cecb19f0bfdbdd44`. STT rollback: `VOICE_PROVIDER_DRIVER=azure` then restart.
+- [x] **4.5** User timer `global-english-soft-launch-observe.timer` every minute. Signals: API down (two live fails), queue stuck (worker/scheduler/Redis/backlog), provider 5xx counts from `laravel.log`. JSONL `~/ge-soft-launch/alerts/observe.jsonl`. No transcripts. Named SMS/Telegram not invented (`mail` not installed).
+
+**Exit:** yesterday’s gzip dump can be restored into a temp DB; STT rolls back with one env change. **Wave 4 complete.** Next is Wave 5 (stable host). Do not treat the Quick Tunnel as the public origin.
 
 ---
 
@@ -285,8 +287,8 @@ Do not start because you are excited. Start because Wave 11 stayed green.
 
 ## First action tomorrow morning
 
-1. Wave 0–2A and the Wave 3 **host** inventory are done.  
-2. APO: rotate the Sarvam key; set a Sarvam billing alert and monthly cap; name who gets spend SMS.  
-3. Next engineering wave is **Wave 4** (backup, observe, rollback).  
-4. Do **not** flip `VOICE_PROVIDER_DRIVER=indic` until Wave 6.  
+1. Wave 0–4 are done on this host (Wave 3 dashboard leftovers still APO).  
+2. APO: rotate the Sarvam key; set a Sarvam billing alert and monthly cap; name who gets spend SMS; copy the encrypted backup off this NVMe.  
+3. Next engineering wave is **Wave 5** (stable HTTPS host + APK rebuild).  
+4. Wave 6 staff Indic tests are still required even though this host’s env already has `VOICE_PROVIDER_DRIVER=indic`.  
 5. Do **not** set `APP_ENV=production`.

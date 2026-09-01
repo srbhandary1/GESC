@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-systemd-install
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-systemd-install
 
 help:
 	@printf '%s\n' \
@@ -32,7 +32,10 @@ help:
 		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
 		'make soft-launch-status  Soft-launch process and health status' \
 		'make soft-launch-ready   Soft-launch readiness checklist' \
-		'make soft-launch-backup  Dump soft-launch Postgres to ~/ge-soft-launch/backups' \
+		'make soft-launch-backup  Dump soft-launch Postgres, encrypt, copy ciphertext offsite' \
+		'make soft-launch-restore-drill  Restore latest gzip dump into a temporary database' \
+		'make soft-launch-observe  Content-free API/queue/provider-5xx check' \
+		'make soft-launch-observe-install Install the per-minute user observe timer' \
 		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
 		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
 		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
@@ -200,6 +203,7 @@ release-contract:
 
 soft-launch-contract-test:
 	@sh scripts/test-soft-launch-environment.sh
+	@bash scripts/test-soft-launch-observe.sh
 
 migrate:
 	cd $(API_DIR) && $(PHP) artisan migrate
@@ -274,8 +278,20 @@ soft-launch-ready:
 	@bash scripts/check-soft-launch-readiness.sh
 
 soft-launch-backup:
-	@chmod +x scripts/run-soft-launch.sh
+	@chmod +x scripts/run-soft-launch.sh scripts/soft-launch-encrypt-backup.sh
 	@bash scripts/run-soft-launch.sh backup
+
+soft-launch-restore-drill:
+	@chmod +x scripts/soft-launch-restore-drill.sh
+	@bash scripts/soft-launch-restore-drill.sh
+
+soft-launch-observe:
+	@chmod +x scripts/soft-launch-observe.sh
+	@bash scripts/soft-launch-observe.sh
+
+soft-launch-observe-install:
+	@chmod +x scripts/install-soft-launch-observe-timer.sh scripts/soft-launch-observe.sh
+	@bash scripts/install-soft-launch-observe-timer.sh
 
 soft-launch-systemd-install:
 	@chmod +x scripts/install-soft-launch-systemd.sh
