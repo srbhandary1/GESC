@@ -1,5 +1,38 @@
 # Quality review
 
+## Wave 3: vendor host inventory — 1 September 2026
+
+### Scope reviewed
+
+- Confirm Azure OpenAI / Azure Speech / Sarvam secret files on this host.
+- Confirm regional Azure hosts still answer TLS.
+- Record kill switches, authorized spend ceilings, and what stays dummy until later waves.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Azure OpenAI secret | Pass | `$HOME/ge-conversation-model/secrets/azure-openai.secret` mode `0600`, outside repo, not a symlink |
+| Azure OpenAI host | Pass | `https://ge-conversation-southindia.openai.azure.com/` HTTP 200 over TLS; no credential sent (2026-09-01T16:04:14Z) |
+| Chat kill switch | Pass | `CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED` in soft-launch `.env` (gitignored); documented in `.env.example` |
+| Azure Speech secret | Pass | `$HOME/ge-speech-benchmark/secrets/azure-speech.secret` mode `0600`, outside repo |
+| Azure Speech host | Pass | `https://ge-speech-centralindia.cognitiveservices.azure.com/` HTTP 200 over TLS; no credential sent |
+| TTS voices | Pass | `GuidanceTtsPolicy`: `en-IN-NeerjaNeural`, `kn-IN-SapnaNeural` |
+| Sarvam secret | Pass | `$HOME/ge-indic-stt/secrets/sarvam.secret` mode `0600`. Indic driver unset |
+| `.env` not in git | Pass | `apps/api/.gitignore` ignores `.env` |
+| Dummy payments | Pass | `PAYMENT_DRIVER` unset → `DummyPaymentProvider` |
+| Google/Facebook production IDs | Not set | Client IDs unset (Wave 5) |
+| Authenticated Azure/Sarvam spend in this session | Not run | No API key was sent |
+| Sarvam rotate / DPA / monthly cap | Open | APO dashboard |
+| Named spend SMS | Not set | Not invented |
+| Play Console | Not opened | Wave 10; package `com.globalenglish.app` |
+
+### Known limitations
+
+- APP-0064 speech spend-approval `valid_until` is 2026-09-14.
+- HTTP 200 on the Azure resource URL is not a token/deployment smoke test.
+- `make verify` still blocked on this host (PHP 8.5.4 vs 8.4.23; no system `pdo_pgsql`; Node v22 vs 24.18.1).
+
 ## Wave 2A: Indic STT prerequisites — 1 September 2026
 
 ### Scope reviewed
