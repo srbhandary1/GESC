@@ -3402,7 +3402,8 @@ this record without changing the decisions accepted here.
   written by AI output (master plan §0.3).
 - No production or Google Play authorization.
 - No curriculum publication for Levels 2–17; `curriculum_publication_gate`
-  is unchanged.
+  is unchanged. **Later:** D-0272 / Wave 7.1 published Direct lesson-practice
+  Levels 1–17 for entitled learners (not graph `CurriculumPublisher`).
 - Kannada UI catalogue remains `pending-independent-review`.
 - The compute-profile orchestration protocol in the source specification is
   **not** accepted; DR-0038 records it as out of scope.

@@ -335,6 +335,109 @@ final class LessonPracticeAttachmentService
         });
     }
 
+    /**
+     * @return array{blueprint: LessonPracticeBlueprint, created: bool}
+     */
+    public function publishBlueprint(
+        OrganizationContext $context,
+        string $blueprintId,
+        string $expectedContentHash,
+        string $idempotencyKey,
+    ): array {
+        return DB::transaction(function () use (
+            $context,
+            $blueprintId,
+            $expectedContentHash,
+            $idempotencyKey,
+        ): array {
+            $eventKey = 'publish:'.$idempotencyKey;
+            $existingEvent = DB::table('lesson_practice_attachment_events')
+                ->where('organization_id', $context->organizationId)
+                ->where('idempotency_key', $eventKey)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingEvent !== null) {
+                $blueprint = LessonPracticeBlueprint::query()
+                    ->where('organization_id', $context->organizationId)
+                    ->whereKey($existingEvent->blueprint_id)
+                    ->first();
+                if ($blueprint === null) {
+                    throw new LessonPracticeOperationRejected('idempotency_orphan');
+                }
+                if ($blueprint->content_hash !== $expectedContentHash) {
+                    throw new LessonPracticeIdempotencyConflict('publish_hash_mismatch');
+                }
+
+                return ['blueprint' => $blueprint, 'created' => false];
+            }
+
+            $blueprint = LessonPracticeBlueprint::query()
+                ->where('organization_id', $context->organizationId)
+                ->whereKey($blueprintId)
+                ->lockForUpdate()
+                ->first();
+            if ($blueprint === null) {
+                throw new LessonPracticeOperationRejected('blueprint_unavailable');
+            }
+            if ($blueprint->content_hash !== $expectedContentHash) {
+                throw new LessonPracticeOperationRejected('hash_mismatch');
+            }
+            if ($blueprint->state === 'published') {
+                return ['blueprint' => $blueprint, 'created' => false];
+            }
+            if ($blueprint->state !== 'draft') {
+                throw new LessonPracticeOperationRejected('blueprint_unavailable');
+            }
+
+            $mediaCount = LessonPracticeMedia::query()
+                ->where('organization_id', $context->organizationId)
+                ->where('blueprint_id', $blueprintId)
+                ->count();
+            if ($mediaCount !== 4) {
+                throw new LessonPracticeOperationRejected('parts_missing');
+            }
+
+            foreach (['english_academic', 'kannada'] as $kind) {
+                $approved = LessonPracticeReview::query()
+                    ->where('organization_id', $context->organizationId)
+                    ->where('blueprint_id', $blueprintId)
+                    ->where('review_kind', $kind)
+                    ->where('blueprint_content_hash', $expectedContentHash)
+                    ->where('decision', 'approved')
+                    ->exists();
+                if (! $approved) {
+                    throw new LessonPracticeOperationRejected('reviews_incomplete');
+                }
+            }
+
+            $publication = $blueprint->canonical_json['publication'] ?? null;
+            if (
+                ! is_array($publication)
+                || ($publication['eligible'] ?? false) !== true
+                || (($publication['blockers'] ?? null) !== [])
+            ) {
+                throw new LessonPracticeOperationRejected('publication_ineligible');
+            }
+
+            $blueprint->state = 'published';
+            $blueprint->save();
+
+            DB::table('lesson_practice_attachment_events')->insert([
+                'id' => (string) Str::ulid(),
+                'organization_id' => $context->organizationId,
+                'blueprint_id' => $blueprintId,
+                'actor_membership_id' => $context->membershipId,
+                'idempotency_key' => $eventKey,
+                'request_hash' => hash('sha256', $expectedContentHash.'|publish'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return ['blueprint' => $blueprint->refresh(), 'created' => true];
+        });
+    }
+
     public function getBlueprint(
         OrganizationContext $context,
         string $blueprintId,

@@ -24,6 +24,7 @@ use App\Curriculum\LessonPractice\App0063LevelsCommissioner;
 use App\Curriculum\LessonPractice\App0065AuthoredLevelsReplacer;
 use App\Curriculum\LessonPractice\App0066EnglishReviewReplacer;
 use App\Curriculum\LessonPractice\App0067KannadaReviewReplacer;
+use App\Curriculum\LessonPractice\DirectPathwayPublicationService;
 use App\Identity\LocalOperatorIdentityBootstrapper;
 use App\Learning\LevelVideos\LegacyLevelVideoCommissioner;
 use App\Models\Membership;
@@ -351,6 +352,42 @@ Artisan::command(
         return 0;
     },
 )->purpose('APP-0067 record named Kannada review of authored Levels 2–17');
+
+Artisan::command(
+    'lesson-practice:publish-direct-pathway
+        {--approval=WAVE-7.1 : Must be WAVE-7.1}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== DirectPathwayPublicationService::APPROVAL) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'wave71_publish_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(DirectPathwayPublicationService::class)
+                ->publish();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'wave71_publish_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('Wave 7.1 publish attached Direct lesson-practice Levels 1–17');
 
 Artisan::command(
     'conversation:seed-roleplay-catalog {--organization= : Organization ULID; defaults to Direct}',
