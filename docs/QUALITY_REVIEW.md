@@ -1,5 +1,33 @@
 # Quality review
 
+## Wave 7.1: Direct pathway publish — 1 September 2026
+
+### Scope reviewed
+
+- Lift `curriculum_publication_gate` with a real publish, not a comment.
+- Whether graph `CurriculumPublisher` applies to the LPL program.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Wave 2A | Already complete | Commit `38130ab`; 25s cap, ledger, failover |
+| LPL graph publication | Not used | `curriculum_workspaces` empty; no graph heads |
+| `publishBlueprint` | Pass | Integration `LevelSessionDeliveryTest` 3/3 |
+| Authored blueprint eligible | Pass | Unit `LessonPracticeBlueprintValidatorTest` 3/3 |
+| Live publish | Pass | 17 processed, 17 published; replay skipped 17 |
+| Prior drafts retained | Pass | 65 earlier draft rows remain |
+| `APP_ENV=production` | Not set | Remains `soft-launch` |
+| Dummy checkout | Unchanged | Wave 8 |
+| Stable host | Not done | Wave 5 |
+
+### Known limitations
+
+- Entitled learners see Levels 3–17; demo remains 1–2.
+- Teaching audio was already attached; publish changes eligibility/state.
+- Wave 6 staff Indic tests remain open.
+- Operator 7.6 not re-checked on `ai.globalspokenenglish.com`.
+
 ## Wave 5: stable host + legal pages — 1 September 2026
 
 ### Scope reviewed

@@ -157,14 +157,16 @@ Only after Waves 1, 2A, 3, 4, 5.
 
 ## Wave 7 — Product holes that block “this is the app”
 
-- [ ] **7.1** Publish Direct Levels 1–17 for entitled learners (lift `curriculum_publication_gate` with a real publish action, not a comment). Confirm Learn plays teaching audio.
-- [ ] **7.2** Progress tab shows can-do / streak / due review, **not** the Learn level path.
-- [ ] **7.3** Home: due review outranks a random lesson; streak visible.
-- [ ] **7.4** Kannada UI: Direct default `kn-IN`. If independent review is still pending, ship it anyway with honest “draft” only if legally acceptable; do **not** show English chrome to a Kannada-only adult as the only path.
-- [ ] **7.5** Type-instead still works when they refuse mic.
-- [ ] **7.6** Operator: enroll, grant, revoke, GST, privacy export/erasure still work on the stable host.
+Recorded 1 September 2026 on this host. Dummy checkout unchanged. Stable host still missing.
 
-**Exit:** one new adult can: sign in → Home → one Learn session → one Speak turn → see Progress.
+- [x] **7.1** Publish Direct Levels 1–17: `lesson-practice:publish-direct-pathway --approval=WAVE-7.1`. 17 latest blueprints `published` and `publication.eligible=true`; prior drafts retained. Replay skipped 17. Evidence `docs/evidence/lpl-01/wave71-direct-pathway-publish-result.json`. Learn already served attached media; this is the publish action, not a comment.
+- [x] **7.2** Progress tab is `ProgressDashboard` (can-do / streak / due review), not the Learn level path.
+- [x] **7.3** Home ranks due review above the next mission (`LearnerJourney`); streak is visible.
+- [x] **7.4** Direct default locale is `kn-IN`. Soft-launch web is translation-preview (`VITE_UI_TRANSLATION_PREVIEW=true`) with an honest pending-review notice. Independent review is still pending.
+- [x] **7.5** Type-instead remains on Speak (`conversation.confidence.type_instead`) and Learn continue-without-recording.
+- [ ] **7.6** Operator enroll / grant / revoke / GST / privacy export-erasure exist on the **current** origin. Not re-verified on `ai.globalspokenenglish.com` (Wave 5 still blocked).
+
+**Exit:** code and live publish for 7.1 are done. The adult journey on the **stable** host is still Wave 5.
 
 ---
 
@@ -282,8 +284,8 @@ Do not start because you are excited. Start because Wave 11 stayed green.
 
 ## First action tomorrow morning
 
-1. Wave 0–4 are done. Wave 5 **legal pages** are in the tree; **DNS and router are not**.  
-2. APO: in Cloudflare, grey-cloud `ai` A record to this box’s public IPv4. On the router, stop WAN 80 serving the login page; forward 80→`192.168.1.4:8080` and 443→`192.168.1.4:8443`.  
-3. Then engineering: `make soft-launch-stable-prereq` must pass, then 5.3–5.8.  
-4. Rotate the Sarvam key; copy the encrypted backup off this NVMe.  
+1. Wave 2A is already complete. Wave 7.1 Direct Levels 1–17 are published.  
+2. Still pending: **payment gateway**, **hosting server**, **DNS A record**.  
+3. APO: Cloudflare DNS-only `ai` A record; router 80/443 → `192.168.1.4:8080/8443`. Then 5.3–5.8.  
+4. Wave 6 staff Indic tests on the current origin can proceed without the stable host if you accept tunnel UAT.  
 5. Do **not** set `APP_ENV=production`. Do not stop the Quick Tunnel until 5.3.

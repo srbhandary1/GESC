@@ -10,8 +10,8 @@ use InvalidArgumentException;
  * Authored Levels 2–17 lesson-practice copy (APP-0065).
  *
  * English academic review is recorded under APP-0066. Kannada review of the
- * authored summaries is recorded under APP-0067. Curriculum publication
- * remains outstanding.
+ * authored summaries is recorded under APP-0067. Wave 7.1 publishes these
+ * blueprints for entitled Direct learners via DirectPathwayPublicationService.
  */
 final class AuthoredFoundationLessons
 {
@@ -67,7 +67,7 @@ final class AuthoredFoundationLessons
                 $levelNumber,
                 $conceptKey,
             ),
-            'state' => 'authored_app0067_bilingual_reviewed_unpublished',
+            'state' => 'published_direct_entitled_v1',
             'authorship' => 'app0065_authored_english_app0066_kannada_app0067',
             'approval_reference' => self::APPROVAL,
             'english_review_reference' => self::ENGLISH_REVIEW_APPROVAL,
@@ -94,19 +94,17 @@ final class AuthoredFoundationLessons
                 'english_academic' => [
                     'status' => 'approved',
                     'authority' => 'APP-0066_human_english_academic_review',
-                    'scope' => 'private_pilot_english_and_kannada_named_reviewed_unpublished',
+                    'scope' => 'private_pilot_english_and_kannada_named_reviewed',
                 ],
                 'kannada' => [
                     'status' => 'approved',
                     'authority' => 'APP-0067_human_kannada_review',
-                    'scope' => 'private_pilot_kannada_named_reviewed_unpublished',
+                    'scope' => 'private_pilot_kannada_named_reviewed',
                 ],
             ],
             'publication' => [
-                'eligible' => false,
-                'blockers' => [
-                    'curriculum_publication_gate',
-                ],
+                'eligible' => true,
+                'blockers' => [],
             ],
         ];
     }

@@ -41,10 +41,16 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
             'lesson-practice',
         );
         $learner = $this->createUser();
-        [, $learnerContext] = $this->createMembership(
+        [$learnerMembership, $learnerContext] = $this->createMembership(
             $organization,
             $learner,
             Membership::TYPE_LEARNER,
+        );
+        $this->grantTestPermissions(
+            $learnerMembership,
+            $learnerContext,
+            ['learning.participate'],
+            'lesson-practice-learner',
         );
 
         $canonical = $this->canonicalBlueprint();
@@ -117,6 +123,27 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
                 (string) Str::ulid(),
             ),
         );
+        $published = $this->contexts()->run(
+            $authorContext,
+            fn (): array => $attachment->publishBlueprint(
+                $authorContext,
+                $blueprintId,
+                $hash,
+                'wave71-test-can',
+            ),
+        );
+        self::assertTrue($published['created']);
+        self::assertSame('published', $published['blueprint']->state);
+        $replayed = $this->contexts()->run(
+            $authorContext,
+            fn (): array => $attachment->publishBlueprint(
+                $authorContext,
+                $blueprintId,
+                $hash,
+                'wave71-test-can',
+            ),
+        );
+        self::assertFalse($replayed['created']);
 
         $delivery = app(LevelSessionDeliveryService::class);
         $levels = $this->contexts()->run(
@@ -283,6 +310,10 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
             ],
             'kannada_guidance' => [
                 'summary' => 'ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.',
+            ],
+            'publication' => [
+                'eligible' => true,
+                'blockers' => [],
             ],
         ];
     }

@@ -76,11 +76,9 @@ final class LessonPracticeBlueprintValidatorTest extends TestCase
                 'independent_kannada_review',
                 $blueprint['publication']['blockers'],
             );
-            self::assertContains(
-                'curriculum_publication_gate',
-                $blueprint['publication']['blockers'],
-            );
-            self::assertFalse($blueprint['publication']['eligible']);
+            self::assertSame([], $blueprint['publication']['blockers']);
+            self::assertTrue($blueprint['publication']['eligible']);
+            self::assertSame('published_direct_entitled_v1', $blueprint['state']);
             self::assertTrue($blueprint['kannada_guidance']['independent_review']);
         }
     }
