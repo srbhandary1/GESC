@@ -1,5 +1,40 @@
 # Quality review
 
+## Wave 4: backup, observe, rollback — 1 September 2026
+
+### Scope reviewed
+
+- Fresh soft-launch Postgres gzip dump, AES wrap, same-host ciphertext copy.
+- Restore into a temporary database only (never drop live).
+- Worker/scheduler, health/ready, rollback card, content-free observe timer.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Gzip dump mode 0600 | Pass | `soft-launch-20260901T162027Z.sql.gz` 462785 bytes; SHA-256 `8bfc83d57c6deb9e4cc4a825ec4cb647649469fca96072c56738d417ba3e84ad` |
+| Encrypted offsite copy | Pass | `~/ge-offsite-backups/soft-launch-20260901T162027Z.sql.gz.enc` SHA-256 `6437e45efd1533be6f78a79cd4b8d98becbb0e79b7f4a78b6c96223ae5a0a364`; passphrase mode 0600 outside git |
+| Decrypt \| gzip -t | Pass | `soft-launch-encrypt-backup.sh` during backup |
+| Temp-DB gzip restore | Pass | RTO 2s; `live_database_overwritten=false`; `artifacts/ops/soft-launch-restore-drill-20260901T162031Z.json` |
+| REL-01 custom-format drill | Pass | RTO 2s; `artifacts/ops/backup-restore-20260901T162039Z.json` |
+| User unit | Pass | `global-english-soft-launch.service` enabled/active; linger yes |
+| Worker/scheduler | Pass | pids running; readiness checks added |
+| Health | Pass | live `ok`; ready `ready` |
+| Readiness | Pass | 24 pass / 0 warn / 0 fail |
+| Observe fixtures | Pass | `scripts/test-soft-launch-observe.sh` plus existing env contract |
+| Observe timer | Pass | `global-english-soft-launch-observe.timer` enabled; oneshot exit 0; signals empty |
+| Previous APK | Pass | SHA-256 `aa94cacc3f4e244a9a258aee4f62e345f92bac6654ff3c22140678282213cca0` |
+| USB/second-machine copy | Open | Single NVMe |
+| Named SMS/Telegram | Not set | `mail` not installed; optional MAILTO/COMMAND documented |
+| `APP_ENV=production` | Not set | Remains `soft-launch` |
+
+### Known limitations
+
+- Encrypted copy is same disk until copied off-box.
+- Gitignored env already has `VOICE_PROVIDER_DRIVER=indic`; Wave 6 staff tests, failover kill, and ledger watch are still required.
+- Quick Tunnel remains the HTTPS entry (Wave 5).
+- `make verify` still blocked on this host (PHP 8.5.4 vs 8.4.23; no system `pdo_pgsql`; Node v22 vs 24.18.1).
+
 ## Wave 3: vendor host inventory — 1 September 2026
 
 ### Scope reviewed

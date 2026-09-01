@@ -12,7 +12,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-systemd-install
 
 help:
 	@printf '%s\n' \
@@ -25,6 +25,20 @@ help:
 		'make demo-client-tunnel  Temporary HTTPS Cloudflare tunnel for remote client testing' \
 		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
 		'make android-closed-beta  Build the PR-014 production-path closed-beta Android APK' \
+		'make android-release-bundle Build a signed production-path Android App Bundle' \
+		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
+		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
+		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
+		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
+		'make soft-launch-status  Soft-launch process and health status' \
+		'make soft-launch-ready   Soft-launch readiness checklist' \
+		'make soft-launch-backup  Dump soft-launch Postgres, encrypt, copy ciphertext offsite' \
+		'make soft-launch-restore-drill  Restore latest gzip dump into a temporary database' \
+		'make soft-launch-observe  Content-free API/queue/provider-5xx check' \
+		'make soft-launch-observe-install Install the per-minute user observe timer' \
+		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
+		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
+		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
 		'make test          Run deterministic backend and frontend tests' \
 		'make e2e           Run the critical web browser journeys' \
@@ -155,6 +169,13 @@ ai-eval:
 openapi:
 	$(PNPM) run openapi:check
 
+release-contract:
+	$(PNPM) run release:check
+
+soft-launch-contract-test:
+	@sh scripts/test-soft-launch-environment.sh
+	@bash scripts/test-soft-launch-observe.sh
+
 migrate:
 	cd $(API_DIR) && $(PHP) artisan migrate
 
@@ -184,3 +205,65 @@ backup-restore-drill:
 staged-deploy-dry-run:
 	@chmod +x scripts/run-staged-deploy-dry-run.sh
 	@bash scripts/run-staged-deploy-dry-run.sh
+
+# APP-0053 Ubuntu invite-only soft launch (real product; not make demo).
+soft-launch-setup:
+	@chmod +x scripts/setup-soft-launch-workspace.sh scripts/install-soft-launch-caddy.sh
+	@bash scripts/setup-soft-launch-workspace.sh
+
+soft-launch-start:
+	@chmod +x scripts/run-soft-launch.sh scripts/install-soft-launch-caddy.sh
+	@test -x "$${HOME}/.local/bin/caddy" || bash scripts/install-soft-launch-caddy.sh
+	@bash scripts/run-soft-launch.sh start
+
+soft-launch-stop:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh stop
+
+soft-launch-restart:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh restart
+
+soft-launch-status:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh status
+
+soft-launch-tunnel:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh tunnel
+
+soft-launch-tunnel-stop:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh tunnel-stop
+
+soft-launch-configure-stable:
+	@test -n "$(HOST)" || (printf '%s\n' 'Set HOST to the lowercase DNS hostname without a scheme, path or port.' && exit 1)
+	@GE_SOFT_LAUNCH_STABLE_HOST="$(HOST)" bash scripts/run-soft-launch.sh configure-stable-host
+
+soft-launch-health:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh health
+
+soft-launch-ready:
+	@chmod +x scripts/check-soft-launch-readiness.sh
+	@bash scripts/check-soft-launch-readiness.sh
+
+soft-launch-backup:
+	@chmod +x scripts/run-soft-launch.sh scripts/soft-launch-encrypt-backup.sh
+	@bash scripts/run-soft-launch.sh backup
+
+soft-launch-restore-drill:
+	@chmod +x scripts/soft-launch-restore-drill.sh
+	@bash scripts/soft-launch-restore-drill.sh
+
+soft-launch-observe:
+	@chmod +x scripts/soft-launch-observe.sh
+	@bash scripts/soft-launch-observe.sh
+
+soft-launch-observe-install:
+	@chmod +x scripts/install-soft-launch-observe-timer.sh scripts/soft-launch-observe.sh
+	@bash scripts/install-soft-launch-observe-timer.sh
+
+soft-launch-systemd-install:
+	@chmod +x scripts/install-soft-launch-systemd.sh
+	@bash scripts/install-soft-launch-systemd.sh --start

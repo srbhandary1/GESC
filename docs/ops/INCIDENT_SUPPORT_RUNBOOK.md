@@ -20,6 +20,14 @@ tokens, or learner PII into tickets or chat.
 3. Correlate with `X-Correlation-ID` / `http.request_completed` structured logs.
 
 Alert stubs: [ALERTS_SKELETON.md](ALERTS_SKELETON.md).
+Soft-launch rollback card: [SOFT_LAUNCH_ROLLBACK.md](SOFT_LAUNCH_ROLLBACK.md).
+
+On this host, `make soft-launch-observe` (or the user timer) checks API liveness,
+queue worker/scheduler, Redis backlog, and provider 5xx **counts**. Do not
+paste `laravel.log` lines into chat.
+
+STT rollback for Speak: set `VOICE_PROVIDER_DRIVER=azure` in the gitignored
+soft-launch env and restart API/worker.
 
 ## Auth / PKCE incidents (web + Android closed beta)
 
