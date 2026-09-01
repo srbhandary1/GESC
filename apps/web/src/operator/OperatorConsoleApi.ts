@@ -47,6 +47,68 @@ export interface OperatorAuditEvent {
   readonly occurred_at: string
 }
 
+export interface OperatorAuditEventPage {
+  readonly items: readonly OperatorAuditEvent[]
+  readonly next_cursor: string | null
+}
+
+export type OperatorNavigationKey =
+  | 'overview'
+  | 'learning'
+  | 'operations'
+  | 'safety'
+  | 'people'
+  | 'learners'
+  | 'entitlements'
+
+export type OperatorPanelKey =
+  | 'pilot_analytics'
+  | 'content_studio'
+  | 'media_library'
+  | 'review_queue'
+  | 'publish_status'
+  | 'support_diagnostics'
+  | 'audit'
+  | OperatorOrganizationPanelKey
+  | OperatorLearnerPanelKey
+  | 'entitlement_plans'
+  | 'entitlement_directory'
+
+export interface OperatorOverview {
+  readonly generated_at: string
+  readonly organization: {
+    readonly id: string
+    readonly name: string
+    readonly timezone: string
+  }
+  readonly navigation: readonly OperatorNavigationKey[]
+  readonly panels: readonly OperatorPanelKey[]
+  readonly search_available: boolean
+}
+
+export type OperatorSearchResultKind =
+  | 'curriculum_version'
+  | 'curriculum_publication'
+  | 'support_diagnostic'
+  | 'audit_event'
+
+export type OperatorSearchSection = 'learning' | 'operations' | 'safety'
+
+export interface OperatorSearchResult {
+  readonly kind: OperatorSearchResultKind
+  readonly id: string
+  readonly section: OperatorSearchSection
+  readonly primary_text: string
+  readonly secondary_text: string
+  readonly occurred_at: string | null
+}
+
+export interface OperatorSearchPage {
+  readonly generated_at: string
+  readonly items: readonly OperatorSearchResult[]
+  readonly next_cursor: string | null
+}
+
 export interface OperatorPilotAnalyticsSummary {
   readonly generated_at: string
   readonly usage: {

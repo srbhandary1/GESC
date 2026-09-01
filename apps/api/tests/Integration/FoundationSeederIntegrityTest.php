@@ -86,7 +86,11 @@ final class FoundationSeederIntegrityTest extends TestCase
             $before['graph_hash'],
             DB::table('curriculum_graph_revisions')->value('graph_hash'),
         );
-        $this->assertSame(22, DB::table('permissions')->count());
+        $this->assertSame(46, DB::table('permissions')->count());
+        self::assertEqualsCanonicalizing(
+            PermissionCatalogue::keys(),
+            DB::table('permissions')->pluck('key')->all(),
+        );
         $this->assertSame(
             1,
             DB::table('role_permissions')
@@ -100,6 +104,26 @@ final class FoundationSeederIntegrityTest extends TestCase
                 ->count(),
         );
         $this->assertDatabaseHas('permissions', ['key' => 'audit.read']);
+        foreach ([
+            'organization.settings.read',
+            'branches.read',
+            'branches.manage',
+            'trainer_profiles.read',
+            'trainer_profiles.manage',
+            'membership_sessions.revoke',
+            'learners.read',
+            'learners.profile.correct',
+            'learners.lifecycle.manage',
+            'enrollments.read',
+            'enrollments.manage',
+            'entitlement_plans.read',
+            'entitlements.grant',
+        ] as $permissionKey) {
+            $this->assertDatabaseHas('permissions', ['key' => $permissionKey]);
+        }
+        $this->assertDatabaseMissing('permissions', [
+            'key' => 'organization.settings.manage',
+        ]);
         $this->assertDatabaseHas('roles', [
             'key' => 'trainer',
             'is_system' => true,
@@ -113,6 +137,72 @@ final class FoundationSeederIntegrityTest extends TestCase
             'is_system' => true,
         ]);
         $this->assertSame(4, DB::table('roles')->count());
+        $organizationAdminPermissions = DB::table('role_permissions')
+            ->join('roles', function ($join): void {
+                $join
+                    ->on('roles.organization_id', '=', 'role_permissions.organization_id')
+                    ->on('roles.id', '=', 'role_permissions.role_id');
+            })
+            ->join(
+                'permissions',
+                'permissions.id',
+                '=',
+                'role_permissions.permission_id',
+            )
+            ->where('roles.key', 'organization_admin')
+            ->pluck('permissions.key')
+            ->all();
+        foreach ([
+            'organization.settings.read',
+            'branches.read',
+            'branches.manage',
+            'cohorts.read',
+            'cohorts.manage',
+            'institution_invites.manage',
+            'memberships.read',
+            'memberships.manage',
+            'roles.manage',
+            'trainer_profiles.read',
+            'trainer_profiles.manage',
+            'membership_sessions.revoke',
+            'entitlement_plans.read',
+            'entitlements.grant',
+        ] as $permissionKey) {
+            self::assertContains(
+                $permissionKey,
+                $organizationAdminPermissions,
+            );
+        }
+        $trainerAdministrativeGrantCount = DB::table('role_permissions')
+            ->join('roles', function ($join): void {
+                $join
+                    ->on('roles.organization_id', '=', 'role_permissions.organization_id')
+                    ->on('roles.id', '=', 'role_permissions.role_id');
+            })
+            ->join(
+                'permissions',
+                'permissions.id',
+                '=',
+                'role_permissions.permission_id',
+            )
+            ->where('roles.key', 'trainer')
+            ->whereIn('permissions.key', [
+                'organization.settings.read',
+                'branches.read',
+                'branches.manage',
+                'trainer_profiles.read',
+                'trainer_profiles.manage',
+                'membership_sessions.revoke',
+                'learners.read',
+                'learners.profile.correct',
+                'learners.lifecycle.manage',
+                'enrollments.read',
+                'enrollments.manage',
+                'entitlement_plans.read',
+                'entitlements.grant',
+            ])
+            ->count();
+        self::assertSame(0, $trainerAdministrativeGrantCount);
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('curriculum_publications')->count());
         $this->assertSame(2, DB::table('ai_personas')->count());

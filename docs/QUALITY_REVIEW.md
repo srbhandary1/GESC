@@ -1,5 +1,151 @@
 # Quality review
 
+## D-0267: Premium flagship and courtesy month — 1 September 2026
+
+### Scope reviewed
+
+- DR-0046 Option A / ADR-0036 / APP-0073 / master plan 3.13.
+- Premium as the recommended Direct paid SKU; Modules remains ₹350 without Role-play.
+- Complimentary one-month Premium for current Direct learner memberships.
+- No import of the previous website’s students, passwords or progress.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Premium catalogue + recommended flag | Pass | Feature `CourtesyPremiumGrantTest::test_catalogue_flags_premium_as_recommended` |
+| Courtesy grant, replay skip, CSV username filter, dry-run | Pass | Feature `CourtesyPremiumGrantTest` 4 passed with `DirectEntitlementTest` 5 passed — 9 tests / 56 assertions |
+| OpenAPI / contracts | Pass | Version **0.39.0**; `pnpm run openapi:check` (lint + policy + generated types match) |
+| Web typecheck | Pass | `pnpm --filter @global-english/web run typecheck` |
+| Focused web tests | Pass | Vitest 3 files / 14 passed (`SubscriptionPanel`, `OperatorEntitlementAdministration`, `OperatorConsole`) |
+| Localization tests | Pass | `pnpm --filter @global-english/localization run test` — 3 files / 31 passed. Catalogue revision `ui-*-2026-09-01.2`, 1162 keys |
+| ESLint (touched web files) | Pass | `eslint` on subscription panel, operator entitlement/console — 0 warnings |
+| Pint / PHPStan (new PHP) | Pass | Pint `--test` on dirty PHP; PHPStan 0 errors on Entitlements, EntitlementAdministration, courtesy command, operator controller |
+| PostgreSQL integration | Not run | Host PHP 8.5.4 has no `pdo_pgsql`. `EntitlementAdministrationApiTest` courtesy cases are written for CI |
+| Closed-beta APK | Not rebuilt | No native change in this checkpoint |
+| Browser UI | Not run | No local Vite/API process was running in this session |
+| Old-website import | Not done | No scrape or copy of `www.globalspokenenglish.com` |
+
+### Known limitations
+
+- Courtesy grants apply only to Direct learner memberships already in this database.
+- Email logins from the previous website cannot become usernames here (ADR-0021).
+- Dummy payment driver and dummy GSTIN are unchanged. Production and Play remain unauthorized.
+- `make verify` still blocked on this host (PHP 8.5.4 vs pinned 8.4.23; no `pdo_pgsql`; Node v22.22.1 vs 24.18.1).
+- Kannada UI catalogue remains `pending-independent-review`.
+
+## D-0266: Direct subscriptions, GST and dummy in-app checkout — 1 September 2026
+
+### Scope reviewed
+
+- DR-0045 Option C / ADR-0035 / ADMIN-ENT-01 / APP-0072 / master plan 3.12.
+- Direct auto-demo, GST-exclusive dummy checkout, live-AI meter, operator GST/plan/grants.
+- Institutional organizations remain unmetered.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Auto-demo, 300s meter, GST checkout, Role-play lock, institutional bypass | Pass | Feature `DirectEntitlementTest` 5 passed, 25 assertions: 401 unauthenticated; Direct auto-demo Level 2 / Role-play / 300s with idempotent charge then deny; ₹350 checkout 6300 GST paise, all levels, Role-play locked; ₹500 allows Role-play; institutional `applies=false` |
+| OpenAPI / contracts | Pass | Version **0.38.0**; `pnpm run openapi:check` (lint + policy + generated types match) |
+| Web typecheck | Pass | `pnpm --filter @global-english/web run typecheck` |
+| Focused web tests | Pass | Vitest 5 files / 34 passed (`App.test.tsx`, `LevelPathPanel.test.tsx`, `SubscriptionPanel.test.tsx`, `OperatorEntitlementAdministration.test.tsx`, `OperatorConsole.test.tsx`) |
+| Localization tests | Pass | `pnpm --filter @global-english/localization run test` — 3 files / 31 passed. Catalogue revision `ui-*-2026-09-01.1`, 1158 keys |
+| ESLint (touched web files) | Pass | `eslint` on App, SpeakRoom, LevelPath, subscription panel, operator entitlement/console — 0 warnings |
+| Pint / PHPStan (new PHP) | Pass | Pint `--test` on entitlement PHP; PHPStan 0 errors on Entitlements, Billing, EntitlementAdministration, related controllers/requests, `ProblemDetailsFactory`, `LevelSessionDeliveryService` |
+| Locale CLI | Not run | `pnpm run locale:check` fails on this host: Node v22.22.1 cannot load the TypeScript validation entry (pinned 24.18.1). Vitest validation above is the local stand-in |
+| PostgreSQL integration | Not run | Host PHP 8.5.4 has no `pdo_pgsql`. `EntitlementAdministrationApiTest` is written for CI |
+| Closed-beta APK | Not rebuilt | No native change in this checkpoint |
+| Browser UI | Not run | No local Vite/API process was running in this session |
+
+### Known limitations
+
+- Dummy payment driver completes in-process. Production and `PAYMENT_DRIVER=disabled` fail closed. No live Razorpay/Stripe/Play Billing.
+- Dummy GSTIN `29AAAAA0000A1Z5` is invalid for filing until replaced on the operator Subscriptions page.
+- Sign-in throttle clear is best-effort against the hashed username limiter key.
+- `make verify` still blocked on this host (PHP 8.5.4 vs pinned 8.4.23; no `pdo_pgsql`; Node v22.22.1 vs 24.18.1).
+- Production/Play remain unauthorized.
+- Kannada UI catalogue remains `pending-independent-review`.
+
+## D-0264: Google and Facebook extra sign-in — 1 September 2026
+
+### Scope reviewed
+
+- DR-0044 Option B / ADR-0034 / master plan 3.11.
+- Federated identities, web Sanctum session, Android Passport family.
+- Username/password enrollment and `/oauth/token` password grant unchanged.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Social cannot create accounts | Pass | Feature `FederatedSignInTest` 6 passed, 85 assertions: unlinked Google callback redirects home with no new user, session, or `federated_identities` row |
+| Same web session / Android family | Pass | Same suite: web federated sign-in creates one `authentication_sessions` row and `/api/v1/me` matches; Android ticket POST issues Bearer family, no session cookie, `/me` works |
+| `/oauth/token` password grant rejected | Pass | Same suite asserts `grant_type=password` is 400 `invalid_request` |
+| Linking is idempotent | Pass | Password session + `intent=link` for the same Facebook subject stays one row |
+| OpenAPI / contracts | Pass | Version **0.37.0**; `pnpm run openapi:check` (lint + policy + generated types match) |
+| Web typecheck | Pass | `pnpm --filter @global-english/web run typecheck` |
+| Focused web tests | Pass | Vitest 11 files / 72 passed (App, adapters, password panel, federated buttons, native contract, defaultAuthentication, OTP/MFA/account security) |
+| ESLint (touched web files) | Pass | `eslint` on adapters, panels, `App.tsx` — 0 warnings |
+| Pint / PHPStan (new PHP) | Pass | Pint `--test` on federated PHP; PHPStan 0 errors on Federated namespace, controller, model, `AppServiceProvider`, `MobileTokenFamilyService` |
+| Locale keys | Pass (key parity) | All 6 UI catalogues have the same 1134 keys including `auth.social.*`. `pnpm run locale:check` was not run: this host has Node v22.22.1, not pinned 24.18.1 |
+| PostgreSQL integration | Not run | Host PHP 8.5.4 has no `pdo_pgsql` |
+| Closed-beta APK | Not rebuilt | `GlobalEnglishSystemBrowserPlugin` now allows `/oauth/social/google/authorize` and `/oauth/social/facebook/authorize` in addition to `/oauth/authorize`. `make android-closed-beta` was not run (requires `VITE_MOBILE_API_ORIGIN`). The D-0263 HTTP LAN APK cannot open those Custom Tabs paths |
+
+### Known limitations
+
+- Live Google/Facebook need operator-registered OAuth clients in env (never commit secrets). Missing client configuration fails closed.
+- First-time users still need invitation + username/password, then link. Social never creates or invites an account.
+- Android federated authorization requires HTTPS matching `BuildConfig.MOBILE_API_ORIGIN`. Staff LAN HTTP `:8080` Custom Tabs remain fail-closed.
+- Password confirmation is not satisfied by social sign-in.
+- Android link/sign-in ticket exchange issues a new `federated_sign_in` family and does not revoke the previous family.
+- Feature `phpunit.xml` now forces `APP_URL=https://localhost` and `SANCTUM_STATEFUL_DOMAINS` including `localhost`, so Feature cookie tests are not poisoned by staff LAN `.env` domains.
+- Production/Play remain unauthorized.
+- Kannada UI catalogue remains `pending-independent-review`.
+- `make verify` still blocked on this host (PHP 8.5.4 vs pinned 8.4.23; no `pdo_pgsql`; Node v22.22.1 vs 24.18.1).
+
+## D-0263: In-app Android username/password login — 1 September 2026
+
+### Scope reviewed
+
+- DR-0043 Option B / ADR-0033 / master plan 3.10.
+- First-party mobile password routes and Passport family issuance.
+- Android in-app form on `#sign-in`. `/oauth/token` password grant remains rejected.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| `/oauth/token` password grant rejected | Pass | SQLite `MobileOAuthPolicyTest` 9 passed, 38 assertions; Feature `MobilePasswordSignInTest` also asserts `grant_type=password` is 400 |
+| Web Sanctum still stateful | Pass | Feature `MobilePasswordSignInTest` (7 passed, 74 assertions): web sign-in without a stateful browser is 401 |
+| Family create for `password_sign_in` | Pass | Feature happy path issues access + refresh and `/me` works after rotation. Integration `MobileTokenFamilyTest` was not run on this host (no `pdo_pgsql`). |
+| No credentials in web storage | Pass | Web vitest 8 files / 53 passed (`App.test`, Android adapter, bind deep-link, password panel, defaultAuthentication, native contract, `androidPkceEnvironment`, capacitor config) |
+| OpenAPI / contracts | Pass | Version 0.36.0; `pnpm run openapi:check` (lint + policy + generated types match) |
+| Web typecheck | Pass | `pnpm --filter @global-english/web run typecheck` |
+| Pint / PHPStan (new PHP) | Pass | Pint `--test` on mobile password files; PHPStan 0 errors on grant, issuer, factory, controller |
+| PostgreSQL integration | Not run | Host PHP 8.5.4 has no `pdo_pgsql`; `phpunit.postgres.xml` filtered suite: 13 errors, `could not find driver` |
+| Closed-beta APK | Pass | `make android-closed-beta` BUILD SUCCESSFUL, 103 Gradle tasks; `com.globalenglish.app` 1.0 (1), targetSdk 36 |
+
+### Closed-beta APK record (1 September 2026)
+
+- Build-tree: `apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk`
+- Protected copy: `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-in-app-login-20260901.apk`
+- Size: 14,932,042 bytes
+- SHA-256: `aa94cacc3f4e244a9a258aee4f62e345f92bac6654ff3c22140678282213cca0`
+- Baked origin: `http://117.254.108.143:8080` (staff LAN; Cloudflare tunnel was stopped at build time)
+- Public client id: `019fdd3f-4bba-720b-9e4e-a771ecccdd7f`
+- Package embeds `auth/mobile/password/sign-ins`; does not embed `com.globalenglish.demo`
+
+### Known limitations
+
+- The password is typed in the Capacitor WebView (honest ADR-0033 trade-off).
+- Old APKs still open Chrome until testers install a build from this checkpoint.
+- This APK is pinned to staff LAN HTTP on port 8080 because the Quick Tunnel was stopped. It is not the HTTPS-tunnel closed-group origin. Rebuild against HTTPS when a tunnel hostname is available.
+- PostgreSQL integration tests for this checkpoint were not executed on this host.
+- `make verify` was not run (host PHP 8.5.4 vs pinned 8.4.23; no `pdo_pgsql`).
+- Production/Play remain unauthorized.
+- Kannada UI catalogue remains `pending-independent-review`.
+
 ## DR-0038 C: Speak hold-to-talk latency — 30 August 2026
 
 ### Scope reviewed

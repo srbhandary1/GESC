@@ -47,4 +47,19 @@ return [
         'family_inactivity_days' => (int) env('AUTH_MOBILE_FAMILY_INACTIVITY_DAYS', 30),
         'family_absolute_days' => (int) env('AUTH_MOBILE_FAMILY_ABSOLUTE_DAYS', 90),
     ],
+
+    'federated' => [
+        'driver' => env('AUTH_FEDERATED_DRIVER', 'oidc'),
+        'web_return_url' => env('AUTH_FEDERATED_WEB_RETURN_URL', '/'),
+        'google' => [
+            'client_id' => env('GOOGLE_OAUTH_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI'),
+        ],
+        'facebook' => [
+            'client_id' => env('FACEBOOK_OAUTH_CLIENT_ID'),
+            'client_secret' => env('FACEBOOK_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('FACEBOOK_OAUTH_REDIRECT_URI'),
+        ],
+    ],
 ];

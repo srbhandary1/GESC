@@ -6,6 +6,7 @@ namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\RoleplayStages;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -21,6 +22,7 @@ final readonly class RoleplayStageService
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
         private ConversationSessionService $sessions,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -46,6 +48,7 @@ final readonly class RoleplayStageService
             $idempotencyKey,
         ): array {
             $context = $this->authority->require($learner);
+            $this->entitlements->assertRoleplay($learner);
             $membershipId = (string) $context->membershipId;
             $fingerprint = $this->commands->fingerprint([
                 'session_id' => $sessionId,

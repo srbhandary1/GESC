@@ -33,6 +33,414 @@ export const OtpRequestSchema = {
     }
 } as const;
 
+export const PasswordSignInSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const MobilePasswordSignInSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const FederatedProviderAvailabilitySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'google',
+        'facebook'
+    ],
+    properties: {
+        google: {
+            type: 'boolean'
+        },
+        facebook: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const MobileFederatedAuthorizationResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'authorization_url'
+    ],
+    properties: {
+        authorization_url: {
+            type: 'string',
+            format: 'uri'
+        }
+    }
+} as const;
+
+export const MobileFederatedSignInSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const MobileFederatedLinkStartSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const PasswordInvitationEnrollmentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const PasswordEstablishmentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const PasswordConfirmationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'password'
+    ],
+    properties: {
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        }
+    }
+} as const;
+
+export const PasswordConfirmationResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'confirmed_at',
+        'expires_at'
+    ],
+    properties: {
+        confirmed_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const PasswordChangeSchema = {
+    type: 'object',
+    additionalProperties: false
+} as const;
+
+export const UsernameChangeSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const PasswordRecoveryRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username'
+    ],
+    properties: {
+        username: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const PasswordRecoveryCompletionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'challenge_id',
+        'username'
+    ],
+    properties: {
+        challenge_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const PasswordSetupCompletionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'challenge_id',
+        'username'
+    ],
+    properties: {
+        challenge_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        }
+    }
+} as const;
+
+export const GenericRecoveryResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'message'
+    ],
+    properties: {
+        message: {
+            type: 'string',
+            const: 'If the account is eligible, recovery instructions will be sent.'
+        }
+    }
+} as const;
+
+export const PasswordAuthenticationStatusSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'credential_ready',
+        'mode',
+        'password_confirmed_at'
+    ],
+    properties: {
+        username: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/GlobalUsername'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        credential_ready: {
+            type: 'boolean'
+        },
+        mode: {
+            type: 'string',
+            enum: [
+                'legacy_otp',
+                'credential_migration',
+                'password_only'
+            ]
+        },
+        password_confirmed_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const AuthenticationModeResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'mode'
+    ],
+    properties: {
+        mode: {
+            type: 'string',
+            enum: [
+                'legacy_otp',
+                'credential_migration',
+                'password_only'
+            ]
+        }
+    }
+} as const;
+
+export const GlobalUsernameSchema = {
+    type: 'string',
+    minLength: 4,
+    maxLength: 64,
+    pattern: '^[a-z][a-z0-9._-]{3,63}$'
+} as const;
+
+export const NewPasswordSchema = {
+    type: 'string',
+    minLength: 15,
+    maxLength: 128,
+    writeOnly: true,
+    description: 'NFC-normalized 15-128 Unicode code points; server policy is authoritative.'
+} as const;
+
+export const PlatformAccountSetupRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'target_user_id',
+        'reason_key'
+    ],
+    properties: {
+        target_user_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.migration_setup'
+        }
+    }
+} as const;
+
+export const PlatformAccountSetupResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'expires_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'delivered'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'contact_type',
+        'reason_key'
+    ],
+    properties: {
+        contact_type: {
+            type: 'string',
+            enum: [
+                'email',
+                'phone'
+            ]
+        },
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.verified_contact_replacement'
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'notification_outcome'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            const: 'completed'
+        },
+        notification_outcome: {
+            type: 'string',
+            enum: [
+                'accepted',
+                'unavailable',
+                'not_possible'
+            ]
+        }
+    }
+} as const;
+
 export const OtpChallengeSchema = {
     type: 'object',
     additionalProperties: false,
@@ -746,6 +1154,638 @@ export const LearnerProgressDashboardSchema = {
         },
         recurring_errors: {
             $ref: '#/components/schemas/ProgressRecurringErrors'
+        }
+    }
+} as const;
+
+export const LearnerEntitlementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'applies',
+        'entitlement_id',
+        'plan_code',
+        'plan_name',
+        'status',
+        'source',
+        'allows_roleplay',
+        'max_level_number',
+        'is_demo',
+        'starts_at',
+        'first_sign_in_at',
+        'expires_at',
+        'live_ai_seconds_used',
+        'live_ai_cap_seconds',
+        'live_ai_seconds_remaining',
+        'gstin_is_placeholder'
+    ],
+    properties: {
+        applies: {
+            type: 'boolean'
+        },
+        entitlement_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        plan_code: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        plan_name: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string'
+        },
+        source: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        starts_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        first_sign_in_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        expires_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        live_ai_seconds_used: {
+            type: 'integer',
+            minimum: 0
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_seconds_remaining: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionCatalogueSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gstin_is_placeholder',
+        'gst_registered',
+        'plans'
+    ],
+    properties: {
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        gst_registered: {
+            type: 'boolean'
+        },
+        plans: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerSubscriptionPlanOffer'
+            }
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionPlanOfferSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'code',
+        'name',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'gst_rate_bps',
+        'allows_roleplay',
+        'max_level_number',
+        'live_ai_cap_seconds',
+        'is_demo',
+        'checkout_required',
+        'recommended'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        code: {
+            type: 'string'
+        },
+        name: {
+            type: 'string'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        checkout_required: {
+            type: 'boolean'
+        },
+        recommended: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const CreateLearnerSubscriptionCheckoutRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'plan_id'
+    ],
+    properties: {
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const LearnerSubscriptionCheckoutSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'plan_id',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'gstin_is_placeholder',
+        'entitlement_id',
+        'replayed'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'completed',
+                'failed'
+            ]
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        entitlement_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorEntitlementWorkspaceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'tax',
+        'plans',
+        'courtesy_premium'
+    ],
+    properties: {
+        tax: {
+            $ref: '#/components/schemas/OperatorTaxSettings'
+        },
+        plans: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorEntitlementPlan'
+            }
+        },
+        courtesy_premium: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'granted_memberships'
+            ],
+            properties: {
+                granted_memberships: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        }
+    }
+} as const;
+
+export const OperatorTaxSettingsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gst_registered',
+        'gstin',
+        'gst_rate_bps',
+        'gstin_is_placeholder',
+        'version'
+    ],
+    properties: {
+        gst_registered: {
+            type: 'boolean'
+        },
+        gstin: {
+            type: 'string',
+            minLength: 15,
+            maxLength: 15
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 5000
+        },
+        gstin_is_placeholder: {
+            type: 'boolean'
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorEntitlementPlanSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'code',
+        'name',
+        'amount_ex_gst_paise',
+        'gst_paise',
+        'total_paise',
+        'billing_period',
+        'duration_value',
+        'allows_roleplay',
+        'max_level_number',
+        'live_ai_cap_seconds',
+        'is_demo',
+        'status',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        code: {
+            type: 'string'
+        },
+        name: {
+            type: 'string'
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        total_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        billing_period: {
+            type: 'string',
+            enum: [
+                'hours',
+                'calendar_month'
+            ]
+        },
+        duration_value: {
+            type: 'integer',
+            minimum: 1
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        is_demo: {
+            type: 'boolean'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'retired'
+            ]
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorLearnerEntitlementListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'learner_membership_id',
+        'entitlements'
+    ],
+    properties: {
+        learner_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        entitlements: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerEntitlement'
+            }
+        }
+    }
+} as const;
+
+export const OperatorLearnerEntitlementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'plan_code',
+        'status',
+        'source',
+        'starts_at',
+        'first_sign_in_at',
+        'expires_at',
+        'live_ai_seconds_used',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        plan_code: {
+            type: 'string'
+        },
+        status: {
+            type: 'string'
+        },
+        source: {
+            type: 'string'
+        },
+        starts_at: {
+            type: 'string'
+        },
+        first_sign_in_at: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        expires_at: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        live_ai_seconds_used: {
+            type: 'integer',
+            minimum: 0
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const UpdateOperatorTaxSettingsRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'gst_registered',
+        'gstin',
+        'gst_rate_bps',
+        'expected_version'
+    ],
+    properties: {
+        gst_registered: {
+            type: 'boolean'
+        },
+        gstin: {
+            type: 'string',
+            minLength: 15,
+            maxLength: 15
+        },
+        gst_rate_bps: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 5000
+        },
+        expected_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const UpdateOperatorEntitlementPlanRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'name',
+        'amount_ex_gst_paise',
+        'duration_value',
+        'allows_roleplay',
+        'status',
+        'expected_version'
+    ],
+    properties: {
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        amount_ex_gst_paise: {
+            type: 'integer',
+            minimum: 0
+        },
+        duration_value: {
+            type: 'integer',
+            minimum: 1
+        },
+        allows_roleplay: {
+            type: 'boolean'
+        },
+        max_level_number: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        live_ai_cap_seconds: {
+            type: [
+                'integer',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'retired'
+            ]
+        },
+        expected_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const GrantOperatorLearnerEntitlementRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'plan_id'
+    ],
+    properties: {
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OperatorEntitlementCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            type: 'object',
+            additionalProperties: true,
+            required: [
+                'result_type',
+                'result_id',
+                'completed_at'
+            ],
+            properties: {
+                result_type: {
+                    type: 'string'
+                },
+                result_id: {
+                    type: 'string'
+                },
+                completed_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                workspace: {
+                    type: 'object',
+                    additionalProperties: true
+                }
+            }
+        },
+        replayed: {
+            type: 'boolean'
         }
     }
 } as const;
@@ -2870,6 +3910,4844 @@ export const ReadinessResponseSchema = {
     }
 } as const;
 
+export const OperatorCursorSchema = {
+    type: 'string',
+    description: 'Encrypted opaque position bound to the active organization and read\npurpose. Callers must replay it unchanged and cannot inspect its state.\n',
+    minLength: 1,
+    maxLength: 4096
+} as const;
+
+export const OperatorOverviewOrganizationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'name',
+        'timezone'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const OperatorOverviewSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'organization',
+        'navigation',
+        'panels',
+        'search_available'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        organization: {
+            $ref: '#/components/schemas/OperatorOverviewOrganization'
+        },
+        navigation: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 7,
+            uniqueItems: true,
+            items: {
+                type: 'string',
+                enum: [
+                    'overview',
+                    'learning',
+                    'learners',
+                    'entitlements',
+                    'people',
+                    'operations',
+                    'safety'
+                ]
+            }
+        },
+        panels: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 21,
+            uniqueItems: true,
+            items: {
+                type: 'string',
+                enum: [
+                    'pilot_analytics',
+                    'content_studio',
+                    'media_library',
+                    'review_queue',
+                    'publish_status',
+                    'support_diagnostics',
+                    'audit',
+                    'organization_settings',
+                    'branches',
+                    'cohorts',
+                    'staff_memberships',
+                    'institution_invites',
+                    'roles',
+                    'trainer_profiles',
+                    'authority_appointments',
+                    'membership_sessions',
+                    'learner_directory',
+                    'learner_enrollments',
+                    'learner_invitations',
+                    'entitlement_plans',
+                    'entitlement_directory'
+                ]
+            }
+        },
+        search_available: {
+            type: 'boolean',
+            description: 'Whether at least one existing safe global-search source is authorized.'
+        }
+    }
+} as const;
+
+export const OperatorSearchResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'kind',
+        'id',
+        'section',
+        'primary_text',
+        'secondary_text',
+        'occurred_at'
+    ],
+    properties: {
+        kind: {
+            type: 'string',
+            enum: [
+                'curriculum_version',
+                'curriculum_publication',
+                'support_diagnostic',
+                'audit_event'
+            ]
+        },
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        section: {
+            type: 'string',
+            enum: [
+                'learning',
+                'operations',
+                'safety'
+            ]
+        },
+        primary_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        secondary_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 320
+        },
+        occurred_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorSearchListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'items',
+        'next_cursor'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        items: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorSearchResult'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorAllowedActionsSchema = {
+    type: 'array',
+    uniqueItems: true,
+    maxItems: 12,
+    items: {
+        type: 'string',
+        enum: [
+            'branch.create',
+            'branch.update',
+            'branch.archive',
+            'cohort.create',
+            'cohort.update',
+            'cohort.archive',
+            'membership.assign_role',
+            'membership.revoke_role',
+            'membership.deactivate',
+            'membership.reactivate',
+            'invitation.issue',
+            'invitation.revoke',
+            'role.create',
+            'role.update',
+            'role.retire',
+            'trainer.assign_cohort',
+            'trainer.revoke_cohort',
+            'appointment.create',
+            'appointment.accept',
+            'appointment.surrender',
+            'appointment.revoke',
+            'membership_session.revoke',
+            'learner.goal_correct',
+            'learner.suspend',
+            'learner.reactivate',
+            'learner_enrollment.create',
+            'learner_enrollment.change_cohort',
+            'learner_enrollment.activate_curriculum',
+            'learner_enrollment.withdraw',
+            'learner_invitation.issue',
+            'learner_invitation.revoke'
+        ]
+    }
+} as const;
+
+export const OperatorLearnerGoalKeySchema = {
+    type: 'string',
+    enum: [
+        'everyday-conversation',
+        'workplace-confidence',
+        'travel-confidence'
+    ]
+} as const;
+
+export const OperatorLearnerChoiceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const OperatorLearnerProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'adult_confirmed',
+        'onboarding_completed',
+        'current_goal_key',
+        'current_goal_version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        adult_confirmed: {
+            type: 'boolean'
+        },
+        onboarding_completed: {
+            type: 'boolean'
+        },
+        current_goal_key: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerGoalKey'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        current_goal_version: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorPositiveVersion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorLearnerSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'membership_id',
+        'display_name',
+        'status',
+        'joined_at',
+        'ended_at',
+        'version',
+        'profile',
+        'attempt_count',
+        'latest_attempt_at',
+        'allowed_actions'
+    ],
+    properties: {
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        display_name: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 160
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'suspended',
+                'ended'
+            ]
+        },
+        joined_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        ended_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        profile: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerProfile'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        attempt_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        latest_attempt_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorLearnerCohortChoicesSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'cohorts'
+    ],
+    properties: {
+        cohorts: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerChoice'
+            }
+        }
+    }
+} as const;
+
+export const OperatorLearnerListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions',
+        'choices'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearner'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        },
+        choices: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerCohortChoices'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorLearnerResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorLearner'
+        }
+    }
+} as const;
+
+export const OperatorLearnerEnrollmentCohortSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name',
+        'status',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 100
+        },
+        name: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 160
+        },
+        status: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'active',
+                'archived',
+                null
+            ]
+        },
+        version: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorPositiveVersion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorLearnerTrainerSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'membership_id',
+        'display_name'
+    ],
+    properties: {
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        display_name: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 160
+        }
+    }
+} as const;
+
+export const OperatorLearnerCurriculumPinSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'owner_organization_id',
+        'version_id',
+        'publication_id',
+        'share_grant_id'
+    ],
+    properties: {
+        owner_organization_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        version_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        share_grant_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const OperatorLearnerEnrollmentSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'learner_membership_id',
+        'status',
+        'version',
+        'enrolled_at',
+        'activated_at',
+        'ended_at',
+        'cohort',
+        'curriculum_pin',
+        'trainers',
+        'allowed_actions'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        learner_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending_curriculum',
+                'active',
+                'completed',
+                'withdrawn'
+            ]
+        },
+        version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        enrolled_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        activated_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        ended_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        cohort: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerEnrollmentCohort'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        curriculum_pin: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerCurriculumPin'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        trainers: {
+            oneOf: [
+                {
+                    type: 'array',
+                    maxItems: 100,
+                    items: {
+                        $ref: '#/components/schemas/OperatorLearnerTrainerSummary'
+                    }
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorLearnerEnrollmentListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerEnrollment'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationRelationshipSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name',
+        'version',
+        'status'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        status: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'active',
+                'archived',
+                'retired',
+                null
+            ]
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'status',
+        'version',
+        'role',
+        'cohort',
+        'expires_at',
+        'accepted_at',
+        'revoked_at',
+        'created_at',
+        'updated_at',
+        'allowed_actions'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'accepted',
+                'revoked',
+                'expired'
+            ]
+        },
+        version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        role: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerInvitationRelationship'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        cohort: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorLearnerInvitationRelationship'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        accepted_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        revoked_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationChoicesSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'roles',
+        'cohorts'
+    ],
+    properties: {
+        roles: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerChoice'
+            }
+        },
+        cohorts: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerChoice'
+            }
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions',
+        'choices'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorLearnerInvitation'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        },
+        choices: {
+            $ref: '#/components/schemas/OperatorLearnerInvitationChoices'
+        }
+    }
+} as const;
+
+export const CorrectOperatorLearnerGoalRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'goal_key',
+        'expected_version'
+    ],
+    properties: {
+        goal_key: {
+            $ref: '#/components/schemas/OperatorLearnerGoalKey'
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const CreateOperatorLearnerEnrollmentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_membership_version',
+        'expected_version',
+        'cohort_id',
+        'expected_cohort_version'
+    ],
+    properties: {
+        expected_membership_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        },
+        cohort_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_cohort_version: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorPositiveVersion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const ChangeOperatorLearnerEnrollmentCohortRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_version',
+        'cohort_id',
+        'expected_cohort_version'
+    ],
+    properties: {
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        cohort_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_cohort_version: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorPositiveVersion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const ActivateOperatorLearnerEnrollmentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'share_grant_id',
+        'expected_version'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        share_grant_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const IssueOperatorLearnerInvitationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'role_id',
+        'expected_role_version',
+        'cohort_id',
+        'expected_cohort_version',
+        'expires_in_hours',
+        'expected_version'
+    ],
+    properties: {
+        role_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_role_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        cohort_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_cohort_version: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorPositiveVersion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expires_in_hours: {
+            type: 'integer',
+            enum: [
+                24,
+                72,
+                168
+            ]
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        }
+    }
+} as const;
+
+export const OperatorLearnerCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorLearner'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorLearnerEnrollmentCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorLearnerEnrollment'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationLifecycleCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorLearnerInvitation'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorLearnerInvitationCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'activation_code',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorLearnerInvitation'
+        },
+        activation_code: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 20,
+            maxLength: 200
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorOrganizationProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'name',
+        'kind',
+        'status',
+        'timezone',
+        'allowed_actions'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        kind: {
+            type: 'string',
+            enum: [
+                'institution',
+                'platform_direct'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'suspended',
+                'closed'
+            ]
+        },
+        timezone: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        allowed_actions: {
+            type: 'array',
+            maxItems: 0,
+            items: {
+                type: 'string'
+            }
+        }
+    }
+} as const;
+
+export const OperatorOrganizationProfileResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorOrganizationProfile'
+        }
+    }
+} as const;
+
+export const OperatorBranchSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        }
+    }
+} as const;
+
+export const OperatorBranchSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorBranchSummary'
+        },
+        {
+            type: 'object',
+            required: [
+                'status',
+                'version',
+                'created_at',
+                'updated_at',
+                'allowed_actions'
+            ],
+            properties: {
+                status: {
+                    type: 'string',
+                    enum: [
+                        'active',
+                        'archived'
+                    ]
+                },
+                version: {
+                    type: 'integer',
+                    minimum: 1
+                },
+                created_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                updated_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                allowed_actions: {
+                    $ref: '#/components/schemas/OperatorAllowedActions'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorBranchListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorBranch'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorCohortSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name',
+        'status',
+        'version'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 80
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'archived'
+            ]
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorCohortSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorCohortSummary'
+        },
+        {
+            type: 'object',
+            required: [
+                'status',
+                'branch',
+                'version',
+                'created_at',
+                'updated_at',
+                'allowed_actions'
+            ],
+            properties: {
+                status: {
+                    type: 'string',
+                    enum: [
+                        'active',
+                        'archived'
+                    ]
+                },
+                branch: {
+                    oneOf: [
+                        {
+                            $ref: '#/components/schemas/OperatorBranchSummary'
+                        },
+                        {
+                            type: 'null'
+                        }
+                    ]
+                },
+                version: {
+                    type: 'integer',
+                    minimum: 1
+                },
+                created_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                updated_at: {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                allowed_actions: {
+                    $ref: '#/components/schemas/OperatorAllowedActions'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorCohortListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorCohort'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorRoleSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'key',
+        'name',
+        'is_system'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 80
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        is_system: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorStaffMembershipSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'membership_id',
+        'display_name',
+        'membership_type',
+        'status',
+        'joined_at',
+        'ended_at',
+        'roles',
+        'version',
+        'allowed_actions'
+    ],
+    properties: {
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        display_name: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 160
+        },
+        membership_type: {
+            type: 'string',
+            enum: [
+                'trainer',
+                'organization_admin'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'active',
+                'suspended',
+                'ended'
+            ]
+        },
+        joined_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        ended_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        roles: {
+            type: 'array',
+            maxItems: 50,
+            items: {
+                $ref: '#/components/schemas/OperatorRoleSummary'
+            }
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorStaffMembershipListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorStaffMembership'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorInstitutionInviteSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'membership_type',
+        'status',
+        'expires_at',
+        'created_at',
+        'updated_at',
+        'accepted_at',
+        'version',
+        'allowed_actions'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        membership_type: {
+            type: 'string',
+            enum: [
+                'trainer',
+                'organization_admin'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'pending',
+                'accepted',
+                'revoked',
+                'expired'
+            ]
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        accepted_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        accepted_membership_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        version: {
+            type: 'integer',
+            minimum: 1
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorInstitutionInviteListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorInstitutionInvite'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorDelegablePermissionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'description'
+    ],
+    properties: {
+        key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        description: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 320
+        }
+    }
+} as const;
+
+export const OperatorRoleSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorRoleSummary'
+        },
+        {
+            type: 'object',
+            required: [
+                'status',
+                'version',
+                'permission_keys',
+                'assignment_count',
+                'allowed_actions'
+            ],
+            properties: {
+                status: {
+                    type: 'string',
+                    enum: [
+                        'active',
+                        'retired'
+                    ]
+                },
+                version: {
+                    type: 'integer',
+                    minimum: 1
+                },
+                permission_keys: {
+                    type: 'array',
+                    maxItems: 100,
+                    uniqueItems: true,
+                    items: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 120
+                    }
+                },
+                assignment_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                allowed_actions: {
+                    $ref: '#/components/schemas/OperatorAllowedActions'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorRoleListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions',
+        'delegable_permissions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorRole'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        },
+        delegable_permissions: {
+            type: 'array',
+            maxItems: 100,
+            items: {
+                $ref: '#/components/schemas/OperatorDelegablePermission'
+            }
+        }
+    }
+} as const;
+
+export const OperatorAuthorityAppointmentSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'authority_kind',
+        'scope_type',
+        'program_id',
+        'valid_from',
+        'valid_until',
+        'state',
+        'state_fingerprint',
+        'allowed_actions'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        authority_kind: {
+            type: 'string',
+            enum: [
+                'english_academic_reviewer',
+                'kannada_reviewer',
+                'rights_confirmer'
+            ]
+        },
+        scope_type: {
+            type: 'string',
+            enum: [
+                'organization',
+                'program'
+            ]
+        },
+        program_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        valid_from: {
+            type: 'string',
+            format: 'date-time'
+        },
+        valid_until: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'pending',
+                'active',
+                'surrendered',
+                'revoked',
+                'expired'
+            ]
+        },
+        state_fingerprint: {
+            type: 'string',
+            minLength: 64,
+            maxLength: 64,
+            pattern: '^[a-f0-9]{64}$'
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorAuthorityAppointmentDetailSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorAuthorityAppointmentSummary'
+        },
+        {
+            type: 'object',
+            required: [
+                'qualification_basis',
+                'approval_evidence_key'
+            ],
+            properties: {
+                qualification_basis: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 1000
+                },
+                approval_evidence_key: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 120
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorAuthorityAppointmentListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorAuthorityAppointmentSummary'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorAuthorityAppointmentResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorAuthorityAppointmentDetail'
+        }
+    }
+} as const;
+
+export const OperatorTrainerProfileSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorStaffMembership'
+        },
+        {
+            type: 'object',
+            required: [
+                'cohorts',
+                'appointments'
+            ],
+            properties: {
+                membership_type: {
+                    type: 'string',
+                    const: 'trainer'
+                },
+                cohorts: {
+                    type: 'array',
+                    maxItems: 50,
+                    items: {
+                        $ref: '#/components/schemas/OperatorCohortSummary'
+                    }
+                },
+                appointments: {
+                    type: 'array',
+                    maxItems: 50,
+                    items: {
+                        $ref: '#/components/schemas/OperatorAuthorityAppointmentSummary'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorTrainerProfileListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorTrainerProfile'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorMembershipSessionsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'membership_id',
+        'active_web_session_count',
+        'active_android_family_count',
+        'latest_activity_at',
+        'state_fingerprint',
+        'allowed_actions'
+    ],
+    properties: {
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        active_web_session_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        active_android_family_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        latest_activity_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        state_fingerprint: {
+            type: 'string',
+            minLength: 64,
+            maxLength: 64,
+            pattern: '^[a-f0-9]{64}$'
+        },
+        allowed_actions: {
+            $ref: '#/components/schemas/OperatorAllowedActions'
+        }
+    }
+} as const;
+
+export const OperatorMembershipSessionsResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorMembershipSessions'
+        }
+    }
+} as const;
+
+export const OperatorVersionZeroSchema = {
+    type: 'integer',
+    const: 0,
+    example: 0
+} as const;
+
+export const OperatorPositiveVersionSchema = {
+    type: 'integer',
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3
+} as const;
+
+export const CreateOperatorBranchRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'name',
+        'expected_version'
+    ],
+    properties: {
+        key: {
+            type: 'string',
+            pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+            minLength: 1,
+            maxLength: 100
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        }
+    }
+} as const;
+
+export const UpdateOperatorBranchRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'name',
+        'expected_version'
+    ],
+    properties: {
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const OperatorExpectedVersionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_version'
+    ],
+    properties: {
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const CreateOperatorCohortRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'name',
+        'expected_version'
+    ],
+    properties: {
+        key: {
+            type: 'string',
+            pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+            minLength: 1,
+            maxLength: 80
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        branch_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        }
+    }
+} as const;
+
+export const UpdateOperatorCohortRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'name',
+        'expected_version'
+    ],
+    properties: {
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        branch_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const IssueOperatorInstitutionInviteRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'membership_type',
+        'expected_version'
+    ],
+    properties: {
+        membership_type: {
+            type: 'string',
+            enum: [
+                'trainer',
+                'organization_admin'
+            ]
+        },
+        expires_in_hours: {
+            type: 'integer',
+            enum: [
+                24,
+                72,
+                168
+            ],
+            default: 72
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        }
+    }
+} as const;
+
+export const CreateOperatorRoleRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'name',
+        'permission_keys',
+        'expected_version'
+    ],
+    properties: {
+        key: {
+            type: 'string',
+            pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+            minLength: 1,
+            maxLength: 80
+        },
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        permission_keys: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 100,
+            uniqueItems: true,
+            items: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 120
+            }
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorVersionZero'
+        }
+    }
+} as const;
+
+export const UpdateOperatorRoleRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'name',
+        'permission_keys',
+        'expected_version'
+    ],
+    properties: {
+        name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        permission_keys: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 100,
+            uniqueItems: true,
+            items: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 120
+            }
+        },
+        expected_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const OperatorMembershipRoleRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'role_id',
+        'expected_membership_version',
+        'expected_role_version'
+    ],
+    properties: {
+        role_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_membership_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        expected_role_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const OperatorTrainerCohortRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'cohort_id',
+        'expected_membership_version',
+        'expected_cohort_version'
+    ],
+    properties: {
+        cohort_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_membership_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        },
+        expected_cohort_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const CreateOperatorAuthorityAppointmentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'authority_kind',
+        'scope_type',
+        'valid_from',
+        'qualification_basis',
+        'approval_evidence_key',
+        'expected_membership_version'
+    ],
+    properties: {
+        authority_kind: {
+            type: 'string',
+            enum: [
+                'english_academic_reviewer',
+                'kannada_reviewer',
+                'rights_confirmer'
+            ]
+        },
+        scope_type: {
+            type: 'string',
+            enum: [
+                'organization',
+                'program'
+            ]
+        },
+        program_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        valid_from: {
+            type: 'string',
+            format: 'date-time'
+        },
+        valid_until: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        qualification_basis: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 1000
+        },
+        approval_evidence_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        expected_membership_version: {
+            $ref: '#/components/schemas/OperatorPositiveVersion'
+        }
+    }
+} as const;
+
+export const OperatorExpectedStateFingerprintRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'state_fingerprint'
+    ],
+    properties: {
+        state_fingerprint: {
+            type: 'string',
+            minLength: 64,
+            maxLength: 64,
+            pattern: '^[a-f0-9]{64}$',
+            example: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        }
+    }
+} as const;
+
+export const RevokeOperatorAuthorityAppointmentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'reason_key',
+        'state_fingerprint'
+    ],
+    properties: {
+        reason_key: {
+            type: 'string',
+            const: 'operator_revoked'
+        },
+        state_fingerprint: {
+            type: 'string',
+            minLength: 64,
+            maxLength: 64,
+            pattern: '^[a-f0-9]{64}$'
+        }
+    }
+} as const;
+
+export const OperatorBranchCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorBranch'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorCohortCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorCohort'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorStaffMembershipCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorStaffMembership'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorInstitutionInviteCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'activation_code',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorInstitutionInvite'
+        },
+        activation_code: {
+            type: [
+                'string',
+                'null'
+            ],
+            minLength: 20,
+            maxLength: 200
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorInstitutionInviteLifecycleCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorInstitutionInvite'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorRoleCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorRole'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorTrainerProfileCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorTrainerProfile'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorAuthorityAppointmentCommandResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorAuthorityAppointmentDetail'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorMembershipSessionRevocationResultSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorMembershipSessions'
+        },
+        {
+            type: 'object',
+            required: [
+                'revoked_web_session_count',
+                'revoked_android_family_count'
+            ],
+            properties: {
+                revoked_web_session_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                revoked_android_family_count: {
+                    type: 'integer',
+                    minimum: 0
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorMembershipSessionRevocationResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'replayed'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorMembershipSessionRevocationResult'
+        },
+        replayed: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorContentKeySchema = {
+    type: 'string',
+    minLength: 1,
+    maxLength: 120,
+    pattern: '^[a-z0-9][a-z0-9._-]{0,119}$'
+} as const;
+
+export const OperatorContentGraphKeySchema = {
+    type: 'string',
+    minLength: 1,
+    maxLength: 100,
+    pattern: '^[a-z0-9][a-z0-9._-]{0,99}$'
+} as const;
+
+export const OperatorContentActionSchema = {
+    type: 'string',
+    enum: [
+        'create_program',
+        'correct_descriptor',
+        'edit_graph',
+        'submit_structure',
+        'create_document',
+        'abandon',
+        'translate',
+        'review_structure',
+        'review_english',
+        'review_kannada',
+        'publish_now',
+        'schedule',
+        'activate',
+        'cancel_schedule',
+        'retire',
+        'rollback',
+        'create_successor'
+    ]
+} as const;
+
+export const OperatorContentBlockerSchema = {
+    type: 'string',
+    enum: [
+        'workspace_incomplete',
+        'workspace_in_review',
+        'workspace_abandoned',
+        'workspace_sealed',
+        'legacy_level_assignment_required',
+        'graph_missing',
+        'graph_review_missing',
+        'graph_review_rejected',
+        'english_review_missing',
+        'kannada_variant_missing',
+        'kannada_review_missing',
+        'media_required_missing',
+        'media_rights_missing',
+        'evidence_invalid',
+        'publication_suspended',
+        'schedule_pending',
+        'schedule_not_due'
+    ]
+} as const;
+
+export const OperatorContentWorkspaceIdentitySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'program_key',
+        'program_internal_name',
+        'descriptor_version',
+        'curriculum_version_id',
+        'version_key',
+        'source_curriculum_version_id',
+        'source_curriculum_publication_id',
+        'state',
+        'workspace_version',
+        'current_draft_revision_id',
+        'submitted_graph_revision_id',
+        'publication_head_version',
+        'active_publication_id',
+        'publication_suspended'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        program_internal_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        descriptor_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        source_curriculum_version_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        source_curriculum_publication_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'draft',
+                'in_review',
+                'sealed',
+                'abandoned'
+            ]
+        },
+        workspace_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        current_draft_revision_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        submitted_graph_revision_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        publication_head_version: {
+            type: 'integer',
+            minimum: 0
+        },
+        active_publication_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        publication_suspended: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorContentWorkspaceSummarySchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentWorkspaceIdentity'
+        },
+        {
+            type: 'object',
+            required: [
+                'graph_hash',
+                'is_complete',
+                'blocker_codes',
+                'allowed_actions'
+            ],
+            properties: {
+                graph_hash: {
+                    oneOf: [
+                        {
+                            $ref: '#/components/schemas/Sha256'
+                        },
+                        {
+                            type: 'null'
+                        }
+                    ]
+                },
+                is_complete: {
+                    type: 'boolean'
+                },
+                blocker_codes: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentBlocker'
+                    }
+                },
+                allowed_actions: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentAction'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentWorkspaceListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorContentWorkspaceSummary'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAction'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentGraphLevelInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'sequence'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorContentGraphObjectiveInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'outcome_code',
+        'sequence',
+        'prerequisite_keys'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        outcome_code: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120,
+            pattern: '^[A-Z0-9][A-Z0-9_]{0,119}$'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        prerequisite_keys: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphKey'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentGraphModuleInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'level_key',
+        'sequence',
+        'estimated_minutes'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        level_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        estimated_minutes: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 1,
+            maximum: 10000
+        }
+    }
+} as const;
+
+export const OperatorContentGraphLessonInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'module_key',
+        'sequence',
+        'objective_keys'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        module_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        objective_keys: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphKey'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentGraphItemInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'lesson_key',
+        'content_document_key',
+        'item_type',
+        'sequence'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        lesson_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        content_document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        item_type: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 48,
+            pattern: '^[a-z][a-z0-9_]{0,47}$'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const OperatorContentGraphDeliveryBundleInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'key',
+        'instruction_document_key',
+        'sequence',
+        'item_keys'
+    ],
+    properties: {
+        key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        instruction_document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        item_keys: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphKey'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentDraftGraphInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'levels',
+        'objectives',
+        'modules',
+        'lessons',
+        'items',
+        'delivery_bundles'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.curriculum-draft-graph.v2'
+        },
+        levels: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphLevelInput'
+            }
+        },
+        objectives: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphObjectiveInput'
+            }
+        },
+        modules: {
+            type: 'array',
+            maxItems: 100,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphModuleInput'
+            }
+        },
+        lessons: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphLessonInput'
+            }
+        },
+        items: {
+            type: 'array',
+            maxItems: 2000,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphItemInput'
+            }
+        },
+        delivery_bundles: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentGraphDeliveryBundleInput'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentCanonicalGraphLevelSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphLevelInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalGraphObjectiveSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphObjectiveInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id',
+                'prerequisite_objective_ids'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                prerequisite_objective_ids: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalGraphModuleSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphModuleInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id',
+                'level_id'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                level_id: {
+                    $ref: '#/components/schemas/Ulid'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalGraphLessonSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphLessonInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id',
+                'module_id',
+                'objective_ids'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                module_id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                objective_ids: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalGraphItemSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphItemInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id',
+                'lesson_id',
+                'content_document_id'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                lesson_id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                content_document_id: {
+                    $ref: '#/components/schemas/Ulid'
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalGraphDeliveryBundleSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentGraphDeliveryBundleInput'
+        },
+        {
+            type: 'object',
+            required: [
+                'id',
+                'instruction_content_document_id',
+                'item_ids'
+            ],
+            properties: {
+                id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                instruction_content_document_id: {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                item_ids: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/Ulid'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentCanonicalDraftGraphSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'organization_id',
+        'curriculum_version_id',
+        'levels',
+        'objectives',
+        'modules',
+        'lessons',
+        'items',
+        'delivery_bundles'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.curriculum-draft-graph.v2'
+        },
+        organization_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        levels: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphLevel'
+            }
+        },
+        objectives: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphObjective'
+            }
+        },
+        modules: {
+            type: 'array',
+            maxItems: 100,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphModule'
+            }
+        },
+        lessons: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphLesson'
+            }
+        },
+        items: {
+            type: 'array',
+            maxItems: 2000,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphItem'
+            }
+        },
+        delivery_bundles: {
+            type: 'array',
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/OperatorContentCanonicalGraphDeliveryBundle'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentDraftGraphRevisionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'revision_id',
+        'revision_number',
+        'graph_hash',
+        'is_complete',
+        'blocker_codes',
+        'authored_by_membership_id',
+        'authored_at',
+        'value'
+    ],
+    properties: {
+        revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        graph_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        is_complete: {
+            type: 'boolean'
+        },
+        blocker_codes: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentBlocker'
+            }
+        },
+        authored_by_membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        authored_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        value: {
+            $ref: '#/components/schemas/OperatorContentCanonicalDraftGraph'
+        }
+    }
+} as const;
+
+export const OperatorContentTypeSchema = {
+    type: 'string',
+    enum: [
+        'assessment_rationale',
+        'dialogue',
+        'explanation',
+        'feedback',
+        'instruction',
+        'learner_action',
+        'model_text',
+        'safety_note',
+        'title',
+        'transcript'
+    ]
+} as const;
+
+export const OperatorContentDocumentSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'content_document_id',
+        'document_key',
+        'content_type',
+        'learner_visible',
+        'localization_requirement',
+        'payload_schema',
+        'source_revision_id',
+        'source_revision_number',
+        'source_content_hash'
+    ],
+    properties: {
+        content_document_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        content_type: {
+            $ref: '#/components/schemas/OperatorContentType'
+        },
+        learner_visible: {
+            type: 'boolean'
+        },
+        localization_requirement: {
+            type: 'string',
+            enum: [
+                'kn_required',
+                'english_only_pedagogical'
+            ]
+        },
+        payload_schema: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        }
+    }
+} as const;
+
+export const OperatorContentAppointmentChoiceSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'authority_kind'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        authority_kind: {
+            type: 'string',
+            enum: [
+                'english_academic_reviewer',
+                'kannada_reviewer'
+            ]
+        }
+    }
+} as const;
+
+export const OperatorContentAppointmentChoicesSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'english',
+        'kannada'
+    ],
+    properties: {
+        english: {
+            type: 'array',
+            maxItems: 50,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAppointmentChoice'
+            }
+        },
+        kannada: {
+            type: 'array',
+            maxItems: 50,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAppointmentChoice'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentReadinessSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'blocker_codes',
+        'ready'
+    ],
+    properties: {
+        blocker_codes: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentBlocker'
+            }
+        },
+        ready: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const OperatorContentWorkspaceDetailSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentWorkspaceIdentity'
+        },
+        {
+            type: 'object',
+            required: [
+                'graph',
+                'documents',
+                'document_count',
+                'documents_truncated',
+                'readiness',
+                'appointment_choices',
+                'allowed_actions'
+            ],
+            properties: {
+                graph: {
+                    oneOf: [
+                        {
+                            $ref: '#/components/schemas/OperatorContentDraftGraphRevision'
+                        },
+                        {
+                            type: 'null'
+                        }
+                    ]
+                },
+                documents: {
+                    type: 'array',
+                    maxItems: 25,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentDocumentSummary'
+                    }
+                },
+                document_count: {
+                    type: 'integer',
+                    minimum: 0
+                },
+                documents_truncated: {
+                    type: 'boolean'
+                },
+                readiness: {
+                    $ref: '#/components/schemas/OperatorContentReadiness'
+                },
+                appointment_choices: {
+                    $ref: '#/components/schemas/OperatorContentAppointmentChoices'
+                },
+                allowed_actions: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentAction'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentWorkspaceResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorContentWorkspaceDetail'
+        }
+    }
+} as const;
+
+export const OperatorGovernedTextPayloadSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'text'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.governed-text.v1'
+        },
+        text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        }
+    }
+} as const;
+
+export const OperatorDailyMissionCheckOptionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'label'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        label: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        }
+    }
+} as const;
+
+export const OperatorDailyMissionCheckSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'prompt',
+        'options',
+        'correct_option_id'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        prompt: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        },
+        options: {
+            type: 'array',
+            minItems: 2,
+            maxItems: 6,
+            items: {
+                $ref: '#/components/schemas/OperatorDailyMissionCheckOption'
+            }
+        },
+        correct_option_id: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        }
+    }
+} as const;
+
+export const OperatorDailyMissionSourcePayloadSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'goal_key',
+        'estimated_minutes',
+        'title',
+        'model_text',
+        'transcript',
+        'can_do',
+        'model_audio_duration_ms',
+        'check'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.daily-speaking-mission.v1'
+        },
+        goal_key: {
+            type: 'string',
+            enum: [
+                'everyday-conversation',
+                'workplace-confidence',
+                'travel-confidence'
+            ]
+        },
+        estimated_minutes: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 60
+        },
+        title: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        },
+        model_text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        },
+        transcript: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        },
+        can_do: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        },
+        model_audio_duration_ms: {
+            type: 'integer',
+            minimum: 250,
+            maximum: 300000
+        },
+        check: {
+            $ref: '#/components/schemas/OperatorDailyMissionCheck'
+        }
+    }
+} as const;
+
+export const OperatorGovernedSourcePayloadSchema = {
+    oneOf: [
+        {
+            $ref: '#/components/schemas/OperatorGovernedTextPayload'
+        },
+        {
+            $ref: '#/components/schemas/OperatorDailyMissionSourcePayload'
+        }
+    ]
+} as const;
+
+export const OperatorDailyMissionKannadaPayloadSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'schema',
+        'guidance'
+    ],
+    properties: {
+        schema: {
+            type: 'string',
+            const: 'global-english.daily-speaking-mission.v1'
+        },
+        guidance: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8000
+        }
+    }
+} as const;
+
+export const OperatorGovernedKannadaPayloadSchema = {
+    oneOf: [
+        {
+            $ref: '#/components/schemas/OperatorGovernedTextPayload'
+        },
+        {
+            $ref: '#/components/schemas/OperatorDailyMissionKannadaPayload'
+        }
+    ]
+} as const;
+
+export const OperatorContentPreviewEnglishSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'locale',
+        'revision_id',
+        'revision_number',
+        'content_hash',
+        'payload'
+    ],
+    properties: {
+        locale: {
+            type: 'string',
+            const: 'en-IN'
+        },
+        revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        payload: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Exact inert stored payload; unknown legacy schemas remain read-only.'
+        }
+    }
+} as const;
+
+export const OperatorContentPreviewKannadaSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'locale',
+        'variant_id',
+        'revision_number',
+        'content_hash',
+        'payload'
+    ],
+    properties: {
+        locale: {
+            type: 'string',
+            const: 'kn-IN'
+        },
+        variant_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        payload: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Exact inert stored Kannada payload.'
+        }
+    }
+} as const;
+
+export const OperatorContentPreviewMediaSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'media_asset_id',
+        'key',
+        'asset_kind',
+        'usage_key',
+        'sequence',
+        'readiness'
+    ],
+    properties: {
+        media_asset_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        asset_kind: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 48
+        },
+        usage_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 48
+        },
+        sequence: {
+            type: 'integer',
+            minimum: 1
+        },
+        readiness: {
+            type: 'string',
+            enum: [
+                'ready',
+                'missing_rights',
+                'rights_blocked'
+            ]
+        }
+    }
+} as const;
+
+export const OperatorContentPreviewSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'content_document_id',
+        'document_key',
+        'content_type',
+        'localization_requirement',
+        'read_only',
+        'english',
+        'kannada',
+        'media'
+    ],
+    properties: {
+        content_document_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        content_type: {
+            $ref: '#/components/schemas/OperatorContentType'
+        },
+        localization_requirement: {
+            type: 'string',
+            enum: [
+                'kn_required',
+                'english_only_pedagogical'
+            ]
+        },
+        read_only: {
+            type: 'boolean'
+        },
+        english: {
+            $ref: '#/components/schemas/OperatorContentPreviewEnglish'
+        },
+        kannada: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorContentPreviewKannada'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        media: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorContentPreviewMedia'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentPreviewResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data'
+    ],
+    properties: {
+        data: {
+            $ref: '#/components/schemas/OperatorContentPreview'
+        }
+    }
+} as const;
+
+export const OperatorContentReviewDecisionSchema = {
+    oneOf: [
+        {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected',
+                'withdrawn'
+            ]
+        },
+        {
+            type: 'null'
+        }
+    ]
+} as const;
+
+export const OperatorContentStructureQueueItemSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'program_key',
+        'curriculum_version_id',
+        'version_key',
+        'graph_revision_id',
+        'graph_revision_number',
+        'graph_hash',
+        'latest_decision',
+        'appointment_choices',
+        'allowed_actions'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        version_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        graph_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        graph_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        graph_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        latest_decision: {
+            $ref: '#/components/schemas/OperatorContentReviewDecision'
+        },
+        appointment_choices: {
+            type: 'array',
+            maxItems: 50,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAppointmentChoice'
+            }
+        },
+        allowed_actions: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAction'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentSourceQueueItemSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'program_key',
+        'curriculum_version_id',
+        'content_document_id',
+        'document_key',
+        'source_revision_id',
+        'source_revision_number',
+        'source_content_hash',
+        'localized_variant_id',
+        'localized_variant_revision_number',
+        'localized_content_hash',
+        'latest_decision',
+        'appointment_choices',
+        'allowed_actions'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        program_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        content_document_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        localized_variant_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        localized_variant_revision_number: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 1
+        },
+        localized_content_hash: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Sha256'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        latest_decision: {
+            $ref: '#/components/schemas/OperatorContentReviewDecision'
+        },
+        appointment_choices: {
+            type: 'array',
+            maxItems: 50,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAppointmentChoice'
+            }
+        },
+        allowed_actions: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAction'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentReadinessQueueItemSchema = {
+    unevaluatedProperties: false,
+    allOf: [
+        {
+            $ref: '#/components/schemas/OperatorContentWorkspaceIdentity'
+        },
+        {
+            type: 'object',
+            required: [
+                'blocker_codes',
+                'ready',
+                'allowed_actions'
+            ],
+            properties: {
+                blocker_codes: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentBlocker'
+                    }
+                },
+                ready: {
+                    type: 'boolean'
+                },
+                allowed_actions: {
+                    type: 'array',
+                    uniqueItems: true,
+                    items: {
+                        $ref: '#/components/schemas/OperatorContentAction'
+                    }
+                }
+            }
+        }
+    ]
+} as const;
+
+export const OperatorContentReviewQueueListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor',
+        'allowed_actions'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                oneOf: [
+                    {
+                        $ref: '#/components/schemas/OperatorContentStructureQueueItem'
+                    },
+                    {
+                        $ref: '#/components/schemas/OperatorContentSourceQueueItem'
+                    },
+                    {
+                        $ref: '#/components/schemas/OperatorContentReadinessQueueItem'
+                    }
+                ]
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        allowed_actions: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentAction'
+            }
+        }
+    }
+} as const;
+
+export const OperatorContentHistoryEventSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'event_kind',
+        'actor_membership_id',
+        'occurred_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        event_kind: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        actor_membership_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        occurred_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorContentHistoryListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'data',
+        'next_cursor'
+    ],
+    properties: {
+        data: {
+            type: 'array',
+            maxItems: 25,
+            items: {
+                $ref: '#/components/schemas/OperatorContentHistoryEvent'
+            }
+        },
+        next_cursor: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/OperatorCursor'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    }
+} as const;
+
+export const CreateOperatorContentProgramRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_key',
+        'internal_name',
+        'version_key',
+        'expected_version'
+    ],
+    properties: {
+        program_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        internal_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        version_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        expected_version: {
+            type: 'integer',
+            const: 0
+        }
+    }
+} as const;
+
+export const CorrectOperatorContentProgramDescriptorRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'internal_name',
+        'expected_descriptor_version'
+    ],
+    properties: {
+        internal_name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 160
+        },
+        expected_descriptor_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const CreateOperatorContentSuccessorRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'successor_version_key',
+        'expected_source_version'
+    ],
+    properties: {
+        successor_version_key: {
+            $ref: '#/components/schemas/OperatorContentGraphKey'
+        },
+        expected_source_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const SaveOperatorContentGraphRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_workspace_version',
+        'graph'
+    ],
+    properties: {
+        expected_workspace_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        graph: {
+            $ref: '#/components/schemas/OperatorContentDraftGraphInput'
+        }
+    }
+} as const;
+
+export const VersionedOperatorContentWorkspaceRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_workspace_version'
+    ],
+    properties: {
+        expected_workspace_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const AbandonOperatorContentWorkspaceRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_workspace_version',
+        'reason_key'
+    ],
+    properties: {
+        expected_workspace_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        reason_key: {
+            type: 'string',
+            enum: [
+                'work_discontinued',
+                'superseded',
+                'created_in_error'
+            ]
+        }
+    }
+} as const;
+
+export const CreateOperatorContentDocumentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'document_key',
+        'content_type',
+        'learner_visible',
+        'payload',
+        'expected_workspace_version'
+    ],
+    properties: {
+        document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        content_type: {
+            $ref: '#/components/schemas/OperatorContentType'
+        },
+        learner_visible: {
+            type: 'boolean'
+        },
+        payload: {
+            $ref: '#/components/schemas/OperatorGovernedSourcePayload'
+        },
+        expected_workspace_version: {
+            type: 'integer',
+            minimum: 1
+        }
+    }
+} as const;
+
+export const AppendOperatorEnglishContentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'expected_head_revision_id',
+        'expected_revision_number',
+        'content_type',
+        'learner_visible',
+        'payload'
+    ],
+    properties: {
+        expected_head_revision_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_revision_number: {
+            type: 'integer',
+            minimum: 0
+        },
+        content_type: {
+            $ref: '#/components/schemas/OperatorContentType'
+        },
+        learner_visible: {
+            type: 'boolean'
+        },
+        payload: {
+            $ref: '#/components/schemas/OperatorGovernedSourcePayload'
+        }
+    }
+} as const;
+
+export const AppendOperatorKannadaContentRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source_content_hash',
+        'expected_source_revision_number',
+        'expected_head_variant_id',
+        'expected_variant_revision_number',
+        'payload'
+    ],
+    properties: {
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        expected_source_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        expected_head_variant_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        expected_variant_revision_number: {
+            type: 'integer',
+            minimum: 0
+        },
+        payload: {
+            $ref: '#/components/schemas/OperatorGovernedKannadaPayload'
+        }
+    }
+} as const;
+
+export const RecordOperatorStructureContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'curriculum_graph_revision_id',
+        'graph_hash',
+        'authority_appointment_id',
+        'decision',
+        'rationale_key'
+    ],
+    properties: {
+        curriculum_graph_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        graph_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        decision: {
+            type: 'string',
+            enum: [
+                'approved',
+                'rejected'
+            ]
+        },
+        rationale_key: {
+            type: 'string',
+            enum: [
+                'meets_standard',
+                'structure_revision_required'
+            ],
+            description: 'Must be meets_standard for approval and structure_revision_required for rejection.'
+        }
+    }
+} as const;
+
+export const WithdrawOperatorContentReviewRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'review_kind',
+        'authority_appointment_id',
+        'rationale_key'
+    ],
+    properties: {
+        review_kind: {
+            type: 'string',
+            enum: [
+                'structure',
+                'english',
+                'kannada'
+            ]
+        },
+        authority_appointment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        rationale_key: {
+            type: 'string',
+            const: 'evidence_withdrawn'
+        }
+    }
+} as const;
+
+export const ScheduleOperatorContentPublicationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'curriculum_version_id',
+        'activation_at',
+        'expected_head_version'
+    ],
+    properties: {
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        activation_at: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Future activation instant with an explicit UTC offset.'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const ActivateOperatorContentPublicationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'expected_head_version'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const CancelOperatorContentPublicationScheduleRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'publication_id',
+        'expected_head_version',
+        'reason_key'
+    ],
+    properties: {
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        },
+        reason_key: {
+            type: 'string',
+            enum: [
+                'schedule_replaced',
+                'release_withdrawn',
+                'timing_changed'
+            ]
+        }
+    }
+} as const;
+
+export const RetireOperatorContentPublicationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'program_id',
+        'expected_head_version',
+        'reason_key'
+    ],
+    properties: {
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        expected_head_version: {
+            type: 'integer',
+            minimum: 0
+        },
+        reason_key: {
+            type: 'string',
+            enum: [
+                'verified_release_retirement',
+                'release_no_longer_current'
+            ]
+        }
+    }
+} as const;
+
+export const OperatorContentWorkspaceCommandResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'result_type',
+        'result_id',
+        'replayed'
+    ],
+    properties: {
+        result_type: {
+            type: 'string',
+            enum: [
+                'program',
+                'curriculum_workspace',
+                'curriculum_draft_graph_revision',
+                'curriculum_graph_revision',
+                'content_document',
+                'content_revision',
+                'localized_variant'
+            ]
+        },
+        result_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        replayed: {
+            type: 'boolean'
+        },
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        descriptor_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_curriculum_publication_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        workspace_version: {
+            type: 'integer',
+            minimum: 1
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'draft',
+                'in_review',
+                'sealed',
+                'abandoned'
+            ]
+        },
+        draft_revision_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        draft_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        graph_revision_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        graph_hash: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Sha256'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        blocker_codes: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+                $ref: '#/components/schemas/OperatorContentBlocker'
+            }
+        },
+        is_complete: {
+            type: 'boolean'
+        },
+        content_document_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        document_key: {
+            $ref: '#/components/schemas/OperatorContentKey'
+        },
+        source_revision_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        source_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        source_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        localized_variant_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        variant_revision_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        localized_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        }
+    }
+} as const;
+
+export const OperatorContentGovernanceResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    minProperties: 1,
+    properties: {
+        curriculum_graph_review_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        withdrawal_review_id: {
+            $ref: '#/components/schemas/Ulid'
+        }
+    }
+} as const;
+
+export const OperatorContentPublicationLifecycleResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'replayed',
+        'head_version'
+    ],
+    properties: {
+        replayed: {
+            type: 'boolean'
+        },
+        program_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        curriculum_version_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        manifest_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        activation_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        activated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        cancelled_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        head_version: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
 export const OperatorContentDraftSchema = {
     type: 'object',
     additionalProperties: false,
@@ -3452,6 +9330,446 @@ export const ProblemDetailsSchema = {
         correlation_id: {
             type: 'string',
             format: 'uuid'
+        }
+    }
+} as const;
+
+export const OrganizationAdministrationProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.fresh_mfa_required',
+                        'problem.organization_administration.stale_state',
+                        'problem.organization_administration.idempotency_conflict',
+                        'problem.organization_administration.last_manager_required',
+                        'problem.organization_administration.active_dependency',
+                        'problem.organization_administration.self_target_forbidden'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:organization-administration-stale-state',
+        title: 'Resource state changed',
+        status: 409,
+        detail: 'Reload the resource and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.organization_administration.stale_state',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const LearnerAdministrationProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.learner_administration.stale_state',
+                        'problem.learner_administration.idempotency_conflict',
+                        'problem.learner_administration.active_dependency',
+                        'problem.learner_administration.unsafe_role'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:learner-administration-stale-state',
+        title: 'Resource state changed',
+        status: 409,
+        detail: 'Reload the learner relationship and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.learner_administration.stale_state',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const ContentWorkspaceProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.content_workspace.not_found',
+                        'problem.content_workspace.stale_version',
+                        'problem.content_workspace.idempotency_conflict',
+                        'problem.content_workspace.state_conflict',
+                        'problem.content_workspace.head_conflict',
+                        'problem.content_workspace.concurrent_change'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:content-workspace-stale-version',
+        title: 'Content state changed',
+        status: 409,
+        detail: 'Reload the content workspace and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.content_workspace.stale_version',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const MediaLibraryProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.media_library.not_found',
+                        'problem.media_library.stale_upload',
+                        'problem.media_library.stale_metadata',
+                        'problem.media_library.stale_lifecycle',
+                        'problem.media_library.stale_workspace',
+                        'problem.media_library.idempotency_conflict',
+                        'problem.media_library.duplicate_use',
+                        'problem.media_library.storage_failure',
+                        'problem.media_library.concurrent_change'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:media-library-stale-upload',
+        title: 'Upload state changed',
+        status: 409,
+        detail: 'Reload the upload and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.media_library.stale_upload',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const PasswordSignInWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'password'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        }
+    }
+} as const;
+
+export const MobilePasswordSignInWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'password',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const MobileFederatedSignInWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'ticket',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        ticket: {
+            type: 'string',
+            minLength: 20,
+            maxLength: 128,
+            writeOnly: true
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const PasswordInvitationEnrollmentWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'invitation_code',
+        'username',
+        'password'
+    ],
+    properties: {
+        invitation_code: {
+            type: 'string',
+            minLength: 12,
+            maxLength: 128,
+            writeOnly: true
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            $ref: '#/components/schemas/NewPassword'
+        }
+    }
+} as const;
+
+export const PasswordEstablishmentWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'username',
+        'password'
+    ],
+    properties: {
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            $ref: '#/components/schemas/NewPassword'
+        }
+    }
+} as const;
+
+export const PasswordChangeWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'current_password',
+        'new_password'
+    ],
+    properties: {
+        current_password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        },
+        new_password: {
+            $ref: '#/components/schemas/NewPassword'
+        }
+    }
+} as const;
+
+export const PasswordRecoveryCompletionWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'challenge_id',
+        'username',
+        'token',
+        'new_password'
+    ],
+    properties: {
+        challenge_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        token: {
+            type: 'string',
+            minLength: 32,
+            maxLength: 256,
+            writeOnly: true
+        },
+        new_password: {
+            $ref: '#/components/schemas/NewPassword'
+        }
+    }
+} as const;
+
+export const PasswordSetupCompletionWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'challenge_id',
+        'username',
+        'token',
+        'password'
+    ],
+    properties: {
+        challenge_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        username: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        token: {
+            type: 'string',
+            minLength: 32,
+            maxLength: 256,
+            writeOnly: true
+        },
+        password: {
+            $ref: '#/components/schemas/NewPassword'
+        }
+    }
+} as const;
+
+export const PlatformAccountSetupRequestWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'target_user_id',
+        'reason_key',
+        'evidence_reference'
+    ],
+    properties: {
+        target_user_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.migration_setup'
+        },
+        evidence_reference: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 160,
+            writeOnly: true
+        }
+    }
+} as const;
+
+export const PlatformRecoveryContactReplacementWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'contact_type',
+        'contact',
+        'reason_key',
+        'evidence_reference'
+    ],
+    properties: {
+        contact_type: {
+            type: 'string',
+            enum: [
+                'email',
+                'phone'
+            ]
+        },
+        contact: {
+            type: 'string',
+            maxLength: 254,
+            writeOnly: true
+        },
+        reason_key: {
+            type: 'string',
+            const: 'account_recovery.verified_contact_replacement'
+        },
+        evidence_reference: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 160,
+            writeOnly: true
         }
     }
 } as const;

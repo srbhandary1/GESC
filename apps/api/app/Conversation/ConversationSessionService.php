@@ -7,6 +7,7 @@ namespace App\Conversation;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\ConversationUiLocales;
 use App\Conversation\Support\RoleplayStages;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -20,6 +21,7 @@ final readonly class ConversationSessionService
         private ConversationEnvironmentGate $environment,
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -47,6 +49,10 @@ final readonly class ConversationSessionService
             $context = $this->authority->require($learner);
             $membershipId = (string) $context->membershipId;
             $mode = $this->resolveMode($personaKey, $scenarioKey);
+
+            if ($mode === 'roleplay') {
+                $this->entitlements->assertRoleplay($learner);
+            }
             $fingerprint = $this->commands->fingerprint([
                 'coaching_mode' => $coachingMode,
                 'mode' => $mode,

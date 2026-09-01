@@ -25,10 +25,14 @@ import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
+import {
+  isFederatedAccountAuthentication,
+  isPasswordFormAuthentication,
+} from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
-import { PreSignInSplash } from './auth/PreSignInSplash'
-import { ConversationJourney } from './conversation/ConversationJourney'
+import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
+import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { curriculumByLevelId } from './demo/curriculum/levelCurriculum'
 import {
@@ -53,6 +57,8 @@ import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import { ProgressDashboard } from './learner/ProgressDashboard'
 import { LevelPathPanel } from './learner/LevelPathPanel'
+import { SubscriptionPanel } from './subscriptions/SubscriptionPanel'
+import type { LearnerEntitlement } from './subscriptions/LearnerSubscriptionApi'
 import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
 import type { LevelSessionsApi } from './learner/LevelSessionsApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
@@ -170,10 +176,18 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
-  const [practiceSurface, setPracticeSurface] = useState<
-    'confidence' | 'roleplay'
-  >('confidence')
-  const { scheme, toggleScheme } = useColorScheme()
+  const [speakMode, setSpeakMode] = useState<'everyday' | 'situation'>(
+    'everyday',
+  )
+  const [entitlement, setEntitlement] = useState<LearnerEntitlement | null>(
+    null,
+  )
+  const [boundConversation, setBoundConversation] =
+    useState<FriendSession | null>(null)
+  const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
+  const [locationHash, setLocationHash] = useState(
+    () => globalThis.location?.hash ?? '',
+  )
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -434,10 +448,74 @@ function App({
       currentDestination={destination}
       hidePrimaryNavigation={showPreSignInGate}
       headerActions={
-        <div className="shell-header-tools">
-          {demoMode ? (
-            <a className="shell-profile-link" href="#profile">
-              <LocalizedMessage resolution={message('shell.profile_label')} />
+        <div className="shell-header-actions">
+          {androidAuthentication !== null &&
+          session.status === 'authenticated' ? (
+            <>
+              <p className="shell-account-menu__status" role="status">
+                <LocalizedMessage
+                  resolution={message(sessionMessageKey(session))}
+                />
+              </p>
+              <button
+                className="shell-header-authentication"
+                type="button"
+                onClick={() => {
+                  void androidAuthentication
+                    .logout()
+                    .then(() => setSession({ status: 'anonymous' }))
+                    .catch(() => setSession({ status: 'unavailable' }))
+                }}
+              >
+                <LocalizedMessage
+                  resolution={message('session.android_sign_out')}
+                />
+              </button>
+            </>
+          ) : null}
+          {!demoMode &&
+          (authentication.transport === 'sanctum-cookie' ||
+            androidAuthentication !== null) &&
+          (session.status === 'anonymous' ||
+            session.status === 'unavailable') ? (
+            <>
+              {session.status === 'unavailable' ? (
+                <p className="shell-account-menu__status" role="status">
+                  <LocalizedMessage
+                    resolution={message('session.unavailable')}
+                  />
+                </p>
+              ) : null}
+            <a
+              className={
+                showDedicatedSignIn
+                  ? 'shell-header-authentication shell-header-authentication--quiet'
+                  : 'shell-header-authentication'
+              }
+              href={showDedicatedSignIn ? '#home' : '#sign-in'}
+              onClick={(event) => {
+                // Own the navigation: React flushes this click's state update
+                // before the browser follows the link, so the toggled href
+                // would otherwise navigate to the *new* target.
+                event.preventDefault()
+
+                if (showDedicatedSignIn) {
+                  globalThis.location.hash = '#home'
+                  setDestination('home')
+                  setLocationHash('#home')
+                  return
+                }
+
+                globalThis.location.hash = '#sign-in'
+                setDestination('home')
+                setLocationHash('#sign-in')
+              }}
+            >
+              <LocalizedMessage
+                resolution={message(
+                  showDedicatedSignIn ? 'nav.home' : 'session.label',
+                )}
+              />
             </a>
           ) : null}
           <ThemeToggle
@@ -632,28 +710,40 @@ function App({
                 localizationPolicy={localizationPolicy}
                 onLocaleChange={setLocale}
               />
-            ) : (
-              <LearnerLevelsSurface
-                audioRecorder={audioRecorder}
-                conversationApi={conversationApi}
-                createClientId={createClientId}
-                demoMode={demoMode}
-                demoOrganization={demoOrganization}
-                learnerJourneyApi={learnerJourneyApi}
-                levelSessionsApi={levelSessionsApi}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                offlineBinding={offlineBinding}
-                offlineStore={offlineStore}
-                onLocaleChange={setLocale}
-                resumeBundle={offlineResume?.storedBundle}
-              />
-            )}
-          </>
-        ) : canPractice ? (
-          practiceSurface === 'roleplay' ? (
-            <RoleplayJourney
-              api={conversationApi}
+            </div>
+          </section>
+        ) : null}
+
+        {showDemoMission ? (
+          <LearnerJourney
+            api={learnerJourneyApi}
+            audioRecorder={audioRecorder}
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            offlineBinding={offlineBinding}
+            offlineStore={offlineStore}
+            resumeBundle={offlineResume?.storedBundle}
+          />
+        ) : showDemoPhase1 ? (
+          <DemoPhase1Shell
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : canHomeLearner ? (
+          <div className="learner-stack">
+            <TutorHomeHero
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+            />
+            <SubscriptionPanel
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onChange={setEntitlement}
+            />
+            <LearnerJourney
+              api={learnerJourneyApi}
+              audioRecorder={audioRecorder}
               createClientId={createClientId}
               locale={locale}
               localizationPolicy={localizationPolicy}
@@ -661,32 +751,64 @@ function App({
                 setPracticeSurface('confidence')
               }}
             />
-          ) : (
-            <>
-              <div className="shell-practice-switch">
-                <button
-                  onClick={() => {
-                    setPracticeSurface('roleplay')
-                  }}
-                  type="button"
-                >
-                  <LocalizedMessage
-                    resolution={message(
-                      'conversation.roleplay.entry_button',
-                    )}
-                  />
-                </button>
-              </div>
-              <ConversationJourney
-                api={conversationApi}
-                createClientId={createClientId}
-                demoMode={demoMode}
-                listenLines={practiceListenLines}
+          </div>
+        ) : canLearnPath ? (
+          <>
+            {!demoMode ? (
+              <SubscriptionPanel
                 locale={locale}
                 localizationPolicy={localizationPolicy}
+                onChange={setEntitlement}
               />
-            </>
-          )
+            ) : null}
+            <LevelPathPanel
+              api={levelSessionsApi}
+              conversationApi={conversationApi}
+              createClientId={createClientId}
+              demoMode={demoMode}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onOpenRoleplay={() => {
+                setBoundConversation(null)
+                setSpeakMode('situation')
+                globalThis.location.hash = '#speak'
+              }}
+            />
+          </>
+        ) : canSpeak ? (
+          <>
+            {!demoMode ? (
+              <SubscriptionPanel
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                onChange={setEntitlement}
+              />
+            ) : null}
+            <SpeakRoom
+              allowsRoleplay={
+                demoMode || entitlement?.allows_roleplay === true
+              }
+              api={conversationApi}
+              createClientId={createClientId}
+              demoMode={demoMode}
+              initialMode={speakMode}
+              initialSession={boundConversation ?? undefined}
+              key={`speak-${speakMode}-${boundConversation?.id ?? 'unbound'}`}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+            />
+          </>
+        ) : canTuition ? (
+          <TuitionRequestPanel
+            api={
+              demoMode
+                ? demoTuitionRequestsApi
+                : undefined
+            }
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
         ) : canShowDemoProgress ? (
           <DemoLearnerProgress
             api={learnerJourneyApi}
@@ -752,11 +874,26 @@ function SessionSummary({
   const androidAuth = isAndroidPkce
     ? (authentication as AndroidPkceAuthentication)
     : null
+  const passwordAuth = isPasswordFormAuthentication(authentication)
+    ? authentication
+    : null
+  const isAuthenticated = session.status === 'authenticated'
 
   return (
     <section
-      className="shell-session"
-      aria-labelledby="session-title"
+      className={`shell-session${
+        passwordAuth !== null && !isAuthenticated ? ' shell-session--sign-in' : ''
+      }${isAuthenticated ? ' shell-session--account' : ''}${
+        embedded ? ' shell-session--embedded' : ''
+      }`}
+      aria-labelledby={embedded && !isAuthenticated ? undefined : 'session-title'}
+      id={
+        embedded
+          ? undefined
+          : isAuthenticated
+            ? 'session-account-security'
+            : 'sign-in'
+      }
     >
       <h2
         className="shell-session__title"
@@ -816,14 +953,67 @@ function SessionSummary({
             </button>
           ) : null}
         </div>
-      )}
+      ) : null}
+      {passwordAuth !== null && !isAuthenticated ? (
+        <WebPasswordSignInPanel
+          authentication={passwordAuth}
+          embedded={embedded}
+          message={message}
+          onAuthenticated={onSessionChange}
+        />
+      ) : null}
+      {webAuth !== null && isAuthenticated && accountSecurityOpen ? (
+        <PasswordAccountSecurityPanel
+          authentication={webAuth}
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+          onCredentialsRevoked={() => {
+            onAccountSecurityOpenChange(false)
+            onSessionChange({ status: 'anonymous' })
+          }}
+        />
+      ) : null}
+      {webAuth === null &&
+      isAuthenticated &&
+      isFederatedAccountAuthentication(authentication) &&
+      isPasswordFormAuthentication(authentication) ? (
+        <FederatedAccountsPanel
+          authentication={authentication}
+          message={message}
+        />
+      ) : null}
     </section>
   )
 }
 
 function supportedLocale(value: string): SupportedLocale | null {
   return (
-    SUPPORTED_LOCALES.find((locale) => locale === value) ?? null
+    authentication.transport === 'sanctum-cookie' &&
+    typeof candidate.signIn === 'function' &&
+    typeof candidate.authenticationMode === 'function' &&
+    typeof candidate.requestPasswordRecovery === 'function' &&
+    typeof candidate.passwordStatus === 'function' &&
+    typeof candidate.establishPassword === 'function' &&
+    typeof candidate.confirmPassword === 'function' &&
+    typeof candidate.changePassword === 'function' &&
+    typeof candidate.changeUsername === 'function' &&
+    typeof candidate.privilegedMfaStatus === 'function' &&
+    typeof candidate.beginPrivilegedMfaEnrollment === 'function' &&
+    typeof candidate.confirmPrivilegedMfaEnrollment === 'function' &&
+    typeof candidate.createPrivilegedMfaChallenge === 'function' &&
+    typeof candidate.verifyPrivilegedMfaChallenge === 'function' &&
+    typeof candidate.regeneratePrivilegedMfaRecoveryCodes === 'function' &&
+    typeof candidate.revokePrivilegedMfaFactor === 'function' &&
+    typeof candidate.requestOtp === 'function' &&
+    typeof candidate.verifyOtp === 'function' &&
+    typeof candidate.sessions === 'function' &&
+    typeof candidate.revokeSession === 'function' &&
+    typeof candidate.revokeAllSessions === 'function' &&
+    typeof candidate.federatedProviders === 'function' &&
+    typeof candidate.beginFederatedSignIn === 'function' &&
+    typeof candidate.federatedLinks === 'function' &&
+    typeof candidate.beginFederatedLink === 'function' &&
+    typeof candidate.unlinkFederated === 'function'
   )
 }
 

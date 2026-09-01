@@ -2,10 +2,13 @@ import type { FriendSession } from '../conversation/ConversationJourneyApi'
 
 export type LevelAvailability = 'available' | 'commissioning_pending'
 
+export type LevelEntitlementAccess = 'allowed' | 'upgrade_required'
+
 export interface LevelSummary {
   level_number: number
   concept_key: string | null
   availability: LevelAvailability
+  entitlement_access?: LevelEntitlementAccess
   blueprint_id: string | null
   session_part_ids: string[]
 }

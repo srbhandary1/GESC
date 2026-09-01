@@ -19,4 +19,37 @@ describe('resolveAndroidPkceEnvironment', () => {
       tokenEndpoint: 'https://api.example.test/oauth/token',
     })
   })
+
+  it('fails closed for non-origin, insecure remote, or credential-diverting configuration', () => {
+    for (const env of [
+      { VITE_MOBILE_API_ORIGIN: '/api' },
+      { VITE_MOBILE_API_ORIGIN: 'http://api.example.test' },
+      { VITE_MOBILE_API_ORIGIN: 'http://192.168.1.4:8000' },
+      { VITE_MOBILE_API_ORIGIN: 'http://117.254.108.143' },
+      { VITE_MOBILE_API_ORIGIN: 'https://api.example.test/prefix' },
+      {
+        VITE_MOBILE_API_ORIGIN: 'https://api.example.test',
+        VITE_MOBILE_OAUTH_TOKEN_URL: 'https://attacker.example/oauth/token',
+      },
+      {
+        VITE_MOBILE_API_ORIGIN: 'https://api.example.test',
+        VITE_MOBILE_OAUTH_REDIRECT_URI: 'com.globalenglish.demo:/oauth/callback',
+      },
+    ]) {
+      expect(resolveAndroidPkceEnvironment(env)).toBeNull()
+    }
+  })
+
+  it('allows cleartext only for the documented local Android hosts', () => {
+    expect(
+      resolveAndroidPkceEnvironment({
+        VITE_MOBILE_API_ORIGIN: 'http://10.0.2.2:8000',
+      })?.apiBaseUrl,
+    ).toBe('http://10.0.2.2:8000/api/v1')
+    expect(
+      resolveAndroidPkceEnvironment({
+        VITE_MOBILE_API_ORIGIN: 'http://117.254.108.143:8080',
+      })?.apiBaseUrl,
+    ).toBe('http://117.254.108.143:8080/api/v1')
+  })
 })

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\CurriculumGraphProjector;
+use App\Entitlements\DirectCatalogSeeder;
 use App\Models\Organization;
 use App\Models\Role;
 use Carbon\CarbonInterface;
@@ -66,6 +67,15 @@ final class FoundationSeeder extends Seeder
                 'curriculum.share.manage',
                 'enrollments.curriculum.assign',
                 'audit.read',
+                'support.diagnostics.read',
+                'privacy.export.request',
+                'privacy.erasure.request',
+                'entitlement_plans.read',
+                'entitlement_plans.manage',
+                'entitlements.read',
+                'entitlements.grant',
+                'entitlements.adjust',
+                'entitlements.revoke',
             ],
         ],
         Role::DIRECT_CONTENT_REVIEWER_KEY => [
@@ -188,6 +198,10 @@ final class FoundationSeeder extends Seeder
             $this->seedSyntheticRoleplayPrototype(
                 $organizationId,
                 $now,
+            );
+            (new DirectCatalogSeeder)->seed(
+                $organizationId,
+                $now->toIso8601String(),
             );
         });
     }

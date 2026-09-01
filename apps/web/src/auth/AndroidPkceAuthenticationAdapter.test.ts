@@ -117,6 +117,165 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     )
   })
 
+  it('signs in with username and password without opening Custom Tabs', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const systemBrowser: SystemAuthorizationBrowser = {
+      open: vi.fn(async () => undefined),
+    }
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+
+      if (request.url.endsWith('/auth/mobile/password/sign-ins')) {
+        expect(request.credentials).toBe('omit')
+        expect(request.headers.get('Content-Type')).toBe('application/json')
+        const body = (await request.json()) as Record<string, unknown>
+        expect(body).toEqual({
+          client_id: 'public-android-client',
+          installation_id: secureStore.installationId,
+          password: 'Correct horse battery 2026!',
+          username: 'learner.one',
+        })
+
+        return Response.json({
+          access_token: 'memory-only-access-token',
+          expires_in: 900,
+          refresh_token: 'secure-refresh-token',
+          token_type: 'Bearer',
+        })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = createAdapter(secureStore, systemBrowser, fetcher)
+
+    await adapter.signIn('learner.one', 'Correct horse battery 2026!')
+
+    expect(systemBrowser.open).not.toHaveBeenCalled()
+    expect(secureStore.refreshToken).toBe('secure-refresh-token')
+    expect(JSON.stringify(secureStore)).not.toContain(
+      'memory-only-access-token',
+    )
+    expect(JSON.stringify(secureStore)).not.toContain(
+      'Correct horse battery 2026!',
+    )
+  })
+
+  it('exchanges a federated ticket without consuming PKCE pending authorization', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    secureStore.pending = { state: 'pkce-state', verifier: 'pkce-verifier' }
+    const systemBrowser: SystemAuthorizationBrowser = {
+      open: vi.fn(async () => undefined),
+    }
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+
+      if (request.url.endsWith('/auth/mobile/social/sign-ins')) {
+        expect(request.headers.get('Authorization')).toBeNull()
+        expect(JSON.parse(await request.text())).toEqual({
+          client_id: 'public-android-client',
+          installation_id: secureStore.installationId,
+          ticket: 'federated-ticket-value-xxxxxxxx',
+        })
+
+        return Response.json({
+          access_token: 'memory-only-access-token',
+          expires_in: 900,
+          refresh_token: 'secure-refresh-token',
+          token_type: 'Bearer',
+        })
+      }
+
+      if (request.url.endsWith('/api/v1/me')) {
+        return Response.json({
+          current_membership: null,
+          memberships: [],
+          user: { id: '01J00000000000000000000001' },
+        })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = createAdapter(secureStore, systemBrowser, fetcher)
+    const snapshot = await adapter.completeAuthorization(
+      'com.globalenglish.app:/oauth/callback?social_ticket=federated-ticket-value-xxxxxxxx&state=federated-state',
+    )
+
+    expect(snapshot.status).toBe('authenticated')
+    expect(secureStore.pending).toEqual({
+      state: 'pkce-state',
+      verifier: 'pkce-verifier',
+    })
+    expect(secureStore.refreshToken).toBe('secure-refresh-token')
+    expect(systemBrowser.open).not.toHaveBeenCalled()
+  })
+
+  it('opens origin-pinned Custom Tabs for federated sign-in', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const openedUrls: string[] = []
+    const systemBrowser: SystemAuthorizationBrowser = {
+      open: vi.fn(async (url: string) => {
+        openedUrls.push(url)
+      }),
+    }
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const request = new Request(input)
+
+      if (request.url.includes('/auth/mobile/social/google/authorization')) {
+        return Response.json({
+          authorization_url:
+            'https://api.global-english.test/oauth/social/google/authorize?client_id=public-android-client',
+        })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = createAdapter(secureStore, systemBrowser, fetcher)
+
+    await adapter.beginFederatedSignIn('google')
+
+    expect(openedUrls).toEqual([
+      'https://api.global-english.test/oauth/social/google/authorize?client_id=public-android-client',
+    ])
+    expect(secureStore.pending).toBeNull()
+  })
+
+  it('rejects Capacitor-style empty identity bodies instead of authenticating', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const systemBrowser: SystemAuthorizationBrowser = {
+      open: vi.fn(async () => undefined),
+    }
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+
+      if (request.url.endsWith('/oauth/token')) {
+        return Response.json({
+          access_token: 'memory-only-access-token',
+          expires_in: 900,
+          refresh_token: 'secure-refresh-token',
+          token_type: 'Bearer',
+        })
+      }
+
+      if (request.url.endsWith('/api/v1/me')) {
+        // hey-api + Capacitor Content-Length: 0 can surface as {}.
+        return Response.json({})
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = createAdapter(secureStore, systemBrowser, fetcher)
+
+    await adapter.beginAuthorization()
+    const pending = secureStore.pending
+
+    await expect(
+      adapter.completeAuthorization(
+        `com.globalenglish.app:/oauth/callback?code=authorization-code&state=${pending?.state}`,
+      ),
+    ).rejects.toBeInstanceOf(AuthenticationUnavailableError)
+    expect(secureStore.refreshToken).toBeNull()
+  })
+
   it('serializes refresh and clears credentials after a failed exchange', async () => {
     const secureStore = new InMemoryReviewedSecureStore()
     secureStore.refreshToken = 'one-time-refresh-token'

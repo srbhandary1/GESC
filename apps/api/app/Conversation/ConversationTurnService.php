@@ -17,6 +17,9 @@ use App\Conversation\Providers\SpeechToTextResult;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
 use App\Conversation\Providers\TextToSpeechResult;
+use App\Conversation\Support\GuidanceTtsPolicy;
+use App\Entitlements\EntitlementAccess;
+use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -34,6 +37,8 @@ final readonly class ConversationTurnService
         private SpeechToTextProvider $speechToText,
         private ConversationOrchestrator $orchestrator,
         private TextToSpeechProvider $textToSpeech,
+        private MeaningfulSpeakingDayProjector $speakingDays,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -72,6 +77,11 @@ final readonly class ConversationTurnService
                 organizationId: $context->organizationId,
                 membershipId: $membershipId,
                 sessionId: $sessionId,
+            );
+            $this->entitlements->consumeLiveAi(
+                $learner,
+                $idempotencyKey,
+                (int) config('billing.live_ai_turn_seconds', 10),
             );
             $fingerprint = $this->commands->fingerprint([
                 'prototype_utterance' => $utterance,

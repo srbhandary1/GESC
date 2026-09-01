@@ -28,11 +28,24 @@ describe('bindAndroidPkceDeepLink', () => {
     }))
     const authentication = {
       transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
       beginAuthorization: vi.fn(),
       completeAuthorization,
       current: vi.fn(),
+      enrollWithInvitation: vi.fn(),
+      federatedProviders: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedSignIn: vi.fn(async () => undefined),
+      federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+      beginFederatedLink: vi.fn(async () => undefined),
+      unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(),
       refresh: vi.fn(),
+      requestPasswordRecovery: vi.fn(),
+      signIn: vi.fn(),
     } satisfies AndroidPkceAuthentication
 
     let listener: ((event: { url: string }) => void) | undefined
@@ -66,6 +79,59 @@ describe('bindAndroidPkceDeepLink', () => {
       expect(onAuthenticated).toHaveBeenCalled()
     })
 
+    dispose()
+  })
+
+  it('registers the listener before consuming a cold-start callback', async () => {
+    const events: string[] = []
+    const completeAuthorization = vi.fn(async () => ({
+      status: 'anonymous' as const,
+    }))
+    const authentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      beginAuthorization: vi.fn(),
+      completeAuthorization,
+      current: vi.fn(),
+      enrollWithInvitation: vi.fn(),
+      federatedProviders: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedSignIn: vi.fn(async () => undefined),
+      federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+      beginFederatedLink: vi.fn(async () => undefined),
+      unlinkFederated: vi.fn(async () => undefined),
+      logout: vi.fn(),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
+      refresh: vi.fn(),
+      requestPasswordRecovery: vi.fn(),
+      signIn: vi.fn(),
+    } satisfies AndroidPkceAuthentication
+
+    const dispose = await bindAndroidPkceDeepLink(
+      authentication,
+      vi.fn(),
+      undefined,
+      {
+        addListener: async () => {
+          events.push('listener')
+
+          return { remove: async () => undefined }
+        },
+        getLaunchUrl: async () => {
+          events.push('launch')
+
+          return {
+            url: 'com.globalenglish.app:/oauth/callback?code=cold&state=cold-state',
+          }
+        },
+      },
+    )
+
+    expect(events).toEqual(['listener', 'launch'])
+    expect(completeAuthorization).toHaveBeenCalledTimes(1)
     dispose()
   })
 })

@@ -558,43 +558,111 @@ describe('localized application shell', () => {
     const beginAuthorization = vi.fn(async () => undefined)
     const authentication: AndroidPkceAuthentication = {
       transport: 'passport-pkce',
-      current: vi.fn(
-        async (): Promise<AuthenticationSnapshot> => ({
-          status: 'anonymous',
-        }),
-      ),
-      logout: vi.fn(async () => undefined),
-      beginAuthorization,
+      authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      beginAuthorization: vi.fn(async () => undefined),
       completeAuthorization: vi.fn(
         async (): Promise<AuthenticationSnapshot> => ({
           status: 'anonymous',
         }),
       ),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'authenticated',
+          identity: {
+            current_membership: null,
+            memberships: [],
+            user: { id: '01J00000000000000000000001' },
+          },
+        }),
+      ),
+      enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn((listener) => {
+        invalidate = listener
+
+        return () => undefined
+      }),
       refresh: vi.fn(async () => undefined),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      signIn: vi.fn(async () => undefined),
     }
     const user = userEvent.setup()
 
     render(<App authentication={authentication} />)
 
-    await user.click(
-      await screen.findByRole('button', { name: text('session.sign_in') }),
-    )
-    expect(beginAuthorization).toHaveBeenCalledOnce()
+    act(() => invalidate())
+
+    expect(
+      await screen.findByRole('link', {
+        name: text('session.label'),
+      }),
+    ).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.queryByRole('button', {
+        name: text('session.android_sign_in'),
+      }),
+    ).not.toBeInTheDocument()
   })
 
-  it('opens session details from Sign in when PKCE is not available', async () => {
+  it('opens the in-app Android password form from the header Sign in link', async () => {
     const user = userEvent.setup()
+    const beginAuthorization = vi.fn(async () => undefined)
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      authenticatedFetch: vi.fn(),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      beginAuthorization,
+      completeAuthorization: vi.fn(),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
+      logout: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
+      refresh: vi.fn(async () => undefined),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      signIn: vi.fn(async () => undefined),
+    }
 
     render(<App authentication={anonymousAuthentication()} />)
 
-    const signIn = await screen.findByRole('button', {
-      name: text('session.sign_in'),
+    const signIn = await screen.findByRole('link', {
+      name: text('session.label'),
     })
-    const details = screen.getByText(text('session.details')).closest('details')
+    expect(signIn.closest('header')).toBeInTheDocument()
+    expect(signIn).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.queryByRole('button', {
+        name: text('session.android_sign_in'),
+      }),
+    ).not.toBeInTheDocument()
 
     expect(details).not.toHaveAttribute('open')
     await user.click(signIn)
-    expect(details).toHaveAttribute('open')
+
+    expect(
+      await screen.findByLabelText(text('auth.password.username')),
+    ).toBeInTheDocument()
+    expect(beginAuthorization).not.toHaveBeenCalled()
   })
 })
 
@@ -637,6 +705,121 @@ function membershipAuthentication(
       }),
     ),
     logout: vi.fn(async () => undefined),
+  }
+}
+
+function webMembershipAuthentication(): WebSessionAuthentication {
+  return {
+    transport: 'sanctum-cookie',
+    authenticationMode: vi.fn(async () => 'password_only' as const),
+    beginPrivilegedMfaEnrollment: vi.fn(),
+    changePassword: vi.fn(async () => undefined),
+    changeUsername: vi.fn(async () => undefined),
+    confirmPassword: vi.fn(async () => undefined),
+    confirmPrivilegedMfaEnrollment: vi.fn(),
+    createPrivilegedMfaChallenge: vi.fn(),
+    current: vi.fn(
+      async (): Promise<AuthenticationSnapshot> => ({
+        status: 'authenticated',
+        identity: {
+          current_membership: {
+            id: '01J00000000000000000000002',
+            membership_type: 'organization_admin',
+            organization: {
+              id: '01J00000000000000000000003',
+              kind: 'institution',
+              name: 'Hithaishi Learning Hub',
+            },
+            role_keys: ['organization-admin'],
+            status: 'active',
+          },
+          memberships: [],
+          user: { id: '01J00000000000000000000001' },
+        },
+      }),
+    ),
+    enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
+    establishPassword: vi.fn(async () => undefined),
+    logout: vi.fn(async () => undefined),
+    passwordStatus: vi.fn(async () => ({
+      credential_ready: true,
+      mode: 'password_only' as const,
+      password_confirmed_at: null,
+      username: 'operator.one',
+    })),
+    privilegedMfaStatus: vi.fn(),
+    regeneratePrivilegedMfaRecoveryCodes: vi.fn(),
+    requestOtp: vi.fn(),
+    requestPasswordRecovery: vi.fn(async () => undefined),
+    revokeAllSessions: vi.fn(async () => undefined),
+    revokePrivilegedMfaFactor: vi.fn(),
+    revokeSession: vi.fn(async () => undefined),
+    sessions: vi.fn(async () => [
+      {
+        absolute_expires_at: '2026-08-12T10:00:00Z',
+        created_at: '2026-08-11T10:00:00Z',
+        current: true,
+        expires_at: '2026-08-11T11:00:00Z',
+        id: '01J00000000000000000000004',
+        last_activity_at: '2026-08-11T10:00:00Z',
+        mfa_verified_at: null,
+        mfa_verified_method: null,
+        mfa_verified_scope: null,
+        password_confirmed_at: null,
+        privileged: true,
+      },
+    ]),
+    signIn: vi.fn(async () => undefined),
+    verifyOtp: vi.fn(async () => undefined),
+    verifyPrivilegedMfaChallenge: vi.fn(),
+  }
+}
+
+function operatorApi(
+  getOverview: OperatorConsoleApi['getOverview'],
+): OperatorConsoleApi {
+  return {
+    getOverview,
+    getPilotAnalytics: vi.fn(async () => ({
+      demonstrated_learning: {
+        mastery_by_knowledge_state: {},
+        mastery_state_count: 0,
+        review_schedule_count: 0,
+      },
+      distinction_note:
+        'usage_counts_are_not_demonstrated_learning' as const,
+      generated_at: '2026-08-09T10:00:00+00:00',
+      usage: {
+        conversation_session_count: 0,
+        conversation_sessions_by_status: {},
+        formative_attempt_count: 0,
+        formative_attempts_by_status: {},
+        learner_membership_count: 0,
+      },
+    })),
+    listAuditEvents: vi.fn(async () => ({
+      items: [],
+      next_cursor: null,
+    })),
+    listDrafts: vi.fn(async () => []),
+    listPublications: vi.fn(async () => []),
+    listSupportDiagnostics: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+    })),
+    search: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+      next_cursor: null,
+    })),
   }
 }
 

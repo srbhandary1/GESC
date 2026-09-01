@@ -48,6 +48,60 @@ function read(
     : undefined
 }
 
-function trimTrailingSlash(value: string): string {
-  return value.replace(/\/+$/u, '')
+function normalizeApiOrigin(value: string | undefined): string | null {
+  if (value === undefined) {
+    return null
+  }
+
+  try {
+    const url = new URL(value)
+    const localHttpHosts = new Set(['10.0.2.2', '127.0.0.1', 'localhost'])
+    // Staff LAN closed-beta may publish HTTP on port 8080. Other remote HTTP
+    // origins stay fail-closed.
+    const ipv4Literal =
+      /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/u
+    const httpPort = url.port === '' ? '80' : url.port
+    const allowedHttp =
+      localHttpHosts.has(url.hostname) ||
+      (httpPort === '8080' && ipv4Literal.test(url.hostname))
+
+    if (
+      (url.protocol !== 'https:' &&
+        !(url.protocol === 'http:' && allowedHttp)) ||
+      url.username !== '' ||
+      url.password !== '' ||
+      (url.pathname !== '' && url.pathname !== '/') ||
+      url.search !== '' ||
+      url.hash !== ''
+    ) {
+      return null
+    }
+
+    return url.origin
+  } catch {
+    return null
+  }
+}
+
+function normalizeOAuthEndpoint(
+  value: string,
+  expectedOrigin: string,
+): string | null {
+  try {
+    const url = new URL(value)
+
+    if (
+      url.origin !== expectedOrigin ||
+      url.username !== '' ||
+      url.password !== '' ||
+      url.search !== '' ||
+      url.hash !== ''
+    ) {
+      return null
+    }
+
+    return url.toString()
+  } catch {
+    return null
+  }
 }

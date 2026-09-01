@@ -199,7 +199,14 @@ export function LevelPathPanel({
   }
 
   const ready = (levels ?? []).filter(
-    (level) => level.availability === 'available',
+    (level) =>
+      level.availability === 'available' &&
+      level.entitlement_access !== 'upgrade_required',
+  )
+  const upgradeRequired = (levels ?? []).filter(
+    (level) =>
+      level.availability === 'available' &&
+      level.entitlement_access === 'upgrade_required',
   )
   const pending = (levels ?? []).filter(
     (level) => level.availability !== 'available',
@@ -281,6 +288,30 @@ export function LevelPathPanel({
         <p className="level-path__empty">
           <LocalizedMessage resolution={message('level.path.empty')} />
         </p>
+      ) : null}
+
+      {upgradeRequired.length > 0 ? (
+        <div className="level-path__later">
+          <h3>
+            <LocalizedMessage
+              resolution={message('subscription.level_locked')}
+            />
+          </h3>
+          <ul className="level-path__pending">
+            {upgradeRequired.map((level) => (
+              <li
+                key={level.level_number}
+                className="level-path__pending-item"
+              >
+                <LocalizedMessage
+                  resolution={message('level.path.level_label', {
+                    number: String(level.level_number),
+                  })}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {pending.length > 0 ? (

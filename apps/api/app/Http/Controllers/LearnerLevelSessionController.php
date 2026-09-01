@@ -26,10 +26,11 @@ final class LearnerLevelSessionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
         $context = $this->contexts->current();
 
         return response()->json([
-            'levels' => $this->sessions->listLevels($context),
+            'levels' => $this->sessions->listLevels($context, $principal->user),
         ])->header('Cache-Control', 'private, no-store');
     }
 
