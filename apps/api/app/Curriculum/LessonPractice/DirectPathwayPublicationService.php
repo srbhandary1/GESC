@@ -233,7 +233,12 @@ final class DirectPathwayPublicationService
     }
 
     /**
-     * @param  array<string, array<string, string>>  $assets
+     * @param  array<string, array{
+     *   media_asset_id: string,
+     *   metadata_revision_id: string,
+     *   metadata_content_hash: string,
+     *   rights_revision_id?: string
+     * }>  $assets
      * @return array<string, mixed>
      */
     private function publishedCanonical(
@@ -251,9 +256,6 @@ final class DirectPathwayPublicationService
         }
 
         $canonical = $current->canonical_json;
-        if (! is_array($canonical)) {
-            throw new RuntimeException('canonical_missing:'.$conceptKey);
-        }
         $canonical['state'] = 'published_direct_entitled_v1';
         $canonical['publication'] = [
             'eligible' => true,

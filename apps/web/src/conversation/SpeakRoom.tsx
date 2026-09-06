@@ -25,6 +25,9 @@ export interface SpeakRoomProps {
   readonly initialMode?: SpeakMode
   readonly initialSession?: FriendSession
   readonly allowsRoleplay?: boolean
+  readonly onLiveAiUsageChanged?: () => void
+  readonly roleplayStatusMessageKey?: MessageKey
+  readonly voiceUnavailableMessageKey?: MessageKey
 }
 
 export function SpeakRoom({
@@ -36,6 +39,9 @@ export function SpeakRoom({
   initialMode = 'everyday',
   initialSession,
   allowsRoleplay = true,
+  onLiveAiUsageChanged,
+  roleplayStatusMessageKey,
+  voiceUnavailableMessageKey,
 }: SpeakRoomProps) {
   const [requestedMode, setRequestedMode] = useState<SpeakMode>(
     allowsRoleplay ? initialMode : 'everyday',
@@ -80,10 +86,10 @@ export function SpeakRoom({
           )
         })}
       </div>
-      {!allowsRoleplay ? (
-        <p className="speak-room__upgrade">
+      {roleplayStatusMessageKey !== undefined ? (
+        <p className="speak-room__upgrade" role="status">
           <LocalizedMessage
-            resolution={message('subscription.roleplay_locked')}
+            resolution={message(roleplayStatusMessageKey)}
           />
         </p>
       ) : null}
@@ -98,6 +104,7 @@ export function SpeakRoom({
             createClientId={createClientId}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onLiveAiUsageChanged={onLiveAiUsageChanged}
             onBack={() => {
               setRequestedMode('everyday')
             }}
@@ -111,6 +118,8 @@ export function SpeakRoom({
             key={initialSession?.id ?? 'unbound-speak'}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onLiveAiUsageChanged={onLiveAiUsageChanged}
+            voiceUnavailableMessageKey={voiceUnavailableMessageKey}
           />
         )}
       </div>

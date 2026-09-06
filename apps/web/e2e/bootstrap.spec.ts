@@ -34,6 +34,30 @@ test('renders an axe-clean Kannada-first pre-sign-in splash', async ({
       name: message('shell.splash.tagline'),
     }),
   ).toBeVisible()
+  await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
+  await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
+  await expect(
+    page.getByText(message('conversation.prototype_notice')),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', {
+      name: message('marketing.hero.cta_learn'),
+    }),
+  ).toHaveAttribute('href', '#how-it-works')
+  for (const sectionHeading of [
+    'marketing.showcase.title',
+    'marketing.section.how',
+    'marketing.section.why',
+    'marketing.section.pedagogy',
+    'marketing.benefit.together.title',
+    'marketing.join.title',
+  ] as const) {
+    await expect(
+      page.getByRole('heading', { name: message(sectionHeading) }),
+    ).toBeVisible()
+  }
+  await expect(page.locator('.marketing-landing img')).toHaveCount(0)
+  await expect(page.locator('.marketing-split, .marketing-showcase, .marketing-why')).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: message('session.sign_in') }),
   ).toBeVisible()

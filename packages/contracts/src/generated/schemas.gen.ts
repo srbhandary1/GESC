@@ -1300,10 +1300,12 @@ export const LearnerSubscriptionPlanOfferSchema = {
         'gst_paise',
         'total_paise',
         'gst_rate_bps',
+        'billing_period',
         'allows_roleplay',
         'max_level_number',
         'live_ai_cap_seconds',
         'is_demo',
+        'is_talk_pack',
         'checkout_required',
         'recommended'
     ],
@@ -1333,6 +1335,14 @@ export const LearnerSubscriptionPlanOfferSchema = {
             type: 'integer',
             minimum: 0
         },
+        billing_period: {
+            type: 'string',
+            enum: [
+                'hours',
+                'calendar_month',
+                'talk_pack'
+            ]
+        },
         allows_roleplay: {
             type: 'boolean'
         },
@@ -1349,6 +1359,9 @@ export const LearnerSubscriptionPlanOfferSchema = {
             ]
         },
         is_demo: {
+            type: 'boolean'
+        },
+        is_talk_pack: {
             type: 'boolean'
         },
         checkout_required: {
@@ -1542,7 +1555,8 @@ export const OperatorEntitlementPlanSchema = {
             type: 'string',
             enum: [
                 'hours',
-                'calendar_month'
+                'calendar_month',
+                'talk_pack'
             ]
         },
         duration_value: {

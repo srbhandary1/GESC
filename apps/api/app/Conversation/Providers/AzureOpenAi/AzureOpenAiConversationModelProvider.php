@@ -249,14 +249,7 @@ TEXT;
 
         $needed = $raw['needed'] ?? true;
         if ($needed === false) {
-            return new PriorityCorrection(
-                errorCategory: 'none',
-                correctionEn: 'none',
-                explanationL1: 'none',
-                explanationLocale: $uiLocale,
-                retryRecommended: false,
-                needed: false,
-            );
+            return null;
         }
 
         $category = $raw['error_category'] ?? null;

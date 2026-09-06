@@ -185,7 +185,7 @@ final readonly class EntitlementAdministrationCommands
                     ->where('status', 'active')
                     ->first();
 
-                if (! $plan instanceof stdClass) {
+                if (! $plan instanceof stdClass || DirectPlanDefaults::isTalkPack($plan)) {
                     throw new EntitlementAdministrationRejected;
                 }
 

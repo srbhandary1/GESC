@@ -53,6 +53,8 @@ export class BrowserAudioRecorder implements AudioRecorder {
       throw new RecordingUnavailableError()
     }
 
+    stopSpeechPlayback()
+
     let stream: MediaStream
 
     try {

@@ -137,8 +137,13 @@ fi
 
 soft_launch_runner="$root_dir/scripts/run-soft-launch.sh"
 grep -Fq 'umask 077' "$soft_launch_runner"
-grep -Fq 'nohup "${PHP_BIN}" -S "127.0.0.1:${API_PORT}" "${API_ROUTER}"' \
+grep -Fq 'nohup "${PHP_BIN}" -S "127.0.0.1:${api_port}" "${API_ROUTER}"' \
   "$soft_launch_runner"
+grep -Fq 'ensure_api_listen_port' "$soft_launch_runner"
+grep -Fq 'web_build_fingerprint' "$soft_launch_runner"
+grep -Fq '.soft-launch-web-build' "$soft_launch_runner"
+grep -Fq 'Web inputs changed during the build' "$soft_launch_runner"
+grep -Fq 'refresh-web)' "$soft_launch_runner"
 if grep -Fq 'artisan serve' "$soft_launch_runner"; then
   printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
   exit 1
@@ -167,6 +172,7 @@ grep -Fq 'handle /oauth/* {' "$soft_launch_caddyfile"
 grep -Fq 'handle /auth/mobile/* {' "$soft_launch_caddyfile"
 grep -Fq 'http://:9080 {' "$soft_launch_caddyfile"
 grep -Fq 'bind 127.0.0.1' "$soft_launch_caddyfile"
+grep -Fq 'reverse_proxy 127.0.0.1:{$GE_SOFT_LAUNCH_API_PORT:8000}' "$soft_launch_caddyfile"
 grep -Fq 'header_up X-Forwarded-Proto https' "$soft_launch_caddyfile"
 grep -Fq '@credentialPages path /password-establishment.html /password-recovery.html' \
   "$soft_launch_caddyfile"
@@ -201,7 +207,10 @@ grep -Fq "'/auth/mobile/'" "$offline_registration"
 grep -Fq "updateViaCache: 'none'" "$offline_registration"
 grep -Fq 'await registration.update()' "$offline_registration"
 grep -Fq 'OFFLINE_SHELL_VERSION' "$service_worker"
-grep -Fq "version: 'v5'" "$service_worker"
+grep -Fq "version: CACHE_VERSION" "$service_worker"
+grep -Fq "searchParams.get('release')" "$service_worker"
+grep -Fq 'serviceWorkerPath()' "$offline_registration"
+grep -Fq 'VITE_PUBLIC_SHELL_RELEASE' "$offline_registration"
 grep -Fq "'/password-recovery.html'" "$service_worker"
 grep -Fq "'/password-establishment.html'" "$service_worker"
 

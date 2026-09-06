@@ -16,6 +16,7 @@ use Database\Seeders\FoundationSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
 /**
@@ -186,6 +187,7 @@ trait FederatedSignInTests
             ->assertExactJson(['google' => true, 'facebook' => true]);
     }
 
+    /** @return TestResponse<Response> */
     private function completeWebProviderCallback(
         string $provider,
         string $subject,
@@ -209,6 +211,7 @@ trait FederatedSignInTests
             ]));
     }
 
+    /** @param TestResponse<Response> $response */
     private function followSessionCookie(TestResponse $response): void
     {
         $cookie = $response->getCookie((string) config('session.cookie'));

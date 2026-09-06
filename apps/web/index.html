@@ -2,18 +2,37 @@
 <html lang="kn-IN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="Kannada-guided spoken-English platform"
     />
-    <title>Global English</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap"
-      rel="stylesheet"
-    />
+    <meta name="theme-color" content="#040713" />
+    <title>Global spoken English Course</title>
+    <script>
+      ;(function applyStoredInterfaceTheme() {
+        var storageKey = 'ge-interface-theme-preference-v2'
+        var preference = localStorage.getItem(storageKey) || 'light'
+        var prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+        var resolved =
+          preference === 'dark' ||
+          (preference === 'system' && prefersDark)
+            ? 'dark'
+            : 'light'
+        document.documentElement.dataset.geTheme = resolved
+        document.documentElement.dataset.geThemePreference = preference
+        document.documentElement.style.colorScheme = resolved
+        var themeColor = document.querySelector('meta[name="theme-color"]')
+        if (themeColor) {
+          themeColor.setAttribute(
+            'content',
+            '#040713',
+          )
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

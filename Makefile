@@ -9,10 +9,11 @@ API_DIR := apps/api
 WEB_DIR := apps/web
 WEB_FILTER := @global-english/web
 COMPOSER_VERSION := 2.10.2
+PHPUNIT_STORAGE_DIR ?= /tmp/global-spoken-english-phpunit-$(shell id -u)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight
 
 help:
 	@printf '%s\n' \
@@ -28,6 +29,7 @@ help:
 		'make android-release-bundle Build a signed production-path Android App Bundle' \
 		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
 		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
+		'make soft-launch-refresh-web  Rebuild served web only when inputs changed' \
 		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
 		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
 		'make soft-launch-status  Soft-launch process and health status' \
@@ -38,6 +40,7 @@ help:
 		'make soft-launch-observe-install Install the per-minute user observe timer' \
 		'make soft-launch-stable-prereq  Fail-closed DNS/TLS check for ai.globalspokenenglish.com' \
 		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
+		'make wave6-indic-preflight  Wave 6 automated Indic STT env/DI/tests preflight (not mic staff matrix)' \
 		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
 		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
@@ -135,8 +138,8 @@ verify: check-toolchain
 	$(COMPOSER_CMD) --working-dir=$(API_DIR) audit --locked
 	cd $(API_DIR) && $(PHP) vendor/bin/pint --test
 	$(PHP) $(API_DIR)/vendor/bin/phpstan analyse --configuration=$(API_DIR)/phpstan.neon --memory-limit=1G
-	cd $(API_DIR) && $(PHP) artisan test
-	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
+	cd $(API_DIR) && LARAVEL_STORAGE_PATH=$(PHPUNIT_STORAGE_DIR) $(PHP) artisan test
+	cd $(API_DIR) && LARAVEL_STORAGE_PATH=$(PHPUNIT_STORAGE_DIR) $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) install --frozen-lockfile
 	$(PNPM) audit --audit-level=high
 	$(PNPM) run locale:check
@@ -146,11 +149,12 @@ verify: check-toolchain
 	$(PNPM) run test
 
 test:
-	cd $(API_DIR) && $(PHP) artisan test
-	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
+	cd $(API_DIR) && LARAVEL_STORAGE_PATH=$(PHPUNIT_STORAGE_DIR) $(PHP) artisan test
+	cd $(API_DIR) && LARAVEL_STORAGE_PATH=$(PHPUNIT_STORAGE_DIR) $(PHP) vendor/bin/phpunit --configuration=phpunit.postgres.xml
 	$(PNPM) run test
 
 e2e:
+	cd $(API_DIR) && LARAVEL_STORAGE_PATH=$(PHPUNIT_STORAGE_DIR) $(PHP) artisan test tests/Integration/MediaTranscriptionReconciliationApiTest.php
 	$(PNPM) run e2e
 
 demo-e2e:
@@ -225,6 +229,10 @@ soft-launch-restart:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh restart
 
+soft-launch-refresh-web:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh refresh-web
+
 soft-launch-status:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh status
@@ -272,3 +280,7 @@ soft-launch-stable-prereq:
 soft-launch-systemd-install:
 	@chmod +x scripts/install-soft-launch-systemd.sh
 	@bash scripts/install-soft-launch-systemd.sh --start
+
+wave6-indic-preflight:
+	@chmod +x scripts/wave6-indic-stt-preflight.sh
+	@bash scripts/wave6-indic-stt-preflight.sh

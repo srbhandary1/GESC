@@ -4,6 +4,7 @@ import {
   type AudioControlState,
 } from '@global-english/design-system'
 import { useEffect, useRef, useState } from 'react'
+import './LearnerJourney.css'
 
 interface ModelAudioPlayerProps {
   readonly labels: AudioControlLabels
@@ -15,8 +16,12 @@ interface ModelAudioPlayerProps {
   readonly onEnded?: () => void
   readonly onPause?: () => void
   readonly onPlaying?: () => void
+  readonly slowLabel: string
   readonly source: string
 }
+
+const SLOW_RATE = 0.75
+const positionsBySource = new Map<string, number>()
 
 export function ModelAudioPlayer({
   labels,
@@ -25,12 +30,15 @@ export function ModelAudioPlayer({
   onEnded,
   onPause,
   onPlaying,
+  slowLabel,
   source,
 }: ModelAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const onEndedRef = useRef(onEnded)
   const onPauseRef = useRef(onPause)
   const onPlayingRef = useRef(onPlaying)
+  const [slow, setSlow] = useState(false)
+  const slowRef = useRef(false)
   const [state, setState] = useState<AudioControlState>(
     loadSource === undefined ? 'ready' : 'loading',
   )
@@ -93,9 +101,6 @@ export function ModelAudioPlayer({
         ? loadedSource.objectUrl
         : null
 
-  // While a fetched source is not yet playable the player is loading unless
-  // the fetch already failed. Deriving this replaces a synchronous setState
-  // inside the fetch effect.
   const visibleState: AudioControlState =
     loadSource !== undefined && playableSource === null && state !== 'error'
       ? 'loading'
@@ -108,21 +113,38 @@ export function ModelAudioPlayer({
       return
     }
 
-    const handleCanPlay = () => setState('ready')
+    const restorePosition = () => {
+      const saved = positionsBySource.get(source)
+      if (saved !== undefined && saved > 0 && !audio.ended) {
+        audio.currentTime = saved
+      }
+    }
+
+    const handleCanPlay = () => {
+      restorePosition()
+      audio.playbackRate = slowRef.current ? SLOW_RATE : 1
+      setState('ready')
+    }
     const handleEnded = () => {
+      positionsBySource.delete(source)
       setState('ended')
       onEndedRef.current?.()
     }
     const handleError = () => setState('error')
     const handlePause = () => {
+      positionsBySource.set(source, audio.currentTime)
       if (!audio.ended) {
         setState('paused')
         onPauseRef.current?.()
       }
     }
     const handlePlaying = () => {
+      audio.playbackRate = slowRef.current ? SLOW_RATE : 1
       setState('playing')
       onPlayingRef.current?.()
+    }
+    const handleTimeUpdate = () => {
+      positionsBySource.set(source, audio.currentTime)
     }
     const handleWaiting = () => setState('loading')
 
@@ -131,6 +153,7 @@ export function ModelAudioPlayer({
     audio.addEventListener('error', handleError)
     audio.addEventListener('pause', handlePause)
     audio.addEventListener('playing', handlePlaying)
+    audio.addEventListener('timeupdate', handleTimeUpdate)
     if (loadSource === undefined) {
       audio.addEventListener('waiting', handleWaiting)
     }
@@ -142,6 +165,7 @@ export function ModelAudioPlayer({
       audio.removeEventListener('error', handleError)
       audio.removeEventListener('pause', handlePause)
       audio.removeEventListener('playing', handlePlaying)
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('waiting', handleWaiting)
       audio.pause()
       for (const sourceElement of audio.querySelectorAll('source')) {
@@ -149,7 +173,14 @@ export function ModelAudioPlayer({
       }
       audio.load()
     }
-  }, [loadSource, playableSource])
+  }, [loadSource, playableSource, source])
+
+  useEffect(() => {
+    slowRef.current = slow
+    if (audioRef.current !== null) {
+      audioRef.current.playbackRate = slow ? SLOW_RATE : 1
+    }
+  }, [slow, playableSource])
 
   const play = async () => {
     const audio = audioRef.current
@@ -159,6 +190,7 @@ export function ModelAudioPlayer({
       return
     }
 
+    audio.playbackRate = slow ? SLOW_RATE : 1
     setState('loading')
 
     try {
@@ -176,12 +208,13 @@ export function ModelAudioPlayer({
       return
     }
 
+    positionsBySource.delete(source)
     audio.currentTime = 0
     await play()
   }
 
   return (
-    <>
+    <div className="model-audio-player">
       {playableSource === null ? null : (
         <audio
           aria-hidden="true"
@@ -203,6 +236,22 @@ export function ModelAudioPlayer({
         onRequestReplay={() => void replay()}
         state={visibleState}
       />
-    </>
+      <button
+        aria-pressed={slow}
+        className="model-audio-player__slow"
+        onClick={() => {
+          setSlow((current) => {
+            const next = !current
+            if (audioRef.current !== null) {
+              audioRef.current.playbackRate = next ? SLOW_RATE : 1
+            }
+            return next
+          })
+        }}
+        type="button"
+      >
+        {slowLabel}
+      </button>
+    </div>
   )
 }

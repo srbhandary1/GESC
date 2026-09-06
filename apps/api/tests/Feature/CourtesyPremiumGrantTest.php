@@ -19,6 +19,7 @@ use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Testing\PendingCommand;
 use Tests\TestCase;
 
 final class CourtesyPremiumGrantTest extends TestCase
@@ -48,6 +49,11 @@ final class CourtesyPremiumGrantTest extends TestCase
             self::assertSame('Modules', $modules['name']);
             self::assertFalse($modules['recommended']);
             self::assertSame(DirectPlanDefaults::MONTHLY_ROLEPLAY, $catalogue['plans'][0]['code']);
+            $talk = collect($catalogue['plans'])->firstWhere('code', DirectPlanDefaults::TALK_PACK_30);
+            self::assertIsArray($talk);
+            self::assertTrue($talk['is_talk_pack']);
+            self::assertFalse($talk['recommended']);
+            self::assertSame(DirectPlanDefaults::TALK_PACK_30_SECONDS, $talk['live_ai_cap_seconds']);
         } finally {
             $manager->clear();
         }
@@ -75,6 +81,7 @@ final class CourtesyPremiumGrantTest extends TestCase
             self::assertSame(DirectPlanDefaults::MONTHLY_ROLEPLAY, $snapshot['plan_code']);
             self::assertTrue($snapshot['allows_roleplay']);
             self::assertNull($snapshot['max_level_number']);
+            self::assertSame(DirectPlanDefaults::PREMIUM_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
             self::assertSame(2, $service->grantedMembershipCount($organizationId));
             self::assertSame(1, DB::table('learner_entitlements')
                 ->where('learner_membership_id', $firstContext->membershipId)
@@ -114,7 +121,9 @@ final class CourtesyPremiumGrantTest extends TestCase
     public function test_dry_run_does_not_write_grants(): void
     {
         $this->learner('alpha.learner');
-        $this->artisan('entitlements:grant-courtesy-premium', ['--dry-run' => true])
+        $command = $this->artisan('entitlements:grant-courtesy-premium', ['--dry-run' => true]);
+        self::assertInstanceOf(PendingCommand::class, $command);
+        $command
             ->expectsOutputToContain('Would process')
             ->assertSuccessful();
         self::assertSame(0, DB::table('learner_entitlements')->count());

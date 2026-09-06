@@ -83,7 +83,20 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
         }
 
         $locale = $this->configuration->localeForVoice($request->voice);
-        $ssml = GuidanceTtsSsml::document($locale, $request->voice, $text);
+        $embeddedLatinVoice = $request->purpose === GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1
+            && $locale !== 'en-IN'
+            && preg_match('/\p{Latin}/u', $text) === 1
+                ? GuidanceTtsPolicy::voiceFor(
+                    GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+                    'en-IN',
+                )
+                : null;
+        $ssml = GuidanceTtsSsml::document(
+            $locale,
+            $request->voice,
+            $text,
+            $embeddedLatinVoice,
+        );
         $started = hrtime(true);
         $maximumBytes = $this->configuration->maximumAudioResponseBytes();
 
@@ -182,7 +195,10 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
             providerUsage: new ProviderUsage(
                 providerKey: $this->configuration->providerKey(),
                 modelVersion: $this->configuration->modelVersionBase()
-                    .':'.$request->voice,
+                    .':'.$request->voice
+                    .($embeddedLatinVoice === null
+                        ? ''
+                        : '+'.$embeddedLatinVoice),
                 latencyMilliseconds: $latency,
                 inputUnits: $characters,
                 outputUnits: strlen($audio),

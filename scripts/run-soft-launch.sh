@@ -25,6 +25,7 @@ CADDYFILE="${ROOT_DIR}/infra/soft-launch/Caddyfile"
 PROXY_PORT="${GE_SOFT_LAUNCH_PROXY_PORT:-9080}"
 API_PORT="${GE_SOFT_LAUNCH_API_PORT:-8000}"
 PUBLIC_HTTP_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTP_PORT:-8080}"
+API_PORT_FALLBACK="${GE_SOFT_LAUNCH_API_PORT_FALLBACK:-8010}"
 PUBLIC_HTTPS_PORT="${GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT:-8443}"
 REQUESTED_STABLE_HOST="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
 
@@ -58,6 +59,18 @@ require_php() {
     PHP_BIN="$(command -v php || true)"
   fi
   [[ -x "${PHP_BIN}" ]] || die "PHP binary not found. Set GE_SOFT_LAUNCH_PHP."
+}
+
+require_node() {
+  if [[ ! -x "${NODE_BIN}" ]]; then
+    NODE_BIN="$(command -v node || true)"
+  fi
+  [[ -x "${NODE_BIN}" ]] || die "Node binary not found. Set GE_SOFT_LAUNCH_NODE."
+}
+
+web_build_fingerprint() {
+  require_node
+  "${NODE_BIN}" "${ROOT_DIR}/apps/web/buildFingerprint.ts"
 }
 
 require_caddy() {
@@ -96,21 +109,32 @@ ensure_services() {
 }
 
 ensure_web_dist() {
-  # Invite-only soft-launch is an explicit review/pilot build (D-0030):
-  # show draft Kannada with the visible preview notice. Ordinary
-  # `pnpm --filter @global-english/web build` stays approved-only.
-  local stamp="${WEB_DIST}/.soft-launch-ui-preview"
-  if [[ ! -f "${WEB_DIST}/index.html" || ! -f "${stamp}" ]]; then
+  # Invite-only soft-launch uses the ordinary approved-only web build. Rebuild
+  # whenever a served source/config/catalogue input changes; an old dist stamp
+  # must never hide a newer interface implementation.
+  local stamp="${WEB_DIST}/.soft-launch-web-build"
+  local current_fingerprint
+  local stamped_fingerprint=""
+  current_fingerprint="$(web_build_fingerprint)"
+  if [[ -f "${stamp}" ]]; then
+    stamped_fingerprint="$(<"${stamp}")"
+  fi
+  if [[ ! -f "${WEB_DIST}/index.html" || "${stamped_fingerprint}" != "${current_fingerprint}" ]]; then
     require_php
     if [[ -x "${PNPM_BIN}" ]]; then
       (cd "${ROOT_DIR}" && PATH="$(dirname "${NODE_BIN}"):${PATH}" \
-        VITE_UI_TRANSLATION_PREVIEW=true \
         "${PNPM_BIN}" --filter @global-english/web build)
     else
-      (cd "${ROOT_DIR}" && VITE_UI_TRANSLATION_PREVIEW=true \
-        pnpm --filter @global-english/web build)
+      (cd "${ROOT_DIR}" && pnpm --filter @global-english/web build)
     fi
-    printf 'preview\n' >"${stamp}"
+    local built_fingerprint
+    built_fingerprint="$(web_build_fingerprint)"
+    [[ "${built_fingerprint}" == "${current_fingerprint}" ]] \
+      || die "Web inputs changed during the build; restart to produce one coherent release."
+    printf '%s\n' "${built_fingerprint}" >"${stamp}"
+    rm -f \
+      "${WEB_DIST}/.soft-launch-ui-approved-only" \
+      "${WEB_DIST}/.soft-launch-ui-preview"
   fi
   [[ -f "${WEB_DIST}/index.html" ]] || die "Web dist missing at ${WEB_DIST}"
 }
@@ -121,15 +145,110 @@ source_soft_launch_env() {
   GE_SOFT_LAUNCH_ENV="${ENV_FILE}" load_soft_launch_environment
 }
 
+api_listen_port_free() {
+  python3 - "$1" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    sock.bind(("127.0.0.1", port))
+except OSError:
+    raise SystemExit(1)
+finally:
+    sock.close()
+PY
+}
+
+api_health_ok() {
+  curl --silent --fail --max-time 2 "http://127.0.0.1:${1}/api/v1/health/live" >/dev/null 2>&1
+}
+
+api_listener_pid() {
+  ss -H -l -t -n -p "sport = :${1}" 2>/dev/null \
+    | grep -oE 'pid=[0-9]+' \
+    | head -1 \
+    | cut -d= -f2
+}
+
+record_api_pid() {
+  local pid="$1"
+  if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
+    printf '%s\n' "${pid}" >"${PID_DIR}/api.pid"
+  fi
+}
+
+persist_api_listen_port() {
+  local port="$1"
+  python3 - "${ENV_FILE}" "${port}" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+port = sys.argv[2]
+text = path.read_text(encoding="utf-8") if path.exists() else ""
+key = "GE_SOFT_LAUNCH_API_PORT"
+written = False
+lines = []
+for raw in text.splitlines():
+    if raw.startswith(f"{key}="):
+        lines.append(f"{key}={port}")
+        written = True
+    else:
+        lines.append(raw)
+if not written:
+    lines.append(f"{key}={port}")
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+path.chmod(0o600)
+PY
+  GE_SOFT_LAUNCH_API_PORT="${port}"
+  API_PORT="${port}"
+  export GE_SOFT_LAUNCH_API_PORT API_PORT
+}
+
+ensure_api_listen_port() {
+  local port
+  local seen=" "
+  for port in ${GE_SOFT_LAUNCH_API_PORT:-} 8000 "${API_PORT_FALLBACK}" 8011 8012 8013 8014 8015; do
+    [[ -n "${port}" ]] || continue
+    [[ "${seen}" == *" ${port} "* ]] && continue
+    seen+=" ${port} "
+    if api_health_ok "${port}"; then
+      if [[ "${port}" != "8000" ]]; then
+        printf 'Reusing Laravel API already live on 127.0.0.1:%s\n' "${port}" >&2
+      fi
+      persist_api_listen_port "${port}"
+      record_api_pid "$(api_listener_pid "${port}")"
+      return
+    fi
+    if api_listen_port_free "${port}"; then
+      if [[ "${port}" != "8000" ]]; then
+        printf 'Port 8000 is unavailable; binding Laravel API on 127.0.0.1:%s\n' "${port}" >&2
+      fi
+      persist_api_listen_port "${port}"
+      return
+    fi
+  done
+  die "No free Laravel API port between 8000 and 8015; another process is holding the listeners."
+}
+
 start_api() {
   require_php
   [[ -f "${API_PUBLIC}/index.php" ]] || die "Laravel public entrypoint is missing."
   [[ -f "${API_ROUTER}" ]] || die "Laravel development-server router is missing."
+  source_soft_launch_env
+  local api_port="${GE_SOFT_LAUNCH_API_PORT:-8000}"
+  if api_health_ok "${api_port}"; then
+    record_api_pid "$(api_listener_pid "${api_port}")"
+    return
+  fi
   stop_pidfile api
   (
     cd "${API_PUBLIC}"
     source_soft_launch_env
-    nohup "${PHP_BIN}" -S "127.0.0.1:${API_PORT}" "${API_ROUTER}" \
+    api_port="${GE_SOFT_LAUNCH_API_PORT:-8000}"
+    nohup "${PHP_BIN}" -S "127.0.0.1:${api_port}" "${API_ROUTER}" \
       >"${LOG_DIR}/api.log" 2>&1 &
     echo $! >"${PID_DIR}/api.pid"
   )
@@ -163,6 +282,8 @@ start_proxy() {
   require_caddy
   stop_pidfile caddy
   ensure_web_dist
+  source_soft_launch_env
+  export GE_SOFT_LAUNCH_API_PORT="${GE_SOFT_LAUNCH_API_PORT:-8000}"
   export GE_SOFT_LAUNCH_WEB_ROOT="${WEB_DIST}"
   nohup "${CADDY_BIN}" run --config "${CADDYFILE}" --adapter caddyfile \
     >"${LOG_DIR}/caddy.log" 2>&1 &
@@ -239,6 +360,9 @@ start_tunnel() {
 apply_public_origin() {
   local origin="$1"
   persist_public_origin "${origin}" ""
+  source_soft_launch_env
+  ensure_api_listen_port
+  stop_pidfile api
   start_api
   start_worker
   start_public_http
@@ -405,6 +529,7 @@ case "${MODE}" in
   start)
     ensure_services
     source_soft_launch_env
+    ensure_api_listen_port
     ensure_web_dist
     start_api
     start_worker
@@ -459,6 +584,10 @@ case "${MODE}" in
   status)
     status
     ;;
+  refresh-web)
+    ensure_web_dist
+    printf 'web build: %s\n' "$(web_build_fingerprint)"
+    ;;
   backup)
     backup_db
     ;;
@@ -473,6 +602,6 @@ case "${MODE}" in
     supervise
     ;;
   *)
-    die "Usage: $0 {start|stop|restart|status|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
+    die "Usage: $0 {start|stop|restart|status|refresh-web|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
     ;;
 esac

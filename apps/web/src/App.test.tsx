@@ -6,10 +6,12 @@ import {
   type ResolutionPolicy,
   type SupportedLocale,
 } from '@global-english/localization'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { Capacitor } from '@capacitor/core'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { INTERFACE_THEME_STORAGE_KEY } from './theme/interfaceTheme'
 import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
@@ -33,6 +35,21 @@ afterEach(() => {
   window.localStorage.removeItem('ge-ui-color-scheme')
   window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
+})
+
+beforeAll(async () => {
+  await Promise.all([
+    import('./conversation/SpeakRoom'),
+    import('./demo/DemoLearnerProgress'),
+    import('./demo/phase1/DemoPhase1Shell'),
+    import('./learner/LearnerJourney'),
+    import('./learner/LevelPathPanel'),
+    import('./learner/ProgressDashboard'),
+    import('./learner/TuitionRequestPanel'),
+    import('./marketing/MarketingLanding'),
+    import('./operator/OperatorConsole'),
+    import('./subscriptions/SubscriptionPanel'),
+  ])
 })
 
 describe('localized application shell', () => {
@@ -85,30 +102,8 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('nav.progress') }),
     ).toHaveAttribute('href', '#progress')
     expect(
-      screen.queryByText('Global English Local Demo'),
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('button', {
-        name: new RegExp(text('shell.theme.label')),
-      }),
-    ).toBeInTheDocument()
-
-    await userEvent.click(
-      screen.getByRole('link', { name: text('shell.profile_label') }),
-    )
-    expect(
-      screen.getByRole('heading', {
-        name: text('demo.phase1.profile.demo_status'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('complementary', {
-        name: text('demo.label'),
-      }),
-    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
-    expect(
-      screen.getByText('Global English Local Demo'),
-    ).toBeInTheDocument()
+      screen.getAllByText('Global English Local Demo').length,
+    ).toBeGreaterThan(0)
   })
 
   it('toggles a persisted light/dark appearance without touching credentials', async () => {
@@ -154,14 +149,48 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.practice.title'),
-      }),
+        name: text('demo.page.learn.title'),
+      }, { timeout: 8_000 }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', {
+      await screen.findByRole('heading', {
         level: 2,
-        name: text('conversation.demo.title'),
+        name: text('level.path.title'),
+      }, { timeout: 8_000 }),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', {
+        name: /ಮಟ್ಟ 1|Level 1/i,
       }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens the Speak room from the demo primary navigation', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+        levelSessionsApi={demo.levelSessionsApi}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('link', { name: text('nav.speak') }),
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('demo.page.speak.title'),
+      }, { timeout: 8_000 }),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('tab', { name: text('speak.mode.everyday') }, { timeout: 8_000 }),
     ).toBeInTheDocument()
   })
 
@@ -243,8 +272,26 @@ describe('localized application shell', () => {
     render(<App authentication={authentication} />)
 
     expect(
-      screen.getByRole('banner').querySelector('[lang="en-IN"]'),
-    ).toHaveTextContent(text('app.name', 'en-IN'))
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeInTheDocument()
+
+    expect(document.querySelector('.ge-application-frame--studio')).not.toBeNull()
+
+    expect(screen.getByText(text('app.name'))).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: text('session.label') }),
+    ).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') })
+        .length,
+    ).toBeGreaterThan(0)
+    expect(document.querySelector('.marketing-hero__slide')).toBeNull()
+    expect(
+      screen.getByText(text('conversation.prototype_notice')),
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole('navigation', {
         name: text('shell.navigation_label'),
@@ -271,13 +318,13 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 3,
-        name: text('marketing.benefit.hybrid.title'),
+        name: text('marketing.outcome.work.title'),
       }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('heading', {
         level: 3,
-        name: text('marketing.benefit.tuition.title'),
+        name: 'Premium',
       }),
     ).toBeInTheDocument()
     expect(
@@ -315,6 +362,76 @@ describe('localized application shell', () => {
     expect(authentication.current).toHaveBeenCalledOnce()
   })
 
+  it('lets a guest close the dedicated sign-in page back to the marketing home', async () => {
+    window.history.replaceState(null, '', '/#sign-in')
+    const user = userEvent.setup()
+    const authentication = guestWebAuthentication()
+
+    render(<App authentication={authentication} />)
+
+    expect(
+      await screen.findByLabelText(text('auth.password.username')),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(text('session.sign_in_hint')),
+    ).not.toBeInTheDocument()
+    const close = screen
+      .getAllByRole('link', { name: text('nav.home') })
+      .find((link) => link.classList.contains('shell-sign-in-page__close'))
+    expect(close).toBeDefined()
+    expect(close).toHaveAttribute('href', '#home')
+
+    await user.click(close!)
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+    expect(
+      screen.getByRole('link', { name: text('session.label') }),
+    ).toHaveAttribute('href', '#sign-in')
+  })
+
+  it('shows the dedicated sign-in gate instead of marketing on operator workspace hashes', async () => {
+    window.history.replaceState(null, '', '/#operator-learners')
+    const authentication = guestWebAuthentication()
+
+    render(<App authentication={authentication} />)
+
+    expect(
+      await screen.findByLabelText(text('auth.password.username')),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', {
+        level: 1,
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole('link', {
+        name: text('marketing.hero.cta_sign_in'),
+      }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole('link', {
+        name: text('marketing.hero.cta_learn'),
+      }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole('link', {
+        name: text('marketing.hero.cta_android'),
+      }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole('link', {
+        name: text('shell.android_download'),
+      }),
+    ).toBeNull()
+  })
+
   it('changes locale only in memory and focuses the selected destination', async () => {
     const authentication = anonymousAuthentication()
     const localStorageWrite = vi.spyOn(Storage.prototype, 'setItem')
@@ -344,8 +461,13 @@ describe('localized application shell', () => {
       screen.queryByRole('navigation', {
         name: text('shell.navigation_label', 'en-IN'),
       }),
-    ).not.toBeInTheDocument()
-    expect(localStorageWrite).not.toHaveBeenCalled()
+    ).toBeInTheDocument()
+    expect(
+      localStorageWrite.mock.calls.filter(
+        ([key]) =>
+          key !== INTERFACE_THEME_STORAGE_KEY && key !== '__ge_theme_probe__',
+      ),
+    ).toHaveLength(0)
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
   })
 
@@ -354,7 +476,9 @@ describe('localized application shell', () => {
 
     render(<App authentication={anonymousAuthentication()} />)
 
-    const localeSelect = screen.getByRole('combobox')
+    const localeSelect = screen.getByRole('combobox', {
+      name: text('shell.locale_label'),
+    })
 
     expect(
       [...localeSelect.querySelectorAll('option')].map(
@@ -538,7 +662,8 @@ describe('localized application shell', () => {
         name: text('learner.onboarding.adult_title'),
       }),
     ).toBeInTheDocument()
-    expect(home).toHaveBeenCalled()
+    expect(document.querySelector('.ge-application-frame--studio-learner')).not.toBeNull()
+    expect(home).toHaveBeenCalledOnce()
   })
 
   it('does not open Learn for a non-learner membership with a learner role key', async () => {
@@ -564,6 +689,58 @@ describe('localized application shell', () => {
       screen.getByText(text('shell.checkpoint_notice')),
     ).toBeInTheDocument()
     expect(home).not.toHaveBeenCalled()
+  })
+
+  it('keeps authenticated account security collapsed and offers sign out', async () => {
+    const user = userEvent.setup()
+    const authentication = webMembershipAuthentication()
+    const getOverview = vi.fn(async () => ({
+      generated_at: '2026-08-11T10:00:00+00:00',
+      navigation: ['overview'] as const,
+      organization: {
+        id: '01J00000000000000000000003',
+        name: 'Hithaishi Learning Hub',
+        timezone: 'Asia/Kolkata',
+      },
+      panels: [] as const,
+      search_available: false,
+    }))
+
+    render(
+      <App
+        authentication={authentication}
+        operatorConsoleApi={operatorApi(getOverview)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('operator.shell.title'),
+      }),
+    ).toBeInTheDocument()
+    const account = screen.getByRole('button', {
+      name: text('session.account_menu'),
+    })
+    expect(account).toHaveAttribute('aria-expanded', 'false')
+    await waitFor(() =>
+      expect(authentication.passwordStatus).toHaveBeenCalledOnce(),
+    )
+    expect(screen.getByText('operator.one')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: text('session.label') })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', {
+        name: text('operator.password.title'),
+      }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: text('session.android_sign_out') }),
+    )
+    expect(authentication.logout).toHaveBeenCalledOnce()
+    expect(
+      await screen.findByRole('link', { name: text('session.label') }),
+    ).toHaveAttribute('href', '#sign-in')
+    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {
@@ -701,7 +878,96 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
     expect(beginAuthorization).not.toHaveBeenCalled()
   })
+
+  it('hides APK download chrome on native Android', async () => {
+    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
+    vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
+
+    render(<App authentication={androidPkceAuthentication()} />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', {
+        name: text('shell.android_download'),
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', {
+        name: text('marketing.android.download'),
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows account menu for signed-in Android learners', async () => {
+    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
+    vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
+
+    render(
+      <App
+        authentication={androidPkceAuthentication({
+          status: 'authenticated',
+          identity: {
+            current_membership: {
+              id: '01J00000000000000000000002',
+              membership_type: 'learner',
+              organization: {
+                id: '01J00000000000000000000003',
+                kind: 'platform_direct',
+                name: 'Global English Direct',
+              },
+              role_keys: ['learner'],
+              status: 'active',
+            },
+            memberships: [],
+            user: { id: '01J00000000000000000000001' },
+          },
+        })}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('button', {
+        name: text('session.account_menu'),
+      }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      screen.getByRole('button', {
+        name: text('session.android_sign_out'),
+      }),
+    ).toBeInTheDocument()
+  })
 })
+
+function androidPkceAuthentication(
+  snapshot: AuthenticationSnapshot = { status: 'anonymous' },
+): AndroidPkceAuthentication {
+  return {
+    transport: 'passport-pkce',
+    authenticatedFetch: vi.fn(),
+    authenticationMode: vi.fn(async () => 'password_only' as const),
+    beginAuthorization: vi.fn(async () => undefined),
+    completeAuthorization: vi.fn(),
+    current: vi.fn(async () => snapshot),
+    enrollWithInvitation: vi.fn(async () => undefined),
+    federatedProviders: vi.fn(async () => ({
+      google: false,
+      facebook: false,
+    })),
+    beginFederatedSignIn: vi.fn(async () => undefined),
+    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
+    beginFederatedLink: vi.fn(async () => undefined),
+    unlinkFederated: vi.fn(async () => undefined),
+    logout: vi.fn(async () => undefined),
+    onAuthenticationInvalidated: vi.fn(() => () => undefined),
+    refresh: vi.fn(async () => undefined),
+    requestPasswordRecovery: vi.fn(async () => undefined),
+    signIn: vi.fn(async () => undefined),
+  }
+}
 
 function anonymousAuthentication(): AuthenticationAdapter {
   return {

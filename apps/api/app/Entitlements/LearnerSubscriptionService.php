@@ -25,7 +25,27 @@ final readonly class LearnerSubscriptionService
     ) {}
 
     /**
-     * @return array<string, mixed>
+     * @return array{
+     *   gstin_is_placeholder: bool,
+     *   gst_registered: bool,
+     *   plans: list<array{
+     *     id: string,
+     *     code: string,
+     *     name: string,
+     *     amount_ex_gst_paise: int,
+     *     gst_paise: int,
+     *     total_paise: int,
+     *     gst_rate_bps: int,
+     *     billing_period: string,
+     *     allows_roleplay: bool,
+     *     max_level_number: int|null,
+     *     live_ai_cap_seconds: int|null,
+     *     is_demo: bool,
+     *     is_talk_pack: bool,
+     *     checkout_required: bool,
+     *     recommended: bool
+     *   }>
+     * }
      */
     public function catalogue(User $learner): array
     {
@@ -35,6 +55,8 @@ final readonly class LearnerSubscriptionService
         $plans = DB::table('entitlement_plans')
             ->where('organization_id', $context->organizationId)
             ->where('status', 'active')
+            ->orderByRaw("CASE WHEN billing_period = 'talk_pack' THEN 1 ELSE 0 END")
+            ->orderByRaw("CASE WHEN billing_period = 'talk_pack' THEN live_ai_cap_seconds ELSE 0 END")
             ->orderByDesc('amount_ex_gst_paise')
             ->orderBy('code')
             ->get();
@@ -47,6 +69,7 @@ final readonly class LearnerSubscriptionService
                 (bool) $tax->gst_registered,
             );
             $code = $this->string($plan, 'code');
+            $isTalkPack = DirectPlanDefaults::isTalkPack($plan);
             $listed[] = [
                 'id' => $this->string($plan, 'id'),
                 'code' => $code,
@@ -55,10 +78,12 @@ final readonly class LearnerSubscriptionService
                 'gst_paise' => $payable['gst_paise'],
                 'total_paise' => $payable['total_paise'],
                 'gst_rate_bps' => $payable['gst_rate_bps'],
+                'billing_period' => $this->string($plan, 'billing_period'),
                 'allows_roleplay' => (bool) $plan->allows_roleplay,
                 'max_level_number' => $this->nullableInt($plan, 'max_level_number'),
                 'live_ai_cap_seconds' => $this->nullableInt($plan, 'live_ai_cap_seconds'),
                 'is_demo' => (bool) $plan->is_demo,
+                'is_talk_pack' => $isTalkPack,
                 'checkout_required' => ! (bool) $plan->is_demo && (int) $plan->amount_ex_gst_paise > 0,
                 'recommended' => $code === DirectPlanDefaults::MONTHLY_ROLEPLAY,
             ];
@@ -160,6 +185,17 @@ final readonly class LearnerSubscriptionService
                 throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
             }
 
+            if (DirectPlanDefaults::isTalkPack($plan)) {
+                return $this->completeTalkPackCheckout(
+                    $organizationId,
+                    $membershipId,
+                    $plan,
+                    $checkoutId,
+                    $capture->provider,
+                    $capture->providerReference,
+                );
+            }
+
             $starts = CarbonImmutable::now('Asia/Kolkata');
             $expires = $this->string($plan, 'billing_period') === 'calendar_month'
                 ? $starts->addMonths((int) $plan->duration_value)
@@ -202,6 +238,52 @@ final readonly class LearnerSubscriptionService
 
             return $this->checkoutPayload($completed);
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function completeTalkPackCheckout(
+        string $organizationId,
+        string $membershipId,
+        stdClass $plan,
+        string $checkoutId,
+        string $provider,
+        string $providerReference,
+    ): array {
+        $entitlement = DB::table('learner_entitlements')
+            ->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->first();
+
+        if (! $entitlement instanceof stdClass) {
+            throw new EntitlementDenied(EntitlementDenied::TALK_PACK_REQUIRES_PAID);
+        }
+
+        $now = CarbonImmutable::now('Asia/Kolkata');
+        $this->access->addTalkPack(
+            $organizationId,
+            $entitlement,
+            $plan,
+            $checkoutId,
+            $now,
+        );
+        DB::table('subscription_checkouts')->where('id', $checkoutId)->update([
+            'status' => 'completed',
+            'provider' => $provider,
+            'provider_reference' => $providerReference,
+            'entitlement_id' => $this->string($entitlement, 'id'),
+            'updated_at' => Date::now(),
+        ]);
+        $completed = DB::table('subscription_checkouts')->where('id', $checkoutId)->first();
+
+        if (! $completed instanceof stdClass) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        return $this->checkoutPayload($completed);
     }
 
     /**

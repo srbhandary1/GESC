@@ -720,6 +720,7 @@ function LevelSessionJourney({
                   onEnded={handleLessonAudioEnded}
                   onPause={() => setLessonPlaying(false)}
                   onPlaying={markLessonAudioHeard}
+                  slowLabel={message('learner.audio.slow').text}
                   source={visibleDetail.audio_stream_path}
                 />
               )}

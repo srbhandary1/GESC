@@ -329,10 +329,12 @@ export type LearnerSubscriptionPlanOffer = {
     gst_paise: number;
     total_paise: number;
     gst_rate_bps: number;
+    billing_period: 'hours' | 'calendar_month' | 'talk_pack';
     allows_roleplay: boolean;
     max_level_number: number | null;
     live_ai_cap_seconds: number | null;
     is_demo: boolean;
+    is_talk_pack: boolean;
     checkout_required: boolean;
     recommended: boolean;
 };
@@ -376,7 +378,7 @@ export type OperatorEntitlementPlan = {
     amount_ex_gst_paise: number;
     gst_paise: number;
     total_paise: number;
-    billing_period: 'hours' | 'calendar_month';
+    billing_period: 'hours' | 'calendar_month' | 'talk_pack';
     duration_value: number;
     allows_roleplay: boolean;
     max_level_number: number | null;

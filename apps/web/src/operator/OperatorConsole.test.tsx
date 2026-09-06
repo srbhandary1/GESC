@@ -1,4 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { OperatorConsole } from './OperatorConsole'
 import type {
@@ -14,7 +20,12 @@ import type { OperatorMediaLibraryApi } from './OperatorMediaLibraryApi'
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  window.history.replaceState(null, '', '/')
 })
+
+function openOperatorSection(hash: string) {
+  window.history.replaceState(null, '', hash.startsWith('#') ? hash : `#${hash}`)
+}
 
 describe('operator console', () => {
   it('mounts the Media Library only from the server panel manifest', async () => {
@@ -52,6 +63,8 @@ describe('operator console', () => {
         search_available: false,
       })),
     })
+
+    openOperatorSection('#operator-learning')
 
     render(
       <OperatorConsole
@@ -103,6 +116,8 @@ describe('operator console', () => {
       })),
     })
 
+    openOperatorSection('#operator-learning')
+
     render(
       <OperatorConsole
         api={api}
@@ -118,9 +133,11 @@ describe('operator console', () => {
 
     expect(await screen.findByRole('heading', { name: 'Content Studio' }))
       .toBeInTheDocument()
-    expect(listWorkspaces).toHaveBeenCalledOnce()
-    expect(listReviewQueue).toHaveBeenCalledOnce()
-    expect(listPublications).toHaveBeenCalledOnce()
+    await waitFor(() => {
+      expect(listWorkspaces).toHaveBeenCalledOnce()
+      expect(listReviewQueue).toHaveBeenCalledOnce()
+      expect(listPublications).toHaveBeenCalledOnce()
+    })
     expect(screen.queryByRole('heading', { name: 'Publish status' }))
       .not.toBeInTheDocument()
   })
@@ -142,6 +159,8 @@ describe('operator console', () => {
         search_available: false,
       })),
     })
+
+    openOperatorSection('#operator-learners')
 
     render(
       <OperatorConsole
@@ -190,6 +209,8 @@ describe('operator console', () => {
       })),
     })
 
+    openOperatorSection('#operator-entitlements')
+
     render(
       <OperatorConsole
         api={api}
@@ -203,9 +224,9 @@ describe('operator console', () => {
       await screen.findByRole('link', { name: 'Subscriptions' }),
     ).toHaveAttribute('href', '#operator-entitlements')
     expect(
-      await screen.findByRole('heading', { name: 'Subscriptions' }),
-    ).toBeInTheDocument()
-    expect(workspace).toHaveBeenCalledOnce()
+      screen.getAllByRole('heading', { name: 'Subscriptions' }).length,
+    ).toBeGreaterThan(0)
+    await waitFor(() => expect(workspace).toHaveBeenCalledOnce())
   })
 
   it('renders the manifest People workspace and suppresses unavailable global search', async () => {
@@ -226,6 +247,8 @@ describe('operator console', () => {
       next_cursor: null,
     }))
 
+    openOperatorSection('#operator-people')
+
     render(
       <OperatorConsole
         api={api}
@@ -240,11 +263,6 @@ describe('operator console', () => {
       'href',
       '#operator-people',
     )
-    expect(
-      await screen.findByRole('heading', {
-        name: 'Organization and staff administration',
-      }),
-    ).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Branches' }))
       .toBeInTheDocument()
     expect(screen.queryByRole('search')).not.toBeInTheDocument()
@@ -332,7 +350,7 @@ describe('operator console', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Operator content workflow',
+        name: 'Organization signals',
       }),
     ).toBeInTheDocument()
     expect(
@@ -352,11 +370,261 @@ describe('operator console', () => {
       screen.getByRole('heading', { name: 'Audit trail' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('curriculum.publication.activated'),
+      screen.queryByRole('link', { name: 'Learning' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Safety' }),
+    ).not.toBeInTheDocument()
+
+    openOperatorSection('#operator-operations')
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Support diagnostics' }),
     ).toBeInTheDocument()
-    expect(api.listDrafts).toHaveBeenCalledTimes(1)
-    expect(api.listPublications).toHaveBeenCalledTimes(1)
-    expect(api.listAuditEvents).toHaveBeenCalledTimes(1)
-    expect(api.getPilotAnalytics).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('stuck_in_progress')).toBeInTheDocument()
+    expect(listSupportDiagnostics).toHaveBeenCalledOnce()
+    expect(listDrafts).not.toHaveBeenCalled()
+    expect(listPublications).not.toHaveBeenCalled()
+    expect(listAuditEvents).not.toHaveBeenCalled()
+    expect(getPilotAnalytics).not.toHaveBeenCalled()
+  })
+
+  it('keeps successful panels available while one panel fails and retries', async () => {
+    const draft: OperatorContentDraft = {
+      curriculum_version_id: '01J00000000000000000000002',
+      head_manifest_hash: null,
+      head_publication_id: null,
+      head_publication_number: null,
+      head_version: 0,
+      latest_english_decision: null,
+      latest_kannada_decision: null,
+      program_id: '01J00000000000000000000001',
+      program_internal_name: 'Synthetic Foundation Preview',
+      program_key: 'synthetic-foundation-preview',
+      publication_status: 'unpublished',
+      version_key: 'draft-1',
+    }
+    const listDrafts = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('temporary'))
+      .mockResolvedValue([draft])
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: [
+          'overview',
+          'learning',
+          'operations',
+          'safety',
+        ] as const,
+        organization: organization(),
+        panels: [
+          'pilot_analytics',
+          'review_queue',
+          'publish_status',
+          'support_diagnostics',
+          'audit',
+        ] as const,
+        search_available: true,
+      })),
+      listDrafts,
+      listPublications: vi.fn(async () => [
+        {
+          created_at: '2026-08-09T10:00:00+00:00',
+          curriculum_version_id: draft.curriculum_version_id,
+          head_version: 1,
+          is_head: true,
+          manifest_hash: 'a'.repeat(64),
+          program_id: draft.program_id,
+          program_key: draft.program_key,
+          publication_id: '01J00000000000000000000003',
+          publication_number: 1,
+          version_key: draft.version_key,
+        },
+      ]),
+    })
+
+    openOperatorSection('#operator-learning')
+
+    renderConsole(api)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Publish status' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('#1 · head')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'This panel could not be loaded. Other operator tasks remain available.',
+      ),
+    ).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(
+      await screen.findByText('Synthetic Foundation Preview'),
+    ).toBeInTheDocument()
+    expect(listDrafts).toHaveBeenCalledTimes(2)
+    expect(screen.getByText('#1 · head')).toBeInTheDocument()
+  })
+
+  it('debounces bounded search, ignores short input, and appends a cursor page', async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        items: [
+          {
+            id: '01J00000000000000000000002',
+            kind: 'curriculum_version' as const,
+            occurred_at: null,
+            primary_text: 'Synthetic Foundation Preview',
+            secondary_text: 'synthetic-foundation-preview / draft-1',
+            section: 'learning' as const,
+          },
+        ],
+        next_cursor: 'encrypted-next',
+      })
+      .mockResolvedValueOnce({
+        generated_at: '2026-08-09T10:00:01+00:00',
+        items: [
+          {
+            id: '01J00000000000000000000003',
+            kind: 'curriculum_publication' as const,
+            occurred_at: '2026-08-09T10:00:00+00:00',
+            primary_text: 'Synthetic Foundation Preview',
+            secondary_text: 'synthetic-foundation-preview / draft-1 · #1',
+            section: 'learning' as const,
+          },
+        ],
+        next_cursor: null,
+      })
+    const api = operatorApi({ search })
+    const user = userEvent.setup()
+
+    renderConsole(api)
+    const input = await screen.findByRole('searchbox', {
+      name: 'Search this organization',
+    })
+
+    await user.type(input, 'x')
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 350))
+    expect(search).not.toHaveBeenCalled()
+
+    await user.type(input, 'y')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    expect(
+      await screen.findByText('synthetic-foundation-preview / draft-1'),
+    ).toBeInTheDocument()
+    expect(search).toHaveBeenCalledWith(
+      'xy',
+      undefined,
+      expect.any(AbortSignal),
+    )
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 350))
+    expect(search).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Load more' }))
+
+    expect(
+      await screen.findByText(
+        'synthetic-foundation-preview / draft-1 · #1',
+      ),
+    ).toBeInTheDocument()
+    expect(search).toHaveBeenLastCalledWith(
+      'xy',
+      'encrypted-next',
+      expect.any(AbortSignal),
+    )
+    expect(screen.getByText('Results shown').closest('p')).toHaveTextContent(
+      'Results shown: 2',
+    )
+  })
+
+  it('opens safe audit detail and appends cursor-paged events', async () => {
+    const listAuditEvents = vi
+      .fn()
+      .mockResolvedValueOnce({
+        items: [auditEvent('01J00000000000000000000004', 'activated')],
+        next_cursor: 'audit-next',
+      })
+      .mockResolvedValueOnce({
+        items: [auditEvent('01J00000000000000000000007', 'reviewed')],
+        next_cursor: null,
+      })
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: ['overview', 'safety'] as const,
+        organization: organization(),
+        panels: ['audit'] as const,
+        search_available: true,
+      })),
+      listAuditEvents,
+    })
+    const user = userEvent.setup()
+
+    openOperatorSection('#operator-safety')
+
+    renderConsole(api)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: /curriculum\.publication\.activated/u,
+      }),
+    )
+
+    expect(screen.getByText('Audit event detail')).toBeInTheDocument()
+    expect(
+      screen.getByText('11111111-1111-4111-8111-111111111111'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('01J00000000000000000000005'),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Load more' }))
+
+    expect(
+      await screen.findByRole('button', {
+        name: /curriculum\.content_review\.recorded/u,
+      }),
+    ).toBeInTheDocument()
+    expect(listAuditEvents).toHaveBeenLastCalledWith(
+      'audit-next',
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('retries the hidden-denial overview without starting panel reads', async () => {
+    const getOverview = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('not available'))
+      .mockResolvedValueOnce({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: ['overview'] as const,
+        organization: organization(),
+        panels: [] as const,
+        search_available: false,
+      })
+    const listDrafts = vi.fn(async () => [])
+    const api = operatorApi({ getOverview, listDrafts })
+
+    renderConsole(api)
+
+    expect(
+      await screen.findByText(
+        'The operator content workflow is unavailable. Try again.',
+      ),
+    ).toBeInTheDocument()
+    expect(listDrafts).not.toHaveBeenCalled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(
+      await screen.findByText('Hithaishi Learning Hub'),
+    ).toBeInTheDocument()
+    expect(getOverview).toHaveBeenCalledTimes(2)
+    expect(listDrafts).not.toHaveBeenCalled()
   })
 })

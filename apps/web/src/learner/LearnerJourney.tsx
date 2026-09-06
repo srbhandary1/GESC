@@ -673,6 +673,17 @@ export function LearnerJourney({
     )
   }
 
+  const home = state.home
+  const hasDominantAction =
+    home.enrollment !== null &&
+    (home.due_review !== null || home.next_mission !== null)
+  const dominantTitle =
+    home.due_review?.title ?? home.next_mission?.title ?? null
+  const reviewDue = home.due_review !== null
+  const estimatedMinutes = reviewDue
+    ? null
+    : (home.next_mission?.estimated_minutes ?? 0)
+
   return (
     <section
       aria-labelledby="learner-home-title"
@@ -698,32 +709,33 @@ export function LearnerJourney({
           <LocalizedMessage
             resolution={message('learner.home.no_mission')}
           />
+        </aside>
+      </header>
+      {!hasDominantAction ? (
+        <p className="learner-card learner-home__empty">
+          <LocalizedMessage resolution={message('learner.home.no_mission')} />
         </p>
       ) : (
         <section
           aria-labelledby="next-mission-title"
           className="learner-card"
         >
-          <p className="learner-eyebrow">
-            <LocalizedMessage
-              resolution={message('learner.home.next_mission')}
-            />
-          </p>
-          <h3
-            className="learner-card__title"
-            id="next-mission-title"
-          >
-            <GovernedText content={state.home.next_mission.title} />
-          </h3>
-          <p>
-            <LocalizedMessage
-              resolution={resolveInterfaceMessage(
-                'learner.home.estimated_minutes',
-                locale,
-                localizationPolicy,
-                {
-                  minutes: state.home.next_mission.estimated_minutes,
-                },
+          <div className="learner-home__action-body">
+            <p className="learner-home__eyebrow">
+              <LocalizedMessage
+                resolution={message(
+                  home.due_review === null
+                    ? 'learner.home.todays_mission'
+                    : 'learner.home.review_due',
+                )}
+              />
+            </p>
+            <h3
+              className="learner-home__action-title"
+              id="dominant-action-title"
+            >
+              {dominantTitle === null ? null : (
+                <GovernedText content={dominantTitle} />
               )}
             />
           </p>
@@ -733,25 +745,62 @@ export function LearnerJourney({
                 resolution={message('learner.error.message')}
               />
             </p>
-          ) : null}
-          <button
-            className="ge-button ge-button--primary"
-            disabled={busy}
-            onClick={() => void beginMission(state.home)}
-            type="button"
-          >
-            <LocalizedMessage
-              resolution={message(
-                busy
-                  ? 'learner.home.starting'
-                  : 'learner.home.start_mission',
-              )}
-            />
-          </button>
+            <p className="learner-home__meta">
+              <LocalizedMessage
+                resolution={
+                  reviewDue
+                    ? resolveInterfaceMessage(
+                        'learner.home.review_interval',
+                        locale,
+                        localizationPolicy,
+                        { days: String(home.due_review!.interval_days) },
+                      )
+                    : resolveInterfaceMessage(
+                        'learner.home.estimated_minutes',
+                        locale,
+                        localizationPolicy,
+                        { minutes: estimatedMinutes ?? 0 },
+                      )
+                }
+              />
+            </p>
+            {actionError ? (
+              <p
+                className="learner-home__error"
+                role="alert"
+              >
+                <LocalizedMessage
+                  resolution={message('learner.error.message')}
+                />
+              </p>
+            ) : null}
+            <button
+              className="ge-button ge-button--primary learner-home__continue"
+              disabled={busy}
+              onClick={() =>
+                void beginMission(
+                  home,
+                  home.due_review === null
+                    ? home.next_mission!
+                    : {
+                        estimated_minutes: 0,
+                        id: home.due_review.mission_id,
+                        title: home.due_review.title,
+                      },
+                )
+              }
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message(
+                  busy ? 'learner.home.continuing' : 'learner.home.continue',
+                )}
+              />
+            </button>
+          </div>
         </section>
       )}
-      {state.home.enrollment === null ||
-      state.home.next_mission === null ? null : (
+      {!hasDominantAction ? null : (
         <section
           aria-labelledby="offline-access-title"
           className="learner-card learner-offline"
@@ -896,11 +945,35 @@ function OnboardingForm({
       data-grove-first-run="open"
       role="dialog"
     >
-    <OnboardingStepper
-      busy={busy}
-      commandLocked={commandLocked}
-      error={
-        error ? (
+      <h2
+        id="onboarding-title"
+        ref={titleRef}
+        tabIndex={-1}
+      >
+        <LocalizedMessage
+          resolution={message('learner.onboarding.title')}
+        />
+      </h2>
+      <p>
+        <LocalizedMessage
+          resolution={message('learner.onboarding.introduction')}
+        />
+      </p>
+      <p>
+        <LocalizedMessage
+          resolution={message('learner.onboarding.orientation')}
+        />
+      </p>
+      <form onSubmit={(event) => void submit(event)}>
+        <label className="learner-choice learner-choice--confirmation">
+          <input
+            checked={adultConfirmed}
+            disabled={busy || commandLocked}
+            onChange={(event) =>
+              setAdultConfirmed(event.currentTarget.checked)
+            }
+            type="checkbox"
+          />
           <LocalizedMessage
             resolution={message('learner.onboarding.error')}
           />
@@ -1125,6 +1198,7 @@ function MissionExperience({
                 errorStatus: text('learner.audio.error_status'),
               }}
               mimeType={mission.model_audio.mime_type}
+              slowLabel={text('learner.audio.slow')}
               source={mission.model_audio.stream_url}
             />
           )}

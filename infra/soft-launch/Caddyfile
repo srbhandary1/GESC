@@ -6,7 +6,7 @@
 }
 
 (laravel_backend) {
-	reverse_proxy 127.0.0.1:8000 {
+	reverse_proxy 127.0.0.1:{$GE_SOFT_LAUNCH_API_PORT:8000} {
 		# This loopback listener is exclusively the HTTPS tunnel origin. The
 		# static HTTP listener is a separate Caddy process on port 8080.
 		header_up X-Forwarded-Proto https

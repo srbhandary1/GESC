@@ -84,7 +84,9 @@ final class EntitlementAdministrationApiTest extends TenancyIntegrationTestCase
             ->assertJsonPath('tax.gstin_is_placeholder', true)
             ->assertJsonPath('tax.gst_rate_bps', 1800);
         $this->assertNoStore($workspace);
-        $planId = collect($workspace->json('plans'))
+        $plans = $workspace->json('plans');
+        self::assertIsArray($plans);
+        $planId = collect($plans)
             ->firstWhere('code', DirectPlanDefaults::MONTHLY_ROLEPLAY)['id'] ?? null;
         self::assertIsString($planId);
 

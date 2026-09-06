@@ -29,11 +29,14 @@ prices unless a later decision says so.
 Listed amounts are **GST exclusive**. Checkout adds GST from the operator
 tax settings (§4).
 
-| Code | Display name | Price (ex-GST) | Access window | Content | Role-play |
-|---|---|---|---|---|---|
-| `demo` | Two-day demo | ₹0 | 48 hours from first sign-in, plus the 5-minute live-AI cap in §2 | Level 1 and Level 2 only | Included for those two levels, inside the 5-minute cap |
-| `monthly_modules` | Modules | ₹350 / calendar month | Recurring monthly while the grant is active | All published levels | Not included |
-| `monthly_modules_roleplay` | **Premium** (flagship) | ₹500 / calendar month | Recurring monthly while the grant is active | All published levels | Included |
+| Code | Display name | Price (ex-GST) | Access window | Content | Role-play | Live AI |
+|---|---|---|---|---|---|---|
+| `demo` | Two-day demo | ₹0 | 48 hours from first sign-in, plus the 5-minute live-AI cap in §2 | Level 1 and Level 2 only | Included for those two levels, inside the 5-minute cap | 5 minutes |
+| `monthly_modules` | Modules | ₹350 / calendar month | Recurring monthly while the grant is active | All published levels | Not included | **40 minutes / month** |
+| `monthly_modules_roleplay` | **Premium** (flagship) | ₹500 / calendar month | Recurring monthly while the grant is active | All published levels | Included | **90 minutes / month** |
+| `talk_pack_30` | Talk 30 | ₹199 | Until the current paid month ends, or 30 days, whichever is sooner | Does not change levels | Does not unlock | **+30 minutes** |
+| `talk_pack_60` | Talk 60 | ₹349 | Same as Talk 30 | Does not change levels | Does not unlock | **+60 minutes** |
+| `talk_pack_180` | Talk 180 | ₹899 | Same as Talk 30 | Does not change levels | Does not unlock | **+180 minutes** |
 
 Premium is the recommended paid plan (SuperNova-like one flagship SKU).
 Modules is the cheaper downsell: all published levels without Role-play.
@@ -43,6 +46,13 @@ with Swathi remains available. The Speak situation picker and Role-play
 journeys (Observe / Rehearse / Perform) stay locked.
 
 ₹500 Premium is ₹350 plus Role-play.
+
+Paid live-AI time is a **hard monthly pool** (ADR-0037). Speak, Role-play and
+Learn Conversation/Interaction share it. Published lesson audio/video do not.
+When the pool is empty, live talk fails closed. Learners may buy Talk 30 / 60
+/ 180 packs on an **active Modules or Premium** month. Packs do not unlock
+Role-play. Demo and expired accounts must subscribe first. Packs expire at
+the sooner of the paid month’s end and 30 days from purchase. No refunds.
 
 1:1 waitlist and institute contact links are **not** sold in these tiers
 (ADR-0026).
@@ -99,9 +109,9 @@ plan page later; do not bury them only in client copy.
    is an attributed operator adjustment, not a learner self-serve, unless a
    later decision says otherwise.
 
-Paid plans (`monthly_modules`, `monthly_modules_roleplay`) do **not** use
-this 5-minute cap. Their limits are the plan’s module and Role-play flags
-only, until a later usage policy is accepted.
+Paid plans (`monthly_modules`, `monthly_modules_roleplay`) use the same
+inclusive live-AI meter as the demo, with monthly defaults of **2400** and
+**5400** seconds (ADR-0037). Talk packs add seconds to that pool.
 
 ---
 
@@ -208,7 +218,7 @@ AI must not grant, deny, price or meter entitlements.
 - Production or Google Play authorization.
 - Selling Role-play as a one-off add-on without a new plan code.
 - Using AI scores, streaks or attendance to decide paid access.
-- 5-minute live-AI cap on paid monthly plans.
+- Per-minute overage billing.
 - Storing card numbers or UPI credentials.
 - Creating accounts from payment success without username/password
   enrollment (ADR-0034).
@@ -220,7 +230,8 @@ AI must not grant, deny, price or meter entitlements.
 ## 8. Implementation status
 
 Implemented as ADMIN-ENT-01 / ADR-0035 / APP-0072, with Premium flagship and
-courtesy month as ADR-0036 / APP-0073. OpenAPI 0.39.0. Dummy
+courtesy month as ADR-0036 / APP-0073, and paid live-AI caps plus talk packs
+as ADR-0037 / APP-0074. OpenAPI **0.40.0**. Dummy
 checkout completes in-process. Live GSTIN replacement is an operator action
 on the Subscriptions page. Production, Play Billing and live payment
 credentials remain unauthorized.

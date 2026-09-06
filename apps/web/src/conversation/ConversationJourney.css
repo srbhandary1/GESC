@@ -1,96 +1,8 @@
 .conversation-journey {
   display: grid;
   gap: var(--ge-space-5);
-  width: min(100%, 36rem);
-  margin-inline: auto;
-}
-
-.conversation-journey--embedded {
   width: 100%;
-  margin-inline: 0;
-  padding-top: var(--ge-space-4);
-  border-top: 1px solid var(--ge-color-border);
-}
-
-.conversation-journey__heading {
-  display: grid;
-  justify-items: center;
-  gap: var(--ge-space-2);
-  text-align: center;
-}
-
-.conversation-journey__presence {
-  display: grid;
-  justify-items: center;
-}
-
-.conversation-journey__prompt {
-  display: grid;
-  justify-items: start;
-  gap: 0.75rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--ge-color-border);
-  border-radius: 1.25rem;
-  background: var(--ge-color-surface);
-}
-
-.conversation-journey__prompt-text {
-  margin: 0;
-  font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.3;
-}
-
-.conversation-journey__transcript {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.conversation-journey__bubble {
-  display: grid;
-  gap: 0.25rem;
-  width: 86%;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--ge-color-border);
-  border-radius: 1.1rem;
-  background: var(--ge-color-surface);
-}
-
-.conversation-journey__bubble dt {
-  color: var(--ge-color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 750;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.conversation-journey__bubble--mira {
-  justify-self: start;
-  background: color-mix(in srgb, var(--ge-color-action) 10%, var(--ge-color-surface));
-}
-
-.conversation-journey__bubble--you {
-  justify-self: end;
-}
-
-.conversation-journey__mic-dock {
-  display: grid;
-  justify-items: center;
-  gap: 0.65rem;
-  padding-block: 0.5rem;
-}
-
-.conversation-journey__mic-hint {
-  margin: 0;
-  color: var(--ge-color-text-muted);
-  font-size: 0.9rem;
-  font-weight: 650;
-}
-
-.conversation-journey__about {
-  justify-self: start;
+  max-width: none;
 }
 
 .conversation-journey__notice,
@@ -125,25 +37,19 @@
 }
 
 .conversation-journey__heading {
-  background:
-    linear-gradient(
-      145deg,
-      #0a1f18 0%,
-      #071611 70%,
-      color-mix(in srgb, var(--ge-color-brass) 28%, #071611) 100%
-    );
-  color: #f4f8f5;
-  border-color: color-mix(in srgb, var(--ge-color-brass) 35%, #071611);
+  background: var(--ge-accent-panel-bg);
+  color: var(--ge-accent-panel-text);
+  border-color: var(--ge-accent-panel-border);
 }
 
 .speak-loop-timings {
   justify-self: end;
   margin: 0;
   padding: var(--ge-space-2) var(--ge-space-3);
-  border: 1px dashed color-mix(in srgb, var(--ge-color-brass) 45%, transparent);
+  border: 1px dashed var(--ge-timing-chip-border);
   border-radius: var(--ge-radius-sm);
-  background: rgb(7 22 17 / 0.45);
-  color: #d7e4dc;
+  background: var(--ge-timing-chip-bg);
+  color: var(--ge-timing-chip-text);
   font-size: 0.75rem;
   line-height: 1.35;
 }
@@ -163,7 +69,7 @@
   font-family: var(--ge-font-family-display);
   font-weight: 650;
   letter-spacing: -0.02em;
-  color: #f8f4e8;
+  color: var(--ge-accent-panel-heading);
 }
 
 .conversation-journey__controls {
@@ -179,8 +85,38 @@
   padding-inline-start: 1.25rem;
 }
 
-.conversation-journey__progress,
-.conversation-journey__identity {
+.conversation-journey__progress {
+  font-weight: 650;
+  color: var(--ge-color-action);
+}
+
+.conversation-journey__example {
+  display: grid;
+  gap: var(--ge-space-3);
+  padding: var(--ge-space-3);
+  border: 1px dashed color-mix(in srgb, var(--ge-color-border) 80%, transparent);
+  border-radius: var(--ge-radius-sm);
+}
+
+.conversation-journey__example summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.conversation-journey__consent-details {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.speak-room {
+  display: grid;
+  gap: var(--ge-space-4);
+  width: 100%;
+  max-width: none;
+}
+
+.level-session__part-hint {
+  margin: 0;
   color: var(--ge-color-text-muted);
   font-size: 0.88rem;
   font-weight: 550;
@@ -230,13 +166,7 @@
   max-width: 16rem;
   min-height: var(--ge-target-minimum);
   padding-inline: var(--ge-space-3);
-}
-
-.conversation-journey__voice {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  padding: var(--ge-space-4);
+  box-shadow: var(--ge-input-inset-shadow);
 }
 
 .conversation-journey__voice-notice {

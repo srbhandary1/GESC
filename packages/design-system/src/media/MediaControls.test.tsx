@@ -141,6 +141,34 @@ describe('media presentation controls', () => {
     expect(onRequestCancel).toHaveBeenCalledOnce()
   })
 
+  it('keeps the primary hold control available after a capture error', async () => {
+    const onRequestStart = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+          holding: 'Listening…',
+          release: 'Release to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={vi.fn()}
+        state="error"
+      />,
+    )
+
+    expect(screen.getByText('Recording failed')).toBeVisible()
+    const retry = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: retry })
+    expect(onRequestStart).toHaveBeenCalledOnce()
+  })
+
   it('announces blocked state without offering a capture control', () => {
     render(
       <RecordingControls

@@ -40,7 +40,7 @@ describe('web password sign-in panel', () => {
     const username = screen.getByLabelText('Username')
     const password = screen.getByLabelText('Password')
     expect(username).toHaveAttribute('autocomplete', 'username')
-    expect(username).toHaveAttribute('pattern', '[A-Za-z][A-Za-z0-9._-]{3,63}')
+    expect(username).toHaveAttribute('pattern', '[A-Za-z][A-Za-z0-9._\\-]{3,63}')
     expect(password).toHaveAttribute('autocomplete', 'current-password')
     expect(password).toHaveAttribute('type', 'password')
     await user.type(username, 'learner.one')
@@ -57,6 +57,73 @@ describe('web password sign-in panel', () => {
     expect(password).toHaveValue('')
     expect(localStorageWrite).not.toHaveBeenCalled()
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
+  })
+
+  it('keeps the password and shows the error above Sign in when sign-in fails', async () => {
+    const user = userEvent.setup()
+    const authentication = webAuthentication()
+    vi.mocked(authentication.signIn).mockRejectedValue(new Error('unavailable'))
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('Username'), 'learner.one')
+    await user.type(
+      screen.getByLabelText('Password'),
+      'Correct horse battery 2026!',
+    )
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      'Sign-in could not be completed. Check the details and try again.',
+    )
+    expect(screen.getByLabelText('Password')).toHaveValue(
+      'Correct horse battery 2026!',
+    )
+    expect(screen.getByLabelText('Username')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    )
+    const submit = screen.getByRole('button', { name: 'Sign in' })
+    expect(
+      alert.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('does not treat an anonymous session after a 200 sign-in as success', async () => {
+    const user = userEvent.setup()
+    const authentication = webAuthentication()
+    const onAuthenticated = vi.fn()
+    vi.mocked(authentication.current).mockResolvedValue({
+      status: 'anonymous',
+    })
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={onAuthenticated}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('Username'), 'learner.one')
+    await user.type(
+      screen.getByLabelText('Password'),
+      'Correct horse battery 2026!',
+    )
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(onAuthenticated).not.toHaveBeenCalled()
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toHaveValue(
+      'Correct horse battery 2026!',
+    )
   })
 
   it('shows the same generic recovery response without exposing account state', async () => {

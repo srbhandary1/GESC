@@ -2,7 +2,7 @@
 
 **Checkpoint:** PRIV-DSR-01
 
-**Inventory version:** `learner-privacy-v7`
+**Inventory version:** `learner-privacy-v8`
 
 **Scope:** one learner membership in one organization
 
@@ -53,6 +53,7 @@ authorization boundary; it does not make the record public or mutable.
 | `learner_entitlements` | `learner_membership_id` | Plan id, status, source, windows, used seconds; plan snapshot excluded | Retain commercial grant evidence |
 | `subscription_checkouts` | `learner_membership_id` | Count only; provider references excluded | Retain payment evidence without secrets |
 | `live_ai_meter_charges` | via entitlement | Count only | Retain meter evidence without audio |
+| `live_ai_talk_packs` | via entitlement | Count only | Retain purchased live-AI pack grants without audio |
 | `password_recovery_challenges` | Global `user_id` when eligible | Count only; lookup/token digests and delivery metadata excluded | Retain through short security expiry/cleanup; successful organization erasure revokes sessions but does not create a recovery bypass |
 | `password_cutover_exclusions` | Exact excluded global `user_id`, global cutover marker and configured recovery owner | Count only; manifest digest and owner relationship remain restricted platform evidence | Retain append-only cutover and recovery accountability; it cannot be changed through tenant administration or learner erasure |
 | `privileged_password_recovery_cases` | Target global `user_id` | Safe historical reason/status/version/times; external evidence reference/digest excluded | Retain superseded/completed historical accountability outside tenant administration; no active route advances it |

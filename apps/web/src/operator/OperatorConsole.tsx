@@ -66,6 +66,26 @@ type ResourceState<T> =
   | { readonly status: 'error' }
   | { readonly status: 'ready'; readonly value: T }
 
+const navigationTitleKeys: Readonly<Record<OperatorNavigationKey, MessageKey>> = {
+  overview: 'operator.overview.title',
+  people: 'operator.people.title',
+  learners: 'operator.learners.title',
+  learning: 'operator.learning.title',
+  operations: 'operator.operations.title',
+  safety: 'operator.safety.title',
+  entitlements: 'operator.navigation.entitlements',
+}
+
+const navigationLeadKeys: Readonly<Record<OperatorNavigationKey, MessageKey>> = {
+  overview: 'operator.navigation.overview.lead',
+  people: 'operator.navigation.people.lead',
+  learners: 'operator.navigation.learners.lead',
+  learning: 'operator.navigation.learning.lead',
+  operations: 'operator.navigation.operations.lead',
+  safety: 'operator.navigation.safety.lead',
+  entitlements: 'operator.navigation.entitlements.lead',
+}
+
 const navigationMetadata: Readonly<
   Record<
     OperatorNavigationKey,
@@ -129,6 +149,55 @@ const learnerPanelKeys: ReadonlySet<string> = new Set([
   'learner_enrollments',
   'learner_invitations',
 ])
+
+function resolveOperatorSection(
+  hash: string,
+  navigation: readonly OperatorNavigationKey[],
+): OperatorNavigationKey {
+  const normalized = hash.replace(/^#/, '')
+
+  if (
+    normalized === '' ||
+    normalized === 'home' ||
+    normalized === 'operator-workspace-overview'
+  ) {
+    return navigation.includes('overview') ? 'overview' : navigation[0]!
+  }
+
+  for (const item of navigation) {
+    if (normalized === navigationMetadata[item].anchor) {
+      return item
+    }
+  }
+
+  return navigation.includes('overview') ? 'overview' : navigation[0]!
+}
+
+function useOperatorSection(
+  navigation: readonly OperatorNavigationKey[] | undefined,
+): OperatorNavigationKey {
+  const [locationHash, setLocationHash] = useState(
+    () => globalThis.location?.hash ?? '',
+  )
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setLocationHash(globalThis.location?.hash ?? '')
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange)
+    }
+  }, [])
+
+  if (navigation === undefined || navigation.length === 0) {
+    return 'overview'
+  }
+
+  return resolveOperatorSection(locationHash, navigation)
+}
 
 function formatGroupedCounts(
   counts: Readonly<Record<string, number>>,
@@ -223,25 +292,19 @@ export function OperatorConsole({
     [api],
   )
   const overview = useOperatorResource(loadOverview)
+  const activeSection = useOperatorSection(
+    overview.state.status === 'ready'
+      ? overview.state.value.navigation
+      : undefined,
+  )
 
   return (
-    <section
-      aria-labelledby="operator-console-title"
+    <div
       className="operator-console"
       data-operator-console="content-workflow"
     >
-      <h2 className="operator-console__title" id="operator-console-title">
-        <LocalizedMessage resolution={message('operator.console.title')} />
-      </h2>
-      <p className="operator-console__lead">
-        <LocalizedMessage resolution={message('operator.console.lead')} />
-      </p>
-      <p className="operator-console__notice">
-        <LocalizedMessage resolution={message('operator.console.notice')} />
-      </p>
-
-      {state === 'loading' ? (
-        <p>
+      {overview.state.status === 'loading' ? (
+        <div className="operator-console__shell-state" role="status">
           <LocalizedMessage
             resolution={message('operator.console.loading')}
           />
@@ -254,224 +317,254 @@ export function OperatorConsole({
         </p>
       ) : null}
 
-      {state === 'ready' ? (
-        <>
-          <section
-            aria-labelledby="operator-pilot-analytics-title"
-            className="operator-console__panel"
-          >
-            <div>
-              <span className="operator-workspace__organization-label">
-                <LocalizedMessage
-                  resolution={message('operator.organization.label')}
-                />
-              </span>
-              <bdi className="operator-workspace__organization-name" lang="">
-                {overview.state.value.organization.name}
-              </bdi>
+      {overview.state.status === 'ready' ? (
+        <div className="operator-workspace operator-workspace--sectioned">
+          <aside className="operator-workspace__sidebar">
+            <div
+              className="operator-workspace__organization operator-workspace__organization--compact"
+              id="operator-workspace-overview"
+            >
+              <div>
+                <span className="operator-workspace__organization-label">
+                  <LocalizedMessage
+                    resolution={message('operator.organization.label')}
+                  />
+                </span>
+                <bdi className="operator-workspace__organization-name" lang="">
+                  {overview.state.value.organization.name}
+                </bdi>
+              </div>
+              <div>
+                <span className="operator-workspace__organization-label">
+                  <LocalizedMessage
+                    resolution={message('operator.organization.timezone')}
+                  />
+                </span>
+                <bdi>{overview.state.value.organization.timezone}</bdi>
+              </div>
             </div>
-            <div>
-              <span className="operator-workspace__organization-label">
+
+            <nav
+              aria-label={message('operator.navigation.label').text}
+              className="operator-workspace__navigation operator-workspace__navigation--sidebar"
+            >
+              <ul>
+                {overview.state.value.navigation.map((item) => (
+                  <li key={item}>
+                    <a
+                      aria-current={
+                        activeSection === item ? 'page' : undefined
+                      }
+                      href={`#${navigationMetadata[item].anchor}`}
+                    >
+                      <LocalizedMessage
+                        resolution={message(navigationMetadata[item].label)}
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <p className="operator-console__notice operator-console__notice--sidebar">
+              <LocalizedMessage
+                resolution={message('operator.console.notice')}
+              />
+            </p>
+          </aside>
+
+          <div className="operator-workspace__main">
+            <header className="operator-console__heading">
+              <p className="operator-console__kicker">
                 <LocalizedMessage
-                  resolution={message('operator.organization.timezone')}
+                  resolution={message('operator.console.kicker')}
                 />
-              </span>
-              <bdi>{overview.state.value.organization.timezone}</bdi>
-            </div>
-          </div>
-
-          {overview.state.value.search_available ? (
-            <OperatorSearch api={api} locale={locale} message={message} />
-          ) : null}
-
-          <nav
-            aria-label={message('operator.navigation.label').text}
-            className="operator-workspace__navigation"
-          >
-            <ul>
-              {overview.state.value.navigation.map((item) => (
-                <li key={item}>
-                  <a href={`#${navigationMetadata[item].anchor}`}>
-                    <LocalizedMessage
-                      resolution={message(navigationMetadata[item].label)}
-                    />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="operator-workspace__tasks">
-            {overview.state.value.panels.includes('pilot_analytics') ||
-            overview.state.value.panels.includes('organization_settings') ? (
-              <section
-                aria-labelledby="operator-overview-title"
-                className="operator-task-group"
+              </p>
+              <h2
+                className="operator-console__title"
+                id="operator-console-title"
               >
-                <div className="operator-task-group__heading">
-                  <p>
-                    <LocalizedMessage
-                      resolution={message('operator.navigation.overview')}
-                    />
-                  </p>
-                  <h3 id="operator-overview-title">
-                    <LocalizedMessage
-                      resolution={message('operator.overview.title')}
-                    />
-                  </h3>
-                </div>
-                <div className="operator-task-group__grid">
+                <LocalizedMessage
+                  resolution={message(navigationTitleKeys[activeSection])}
+                />
+              </h2>
+              <p className="operator-console__lead">
+                <LocalizedMessage
+                  resolution={message(navigationLeadKeys[activeSection])}
+                />
+              </p>
+            </header>
+
+            {activeSection === 'overview' &&
+            overview.state.value.search_available ? (
+              <OperatorSearch api={api} locale={locale} message={message} />
+            ) : null}
+
+            {activeSection === 'overview' ? (
+              <OperatorSectionDashboard
+                message={message}
+                navigation={overview.state.value.navigation}
+              />
+            ) : null}
+
+            <div className="operator-workspace__tasks">
+              {activeSection === 'overview' &&
+              (overview.state.value.panels.includes('pilot_analytics') ||
+                overview.state.value.panels.includes('organization_settings')) ? (
+                <section
+                  aria-labelledby="operator-overview-title"
+                  className="operator-task-group"
+                >
+                  <div className="operator-task-group__heading">
+                    <h3 id="operator-overview-title">
+                      <LocalizedMessage
+                        resolution={message('operator.overview.title')}
+                      />
+                    </h3>
+                  </div>
+                  <div className="operator-task-group__grid operator-task-group__grid--overview">
+                    {overview.state.value.panels.includes(
+                      'organization_settings',
+                    ) ? (
+                      <OperatorOrganizationSettingsPanel
+                        api={organizationApi}
+                        locale={locale}
+                        localizationPolicy={localizationPolicy}
+                      />
+                    ) : null}
+                    {overview.state.value.panels.includes('pilot_analytics') ? (
+                      <PilotAnalyticsPanel api={api} message={message} />
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
+
+              {activeSection === 'people' &&
+              overview.state.value.navigation.includes('people') ? (
+                <OperatorOrganizationAdministration
+                  api={organizationApi}
+                  createCommandId={createCommandId}
+                  currentMembershipId={currentMembershipId}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  panels={overview.state.value.panels.filter(
+                    (panel): panel is OperatorOrganizationPanelKey =>
+                      organizationPanelKeys.has(panel),
+                  )}
+                />
+              ) : null}
+
+              {activeSection === 'learners' &&
+              overview.state.value.navigation.includes('learners') ? (
+                <OperatorLearnerAdministration
+                  api={learnerApi}
+                  createCommandId={createCommandId}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  panels={overview.state.value.panels.filter(
+                    (panel): panel is OperatorLearnerPanelKey =>
+                      learnerPanelKeys.has(panel),
+                  )}
+                />
+              ) : null}
+
+              {activeSection === 'entitlements' &&
+              overview.state.value.navigation.includes('entitlements') ? (
+                <OperatorEntitlementAdministration
+                  api={entitlementApi}
+                  createCommandId={createCommandId}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                />
+              ) : null}
+
+              {activeSection === 'learning' &&
+              overview.state.value.navigation.includes('learning') ? (
+                <section
+                  aria-labelledby="operator-learning-title"
+                  className="operator-task-group"
+                  id="operator-learning"
+                >
+                  <div className="operator-task-group__heading">
+                    <h3 id="operator-learning-title">
+                      <LocalizedMessage
+                        resolution={message('operator.learning.title')}
+                      />
+                    </h3>
+                  </div>
+                  <div className="operator-task-group__grid operator-task-group__grid--learning">
+                    {overview.state.value.panels.includes('content_studio') ? (
+                      <OperatorContentStudio
+                        api={contentApi}
+                        createCommandId={createCommandId}
+                        locale={locale}
+                        localizationPolicy={localizationPolicy}
+                      />
+                    ) : null}
+                    {overview.state.value.panels.includes('media_library') ? (
+                      <OperatorMediaLibrary
+                        api={mediaApi}
+                        createCommandId={createCommandId}
+                        locale={locale}
+                        localizationPolicy={localizationPolicy}
+                      />
+                    ) : null}
+                    {overview.state.value.panels.includes('review_queue') ? (
+                      <ReviewQueuePanel api={api} message={message} />
+                    ) : null}
+                    {overview.state.value.panels.includes('publish_status') ? (
+                      <PublicationStatusPanel api={api} message={message} />
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
+
+              {activeSection === 'operations' &&
+              overview.state.value.navigation.includes('operations') ? (
+                <section
+                  aria-labelledby="operator-operations-title"
+                  className="operator-task-group"
+                  id="operator-operations"
+                >
+                  <div className="operator-task-group__heading">
+                    <h3 id="operator-operations-title">
+                      <LocalizedMessage
+                        resolution={message('operator.operations.title')}
+                      />
+                    </h3>
+                  </div>
                   {overview.state.value.panels.includes(
-                    'organization_settings',
+                    'support_diagnostics',
                   ) ? (
-                    <OperatorOrganizationSettingsPanel
-                      api={organizationApi}
-                      locale={locale}
-                      localizationPolicy={localizationPolicy}
-                    />
+                    <SupportDiagnosticsPanel api={api} message={message} />
                   ) : null}
-                  {overview.state.value.panels.includes('pilot_analytics') ? (
-                    <PilotAnalyticsPanel api={api} message={message} />
+                </section>
+              ) : null}
+
+              {activeSection === 'safety' &&
+              overview.state.value.navigation.includes('safety') ? (
+                <section
+                  aria-labelledby="operator-safety-title"
+                  className="operator-task-group"
+                  id="operator-safety"
+                >
+                  <div className="operator-task-group__heading">
+                    <h3 id="operator-safety-title">
+                      <LocalizedMessage
+                        resolution={message('operator.safety.title')}
+                      />
+                    </h3>
+                  </div>
+                  {overview.state.value.panels.includes('audit') ? (
+                    <AuditPanel api={api} locale={locale} message={message} />
                   ) : null}
-                </div>
-              </section>
-            ) : null}
-
-            {overview.state.value.navigation.includes('people') ? (
-              <OperatorOrganizationAdministration
-                api={organizationApi}
-                createCommandId={createCommandId}
-                currentMembershipId={currentMembershipId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                panels={overview.state.value.panels.filter(
-                  (panel): panel is OperatorOrganizationPanelKey =>
-                    organizationPanelKeys.has(panel),
-                )}
-              />
-            ) : null}
-
-            {overview.state.value.navigation.includes('learners') ? (
-              <OperatorLearnerAdministration
-                api={learnerApi}
-                createCommandId={createCommandId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                panels={overview.state.value.panels.filter(
-                  (panel): panel is OperatorLearnerPanelKey =>
-                    learnerPanelKeys.has(panel),
-                )}
-              />
-            ) : null}
-
-            {overview.state.value.navigation.includes('entitlements') ? (
-              <OperatorEntitlementAdministration
-                api={entitlementApi}
-                createCommandId={createCommandId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-              />
-            ) : null}
-
-            {overview.state.value.navigation.includes('learning') ? (
-              <section
-                aria-labelledby="operator-learning-title"
-                className="operator-task-group"
-                id="operator-learning"
-              >
-                <div className="operator-task-group__heading">
-                  <p>
-                    <LocalizedMessage
-                      resolution={message('operator.navigation.learning')}
-                    />
-                  </p>
-                  <h3 id="operator-learning-title">
-                    <LocalizedMessage
-                      resolution={message('operator.learning.title')}
-                    />
-                  </h3>
-                </div>
-                <div className="operator-task-group__grid">
-                  {overview.state.value.panels.includes('content_studio') ? (
-                    <OperatorContentStudio
-                      api={contentApi}
-                      createCommandId={createCommandId}
-                      locale={locale}
-                      localizationPolicy={localizationPolicy}
-                    />
-                  ) : null}
-                  {overview.state.value.panels.includes('media_library') ? (
-                    <OperatorMediaLibrary
-                      api={mediaApi}
-                      createCommandId={createCommandId}
-                      locale={locale}
-                      localizationPolicy={localizationPolicy}
-                    />
-                  ) : null}
-                  {overview.state.value.panels.includes('review_queue') ? (
-                    <ReviewQueuePanel api={api} message={message} />
-                  ) : null}
-                  {overview.state.value.panels.includes('publish_status') ? (
-                    <PublicationStatusPanel api={api} message={message} />
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-
-            {overview.state.value.navigation.includes('operations') ? (
-              <section
-                aria-labelledby="operator-operations-title"
-                className="operator-task-group"
-                id="operator-operations"
-              >
-                <div className="operator-task-group__heading">
-                  <p>
-                    <LocalizedMessage
-                      resolution={message('operator.navigation.operations')}
-                    />
-                  </p>
-                  <h3 id="operator-operations-title">
-                    <LocalizedMessage
-                      resolution={message('operator.operations.title')}
-                    />
-                  </h3>
-                </div>
-                {overview.state.value.panels.includes(
-                  'support_diagnostics',
-                ) ? (
-                  <SupportDiagnosticsPanel api={api} message={message} />
-                ) : null}
-              </section>
-            ) : null}
-
-            {overview.state.value.navigation.includes('safety') ? (
-              <section
-                aria-labelledby="operator-safety-title"
-                className="operator-task-group"
-                id="operator-safety"
-              >
-                <div className="operator-task-group__heading">
-                  <p>
-                    <LocalizedMessage
-                      resolution={message('operator.navigation.safety')}
-                    />
-                  </p>
-                  <h3 id="operator-safety-title">
-                    <LocalizedMessage
-                      resolution={message('operator.safety.title')}
-                    />
-                  </h3>
-                </div>
-                {overview.state.value.panels.includes('audit') ? (
-                  <AuditPanel api={api} locale={locale} message={message} />
-                ) : null}
-              </section>
-            ) : null}
+                </section>
+              ) : null}
+            </div>
           </div>
-
         </div>
       ) : null}
-    </section>
+    </div>
   )
 }
 
@@ -982,7 +1075,304 @@ function AuditDetail({
               <LocalizedMessage
                 resolution={message('operator.pilot_analytics.title')}
               />
-            </h3>
+            </dt>
+            <dd>{event.action}</dd>
+          </div>
+          <div>
+            <dt>
+              <LocalizedMessage
+                resolution={message('operator.audit.field.subject')}
+              />
+            </dt>
+            <dd>
+              {event.subject_type}:<code>{event.subject_id}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <LocalizedMessage
+                resolution={message('operator.audit.field.actor')}
+              />
+            </dt>
+            <dd>
+              <code>
+                {event.actor_membership_id ??
+                  message('operator.audit.not_recorded').text}
+              </code>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <LocalizedMessage
+                resolution={message('operator.audit.field.correlation')}
+              />
+            </dt>
+            <dd>
+              <code>
+                {event.correlation_id ??
+                  message('operator.audit.not_recorded').text}
+              </code>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <LocalizedMessage
+                resolution={message('operator.audit.field.occurred_at')}
+              />
+            </dt>
+            <dd>
+              <time dateTime={event.occurred_at}>
+                {formatDateTime(event.occurred_at, locale)}
+              </time>
+            </dd>
+          </div>
+        </dl>
+      )}
+    </aside>
+  )
+}
+
+function OperatorSectionDashboard({
+  message,
+  navigation,
+}: Readonly<{
+  message: MessageResolver
+  navigation: readonly OperatorNavigationKey[]
+}>) {
+  const items = navigation.filter((item) => item !== 'overview')
+
+  if (items.length === 0) {
+    return null
+  }
+
+  return (
+    <section
+      aria-labelledby="operator-dashboard-title"
+      className="operator-section-dashboard"
+    >
+      <div className="operator-section-dashboard__heading">
+        <h3 id="operator-dashboard-title">
+          <LocalizedMessage
+            resolution={message('operator.navigation.dashboard.title')}
+          />
+        </h3>
+        <p>
+          <LocalizedMessage
+            resolution={message('operator.navigation.dashboard.lead')}
+          />
+        </p>
+      </div>
+      <ul className="operator-section-tiles">
+        {items.map((item) => (
+          <li key={item}>
+            <a
+              className="operator-section-tile"
+              href={`#${navigationMetadata[item].anchor}`}
+            >
+              <span className="operator-section-tile__label">
+                <LocalizedMessage
+                  resolution={message(navigationMetadata[item].label)}
+                />
+              </span>
+              <span className="operator-section-tile__lead">
+                <LocalizedMessage
+                  resolution={message(navigationLeadKeys[item])}
+                />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function OperatorSearch({
+  api,
+  locale,
+  message,
+}: PanelProps & Readonly<{ locale: SupportedLocale }>) {
+  const [input, setInput] = useState('')
+  const [activeQuery, setActiveQuery] = useState('')
+  const [state, setState] = useState<ResourceState<
+    readonly OperatorSearchResult[]
+  > | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false)
+  const controller = useRef<AbortController | null>(null)
+  const debounceTimer = useRef<
+    ReturnType<typeof globalThis.setTimeout> | null
+  >(null)
+
+  const executeSearch = useCallback(
+    (query: string, cursor: string | undefined, append: boolean) => {
+      const normalized = query.trim()
+
+      if (normalized.length < 2) {
+        controller.current?.abort()
+        setActiveQuery('')
+        setState(null)
+        setNextCursor(null)
+        setLoadingMore(false)
+        setLoadMoreFailed(false)
+
+        return
+      }
+
+      controller.current?.abort()
+      const request = new AbortController()
+      controller.current = request
+      setActiveQuery(normalized)
+
+      if (append) {
+        setLoadingMore(true)
+        setLoadMoreFailed(false)
+      } else {
+        setState({ status: 'loading' })
+        setNextCursor(null)
+        setLoadingMore(false)
+        setLoadMoreFailed(false)
+      }
+
+      void api
+        .search(normalized, cursor, request.signal)
+        .then((page) => {
+          if (request.signal.aborted) {
+            return
+          }
+
+          setState((current) => ({
+            status: 'ready',
+            value:
+              append && current?.status === 'ready'
+                ? [...current.value, ...page.items]
+                : page.items,
+          }))
+          setNextCursor(page.next_cursor)
+          setLoadingMore(false)
+        })
+        .catch(() => {
+          if (request.signal.aborted) {
+            return
+          }
+
+          if (append) {
+            setLoadMoreFailed(true)
+            setLoadingMore(false)
+          } else {
+            setState({ status: 'error' })
+          }
+        })
+    },
+    [api],
+  )
+
+  useEffect(() => {
+    const query = input.trim()
+
+    if (query.length < 2) {
+      return
+    }
+
+    debounceTimer.current = globalThis.setTimeout(() => {
+      executeSearch(query, undefined, false)
+      debounceTimer.current = null
+    }, 300)
+
+    return () => {
+      if (debounceTimer.current !== null) {
+        globalThis.clearTimeout(debounceTimer.current)
+        debounceTimer.current = null
+      }
+    }
+  }, [executeSearch, input])
+
+  useEffect(
+    () => () => {
+      controller.current?.abort()
+    },
+    [],
+  )
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (debounceTimer.current !== null) {
+      globalThis.clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
+    }
+
+    executeSearch(input, undefined, false)
+  }
+
+  return (
+    <section
+      aria-labelledby="operator-search-title"
+      className="operator-search"
+    >
+      <div className="operator-search__heading">
+        <div>
+          <p>
+            <LocalizedMessage
+              resolution={message('operator.search.kicker')}
+            />
+          </p>
+          <h3 id="operator-search-title">
+            <LocalizedMessage resolution={message('operator.search.title')} />
+          </h3>
+        </div>
+        <p>
+          <LocalizedMessage resolution={message('operator.search.lead')} />
+        </p>
+      </div>
+      <form className="operator-search__form" onSubmit={submit} role="search">
+        <label htmlFor="operator-search-query">
+          <LocalizedMessage resolution={message('operator.search.label')} />
+        </label>
+        <div className="operator-search__controls">
+          <input
+            aria-describedby="operator-search-hint"
+            autoComplete="off"
+            id="operator-search-query"
+            maxLength={80}
+            onChange={(event) => {
+              const value = event.currentTarget.value
+              setInput(value)
+
+              if (value.trim().length < 2) {
+                controller.current?.abort()
+                setActiveQuery('')
+                setState(null)
+                setNextCursor(null)
+                setLoadingMore(false)
+                setLoadMoreFailed(false)
+              }
+            }}
+            placeholder={message('operator.search.placeholder').text}
+            spellCheck={false}
+            type="search"
+            value={input}
+          />
+          <button type="submit">
+            <LocalizedMessage resolution={message('operator.search.submit')} />
+          </button>
+        </div>
+        <p id="operator-search-hint">
+          <LocalizedMessage resolution={message('operator.search.hint')} />
+        </p>
+      </form>
+
+      <div aria-live="polite" className="operator-search__results">
+        {state?.status === 'loading' ? (
+          <p role="status">
+            <LocalizedMessage
+              resolution={message('operator.search.loading')}
+            />
+          </p>
+        ) : null}
+        {state?.status === 'error' ? (
+          <div role="alert">
             <p>
               <LocalizedMessage
                 resolution={message('operator.pilot_analytics.lead')}

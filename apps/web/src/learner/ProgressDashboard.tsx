@@ -18,15 +18,11 @@ export interface ProgressDashboardProps {
   readonly onMissionRequested: () => void
 }
 
-const CONCEPT_LABELS: Record<string, string> = {
-  can: 'Can — ability and permission',
-}
-
 function conceptLabel(conceptKey: string | null): string | null {
   if (conceptKey === null || conceptKey === '') {
     return null
   }
-  return CONCEPT_LABELS[conceptKey] ?? conceptKey.replaceAll('_', ' ')
+  return conceptKey.replaceAll('_', ' ').replaceAll('-', ' ')
 }
 
 export function ProgressDashboard({
@@ -36,29 +32,47 @@ export function ProgressDashboard({
   onMissionRequested,
 }: ProgressDashboardProps) {
   const [data, setData] = useState<LearnerProgressDashboard | null>(null)
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState(false)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
     api.progressDashboard(controller.signal)
-      .then(setData)
+      .then((payload) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        setData(payload)
+        setError(false)
+      })
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === 'AbortError') return
-        setError(e instanceof Error ? e : new Error('Failed to load progress'))
+        setError(true)
       })
     return () => controller.abort()
-  }, [api])
+  }, [api, reloadToken])
 
   const msg = (key: string, parameters?: Record<string, string>) => {
     return resolveInterfaceMessage(key as MessageKey, locale, localizationPolicy, parameters)
   }
 
-  if (error !== null) {
+  if (error) {
     return (
       <div className="progress-dashboard__error" role="alert">
         <LocalizedMessage
-          resolution={msg('problem.unhandled')}
+          resolution={msg('learner.error.message')}
         />
+        <button
+          className="button button--primary"
+          onClick={() => {
+            setData(null)
+            setError(false)
+            setReloadToken((token) => token + 1)
+          }}
+          type="button"
+        >
+          <LocalizedMessage resolution={msg('learner.progress.retry')} />
+        </button>
       </div>
     )
   }
@@ -67,7 +81,7 @@ export function ProgressDashboard({
     return (
       <div className="progress-dashboard__loading" aria-busy="true">
         <LocalizedMessage
-          resolution={msg('learner.audio.loading')}
+          resolution={msg('learner.progress.loading')}
         />
       </div>
     )
@@ -95,7 +109,6 @@ export function ProgressDashboard({
     )
   }
 
-  // Group objectives by concept/objective_key
   const objectivesByKey = new Map<string, typeof data.objectives>()
   for (const obj of data.objectives) {
     const group = objectivesByKey.get(obj.objective_key) ?? []
@@ -106,34 +119,34 @@ export function ProgressDashboard({
   return (
     <div className="progress-dashboard">
       <header className="progress-dashboard__header">
-        <h1 className="progress-dashboard__title" tabIndex={0}>
+        <h1 className="progress-dashboard__title">
           <LocalizedMessage
             resolution={msg('page.progress.title')}
           />
         </h1>
       </header>
 
-      <section className="progress-dashboard__section progress-dashboard__summary" aria-label="Summary statistics">
-        <div className="progress-dashboard__stat" tabIndex={0}>
+      <section className="progress-dashboard__section progress-dashboard__summary" aria-label={msg('learner.progress.summary').text}>
+        <div className="progress-dashboard__stat">
           <span className="progress-dashboard__stat-value">{data.speaking_activity.meaningful_speaking_days_count}</span>
           <span className="progress-dashboard__stat-label">
             <LocalizedMessage resolution={msg('learner.progress.speaking_days', { count: String(data.speaking_activity.meaningful_speaking_days_count) })} />
           </span>
         </div>
-        <div className="progress-dashboard__stat" tabIndex={0}>
+        <div className="progress-dashboard__stat">
           <span className="progress-dashboard__stat-value">{data.delayed_review.completed_on_time_count}</span>
           <span className="progress-dashboard__stat-label">
             <LocalizedMessage resolution={msg('learner.progress.delayed_review_ontime', { count: String(data.delayed_review.completed_on_time_count) })} />
           </span>
         </div>
-        <div className="progress-dashboard__stat" tabIndex={0}>
+        <div className="progress-dashboard__stat">
           <span className="progress-dashboard__stat-value">{data.delayed_review.completed_late_count}</span>
           <span className="progress-dashboard__stat-label">
             <LocalizedMessage resolution={msg('learner.progress.delayed_review_late', { count: String(data.delayed_review.completed_late_count) })} />
           </span>
         </div>
         {(data.delayed_review.due_count > 0 || data.delayed_review.pending_count > 0) && (
-          <div className="progress-dashboard__stat progress-dashboard__stat--missed" tabIndex={0}>
+          <div className="progress-dashboard__stat progress-dashboard__stat--missed">
             <span className="progress-dashboard__stat-value">{data.delayed_review.due_count}</span>
             <span className="progress-dashboard__stat-label">
               <LocalizedMessage resolution={msg('learner.progress.delayed_review_missed', { count: String(data.delayed_review.due_count) })} />
@@ -144,22 +157,22 @@ export function ProgressDashboard({
 
       {data.attempt_improvement.missions_attempted > 0 && (
         <section className="progress-dashboard__section progress-dashboard__improvement" aria-labelledby="improvement-title">
-          <h2 id="improvement-title" className="progress-dashboard__section-title" tabIndex={0}>
+          <h2 id="improvement-title" className="progress-dashboard__section-title">
             <LocalizedMessage resolution={msg('learner.progress.improvement.title')} />
           </h2>
-          <ul className="progress-dashboard__improvement-list" aria-label="Improvement highlights">
+          <ul className="progress-dashboard__improvement-list" aria-label={msg('learner.progress.improvement_list').text}>
             {data.attempt_improvement.missions_passed_on_first_attempt > 0 && (
-              <li tabIndex={0}>
+              <li>
                 <LocalizedMessage resolution={msg('learner.progress.improvement.first_attempt_passed', { count: String(data.attempt_improvement.missions_passed_on_first_attempt) })} />
               </li>
             )}
             {data.attempt_improvement.missions_improved_on_retry > 0 && (
-              <li tabIndex={0}>
+              <li>
                 <LocalizedMessage resolution={msg('learner.progress.improvement.improved_on_retry', { count: String(data.attempt_improvement.missions_improved_on_retry) })} />
               </li>
             )}
             {data.recurring_errors.patterns.map(pattern => (
-              <li key={pattern.error_category} tabIndex={0}>
+              <li key={pattern.error_category}>
                 {pattern.trend === 'reducing'
                   ? <LocalizedMessage resolution={msg('learner.progress.improvement.recurring_error_reducing', { error: pattern.error_category })} />
                   : <LocalizedMessage resolution={msg('learner.progress.improvement.recurring_error_stable', { error: pattern.error_category })} />}
@@ -171,19 +184,18 @@ export function ProgressDashboard({
 
       {objectivesByKey.size > 0 && (
         <section className="progress-dashboard__section progress-dashboard__mastery" aria-labelledby="mastery-title">
-          <h2 id="mastery-title" className="progress-dashboard__section-title" tabIndex={0}>
+          <h2 id="mastery-title" className="progress-dashboard__section-title">
             <LocalizedMessage resolution={msg('learner.progress.mastery.title')} />
           </h2>
           <div className="progress-dashboard__mastery-grid">
             {Array.from(objectivesByKey.entries()).map(([key, objectives]) => (
               <div key={key} className="progress-dashboard__mastery-group">
-                <h3 className="progress-dashboard__mastery-concept" tabIndex={0}>{conceptLabel(key)}</h3>
-                <ul className="progress-dashboard__mastery-list" aria-label={conceptLabel(key) ?? 'Objectives'}>
+                <h3 className="progress-dashboard__mastery-concept">{conceptLabel(key)}</h3>
+                <ul className="progress-dashboard__mastery-list" aria-label={conceptLabel(key) ?? undefined}>
                   {objectives.map(obj => (
                     <li
                       key={obj.objective_id}
                       className={`progress-dashboard__mastery-item progress-dashboard__mastery-item--${obj.knowledge_state}`}
-                      tabIndex={0}
                     >
                       <span className="progress-dashboard__mastery-status" aria-hidden="true" />
                       <span className="progress-dashboard__mastery-label">

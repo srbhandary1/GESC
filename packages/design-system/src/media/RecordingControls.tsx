@@ -55,7 +55,10 @@ export function RecordingControls({
     error: labels.error,
   }[state]
 
-  const canStart = state === 'idle' || state === 'ready'
+  const canStart =
+    state === 'idle' ||
+    state === 'ready' ||
+    (captureMode === 'hold' && state === 'error')
   const isRecording = state === 'recording'
   const isPaused = state === 'paused'
   const holdActive = useRef(false)
@@ -70,7 +73,7 @@ export function RecordingControls({
   }
 
   const beginHold = () => {
-    if (state === 'processing' || state === 'blocked' || state === 'error') {
+    if (state === 'processing' || state === 'blocked') {
       return
     }
 
@@ -109,7 +112,7 @@ export function RecordingControls({
         >
           {statusLabel}
         </p>
-        {state === 'blocked' || state === 'error' ? null : (
+        {state === 'blocked' ? null : (
           <div className="ge-media-controls__actions">
             <button
               aria-pressed={holdPressed}

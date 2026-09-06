@@ -1,5 +1,5 @@
 import type { MessageKey } from '@global-english/localization'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
@@ -20,6 +20,7 @@ interface WebPasswordSignInPanelProps {
 }
 
 const USERNAME_PATTERN = /^[A-Za-z][A-Za-z0-9._-]{3,63}$/
+const USERNAME_HTML_PATTERN = '[A-Za-z][A-Za-z0-9._\\-]{3,63}'
 
 function isValidUsername(value: string): boolean {
   return USERNAME_PATTERN.test(value)
@@ -46,6 +47,7 @@ export function WebPasswordSignInPanel({
   const [legacySetup, setLegacySetup] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
+  const errorRef = useRef<HTMLParagraphElement>(null)
   const [providers, setProviders] = useState<FederatedProviderAvailability>({
     google: false,
     facebook: false,
@@ -78,6 +80,14 @@ export function WebPasswordSignInPanel({
       active = false
     }
   }, [authentication])
+
+  useEffect(() => {
+    if (!error) {
+      return
+    }
+
+    errorRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [error])
 
   useEffect(() => {
     if (!embedded || mode === null || mode === 'legacy_otp' || legacySetup) {
@@ -135,10 +145,17 @@ export function WebPasswordSignInPanel({
     void authentication
       .signIn(username.trim(), password)
       .then(() => authentication.current())
-      .then(onAuthenticated)
+      .then((snapshot) => {
+        if (snapshot.status !== 'authenticated') {
+          setError(true)
+          return
+        }
+
+        setPassword('')
+        onAuthenticated(snapshot)
+      })
       .catch(() => setError(true))
       .finally(() => {
-        setPassword('')
         setBusy(false)
       })
   }
@@ -184,12 +201,11 @@ export function WebPasswordSignInPanel({
         setInvitationSetupComplete(true)
         setInvitationSetup(false)
         setInvitationCode('')
+        setPassword('')
         setPasswordConfirmation('')
       })
       .catch(() => setError(true))
       .finally(() => {
-        setPassword('')
-        setPasswordConfirmation('')
         setBusy(false)
       })
   }
@@ -288,6 +304,8 @@ export function WebPasswordSignInPanel({
           <LocalizedMessage resolution={message('auth.password.username')} />
         </label>
         <input
+          aria-describedby={error ? 'web-password-error' : undefined}
+          aria-invalid={error}
           autoCapitalize="none"
           autoComplete="username"
           disabled={busy}
@@ -295,7 +313,7 @@ export function WebPasswordSignInPanel({
           maxLength={64}
           minLength={4}
           onChange={(event) => setUsername(event.currentTarget.value)}
-          pattern="[A-Za-z][A-Za-z0-9._-]{3,63}"
+          pattern={USERNAME_HTML_PATTERN}
           required
           spellCheck={false}
           type="text"
@@ -310,6 +328,8 @@ export function WebPasswordSignInPanel({
               />
             </label>
             <input
+              aria-describedby={error ? 'web-password-error' : undefined}
+              aria-invalid={error}
               autoComplete={
                 invitationSetup ? 'new-password' : 'current-password'
               }
@@ -357,6 +377,17 @@ export function WebPasswordSignInPanel({
             </label>
           </>
         )}
+
+        {error ? (
+          <p
+            className="web-otp-sign-in__error"
+            id="web-password-error"
+            ref={errorRef}
+            role="alert"
+          >
+            <LocalizedMessage resolution={message('auth.password.error')} />
+          </p>
+        ) : null}
 
         <button disabled={busy || recoverySent} type="submit">
           <LocalizedMessage
@@ -449,11 +480,6 @@ export function WebPasswordSignInPanel({
           <LocalizedMessage
             resolution={message('auth.password.invitation_complete')}
           />
-        </p>
-      ) : null}
-      {error ? (
-        <p className="web-otp-sign-in__error" role="alert">
-          <LocalizedMessage resolution={message('auth.password.error')} />
         </p>
       ) : null}
       </div>

@@ -126,30 +126,15 @@ Started 1 September 2026. **Not exit-complete.** `make soft-launch-configure-sta
 
 Only after Waves 1, 2A, 3, 4, 5.
 
-- [ ] **6.1** Staging/soft-launch env (example; adjust paths):
-
-  ```text
-  VOICE_UPLOAD_ENABLED=true
-  VOICE_PROVIDER_DRIVER=indic
-  VOICE_ALLOWED_ORGANIZATION_IDS=<Direct org id>
-  VOICE_INDIC_TRANSCRIBE_URL=https://api.sarvam.ai/speech-to-text
-  VOICE_INDIC_ALLOWED_HOST=api.sarvam.ai
-  VOICE_INDIC_SECRET_FILE=/home/.../sarvam.secret
-  VOICE_INDIC_AUTH_HEADER=api-subscription-key
-  VOICE_INDIC_MODEL=saaras:v3
-  VOICE_INDIC_MODE=translate
-  VOICE_INDIC_LANGUAGE_CODE=unknown
-  VOICE_INDIC_OUTPUT_LANGUAGE=en-IN
-  ```
-
-- [ ] **6.2** Restart API + worker. Confirm DI is Indic (a safe log line: provider key only, no transcript).
-- [ ] **6.3** Staff hold-to-talk: English only, then Kannada+English mix, then noisy room. Three successes each.
+- [x] **6.1** Staging/soft-launch env configured on this host (`VOICE_PROVIDER_DRIVER=indic`, Sarvam secret mode `0600`, allowlisted org). Verified by `make wave6-indic-preflight`.
+- [x] **6.2** Restart API + worker; DI binds `IndicWithAzureFailoverSpeechToTextProvider`. Verified by `make wave6-indic-preflight` (provider class + `IndicRecordedSpeechConfiguration` preflight).
+- [ ] **6.3** Staff hold-to-talk: English only, then Kannada+English mix, then noisy room. Three successes each. Runbook: [ops/WAVE6_INDIC_STT_STAFF_TESTS.md](ops/WAVE6_INDIC_STT_STAFF_TESTS.md).
 - [ ] **6.4** Confirm 25s (or chunk) UX: long hold is cut or split; user sees why.
 - [ ] **6.5** Kill Sarvam (wrong key or firewall) once: Speak must failover to Azure or show a clean error, **not** HTTP 500.
 - [ ] **6.6** Confirm live-AI 300s demo meter still increments and then denies.
 - [ ] **6.7** Confirm Role-play Perform still works on Premium (courtesy-granted testers).
 - [ ] **6.8** Azure OpenAI + Azure TTS still on. Do **not** disable Azure this wave.
-- [ ] **6.9** Watch `ai_cost_ledger` for `indic-http-stt` rows. If insert fails, roll back to `VOICE_PROVIDER_DRIVER=azure` immediately.
+- [ ] **6.9** Watch `voice_provider_runs` for `provider_key=indic-http-stt` and `result_status=succeeded` after a successful turn. If inserts fail, roll back to `VOICE_PROVIDER_DRIVER=azure` immediately. (`ai_cost_ledger` CHECK allows the key; recorded STT does not write there yet.)
 
 **Exit:** mixed-language hold-to-talk works on the public host; failover tested; ledger writing; Azure chat/TTS still speaking.
 

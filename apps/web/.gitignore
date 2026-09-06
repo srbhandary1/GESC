@@ -10,7 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.playwright-output*
 *.local
+public/downloads/*.apk
 
 # Editor directories and files
 .vscode/*
