@@ -151,11 +151,13 @@ export function OperatorLearnerAdministration({
         {panels.includes('learner_directory') ? (
           <DirectoryPanel
             api={api}
+            cohorts={cohorts}
             createCommandId={createCommandId}
             detail={detail}
             directory={directory}
             filters={filters}
             locale={locale}
+            localizationPolicy={localizationPolicy}
             message={message}
             onApplyFilters={setFilters}
             onRefresh={refreshLearner}
@@ -201,11 +203,13 @@ export function OperatorLearnerAdministration({
 
 function DirectoryPanel({
   api,
+  cohorts,
   createCommandId,
   detail,
   directory,
   filters,
   locale,
+  localizationPolicy,
   message,
   onApplyFilters,
   onRefresh,
@@ -214,11 +218,13 @@ function DirectoryPanel({
   selectedLearner,
 }: Readonly<{
   api: OperatorLearnerApi
+  cohorts: readonly OperatorLearnerChoice[]
   createCommandId: () => string
   detail: ResourceController<OperatorLearner>
   directory: PagedResource<OperatorLearner, OperatorLearnerCollection>
   filters: OperatorLearnerFilters
   locale: SupportedLocale
+  localizationPolicy: ResolutionPolicy
   message: MessageResolver
   onApplyFilters: (filters: OperatorLearnerFilters) => void
   onRefresh: () => void
@@ -229,15 +235,25 @@ function DirectoryPanel({
   const [query, setQuery] = useState(filters.q ?? '')
   const [status, setStatus] = useState(filters.status ?? '')
   const [goal, setGoal] = useState(filters.goal_key ?? '')
+  const [cohortId, setCohortId] = useState(filters.cohort_id ?? '')
   const command = useCommandRunner(createCommandId, onRefresh)
 
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     onApplyFilters({
+      ...(cohortId === '' ? {} : { cohort_id: cohortId }),
       ...(goal === '' ? {} : { goal_key: goal as OperatorLearnerGoalKey }),
       ...(query.trim() === '' ? {} : { q: query.trim() }),
       ...(status === '' ? {} : { status: status as OperatorLearner['status'] }),
     })
+  }
+
+  const resetFilters = () => {
+    setQuery('')
+    setStatus('')
+    setGoal('')
+    setCohortId('')
+    onApplyFilters({})
   }
 
   return (
@@ -248,13 +264,18 @@ function DirectoryPanel({
       titleKey="operator.learners.directory.title"
       wide
     >
-      <form className="operator-people__form" onSubmit={applyFilters} role="search">
+      <form
+        className="operator-directory__toolbar operator-people__form"
+        onSubmit={applyFilters}
+        role="search"
+      >
         <Field id="operator-learner-search" label={message('operator.learners.field.search').text}>
           <input
             autoComplete="off"
             id="operator-learner-search"
             maxLength={80}
             onChange={(event) => setQuery(event.currentTarget.value)}
+            placeholder={message('operator.directory.search_hint').text}
             value={query}
           />
         </Field>
@@ -280,61 +301,110 @@ function DirectoryPanel({
             {goalKeys.map((key) => <option key={key} value={key}>{key}</option>)}
           </select>
         </Field>
-        <button type="submit">{message('operator.learners.filter.apply').text}</button>
+        <Field id="operator-learner-cohort-filter" label={message('operator.learners.field.cohort').text}>
+          <select
+            id="operator-learner-cohort-filter"
+            onChange={(event) => setCohortId(event.currentTarget.value)}
+            value={cohortId}
+          >
+            <option value="">{message('operator.learners.filter.all').text}</option>
+            {cohorts.map((cohort) => (
+              <option key={cohort.id} value={cohort.id}>
+                {cohort.name ?? cohort.key}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div className="operator-directory__toolbar-actions">
+          <button type="submit">{message('operator.learners.filter.apply').text}</button>
+          <button onClick={resetFilters} type="button">
+            {message('operator.directory.reset_filters').text}
+          </button>
+        </div>
       </form>
 
-      <PagedState message={message} resource={directory}>
-        {(page) => (
-          <>
-            {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
-            <ul className="operator-people__cards operator-people__cards--wide">
-              {page.data.map((learner) => (
-                <li key={learner.membership_id}>
-                  <ResourceHeading
-                    code={learner.membership_id}
-                    name={learner.display_name ?? message('operator.people.name_unavailable').text}
-                    status={learner.status}
-                  />
-                  <dl className="operator-people__details">
-                    <Detail label={message('operator.learners.field.goal').text}>
-                      <code>{learner.profile?.current_goal_key ?? message('operator.people.not_recorded').text}</code>
-                    </Detail>
-                    <Detail label={message('operator.learners.field.attempts').text}>
-                      {learner.attempt_count}
-                    </Detail>
-                    <Detail label={message('operator.learners.field.latest_activity').text}>
-                      {learner.latest_attempt_at === null
-                        ? message('operator.people.not_recorded').text
-                        : <time dateTime={learner.latest_attempt_at}>{formatDateTime(learner.latest_attempt_at, locale)}</time>}
-                    </Detail>
-                  </dl>
-                  <button
-                    aria-pressed={selectedId === learner.membership_id}
-                    onClick={() => onSelect(learner.membership_id)}
-                    type="button"
-                  >
-                    {message(selectedId === learner.membership_id
-                      ? 'operator.learners.action.selected'
-                      : 'operator.learners.action.select').text}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <PageControls message={message} resource={directory} />
-          </>
-        )}
-      </PagedState>
+      <div className="operator-directory operator-directory--split">
+        <div className="operator-directory__browse">
+          <PagedState message={message} resource={directory}>
+            {(page) => (
+              <>
+                <p className="operator-directory__summary">
+                  {
+                    resolveInterfaceMessage(
+                      'operator.directory.page_summary',
+                      locale,
+                      localizationPolicy,
+                      { count: page.data.length },
+                    ).text
+                  }
+                </p>
+                {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
+                <ul
+                  aria-label={message('operator.learners.directory.title').text}
+                  className="operator-directory__list"
+                >
+                  {page.data.map((learner) => (
+                    <li key={learner.membership_id}>
+                      <button
+                        aria-label={
+                          learner.display_name ??
+                          message('operator.people.name_unavailable').text
+                        }
+                        aria-pressed={selectedId === learner.membership_id}
+                        className="operator-directory__row"
+                        onClick={() => onSelect(learner.membership_id)}
+                        type="button"
+                      >
+                        <span className="operator-directory__primary">
+                          {learner.display_name ??
+                            message('operator.people.name_unavailable').text}
+                        </span>
+                        <span className="operator-directory__meta">
+                          <code>{learner.membership_id}</code>
+                        </span>
+                        <span className="operator-directory__meta">
+                          {learner.status}
+                        </span>
+                        <span className="operator-directory__meta">
+                          {learner.profile?.current_goal_key ??
+                            message('operator.people.not_recorded').text}
+                        </span>
+                        <span className="operator-directory__meta">
+                          {String(learner.attempt_count)}
+                        </span>
+                        <span className="operator-directory__meta">
+                          {learner.latest_attempt_at === null
+                            ? message('operator.people.not_recorded').text
+                            : formatDateTime(learner.latest_attempt_at, locale)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <PageControls message={message} resource={directory} />
+              </>
+            )}
+          </PagedState>
+        </div>
 
-      {selectedId !== null ? (
-        <LearnerDetail
-          api={api}
-          command={command}
-          detail={detail}
-          locale={locale}
-          message={message}
-          selectedLearner={selectedLearner}
-        />
-      ) : null}
+        <aside className="operator-directory__detail">
+          {selectedId === null ? (
+            <p className="operator-directory__select-hint">
+              {message('operator.learners.enrollments.select_prompt').text}
+            </p>
+          ) : (
+            <LearnerDetail
+              api={api}
+              command={command}
+              detail={detail}
+              locale={locale}
+              message={message}
+              selectedLearner={selectedLearner}
+            />
+          )}
+        </aside>
+      </div>
+
       <CommandFeedback message={message} onReload={onRefresh} state={command.state} />
     </LearnerPanel>
   )

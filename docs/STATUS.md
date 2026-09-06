@@ -1,18 +1,218 @@
 # Repository status
 
+## Sign-in restored — 3 September 2026
+
+- The generic “Sign-in could not be completed” error was an API outage: Laravel could not bind `:8000` (held by another local process) and the user systemd service was crash-looping.
+- Soft-launch now selects a free loopback port (`GE_SOFT_LAUNCH_API_PORT`, currently `8012`) and Caddy proxies to it. After a tunnel URL change, the API is restarted so Sanctum stateful domains match the live origin.
+- Live origin: `https://viii-throw-literature-caroline.trycloudflare.com` (`health live: ok`, password mode `password_only`). Use this URL, not the previous Quick Tunnel hostname.
+- Android APK was not rebuilt.
+
+## Legacy Academy public template — 3 September 2026 (direction superseded)
+
+- Guest `#home` now follows the Global Academy **page** from `globalspokenenglish.com`: teal `#17ad90` bar, **Login** + coral **Join Now**, full-bleed 5-image slider (1600×746, dots/arrows), teal intro band with Sign-in CTAs, 6 why tiles, Vision/Mission splits, 6 how-it-works steps, Demo/Modules/Premium cards (₹0 / ₹350 / ₹500), and a join band.
+- All visible sentences are the **current** product catalogues (Kannada-guided path, no ₹320/₹3000, no fluency-guarantee, no View Students).
+- Guest chrome is theme-independent (`ge-application-frame--academy`). Default appearance is **light**.
+- Browser-checked guest chrome on the previous tunnel origin. Sign-in is restored on `https://viii-throw-literature-caroline.trycloudflare.com` (`health live: ok`, password mode `password_only`). Laravel now binds `127.0.0.1:8012` when `:8000` is held by another local process; Caddy uses `GE_SOFT_LAUNCH_API_PORT`.
+- Public shell cache now uses the source-derived
+  `global-english-public-shell-<sha256>` release identity from D-0281. Android
+  APK was not rebuilt and still targets an older tunnel origin.
+- D-0279 supersedes this visual direction with Futuristic Learning Studio. The
+  legacy implementation remains in the current build only until UX-01B replaces
+  it; it is not the target template.
+
 ## Current checkpoint
 
 | Field | Value |
 |---|---|
-| Checkpoint | Wave 7.1: Direct Levels 1–17 published; Wave 5 host still blocked |
-| Status | Direct lesson-practice latest revisions are `published` (17/17 eligible). Wave 2A remains complete. Wave 5 DNS/router still missing. `APP_ENV` remains `soft-launch`. |
-| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.13 |
-| Updated date | 1 September 2026 |
+| Checkpoint | UX-01: Futuristic Learning Studio — complete (D-0283) |
+| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.14 |
+| Updated date | 6 September 2026 |
 | Git branch | `codex/confidence-conversation` |
-| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | APO: payment gateway (Wave 8), hosting server, DNS A record for `ai.globalspokenenglish.com`. Then `make soft-launch-stable-prereq` and 5.3–5.8. Wave 6 staff Indic tests. Do **not** set `APP_ENV=production`. |
+| Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
+| Next required action | UX-02 (first-use) is the next UI programme checkpoint when authorized. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |
-| Soft launch | Translation-preview web build. Live Azure OpenAI and guidance TTS. Gitignored env already has `VOICE_PROVIDER_DRIVER=indic`; Wave 6 staff tests remain open. |
+| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. Non-English UI catalogues `ui-*-2026-09-06.1` are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. The previously published closed-beta APK targets an obsolete tunnel origin and is not current. |
+
+## D-0283: UX-01 Studio programme complete — 6 September 2026
+
+- The Accountable Product Owner instruction to remove UI/UX blockers and
+  complete the implementation closed the UX-01B screenshot review without a
+  further ceremony. UX-01C–G are implemented on the same Futuristic Learning
+  Studio shell.
+- Guest landing now carries the full hierarchy: hero, Listen→Speak→Understand
+  →Improve preview with Type instead, five real-life outcomes, Swathi/AI
+  boundary, catalogue-true Demo/Modules/Premium cards, trust/readiness and a
+  closing CTA. Sign-in is a Studio handoff; credential transport is unchanged.
+  Authenticated learners use the Studio frame. Guest, learner and operator
+  routes are lazy-loaded.
+- UI-only product holes from the UX audit are repaired without new APIs: due
+  review is no longer coupled to `next_mission` duration; Role-play presents
+  Observe and Rehearse (D-0215 optional examples; the API still starts at
+  observe); transcripts always offer accept/edit/discard; model audio has
+  0.75× slow and resume; Progress retries and uses catalogue labels.
+- Exact pinned `make verify` passed: 249 standard backend tests (2,652
+  assertions), 341 PostgreSQL tests (4,775 assertions), 71 web test files (343
+  tests), 35 localization tests and 12 design-system tests. `make e2e` passed
+  4/4 integration tests (103 assertions) and 21/21 Chromium journeys.
+  `make build` passed. Initial JS is 78.58 kB gzip; guest first visit plus the
+  marketing chunk is 235.77 kB gzip (under the 250 kB target).
+- Bilingual 320/1280 evidence is in `docs/evidence/ux01g/` (landing, sign-in,
+  Home) and `docs/evidence/ux01c/` (landing). Kannada is development-preview.
+- Unused Academy CSS was removed. No schema, payment-provider, APK or
+  production change. UX-02–10 remain proposed.
+
+## D-0282: UX-01B futuristic first screen implemented — 6 September 2026
+
+- Guest mode no longer loads the Academy presentation class/logo or the
+  five-image autoplay carousel. The first fold is an original CSS-native deep
+  Studio composition with controlled cyan/teal/violet accents.
+- It retains the governed message catalogue and contains one primary sign-in
+  action, one secondary four-session action, the canonical four-stage path and
+  explicit Swathi AI disclosure. It introduces no remote media or fonts.
+- Exact pinned `make verify` passed: 249 standard backend tests (2,652
+  assertions), 341 PostgreSQL tests (4,775 assertions), 71 web test files (339
+  tests), 35 localization tests and 12 design-system tests. `make e2e` passed
+  4/4 integration tests (103 assertions) and 21/21 Chromium journeys;
+  `make build` passed and the served release was refreshed.
+- Browser evidence covers axe across all interface locales, keyboard entry,
+  320/360/412/768/1280 widths, 200%/400% text stress, 44-pixel controls,
+  self-hosted fonts, reduced motion and zero horizontal overflow.
+- Accountable review of `docs/evidence/ux01b/hero-{en-IN,kn-IN}-{320,1280}.png`
+  remains before closure. Kannada is explicitly development-preview evidence.
+- No migration, API, authentication, payment, provider, learner-record,
+  navigation, APK or production change. UX-01C remains pending.
+
+## D-0281: UX-01A served-build freshness complete — 6 September 2026
+
+- Soft-launch web builds are now keyed by a deterministic SHA-256 over served
+  sources, configuration, lockfiles, shared contracts/design-system sources
+  and locale catalogues instead of a permanent existence stamp.
+- `make soft-launch-refresh-web` rebuilds only when those inputs change. Vite
+  places the same release identity in the service-worker URL, and the worker
+  retires only older `global-english-public-shell-*` caches without touching
+  protected learner IndexedDB data.
+- A controlled source change moved the fingerprint from `a14a9311…d631` to
+  `a9d06362…4557` and the entry asset from `index-DRG7SBfg.js` to
+  `index-DARKM3lG.js`; an unchanged repeat refresh preserved the same digest.
+- Exact pinned `make verify` passed: 249 standard backend tests (2,652
+  assertions), 341 PostgreSQL tests (4,774 assertions), 71 web test files (339
+  tests), 35 localization tests and 12 design-system tests. `make e2e` passed
+  4/4 reconciliation integration tests (103 assertions) and 21/21 Chromium
+  journeys; `make build` passed.
+- No schema, API, authentication, payment, AI-provider, learner-record,
+  navigation, APK or production change. UX-01B is the next bounded step.
+
+## D-0280: UX-00 complete — 6 September 2026
+
+- The Accountable Product Owner reported `Keyboard: passed` for the final
+  320-CSS-pixel human smoke.
+- Together with D-0278's automated, browser, build and responsive evidence,
+  this closes UX-00. Representative Android TalkBack remains a release gate.
+
+## D-0279: Futuristic Learning Studio direction accepted — 6 September 2026
+
+- The Accountable Product Owner rejects continued use of the legacy Academy
+  template and selects Futuristic Learning Studio for UX-01.
+- The direction is a calm, premium adult AI-learning environment: deep
+  ink/navy depth, controlled cyan/teal/violet luminosity, accessible layered
+  surfaces, an original disclosed Swathi AI presence and restrained motion.
+  It explicitly excludes a recolored school template, low-contrast glass,
+  excessive neon, copied competitor trade dress and an autoplay carousel.
+- [UI_UX_MASTER_PLAN.md](UI_UX_MASTER_PLAN.md) now defines UX-01A→G. UX-01A
+  first repairs served-build/cache freshness so future source changes cannot be
+  hidden behind an existing soft-launch `dist` stamp. UX-01B then replaces the
+  public top fold; later sub-checkpoints complete the guest journey, sign-in,
+  learner frame, route split and closure evidence.
+- This is a documentation and sequencing decision. It changes no production
+  code, schema, API, payment, authentication, AI authority or navigation.
+  UX-00's remaining human keyboard gate is not waived, and UX-02 onward remains
+  unauthorized.
+
+## Closed-beta APK published on tunnel origin — 2 September 2026
+
+- `make android-closed-beta` with Temurin 21 (`~/.local/jdk/jdk-21.0.12+8`) and `ANDROID_HOME=$HOME/Android/Sdk`. Gradle `testDebugUnitTest assembleDebug` BUILD SUCCESSFUL (103 tasks).
+- Baked origin: `https://serious-writer-associate-interest.trycloudflare.com`. Passport public client `019fdd3f-4bba-720b-9e4e-a771ecccdd7f` (`com.globalenglish.app:/oauth/callback`). Package `com.globalenglish.app` 1.0 (1), targetSdk 36.
+- SHA-256 `0f946ec6b2caea217f0824232ad93637d8f15a0678efa42d292fa6f40d382aae` (28,654,905 bytes). Copy: `apps/web/public/downloads/global-spoken-english-android.apk` and `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-tunnel-20260902.apk`.
+- Tunnel HEAD `/downloads/global-spoken-english-android.apk` returned `content-length: 28654905`. No Tailscale required while this Cloudflare hostname is live. Rebuild if the tunnel hostname rotates.
+- Debug-signed only. Not Play. Physical `adb install` not run (no device attached).
+
+## D-0278: UX-00 automated implementation complete — 6 September 2026
+
+- All nine bounded UX-00 repairs are implemented: local script fonts, WCAG AA
+  color pairs, accessible carousel controls, narrow/enlarged-text reflow,
+  operator landmarks/headings, explicit entitlement states, current browser
+  fixtures and non-root artifact isolation.
+- Exact pinned-toolchain `make verify` passed with PHP 8.4.23, Composer 2.10.2,
+  Node 24.18.1, pnpm 11.18.0 and PostgreSQL 18.4: 249 standard backend tests
+  (2,652 assertions), 341 PostgreSQL tests (4,775 assertions), 69 web test
+  files (336 tests), 35 localization tests and 12 design-system tests.
+- `make e2e` passed 4/4 reconciliation integration tests (103 assertions) and
+  all 21 Chromium journeys. `make build` passed; the existing 1.319 MB
+  minified bundle warning is deferred to UX-01 code splitting.
+- Responsive visual evidence: [English 320](evidence/ux00/marketing-en-IN-320.png),
+  [English 1280](evidence/ux00/marketing-en-IN-1280.png),
+  [Kannada 320](evidence/ux00/marketing-kn-IN-320.png) and
+  [Kannada 1280](evidence/ux00/marketing-kn-IN-1280.png). Kannada evidence is
+  an explicit development preview.
+- Human keyboard smoke at 320 CSS pixels remains the only UX-00 closure gate.
+  Representative Android TalkBack remains a release gate; UX-01 and later
+  checkpoints remain unauthorized.
+- New UI copy changed every catalogue hash. The prior D-0274/D-0275 approvals
+  remain valid evidence for their exact old revisions but cannot approve the
+  new `ui-*-2026-09-05.1` bytes. All five non-English revisions are therefore
+  truthfully `pending-independent-review`; approved-only builds fall back to
+  English until renewed independent review.
+
+## UX-00: Restore UX quality baseline started — 5 September 2026
+
+- D-0277 accepts [UI_UX_MASTER_PLAN.md](UI_UX_MASTER_PLAN.md) as a delivery companion and authorizes only UX-00.
+- Exact scope: fonts, contrast, carousel semantics/controls, 320-pixel reflow, operator landmarks/headings, entitlement states, Playwright contract reconciliation and reproducible test output paths.
+- No navigation, payment, schema, APK publication or later UX checkpoint is authorized by this transition.
+
+## D-0276: Wave 6 Indic STT staff tests completed — 5 September 2026
+
+- Automated preflight: `make wave6-indic-preflight` checks Wave 6 env (6.1), Indic DI binding and configuration preflight (6.2), migration `2026_09_01_000300`, 25s cap, health/ready and Indic adapter PHPUnit.
+- Staff runbook: [docs/ops/WAVE6_INDIC_STT_STAFF_TESTS.md](ops/WAVE6_INDIC_STT_STAFF_TESTS.md). Completed evidence: [docs/evidence/wave6/wave6-indic-stt-staff-test-result.json](evidence/wave6/wave6-indic-stt-staff-test-result.json).
+- Recorded STT writes `voice_provider_runs` with `provider_key=indic-http-stt` (not `ai_cost_ledger`; the ledger CHECK exists for allowlisted keys).
+- Staff matrix 6.3–6.9 passed: English 3/3, code-mixed Kannada/English 3/3, noisy room 3/3, 25-second cap, failover, demo meter, Role-play Perform, Azure chat/guidance TTS and provider-run evidence.
+- Final preflight on 5 September: 24 pass, 0 warn, 0 fail. Safe tester counts record 50 successful Indic STT runs and 13 successful Azure STT failovers; no transcript or audio is stored in Git evidence.
+- This does not set `APP_ENV=production` or authorize Play.
+
+## D-0275: Phase-1 UI catalogues approved — 2 September 2026
+
+- Decision artefacts: APP-0076, D-0275. Governance revisions `ui-ml-IN-2026-09-02.2`, `ui-ta-IN-2026-09-02.2`, `ui-te-IN-2026-09-02.2` and `ui-hi-IN-2026-09-02.2` now have `reviewStatus=approved`, `reviewedBy=S R Bhandary`, `approvedAt=2026-09-02T11:35:00+05:30`, `independentReview=true`.
+- With APP-0075 Kannada approval, all five non-English Phase-1 UI catalogues are approved for `approved-only` resolution.
+- Soft-launch learner locale picker remains kn-IN + en-IN only under D-0206; approved Malayalam/Tamil/Telugu/Hindi strings are available to API resolution, demo surfaces and future picker expansion.
+- Production/public release, Role-play script review and curriculum publication remain unauthorized.
+
+## D-0274: Kannada UI catalogue approved — 2 September 2026
+
+- Decision artefacts: APP-0075, D-0274. Governance revision `ui-kn-IN-2026-09-02.2` now has `reviewStatus=approved`, `reviewedBy=S R Bhandary`, `approvedAt=2026-09-02T11:30:00+05:30`, `independentReview=true`.
+- Soft-launch web dist now uses the ordinary `approved-only` build (no `VITE_UI_TRANSLATION_PREVIEW`); Kannada chrome no longer needs a preview build.
+- Ordinary `approved-only` web builds resolve Kannada navigation, sign-in, learn, speak, progress and account chrome without the language-fallback banner when `kn-IN` is selected.
+- Malayalam, Tamil, Telugu and Hindi UI catalogues remain `pending-independent-review` and still fall back to English under `approved-only`.
+- Production/public release, Role-play script review and curriculum publication remain unauthorized.
+
+## Web sign-in failure looked like a no-op — 2 September 2026
+
+- Failed password sign-in POSTs were reaching `/api/v1/auth/password/sign-ins`, but the dedicated `#sign-in` card is taller than a typical viewport. The error sat below Sign in / Forgot password / invitation, mostly off-screen, and the password field was cleared, so the form looked unchanged.
+- Sign-in now keeps the password on failure, renders the alert above the submit button, treats a non-authenticated `current()` after a 200 as failure, and uses a Chromium `/v`-flag-safe username `pattern` (`[A-Za-z][A-Za-z0-9._\\-]{3,63}`). Dedicated sign-in uses a smaller tutor and hides the lede on short viewports. Successful sign-in leaves `#sign-in` for `#home`.
+- Live `/api/v1/me/entitlement` was HTTP 500 because `live_ai_talk_packs` had not been migrated. `2026_09_01_000310_create_live_ai_talk_packs` is now applied on the soft-launch database.
+
+## Soft-launch operator test accounts restored — 2 September 2026
+
+- `trainer` and `reviewer` were missing after the August PostgreSQL restore. Idempotent provisioning script: `scripts/soft-launch-provision-operator-test-accounts.php` (passwords via `GE_SOFT_LAUNCH_TRAINER_PASSWORD` / `GE_SOFT_LAUNCH_REVIEWER_PASSWORD` only; never commit).
+- Both accounts now have Global English Direct trainer memberships, system role packs (`trainer` / `content_reviewer`), and credential-ready password sign-in on the tunnel origin.
+- Tunnel verification: `trainer` opens Learning (Content Studio, Media Library, review queues); `reviewer` opens Learning + Safety (review queues, audit read).
+
+## D-0273: Paid live-AI caps and talk packs — 1 September 2026
+
+- Decision artefacts: DR-0047 Option A, ADR-0037, APP-0074, master plan 3.14. OpenAPI **0.40.0**. Privacy inventory `learner-privacy-v8`.
+- Modules `live_ai_cap_seconds=2400`. Premium `5400`. Demo remains 300.
+- Talk packs `talk_pack_30` / `talk_pack_60` / `talk_pack_180` (₹199 / ₹349 / ₹899 ex-GST) add seconds to the same pool. Require an active calendar-month grant. Expire at `min(membership end, +30 days)`. Do not unlock Role-play.
+- Existing Direct membership grants with a null snapshot cap use the named-code defaults. Operator grants cannot replace a membership with a talk-pack plan id.
+- Migration `2026_09_01_000310_create_live_ai_talk_packs` (table plus PostgreSQL `billing_period` CHECK including `talk_pack`). Speak/Role-play surface `entitlement.ai_exhausted` / `entitlement.demo_ai_exhausted` instead of a generic Swathi error.
 
 ## Wave 7.1: Direct pathway published — 1 September 2026
 
@@ -27,7 +227,7 @@
 - Router: WAN 80 is not this app; WAN 443 not forwarded. LAN `192.168.1.4`.
 - `make soft-launch-configure-stable` and tunnel-stop **not** run.
 - 5.9: `/privacy.html` and `/account-deletion.html` plus in-app Legal links. Operator erasure API unchanged.
-- Android APK not rebuilt. No adb device.
+- Android APK rebuilt 2 September 2026 against the current Quick Tunnel (not `ai.globalspokenenglish.com`). No adb device.
 
 ## Wave 4: backup, observe, rollback — 1 September 2026
 
@@ -195,7 +395,7 @@
 ## Learner tutor UI + in-session teacher — 29 August 2026
 
 - Local Vite sign-in (`127.0.0.1:5173`) failed because the live API treated that origin as non-stateful and used `__Host-` Secure cookies. Soft-launch now includes `127.0.0.1:5173` in Sanctum stateful domains and uses a non-`__Host-` session cookie so password sign-in works on loopback HTTP; the HTTPS tunnel origin remains listed.
-- Username HTML `pattern` is Chromium `/v`-flag safe (`[A-Za-z][A-Za-z0-9._-]{3,63}`).
+- Username HTML `pattern` is Chromium `/v`-flag safe (`[A-Za-z][A-Za-z0-9._\\-]{3,63}`).
 - Product owner required a Super Nova-class animated learner app: live role-play, mistake help in the chosen language, and a mock teacher after voice training — without stopping for extra process.
 - Maya is the on-screen teacher (original character art). Home, levels, conversation and role-play share pulse/orbit motion, chat bubbles, and a large speak control. Android uses the same web UI plus a dark status/navigation bar.
 - After Introduction/Practice audio ends, the bound tutor session starts in place (no tab jump). Practice MCQ is an optional details check; it still gates Practice complete in the API.

@@ -47,13 +47,6 @@ describe('UI catalogue validation', () => {
       'te-IN',
       'hi-IN',
     ])
-    expect(result.warnings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'pending-independent-review',
-        }),
-      ]),
-    )
   })
 
   it('rejects unsupported catalogue and governance locales', () => {

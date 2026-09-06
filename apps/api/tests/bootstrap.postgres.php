@@ -23,6 +23,7 @@ $forced = [
     'CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED' => 'false',
     'CONVERSATION_GUIDANCE_TTS_LIVE_REQUESTS_ENABLED' => 'false',
     'VOICE_UPLOAD_ENABLED' => 'true',
+    'VOICE_ALLOWED_ORGANIZATION_IDS' => '',
     'VOICE_PROVIDER_DRIVER' => 'deterministic-test',
 ];
 

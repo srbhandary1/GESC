@@ -1,416 +1,372 @@
 import type { MessageKey, SupportedLocale } from '@global-english/localization'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
+import {
+  ANDROID_APK_FILENAME,
+  ANDROID_APK_HREF,
+} from './androidDownload'
 import './MarketingLanding.css'
 
 export interface MarketingLandingProps {
+  readonly hideAndroidPromo?: boolean
   readonly locale: SupportedLocale
   readonly message: (key: MessageKey) => InterfaceMessageResolution
 }
 
-const banners = [
-  '/marketing/banners/banner-1.jpg',
-  '/marketing/banners/banner-2.jpg',
-  '/marketing/banners/banner-3.jpg',
-  '/marketing/banners/banner-4.jpg',
-  '/marketing/banners/banner-5.jpg',
-] as const
-
-const whyCards = [
-  {
-    title: 'marketing.why1.title',
-    body: 'marketing.why1.body',
-    image: '/marketing/features/levels.jpg',
-  },
-  {
-    title: 'marketing.why2.title',
-    body: 'marketing.why2.body',
-    image: '/marketing/features/discussions.jpg',
-  },
-  {
-    title: 'marketing.why3.title',
-    body: 'marketing.why3.body',
-    image: '/marketing/features/video.jpg',
-  },
-] as const
-
-const differenceCards = [
-  {
-    title: 'marketing.benefit.hybrid.title',
-    body: 'marketing.benefit.hybrid.body',
-    image: '/marketing/features/mobile-learner.png',
-    fit: 'contain',
-  },
-  {
-    title: 'marketing.benefit.tuition.title',
-    body: 'marketing.benefit.tuition.body',
-    image: '/marketing/features/trainer.png',
-    fit: 'contain',
-  },
-  {
-    title: 'marketing.benefit.together.title',
-    body: 'marketing.benefit.together.body',
-    image: '/marketing/features/club.jpg',
-    fit: 'cover',
-  },
-] as const
-
-const academyPortraits = [
-  '/marketing/features/trainer.png',
-  '/marketing/features/mobile-learner.png',
-  '/marketing/features/highlight.png',
-] as const
-
-const pathSessions = [
+const learningStages = [
   {
     title: 'marketing.path.1.title',
     job: 'marketing.path.1.job',
-    ai: 'marketing.path.1.ai',
     output: 'marketing.path.1.output',
+    ai: 'marketing.path.1.ai',
   },
   {
     title: 'marketing.path.2.title',
     job: 'marketing.path.2.job',
-    ai: 'marketing.path.2.ai',
     output: 'marketing.path.2.output',
+    ai: 'marketing.path.2.ai',
   },
   {
     title: 'marketing.path.3.title',
     job: 'marketing.path.3.job',
-    ai: 'marketing.path.3.ai',
     output: 'marketing.path.3.output',
+    ai: 'marketing.path.3.ai',
   },
   {
     title: 'marketing.path.4.title',
     job: 'marketing.path.4.job',
-    ai: 'marketing.path.4.ai',
     output: 'marketing.path.4.output',
+    ai: 'marketing.path.4.ai',
   },
 ] as const
 
-const pedagogyPoints = [
+const previewStages = [
   {
-    title: 'marketing.pedagogy.1.title',
-    body: 'marketing.pedagogy.1.body',
+    title: 'marketing.loop.listen.title',
+    body: 'marketing.loop.listen.body',
+    coach: 'marketing.path.1.job',
+    learner: 'conversation.confidence.listen_text_first',
   },
   {
-    title: 'marketing.pedagogy.2.title',
-    body: 'marketing.pedagogy.2.body',
+    title: 'marketing.loop.speak.title',
+    body: 'marketing.loop.speak.body',
+    coach: 'marketing.path.3.job',
+    learner: 'marketing.path.3.output',
   },
   {
-    title: 'marketing.pedagogy.3.title',
-    body: 'marketing.pedagogy.3.body',
+    title: 'marketing.loop.understand.title',
+    body: 'marketing.loop.understand.body',
+    coach: 'marketing.pedagogy.4.body',
+    learner: 'marketing.why3.body',
   },
   {
-    title: 'marketing.pedagogy.4.title',
-    body: 'marketing.pedagogy.4.body',
-  },
-  {
-    title: 'marketing.pedagogy.5.title',
-    body: 'marketing.pedagogy.5.body',
+    title: 'marketing.loop.improve.title',
+    body: 'marketing.loop.improve.body',
+    coach: 'marketing.pedagogy.2.body',
+    learner: 'marketing.step3.body',
   },
 ] as const
 
-const showcase = [
+const outcomes = [
+  { title: 'marketing.outcome.work.title', body: 'marketing.outcome.work.body', glyph: '01' },
+  { title: 'marketing.outcome.customer.title', body: 'marketing.outcome.customer.body', glyph: '02' },
+  { title: 'marketing.outcome.education.title', body: 'marketing.outcome.education.body', glyph: '03' },
+  { title: 'marketing.outcome.interview.title', body: 'marketing.outcome.interview.body', glyph: '04' },
+  { title: 'marketing.outcome.everyday.title', body: 'marketing.outcome.everyday.body', glyph: '05' },
+] as const
+
+const trustPoints = [
+  { title: 'marketing.pedagogy.1.title', body: 'marketing.pedagogy.1.body' },
+  { title: 'marketing.pedagogy.4.title', body: 'marketing.pedagogy.4.body' },
+  { title: 'marketing.pedagogy.5.title', body: 'marketing.pedagogy.5.body' },
+] as const
+
+const readinessPoints = [
+  { title: 'marketing.trust.adult.title', body: 'marketing.trust.adult.body' },
+  { title: 'marketing.why3.title', body: 'marketing.why3.body' },
+  { title: 'marketing.trust.offline.title', body: 'marketing.trust.offline.body' },
+  { title: 'marketing.benefit.tuition.title', body: 'marketing.benefit.tuition.body' },
+] as const
+
+const stats = [
+  { label: 'marketing.stats.levels', value: 'marketing.stats.levels_value' },
+  { label: 'marketing.stats.ai', value: 'marketing.stats.ai_value' },
+  { label: 'marketing.stats.guidance', value: 'marketing.stats.guidance_value' },
+  { label: 'marketing.stats.path', value: 'marketing.stats.path_value' },
+] as const
+
+const plans = [
   {
-    src: '/marketing/features/app-left.png',
-    caption: 'marketing.showcase.app',
+    name: 'marketing.plan.demo.name',
+    price: 'marketing.plan.demo.price',
+    lead: 'marketing.plan.demo.lead',
+    extra: 'marketing.plan.demo.extra',
   },
   {
-    src: '/marketing/features/live.jpg',
-    caption: 'marketing.showcase.live',
+    name: 'marketing.plan.modules.name',
+    price: 'marketing.plan.modules.price',
+    lead: 'marketing.plan.modules.lead',
+    extra: 'marketing.plan.modules.extra',
   },
   {
-    src: '/marketing/features/trainers.jpg',
-    caption: 'marketing.benefit.hybrid.title',
+    name: 'marketing.plan.premium.name',
+    price: 'marketing.plan.premium.price',
+    lead: 'marketing.plan.premium.lead',
+    extra: 'marketing.plan.premium.extra',
+    recommended: true,
   },
 ] as const
 
 export function MarketingLanding({
+  hideAndroidPromo = false,
   locale,
   message,
 }: MarketingLandingProps) {
-  const [bannerIndex, setBannerIndex] = useState(0)
-  const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') {
-      return undefined
-    }
-
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const sync = () => {
-      setReduceMotion(media.matches)
-    }
-    sync()
-    media.addEventListener('change', sync)
-    return () => {
-      media.removeEventListener('change', sync)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (reduceMotion) {
-      return undefined
-    }
-
-    const timer = window.setInterval(() => {
-      setBannerIndex((current) => (current + 1) % banners.length)
-    }, 5200)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [reduceMotion])
+  const [previewIndex, setPreviewIndex] = useState(0)
+  const [typedPreview, setTypedPreview] = useState(false)
+  const preview = previewStages[previewIndex] ?? previewStages[0]
 
   return (
     <div className="marketing-landing" lang={locale}>
-      <section className="marketing-hero" aria-labelledby="marketing-hero-title">
-        <div className="marketing-hero__media" aria-hidden="true">
-          {banners.map((src, index) => (
-            <img
-              key={src}
-              alt=""
-              className={
-                index === bannerIndex
-                  ? 'marketing-hero__slide marketing-hero__slide--active'
-                  : 'marketing-hero__slide'
-              }
-              src={src}
-            />
-          ))}
-          <div className="marketing-hero__scrim" />
-        </div>
-        <img
-          alt=""
-          className="marketing-hero__tutor"
-          height={420}
-          src="/tutor/tutor-maya-hero.png"
-          width={320}
-        />
+      <section aria-labelledby="marketing-hero-title" className="marketing-hero">
+        <div aria-hidden="true" className="marketing-hero__grid" />
         <div className="marketing-hero__copy">
           <p className="marketing-hero__badge">
+            <span aria-hidden="true" className="marketing-hero__badge-signal" />
             <LocalizedMessage resolution={message('marketing.hero.badge')} />
           </p>
-          <h1
-            className="marketing-hero__title"
-            id="marketing-hero-title"
-            tabIndex={-1}
-          >
+          <h1 className="marketing-hero__title" id="marketing-hero-title" tabIndex={-1}>
             <LocalizedMessage resolution={message('marketing.hero.title')} />
           </h1>
           <p className="marketing-hero__lede">
             <LocalizedMessage resolution={message('marketing.hero.lede')} />
           </p>
-          <div className="marketing-hero__actions">
+          <div className="marketing-intro__actions">
             <a className="marketing-button marketing-button--primary" href="#sign-in">
-              <LocalizedMessage
-                resolution={message('marketing.hero.cta_sign_in')}
-              />
+              <LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} />
+              <span aria-hidden="true">→</span>
             </a>
             <a className="marketing-button marketing-button--ghost" href="#how-it-works">
-              <LocalizedMessage
-                resolution={message('marketing.hero.cta_learn')}
-              />
+              <LocalizedMessage resolution={message('marketing.hero.cta_learn')} />
             </a>
           </div>
-          <ul className="marketing-hero__portraits" aria-hidden="true">
-            {academyPortraits.map((src) => (
-              <li key={src}>
-                <img alt="" className="marketing-hero__portrait" src={src} />
+          <ol aria-label={message('marketing.stats.path').text} className="marketing-hero__path">
+            {learningStages.map((stage, index) => (
+              <li key={stage.title}>
+                <span aria-hidden="true">0{index + 1}</span>
+                <LocalizedMessage resolution={message(stage.title)} />
               </li>
             ))}
-          </ul>
+          </ol>
+        </div>
+        <div className="marketing-hero__presence">
+          <div aria-hidden="true" className="marketing-hero__orbit marketing-hero__orbit--outer" />
+          <div aria-hidden="true" className="marketing-hero__orbit marketing-hero__orbit--inner" />
+          <div aria-hidden="true" className="marketing-hero__voice-core"><i /><i /><i /><i /><i /></div>
+          <div className="marketing-hero__ai-card">
+            <span><LocalizedMessage resolution={message('tutor.name')} /></span>
+            <strong><LocalizedMessage resolution={message('conversation.disclosure_title')} /></strong>
+            <p><LocalizedMessage resolution={message('conversation.prototype_notice')} /></p>
+          </div>
         </div>
       </section>
 
-      <section
-        className="marketing-section marketing-section--how"
-        id="how-it-works"
-        aria-labelledby="marketing-how-title"
-      >
-        <div className="marketing-section__header marketing-section__header--wide">
-          <h2 id="marketing-how-title">
-            <LocalizedMessage resolution={message('marketing.section.how')} />
-          </h2>
-          <p>
-            <LocalizedMessage
-              resolution={message('marketing.section.how_lead')}
-            />
-          </p>
+      <section aria-labelledby="marketing-stats-title" className="studio-section studio-metrics">
+        <h2 className="visually-hidden" id="marketing-stats-title">
+          <LocalizedMessage resolution={message('marketing.stats.title')} />
+        </h2>
+        <ul>
+          {stats.map((item) => (
+            <li key={item.label}>
+              <strong><LocalizedMessage resolution={message(item.value)} /></strong>
+              <span><LocalizedMessage resolution={message(item.label)} /></span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="marketing-showcase-title" className="studio-section studio-demo">
+        <div className="studio-section__heading">
+          <p><LocalizedMessage resolution={message('marketing.hero.badge')} /></p>
+          <h2 id="marketing-showcase-title"><LocalizedMessage resolution={message('marketing.showcase.title')} /></h2>
+          <span><LocalizedMessage resolution={message('marketing.showcase.lead')} /></span>
         </div>
-        <ol className="marketing-path">
-          {pathSessions.map((session, index) => (
-            <li className="marketing-path__item" key={session.title}>
-              <span className="marketing-path__index" aria-hidden="true">
-                {index + 1}
-              </span>
-              <div className="marketing-path__body">
-                <h3>
-                  <LocalizedMessage resolution={message(session.title)} />
-                </h3>
-                <dl className="marketing-path__meta">
-                  <div>
-                    <dt>
-                      <LocalizedMessage resolution={message('marketing.path.job')} />
-                    </dt>
-                    <dd>
-                      <LocalizedMessage resolution={message(session.job)} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <LocalizedMessage resolution={message('marketing.path.ai')} />
-                    </dt>
-                    <dd>
-                      <LocalizedMessage resolution={message(session.ai)} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <LocalizedMessage
-                        resolution={message('marketing.path.output')}
-                      />
-                    </dt>
-                    <dd>
-                      <LocalizedMessage resolution={message(session.output)} />
-                    </dd>
-                  </div>
-                </dl>
+        <div className="studio-demo__stage">
+          <div className="studio-demo__rail" aria-hidden="true"><i /><i /><i /></div>
+          <div
+            aria-label={message('marketing.preview.controls').text}
+            className="studio-preview__controls"
+            role="group"
+          >
+            {previewStages.map((stage, index) => (
+              <button
+                aria-pressed={index === previewIndex}
+                key={stage.title}
+                onClick={() => {
+                  setPreviewIndex(index)
+                  if (index !== 1) {
+                    setTypedPreview(false)
+                  }
+                }}
+                type="button"
+              >
+                <LocalizedMessage resolution={message(stage.title)} />
+              </button>
+            ))}
+          </div>
+          <div className="studio-demo__conversation">
+            <p className="studio-demo__label">
+              <LocalizedMessage resolution={message(preview.title)} />
+            </p>
+            <p className="studio-demo__hint">
+              <LocalizedMessage resolution={message(preview.body)} />
+            </p>
+            <div className="studio-demo__bubble studio-demo__bubble--coach">
+              <LocalizedMessage resolution={message(preview.coach)} />
+            </div>
+            <div className={typedPreview ? 'studio-demo__bubble studio-demo__bubble--typed' : 'studio-demo__bubble studio-demo__bubble--learner'}>
+              <LocalizedMessage
+                resolution={message(
+                  typedPreview
+                    ? 'marketing.preview.type_instead'
+                    : preview.learner,
+                )}
+              />
+            </div>
+            {typedPreview ? null : (
+              <div aria-hidden="true" className="studio-demo__wave"><i /><i /><i /><i /><i /><i /><i /></div>
+            )}
+          </div>
+          <button
+            className="studio-preview__type"
+            onClick={() => {
+              setTypedPreview(true)
+              setPreviewIndex(1)
+            }}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('conversation.confidence.type_instead')} />
+          </button>
+        </div>
+      </section>
+
+      <section aria-labelledby="marketing-how-title" className="studio-section studio-loop" id="how-it-works">
+        <div className="studio-section__heading">
+          <p><LocalizedMessage resolution={message('marketing.stats.path')} /></p>
+          <h2 id="marketing-how-title"><LocalizedMessage resolution={message('marketing.section.how')} /></h2>
+          <span><LocalizedMessage resolution={message('marketing.section.how_lead')} /></span>
+        </div>
+        <ol>
+          {learningStages.map((stage, index) => (
+            <li key={stage.title}>
+              <span className="studio-loop__number">0{index + 1}</span>
+              <div>
+                <h3><LocalizedMessage resolution={message(stage.title)} /></h3>
+                <p><LocalizedMessage resolution={message(stage.job)} /></p>
+                <small><LocalizedMessage resolution={message(stage.output)} /></small>
               </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section
-        className="marketing-section"
-        aria-labelledby="marketing-pedagogy-title"
-      >
-        <div className="marketing-section__header marketing-section__header--wide">
-          <h2 id="marketing-pedagogy-title">
-            <LocalizedMessage
-              resolution={message('marketing.section.pedagogy')}
-            />
-          </h2>
-          <p>
-            <LocalizedMessage
-              resolution={message('marketing.section.pedagogy_lead')}
-            />
-          </p>
+      <section aria-labelledby="marketing-outcomes-title" className="studio-section studio-outcomes">
+        <div className="studio-section__heading studio-section__heading--center">
+          <p><LocalizedMessage resolution={message('marketing.section.difference')} /></p>
+          <h2 id="marketing-outcomes-title"><LocalizedMessage resolution={message('marketing.section.why')} /></h2>
+          <span><LocalizedMessage resolution={message('marketing.section.difference_lead')} /></span>
         </div>
-        <ul className="marketing-pedagogy">
-          {pedagogyPoints.map((item) => (
-            <li className="marketing-pedagogy__item" key={item.title}>
-              <h3>
-                <LocalizedMessage resolution={message(item.title)} />
-              </h3>
-              <p>
-                <LocalizedMessage resolution={message(item.body)} />
-              </p>
+        <ul>
+          {outcomes.map((outcome) => (
+            <li key={outcome.title}>
+              <span aria-hidden="true">{outcome.glyph}</span>
+              <h3><LocalizedMessage resolution={message(outcome.title)} /></h3>
+              <p><LocalizedMessage resolution={message(outcome.body)} /></p>
             </li>
           ))}
         </ul>
       </section>
 
-      <section
-        className="marketing-section"
-        aria-labelledby="marketing-why-title"
-      >
-        <div className="marketing-section__header">
-          <h2 id="marketing-why-title">
-            <LocalizedMessage resolution={message('marketing.section.why')} />
-          </h2>
+      <section aria-labelledby="marketing-trust-title" className="studio-section studio-trust">
+        <div className="studio-trust__presence" aria-hidden="true">
+          <div className="studio-trust__core"><i /><i /><i /></div>
         </div>
-        <ul className="marketing-why">
-          {whyCards.map((item) => (
-            <li className="marketing-why__item" key={item.title}>
-              <div className="marketing-why__media">
-                <img alt="" className="marketing-why__image" src={item.image} />
-              </div>
-              <div className="marketing-why__copy">
-                <h3>
-                  <LocalizedMessage resolution={message(item.title)} />
-                </h3>
-                <p>
-                  <LocalizedMessage resolution={message(item.body)} />
-                </p>
-              </div>
+        <div className="studio-trust__copy">
+          <div className="studio-section__heading">
+            <p><LocalizedMessage resolution={message('conversation.disclosure_title')} /></p>
+            <h2 id="marketing-trust-title"><LocalizedMessage resolution={message('marketing.section.pedagogy')} /></h2>
+            <span><LocalizedMessage resolution={message('marketing.section.pedagogy_lead')} /></span>
+          </div>
+          <ul>
+            {trustPoints.map((point) => (
+              <li key={point.title}>
+                <span aria-hidden="true">✓</span>
+                <div><h3><LocalizedMessage resolution={message(point.title)} /></h3><p><LocalizedMessage resolution={message(point.body)} /></p></div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="marketing-plans-title" className="studio-section studio-plans">
+        <div className="studio-section__heading studio-section__heading--center">
+          <p><LocalizedMessage resolution={message('subscription.title')} /></p>
+          <h2 id="marketing-plans-title"><LocalizedMessage resolution={message('marketing.benefit.together.title')} /></h2>
+          <span><LocalizedMessage resolution={message('subscription.gst_exclusive')} /></span>
+        </div>
+        <ul>
+          {plans.map((plan) => (
+            <li className={'recommended' in plan && plan.recommended === true ? 'studio-plan studio-plan--recommended' : 'studio-plan'} key={plan.name}>
+              {'recommended' in plan && plan.recommended === true ? <p className="studio-plan__flag"><LocalizedMessage resolution={message('subscription.recommended')} /></p> : null}
+              <h3><LocalizedMessage resolution={message(plan.name)} /></h3>
+              <strong><LocalizedMessage resolution={message(plan.price)} /></strong>
+              <p><LocalizedMessage resolution={message(plan.lead)} /></p>
+              <small><LocalizedMessage resolution={message(plan.extra)} /></small>
+              <a className="marketing-button marketing-button--primary" href="#sign-in"><LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} /></a>
             </li>
           ))}
         </ul>
       </section>
 
-      <section
-        className="marketing-section"
-        aria-labelledby="marketing-difference-title"
-      >
-        <div className="marketing-section__header">
-          <h2 id="marketing-difference-title">
-            <LocalizedMessage
-              resolution={message('marketing.section.difference')}
-            />
-          </h2>
-          <p>
-            <LocalizedMessage
-              resolution={message('marketing.section.difference_lead')}
-            />
-          </p>
+      <section aria-labelledby="marketing-readiness-title" className="studio-section studio-readiness">
+        <div className="studio-section__heading studio-section__heading--center">
+          <p><LocalizedMessage resolution={message('marketing.section.difference')} /></p>
+          <h2 id="marketing-readiness-title"><LocalizedMessage resolution={message('marketing.benefit.hybrid.title')} /></h2>
+          <span><LocalizedMessage resolution={message('marketing.section.difference_lead')} /></span>
         </div>
-        <ul className="marketing-benefits">
-          {differenceCards.map((item) => (
-            <li className="marketing-benefit" key={item.title}>
-              <div
-                className={
-                  item.fit === 'contain'
-                    ? 'marketing-benefit__media marketing-benefit__media--contain'
-                    : 'marketing-benefit__media'
-                }
-              >
-                <img alt="" className="marketing-benefit__image" src={item.image} />
-              </div>
-              <div className="marketing-benefit__copy">
-                <h3>
-                  <LocalizedMessage resolution={message(item.title)} />
-                </h3>
-                <p>
-                  <LocalizedMessage resolution={message(item.body)} />
-                </p>
-              </div>
+        <ul>
+          {readinessPoints.map((point) => (
+            <li key={point.title}>
+              <h3><LocalizedMessage resolution={message(point.title)} /></h3>
+              <p><LocalizedMessage resolution={message(point.body)} /></p>
             </li>
           ))}
         </ul>
       </section>
 
-      <section
-        className="marketing-section"
-        aria-labelledby="marketing-showcase-title"
-      >
-        <div className="marketing-section__header">
-          <h2 id="marketing-showcase-title">
-            <LocalizedMessage
-              resolution={message('marketing.showcase.title')}
-            />
-          </h2>
-          <p>
-            <LocalizedMessage
-              resolution={message('marketing.showcase.lead')}
-            />
-          </p>
-        </div>
-        <ul className="marketing-showcase">
-          {showcase.map((item) => (
-            <li className="marketing-showcase__item" key={item.src}>
-              <div className="marketing-showcase__frame">
-                <img alt="" className="marketing-showcase__image" src={item.src} />
-              </div>
-              <p>
-                <LocalizedMessage resolution={message(item.caption)} />
-              </p>
-            </li>
-          ))}
-        </ul>
+      {!hideAndroidPromo ? (
+        <section aria-labelledby="marketing-android-title" className="studio-section studio-android" id="android-app">
+          <div>
+            <p><LocalizedMessage resolution={message('marketing.showcase.app')} /></p>
+            <h2 id="marketing-android-title"><LocalizedMessage resolution={message('marketing.android.title')} /></h2>
+            <span><LocalizedMessage resolution={message('marketing.android.lead')} /></span>
+          </div>
+          <a className="marketing-button marketing-button--android" download={ANDROID_APK_FILENAME} href={ANDROID_APK_HREF}>
+            <LocalizedMessage resolution={message('marketing.android.download')} />
+          </a>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="marketing-join-title" className="studio-section studio-closing">
+        <div aria-hidden="true" className="studio-closing__glow" />
+        <p><LocalizedMessage resolution={message('marketing.hero.badge')} /></p>
+        <h2 id="marketing-join-title"><LocalizedMessage resolution={message('marketing.join.title')} /></h2>
+        <span><LocalizedMessage resolution={message('marketing.join.body')} /></span>
+        <a className="marketing-button marketing-button--primary" href="#sign-in">
+          <LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} />
+          <span aria-hidden="true">→</span>
+        </a>
       </section>
     </div>
   )

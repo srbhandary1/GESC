@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ConversationJourney } from './ConversationJourney'
 import * as playBase64AudioModule from './playBase64Audio'
-import type {
-  ConversationJourneyApi,
-  FriendSession,
-  FriendTurn,
-  FriendTurnEvent,
+import {
+  ConversationJourneyUnavailableError,
+  type ConversationJourneyApi,
+  type FriendSession,
+  type FriendTurn,
+  type FriendTurnEvent,
 } from './ConversationJourneyApi'
 
 import { resetSpeakLoopHistory } from './speakLoopTimings'
@@ -34,6 +35,7 @@ describe('Friend practice journey', () => {
       .mockReturnValueOnce('turn-command')
       .mockReturnValueOnce('next-turn-command')
     const user = userEvent.setup()
+    const onLiveAiUsageChanged = vi.fn()
 
     render(
       <ConversationJourney
@@ -41,6 +43,7 @@ describe('Friend practice journey', () => {
         createClientId={createClientId}
         locale="en-IN"
         localizationPolicy="development-preview"
+        onLiveAiUsageChanged={onLiveAiUsageChanged}
       />,
     )
 
@@ -88,7 +91,9 @@ describe('Friend practice journey', () => {
     expect(
       screen.getByText('I practise English after work.'),
     ).toHaveAttribute('lang', 'en-IN')
-    expect(screen.getByText('Priority correction')).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('Explanation in your language'),
+    ).toBeInTheDocument()
     expect(
       screen.getByText(
         'A clearer sentence is: "I enjoy learning English after work."',
@@ -130,6 +135,7 @@ describe('Friend practice journey', () => {
       turn.events_url,
       expect.any(AbortSignal),
     )
+    expect(onLiveAiUsageChanged).toHaveBeenCalled()
   })
 
   it.each([
@@ -311,6 +317,37 @@ describe('Friend practice journey', () => {
       await screen.findByRole('alert'),
     ).toHaveTextContent(
       'Swathi is unavailable. Try again.',
+    )
+  })
+
+  it('shows paid live-AI exhaustion from the API problem key', async () => {
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => {
+        throw new ConversationJourneyUnavailableError(
+          409,
+          'entitlement.ai_exhausted',
+        )
+      }),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Talk with Swathi',
+      }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "This month's live speaking time is used up. Buy talk time or wait for the next month.",
     )
   })
 

@@ -41,8 +41,11 @@ function plan(overrides: Partial<SubscriptionPlanOffer> = {}): SubscriptionPlanO
     amount_ex_gst_paise: 35000,
     gst_paise: 6300,
     total_paise: 41300,
+    billing_period: 'calendar_month',
     allows_roleplay: false,
+    live_ai_cap_seconds: 2400,
     is_demo: false,
+    is_talk_pack: false,
     checkout_required: true,
     recommended: false,
     ...overrides,
@@ -63,10 +66,23 @@ describe('subscription panel', () => {
           amount_ex_gst_paise: 0,
           gst_paise: 0,
           total_paise: 0,
+          billing_period: 'hours',
           allows_roleplay: true,
+          live_ai_cap_seconds: 300,
           is_demo: true,
+          is_talk_pack: false,
           checkout_required: false,
           recommended: false,
+        }), plan({
+          id: '01JPLAN00000000000000000004',
+          code: 'talk_pack_30',
+          name: 'Talk 30',
+          amount_ex_gst_paise: 19900,
+          gst_paise: 3582,
+          total_paise: 23482,
+          billing_period: 'talk_pack',
+          live_ai_cap_seconds: 1800,
+          is_talk_pack: true,
         })],
       })),
       checkout,
@@ -83,6 +99,10 @@ describe('subscription panel', () => {
 
     expect(await screen.findByText(/240s/)).toBeInTheDocument()
     expect(screen.getByText(/Prices exclude GST/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Buy talk time' })).toBeDisabled()
+    expect(
+      screen.getByText(/Subscribe to Modules or Premium before buying talk time/),
+    ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Pay now' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
@@ -120,6 +140,51 @@ describe('subscription panel', () => {
 
     expect(await screen.findByText(/Recommended/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Start Premium' }))
+    expect(checkout).toHaveBeenCalledOnce()
+  })
+
+  it('sells talk packs only on an active paid month', async () => {
+    const checkout = vi.fn(async () => ({ status: 'completed' }))
+    const talk = plan({
+      id: '01JPLAN00000000000000000005',
+      code: 'talk_pack_60',
+      name: 'Talk 60',
+      amount_ex_gst_paise: 34900,
+      gst_paise: 6282,
+      total_paise: 41182,
+      billing_period: 'talk_pack',
+      live_ai_cap_seconds: 3600,
+      is_talk_pack: true,
+    })
+    const api: LearnerSubscriptionApi = {
+      entitlement: vi.fn(async () =>
+        entitlement({
+          plan_code: 'monthly_modules',
+          plan_name: 'Modules',
+          is_demo: false,
+          live_ai_seconds_remaining: 1200,
+          live_ai_cap_seconds: 2400,
+        }),
+      ),
+      plans: vi.fn(async () => ({
+        gstin_is_placeholder: false,
+        plans: [plan(), talk],
+      })),
+      checkout,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <SubscriptionPanel
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByText(/Live-AI minutes left/)).toBeInTheDocument()
+    expect(screen.getByText(/20/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Buy talk time' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
 

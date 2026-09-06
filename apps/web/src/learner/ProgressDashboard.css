@@ -3,16 +3,21 @@
   flex-direction: column;
   gap: var(--ge-space-6);
   padding: var(--ge-space-4);
-  max-width: 800px;
-  margin: 0 auto;
   width: 100%;
+  max-width: none;
 }
 
 .progress-dashboard__error,
 .progress-dashboard__loading {
   padding: var(--ge-space-4);
   text-align: center;
-  color: var(--ge-color-ink-subtle);
+  color: var(--ge-color-text-muted);
+}
+
+.progress-dashboard__error {
+  display: grid;
+  justify-items: center;
+  gap: var(--ge-space-3);
 }
 
 .progress-dashboard--empty {
@@ -23,15 +28,15 @@
 }
 
 .progress-dashboard__title {
-  font-size: var(--ge-font-size-6);
+  font-size: var(--ge-font-size-xl);
   font-weight: 700;
   color: var(--ge-color-ink);
   margin: 0;
 }
 
 .progress-dashboard__empty-message {
-  font-size: var(--ge-font-size-3);
-  color: var(--ge-color-ink-subtle);
+  font-size: var(--ge-font-size-md);
+  color: var(--ge-color-text-muted);
   margin: var(--ge-space-2) 0 var(--ge-space-6);
 }
 
@@ -39,123 +44,134 @@
   display: flex;
   flex-direction: column;
   gap: var(--ge-space-3);
+  min-width: 0;
 }
 
 .progress-dashboard__section-title {
-  font-size: var(--ge-font-size-4);
-  font-weight: 600;
+  font-size: var(--ge-font-size-lg);
+  font-weight: 650;
   color: var(--ge-color-ink);
   margin: 0;
-  border-bottom: 1px solid var(--ge-color-surface-sunken);
+  border-bottom: 1px solid var(--ge-color-border);
   padding-bottom: var(--ge-space-2);
 }
 
 .progress-dashboard__summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
   gap: var(--ge-space-3);
 }
 
 .progress-dashboard__stat {
-  background: var(--ge-color-surface);
-  border: 1px solid var(--ge-color-surface-sunken);
-  border-radius: var(--ge-radius-3);
+  background: var(--ge-color-surface-elevated);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
   padding: var(--ge-space-4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  justify-items: center;
+  align-content: start;
   text-align: center;
   gap: var(--ge-space-2);
+  min-block-size: 6.5rem;
 }
 
 .progress-dashboard__stat--missed {
-  border-color: var(--ge-color-surface-raised);
+  border-color: color-mix(in srgb, var(--ge-color-accent) 45%, var(--ge-color-border));
 }
 
 .progress-dashboard__stat-value {
-  font-size: var(--ge-font-size-7);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 700;
   color: var(--ge-color-ink);
   line-height: 1;
 }
 
 .progress-dashboard__stat-label {
-  font-size: var(--ge-font-size-2);
-  color: var(--ge-color-ink-subtle);
-  font-weight: 500;
+  font-size: var(--ge-font-size-sm);
+  color: var(--ge-color-text-muted);
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .progress-dashboard__improvement-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--ge-space-2);
 }
 
 .progress-dashboard__improvement-list li {
   padding: var(--ge-space-3);
-  background: var(--ge-color-surface-raised);
-  border-radius: var(--ge-radius-2);
-  font-size: var(--ge-font-size-3);
+  background: var(--ge-color-status);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  font-size: var(--ge-font-size-md);
   color: var(--ge-color-ink);
   overflow-wrap: anywhere;
 }
 
 .progress-dashboard__mastery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 16rem), 1fr)
+  );
   gap: var(--ge-space-4);
 }
 
 .progress-dashboard__mastery-group {
-  background: var(--ge-color-surface);
-  border: 1px solid var(--ge-color-surface-sunken);
-  border-radius: var(--ge-radius-3);
-  padding: var(--ge-space-3);
+  background: var(--ge-color-surface-elevated);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-4);
+  min-width: 0;
 }
 
 .progress-dashboard__mastery-concept {
-  font-size: var(--ge-font-size-3);
-  font-weight: 600;
+  font-size: var(--ge-font-size-md);
+  font-weight: 650;
   color: var(--ge-color-ink);
   margin: 0 0 var(--ge-space-3);
-  text-transform: capitalize;
+  overflow-wrap: anywhere;
 }
 
 .progress-dashboard__mastery-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--ge-space-2);
 }
 
 .progress-dashboard__mastery-item {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
   gap: var(--ge-space-2);
-  font-size: var(--ge-font-size-2);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.45;
 }
 
 .progress-dashboard__mastery-status {
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-block-start: 0.2rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .progress-dashboard__mastery-item--mastered .progress-dashboard__mastery-status {
-  background-color: var(--ge-color-pine);
+  background-color: var(--ge-color-action);
 }
 
 .progress-dashboard__mastery-item--not_mastered .progress-dashboard__mastery-status {
-  background-color: var(--ge-color-surface-raised);
-  border: 1px solid var(--ge-color-ink-subtle);
+  background-color: transparent;
+  border: 1px solid var(--ge-color-text-muted);
 }
 
 .progress-dashboard__mastery-label {
   color: var(--ge-color-ink);
+  overflow-wrap: anywhere;
 }

@@ -106,13 +106,6 @@ export function TutorHomeHero({
           <LocalizedMessage resolution={message('page.home.continue_practice')} />
         </a>
       </div>
-      <img
-        alt=""
-        className="tutor-home-hero__art"
-        height={420}
-        src="/tutor/tutor-maya-hero.png"
-        width={320}
-      />
     </section>
   )
 }

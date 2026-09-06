@@ -33,7 +33,7 @@ final class DirectLearnerProvisionerTest extends TenancyIntegrationTestCase
             ->where('organization_id', $organization->getKey())
             ->where('key', 'learner')
             ->count());
-        $this->assertSame(40, DB::table('permissions')->count());
+        $this->assertSame(46, DB::table('permissions')->count());
     }
 
     public function test_verified_identity_provisioning_is_transactional_and_replay_safe(): void

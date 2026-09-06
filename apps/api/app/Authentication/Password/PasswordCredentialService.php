@@ -246,35 +246,38 @@ final class PasswordCredentialService
 
     public function resetPassword(User $user, string $newPassword, Request $request): void
     {
-        /** @var User|null $lockedUser */
-        $lockedUser = User::query()->whereKey($user->getKey())->lockForUpdate()->first();
-        /** @var PasswordCredential|null $credential */
-        $credential = PasswordCredential::query()
-            ->whereKey($user->getKey())
-            ->lockForUpdate()
-            ->first();
+        DB::transaction(function () use ($user, $newPassword): void {
+            /** @var User|null $lockedUser */
+            $lockedUser = User::query()->whereKey($user->getKey())->lockForUpdate()->first();
+            /** @var PasswordCredential|null $credential */
+            $credential = PasswordCredential::query()
+                ->whereKey($user->getKey())
+                ->lockForUpdate()
+                ->first();
 
-        if (! $lockedUser instanceof User || ! $credential instanceof PasswordCredential) {
-            throw new PasswordRecoveryFailed;
-        }
+            if (! $lockedUser instanceof User || ! $credential instanceof PasswordCredential) {
+                throw new PasswordRecoveryFailed;
+            }
 
-        $normalized = $this->policy->normalizeAndValidatePassword(
-            $newPassword,
-            (string) $lockedUser->username,
-        );
-        $version = ((int) $lockedUser->credential_version) + 1;
-        $lockedUser->forceFill(['credential_version' => $version])->save();
-        $credential->forceFill([
-            'password_hash' => $this->hash($normalized),
-            'policy_version' => (int) config('authentication.password.policy_version', 1),
-            'credential_version' => $version,
-            'changed_at' => Date::now(),
-            'compromised_at' => null,
-        ])->save();
-        AuthenticationSession::query()->where('user_id', $lockedUser->getKey())->update([
-            'password_confirmed_at' => null,
-            'password_confirmed_credential_version' => null,
-        ]);
+            $normalized = $this->policy->normalizeAndValidatePassword(
+                $newPassword,
+                (string) $lockedUser->username,
+            );
+            $version = ((int) $lockedUser->credential_version) + 1;
+            $lockedUser->forceFill(['credential_version' => $version])->save();
+            $credential->forceFill([
+                'password_hash' => $this->hash($normalized),
+                'policy_version' => (int) config('authentication.password.policy_version', 1),
+                'credential_version' => $version,
+                'changed_at' => Date::now(),
+                'compromised_at' => null,
+            ])->save();
+            AuthenticationSession::query()->where('user_id', $lockedUser->getKey())->update([
+                'password_confirmed_at' => null,
+                'password_confirmed_credential_version' => null,
+            ]);
+        }, 3);
+
         $this->record((string) $user->getKey(), 'password.recovered', 'succeeded', (string) $user->getKey(), $request);
     }
 

@@ -1,5 +1,9 @@
 const CACHE_PREFIX = 'global-english-public-shell-'
-const CACHE_NAME = `${CACHE_PREFIX}v5`
+const requestedRelease = new URL(self.location.href).searchParams.get('release')
+const CACHE_VERSION = /^[a-f0-9]{64}$/.test(requestedRelease ?? '')
+  ? requestedRelease
+  : 'unversioned'
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`
 const FORBIDDEN_PATH_PREFIXES = [
   '/api/',
   '/sanctum/',
@@ -40,7 +44,7 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'GET_OFFLINE_SHELL_VERSION') {
     event.source?.postMessage({
       type: 'OFFLINE_SHELL_VERSION',
-      version: 'v5',
+      version: CACHE_VERSION,
     })
     return
   }

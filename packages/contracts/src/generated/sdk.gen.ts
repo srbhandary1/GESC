@@ -765,9 +765,11 @@ export const listLearnerSubscriptionPlans = <ThrowOnError extends boolean = fals
 });
 
 /**
- * Complete dummy in-app checkout for a paid Direct plan
+ * Complete dummy in-app checkout for a paid Direct plan or talk pack
  *
- * Completes in-process with the dummy payment driver. Production and
+ * Completes in-process with the dummy payment driver. Talk packs require
+ * an active Modules or Premium month and add live-AI seconds; they do
+ * not replace the membership or unlock Role-play. Production and
  * `disabled` fail closed. Replay uses the same Idempotency-Key.
  *
  */

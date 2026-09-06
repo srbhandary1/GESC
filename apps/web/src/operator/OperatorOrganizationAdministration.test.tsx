@@ -208,6 +208,9 @@ describe('operator organization administration', () => {
       name: 'Staff memberships',
     })
     await user.click(
+      await within(staff).findByRole('button', { name: 'Nandini Rao' }),
+    )
+    await user.click(
       await within(staff).findByRole('button', { name: 'Revoke role' }),
     )
     await user.click(within(staff).getByRole('button', { name: 'Confirm' }))

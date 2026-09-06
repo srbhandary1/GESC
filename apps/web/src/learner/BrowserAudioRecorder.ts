@@ -54,7 +54,6 @@ export class BrowserAudioRecorder implements AudioRecorder {
     }
 
     stopSpeechPlayback()
-    await wait(80)
 
     let stream: MediaStream
 

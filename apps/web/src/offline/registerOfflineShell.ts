@@ -1,5 +1,6 @@
 const SERVICE_WORKER_PATH = '/service-worker.js'
 const PUBLIC_SHELL_CACHE_PREFIX = 'global-english-public-shell-'
+const PUBLIC_SHELL_RELEASE = import.meta.env.VITE_PUBLIC_SHELL_RELEASE
 const AUTHENTICATED_PATH_PREFIXES = [
   '/api/',
   '/sanctum/',
@@ -23,7 +24,7 @@ export async function registerOfflineShell(): Promise<void> {
     }
 
     const registration =
-      await navigator.serviceWorker.register(SERVICE_WORKER_PATH, {
+      await navigator.serviceWorker.register(serviceWorkerPath(), {
         scope: '/',
         updateViaCache: 'none',
       })
@@ -60,6 +61,18 @@ export async function registerOfflineShell(): Promise<void> {
     // Offline availability is progressive enhancement. The visible learner
     // state reports unavailability without logging browser or identity data.
   }
+}
+
+export function serviceWorkerPath(
+  release: string = PUBLIC_SHELL_RELEASE,
+): string {
+  if (!/^[a-f0-9]{64}$/.test(release)) {
+    return SERVICE_WORKER_PATH
+  }
+
+  // A new build gets a new script URL, so the browser cannot keep an older
+  // public shell worker merely because the static source filename is stable.
+  return `${SERVICE_WORKER_PATH}?release=${release}`
 }
 
 async function disableDevelopmentOfflineShell(): Promise<void> {

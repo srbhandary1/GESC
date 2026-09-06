@@ -335,7 +335,7 @@ export class WebConversationJourneyApi
     }
 
     if (!response.ok) {
-      throw new ConversationJourneyUnavailableError(response.status)
+      throw await unavailableFromResponse(response)
     }
 
     try {
@@ -469,6 +469,28 @@ function isConversationTurnEvent(
     (event.provider_attempt === null ||
       typeof event.provider_attempt === 'number')
   )
+}
+
+async function unavailableFromResponse(
+  response: Response,
+): Promise<ConversationJourneyUnavailableError> {
+  let messageKey: string | undefined
+
+  try {
+    const body: unknown = await response.json()
+    if (
+      typeof body === 'object' &&
+      body !== null &&
+      'message_key' in body &&
+      typeof body.message_key === 'string'
+    ) {
+      messageKey = body.message_key
+    }
+  } catch {
+    messageKey = undefined
+  }
+
+  return new ConversationJourneyUnavailableError(response.status, messageKey)
 }
 
 function readCookieValue(

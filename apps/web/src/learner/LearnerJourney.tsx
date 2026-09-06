@@ -685,11 +685,15 @@ export function LearnerJourney({
   }
 
   const home = state.home
-  const hasMission =
-    home.enrollment !== null && home.next_mission !== null
+  const hasDominantAction =
+    home.enrollment !== null &&
+    (home.due_review !== null || home.next_mission !== null)
   const dominantTitle =
     home.due_review?.title ?? home.next_mission?.title ?? null
-  const estimatedMinutes = home.next_mission?.estimated_minutes ?? 0
+  const reviewDue = home.due_review !== null
+  const estimatedMinutes = reviewDue
+    ? null
+    : (home.next_mission?.estimated_minutes ?? 0)
 
   return (
     <section
@@ -719,7 +723,7 @@ export function LearnerJourney({
           />
         </aside>
       </header>
-      {!hasMission ? (
+      {!hasDominantAction ? (
         <p className="learner-card learner-home__empty">
           <LocalizedMessage resolution={message('learner.home.no_mission')} />
         </p>
@@ -728,13 +732,6 @@ export function LearnerJourney({
           aria-labelledby="dominant-action-title"
           className="learner-home__action"
         >
-          <div
-            aria-hidden="true"
-            className="learner-home__action-orbit"
-          >
-            <span className="learner-home__action-orbit-ring" />
-            <span className="learner-home__action-orbit-ring learner-home__action-orbit-ring--delay" />
-          </div>
           <div className="learner-home__action-body">
             <p className="learner-home__eyebrow">
               <LocalizedMessage
@@ -770,12 +767,21 @@ export function LearnerJourney({
             </p>
             <p className="learner-home__meta">
               <LocalizedMessage
-                resolution={resolveInterfaceMessage(
-                  'learner.home.estimated_minutes',
-                  locale,
-                  localizationPolicy,
-                  { minutes: estimatedMinutes },
-                )}
+                resolution={
+                  reviewDue
+                    ? resolveInterfaceMessage(
+                        'learner.home.review_interval',
+                        locale,
+                        localizationPolicy,
+                        { days: String(home.due_review!.interval_days) },
+                      )
+                    : resolveInterfaceMessage(
+                        'learner.home.estimated_minutes',
+                        locale,
+                        localizationPolicy,
+                        { minutes: estimatedMinutes ?? 0 },
+                      )
+                }
               />
             </p>
             {actionError ? (
@@ -797,7 +803,7 @@ export function LearnerJourney({
                   home.due_review === null
                     ? home.next_mission!
                     : {
-                        estimated_minutes: home.next_mission!.estimated_minutes,
+                        estimated_minutes: 0,
                         id: home.due_review.mission_id,
                         title: home.due_review.title,
                       },
@@ -814,7 +820,7 @@ export function LearnerJourney({
           </div>
         </section>
       )}
-      {!hasMission ? null : (
+      {!hasDominantAction ? null : (
         <section
           aria-labelledby="offline-access-title"
           className="learner-card learner-home__sync learner-offline"
@@ -971,6 +977,11 @@ function OnboardingForm({
       <p>
         <LocalizedMessage
           resolution={message('learner.onboarding.introduction')}
+        />
+      </p>
+      <p>
+        <LocalizedMessage
+          resolution={message('learner.onboarding.orientation')}
         />
       </p>
       <form onSubmit={(event) => void submit(event)}>
@@ -1247,6 +1258,7 @@ function MissionExperience({
               }}
               loadSource={api.downloadModelAudio}
               mimeType={mission.model_audio.mime_type}
+              slowLabel={text('learner.audio.slow')}
               source={mission.model_audio.stream_url}
             />
           )}

@@ -205,7 +205,13 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByLabel('Interface language').selectOption('en-IN')
   await page.getByRole('tab', { name: 'A situation' }).click()
   await page.getByRole('button', { name: 'Start this situation' }).click()
-  await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible({
+  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible({
+    timeout: 10_000,
+  })
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible({
     timeout: 10_000,
   })
   await page.getByRole('button', { name: 'Type instead' }).click()

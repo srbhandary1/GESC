@@ -727,6 +727,24 @@ describe('deterministic learner journey', () => {
     expect(
       screen.getByRole('button', { name: t('learner.home.continue') }),
     ).toHaveClass('learner-home__continue')
+    expect(
+      screen.queryByText(
+        resolveMessage('learner.home.estimated_minutes', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { minutes: 5 },
+        }).text,
+      ),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        resolveMessage('learner.home.review_interval', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { days: '3' },
+        }).text,
+      ),
+    ).toBeVisible()
     await user.click(
       screen.getByRole('button', { name: t('learner.home.continue') }),
     )

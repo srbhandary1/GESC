@@ -277,6 +277,62 @@ describe('RecordingTurn privacy boundaries', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps hold-to-talk in place after an empty local capture', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['too short'], { type: 'audio/webm' }),
+        durationMs: 249,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={vi.fn()}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    const hold = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await screen.findByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+
+    expect(await screen.findByText(labels.controls.error)).toBeVisible()
+    const retry = screen.getByRole('button', { name: 'Hold to talk' })
+    expect(retry).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: labels.retry }),
+    ).not.toBeInTheDocument()
+
+    await user.pointer({ keys: '[MouseLeft>]', target: retry })
+    await waitFor(() => {
+      expect(recorder.start).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it('hold cancel after release aborts the in-flight submit', async () => {
     const session: AudioRecordingSession = {
       cancel: vi.fn(),

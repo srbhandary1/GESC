@@ -131,10 +131,12 @@ export interface ConversationJourneyApi {
 
 export class ConversationJourneyUnavailableError extends Error {
   readonly status?: number
+  readonly messageKey?: string
 
-  constructor(status?: number) {
+  constructor(status?: number, messageKey?: string) {
     super('The deterministic Friend prototype is unavailable.')
     this.name = 'ConversationJourneyUnavailableError'
     this.status = status
+    this.messageKey = messageKey
   }
 }

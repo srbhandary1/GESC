@@ -182,7 +182,7 @@ test('learner workspace keeps bounded administration tasks independent and secre
 
   await directory
     .getByRole('button', {
-      name: message('operator.learners.action.select'),
+      name: 'Asha Learner',
     })
     .click()
   await expect(
@@ -270,7 +270,7 @@ test('Content Studio keeps governed resources independent through exact review a
 }) => {
   const api = await mockContentStudioApi(page)
 
-  await page.goto('/#practice')
+  await page.goto('/#operator-learning')
 
   const studio = page.getByRole('article', {
     name: message('operator.content.title'),
@@ -345,7 +345,7 @@ test('Media Library keeps private upload, quarantine, rights, and attachment evi
 }) => {
   const api = await mockMediaLibraryApi(page)
 
-  await page.goto('/#practice')
+  await page.goto('/#operator-learning')
 
   const library = page.getByRole('article', {
     name: message('operator.media.title'),
@@ -544,9 +544,44 @@ test('permission-aware operator shell keeps safe tasks available independently',
       name: message('operator.navigation.learning'),
     }),
   ).toBeVisible()
+  const search = page.locator('.operator-search')
+  await search
+    .getByRole('searchbox', {
+      name: message('operator.search.label'),
+    })
+    .fill('draft')
+  const versionResult = search.getByRole('link', {
+    name: /Curriculum version Synthetic Foundation Preview/u,
+  })
+  await expect(versionResult).toBeVisible()
+  await search
+    .getByRole('button', { name: message('operator.load_more') })
+    .click()
+  await expect(
+    search.getByText(
+      'synthetic-foundation-preview / draft-1 · #1',
+      { exact: true },
+    ),
+  ).toBeVisible()
+  expect(api.searchRequests).toEqual([
+    { cursor: null, query: 'draft' },
+    { cursor: 'search-cursor', query: 'draft' },
+  ])
+
+  await versionResult.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/#operator-learning$/u)
   await expect(
     page.getByText('#1 · head', { exact: true }),
   ).toBeVisible()
+
+  await taskNavigation
+    .getByRole('link', {
+      name: message('operator.navigation.operations'),
+    })
+    .focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/#operator-operations$/u)
 
   const supportPanel = page
     .getByRole('heading', {
@@ -562,32 +597,13 @@ test('permission-aware operator shell keeps safe tasks available independently',
   await expect(supportPanel.getByText('stuck_in_progress')).toBeVisible()
   expect(api.supportRequests).toBe(2)
 
-  const search = page.locator('.operator-search')
-  await search
-    .getByRole('searchbox', {
-      name: message('operator.search.label'),
+  await taskNavigation
+    .getByRole('link', {
+      name: message('operator.navigation.safety'),
     })
-    .fill('draft')
-  const versionResult = search.getByRole('link', {
-    name: /Curriculum version Synthetic Foundation Preview/u,
-  })
-  await expect(versionResult).toBeVisible()
-  await versionResult.focus()
+    .focus()
   await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/#operator-learning$/u)
-  await search
-    .getByRole('button', { name: message('operator.load_more') })
-    .click()
-  await expect(
-    search.getByText(
-      'synthetic-foundation-preview / draft-1 · #1',
-      { exact: true },
-    ),
-  ).toBeVisible()
-  expect(api.searchRequests).toEqual([
-    { cursor: null, query: 'draft' },
-    { cursor: 'search-cursor', query: 'draft' },
-  ])
+  await expect(page).toHaveURL(/#operator-safety$/u)
 
   const auditPanel = page
     .getByRole('heading', { name: message('operator.audit.title') })
@@ -610,14 +626,6 @@ test('permission-aware operator shell keeps safe tasks available independently',
     }),
   ).toBeVisible()
   expect(api.auditCursors).toEqual([null, 'audit-cursor'])
-
-  await taskNavigation
-    .getByRole('link', {
-      name: message('operator.navigation.operations'),
-    })
-    .focus()
-  await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/#operator-operations$/u)
 
   const desktopAccessibility = await new AxeBuilder({ page }).analyze()
   expect(desktopAccessibility.violations).toEqual([])

@@ -33,6 +33,8 @@ import {
   type OperatorOrganizationPanelKey,
   type OperatorRole,
   type OperatorRoleCollection,
+  type OperatorRoleSummary,
+  type OperatorStaffDirectoryFilters,
   type OperatorStaffMembership,
   type OperatorTrainerProfile,
 } from './OperatorOrganizationApi'
@@ -57,6 +59,7 @@ interface CommonPanelProps {
   readonly api: OperatorOrganizationApi
   readonly createCommandId: () => string
   readonly locale: SupportedLocale
+  readonly localizationPolicy: ResolutionPolicy
   readonly message: MessageResolver
 }
 
@@ -79,7 +82,7 @@ export function OperatorOrganizationAdministration({
 }: OperatorOrganizationAdministrationProps) {
   const message: MessageResolver = (key) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
-  const common = { api, createCommandId, locale, message }
+  const common = { api, createCommandId, locale, localizationPolicy, message }
 
   return (
     <section
@@ -669,12 +672,17 @@ function StaffMembershipsPanel({
   canReadRoles,
   createCommandId,
   locale,
+  localizationPolicy,
   message,
 }: CommonPanelProps & Readonly<{ canReadRoles: boolean }>) {
+  const [filters, setFilters] = useState<OperatorStaffDirectoryFilters>({})
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [namePrefix, setNamePrefix] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const loadMemberships = useCallback(
     (cursor: string | undefined, signal: AbortSignal) =>
-      api.listMemberships(cursor, signal),
-    [api],
+      api.listMemberships(filters, cursor, signal),
+    [api, filters],
   )
   const memberships = usePagedResource<
     OperatorStaffMembership,
@@ -697,6 +705,26 @@ function StaffMembershipsPanel({
   }, [canReadRoles, memberships, roles])
   const command = useCommandRunner(createCommandId, reload)
 
+  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSelectedId(null)
+    setFilters({
+      ...(namePrefix.trim() === ''
+        ? {}
+        : { display_name_prefix: namePrefix.trim() }),
+      ...(statusFilter === ''
+        ? {}
+        : { status: statusFilter as OperatorStaffMembership['status'] }),
+    })
+  }
+
+  const resetFilters = () => {
+    setNamePrefix('')
+    setStatusFilter('')
+    setSelectedId(null)
+    setFilters({})
+  }
+
   return (
     <PeoplePanel
       headingId="operator-staff-memberships-title"
@@ -705,164 +733,166 @@ function StaffMembershipsPanel({
       titleKey="operator.people.memberships.title"
       wide
     >
+      <form
+        className="operator-directory__toolbar operator-people__form"
+        onSubmit={applyFilters}
+        role="search"
+      >
+        <Field
+          id="operator-staff-name-prefix"
+          label={message('operator.people.field.name_prefix').text}
+        >
+          <input
+            autoComplete="off"
+            id="operator-staff-name-prefix"
+            maxLength={80}
+            onChange={(event) => setNamePrefix(event.currentTarget.value)}
+            placeholder={message('operator.directory.prefix_hint').text}
+            value={namePrefix}
+          />
+        </Field>
+        <Field
+          id="operator-staff-status-filter"
+          label={message('operator.people.field.status').text}
+        >
+          <select
+            id="operator-staff-status-filter"
+            onChange={(event) => setStatusFilter(event.currentTarget.value)}
+            value={statusFilter}
+          >
+            <option value="">{message('operator.learners.filter.all').text}</option>
+            <option value="active">active</option>
+            <option value="suspended">suspended</option>
+            <option value="ended">ended</option>
+          </select>
+        </Field>
+        <div className="operator-directory__toolbar-actions">
+          <button type="submit">
+            {message('operator.learners.filter.apply').text}
+          </button>
+          <button onClick={resetFilters} type="button">
+            {message('operator.directory.reset_filters').text}
+          </button>
+        </div>
+      </form>
+
       <CollectionState resource={memberships} message={message}>
-        {(page) => (
-          <>
-            {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
-            <ul className="operator-people__cards operator-people__cards--wide">
-              {page.data.map((membership) => (
-                <li key={membership.membership_id}>
-                  <ResourceHeading
-                    code={membership.membership_type}
-                    name={
-                      membership.display_name ??
-                      message('operator.people.name_unavailable').text
-                    }
-                    status={membership.status}
-                  />
-                  <ResourceMeta
-                    id={membership.membership_id}
-                    locale={locale}
-                    message={message}
-                    updatedAt={membership.ended_at ?? membership.joined_at}
-                    version={membership.version}
-                  />
-                  <div className="operator-people__relationships">
-                    <h5>{message('operator.people.memberships.roles').text}</h5>
-                    {membership.roles.length === 0 ? (
-                      <p>{message('operator.people.unassigned').text}</p>
-                    ) : (
-                      <ul className="operator-people__chips">
-                        {membership.roles.map((role) => {
-                          const currentRole =
-                            roles.state.status === 'ready'
-                              ? roles.state.value.data.find(
-                                  (candidate) => candidate.id === role.id,
-                                )
-                              : undefined
+        {(page) => {
+          const selectedMembership =
+            page.data.find(
+              (membership) => membership.membership_id === selectedId,
+            ) ?? null
 
-                          return (
-                            <li key={role.id}>
-                              <SafeText>{role.name}</SafeText>
-                              <code>{role.key}</code>
-                              {hasAction(
-                                membership.allowed_actions,
-                                'membership.revoke_role',
-                              ) && currentRole !== undefined ? (
-                                <ConfirmAction
-                                  busy={command.busy}
-                                  confirmText={message(
-                                    'operator.people.confirm.revoke_role',
-                                  ).text}
-                                  label={message(
-                                    'operator.people.action.revoke_role',
-                                  ).text}
-                                  message={message}
-                                  onConfirm={() =>
-                                    command.run(
-                                      `membership.revoke_role:${membership.membership_id}:${role.id}:${String(membership.version)}:${String(currentRole.version)}`,
-                                      (idempotencyKey) =>
-                                        api.revokeMembershipRole(
-                                          membership.membership_id,
-                                          {
-                                            expected_membership_version:
-                                              membership.version,
-                                            expected_role_version:
-                                              currentRole.version,
-                                            role_id: role.id,
-                                          },
-                                          idempotencyKey,
-                                        ),
-                                    )
-                                  }
-                                />
-                              ) : null}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
-                  </div>
-
-                  {hasAction(
-                    membership.allowed_actions,
-                    'membership.assign_role',
-                  ) ? (
-                    <MembershipRoleAssignmentForm
-                      command={command}
-                      membership={membership}
-                      message={message}
-                      roles={roles}
-                      onAssign={(role, idempotencyKey) =>
-                        api.assignMembershipRole(
-                          membership.membership_id,
-                          {
-                            expected_membership_version: membership.version,
-                            expected_role_version: role.version,
-                            role_id: role.id,
-                          },
-                          idempotencyKey,
-                        )
+          return (
+            <>
+              <p className="operator-directory__summary">
+                {
+                  resolveInterfaceMessage(
+                    'operator.directory.page_summary',
+                    locale,
+                    localizationPolicy,
+                    { count: page.data.length },
+                  ).text
+                }
+              </p>
+              {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
+              <ul
+                aria-label={message('operator.people.memberships.title').text}
+                className="operator-directory__list"
+              >
+                {page.data.map((membership) => (
+                  <li key={membership.membership_id}>
+                    <button
+                      aria-label={
+                        membership.display_name ??
+                        message('operator.people.name_unavailable').text
                       }
-                    />
-                  ) : null}
-
-                  <div className="operator-people__actions">
-                    {hasAction(
-                      membership.allowed_actions,
-                      'membership.deactivate',
-                    ) ? (
-                      <ConfirmAction
-                        busy={command.busy}
-                        confirmText={message(
-                          'operator.people.confirm.deactivate_membership',
-                        ).text}
-                        label={message(
-                          'operator.people.action.deactivate',
-                        ).text}
-                        message={message}
-                        onConfirm={() =>
-                          command.run(
-                            `membership.deactivate:${membership.membership_id}:${String(membership.version)}`,
-                            (idempotencyKey) =>
-                              api.deactivateMembership(
-                                membership.membership_id,
-                                { expected_version: membership.version },
-                                idempotencyKey,
-                              ),
-                          )
-                        }
-                      />
-                    ) : null}
-                    {hasAction(
-                      membership.allowed_actions,
-                      'membership.reactivate',
-                    ) ? (
-                      <button
-                        disabled={command.busy}
-                        onClick={() => {
-                          void command.run(
-                            `membership.reactivate:${membership.membership_id}:${String(membership.version)}`,
-                            (idempotencyKey) =>
-                              api.reactivateMembership(
-                                membership.membership_id,
-                                { expected_version: membership.version },
-                                idempotencyKey,
-                              ),
-                          )
-                        }}
-                        type="button"
-                      >
-                        {message('operator.people.action.reactivate').text}
-                      </button>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <PageControls message={message} resource={memberships} />
-          </>
-        )}
+                      aria-pressed={selectedId === membership.membership_id}
+                      className="operator-directory__row"
+                      onClick={() => {
+                        setSelectedId(membership.membership_id)
+                      }}
+                      type="button"
+                    >
+                      <span className="operator-directory__primary">
+                        {membership.display_name ??
+                          message('operator.people.name_unavailable').text}
+                      </span>
+                      <span className="operator-directory__meta">
+                        {membership.membership_type}
+                      </span>
+                      <span className="operator-directory__meta">
+                        {membership.status}
+                      </span>
+                      <span className="operator-directory__meta">
+                        {membership.roles.length === 0
+                          ? message('operator.people.unassigned').text
+                          : membership.roles
+                              .map((role) => role.name)
+                              .join(', ')}
+                      </span>
+                      <span className="operator-directory__meta">
+                        <code>{membership.membership_id}</code>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <PageControls message={message} resource={memberships} />
+              {selectedMembership === null ? (
+                <p className="operator-directory__select-hint">
+                  {message('operator.people.memberships.select_prompt').text}
+                </p>
+              ) : (
+                <StaffMembershipDetail
+                  command={command}
+                  locale={locale}
+                  membership={selectedMembership}
+                  message={message}
+                  onAssign={(role, idempotencyKey) =>
+                    api.assignMembershipRole(
+                      selectedMembership.membership_id,
+                      {
+                        expected_membership_version:
+                          selectedMembership.version,
+                        expected_role_version: role.version,
+                        role_id: role.id,
+                      },
+                      idempotencyKey,
+                    )
+                  }
+                  onDeactivate={(idempotencyKey) =>
+                    api.deactivateMembership(
+                      selectedMembership.membership_id,
+                      { expected_version: selectedMembership.version },
+                      idempotencyKey,
+                    )
+                  }
+                  onReactivate={(idempotencyKey) =>
+                    api.reactivateMembership(
+                      selectedMembership.membership_id,
+                      { expected_version: selectedMembership.version },
+                      idempotencyKey,
+                    )
+                  }
+                  onRevokeRole={(role, currentRole, idempotencyKey) =>
+                    api.revokeMembershipRole(
+                      selectedMembership.membership_id,
+                      {
+                        expected_membership_version:
+                          selectedMembership.version,
+                        expected_role_version: currentRole.version,
+                        role_id: role.id,
+                      },
+                      idempotencyKey,
+                    )
+                  }
+                  roles={roles}
+                />
+              )}
+            </>
+          )
+        }}
       </CollectionState>
       {roles.state.status === 'loading' ? (
         <PanelLoading message={message} />
@@ -883,6 +913,138 @@ function StaffMembershipsPanel({
         state={command.state}
       />
     </PeoplePanel>
+  )
+}
+
+function StaffMembershipDetail({
+  command,
+  locale,
+  membership,
+  message,
+  onAssign,
+  onDeactivate,
+  onReactivate,
+  onRevokeRole,
+  roles,
+}: Readonly<{
+  command: CommandRunner
+  locale: SupportedLocale
+  membership: OperatorStaffMembership
+  message: MessageResolver
+  onAssign: (role: OperatorRole, idempotencyKey: string) => Promise<unknown>
+  onDeactivate: (idempotencyKey: string) => Promise<unknown>
+  onReactivate: (idempotencyKey: string) => Promise<unknown>
+  onRevokeRole: (
+    role: OperatorRoleSummary,
+    currentRole: OperatorRole,
+    idempotencyKey: string,
+  ) => Promise<unknown>
+  roles: PagedResource<OperatorRole, OperatorRoleCollection>
+}>) {
+  return (
+    <section
+      aria-labelledby="operator-staff-membership-detail-title"
+      className="operator-directory__detail-panel operator-people__relationships"
+    >
+      <h5 id="operator-staff-membership-detail-title">
+        {membership.display_name ??
+          message('operator.people.name_unavailable').text}
+      </h5>
+      <ResourceMeta
+        id={membership.membership_id}
+        locale={locale}
+        message={message}
+        updatedAt={membership.ended_at ?? membership.joined_at}
+        version={membership.version}
+      />
+      <div className="operator-people__relationships">
+        <h5>{message('operator.people.memberships.roles').text}</h5>
+        {membership.roles.length === 0 ? (
+          <p>{message('operator.people.unassigned').text}</p>
+        ) : (
+          <ul className="operator-people__chips">
+            {membership.roles.map((role) => {
+              const currentRole =
+                roles.state.status === 'ready'
+                  ? roles.state.value.data.find(
+                      (candidate) => candidate.id === role.id,
+                    )
+                  : undefined
+
+              return (
+                <li key={role.id}>
+                  <SafeText>{role.name}</SafeText>
+                  <code>{role.key}</code>
+                  {hasAction(
+                    membership.allowed_actions,
+                    'membership.revoke_role',
+                  ) && currentRole !== undefined ? (
+                    <ConfirmAction
+                      busy={command.busy}
+                      confirmText={message(
+                        'operator.people.confirm.revoke_role',
+                      ).text}
+                      label={message('operator.people.action.revoke_role').text}
+                      message={message}
+                      onConfirm={() =>
+                        command.run(
+                          `membership.revoke_role:${membership.membership_id}:${role.id}:${String(membership.version)}:${String(currentRole.version)}`,
+                          (idempotencyKey) =>
+                            onRevokeRole(role, currentRole, idempotencyKey),
+                        )
+                      }
+                    />
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
+      {hasAction(membership.allowed_actions, 'membership.assign_role') ? (
+        <MembershipRoleAssignmentForm
+          command={command}
+          membership={membership}
+          message={message}
+          roles={roles}
+          onAssign={onAssign}
+        />
+      ) : null}
+
+      <div className="operator-people__actions">
+        {hasAction(membership.allowed_actions, 'membership.deactivate') ? (
+          <ConfirmAction
+            busy={command.busy}
+            confirmText={message(
+              'operator.people.confirm.deactivate_membership',
+            ).text}
+            label={message('operator.people.action.deactivate').text}
+            message={message}
+            onConfirm={() =>
+              command.run(
+                `membership.deactivate:${membership.membership_id}:${String(membership.version)}`,
+                onDeactivate,
+              )
+            }
+          />
+        ) : null}
+        {hasAction(membership.allowed_actions, 'membership.reactivate') ? (
+          <button
+            disabled={command.busy}
+            onClick={() => {
+              void command.run(
+                `membership.reactivate:${membership.membership_id}:${String(membership.version)}`,
+                onReactivate,
+              )
+            }}
+            type="button"
+          >
+            {message('operator.people.action.reactivate').text}
+          </button>
+        ) : null}
+      </div>
+    </section>
   )
 }
 
@@ -1524,12 +1686,17 @@ function TrainerProfilesPanel({
   canReadCohorts,
   createCommandId,
   locale,
+  localizationPolicy,
   message,
 }: CommonPanelProps & Readonly<{ canReadCohorts: boolean }>) {
+  const [filters, setFilters] = useState<OperatorStaffDirectoryFilters>({})
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [namePrefix, setNamePrefix] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const loadTrainers = useCallback(
     (cursor: string | undefined, signal: AbortSignal) =>
-      api.listTrainerProfiles(cursor, signal),
-    [api],
+      api.listTrainerProfiles(filters, cursor, signal),
+    [api, filters],
   )
   const trainers = usePagedResource<
     OperatorTrainerProfile,
@@ -1552,6 +1719,26 @@ function TrainerProfilesPanel({
   }, [canReadCohorts, cohorts, trainers])
   const command = useCommandRunner(createCommandId, reload)
 
+  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSelectedId(null)
+    setFilters({
+      ...(namePrefix.trim() === ''
+        ? {}
+        : { display_name_prefix: namePrefix.trim() }),
+      ...(statusFilter === ''
+        ? {}
+        : { status: statusFilter as OperatorStaffMembership['status'] }),
+    })
+  }
+
+  const resetFilters = () => {
+    setNamePrefix('')
+    setStatusFilter('')
+    setSelectedId(null)
+    setFilters({})
+  }
+
   return (
     <PeoplePanel
       headingId="operator-trainer-profiles-title"
@@ -1560,40 +1747,129 @@ function TrainerProfilesPanel({
       titleKey="operator.people.trainers.title"
       wide
     >
+      <form
+        className="operator-directory__toolbar operator-people__form"
+        onSubmit={applyFilters}
+        role="search"
+      >
+        <Field
+          id="operator-trainer-name-prefix"
+          label={message('operator.people.field.name_prefix').text}
+        >
+          <input
+            autoComplete="off"
+            id="operator-trainer-name-prefix"
+            maxLength={80}
+            onChange={(event) => setNamePrefix(event.currentTarget.value)}
+            placeholder={message('operator.directory.prefix_hint').text}
+            value={namePrefix}
+          />
+        </Field>
+        <Field
+          id="operator-trainer-status-filter"
+          label={message('operator.people.field.status').text}
+        >
+          <select
+            id="operator-trainer-status-filter"
+            onChange={(event) => setStatusFilter(event.currentTarget.value)}
+            value={statusFilter}
+          >
+            <option value="">{message('operator.learners.filter.all').text}</option>
+            <option value="active">active</option>
+            <option value="suspended">suspended</option>
+            <option value="ended">ended</option>
+          </select>
+        </Field>
+        <div className="operator-directory__toolbar-actions">
+          <button type="submit">
+            {message('operator.learners.filter.apply').text}
+          </button>
+          <button onClick={resetFilters} type="button">
+            {message('operator.directory.reset_filters').text}
+          </button>
+        </div>
+      </form>
+
       <CollectionState resource={trainers} message={message}>
-        {(page) => (
-          <>
-            {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
-            <ul className="operator-people__cards operator-people__cards--wide">
-              {page.data.map((trainer) => (
-                <li key={trainer.membership_id}>
-                  <ResourceHeading
-                    code={trainer.membership_type}
-                    name={
-                      trainer.display_name ??
-                      message('operator.people.name_unavailable').text
-                    }
-                    status={trainer.status}
-                  />
+        {(page) => {
+          const selectedTrainer =
+            page.data.find((trainer) => trainer.membership_id === selectedId) ??
+            null
+
+          return (
+            <>
+              <p className="operator-directory__summary">
+                {
+                  resolveInterfaceMessage(
+                    'operator.directory.page_summary',
+                    locale,
+                    localizationPolicy,
+                    { count: page.data.length },
+                  ).text
+                }
+              </p>
+              {page.data.length === 0 ? <PanelEmpty message={message} /> : null}
+              <ul
+                aria-label={message('operator.people.trainers.title').text}
+                className="operator-directory__list"
+              >
+                {page.data.map((trainer) => (
+                  <li key={trainer.membership_id}>
+                    <button
+                      aria-pressed={selectedId === trainer.membership_id}
+                      className="operator-directory__row"
+                      onClick={() => {
+                        setSelectedId(trainer.membership_id)
+                      }}
+                      type="button"
+                    >
+                      <span className="operator-directory__primary">
+                        {trainer.display_name ??
+                          message('operator.people.name_unavailable').text}
+                      </span>
+                      <span className="operator-directory__meta">
+                        {trainer.status}
+                      </span>
+                      <span className="operator-directory__meta">
+                        {trainer.cohorts.length === 0
+                          ? message('operator.people.unassigned').text
+                          : trainer.cohorts.map((cohort) => cohort.name).join(', ')}
+                      </span>
+                      <span className="operator-directory__meta">
+                        <code>{trainer.membership_id}</code>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <PageControls message={message} resource={trainers} />
+              {selectedTrainer === null ? (
+                <p className="operator-directory__select-hint">
+                  {message('operator.people.trainers.select_prompt').text}
+                </p>
+              ) : (
+                <div className="operator-directory__detail-panel">
                   <ResourceMeta
-                    id={trainer.membership_id}
+                    id={selectedTrainer.membership_id}
                     locale={locale}
                     message={message}
-                    updatedAt={trainer.ended_at ?? trainer.joined_at}
-                    version={trainer.version}
+                    updatedAt={
+                      selectedTrainer.ended_at ?? selectedTrainer.joined_at
+                    }
+                    version={selectedTrainer.version}
                   />
                   <div className="operator-people__relationships">
                     <h5>{message('operator.people.trainers.cohorts').text}</h5>
-                    {trainer.cohorts.length === 0 ? (
+                    {selectedTrainer.cohorts.length === 0 ? (
                       <p>{message('operator.people.unassigned').text}</p>
                     ) : (
                       <ul className="operator-people__chips">
-                        {trainer.cohorts.map((cohort) => (
+                        {selectedTrainer.cohorts.map((cohort) => (
                           <li key={cohort.id}>
                             <SafeText>{cohort.name}</SafeText>
                             <code>{cohort.key}</code>
                             {hasAction(
-                              trainer.allowed_actions,
+                              selectedTrainer.allowed_actions,
                               'trainer.revoke_cohort',
                             ) ? (
                               <ConfirmAction
@@ -1607,16 +1883,16 @@ function TrainerProfilesPanel({
                                 message={message}
                                 onConfirm={() =>
                                   command.run(
-                                    `trainer.revoke_cohort:${trainer.membership_id}:${cohort.id}:${String(trainer.version)}:${String(cohort.version)}`,
+                                    `trainer.revoke_cohort:${selectedTrainer.membership_id}:${cohort.id}:${String(selectedTrainer.version)}:${String(cohort.version)}`,
                                     (idempotencyKey) =>
                                       api.revokeTrainerCohort(
-                                        trainer.membership_id,
+                                        selectedTrainer.membership_id,
                                         {
                                           cohort_id: cohort.id,
                                           expected_cohort_version:
                                             cohort.version,
                                           expected_membership_version:
-                                            trainer.version,
+                                            selectedTrainer.version,
                                         },
                                         idempotencyKey,
                                       ),
@@ -1630,7 +1906,7 @@ function TrainerProfilesPanel({
                     )}
                   </div>
                   {hasAction(
-                    trainer.allowed_actions,
+                    selectedTrainer.allowed_actions,
                     'trainer.assign_cohort',
                   ) ? (
                     <TrainerCohortAssignmentForm
@@ -1639,29 +1915,28 @@ function TrainerProfilesPanel({
                       message={message}
                       onAssign={(cohort, idempotencyKey) =>
                         api.assignTrainerCohort(
-                          trainer.membership_id,
+                          selectedTrainer.membership_id,
                           {
                             cohort_id: cohort.id,
                             expected_cohort_version: cohort.version,
-                            expected_membership_version: trainer.version,
+                            expected_membership_version: selectedTrainer.version,
                           },
                           idempotencyKey,
                         )
                       }
-                      trainer={trainer}
+                      trainer={selectedTrainer}
                     />
                   ) : null}
                   <SafeAppointmentList
-                    appointments={trainer.appointments}
+                    appointments={selectedTrainer.appointments}
                     locale={locale}
                     message={message}
                   />
-                </li>
-              ))}
-            </ul>
-            <PageControls message={message} resource={trainers} />
-          </>
-        )}
+                </div>
+              )}
+            </>
+          )
+        }}
       </CollectionState>
       {cohorts.state.status === 'ready' ? (
         <PageControls
@@ -1813,7 +2088,7 @@ function AuthorityAppointmentsPanel({
   )
   const loadTrainers = useCallback(
     (cursor: string | undefined, signal: AbortSignal) =>
-      api.listTrainerProfiles(cursor, signal),
+      api.listTrainerProfiles(undefined, cursor, signal),
     [api],
   )
   const trainers = usePagedResource<
@@ -2272,7 +2547,7 @@ function MembershipSessionsPanel({
 }: CommonPanelProps) {
   const loadMemberships = useCallback(
     (cursor: string | undefined, signal: AbortSignal) =>
-      api.listMemberships(cursor, signal),
+      api.listMemberships(undefined, cursor, signal),
     [api],
   )
   const memberships = usePagedResource<

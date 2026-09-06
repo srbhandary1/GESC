@@ -1,5 +1,6 @@
 import type { AudioControlLabels } from '@global-english/design-system'
 import { cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 
@@ -41,6 +42,7 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        slowLabel="Slow"
         source="/first.wav"
       />,
     )
@@ -55,6 +57,7 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        slowLabel="Slow"
         source="/second.wav"
       />,
     )
@@ -87,6 +90,7 @@ describe('ModelAudioPlayer', () => {
         labels={labels}
         loadSource={loadSource}
         mimeType="audio/mpeg"
+        slowLabel="Slow"
         source="/api/v1/me/levels/1/sessions/introduction/audio"
       />,
     )
@@ -116,6 +120,7 @@ describe('ModelAudioPlayer', () => {
         labels={labels}
         loadSource={loadSource}
         mimeType="audio/wav"
+        slowLabel="Slow"
         source="https://api.example.test/api/v1/media/model-audio"
       />,
     )
@@ -137,5 +142,23 @@ describe('ModelAudioPlayer', () => {
     expect(revokeObjectUrl).toHaveBeenCalledWith(
       'blob:authenticated-model-audio',
     )
+  })
+
+  it('exposes a slow-speed toggle without resetting resume position', async () => {
+    const user = userEvent.setup()
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        mimeType="audio/wav"
+        slowLabel="Slow"
+        source="/first.wav"
+      />,
+    )
+
+    const slow = screen.getByRole('button', { name: 'Slow' })
+    expect(slow).toHaveAttribute('aria-pressed', 'false')
+    await user.click(slow)
+    expect(slow).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
   })
 })

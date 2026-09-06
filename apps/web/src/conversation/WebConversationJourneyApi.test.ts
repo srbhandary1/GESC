@@ -329,4 +329,41 @@ describe('web deterministic conversation API', () => {
       }),
     )
   })
+
+  it('surfaces entitlement problem keys from failed mutations', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            correlation_id: '00000000-0000-4000-8000-000000000001',
+            detail: 'This month’s live-AI allowance is used up.',
+            instance:
+              'urn:global-english:problem-instance:00000000-0000-4000-8000-000000000001',
+            message_key: 'entitlement.ai_exhausted',
+            status: 409,
+            title: 'Live speaking time used',
+            type: 'urn:global-english:problem:entitlement-ai-exhausted',
+          },
+          { status: 409 },
+        ),
+      )
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await expect(
+      api.createTurn(
+        '01J00000000000000000000001',
+        { prototype_utterance: 'Hello' },
+        'turn-command',
+      ),
+    ).rejects.toMatchObject({
+      messageKey: 'entitlement.ai_exhausted',
+      name: 'ConversationJourneyUnavailableError',
+      status: 409,
+    })
+  })
 })

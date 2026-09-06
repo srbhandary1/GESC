@@ -14,6 +14,10 @@ final class EntitlementDenied extends HttpException
 
     public const string DEMO_AI_EXHAUSTED = 'entitlement.demo_ai_exhausted';
 
+    public const string AI_EXHAUSTED = 'entitlement.ai_exhausted';
+
+    public const string TALK_PACK_REQUIRES_PAID = 'entitlement.talk_pack_requires_paid';
+
     public const string EXPIRED = 'entitlement.expired';
 
     public const string CHECKOUT_UNAVAILABLE = 'entitlement.checkout_unavailable';

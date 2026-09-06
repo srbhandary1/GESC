@@ -3247,6 +3247,158 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0073"></a>
 
+<a id="app-0074"></a>
+
+## APP-0074 — DR-0047 Option A: Paid live-AI caps and talk packs
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-01 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Free-text product-owner instruction in the active Cursor conversation |
+| Related request | [DR-0047](DR-0047_PAID_LIVE_AI_CAPS_AND_TALK_PACKS_REQUEST.md) |
+| Related decision | [D-0273](DECISIONS.md) |
+| Related ADR | [ADR-0037](adr/0037-paid-live-ai-caps-and-talk-packs.md) |
+| Related specification | [ADMIN-ENT-01](ADMIN-ENT-01_SPEC.md); [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — §§9.2, 16.5, 31, 32, via ADR-0037 |
+
+### Exact human statement
+
+```text
+How about an option to buy more AI talk time? Some anount per hour?
+add these suggestions into the app.
+```
+
+### Accepted scope
+
+- Modules 40 minutes / Premium 90 minutes inclusive live-AI pools.
+- Talk 30 / 60 / 180 prepaid packs on an active paid month.
+- Dummy checkout; no Play Billing; no per-minute overage.
+
+### Conditions and limitations
+
+- Talk packs do not unlock Role-play and do not apply to demo or expired grants.
+- Independent security, privacy and tenancy review remains mandatory before production.
+
+<a id="app-0076"></a>
+
+## APP-0076 — Named Phase-1 UI catalogue reviews (Malayalam, Tamil, Telugu, Hindi)
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-02 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as independent UI reviewer for Malayalam, Tamil, Telugu and Hindi interface catalogues |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0075](APPROVALS.md#app-0075); [APP-0006](APPROVALS.md#app-0006); [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Related decision | [D-0275](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+start gap 2
+```
+
+### Context and interpretation
+
+Continuing the one-by-one gap closure after APP-0075 Kannada UI approval, the
+Accountable Product Owner records named independent review of the current
+Malayalam, Tamil, Telugu and Hindi interface catalogues at revision
+`ui-*-2026-09-02.2`.
+
+Accepted interpretation:
+
+1. `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` governance metadata move to
+   `approved` with honest reviewer attribution distinct from the Codex
+   implementation draft translator.
+2. Ordinary `approved-only` builds resolve those locales when explicitly
+   requested (API, demo, tests).
+3. The soft-launch learner locale picker remains kn-IN + en-IN only under
+   D-0206.
+4. This is not curriculum, lesson-summary, Role-play or production/Play
+   authorization.
+
+### Accepted scope
+
+- Update `packages/localization/src/catalogues/governance.json` for the four
+  locales.
+- Adjust localization and web policy tests for approved resolution.
+- STATUS, DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Not separately commissioned linguist firms; reviewer is the same product
+  owner who authorized APP-0006 scope and APP-0075.
+- Soft-launch UI picker is unchanged; approved catalogues are available to API
+  resolution and explicit review/demo surfaces.
+- Production/public release remains unauthorized.
+
+<a id="app-0075"></a>
+
+## APP-0075 — Named Kannada UI catalogue independent review
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-02 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as independent Kannada UI reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0006](APPROVALS.md#app-0006); [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Related decision | [D-0274](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+And also help me complete - Language fallback
+Kannada interface text is still awaiting independent review, so English is shown.
+Then lets complete them all one by one. Start with the first gap.
+```
+
+### Context and interpretation
+
+The Accountable Product Owner completed named independent review of the current
+`ui-kn-IN-2026-09-01.5` interface catalogue after spot-checking the Direct
+soft-launch chrome (navigation, sign-in, learn, speak, progress and account).
+
+Accepted interpretation:
+
+1. `kn-IN` governance metadata moves to `approved` with honest reviewer
+   attribution distinct from the Codex implementation draft translator.
+2. Ordinary `approved-only` builds resolve Kannada chrome without the language
+   fallback banner for the default locale.
+3. Malayalam, Tamil, Telugu and Hindi UI catalogues remain
+   `pending-independent-review`.
+4. This is not curriculum, lesson-summary, Role-play or production/Play
+   authorization.
+
+### Accepted scope
+
+- Update `packages/localization/src/catalogues/governance.json` for `kn-IN`.
+- Adjust localization and App tests for approved Kannada resolution.
+- STATUS, DECISIONS and QUALITY_REVIEW.
+
+### Conditions and limitations
+
+- Not a separately commissioned linguist firm; reviewer is the same product
+  owner who authorized APP-0006 scope.
+- Other UI locales still fall back to English under `approved-only`.
+- Production/public release remains unauthorized.
+
+<a id="app-0073"></a>
+
 ## APP-0073 — DR-0046 Option A: Premium flagship and courtesy month
 
 | Field | Evidence |

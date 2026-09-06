@@ -1,14 +1,20 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import type {
   ConversationJourneyApi,
   SecureVoiceRecording,
   VoiceConsents,
 } from './ConversationJourneyApi'
 import { VoicePracticePanel } from './VoicePracticePanel'
+import * as audioToPcmWav from './audioToPcmWav'
+import { encodeMonoPcmWav } from '../shared/pcmWav'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 describe('secure voice practice consent boundary', () => {
   it('requires both distinct purposes before exposing recording controls', async () => {
@@ -165,6 +171,45 @@ describe('secure voice practice consent boundary', () => {
     expect(onPreferTyping).toHaveBeenCalledOnce()
   })
 
+  it('renders hold-remaining copy without crashing once recording is available', async () => {
+    const bothGranted = listing('granted', 'granted')
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const text = (key: Parameters<typeof resolveInterfaceMessage>[0], parameters = {}) =>
+      resolveInterfaceMessage(
+        key,
+        'kn-IN',
+        'development-preview',
+        parameters,
+      ).text
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => crypto.randomUUID()}
+        locale="kn-IN"
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={text}
+      />,
+    )
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('ಧ್ವನಿ ಸಮ್ಮತಿಯನ್ನು ನಿರ್ವಹಿಸಿ'),
+      ).toBeInTheDocument(),
+    )
+  })
+
   it('treats a closed voice gate as an honest status, not a failure alert', async () => {
     const api: ConversationJourneyApi = {
       createTurn: vi.fn(),
@@ -221,7 +266,9 @@ describe('secure voice practice consent boundary', () => {
       pause: vi.fn(),
       resume: vi.fn(),
       stop: vi.fn(async () => ({
-        blob: new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
+        blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
+          type: 'audio/wav',
+        }),
         durationMs: 250,
         mimeType: 'audio/webm',
       })),
@@ -259,6 +306,315 @@ describe('secure voice practice consent boundary', () => {
       screen.getByRole('button', { name: 'learner.recording.cancel' }),
     )
     expect(uploadSignal?.aborted).toBe(true)
+  })
+
+  it('accepts a high-confidence clip and hands the transcript to the journey', async () => {
+    vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
+      new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
+    )
+    const bothGranted = listing('granted', 'granted')
+    const onTranscriptSelected = vi.fn()
+    const recording = {
+      byte_size: 128,
+      codec: 'pcm_s16le',
+      created_at: '2026-07-31T12:00:00Z',
+      deletion_url:
+        '/api/v1/voice-recordings/01JRECORDING000000000000001/deletion',
+      duration_ms: 250,
+      id: '01JRECORDING000000000000001',
+      mime_type: 'audio/wav',
+      replayed: false,
+      source_deleted: true,
+      status: 'awaiting_learner_confirmation',
+      transcript: 'I practise English after work.',
+      transcript_confidence: 0.92,
+      transcript_review_url:
+        '/api/v1/voice-recordings/01JRECORDING000000000000001/transcript-review',
+    } as const satisfies SecureVoiceRecording
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(async () => ({
+        ...recording,
+        status: 'confirmed' as const,
+      })),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(async () => recording),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const session = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={onTranscriptSelected}
+        recorder={recorder}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'conversation.voice.use_transcript' }),
+      ).toBeInTheDocument()
+    })
+    await user.click(
+      screen.getByRole('button', { name: 'conversation.voice.use_transcript' }),
+    )
+    await waitFor(() => {
+      expect(onTranscriptSelected).toHaveBeenCalledWith(
+        'I practise English after work.',
+      )
+    })
+    expect(
+      await screen.findByRole('button', { name: 'learner.recording.hold' }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'learner.recording.processing' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('restores the record control with a fresh command after an upload rejection', async () => {
+    vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
+      new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
+        type: 'audio/wav',
+      }),
+    )
+    const bothGranted = listing('granted', 'granted')
+    const uploadCommands: string[] = []
+    const uploadVoiceRecording: NonNullable<
+      ConversationJourneyApi['uploadVoiceRecording']
+    > = async (sessionId, audio, commandId) => {
+      void sessionId
+      void audio
+      uploadCommands.push(commandId)
+      throw new Error('rejected')
+    }
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording,
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => ({
+        cancel: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        stop: vi.fn(async () => ({
+          blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
+            type: 'audio/wav',
+          }),
+          durationMs: 250,
+          mimeType: 'audio/webm',
+        })),
+      })),
+    }
+    const user = userEvent.setup()
+    let commandNumber = 0
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => `voice-command-${++commandNumber}`}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        recorder={recorder}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'conversation.voice.error',
+    )
+    expect(
+      screen.getByRole('button', { name: 'learner.recording.hold' }),
+    ).toBeEnabled()
+
+    const retryHold = screen.getByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: retryHold })
+    await user.pointer({ keys: '[/MouseLeft]', target: retryHold })
+
+    await waitFor(() => {
+      expect(uploadCommands).toHaveLength(2)
+    })
+    expect(new Set(uploadCommands).size).toBe(2)
+  })
+
+  it('keeps retry available when STT returns a recoverable failed recording', async () => {
+    vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
+      new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
+        type: 'audio/wav',
+      }),
+    )
+    const bothGranted = listing('granted', 'granted')
+    const failedRecording = {
+      byte_size: 8_044,
+      codec: 'pcm_s16le',
+      created_at: '2026-09-05T16:42:39Z',
+      deletion_url:
+        '/api/v1/voice-recordings/01M1S76R68W7N8X7W0XSN8AR0Y/deletion',
+      duration_ms: 512,
+      id: '01M1S76R68W7N8X7W0XSN8AR0Y',
+      mime_type: 'audio/wav',
+      replayed: false,
+      source_deleted: false,
+      status: 'provider_failed_recoverable',
+      transcript: null,
+      transcript_confidence: null,
+      transcript_review_url:
+        '/api/v1/voice-recordings/01M1S76R68W7N8X7W0XSN8AR0Y/transcript-review',
+    } as const satisfies SecureVoiceRecording
+    const uploadCommands: string[] = []
+    const uploadVoiceRecording: NonNullable<
+      ConversationJourneyApi['uploadVoiceRecording']
+    > = async (sessionId, audio, commandId) => {
+      void sessionId
+      void audio
+      uploadCommands.push(commandId)
+      return failedRecording
+    }
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording,
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => ({
+        cancel: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        stop: vi.fn(async () => ({
+          blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
+            type: 'audio/wav',
+          }),
+          durationMs: 512,
+          mimeType: 'audio/webm',
+        })),
+      })),
+    }
+    const user = userEvent.setup()
+    let commandNumber = 0
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => `voice-command-${++commandNumber}`}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        recorder={recorder}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'conversation.voice.error',
+    )
+    expect(
+      screen.getByRole('button', { name: 'learner.recording.hold' }),
+    ).toBeEnabled()
+
+    const retryHold = screen.getByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: retryHold })
+    await user.pointer({ keys: '[/MouseLeft]', target: retryHold })
+
+    await waitFor(() => {
+      expect(uploadCommands).toHaveLength(2)
+    })
+    expect(new Set(uploadCommands).size).toBe(2)
+  })
+
+  it('shows demo exhaustion and does not expose recording controls', async () => {
+    const api = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => listing('granted', 'granted')),
+      withdrawVoiceConsent: vi.fn(),
+    } satisfies ConversationJourneyApi
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+        unavailableMessageKey="entitlement.demo_ai_exhausted"
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'entitlement.demo_ai_exhausted',
+    )
+    expect(
+      screen.queryByRole('button', { name: 'learner.recording.hold' }),
+    ).not.toBeInTheDocument()
   })
 })
 

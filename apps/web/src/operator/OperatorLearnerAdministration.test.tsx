@@ -76,7 +76,7 @@ describe('operator learner administration', () => {
     renderAdministration(api, ['learner_directory', 'learner_enrollments'])
 
     expect(listEnrollments).not.toHaveBeenCalled()
-    await user.click(await screen.findByRole('button', { name: 'Open learner' }))
+    await user.click(await screen.findByRole('button', { name: 'Asha Learner' }))
 
     expect(await screen.findByRole('heading', { name: 'Selected learner detail' }))
       .toBeInTheDocument()
@@ -169,7 +169,7 @@ describe('operator learner administration', () => {
     })
 
     renderAdministration(api, ['learner_directory'])
-    await user.click(await screen.findByRole('button', { name: 'Open learner' }))
+    await user.click(await screen.findByRole('button', { name: 'Asha Learner' }))
 
     const suspend = await screen.findByRole('button', { name: 'Suspend' })
     await user.click(suspend)

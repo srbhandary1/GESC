@@ -11,6 +11,8 @@ import {
   type SupportedLocale,
 } from '@global-english/localization'
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -20,6 +22,9 @@ import {
 import './App.css'
 import './demo/demoExperience.css'
 import './tutor/tutorExperience.css'
+import './theme/themeTokens.css'
+import './theme/futuraExperience.css'
+import './theme/themeSurfaces.css'
 import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
@@ -34,10 +39,7 @@ import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
-import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
-import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import type { ConversationJourneyApi, FriendSession } from './conversation/ConversationJourneyApi'
-import { SpeakRoom } from './conversation/SpeakRoom'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
@@ -46,28 +48,30 @@ import {
   type InterfaceMessageResolution,
 } from './localization/interfaceLocalization'
 import { LocalizedMessage } from './localization/LocalizedMessage'
-import { MarketingLanding } from './marketing/MarketingLanding'
+import './theme/studioExperience.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
-import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'
-import { TuitionRequestPanel } from './learner/TuitionRequestPanel'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
-import { ProgressDashboard } from './learner/ProgressDashboard'
-import { LevelPathPanel } from './learner/LevelPathPanel'
-import { SubscriptionPanel } from './subscriptions/SubscriptionPanel'
+import { LiveAiMinutesChip } from './subscriptions/LiveAiMinutesChip'
+import { InterfaceThemeControl } from './theme/InterfaceThemeControl'
+import { useInterfaceTheme } from './theme/useInterfaceTheme'
 import type { LearnerEntitlement } from './subscriptions/LearnerSubscriptionApi'
+import { useLearnerEntitlement } from './subscriptions/useLearnerEntitlement'
 import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
 import type { LevelSessionsApi } from './learner/LevelSessionsApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
+import {
+  ANDROID_APK_FILENAME,
+  ANDROID_APK_HREF,
+} from './marketing/androidDownload'
 import { browserOfflineLearningStore } from './offline/BrowserOfflineLearningStore'
 import type {
   OfflineLearningStore,
   OfflinePersonalDeviceResume,
   OfflineProfileBinding,
 } from './offline/OfflineLearningStore'
-import { OperatorConsole } from './operator/OperatorConsole'
 import { PasswordAccountSecurityPanel } from './operator/PasswordAccountSecurityPanel'
 import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
 import { defaultOperatorConsoleApi } from './operator/OperatorConsoleApi'
@@ -94,6 +98,53 @@ interface AppProps {
   operatorConsoleApi?: OperatorConsoleApi
   operatorOrganizationApi?: OperatorOrganizationApi
 }
+
+interface OperatorUsernameResource {
+  readonly authentication: WebSessionAuthentication
+  readonly membershipId: string
+  readonly username: string | null
+}
+
+const DemoLearnerProgress = lazy(async () => {
+  const module = await import('./demo/DemoLearnerProgress')
+  return { default: module.DemoLearnerProgress }
+})
+const DemoPhase1Shell = lazy(async () => {
+  const module = await import('./demo/phase1/DemoPhase1Shell')
+  return { default: module.DemoPhase1Shell }
+})
+const LearnerJourney = lazy(async () => {
+  const module = await import('./learner/LearnerJourney')
+  return { default: module.LearnerJourney }
+})
+const LevelPathPanel = lazy(async () => {
+  const module = await import('./learner/LevelPathPanel')
+  return { default: module.LevelPathPanel }
+})
+const MarketingLanding = lazy(async () => {
+  const module = await import('./marketing/MarketingLanding')
+  return { default: module.MarketingLanding }
+})
+const OperatorConsole = lazy(async () => {
+  const module = await import('./operator/OperatorConsole')
+  return { default: module.OperatorConsole }
+})
+const ProgressDashboard = lazy(async () => {
+  const module = await import('./learner/ProgressDashboard')
+  return { default: module.ProgressDashboard }
+})
+const SpeakRoom = lazy(async () => {
+  const module = await import('./conversation/SpeakRoom')
+  return { default: module.SpeakRoom }
+})
+const SubscriptionPanel = lazy(async () => {
+  const module = await import('./subscriptions/SubscriptionPanel')
+  return { default: module.SubscriptionPanel }
+})
+const TuitionRequestPanel = lazy(async () => {
+  const module = await import('./learner/TuitionRequestPanel')
+  return { default: module.TuitionRequestPanel }
+})
 
 const demoTuitionRequestsApi: TuitionRequestsApi = {
   async list() {
@@ -195,15 +246,29 @@ function App({
     useState<OfflinePersonalDeviceResume | null>(null)
   const [announcedLocale, setAnnouncedLocale] =
     useState<SupportedLocale | null>(null)
+  const { preference: themePreference, resolvedTheme, setPreference: setThemePreference } =
+    useInterfaceTheme()
   const [speakMode, setSpeakMode] = useState<'everyday' | 'situation'>(
     'everyday',
   )
-  const [entitlement, setEntitlement] = useState<LearnerEntitlement | null>(
-    null,
-  )
+  const directEntitlementScope =
+    !demoMode &&
+    session.status === 'authenticated' &&
+    session.identity.current_membership?.membership_type === 'learner' &&
+    session.identity.current_membership.organization.kind === 'platform_direct'
+      ? session.identity.current_membership.id
+      : null
+  const {
+    applyEntitlement,
+    entitlement,
+    refreshEntitlement,
+    status: entitlementStatus,
+  } = useLearnerEntitlement(directEntitlementScope)
   const [boundConversation, setBoundConversation] =
     useState<FriendSession | null>(null)
   const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
+  const [operatorUsernameResource, setOperatorUsernameResource] =
+    useState<OperatorUsernameResource | null>(null)
   const [locationHash, setLocationHash] = useState(
     () => globalThis.location?.hash ?? '',
   )
@@ -320,12 +385,21 @@ function App({
       }
     }
 
+    updateDestination()
     globalThis.addEventListener('hashchange', updateDestination)
 
     return () => {
       globalThis.removeEventListener('hashchange', updateDestination)
     }
   }, [])
+
+  useEffect(() => {
+    if (session.status !== 'authenticated' || locationHash !== '#sign-in') {
+      return
+    }
+
+    globalThis.location.hash = '#home'
+  }, [locationHash, session.status])
 
   const brand = message('app.name')
   const navigationLabel = message('shell.navigation_label')
@@ -392,6 +466,19 @@ function App({
     authentication.transport === 'sanctum-cookie' &&
     session.identity.current_membership !== null &&
     session.identity.current_membership.membership_type !== 'learner'
+  const operatorAuthentication = isWebSessionAuthentication(authentication)
+    ? authentication
+    : null
+  const operatorMembershipId = isOperatorSession
+    ? session.identity.current_membership?.id ?? null
+    : null
+  const operatorUsername =
+    operatorAuthentication !== null &&
+    operatorMembershipId !== null &&
+    operatorUsernameResource?.authentication === operatorAuthentication &&
+    operatorUsernameResource.membershipId === operatorMembershipId
+      ? operatorUsernameResource.username
+      : null
   const title = message(
     isOperatorSession ? 'operator.shell.title' : routeMessages.title,
   )
@@ -439,14 +526,37 @@ function App({
     (session.status === 'checking' ||
       session.status === 'anonymous' ||
       session.status === 'unavailable')
+
+  useEffect(() => {
+    if (isGuestSession && themePreference !== 'light') {
+      setThemePreference('light')
+    }
+  }, [isGuestSession, setThemePreference, themePreference])
   const showDemoPhase1 = demoMode && destination === 'home'
-  const showDedicatedSignIn = isGuestSession && locationHash === '#sign-in'
+  const isOperatorWorkspaceHash = operatorWorkspaceHashFromLocation(locationHash)
+  const showDedicatedSignIn =
+    isGuestSession &&
+    (locationHash === '#sign-in' || isOperatorWorkspaceHash)
   const showMarketingLanding =
-    isGuestSession && destination === 'home' && !showDedicatedSignIn
+    isGuestSession &&
+    destination === 'home' &&
+    !showDedicatedSignIn &&
+    !isOperatorWorkspaceHash
   const accountSecurityVisible =
     accountSecurityOpen && session.status === 'authenticated'
   const showAuthenticatedAccountPanel =
-    !demoMode && accountSecurityVisible
+    !demoMode &&
+    accountSecurityVisible &&
+    (authentication.transport === 'sanctum-cookie' ||
+      androidAuthentication !== null)
+  const openAccountBilling = () => {
+    setAccountSecurityOpen(true)
+    window.setTimeout(() => {
+      document
+        .getElementById('subscription-panel')
+        ?.scrollIntoView({ block: 'nearest' })
+    }, 0)
+  }
   const suppressVisibleHero =
     showDemoMission ||
     canHomeLearner ||
@@ -464,6 +574,39 @@ function App({
     (isLearnerSession ||
       session.status === 'anonymous' ||
       session.status === 'unavailable')
+
+  useEffect(() => {
+    if (operatorAuthentication === null || operatorMembershipId === null) {
+      return undefined
+    }
+
+    let active = true
+
+    void operatorAuthentication
+      .passwordStatus()
+      .then((status) => {
+        if (active) {
+          setOperatorUsernameResource({
+            authentication: operatorAuthentication,
+            membershipId: operatorMembershipId,
+            username: status.username,
+          })
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setOperatorUsernameResource({
+            authentication: operatorAuthentication,
+            membershipId: operatorMembershipId,
+            username: null,
+          })
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [operatorAuthentication, operatorMembershipId])
 
   useEffect(() => {
     const openAccountSecurityFromHash = () => {
@@ -532,26 +675,51 @@ function App({
     >
     <ApplicationFrame
       className={
-        isOperatorSession ? undefined : 'ge-application-frame--tutor'
+        isOperatorSession
+          ? 'ge-application-frame--operator'
+          : `ge-application-frame--tutor${
+              destination === 'home' ? ' ge-application-frame--home' : ''
+            }${isNativeAndroid ? ' ge-application-frame--native-android' : ''}${
+              isGuestSession
+                ? ' ge-application-frame--studio'
+                : isLearnerSession || demoMode
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner'
+                  : ''
+            }`
       }
       brandLabel={
         <>
-          <img
-            alt=""
-            aria-hidden="true"
-            className={
-              isNativeAndroid
-                ? 'shell-brand-logo shell-brand-logo--android'
-                : 'shell-brand-logo'
-            }
-            height={isNativeAndroid ? 48 : 72}
-            src={
-              isNativeAndroid
-                ? '/marketing/brand/logo-android.png'
-                : '/marketing/brand/logo-web.png'
-            }
-            width={isNativeAndroid ? 110 : 180}
-          />
+          {isGuestSession || isLearnerSession || demoMode ? (
+            <span aria-hidden="true" className="shell-studio-brand">
+              <span className="shell-studio-brand__mark">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="shell-studio-brand__name">
+                Global <b>English</b>
+              </span>
+            </span>
+          ) : (
+            <img
+              alt=""
+              aria-hidden="true"
+              className={
+                isNativeAndroid
+                  ? 'shell-brand-logo shell-brand-logo--android'
+                  : 'shell-brand-logo'
+              }
+              height={isNativeAndroid ? 48 : 72}
+              src={
+                resolvedTheme === 'light'
+                  ? '/marketing/brand/logo-academy.png'
+                  : isNativeAndroid
+                    ? '/marketing/brand/logo-android.png'
+                    : '/marketing/brand/logo-web.png'
+              }
+              width={isNativeAndroid ? 110 : 180}
+            />
+          )}
           <span className="visually-hidden">{brand.text}</span>
         </>
       }
@@ -560,91 +728,152 @@ function App({
       hidePrimaryNavigation={isOperatorSession || isGuestSession}
       headerActions={
         <div className="shell-header-actions">
-          {androidAuthentication !== null &&
-          session.status === 'authenticated' ? (
-            <>
-              <p className="shell-account-menu__status" role="status">
+          {session.status === 'authenticated' && isOperatorSession ? (
+            <p className="shell-operator-identity" role="status">
+              <span className="shell-operator-identity__label">
                 <LocalizedMessage
-                  resolution={message(sessionMessageKey(session))}
+                  resolution={message('operator.header.signed_in_as')}
                 />
-              </p>
-              <button
-                className="shell-header-authentication"
-                type="button"
-                onClick={() => {
-                  void androidAuthentication
-                    .logout()
-                    .then(() => setSession({ status: 'anonymous' }))
-                    .catch(() => setSession({ status: 'unavailable' }))
-                }}
-              >
-                <LocalizedMessage
-                  resolution={message('session.android_sign_out')}
-                />
-              </button>
-            </>
-          ) : null}
-          {!demoMode &&
-          (authentication.transport === 'sanctum-cookie' ||
-            androidAuthentication !== null) &&
-          (session.status === 'anonymous' ||
-            session.status === 'unavailable') ? (
-            <>
-              {session.status === 'unavailable' ? (
-                <p className="shell-account-menu__status" role="status">
-                  <LocalizedMessage
-                    resolution={message('session.unavailable')}
-                  />
-                </p>
+              </span>
+              <bdi className="shell-operator-identity__name">
+                {operatorUsername ??
+                  message('operator.header.username_unavailable').text}
+              </bdi>
+              {session.identity.current_membership?.organization.name ? (
+                <bdi className="shell-operator-identity__organization" lang="">
+                  {session.identity.current_membership.organization.name}
+                </bdi>
               ) : null}
-            <a
-              className={
-                showDedicatedSignIn
-                  ? 'shell-header-authentication shell-header-authentication--quiet'
-                  : 'shell-header-authentication'
-              }
-              href={showDedicatedSignIn ? '#home' : '#sign-in'}
-              onClick={(event) => {
-                // Own the navigation: React flushes this click's state update
-                // before the browser follows the link, so the toggled href
-                // would otherwise navigate to the *new* target.
-                event.preventDefault()
-
-                if (showDedicatedSignIn) {
-                  globalThis.location.hash = '#home'
-                  setDestination('home')
-                  setLocationHash('#home')
-                  return
-                }
-
-                globalThis.location.hash = '#sign-in'
-                setDestination('home')
-                setLocationHash('#sign-in')
-              }}
-            >
+            </p>
+          ) : session.status === 'authenticated' ? (
+            <p className="visually-hidden" role="status">
               <LocalizedMessage
-                resolution={message(
-                  showDedicatedSignIn ? 'nav.home' : 'session.label',
-                )}
+                resolution={message(sessionMessageKey(session))}
               />
-            </a>
-            </>
+              {session.identity.current_membership?.organization.name ? (
+                <bdi className="shell-account-menu__organization" lang="">
+                  {session.identity.current_membership.organization.name}
+                </bdi>
+              ) : null}
+            </p>
           ) : null}
           {!demoMode &&
-          authentication.transport === 'sanctum-cookie' &&
-          session.status === 'authenticated' ? (
-            <div className="shell-account-menu">
-              <p className="shell-account-menu__status" role="status">
-                <LocalizedMessage
-                  resolution={message(sessionMessageKey(session))}
-                />
-                {session.identity.current_membership?.organization.name ? (
-                  <bdi className="shell-account-menu__organization" lang="">
-                    {session.identity.current_membership.organization.name}
-                  </bdi>
+          session.status === 'unavailable' &&
+          (authentication.transport === 'sanctum-cookie' ||
+            androidAuthentication !== null) ? (
+            <p className="shell-header-actions__notice" role="status">
+              <LocalizedMessage resolution={message('session.unavailable')} />
+            </p>
+          ) : null}
+          <div className="shell-header-toolbar">
+            {androidAuthentication !== null &&
+            session.status === 'authenticated' ? (
+              <>
+                {isLearnerSession ? (
+                  <LiveAiMinutesChip
+                    entitlement={entitlement}
+                    locale={locale}
+                    localizationPolicy={localizationPolicy}
+                    onOpenAccount={openAccountBilling}
+                  />
                 ) : null}
-              </p>
-              <div className="shell-account-menu__actions">
+                <button
+                  aria-controls="session-account-security"
+                  aria-expanded={accountSecurityVisible}
+                  className="shell-header-authentication"
+                  onClick={() =>
+                    setAccountSecurityOpen((current) => !current)
+                  }
+                  type="button"
+                >
+                  <LocalizedMessage
+                    resolution={message('session.account_menu')}
+                  />
+                </button>
+                <button
+                  className="shell-header-authentication shell-header-authentication--quiet"
+                  type="button"
+                  onClick={() => {
+                    void androidAuthentication
+                      .logout()
+                      .then(() => {
+                        setAccountSecurityOpen(false)
+                        setSession({ status: 'anonymous' })
+                      })
+                      .catch(() => setSession({ status: 'unavailable' }))
+                  }}
+                >
+                  <LocalizedMessage
+                    resolution={message('session.android_sign_out')}
+                  />
+                </button>
+              </>
+            ) : null}
+            {!demoMode &&
+            (authentication.transport === 'sanctum-cookie' ||
+              androidAuthentication !== null) &&
+            (session.status === 'checking' ||
+              session.status === 'anonymous' ||
+              session.status === 'unavailable') ? (
+              <>
+                <a
+                  className={
+                    showDedicatedSignIn
+                      ? 'shell-header-authentication shell-header-authentication--quiet'
+                      : 'shell-header-nav-link'
+                  }
+                  href={showDedicatedSignIn ? '#home' : '#sign-in'}
+                  onClick={(event) => {
+                    event.preventDefault()
+
+                    if (showDedicatedSignIn) {
+                      globalThis.location.hash = '#home'
+                      setDestination('home')
+                      setLocationHash('#home')
+                      return
+                    }
+
+                    globalThis.location.hash = '#sign-in'
+                    setDestination('home')
+                    setLocationHash('#sign-in')
+                  }}
+                >
+                  <LocalizedMessage
+                    resolution={message(
+                      showDedicatedSignIn ? 'nav.home' : 'session.label',
+                    )}
+                  />
+                </a>
+                {showDedicatedSignIn ? null : (
+                  <a
+                    className="shell-header-authentication"
+                    href="#sign-in"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      globalThis.location.hash = '#sign-in'
+                      setDestination('home')
+                      setLocationHash('#sign-in')
+                    }}
+                  >
+                    <LocalizedMessage
+                      resolution={message('marketing.hero.cta_sign_in')}
+                    />
+                  </a>
+                )}
+              </>
+            ) : null}
+            {!demoMode &&
+            authentication.transport === 'sanctum-cookie' &&
+            session.status === 'authenticated' ? (
+              <>
+                {isLearnerSession ? (
+                  <LiveAiMinutesChip
+                    entitlement={entitlement}
+                    locale={locale}
+                    localizationPolicy={localizationPolicy}
+                    onOpenAccount={openAccountBilling}
+                  />
+                ) : null}
                 <button
                   aria-controls="session-account-security"
                   aria-expanded={accountSecurityVisible}
@@ -684,53 +913,78 @@ function App({
                     resolution={message('session.android_sign_out')}
                   />
                 </button>
-              </div>
-            </div>
-          ) : null}
-          <div className="shell-locale-control">
-            <label
-              className="shell-locale-control__label"
-              htmlFor="interface-locale"
-            >
-              <LocalizedMessage resolution={message('shell.locale_label')} />
-            </label>
-            <select
-              className="shell-locale-control__select"
-              id="interface-locale"
-              value={locale}
-              onChange={handleLocaleChange}
-            >
-              {INTERFACE_LOCALES.map((supported) => {
-                // Language names are endonyms in every catalogue. Tag each
-                // option with that language so assistive tech and fonts match.
-                const option = resolveInterfaceMessage(
-                  localeMessageKeys[supported],
-                  locale,
-                  localizationPolicy,
-                )
-
-                return (
-                  <option key={supported} lang={supported} value={supported}>
-                    {option.text}
-                  </option>
-                )
-              })}
-            </select>
-            <p
-              className="visually-hidden"
-              aria-atomic="true"
-              aria-live="polite"
-            >
-              {announcedLocale === null ? null : (
+              </>
+            ) : null}
+            {!demoMode &&
+            !isNativeAndroid &&
+            !isOperatorSession &&
+            !showDedicatedSignIn ? (
+              <a
+                className="shell-android-download"
+                download={ANDROID_APK_FILENAME}
+                href={ANDROID_APK_HREF}
+              >
+                <span
+                  aria-hidden="true"
+                  className="shell-android-download__icon"
+                >
+                  📱
+                </span>
                 <LocalizedMessage
-                  resolution={resolveInterfaceMessage(
-                    'shell.locale_changed',
-                    announcedLocale,
-                    localizationPolicy,
-                  )}
+                  resolution={message('shell.android_download')}
                 />
-              )}
-            </p>
+              </a>
+            ) : null}
+            {isGuestSession ? null : (
+            <InterfaceThemeControl
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onPreferenceChange={setThemePreference}
+              preference={themePreference}
+            />
+            )}
+            <div className="shell-locale-control shell-locale-control--compact">
+              <label className="visually-hidden" htmlFor="interface-locale">
+                <LocalizedMessage resolution={message('shell.locale_label')} />
+              </label>
+              <select
+                className="shell-locale-control__select"
+                id="interface-locale"
+                value={locale}
+                onChange={handleLocaleChange}
+              >
+                {INTERFACE_LOCALES.map((supported) => {
+                  // Language names are endonyms in every catalogue. Tag each
+                  // option with that language so assistive tech and fonts match.
+                  const option = resolveInterfaceMessage(
+                    localeMessageKeys[supported],
+                    locale,
+                    localizationPolicy,
+                  )
+
+                  return (
+                    <option key={supported} lang={supported} value={supported}>
+                      {option.text}
+                    </option>
+                  )
+                })}
+              </select>
+              <p
+                className="visually-hidden"
+                aria-atomic="true"
+                aria-live="polite"
+              >
+                {announcedLocale === null ? null : (
+                  <LocalizedMessage
+                    resolution={resolveInterfaceMessage(
+                      'shell.locale_changed',
+                      announcedLocale,
+                      localizationPolicy,
+                    )}
+                  />
+                )}
+              </p>
+            </div>
           </div>
         </div>
       }
@@ -835,8 +1089,16 @@ function App({
           </section>
         )}
 
+        <Suspense
+          fallback={
+            <p className="shell-route-fallback" role="status">
+              <LocalizedMessage resolution={message('learner.loading')} />
+            </p>
+          }
+        >
         {showMarketingLanding ? (
           <MarketingLanding
+            hideAndroidPromo={isNativeAndroid}
             locale={locale}
             message={message}
           />
@@ -864,7 +1126,7 @@ function App({
                 <TutorPresence
                   locale={locale}
                   localizationPolicy={localizationPolicy}
-                  size="md"
+                  size="sm"
                 />
                 <p className="shell-sign-in-page__eyebrow">
                   <LocalizedMessage
@@ -882,6 +1144,7 @@ function App({
               </header>
               <SessionSummary
                 accountSecurityOpen={accountSecurityVisible}
+                applyEntitlement={applyEntitlement}
                 authentication={authentication}
                 embedded
                 locale={locale}
@@ -917,11 +1180,6 @@ function App({
               locale={locale}
               localizationPolicy={localizationPolicy}
             />
-            <SubscriptionPanel
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              onChange={setEntitlement}
-            />
             <LearnerJourney
               api={learnerJourneyApi}
               audioRecorder={audioRecorder}
@@ -934,15 +1192,7 @@ function App({
             />
           </div>
         ) : canLearnPath ? (
-          <>
-            {!demoMode ? (
-              <SubscriptionPanel
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                onChange={setEntitlement}
-              />
-            ) : null}
-            <LevelPathPanel
+          <LevelPathPanel
               api={levelSessionsApi}
               conversationApi={conversationApi}
               createClientId={createClientId}
@@ -955,19 +1205,12 @@ function App({
                 globalThis.location.hash = '#speak'
               }}
             />
-          </>
         ) : canSpeak ? (
-          <>
-            {!demoMode ? (
-              <SubscriptionPanel
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                onChange={setEntitlement}
-              />
-            ) : null}
-            <SpeakRoom
+          <SpeakRoom
               allowsRoleplay={
-                demoMode || entitlement?.allows_roleplay === true
+                demoMode ||
+                directEntitlementScope === null ||
+                entitlement?.allows_roleplay === true
               }
               api={conversationApi}
               createClientId={createClientId}
@@ -977,8 +1220,30 @@ function App({
               key={`speak-${speakMode}-${boundConversation?.id ?? 'unbound'}`}
               locale={locale}
               localizationPolicy={localizationPolicy}
+              onLiveAiUsageChanged={() => {
+                void refreshEntitlement()
+              }}
+              roleplayStatusMessageKey={
+                demoMode || directEntitlementScope === null
+                  ? undefined
+                  : entitlementStatus === 'loading'
+                    ? 'learner.loading'
+                    : entitlementStatus === 'unavailable'
+                      ? 'subscription.error'
+                      : entitlement?.allows_roleplay === true
+                        ? undefined
+                        : 'subscription.roleplay_locked'
+              }
+              voiceUnavailableMessageKey={
+                entitlement?.live_ai_seconds_remaining !== null &&
+                entitlement?.live_ai_seconds_remaining !== undefined &&
+                entitlement.live_ai_seconds_remaining <= 10
+                  ? entitlement.is_demo
+                    ? 'entitlement.demo_ai_exhausted'
+                    : 'entitlement.ai_exhausted'
+                  : undefined
+              }
             />
-          </>
         ) : canTuition ? (
           <TuitionRequestPanel
             api={
@@ -1023,7 +1288,7 @@ function App({
             }}
             organizationApi={operatorOrganizationApi}
           />
-        ) : showMarketingLanding ? null : session.status === 'anonymous' ||
+        ) : showMarketingLanding || showDedicatedSignIn ? null : session.status === 'anonymous' ||
           session.status === 'unavailable' ? (
           <p className="shell-sign-in-hint">
             <LocalizedMessage resolution={message('session.sign_in_hint')} />{' '}
@@ -1053,6 +1318,7 @@ function App({
             ? (
                 <SessionSummary
                   accountSecurityOpen={accountSecurityVisible}
+                  applyEntitlement={applyEntitlement}
                   authentication={authentication}
                   locale={locale}
                   localizationPolicy={localizationPolicy}
@@ -1060,9 +1326,12 @@ function App({
                   onAccountSecurityOpenChange={setAccountSecurityOpen}
                   onSessionChange={setSession}
                   session={session}
+                  showSubscriptionPanel={isLearnerSession}
                 />
               )
             : null}
+
+        </Suspense>
 
         {demoMode ? null : <LegalLinks message={message} />}
       </div>
@@ -1073,6 +1342,7 @@ function App({
 
 interface SessionSummaryProps {
   accountSecurityOpen: boolean
+  applyEntitlement: (entitlement: LearnerEntitlement) => void
   authentication: AuthenticationAdapter
   embedded?: boolean
   locale: SupportedLocale
@@ -1081,10 +1351,12 @@ interface SessionSummaryProps {
   onAccountSecurityOpenChange: (open: boolean) => void
   onSessionChange: (session: SessionState) => void
   session: SessionState
+  showSubscriptionPanel?: boolean
 }
 
 function SessionSummary({
   accountSecurityOpen,
+  applyEntitlement,
   authentication,
   embedded = false,
   locale,
@@ -1093,6 +1365,7 @@ function SessionSummary({
   onAccountSecurityOpenChange,
   onSessionChange,
   session,
+  showSubscriptionPanel = false,
 }: SessionSummaryProps) {
   useEffect(() => {
     if (
@@ -1177,6 +1450,13 @@ function SessionSummary({
           onAuthenticated={onSessionChange}
         />
       ) : null}
+      {showSubscriptionPanel && isAuthenticated && accountSecurityOpen ? (
+        <SubscriptionPanel
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+          onChange={applyEntitlement}
+        />
+      ) : null}
       {webAuth !== null && isAuthenticated && accountSecurityOpen ? (
         <PasswordAccountSecurityPanel
           authentication={webAuth}
@@ -1237,6 +1517,15 @@ function isWebSessionAuthentication(
     typeof candidate.federatedLinks === 'function' &&
     typeof candidate.beginFederatedLink === 'function' &&
     typeof candidate.unlinkFederated === 'function'
+  )
+}
+
+function operatorWorkspaceHashFromLocation(hash: string): boolean {
+  const normalized = hash.replace(/^#/u, '')
+
+  return (
+    normalized.startsWith('operator-') ||
+    normalized === 'operator-workspace-overview'
   )
 }
 

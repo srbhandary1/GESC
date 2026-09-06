@@ -17,7 +17,7 @@ describe('ProgressDashboard', () => {
 
     render(<ProgressDashboard api={api} locale="en-IN" onMissionRequested={vi.fn()} />)
     
-    expect(screen.getByText('Loading audio', { exact: false })).toBeDefined()
+    expect(screen.getByText('Loading your progress', { exact: false })).toBeDefined()
   })
 
   it('renders empty state when no activity', async () => {
@@ -139,7 +139,52 @@ describe('ProgressDashboard', () => {
     expect(improvementList).toHaveTextContent('grammar')
     expect(improvementList).toHaveTextContent('reducing trend')
 
-    const masteryList = screen.getByLabelText('Can — ability and permission')
+    const masteryList = screen.getByLabelText('can')
     expect(masteryList).toHaveTextContent('Mastered')
+  })
+
+  it('lets the learner retry after a progress load failure', async () => {
+    const user = userEvent.setup()
+    const progressDashboard = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('unavailable'))
+      .mockResolvedValueOnce({
+        enrollment: { id: 'enrollment-1', status: 'active' },
+        objectives: [],
+        speaking_activity: {
+          meaningful_speaking_days_count: 0,
+          completed_turn_count: 0,
+          speaking_duration_ms: 0,
+          speaking_minutes: 0,
+          timezone: 'Asia/Kolkata',
+        },
+        attempt_improvement: {
+          missions_attempted: 0,
+          missions_passed_on_first_attempt: 0,
+          missions_improved_on_retry: 0,
+          missions_still_not_mastered: 0,
+        },
+        delayed_review: {
+          scheduled_count: 0,
+          due_count: 0,
+          pending_count: 0,
+          completed_count: 0,
+          completed_on_time_count: 0,
+          completed_late_count: 0,
+        },
+        recurring_errors: { patterns: [] },
+      })
+    const api = { progressDashboard } as unknown as LearnerJourneyApi
+
+    render(<ProgressDashboard api={api} locale="en-IN" onMissionRequested={vi.fn()} />)
+
+    expect(
+      await screen.findByRole('button', { name: 'Try again' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Your progress will appear here' }),
+    ).toBeInTheDocument()
+    expect(progressDashboard).toHaveBeenCalledTimes(2)
   })
 })

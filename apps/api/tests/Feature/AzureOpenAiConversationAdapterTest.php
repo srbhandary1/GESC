@@ -193,6 +193,46 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         });
     }
 
+    public function test_chat_completions_maps_unneeded_correction_to_null(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+
+        $modelJson = json_encode([
+            'understood_intent' => 'share_about_work',
+            'assistant_reply_en' => 'That sounds like a productive day.',
+            'safety_state' => 'ok',
+            'priority_correction' => [
+                'needed' => false,
+                'error_category' => 'none',
+                'correction_en' => 'none',
+                'explanation_l1' => 'none',
+                'explanation_locale' => 'kn-IN',
+                'retry_recommended' => false,
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                [
+                    'choices' => [[
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => $modelJson,
+                        ],
+                    ]],
+                ],
+                200,
+                ['Content-Type' => 'application/json'],
+            ),
+        ]);
+
+        $result = $this->app->make(AzureOpenAiConversationModelProvider::class)
+            ->respond($this->sampleRequest());
+
+        $this->assertNull($result->priorityCorrection);
+    }
+
     public function test_malformed_model_json_fails_closed_without_leaking_body(): void
     {
         $this->configureAuthorizedBoundary();

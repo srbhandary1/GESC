@@ -1,0 +1,7 @@
+/* Component surfaces that depend on theme tokens loaded after base styles. */
+
+@media (max-width: 30rem) {
+  .marketing-hero {
+    background: var(--ge-panel-background);
+  }
+}

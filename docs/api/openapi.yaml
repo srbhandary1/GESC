@@ -2,9 +2,11 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.39.0
+  version: 0.40.0
   description: |
-    Canonical API contract for the Global English platform. ADR-0036 adds
+    Canonical API contract for the Global English platform. ADR-0037 adds
+    monthly live-AI caps on Direct paid plans and prepaid talk-time packs.
+    ADR-0036 adds
     the Premium flagship Direct plan and one complimentary Premium month for
     current Direct learners. ADR-0035 adds
     Direct learner subscriptions, GST-exclusive dummy checkout and operator
@@ -1738,9 +1740,11 @@ paths:
   /me/subscription-checkouts:
     post:
       operationId: createLearnerSubscriptionCheckout
-      summary: Complete dummy in-app checkout for a paid Direct plan
+      summary: Complete dummy in-app checkout for a paid Direct plan or talk pack
       description: |
-        Completes in-process with the dummy payment driver. Production and
+        Completes in-process with the dummy payment driver. Talk packs require
+        an active Modules or Premium month and add live-AI seconds; they do
+        not replace the membership or unlock Role-play. Production and
         `disabled` fail closed. Replay uses the same Idempotency-Key.
       tags:
         - Learning
@@ -11312,10 +11316,12 @@ components:
         - gst_paise
         - total_paise
         - gst_rate_bps
+        - billing_period
         - allows_roleplay
         - max_level_number
         - live_ai_cap_seconds
         - is_demo
+        - is_talk_pack
         - checkout_required
         - recommended
       properties:
@@ -11337,6 +11343,9 @@ components:
         gst_rate_bps:
           type: integer
           minimum: 0
+        billing_period:
+          type: string
+          enum: [hours, calendar_month, talk_pack]
         allows_roleplay:
           type: boolean
         max_level_number:
@@ -11344,6 +11353,8 @@ components:
         live_ai_cap_seconds:
           type: [integer, "null"]
         is_demo:
+          type: boolean
+        is_talk_pack:
           type: boolean
         checkout_required:
           type: boolean
@@ -11477,7 +11488,7 @@ components:
           minimum: 0
         billing_period:
           type: string
-          enum: [hours, calendar_month]
+          enum: [hours, calendar_month, talk_pack]
         duration_value:
           type: integer
           minimum: 1

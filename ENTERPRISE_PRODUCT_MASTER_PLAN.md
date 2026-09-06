@@ -1,6 +1,6 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.13"
+version: "3.14"
 status: "Canonical implementation baseline"
 prepared: "14 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
@@ -1356,7 +1356,7 @@ AI logs are redacted and retained under policy. A model response is not an autho
 - `notices`, `notice_localizations`, `notice_audiences`, `notice_acknowledgements`
 - `entitlement_plans`, `learner_entitlements`, `entitlement_events`,
   `organization_tax_settings`, `subscription_checkouts`,
-  `live_ai_meter_charges`
+  `live_ai_meter_charges`, `live_ai_talk_packs`
 - `facilitated_sessions`, `external_meeting_links`, `session_reminders`
 - `typed_groups`, `group_memberships`, `group_moderation_events`
 - `assignments`, `assignment_submissions`, `human_review_decisions`,
@@ -2418,7 +2418,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Security | OWASP ASVS 5.0.0 Level 2 target where applicable |
 | Android | Capacitor 8, minimum API 24, target API 36 at scaffold |
 | Pilot tenancy | Global English Direct plus at most one manually provisioned partner institution; self-service tenant sales deferred |
-| Monetization | Direct dummy in-app checkout (ADR-0035); Premium flagship and courtesy month (ADR-0036); live providers and Play Billing deferred |
+| Monetization | Direct dummy in-app checkout (ADR-0035); Premium flagship and courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); live providers and Play Billing deferred |
 | Minors | Deferred behind a separate legal/safety gate |
 
 ### 32.1 Decisions that do not block Step 1

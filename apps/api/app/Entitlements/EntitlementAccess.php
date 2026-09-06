@@ -90,16 +90,10 @@ final readonly class EntitlementAccess
                 }
 
                 $snapshot = $this->decodedSnapshot($entitlement);
-                $cap = isset($snapshot['live_ai_cap_seconds']) && is_numeric($snapshot['live_ai_cap_seconds'])
-                    ? (int) $snapshot['live_ai_cap_seconds']
-                    : null;
+                $cap = $this->effectiveLiveAiCap($entitlement, $snapshot);
 
                 if ($cap === null) {
-                    if (! ($snapshot['is_demo'] ?? false)) {
-                        return;
-                    }
-
-                    $cap = DirectPlanDefaults::DEMO_LIVE_AI_CAP_SECONDS;
+                    return;
                 }
 
                 $existing = DB::table('live_ai_meter_charges')
@@ -115,7 +109,11 @@ final readonly class EntitlementAccess
                 $used = (int) $entitlement->live_ai_seconds_used;
 
                 if (($used + $seconds) > $cap) {
-                    throw new EntitlementDenied(EntitlementDenied::DEMO_AI_EXHAUSTED);
+                    throw new EntitlementDenied(
+                        ($snapshot['is_demo'] ?? false) === true
+                            ? EntitlementDenied::DEMO_AI_EXHAUSTED
+                            : EntitlementDenied::AI_EXHAUSTED,
+                    );
                 }
 
                 $now = Date::now();
@@ -306,10 +304,7 @@ final readonly class EntitlementAccess
     private function present(string $organizationId, stdClass $row): array
     {
         $snapshot = $this->decodedSnapshot($row);
-        $cap = $this->nullableInt($row, 'live_ai_cap_seconds')
-            ?? (isset($snapshot['live_ai_cap_seconds']) && is_int($snapshot['live_ai_cap_seconds'])
-                ? $snapshot['live_ai_cap_seconds']
-                : null);
+        $cap = $this->effectiveLiveAiCap($row, $snapshot);
         $used = (int) $row->live_ai_seconds_used;
         $active = $this->string($row, 'status') === 'active';
         $tax = DB::table('organization_tax_settings')
@@ -390,6 +385,10 @@ final readonly class EntitlementAccess
         $expires = $this->string($plan, 'billing_period') === 'calendar_month'
             ? $starts->addMonths((int) $plan->duration_value)
             : $starts->addHours((int) $plan->duration_value);
+
+        if (DirectPlanDefaults::isTalkPack($plan)) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
         $id = (string) Str::ulid();
         $this->expireActive($organizationId, $learnerMembershipId);
         DB::table('learner_entitlements')->insert([
@@ -414,6 +413,70 @@ final readonly class EntitlementAccess
         ]);
 
         return $id;
+    }
+
+    /**
+     * @return array{expires_at: CarbonImmutable, seconds: int}
+     */
+    public function addTalkPack(
+        string $organizationId,
+        stdClass $entitlement,
+        stdClass $plan,
+        string $checkoutId,
+        CarbonImmutable $now,
+    ): array {
+        $snapshot = $this->decodedSnapshot($entitlement);
+
+        if (
+            $this->string($entitlement, 'status') !== 'active'
+            || ($snapshot['is_demo'] ?? false) === true
+            || ($snapshot['billing_period'] ?? '') !== 'calendar_month'
+        ) {
+            throw new EntitlementDenied(EntitlementDenied::TALK_PACK_REQUIRES_PAID);
+        }
+
+        $seconds = $this->nullableInt($plan, 'live_ai_cap_seconds') ?? 0;
+
+        if ($seconds < 1) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        $membershipEndRaw = $this->nullableString($entitlement, 'expires_at');
+
+        if ($membershipEndRaw === null) {
+            throw new EntitlementDenied(EntitlementDenied::TALK_PACK_REQUIRES_PAID);
+        }
+
+        $membershipEnd = CarbonImmutable::parse($membershipEndRaw);
+        $packHorizon = $now->addDays(DirectPlanDefaults::TALK_PACK_MAX_DAYS);
+        $expires = $packHorizon->lessThan($membershipEnd) ? $packHorizon : $membershipEnd;
+
+        if ($expires->lessThanOrEqualTo($now)) {
+            throw new EntitlementDenied(EntitlementDenied::EXPIRED);
+        }
+
+        DB::table('live_ai_talk_packs')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'entitlement_id' => $this->string($entitlement, 'id'),
+            'checkout_id' => $checkoutId,
+            'plan_code' => $this->string($plan, 'code'),
+            'seconds' => $seconds,
+            'expires_at' => $expires,
+            'created_at' => $now,
+        ]);
+        $this->event($organizationId, $this->string($entitlement, 'id'), 'talk_pack_granted', null, [
+            'source' => 'checkout',
+            'plan_code' => $this->string($plan, 'code'),
+            'checkout_id' => $checkoutId,
+            'seconds' => $seconds,
+            'expires_at' => $expires->utc()->toIso8601String(),
+        ]);
+
+        return [
+            'expires_at' => $expires,
+            'seconds' => $seconds,
+        ];
     }
 
     /**
@@ -519,5 +582,41 @@ final readonly class EntitlementAccess
         }
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function effectiveLiveAiCap(stdClass $entitlement, array $snapshot): ?int
+    {
+        $planCap = $this->membershipCap($snapshot);
+
+        if ($planCap === null) {
+            return null;
+        }
+
+        return $planCap + $this->activeTalkPackSeconds($this->string($entitlement, 'id'));
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function membershipCap(array $snapshot): ?int
+    {
+        if (isset($snapshot['live_ai_cap_seconds']) && is_numeric($snapshot['live_ai_cap_seconds'])) {
+            return (int) $snapshot['live_ai_cap_seconds'];
+        }
+
+        $code = is_string($snapshot['code'] ?? null) ? $snapshot['code'] : '';
+
+        return DirectPlanDefaults::membershipLiveAiCap($code);
+    }
+
+    private function activeTalkPackSeconds(string $entitlementId): int
+    {
+        return (int) DB::table('live_ai_talk_packs')
+            ->where('entitlement_id', $entitlementId)
+            ->where('expires_at', '>', Date::now())
+            ->sum('seconds');
     }
 }

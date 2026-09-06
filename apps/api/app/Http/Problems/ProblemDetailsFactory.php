@@ -128,6 +128,18 @@ final class ProblemDetailsFactory
                     'detail' => 'The free demo live-AI allowance is used up.',
                     'message_key' => EntitlementDenied::DEMO_AI_EXHAUSTED,
                 ],
+                EntitlementDenied::AI_EXHAUSTED => [
+                    'type' => 'urn:global-english:problem:entitlement-ai-exhausted',
+                    'title' => 'Live speaking time used',
+                    'detail' => 'This month’s live-AI allowance is used up. Buy talk time or wait for the next month.',
+                    'message_key' => EntitlementDenied::AI_EXHAUSTED,
+                ],
+                EntitlementDenied::TALK_PACK_REQUIRES_PAID => [
+                    'type' => 'urn:global-english:problem:entitlement-talk-pack-requires-paid',
+                    'title' => 'Talk time needs a paid plan',
+                    'detail' => 'Buy Modules or Premium before adding talk time.',
+                    'message_key' => EntitlementDenied::TALK_PACK_REQUIRES_PAID,
+                ],
                 EntitlementDenied::EXPIRED => [
                     'type' => 'urn:global-english:problem:entitlement-expired',
                     'title' => 'Subscription expired',

@@ -20,6 +20,7 @@
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000" force="true"/>
         <env name="APP_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtdGVzdC1rZXktMDAwMDAwMDA=" force="true"/>
         <env name="AUTH_IDENTITY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtaWRlbnRpdHktdGVzdC1rZXk=" force="true"/>
+        <env name="AUTH_RECOVERY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtcmVjb3ZlcnktbG9jYWwta2V5" force="true"/>
         <env name="OFFLINE_BUNDLE_SIGNING_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtb2ZmbGluZS10ZXN0LWtleS12MQ==" force="true"/>
         <env name="CONVERSATION_PROVIDER_DRIVER" value="fake" force="true"/>
         <env name="VOICE_UPLOAD_ENABLED" value="true" force="true"/>
@@ -37,7 +38,7 @@
         <env name="DB_URL" value="" force="true"/>
         <env name="DATABASE_URL" value="" force="true"/>
         <env name="DB_SSLMODE" value="disable" force="true"/>
-        <env name="LARAVEL_STORAGE_PATH" value="/tmp/global-english-postgres-phpunit-storage" force="true"/>
+        <env name="LARAVEL_STORAGE_PATH" value="/tmp/global-english-postgres-phpunit-storage"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="database" force="true"/>

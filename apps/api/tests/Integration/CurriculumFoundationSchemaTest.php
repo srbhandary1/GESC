@@ -19,7 +19,7 @@ final class CurriculumFoundationSchemaTest extends TenancyIntegrationTestCase
     {
         $this->seed(FoundationSeeder::class);
 
-        $this->assertSame(40, DB::table('permissions')->count());
+        $this->assertSame(46, DB::table('permissions')->count());
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('localized_variants')->count());
         $this->assertSame(0, DB::table('content_reviews')->count());

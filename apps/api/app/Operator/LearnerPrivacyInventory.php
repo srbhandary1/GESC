@@ -19,7 +19,7 @@ use stdClass;
  */
 final class LearnerPrivacyInventory
 {
-    public const string VERSION = 'learner-privacy-v7';
+    public const string VERSION = 'learner-privacy-v8';
 
     /**
      * Membership-linked governance records are not creatable by an authorized
@@ -303,6 +303,24 @@ final class LearnerPrivacyInventory
                 'Live-AI charge keys are metering evidence without audio or transcripts.',
                 Schema::hasTable('live_ai_meter_charges') && Schema::hasTable('learner_entitlements')
                     ? DB::table('live_ai_meter_charges')
+                        ->whereIn(
+                            'entitlement_id',
+                            DB::table('learner_entitlements')
+                                ->where('organization_id', $organizationId)
+                                ->where('learner_membership_id', $membershipId)
+                                ->pluck('id'),
+                        )
+                        ->count()
+                    : 0,
+            ),
+            $this->countOnlyGroup(
+                'live_ai_talk_packs',
+                'organization_membership',
+                'count_only',
+                'retain_entitlement_meter',
+                'Purchased live-AI talk packs are commercial meter grants without audio or transcripts.',
+                Schema::hasTable('live_ai_talk_packs') && Schema::hasTable('learner_entitlements')
+                    ? DB::table('live_ai_talk_packs')
                         ->whereIn(
                             'entitlement_id',
                             DB::table('learner_entitlements')

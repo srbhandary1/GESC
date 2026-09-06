@@ -44,6 +44,11 @@ export interface OperatorCollection<T> {
   readonly allowed_actions: readonly OperatorOrganizationAction[]
 }
 
+export interface OperatorStaffDirectoryFilters {
+  readonly display_name_prefix?: string
+  readonly status?: OperatorStaffMembership['status']
+}
+
 export interface OperatorResource<T> {
   readonly data: T
 }
@@ -220,6 +225,7 @@ export interface OperatorOrganizationApi {
     signal?: AbortSignal,
   ): Promise<OperatorCollection<OperatorCohort>>
   listMemberships(
+    filters?: OperatorStaffDirectoryFilters,
     cursor?: string,
     signal?: AbortSignal,
   ): Promise<OperatorCollection<OperatorStaffMembership>>
@@ -229,6 +235,7 @@ export interface OperatorOrganizationApi {
   ): Promise<OperatorCollection<OperatorInvitation>>
   listRoles(cursor?: string, signal?: AbortSignal): Promise<OperatorRoleCollection>
   listTrainerProfiles(
+    filters?: OperatorStaffDirectoryFilters,
     cursor?: string,
     signal?: AbortSignal,
   ): Promise<OperatorCollection<OperatorTrainerProfile>>
@@ -471,9 +478,17 @@ export class WebOperatorOrganizationApi implements OperatorOrganizationApi {
     )
   }
 
-  listMemberships(cursor?: string, signal?: AbortSignal) {
+  listMemberships(
+    filters: OperatorStaffDirectoryFilters = {},
+    cursor?: string,
+    signal?: AbortSignal,
+  ) {
     return this.#get<OperatorCollection<OperatorStaffMembership>>(
-      this.#collectionPath('/operator/memberships', cursor),
+      this.#collectionPath(
+        '/operator/memberships',
+        cursor,
+        filters as Readonly<Record<string, string | undefined>>,
+      ),
       signal,
     )
   }
@@ -492,9 +507,17 @@ export class WebOperatorOrganizationApi implements OperatorOrganizationApi {
     )
   }
 
-  listTrainerProfiles(cursor?: string, signal?: AbortSignal) {
+  listTrainerProfiles(
+    filters: OperatorStaffDirectoryFilters = {},
+    cursor?: string,
+    signal?: AbortSignal,
+  ) {
     return this.#get<OperatorCollection<OperatorTrainerProfile>>(
-      this.#collectionPath('/operator/trainer-profiles', cursor),
+      this.#collectionPath(
+        '/operator/trainer-profiles',
+        cursor,
+        filters as Readonly<Record<string, string | undefined>>,
+      ),
       signal,
     )
   }
@@ -877,8 +900,20 @@ export class WebOperatorOrganizationApi implements OperatorOrganizationApi {
     )
   }
 
-  #collectionPath(path: string, cursor?: string): string {
+  #collectionPath(
+    path: string,
+    cursor?: string,
+    filters?: Readonly<Record<string, string | undefined>>,
+  ): string {
     const parameters = new URLSearchParams({ limit: '25' })
+
+    if (filters !== undefined) {
+      for (const [key, value] of Object.entries(filters)) {
+        if (value !== undefined && value !== '') {
+          parameters.set(key, value)
+        }
+      }
+    }
 
     if (cursor !== undefined) {
       parameters.set('cursor', cursor)

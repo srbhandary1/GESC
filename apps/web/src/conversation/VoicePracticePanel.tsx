@@ -1,5 +1,6 @@
 import type {
   MessageKey,
+  MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
 import { useEffect, useRef, useState } from 'react'
@@ -21,6 +22,8 @@ import {
   type SpeakLoopPhase,
 } from './speakLoopTimings'
 import { isAbortError } from '../shared/isAbortError'
+import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
+import { conversationErrorMessageKey } from './conversationErrorMessage'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
@@ -33,7 +36,8 @@ interface VoicePracticePanelProps {
   readonly recorder?: AudioRecorder
   readonly resetEpoch?: number
   readonly sessionId: string
-  readonly text: (key: MessageKey) => string
+  readonly text: (key: MessageKey, parameters?: MessageParameters) => string
+  readonly unavailableMessageKey?: MessageKey
 }
 
 type VoicePanelState =
@@ -58,8 +62,6 @@ const REQUIRED_PURPOSES = [
   'conversation_provider_processing',
 ] as const
 
-const AUTO_ACCEPT_MIN_CONFIDENCE = 0.6
-
 export function VoicePracticePanel({
   api,
   createClientId,
@@ -72,12 +74,14 @@ export function VoicePracticePanel({
   resetEpoch = 0,
   sessionId,
   text,
+  unavailableMessageKey,
 }: VoicePracticePanelProps) {
   const [state, setState] = useState<VoicePanelState>({ kind: 'checking' })
   const [correctedTranscript, setCorrectedTranscript] = useState('')
   const [correcting, setCorrecting] = useState(false)
   const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
   const [localResetEpoch, setLocalResetEpoch] = useState(0)
+  const [uploadError, setUploadError] = useState<MessageKey | null>(null)
   const uploadCommand = useRef('')
   const reviewCommand = useRef('')
   const uploadAbort = useRef<AbortController | null>(null)
@@ -139,6 +143,18 @@ export function VoicePracticePanel({
     api.deleteVoiceRecording === undefined
   ) {
     return null
+  }
+
+  if (unavailableMessageKey !== undefined) {
+    return (
+      <section
+        aria-labelledby="secure-voice-title"
+        className="conversation-journey__voice"
+      >
+        <h3 id="secure-voice-title">{text('conversation.voice.title')}</h3>
+        <p role="alert">{text(unavailableMessageKey)}</p>
+      </section>
+    )
   }
 
   const loadConsent = async () => {
@@ -209,6 +225,7 @@ export function VoicePracticePanel({
     listing: VoiceConsents,
     capture: CapturedAudio,
   ) => {
+    setUploadError(null)
     setPhase('processing')
     uploadAbort.current?.abort()
     const controller = new AbortController()
@@ -218,7 +235,7 @@ export function VoicePracticePanel({
       if (uploadCommand.current === '') {
         uploadCommand.current = createClientId()
       }
-      const wav = await audioToPcmWav(capture)
+      const wav = await audioToPcmWav(capture, HOLD_MAXIMUM_DURATION_MS)
       markSpeakLoop('wav_ready')
       const recording = await api.uploadVoiceRecording!(
         sessionId,
@@ -233,31 +250,28 @@ export function VoicePracticePanel({
         recording.transcript === null ||
         recording.transcript.trim() === ''
       ) {
-        setState({ kind: 'error', listing })
+        uploadCommand.current = createClientId()
+        setUploadError('conversation.voice.error')
+        setState({ kind: 'recording', listing })
         releaseHold()
         return
       }
 
-      const confidence = recording.transcript_confidence
-      if (
-        confidence !== null &&
-        confidence < AUTO_ACCEPT_MIN_CONFIDENCE
-      ) {
-        setCorrectedTranscript(recording.transcript)
-        setCorrecting(false)
-        setState({ kind: 'candidate', listing, recording })
-        releaseHold()
-        return
-      }
-
-      await acceptTranscript(listing, recording, 'accept', controller.signal)
+      setCorrectedTranscript(recording.transcript)
+      setCorrecting(false)
+      setState({ kind: 'candidate', listing, recording })
+      releaseHold()
     } catch (error) {
       if (isAbortError(error) || controller.signal.aborted) {
         releaseHold()
         return
       }
 
-      setState({ kind: 'error', listing })
+      uploadCommand.current = createClientId()
+      setUploadError(
+        conversationErrorMessageKey(error, 'conversation.voice.error'),
+      )
+      setState({ kind: 'recording', listing })
       releaseHold()
     }
   }
@@ -459,6 +473,9 @@ export function VoicePracticePanel({
 
       {state.kind === 'recording' ? (
         <>
+          {uploadError !== null ? (
+            <p role="alert">{text(uploadError)}</p>
+          ) : null}
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
             captureMode="hold"
@@ -495,7 +512,9 @@ export function VoicePracticePanel({
               playbackHelp: text('conversation.voice.playback_help'),
               playbackLabel: text('learner.recording.playback_label'),
               retry: text('learner.recording.retry'),
-              holdRemaining: text('conversation.voice.hold_remaining'),
+              holdRemaining: text('conversation.voice.hold_remaining', {
+                seconds: '{seconds}',
+              }),
             }}
             onAudioCaptureChange={(capture) => {
               if (capture === null) {

@@ -1,5 +1,408 @@
 # Quality review
 
+## D-0283: UX-01 Studio programme complete — 6 September 2026
+
+### Scope reviewed
+
+- UX-01B visual-review closeout plus UX-01C–G: complete Studio landing,
+  sign-in handoff, authenticated learner frame, lazy route families, bilingual
+  evidence and the UI-only product holes that blocked those surfaces.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| UX-01B review | Closed by instruction | Accountable Product Owner asked to remove UI/UX blockers and complete the implementation; no further screenshot ceremony |
+| Landing hierarchy (UX-01C) | Pass | Hero, four-step preview with Type instead, five outcomes, Swathi/AI boundary, catalogue Demo/Modules/Premium (₹0 / ₹350 / ₹500 GST exclusive), trust/readiness, closing CTA |
+| Sign-in handoff (UX-01D) | Pass | Dedicated `#sign-in` uses Studio tokens; username/password remain Sanctum; no credential persistence; duplicate sign-in hint removed from that page |
+| Learner frame (UX-01E) | Pass | Guest and learner use Studio frame; operator stays distinct; Home due-review uses `interval_days` rather than `next_mission` duration |
+| Route split (UX-01F) | Pass | Initial `index-DSDJ_Aqr.js` 78.58 kB gzip; guest+marketing 235.77 kB gzip; operator 52.57 kB gzip is not on the learner path |
+| Role-play presentation | Pass | Observe and Rehearse are shown; learner Continues. API still starts at observe. D-0215 optional-example rule is not amended |
+| Voice confirm / model audio / Progress | Pass | Accept/edit/discard always shown; 0.75× slow + resume; Progress retry and catalogue labels |
+| Accessibility / reflow | Pass | Existing 21 Chromium journeys include axe, keyboard, 320–1280, 200%/400% text, 44-pixel targets |
+| Visual evidence | Pass, Kannada preview | [ux01g](evidence/ux01g/) landing, sign-in and Home at 320/1280 in en-IN and kn-IN; landing copies also in [ux01c](evidence/ux01c/) |
+| Scope control | Pass | No payment provider, schema, APK, Wave 5 or `APP_ENV=production`. Unused Academy CSS deleted |
+
+### Verification and limitations
+
+- Exact pinned `make verify`: pass. PHP 8.4.23, Composer 2.10.2, Node 24.18.1,
+  pnpm 11.18.0. Backend 249/249 (2,652 assertions), PostgreSQL 341/341 (4,775
+  assertions), web 343 tests, localization 35, design system 12. One existing
+  moderate pnpm advisory remains non-blocking. Locales validate with five
+  pending-independent-review warnings as expected.
+- `make e2e`: 4/4 integration (103 assertions) and 21/21 Chromium passed after
+  overflow `minmax(min(…rem, 100%), 1fr)` and Role-play `exact` heading locators.
+- `make build` passed; Vite still warns that the lazy marketing chunk is 676 kB
+  minified (157.19 kB gzip). Combined guest download stays under 250 kB gzip.
+- PHPUnit SQLite/Postgres now set `AUTH_RECOVERY_DIGEST_KEY` to the documented
+  local/testing dummy so an empty inherited `APP_ENV` cannot blank it.
+- Kannada/Hindi/Malayalam/Tamil/Telugu `ui-*-2026-09-06.1` catalogues remain
+  pending independent review. Screenshots are development-preview, not
+  translation approval. hi/ml/ta/te currently copy English source.
+- Cursor IDE browser could not reach `127.0.0.1`; landing and sign-in were
+  exercised with Playwright against the preview origin instead.
+- `futuraExperience.css` remains imported for shared shell chrome.
+  Illustration filenames may remain `tutor-maya.png` (D-0218).
+- Remaining honestly incomplete: UX-02 first-use (placement, accessibility
+  setup, audio orientation), UX-08 live payments, UX-10 APK/TalkBack, Wave 5
+  stable HTTPS origin.
+
+## Soft-launch sign-in restored — 3 September 2026
+
+### Scope reviewed
+
+- Restore password sign-in after the Laravel API could not bind `:8000`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| API health | Pass | `GET /api/v1/health/live` 200 through Caddy `:9080` and the live tunnel |
+| Password mode | Pass | `GET /api/v1/auth/password/mode` 200 `password_only` from the tunnel origin |
+| Sign-in form | Pass | `#sign-in` renders username/password with no pre-submit error |
+| Wrong password | Pass (expected fail) | Dummy `tester.one` shows `auth.password.error` after the API responds |
+| Env contract | Pass | `scripts/test-soft-launch-environment.sh` |
+
+### Known limitations
+
+- Tunnel hostname rotated to `https://viii-throw-literature-caroline.trycloudflare.com`. The previous Quick Tunnel origin is dead.
+- Another local process still holds `:8000`; this stack uses `GE_SOFT_LAUNCH_API_PORT=8012`.
+- Closed-beta APK still targets an older tunnel origin.
+
+## Academy homepage template — 3 September 2026
+
+### Scope reviewed
+
+- Rebuild guest `#home` to the Global Academy page structure (slider, Login/Join Now, intro band, why tiles, how-it-works, current Direct prices) using existing product copy only.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| 5-image slider | Pass | Live `banner-3.jpg` 1600×746; 5 slides + arrows + dashes |
+| Login + Join Now | Pass | Header `session.label` + `marketing.hero.cta_sign_in`; intro/plan/join CTAs |
+| New-site copy / prices | Pass | Catalogues unchanged; cards ₹0 / ₹350 / ₹500; no fluency-guarantee |
+| App tests | Pass | `src/App.test.tsx` 19/19 |
+
+### Known limitations
+
+- Sign-in is served from the Laravel API on `GE_SOFT_LAUNCH_API_PORT` (currently `8012` when `:8000` is occupied).
+- Plan names on the public cards are English SKU names (Two-day demo / Modules / Premium), matching the API.
+- Android APK not rebuilt.
+
+## Academy public template — 3 September 2026
+
+### Scope reviewed
+
+- Replace the guest website chrome with the Global Academy template from `globalspokenenglish.com` (teal bar, coral Sign in, full-bleed slider, mint stats). Product copy, prices, and auth stay on the current platform.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Guest academy class + light default | Pass | `ge-application-frame--academy`; storage key `ge-interface-theme-preference-v2`; App/theme tests 19+4 |
+| Live landing chrome | Pass | Tunnel screenshot: `#17ad90` header, coral Sign in, 1920px slider, gold stats on mint gradient |
+| Session checking shows marketing | Pass | `showMarketingLanding` no longer waits for `anonymous` |
+| Old commercial copy not restored | Pass | Current marketing catalogues; no ₹320/₹3000 or fluency-guarantee claims |
+| API sign-in on this host | Pass (ops) | Soft-launch API rebound to `127.0.0.1:8012`; tunnel `password/mode` 200 `password_only`; systemd service active |
+| Android APK template parity | Not claimed | APK not rebuilt |
+
+### Known limitations
+
+- Appearance picker is hidden for guests so the public site stays academy-light. Signed-in learners still have light/dark.
+- Waves on the slider are those baked into the academy banner JPEGs, not a second CSS overlay.
+- Tunnel hostname rotated; the published APK still targets the previous origin.
+
+## Closed-beta APK on tunnel origin — 2 September 2026
+
+### Scope reviewed
+
+- Rebuild production-path Android APK (`com.globalenglish.app`) against the live Cloudflare tunnel so staff can install from the website download link without Tailscale.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| JDK 21 assemble | Pass | Temurin 21.0.12+8; `make android-closed-beta`; Gradle BUILD SUCCESSFUL, 103 tasks |
+| Package identity | Pass | `aapt2 dump badging`: `com.globalenglish.app`, versionName 1.0, targetSdk 36, `INTERNET` / `RECORD_AUDIO` |
+| Baked API origin | Pass | APK JS contains `https://serious-writer-associate-interest.trycloudflare.com` and client `019fdd3f-4bba-720b-9e4e-a771ecccdd7f`; does not contain `117.254.108.143` |
+| Download link | Pass | Tunnel `content-length: 28654905`; SHA-256 `0f946ec6b2caea217f0824232ad93637d8f15a0678efa42d292fa6f40d382aae` |
+| Native UI markers | Pass | APK embeds `marketing-hero__banner` and `ge-application-frame--native-android` |
+| Physical install | Not claimed | No `adb` device on this host |
+
+### Known limitations
+
+- Debug keystore only. Not Play App Signing.
+- The APK is pinned to the current Quick Tunnel hostname. A tunnel restart requires a rebuild.
+- Website dist was rebuilt without `VITE_MOBILE_*` so the PWA stays Sanctum cookie auth; only the APK binary is baked for native Passport.
+- Production/Play remain unauthorized.
+
+## D-0282: UX-01B futuristic first screen implemented — 6 September 2026
+
+### Scope reviewed
+
+- Only UX-01B visual tokens actually used by the guest shell and the public
+  first screen; later landing sections and authenticated frames remain later
+  checkpoints.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Legacy replacement | Pass | Guest App class changed from Academy to Studio; legacy logo and all five carousel images/controls/timers are absent from the rendered first screen |
+| Action hierarchy | Pass | One primary sign-in link and one secondary four-session demonstration link appear in the hero; later-page CTAs are outside UX-01B |
+| Product truth | Pass | Canonical four-stage sequence is visible and Swathi is explicitly described as AI whose advice does not change deterministic records |
+| Original visual system | Pass | Code-native wordmark, voice core, grid and orbits; no remote font, stock hero art, copied mascot, autoplay media or WebGL dependency |
+| Accessibility | Pass | Axe across all six interface locales, keyboard/skip-link, visible focus, ≥44 CSS-pixel controls, reduced motion, self-hosted script fonts and 200%/400% text stress pass |
+| Responsive evidence | Pass automated | English and Kannada-preview at 320/1280 have `scrollWidth === clientWidth`; screenshots recorded under `docs/evidence/ux01b/` |
+| Accountable visual approval | Pending | Product Owner must accept or request revisions to the four review captures before UX-01C |
+| Scope control | Pass | No schema/API/auth/payment/provider/navigation/learner-record/APK/production change; later guest sections remain UX-01C |
+
+### Verification and limitations
+
+- Exact pinned `make verify`: pass. Backend 249/249 (2,652 assertions),
+  PostgreSQL 341/341 (4,775 assertions), web 339 tests, localization 35 and
+  design system 12. One existing moderate pnpm advisory remains non-blocking.
+- `make e2e`: 4/4 integration (103 assertions) and 21/21 Chromium passed.
+- `make build` passed; the ordinary approved-only release and subsequent
+  source-fingerprint refresh produced entry `index-A6DfU909.js`. The existing
+  approximately 313.79 kB gzip initial bundle warning remains assigned to
+  UX-01F code splitting.
+- Kannada screenshots are development-preview evidence, not renewed independent
+  translation approval. The remainder of the old public landing page is
+  intentionally deferred to UX-01C and may look visually transitional below
+  the new first fold.
+
+## D-0281: UX-01A served-build freshness complete — 6 September 2026
+
+### Scope reviewed
+
+- Only UX-01A: deterministic served-web release identity, conditional
+  soft-launch rebuilds and public-shell cache versioning/invalidation.
+- D-0280's user-reported keyboard pass and UX-00 closure.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| UX-00 human exit | Pass | Accountable Product Owner reported `Keyboard: passed` at the required 320 CSS-pixel smoke; Android TalkBack remains a release gate |
+| Deterministic release identity | Pass | SHA-256 covers web source/public/config, root locks/workspace configuration, shared contracts/design-system sources and locale catalogues; stability and mutation tests pass |
+| Stale-build prevention | Pass | Soft launch compares `.soft-launch-web-build` to current inputs and rebuilds on mismatch; `make soft-launch-refresh-web` is available and an unchanged repeat preserved the entry digest |
+| Browser cache transition | Pass | Vite embeds the 64-character release in `/service-worker.js?release=…`; activation deletes only caches with the `global-english-public-shell-` prefix |
+| Protected local data | Pass | The worker cache cleanup does not open or delete IndexedDB, and authenticated/API paths remain excluded from public-shell caching |
+| Controlled mutation proof | Pass | Source mutation changed release `a14a9311…d631`→`a9d06362…4557`, entry `index-DRG7SBfg.js`→`index-DARKM3lG.js`, and index SHA-256 `f63664aa…9546`→`bc06434c…466` |
+| Scope control | Pass | No schema, API, auth, payment, AI-provider, learner-record, navigation, APK or production change; UX-01B remains separate |
+
+### Verification and limitations
+
+- Focused Vitest: 2 files, 3 tests passed; web lint and typecheck passed;
+  soft-launch environment contract and `git diff --check` passed.
+- Exact pinned `make verify` passed: 249 standard backend tests (2,652
+  assertions), 341 PostgreSQL tests (4,774 assertions), 71 web test files (339
+  tests), 35 localization tests and 12 design-system tests. `pnpm audit
+  --audit-level=high` retains one non-blocking moderate advisory.
+- `make e2e` passed 4/4 reconciliation integration tests (103 assertions) and
+  21/21 Chromium journeys after replacing the retired hard-coded `v7` cache
+  assertion with the source-derived release identity. `make build` passed.
+- The first browser invocation did not run because its configured temporary
+  browser cache was empty. A second invocation reused an old approved-only
+  preview server and correctly exposed a test-environment mismatch. After the
+  pinned browser path and intended Kannada-preview server were used, the only
+  application-contract failure was the obsolete `v7` assertion described
+  above; the final complete run passed.
+- The existing Academy presentation remains until UX-01B; UX-01A fixes why
+  changed presentation could remain stale, but is intentionally not itself a
+  visual redesign.
+
+## D-0279: Futuristic Learning Studio plan accepted — 6 September 2026
+
+### Scope reviewed
+
+- Documentation-only selection and sequencing of the UX-01 visual direction.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Product authority | Pass | Accountable Product Owner explicitly requested a futuristic replacement and step-by-step implementation; D-0279 records the direction without changing the canonical navigation or learning rules |
+| Visual definition | Pass | [UI/UX Master Plan §7.1](UI_UX_MASTER_PLAN.md#71-accepted-visual-character--futuristic-learning-studio) distinguishes a calm adult AI-learning studio from legacy Academy chrome, cyberpunk novelty and copied competitor trade dress |
+| Incremental delivery | Pass | [UX-01A→G](UI_UX_MASTER_PLAN.md#112-ux-01--futuristic-learning-studio-implementation-sequence) provides one bounded sub-checkpoint at a time with explicit exit gates |
+| Stale-template cause | Addressed in plan | UX-01A must make served build/cache freshness observable before visual implementation begins |
+| Scope control | Pass | No code, schema, API, navigation, provider, payment, APK or production change; UX-00 keyboard closure remains first |
+
+### Verification and limitations
+
+- New D-0279 cross-document targets and whitespace were checked locally.
+  A repository-wide local-link scan still reports the pre-existing missing
+  `docs/DR-0039_PRONUNCIATION_AVATAR_PACING_TRANSLITERATION_LANGUAGES_REQUEST.md`
+  target from `docs/STATUS.md`; this planning change neither created nor masks
+  it. Application tests were not rerun because this decision changes no runtime
+  file.
+- The visual direction is approved; the actual UX-01B prototype still requires
+  accountable screenshot review before the rest of the landing page is built.
+
+## D-0278: UX-00 automated implementation complete — 6 September 2026
+
+### Scope reviewed
+
+- D-0277's exact UX-00 slice: local fonts, contrast, carousel behavior,
+  narrow/enlarged-text reflow, operator semantics, entitlement truth,
+  Playwright fixtures and non-root output paths.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Fonts and privacy | Pass | No runtime Google Font request; locally bundled full Latin/Kannada/Malayalam/Tamil/Telugu/Devanagari resources load in Chromium |
+| Accessibility | Pass (automated) | Axe, keyboard, named landmarks/headings, carousel pause/resume and 44 CSS-pixel targets pass; 320/360/412 reflow and 200%/400% enlarged-text proxies have no document overflow |
+| Entitlement failure states | Pass | Loading, ready, unavailable, absent and exhausted are distinct; recoverable refresh failure retains the last paid entitlement; institutional membership is not Direct-paywalled |
+| Browser contract | Pass | `make e2e`: 4 integration tests / 103 assertions and 21/21 Chromium journeys, including learner, conversation, Role-play and operator paths |
+| Full verification | Pass | Exact PHP 8.4.23, Composer 2.10.2, Node 24.18.1, pnpm 11.18.0 and PostgreSQL 18.4: `make verify`; 249 standard backend tests / 2,652 assertions, 341 PostgreSQL tests / 4,775 assertions, 69 web files / 336 tests, 35 localization tests and 12 design-system tests |
+| Dependency gates | Pass with recorded debt | Composer audit has no advisory; pnpm high-severity gate passes with one moderate advisory |
+| Production build | Pass with recorded debt | `make build`; 1.319 MB minified / 313.83 kB gzip main bundle retains the known large-chunk warning assigned to UX-01 |
+| Responsive captures | Pass | [English 320](evidence/ux00/marketing-en-IN-320.png), [English 1280](evidence/ux00/marketing-en-IN-1280.png), [Kannada 320](evidence/ux00/marketing-kn-IN-320.png), [Kannada 1280](evidence/ux00/marketing-kn-IN-1280.png); Kannada uses explicit development preview |
+
+### Security, privacy and tenancy
+
+- No credential, learner audio, transcript or personal learner data was added
+  to repository evidence. Runtime third-party font requests were removed.
+- Entitlement caching is scoped to the current API/session resource and never
+  carries an entitlement into another learner scope. Server-side deterministic
+  authorization remains authoritative.
+- API and generated client contracts remain synchronized. No production,
+  payment, APK publication, schema expansion or later UX checkpoint is
+  authorized by this work.
+
+### Remaining gates and limitations
+
+- Human keyboard smoke at 320 CSS pixels remains before UX-00 can be marked
+  closed. Representative Android TalkBack remains a release gate.
+- Every non-English catalogue changed after its prior exact-revision approval.
+  The new `ui-*-2026-09-05.1` revisions are pending independent review;
+  approved-only builds correctly fall back to English. Kannada screenshots are
+  development-preview evidence, not production approval.
+- The main-bundle warning and one moderate pnpm advisory remain recorded debt;
+  neither defeats the configured high-severity or build gate.
+
+## D-0276: Wave 6 Indic STT staff tests completed — 5 September 2026
+
+### Scope reviewed
+
+- Automated Wave 6 preflight plus human staff verification for Indic hold-to-talk, recovery, Role-play and guidance speech on soft-launch.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Preflight script | Pass | 24 pass, 0 warn, 0 fail on 5 September; `scripts/wave6-indic-stt-preflight.sh` |
+| Staff runbook | Pass | [WAVE6_INDIC_STT_STAFF_TESTS.md](ops/WAVE6_INDIC_STT_STAFF_TESTS.md) |
+| Indic adapter PHPUnit | Pass (sqlite) | 7/7 on host with `DB_CONNECTION=sqlite` |
+| Staff hold-to-talk matrix | Pass | English 3/3; Kannada/English 3/3; noisy room 3/3; 25-second cap and clean failover observed |
+| Role-play and Azure continuity | Pass | Premium Role-play Perform completed; Azure chat and mixed Kannada/English guidance TTS completed |
+| Failure recovery | Pass | Empty/invalid local capture and recoverable STT failure retain the primary record control and a fresh retry command |
+| Provider usage table | Pass | Tester counts: Indic STT succeeded 50; Azure STT failover succeeded 13; counts/booleans only in Git evidence |
+
+### Known limitations
+
+- At D-0276 completion, `make verify` was blocked by newly published
+  `league/commonmark` advisories; D-0278 records the dependency update and a
+  green exact-toolchain `make verify`.
+- At D-0276 completion, the Playwright suite had accessibility/fixture
+  failures; D-0278 records their repair and a 21/21 run.
+- Production, Play and `APP_ENV=production` remain unauthorized.
+
+## D-0275: Phase-1 UI catalogues approved — 2 September 2026
+
+### Scope reviewed
+
+- Independent review and approval of Malayalam, Tamil, Telugu and Hindi interface catalogues under APP-0076, completing Phase-1 UI locale governance after APP-0075 Kannada approval.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Governance approval | Pass | `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` `reviewStatus=approved`, revision `ui-*-2026-09-02.2` |
+| Locale validation | Pass | `@global-english/localization` vitest 31/31; zero pending-review warnings |
+| Resolver / web policy tests | Pass | Updated approved-only and synthetic pending-governance fallback tests |
+| Soft-launch locale picker | Unchanged | D-0206 keeps kn-IN + en-IN only in learner UI |
+| Production/Play | Not authorized | Dummy checkout unchanged |
+
+### Known limitations
+
+- Named reviewer is the Accountable Product Owner, not separately commissioned linguist firms per locale.
+- Full `make verify` / `make e2e` were not re-run on this host after the approval slice.
+
+## D-0274: Kannada UI catalogue approved — 2 September 2026
+
+### Scope reviewed
+
+- Independent review and approval of the `kn-IN` interface catalogue under APP-0075.
+- Production `approved-only` resolution for default Kannada chrome and removal of the language-fallback banner.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Governance approval | Pass | `kn-IN` `reviewStatus=approved`, `independentReview=true`, revision `ui-kn-IN-2026-09-02.2` |
+| Locale validation | Pass | `@global-english/localization` vitest 31/31 |
+| Web policy tests | Pass | `interfaceLocalization.test.ts`, `App.test.tsx`, `ApplicationErrorBoundary.test.tsx`, `InterfaceThemeControl.test.tsx` |
+| Soft-launch build policy | Pass | `scripts/run-soft-launch.sh` now builds ordinary `approved-only` `dist/` |
+| Hindi/Malayalam/Tamil/Telugu UI | Not claimed | Still `pending-independent-review`; English fallback remains |
+
+### Known limitations
+
+- Unapproved locale fallback notice in `en-IN` is now generic; derivative catalogue copies of the old Kannada-specific notice were not rewritten in this slice.
+- Full `make verify` / `make e2e` were not re-run on this host after the approval slice.
+
+## Web sign-in failure visibility — 2 September 2026
+
+### Scope reviewed
+
+- Dedicated `#sign-in` after typing a password: live tunnel origin POSTed sign-ins, then looked unchanged.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Failure visibility | Pass (this slice) | Error is in the form above Sign in; password is kept on failure |
+| Anonymous after 200 | Pass (this slice) | `current()` that is not `authenticated` sets the same alert |
+| Username HTML pattern | Pass (this slice) | `/v` flag accepts `[A-Za-z][A-Za-z0-9._\\-]{3,63}`; previous unescaped `-` was ignored by Chromium |
+| Web tests | Pass (this slice) | `WebPasswordSignInPanel.test.tsx` |
+
+### Known limitations
+
+- Live `northstar` sign-in on the tunnel origin now reaches Home (`#home`) with `/api/v1/me/entitlement` HTTP 200 after applying `2026_09_01_000310_create_live_ai_talk_packs`.
+- Soft-launch `dist/` was rebuilt with `VITE_UI_TRANSLATION_PREVIEW=true` for this slice.
+- Full `make verify` / `make e2e` were not re-run after this slice.
+
+## D-0273: Paid live-AI caps and talk packs — 1 September 2026
+
+### Scope reviewed
+
+- Monthly live-AI pools on Modules/Premium and prepaid talk packs.
+- Demo and institutional behaviour left in place.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Decision | Accepted | DR-0047 Option A / ADR-0037 / APP-0074 / master plan 3.14 |
+| OpenAPI / contracts | Pass | Version **0.40.0**; `pnpm run openapi:check` |
+| PHP feature tests | Pass | `DirectEntitlementTest` + `CourtesyPremiumGrantTest` 13/13, 89 assertions (SQLite) |
+| PHPStan / Pint | Pass | Entitlement files 0 PHPStan errors; Pint dirty files clean |
+| Web tests | Pass | `SubscriptionPanel.test.tsx` (talk-pack gate); ConversationJourney paid-exhaustion copy; WebConversationJourneyApi problem-key; Operator entitlement panel |
+| Locale catalogues | Pass | `@global-english/localization` vitest 31/31 including `validateCanonicalCatalogues`. Host Node is 22.22.1 so `pnpm run locale:check` (Node 24 `.ts` loader) was not executed. |
+| PostgreSQL integration | Not run | Host PHP has no `pdo_pgsql` |
+| Privacy inventory | `learner-privacy-v8` | `live_ai_talk_packs` count-only |
+| Production/Play | Not authorized | Dummy checkout unchanged |
+
+### Known limitations
+
+- Dummy payment driver still completes in-process.
+- Pack seconds are not refunded when a learner upgrades mid-month.
+- Operator plan editor does not special-case talk-pack duration beyond stored `duration_value`.
+- PostgreSQL `billing_period` CHECK (`talk_pack`) was not re-run on this host.
+
 ## Wave 7.1: Direct pathway publish — 1 September 2026
 
 ### Scope reviewed
@@ -527,7 +930,7 @@ Provider time is unchanged. Full release-to-first-audio with live Azure was not 
 - Role-play scene characters (Priya, Arun, receptionist, and others) stay scene names, not Maya.
 - Kannada UI catalogue remains `pending-independent-review`.
 - `make e2e` / `make verify` were not re-run for the full suite. PostgreSQL integration tests must use `phpunit.postgres.xml` (now with `tests/bootstrap.postgres.php`).
-- Operator usernames `trainer` and `reviewer` were not in the 13 August dump and were not recreated.
+- Operator usernames `trainer` and `reviewer` were recreated on the soft-launch database on 2 September 2026 via `scripts/soft-launch-provision-operator-test-accounts.php`; tunnel sign-in verified for both accounts.
 
 ## Learner tutor UI + in-session teacher — 29 August 2026
 

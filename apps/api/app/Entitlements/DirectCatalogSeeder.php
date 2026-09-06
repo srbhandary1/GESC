@@ -38,14 +38,28 @@ final class DirectCatalogSeeder
                 ->first();
 
             if ($existing instanceof stdClass) {
+                $updates = [];
+
                 if ((int) $existing->version === 1 && $this->string($existing, 'name') !== $plan['name']) {
+                    $updates['name'] = $plan['name'];
+                }
+
+                if (
+                    $existing->live_ai_cap_seconds === null
+                    && $plan['live_ai_cap_seconds'] !== null
+                    && in_array($plan['code'], [
+                        DirectPlanDefaults::MONTHLY_MODULES,
+                        DirectPlanDefaults::MONTHLY_ROLEPLAY,
+                    ], true)
+                ) {
+                    $updates['live_ai_cap_seconds'] = $plan['live_ai_cap_seconds'];
+                }
+
+                if ($updates !== []) {
+                    $updates['updated_at'] = $now;
                     DB::table('entitlement_plans')
                         ->where('id', $this->string($existing, 'id'))
-                        ->where('version', 1)
-                        ->update([
-                            'name' => $plan['name'],
-                            'updated_at' => $now,
-                        ]);
+                        ->update($updates);
                 }
 
                 continue;

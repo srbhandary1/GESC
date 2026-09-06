@@ -66,6 +66,7 @@ test('completes the disclosed voice-first AI conversation journey', async ({
       'Thank you for sharing that. What would you like to talk about next?',
     ),
   ).toBeVisible()
+  await page.getByText('Turn status', { exact: true }).click()
   await expect(page.getByText('Turn completed')).toBeVisible()
 
   expect(
@@ -153,7 +154,11 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
     .selectOption('en-IN')
   await page.getByRole('tab', { name: 'A situation' }).click()
   await page.getByRole('button', { name: 'Start this situation' }).click()
-  await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
+  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })
@@ -233,6 +238,24 @@ async function mockConversationApi(
         },
         memberships: [],
         user: { id: ids.user },
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/entitlement') {
+      await json(route, {
+        applies: true,
+        entitlement_id: '01J2000000000000000000000E',
+        plan_code: 'monthly_modules_roleplay',
+        plan_name: 'Premium',
+        status: 'active',
+        allows_roleplay: true,
+        max_level_number: null,
+        is_demo: false,
+        expires_at: '2026-10-05T00:00:00+00:00',
+        live_ai_seconds_remaining: 4920,
+        live_ai_cap_seconds: 5400,
+        gstin_is_placeholder: false,
       })
       return
     }

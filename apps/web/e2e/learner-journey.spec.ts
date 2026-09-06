@@ -6,6 +6,9 @@ import {
 } from '@global-english/localization'
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
+import { calculateWebBuildFingerprint } from '../buildFingerprint'
+
+const publicShellCacheName = `global-english-public-shell-${calculateWebBuildFingerprint()}`
 
 const ids = {
   asset: '01J10000000000000000000014',
@@ -240,7 +243,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       }),
     )
     .toMatchObject({
-      cacheKeys: ['global-english-public-shell-v5'],
+      cacheKeys: [publicShellCacheName],
       serviceWorkerRegistrations: 1,
     })
   const cachedUrls = await page.evaluate(async () => {

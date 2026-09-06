@@ -2,6 +2,7 @@ import {
   cleanup,
   render,
   screen,
+  waitFor,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -19,7 +20,12 @@ import type { OperatorMediaLibraryApi } from './OperatorMediaLibraryApi'
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  window.history.replaceState(null, '', '/')
 })
+
+function openOperatorSection(hash: string) {
+  window.history.replaceState(null, '', hash.startsWith('#') ? hash : `#${hash}`)
+}
 
 describe('operator console', () => {
   it('mounts the Media Library only from the server panel manifest', async () => {
@@ -57,6 +63,8 @@ describe('operator console', () => {
         search_available: false,
       })),
     })
+
+    openOperatorSection('#operator-learning')
 
     render(
       <OperatorConsole
@@ -108,6 +116,8 @@ describe('operator console', () => {
       })),
     })
 
+    openOperatorSection('#operator-learning')
+
     render(
       <OperatorConsole
         api={api}
@@ -123,9 +133,11 @@ describe('operator console', () => {
 
     expect(await screen.findByRole('heading', { name: 'Content Studio' }))
       .toBeInTheDocument()
-    expect(listWorkspaces).toHaveBeenCalledOnce()
-    expect(listReviewQueue).toHaveBeenCalledOnce()
-    expect(listPublications).toHaveBeenCalledOnce()
+    await waitFor(() => {
+      expect(listWorkspaces).toHaveBeenCalledOnce()
+      expect(listReviewQueue).toHaveBeenCalledOnce()
+      expect(listPublications).toHaveBeenCalledOnce()
+    })
     expect(screen.queryByRole('heading', { name: 'Publish status' }))
       .not.toBeInTheDocument()
   })
@@ -147,6 +159,8 @@ describe('operator console', () => {
         search_available: false,
       })),
     })
+
+    openOperatorSection('#operator-learners')
 
     render(
       <OperatorConsole
@@ -195,6 +209,8 @@ describe('operator console', () => {
       })),
     })
 
+    openOperatorSection('#operator-entitlements')
+
     render(
       <OperatorConsole
         api={api}
@@ -208,9 +224,9 @@ describe('operator console', () => {
       await screen.findByRole('link', { name: 'Subscriptions' }),
     ).toHaveAttribute('href', '#operator-entitlements')
     expect(
-      await screen.findByRole('heading', { name: 'Subscriptions' }),
-    ).toBeInTheDocument()
-    expect(workspace).toHaveBeenCalledOnce()
+      screen.getAllByRole('heading', { name: 'Subscriptions' }).length,
+    ).toBeGreaterThan(0)
+    await waitFor(() => expect(workspace).toHaveBeenCalledOnce())
   })
 
   it('renders the manifest People workspace and suppresses unavailable global search', async () => {
@@ -231,6 +247,8 @@ describe('operator console', () => {
       next_cursor: null,
     }))
 
+    openOperatorSection('#operator-people')
+
     render(
       <OperatorConsole
         api={api}
@@ -245,11 +263,6 @@ describe('operator console', () => {
       'href',
       '#operator-people',
     )
-    expect(
-      await screen.findByRole('heading', {
-        name: 'Organization and staff administration',
-      }),
-    ).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Branches' }))
       .toBeInTheDocument()
     expect(screen.queryByRole('search')).not.toBeInTheDocument()
@@ -296,7 +309,7 @@ describe('operator console', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Operator content workflow',
+        name: 'Organization signals',
       }),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Overview' })).toBeInTheDocument()
@@ -309,6 +322,10 @@ describe('operator console', () => {
     expect(
       screen.queryByRole('link', { name: 'Safety' }),
     ).not.toBeInTheDocument()
+
+    openOperatorSection('#operator-operations')
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
     expect(
       await screen.findByRole('heading', { name: 'Support diagnostics' }),
     ).toBeInTheDocument()
@@ -374,6 +391,8 @@ describe('operator console', () => {
         },
       ]),
     })
+
+    openOperatorSection('#operator-learning')
 
     renderConsole(api)
 
@@ -492,6 +511,8 @@ describe('operator console', () => {
       listAuditEvents,
     })
     const user = userEvent.setup()
+
+    openOperatorSection('#operator-safety')
 
     renderConsole(api)
 

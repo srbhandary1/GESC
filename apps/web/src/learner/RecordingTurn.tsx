@@ -335,7 +335,7 @@ export function RecordingTurn({
 
       {state === 'blocked' || state === 'error' ? (
         <div className="learner-recording__alternative">
-          {state === 'error' ? (
+          {state === 'error' && captureMode !== 'hold' ? (
             <button
               className="ge-button"
               onClick={retry}
