@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountRecoveryManagementController;
 use App\Http\Controllers\AuthenticationSessionController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CurrentIdentityController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
 use App\Http\Controllers\LearnerLevelSessionController;
+use App\Http\Controllers\LearnerLevelVideoController;
 use App\Http\Controllers\LearnerMediaController;
 use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
@@ -18,14 +20,24 @@ use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\LearnerProgressDashboardController;
 use App\Http\Controllers\LearnerSubscriptionController;
+use App\Http\Controllers\LearnerTuitionRequestController;
 use App\Http\Controllers\LocalPasswordEstablishmentController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\MobilePasswordAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
+use App\Http\Controllers\OperatorContentWorkspaceController;
 use App\Http\Controllers\OperatorEntitlementAdministrationController;
 use App\Http\Controllers\OperatorLearnerAdministrationController;
 use App\Http\Controllers\OperatorLessonPracticeController;
+use App\Http\Controllers\OperatorMediaLibraryController;
+use App\Http\Controllers\OperatorMediaTranscriptionController;
+use App\Http\Controllers\OperatorOrganizationAdministrationController;
+use App\Http\Controllers\OperatorPrivacyController;
+use App\Http\Controllers\OperatorShellController;
+use App\Http\Controllers\OperatorTuitionRequestController;
 use App\Http\Controllers\OtpAuthenticationController;
+use App\Http\Controllers\PasswordAuthenticationController;
+use App\Http\Controllers\PrivilegedMfaController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
 use Illuminate\Support\Facades\Route;
@@ -118,7 +130,52 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/auth/sessions/{sessionId}', [AuthenticationSessionController::class, 'destroy'])
             ->whereUlid('sessionId')
             ->name('api.v1.auth.sessions.destroy');
+        Route::get('/auth/mfa', [PrivilegedMfaController::class, 'show'])
+            ->name('api.v1.auth.mfa.show');
+        Route::post(
+            '/auth/mfa/enrollments',
+            [PrivilegedMfaController::class, 'beginEnrollment'],
+        )->middleware('throttle:mfa-enrollment')
+            ->name('api.v1.auth.mfa.enrollments.store');
+        Route::post(
+            '/auth/mfa/enrollments/{factorId}/confirm',
+            [PrivilegedMfaController::class, 'confirmEnrollment'],
+        )->whereUlid('factorId')
+            ->middleware('throttle:mfa-verification')
+            ->name('api.v1.auth.mfa.enrollments.confirm');
+        Route::post(
+            '/auth/mfa/challenges',
+            [PrivilegedMfaController::class, 'issueChallenge'],
+        )->middleware('throttle:mfa-challenge')
+            ->name('api.v1.auth.mfa.challenges.store');
+        Route::post(
+            '/auth/mfa/challenges/{challengeId}/verify',
+            [PrivilegedMfaController::class, 'verifyChallenge'],
+        )->whereUlid('challengeId')
+            ->middleware('throttle:mfa-verification')
+            ->name('api.v1.auth.mfa.challenges.verify');
+        Route::post(
+            '/auth/mfa/recovery-codes/regenerate',
+            [PrivilegedMfaController::class, 'regenerateRecoveryCodes'],
+        )->middleware(['auth.password-confirmed', 'throttle:mfa-management'])
+            ->name('api.v1.auth.mfa.recovery-codes.regenerate');
+        Route::delete(
+            '/auth/mfa/factor',
+            [PrivilegedMfaController::class, 'revokeFactor'],
+        )->middleware(['auth.password-confirmed', 'throttle:mfa-management'])
+            ->name('api.v1.auth.mfa.factor.destroy');
     });
+
+    Route::prefix('platform')->middleware(['auth:web', 'auth.session', 'auth.password-confirmed'])
+        ->group(function (): void {
+            Route::post('/account-recovery/setups', [AccountRecoveryManagementController::class, 'requestSetup'])
+                ->middleware('throttle:account-recovery-management')
+                ->name('api.v1.platform.account-recovery.setups.store');
+            Route::put('/account-recovery/users/{userId}/contact', [AccountRecoveryManagementController::class, 'replaceContact'])
+                ->whereUlid('userId')
+                ->middleware('throttle:account-recovery-management')
+                ->name('api.v1.platform.account-recovery.users.contact.update');
+        });
 
     Route::post('/auth/mobile/revoke', [MobileAuthenticationController::class, 'revoke'])
         ->middleware(['auth:api', 'scope:mobile:api'])
@@ -193,6 +250,14 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('fact')
             ->name('api.v1.me.ai-memory.destroy');
         Route::get(
+            '/me/tuition-requests',
+            [LearnerTuitionRequestController::class, 'index'],
+        )->name('api.v1.me.tuition-requests.index');
+        Route::post(
+            '/me/tuition-requests',
+            [LearnerTuitionRequestController::class, 'store'],
+        )->name('api.v1.me.tuition-requests.store');
+        Route::get(
             '/missions/{mission}',
             [LearnerMissionController::class, 'show'],
         )->whereUlid('mission')
@@ -230,6 +295,10 @@ Route::prefix('v1')->group(function (): void {
             [LearnerMediaController::class, 'show'],
         )->whereUlid('asset')
             ->name('api.v1.media-assets.content.show');
+        Route::get(
+            '/me/level-videos',
+            [LearnerLevelVideoController::class, 'index'],
+        )->name('api.v1.me.level-videos.index');
         Route::get(
             '/me/levels',
             [LearnerLevelSessionController::class, 'index'],
@@ -270,6 +339,11 @@ Route::prefix('v1')->group(function (): void {
             ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
             ->middleware('throttle:conversation-prototype')
             ->name('api.v1.me.levels.sessions.conversation-sessions.store');
+        Route::get(
+            '/media-assets/{asset}/lesson-video',
+            [LearnerLevelVideoController::class, 'show'],
+        )->whereUlid('asset')
+            ->name('api.v1.media-assets.lesson-video.show');
         Route::post(
             '/conversation-sessions',
             [ConversationController::class, 'start'],
@@ -287,6 +361,12 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('session')
             ->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.turns.store');
+        Route::post(
+            '/conversation-sessions/{session}/speech',
+            [ConversationController::class, 'speak'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.speech.store');
         Route::get(
             '/conversation-turns/{turn}/events',
             [ConversationController::class, 'events'],
@@ -646,29 +726,234 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('blueprint')
             ->name('api.v1.operator.lesson-practice.blueprints.attachments.store');
         Route::get(
-            '/operator/content/drafts',
-            [OperatorContentController::class, 'drafts'],
-        )->name('api.v1.operator.content.drafts.index');
+            '/operator/content/workspaces',
+            [OperatorContentWorkspaceController::class, 'workspaces'],
+        )->name('api.v1.operator.content.workspaces.index');
+        Route::get(
+            '/operator/content/workspaces/{curriculumVersion}',
+            [OperatorContentWorkspaceController::class, 'workspace'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.show');
+        Route::get(
+            '/operator/content/workspaces/{curriculumVersion}/preview',
+            [OperatorContentWorkspaceController::class, 'preview'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.preview.show');
+        Route::get(
+            '/operator/content/workspaces/{curriculumVersion}/history',
+            [OperatorContentWorkspaceController::class, 'history'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.history.index');
+        Route::get(
+            '/operator/content/review-queues',
+            [OperatorContentWorkspaceController::class, 'reviewQueue'],
+        )->name('api.v1.operator.content.review-queues.index');
+        Route::post(
+            '/operator/content/programs',
+            [OperatorContentWorkspaceController::class, 'createProgram'],
+        )
+            ->name('api.v1.operator.content.programs.store');
+        Route::post(
+            '/operator/content/programs/{program}/descriptor-corrections',
+            [OperatorContentWorkspaceController::class, 'correctDescriptor'],
+        )->whereUlid('program')
+            ->name('api.v1.operator.content.programs.descriptor-corrections.store');
+        Route::post(
+            '/operator/content/versions/{curriculumVersion}/successors',
+            [OperatorContentWorkspaceController::class, 'createSuccessor'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.versions.successors.store');
+        Route::post(
+            '/operator/content/workspaces/{curriculumVersion}/graph-revisions',
+            [OperatorContentWorkspaceController::class, 'saveGraph'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.graph-revisions.store');
+        Route::post(
+            '/operator/content/workspaces/{curriculumVersion}/review-submissions',
+            [OperatorContentWorkspaceController::class, 'submitReview'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.review-submissions.store');
+        Route::post(
+            '/operator/content/workspaces/{curriculumVersion}/abandonments',
+            [OperatorContentWorkspaceController::class, 'abandon'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.abandonments.store');
+        Route::post(
+            '/operator/content/workspaces/{curriculumVersion}/documents',
+            [OperatorContentWorkspaceController::class, 'createDocument'],
+        )->whereUlid('curriculumVersion')
+            ->name('api.v1.operator.content.workspaces.documents.store');
+        Route::post(
+            '/operator/content/documents/{document}/english-revisions',
+            [OperatorContentWorkspaceController::class, 'appendEnglish'],
+        )->whereUlid('document')
+            ->name('api.v1.operator.content.documents.english-revisions.store');
+        Route::post(
+            '/operator/content/revisions/{revision}/kannada-variants',
+            [OperatorContentWorkspaceController::class, 'appendKannada'],
+        )->whereUlid('revision')
+            ->name('api.v1.operator.content.revisions.kannada-variants.store');
         Route::get(
             '/operator/content/publications',
             [OperatorContentController::class, 'publicationStatus'],
         )->name('api.v1.operator.content.publications.index');
         Route::post(
+            '/operator/content/reviews/structure',
+            [OperatorContentWorkspaceController::class, 'reviewStructure'],
+        )
+            ->name('api.v1.operator.content.reviews.structure.store');
+        Route::post(
             '/operator/content/reviews/english',
             [OperatorContentController::class, 'reviewEnglish'],
-        )->name('api.v1.operator.content.reviews.english.store');
+        )
+            ->name('api.v1.operator.content.reviews.english.store');
         Route::post(
             '/operator/content/reviews/kannada',
             [OperatorContentController::class, 'reviewKannada'],
-        )->name('api.v1.operator.content.reviews.kannada.store');
+        )
+            ->name('api.v1.operator.content.reviews.kannada.store');
+        Route::post(
+            '/operator/content/reviews/{review}/withdrawals',
+            [OperatorContentWorkspaceController::class, 'withdrawReview'],
+        )->whereUlid('review')
+            ->name('api.v1.operator.content.reviews.withdrawals.store');
         Route::post(
             '/operator/content/publications',
             [OperatorContentController::class, 'publish'],
-        )->name('api.v1.operator.content.publications.store');
+        )
+            ->name('api.v1.operator.content.publications.store');
+        Route::post(
+            '/operator/content/publication-schedules',
+            [OperatorContentWorkspaceController::class, 'schedule'],
+        )
+            ->name('api.v1.operator.content.publication-schedules.store');
+        Route::post(
+            '/operator/content/publication-activations',
+            [OperatorContentWorkspaceController::class, 'activate'],
+        )
+            ->name('api.v1.operator.content.publication-activations.store');
+        Route::post(
+            '/operator/content/publication-schedule-cancellations',
+            [OperatorContentWorkspaceController::class, 'cancelSchedule'],
+        )
+            ->name('api.v1.operator.content.publication-schedule-cancellations.store');
+        Route::post(
+            '/operator/content/publication-retirements',
+            [OperatorContentWorkspaceController::class, 'retire'],
+        )
+            ->name('api.v1.operator.content.publication-retirements.store');
         Route::post(
             '/operator/content/rollbacks',
             [OperatorContentController::class, 'rollback'],
-        )->name('api.v1.operator.content.rollbacks.store');
+        )
+            ->name('api.v1.operator.content.rollbacks.store');
+        Route::get(
+            '/operator/media/manifest',
+            [OperatorMediaLibraryController::class, 'manifest'],
+        )->name('api.v1.operator.media.manifest.show');
+        Route::get(
+            '/operator/media/assets',
+            [OperatorMediaLibraryController::class, 'assets'],
+        )->name('api.v1.operator.media.assets.index');
+        Route::get(
+            '/operator/media/assets/{asset}',
+            [OperatorMediaLibraryController::class, 'asset'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.assets.show');
+        Route::get(
+            '/operator/media/assets/{asset}/preview',
+            [OperatorMediaLibraryController::class, 'assetPreview'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.assets.preview.show');
+        Route::get(
+            '/operator/media/uploads',
+            [OperatorMediaLibraryController::class, 'uploads'],
+        )->name('api.v1.operator.media.uploads.index');
+        Route::get(
+            '/operator/media/uploads/{upload}',
+            [OperatorMediaLibraryController::class, 'upload'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.uploads.show');
+        Route::get(
+            '/operator/media/uploads/{upload}/preview',
+            [OperatorMediaLibraryController::class, 'uploadPreview'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.uploads.preview.show');
+        Route::post(
+            '/operator/media/uploads',
+            [OperatorMediaLibraryController::class, 'startUpload'],
+        )
+            ->name('api.v1.operator.media.uploads.store');
+        Route::post(
+            '/operator/media/uploads/{upload}/parts',
+            [OperatorMediaLibraryController::class, 'storePart'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.upload-parts.store');
+        Route::post(
+            '/operator/media/uploads/{upload}/finalizations',
+            [OperatorMediaLibraryController::class, 'finalizeUpload'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.upload-finalizations.store');
+        Route::post(
+            '/operator/media/uploads/{upload}/acceptances',
+            [OperatorMediaLibraryController::class, 'acceptUpload'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.upload-acceptances.store');
+        Route::post(
+            '/operator/media/uploads/{upload}/rejections',
+            [OperatorMediaLibraryController::class, 'rejectUpload'],
+        )->whereUlid('upload')
+            ->name('api.v1.operator.media.upload-rejections.store');
+        Route::post(
+            '/operator/media/assets/{asset}/adoptions',
+            [OperatorMediaLibraryController::class, 'adoptAsset'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.asset-adoptions.store');
+        Route::post(
+            '/operator/media/assets/{asset}/metadata-revisions',
+            [OperatorMediaLibraryController::class, 'appendMetadata'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.metadata-revisions.store');
+        Route::post(
+            '/operator/media/metadata-revisions/{revision}/kannada-variants',
+            [OperatorMediaLibraryController::class, 'appendKannada'],
+        )->whereUlid('revision')
+            ->name('api.v1.operator.media.metadata-variants.store');
+        Route::post(
+            '/operator/media/metadata-reviews',
+            [OperatorMediaLibraryController::class, 'reviewMetadata'],
+        )
+            ->name('api.v1.operator.media.metadata-reviews.store');
+        Route::post(
+            '/operator/media/rights-decisions',
+            [OperatorMediaLibraryController::class, 'rightsDecision'],
+        )
+            ->name('api.v1.operator.media.rights-decisions.store');
+        Route::post(
+            '/operator/media/assets/{asset}/attachments',
+            [OperatorMediaLibraryController::class, 'attach'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.attachments.store');
+        Route::post(
+            '/operator/media/assets/{asset}/replacements',
+            [OperatorMediaLibraryController::class, 'replace'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.replacements.store');
+        Route::post(
+            '/operator/media/assets/{asset}/retirements',
+            [OperatorMediaLibraryController::class, 'retire'],
+        )->whereUlid('asset')
+            ->name('api.v1.operator.media.retirements.store');
+        Route::get(
+            '/operator/media/transcription-campaigns/{campaign}/assets/{campaignAsset}/candidate',
+            [OperatorMediaTranscriptionController::class, 'candidate'],
+        )->whereUlid('campaign')->whereUlid('campaignAsset')
+            ->name('api.v1.operator.media.transcription-candidates.show');
+        Route::post(
+            '/operator/media/transcription-campaigns/{campaign}/assets/{campaignAsset}/reconciliations',
+            [OperatorMediaTranscriptionController::class, 'reconcile'],
+        )->whereUlid('campaign')->whereUlid('campaignAsset')
+            ->name('api.v1.operator.media.transcription-reconciliations.store');
         Route::get(
             '/operator/audit-events',
             [OperatorContentController::class, 'auditEvents'],
@@ -677,5 +962,29 @@ Route::prefix('v1')->group(function (): void {
             '/operator/pilot-analytics',
             [OperatorContentController::class, 'pilotAnalytics'],
         )->name('api.v1.operator.pilot-analytics.show');
+        Route::get(
+            '/operator/support/diagnostics',
+            [OperatorPrivacyController::class, 'diagnostics'],
+        )->name('api.v1.operator.support.diagnostics.index');
+        Route::post(
+            '/operator/privacy/exports',
+            [OperatorPrivacyController::class, 'createExport'],
+        )
+            ->name('api.v1.operator.privacy.exports.store');
+        Route::get(
+            '/operator/privacy/exports/{exportRequest}',
+            [OperatorPrivacyController::class, 'showExport'],
+        )->whereUlid('exportRequest')
+            ->name('api.v1.operator.privacy.exports.show');
+        Route::post(
+            '/operator/privacy/erasures',
+            [OperatorPrivacyController::class, 'createErasure'],
+        )
+            ->name('api.v1.operator.privacy.erasures.store');
+        Route::get(
+            '/operator/privacy/erasures/{erasureRequest}',
+            [OperatorPrivacyController::class, 'showErasure'],
+        )->whereUlid('erasureRequest')
+            ->name('api.v1.operator.privacy.erasures.show');
     });
 });

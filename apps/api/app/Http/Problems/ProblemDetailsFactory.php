@@ -20,15 +20,23 @@ use App\Operator\OrganizationAdministration\Exceptions\OrganizationAdministratio
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 final class ProblemDetailsFactory
 {
-    public function fromExceptionResponse(Request $request, Response $response): JsonResponse
-    {
+    public function fromExceptionResponse(
+        Request $request,
+        Response $response,
+        ?Throwable $exception = null,
+    ): JsonResponse {
         return $this->make(
             request: $request,
-            status: $response->getStatusCode(),
+            status: $this->statusForException(
+                $response->getStatusCode(),
+                $exception,
+            ),
             sourceResponse: $response,
+            exception: $exception,
         );
     }
 
@@ -41,6 +49,22 @@ final class ProblemDetailsFactory
         );
     }
 
+    public function rangeNotSatisfiable(
+        Request $request,
+        int $totalBytes,
+        string $etag,
+    ): JsonResponse {
+        return $this->make(
+            request: $request,
+            status: Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE,
+            headers: [
+                'Accept-Ranges' => 'bytes',
+                'Content-Range' => 'bytes */'.$totalBytes,
+                'ETag' => $etag,
+            ],
+        );
+    }
+
     /**
      * @param  array<string, string>  $headers
      */
@@ -49,8 +73,9 @@ final class ProblemDetailsFactory
         int $status,
         ?Response $sourceResponse = null,
         array $headers = [],
+        ?Throwable $exception = null,
     ): JsonResponse {
-        $definition = $this->definition($status);
+        $definition = $this->definition($status, $exception);
         $correlationId = CorrelationId::forRequest($request);
 
         foreach (['Allow', 'Retry-After', 'WWW-Authenticate'] as $header) {
@@ -81,7 +106,7 @@ final class ProblemDetailsFactory
     /**
      * @return array{type: string, title: string, detail: string, message_key: string}
      */
-    private function definition(int $status): array
+    private function definition(int $status, ?Throwable $exception = null): array
     {
         if ($exception instanceof EntitlementDenied) {
             return match ($exception->messageKey) {
@@ -393,6 +418,12 @@ final class ProblemDetailsFactory
                 'detail' => 'One or more request values are invalid.',
                 'message_key' => 'problem.validation_failed',
             ],
+            Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE => [
+                'type' => 'urn:global-english:problem:range-not-satisfiable',
+                'title' => 'Range not satisfiable',
+                'detail' => 'The requested byte range is outside this resource.',
+                'message_key' => 'problem.range_not_satisfiable',
+            ],
             Response::HTTP_TOO_MANY_REQUESTS => [
                 'type' => 'urn:global-english:problem:too-many-requests',
                 'title' => 'Too many requests',
@@ -419,5 +450,37 @@ final class ProblemDetailsFactory
                     'message_key' => 'problem.request_failed',
                 ],
         };
+    }
+
+    /**
+     * @param  class-string<Throwable>  $class
+     */
+    private function hasCause(?Throwable $exception, string $class): bool
+    {
+        $current = $exception;
+
+        while ($current instanceof Throwable) {
+            if ($current instanceof $class) {
+                return true;
+            }
+
+            $current = $current->getPrevious();
+        }
+
+        return false;
+    }
+
+    private function statusForException(
+        int $responseStatus,
+        ?Throwable $exception,
+    ): int {
+        if (
+            $this->hasCause($exception, FreshPrivilegedMfaRequired::class)
+            || $this->hasCause($exception, FreshPasswordConfirmationRequired::class)
+        ) {
+            return Response::HTTP_FORBIDDEN;
+        }
+
+        return $responseStatus;
     }
 }

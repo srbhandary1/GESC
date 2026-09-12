@@ -3225,6 +3225,7 @@ the Mira / GESC-green system is re-applied on top.
 | `make demo-android` | passed; sideload APK `5819193` bytes at `/downloads/global-english-demo.apk` |
 | Laravel Pint on SoftLaunch/conversation leftovers | Pass (`pint --test` on the 4 previously dirty files) |
 | SoftLaunch STT/TTS binds | `ConfirmedTextSpeechToTextProvider` / `TextFirstTextToSpeechProvider` restored for `azure-openai-dev` |
+| CC API dependency tree | Restored 295 missing `apps/api` PHP files plus overlapping helpers (`TenancyIntegrationTestCase`, `ConversationEnvironmentGate`, routes, `AppServiceProvider`) from `1a02330`. No web/theme files. |
 | `make verify` | In CI after Pint fix; not claimed locally (Node 22 vs pin 24.18.1) |
 
 

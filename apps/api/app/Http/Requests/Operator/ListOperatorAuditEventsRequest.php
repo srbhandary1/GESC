@@ -16,6 +16,7 @@ final class ListOperatorAuditEventsRequest extends FormRequest
     {
         return [
             'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'cursor' => ['sometimes', 'string', 'max:4096'],
         ];
     }
 
@@ -25,7 +26,7 @@ final class ListOperatorAuditEventsRequest extends FormRequest
             if (
                 array_diff(
                     array_keys($this->query()),
-                    ['limit'],
+                    ['limit', 'cursor'],
                 ) !== []
             ) {
                 $validator->errors()->add(
