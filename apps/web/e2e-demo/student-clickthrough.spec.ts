@@ -124,7 +124,7 @@ test('student click-through exercises every demo page and control', async ({
     page.getByRole('button', { name: /Open Greetings and introductions/ }),
   ).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Tap to Play lesson 1' }),
+    page.getByRole('button', { name: 'Tap to Play lesson 1', exact: true }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Start mission' }).click()
   await page.getByRole('button', { name: 'Play model audio' }).click()
