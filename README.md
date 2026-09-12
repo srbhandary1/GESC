@@ -153,7 +153,8 @@ This serves the built demo on `0.0.0.0:8080` and advertises
 project demo on this workstation. One-time router setup: forward TCP `8080`
 on the static IP to this laptop's LAN address on port `8080`. Until that
 forward exists, `make demo-client-tunnel` publishes a temporary HTTPS
-Cloudflare URL. Full steps and limits are in
+Cloudflare URL. `make demo-android-remote` builds the demo APK so its
+WebView loads that same static-IP origin. Full steps and limits are in
 [docs/CLIENT_DEMO_RUNBOOK.md](docs/CLIENT_DEMO_RUNBOOK.md).
 
 ### Android demo APK
@@ -240,6 +241,7 @@ isolated environments.
 | `make demo-serve` | Serve the built synthetic demo bundle on `127.0.0.1:4175` |
 | `make demo-client` | Serve the synthetic demo on `0.0.0.0:8080` for static-IP client testing |
 | `make demo-android` | Build the Android demo APK from the synthetic demo bundle |
+| `make demo-android-remote` | Build the demo APK so it opens `http://117.254.108.143:8080` |
 | `make android-closed-beta` | Build the PR-014 production-path closed-beta APK (`com.globalenglish.app`; requires `VITE_MOBILE_API_ORIGIN`) |
 | `make verify` | Run formatting, linting, static analysis, tests and contract checks |
 | `make test` | Run all deterministic automated tests |

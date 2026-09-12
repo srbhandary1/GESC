@@ -3228,6 +3228,7 @@ the Mira / GESC-green system is re-applied on top.
 | CC API dependency tree | Restored 295 missing `apps/api` PHP files plus overlapping helpers (`TenancyIntegrationTestCase`, `ConversationEnvironmentGate`, routes, `AppServiceProvider`) from `1a02330`. No web/theme files. |
 | Overlapping CC API models | Restored 104 differing `apps/api` files from `1a02330` so PHPStan can resolve `hasFreshMfaForFactorReplacement`, `revokeAllForUser`, `passwordCredential`, `recordPlatform`, `Role::STATUS_ACTIVE`, and non-final `CurriculumOperationRejected`. `AuthoredPreLevels.php` kept. Laravel Pint `--test` on those PHP files passed. |
 | `make verify` | In CI after overlapping-model restore; not claimed locally (Node 22 vs pin 24.18.1) |
+| Static-IP Android access | Demo APK may live-load `http://117.254.108.143:8080` via `make demo-android-remote`. Soft-launch HTTP Caddy serves `/downloads/*.apk` and proxies `/oauth` + `/auth/mobile`. Restored missing `level1-authored-blueprint-draft.json` for PHPUnit. |
 
 
 

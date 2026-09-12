@@ -25,7 +25,7 @@ turn or local recording practice.
 From the repository root:
 
 ```bash
-make demo-android   # optional; builds the APK used by /downloads
+make demo-android-remote   # APK WebView loads http://117.254.108.143:8080
 make demo-client
 make demo-client-tunnel
 ```
@@ -69,7 +69,8 @@ Defaults:
 | Bind host | `0.0.0.0` |
 | Public port | `8080` (port `8000` is already used by another local demo) |
 | Bundle | `apps/web/dist-demo` (built automatically if missing) |
-| APK download | `/downloads/global-english-demo.apk` when the debug APK exists (`make demo`, `make demo-serve`, and `make demo-client`) |
+| APK download | `/downloads/global-english-demo.apk` when the debug APK exists (`make demo`, `make demo-serve`, `make demo-client`, and soft-launch Caddy after `make demo-android-remote`) |
+| Android live origin | `make demo-android-remote` sets Capacitor `server.url` to `http://117.254.108.143:8080` so the installed app opens the same host as the browser |
 
 Useful commands:
 

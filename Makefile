@@ -13,7 +13,7 @@ PHPUNIT_STORAGE_DIR ?= /tmp/global-spoken-english-phpunit-$(shell id -u)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android demo-android-remote android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight
 
 help:
 	@printf '%s\n' \
@@ -23,6 +23,7 @@ help:
 		'make demo-build    Build the distributable synthetic demo bundle into apps/web/dist-demo' \
 		'make demo-serve    Serve the built synthetic demo bundle on 127.0.0.1:4175' \
 		'make demo-client   Serve the synthetic demo on 0.0.0.0:8080 for static-IP client testing' \
+		'make demo-android-remote  Demo APK that loads http://117.254.108.143:8080' \
 		'make demo-client-tunnel  Temporary HTTPS Cloudflare tunnel for remote client testing' \
 		'make demo-android  Build the Android demo APK from the synthetic demo bundle' \
 		'make android-closed-beta  Build the PR-014 production-path closed-beta Android APK' \
@@ -118,11 +119,22 @@ demo-client-tunnel-stop:
 # Android SDK with platform 36. See README "Android demo APK".
 # Explicitly clears CAPACITOR_APP so the demo tree/identity is never overwritten.
 demo-android: demo-build
-	cd $(WEB_DIR) && env -u CAPACITOR_APP $(PNPM) exec cap sync android
+	cd $(WEB_DIR) && env -u CAPACITOR_APP \
+		GE_ANDROID_REMOTE_ORIGIN="$${GE_ANDROID_REMOTE_ORIGIN:-}" \
+		$(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android && ./gradlew assembleDebug
-	mkdir -p $(WEB_DIR)/dist-demo/downloads
+	mkdir -p $(WEB_DIR)/dist-demo/downloads $(WEB_DIR)/dist/downloads
 	cp $(WEB_DIR)/android/app/build/outputs/apk/debug/app-debug.apk \
 		$(WEB_DIR)/dist-demo/downloads/global-english-demo.apk
+	cp $(WEB_DIR)/android/app/build/outputs/apk/debug/app-debug.apk \
+		$(WEB_DIR)/dist/downloads/global-english-demo.apk
+
+# Demo APK WebView loads the staff static-IP host. Bundled dist-demo remains
+# the offline fallback identity; live review uses 117.254.108.143:8080.
+demo-android-remote:
+	GE_ANDROID_REMOTE_ORIGIN="http://$${GE_CLIENT_DEMO_PUBLIC_HOST:-117.254.108.143}:$${GE_CLIENT_DEMO_PORT:-8080}" \
+	VITE_DEMO_TTS_ORIGIN="http://$${GE_CLIENT_DEMO_PUBLIC_HOST:-117.254.108.143}:$${GE_CLIENT_DEMO_PORT:-8080}" \
+	$(MAKE) demo-android
 
 # PR-014 production-path closed beta (com.globalenglish.app). Requires
 # VITE_MOBILE_API_ORIGIN. See docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md.

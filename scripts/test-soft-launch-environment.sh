@@ -100,6 +100,9 @@ bash -c '
     "http://117.254.108.143:8080"
 ' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$direct_config"
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$direct_config"
+grep -Fq 'handle /oauth/* {' "$direct_config"
+grep -Fq 'handle /auth/mobile/* {' "$direct_config"
+grep -Fq 'handle /downloads/*.apk {' "$direct_config"
 grep -Fq 'root * /srv/web' "$direct_config"
 
 bash -c '
