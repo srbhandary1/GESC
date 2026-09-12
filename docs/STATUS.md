@@ -705,6 +705,9 @@ identity — not a purple Supernova clone.
   draft interface locales (Kannada first) with the existing visible preview
   notice through `VITE_UI_TRANSLATION_PREVIEW=true` (ADR-0005). Ordinary
   production builds remain `approved-only`.
+- Under D-0078, `make demo-android` on this PR rebuilt the demo APK
+  (`com.globalenglish.demo`, 5.4 MB) from the current `dist-demo` learner
+  UI. Home download remains `/downloads/global-english-demo.apk`.
 - Under D-0078, `make demo-android` wraps the same bundle in the Capacitor 8
   project at `apps/web/android` and builds
   `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`

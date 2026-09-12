@@ -3048,6 +3048,17 @@ Not production or Play evidence.
 - No live provider keys are present in this environment. Routing tests
   mock `fetch`. Ordinary ADR-0008 provider binding remains unchanged.
 
+---
+
+## PR #6 Android demo APK rebuild
+
+`make demo-android` on `cursor/learner-ux-elevate-5f47` produced
+`apps/web/android/app/build/outputs/apk/debug/app-debug.apk` (5.4 MB,
+`com.globalenglish.demo`). Capacitor `webDir` is `dist-demo`, so the
+Wonder alignment, 16 lessons, and Profile Voice providers are the same
+UI as web. The existing Home download URL is
+`/downloads/global-english-demo.apk`. The APK is not committed.
+
 
 
 
