@@ -635,10 +635,10 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.35rem 0.9rem;
-  border: 1px solid #006b3f33;
+  border: 1px solid color-mix(in srgb, var(--ge-color-action) 28%, transparent);
   border-radius: var(--ge-radius-pill);
   background: color-mix(in srgb, var(--ge-color-action) 10%, transparent);
-  color: var(--ge-color-mint, var(--ge-color-action));
+  color: var(--ge-color-success);
   font-weight: 700;
   cursor: pointer;
 }
