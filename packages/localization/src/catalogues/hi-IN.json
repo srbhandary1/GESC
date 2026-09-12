@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "इस सीखने के मार्ग के लिए एक लक्ष्य चुनें। आप AI के बिना भी अभ्यास कर सकते हैं।",
   "learner.onboarding.saving": "सहेजा जा रहा है",
   "learner.onboarding.title": "अपना सीखने का लक्ष्य तय करें",
+  "learner.progress.empty": "अभी दिखाने के लिए लक्ष्य प्रगति नहीं है।",
   "learner.progress.title": "लक्ष्य की प्रगति",
   "learner.recording.blocked": "माइक्रोफ़ोन रिकॉर्डिंग उपलब्ध नहीं है।",
   "learner.recording.cancel": "रिकॉर्डिंग रद्द करें",
@@ -411,5 +412,8 @@
   "shell.locale_label": "इंटरफ़ेस की भाषा",
   "shell.navigation_label": "मुख्य नेविगेशन",
   "shell.profile_label": "प्रोफ़ाइल",
-  "shell.skip_to_content": "मुख्य सामग्री पर जाएँ"
+  "shell.skip_to_content": "मुख्य सामग्री पर जाएँ",
+  "shell.theme.dark": "डार्क",
+  "shell.theme.label": "दिखावट",
+  "shell.theme.light": "लाइट"
 }

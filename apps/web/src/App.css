@@ -5,11 +5,9 @@
   overflow-wrap: anywhere;
 }
 
-.ge-application-frame__brand,
 .ge-application-frame__header-actions {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
 }
 
 .ge-primary-navigation__list {
@@ -50,10 +48,10 @@
 
 .shell-header-tools {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: flex-end;
-  gap: var(--ge-space-3);
+  gap: var(--ge-space-2);
   min-width: 0;
   max-width: 100%;
 }
@@ -61,22 +59,34 @@
 .shell-profile-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-block-size: var(--ge-target-minimum);
-  color: var(--ge-color-action);
+  min-inline-size: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
   font-weight: 650;
   text-decoration: none;
+  transition:
+    background var(--ge-motion-fast) var(--ge-ease),
+    transform var(--ge-motion-fast) var(--ge-ease);
 }
 
 .shell-profile-link:hover {
-  text-decoration: underline;
+  background: var(--ge-color-status);
+}
+
+.shell-profile-link:active {
+  transform: scale(0.97);
 }
 
 .shell-locale-control {
   display: grid;
-  width: min(100%, 12rem);
+  width: min(100%, 9.5rem);
   min-width: 0;
   max-width: 100%;
-  gap: var(--ge-space-1);
 }
 
 .shell-locale-control__label {
@@ -102,8 +112,21 @@
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--ge-space-6);
+  gap: var(--ge-space-5);
   overflow-wrap: anywhere;
+  animation: ge-destination-enter var(--ge-motion-med) var(--ge-ease);
+}
+
+@keyframes ge-destination-enter {
+  from {
+    opacity: 0.55;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .shell-preview {
@@ -284,13 +307,13 @@
 
 @media (max-width: 30rem) {
   .shell-header-tools {
-    width: 100%;
+    width: auto;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 
   .shell-locale-control {
-    width: min(100%, 11rem);
+    width: min(100%, 8.5rem);
   }
 
   .shell-locale-control__select {

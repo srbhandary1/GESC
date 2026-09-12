@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "ഈ പഠനപാതയ്ക്ക് ഒരു ലക്ഷ്യം തിരഞ്ഞെടുക്കുക. AI ഇല്ലാതെയും പരിശീലിക്കാം.",
   "learner.onboarding.saving": "സേവ് ചെയ്യുന്നു",
   "learner.onboarding.title": "നിങ്ങളുടെ പഠനലക്ഷ്യം സജ്ജമാക്കുക",
+  "learner.progress.empty": "കാണിക്കാൻ ഇതുവരെ ലക്ഷ്യ പുരോഗതിയില്ല.",
   "learner.progress.title": "ലക്ഷ്യത്തിന്റെ പുരോഗതി",
   "learner.recording.blocked": "മൈക്രോഫോൺ റെക്കോർഡിംഗ് ലഭ്യമല്ല.",
   "learner.recording.cancel": "റെക്കോർഡിംഗ് റദ്ദാക്കുക",
@@ -411,5 +412,8 @@
   "shell.locale_label": "ഇന്റർഫേസ് ഭാഷ",
   "shell.navigation_label": "പ്രധാന നാവിഗേഷൻ",
   "shell.profile_label": "പ്രൊഫൈൽ",
-  "shell.skip_to_content": "പ്രധാന ഉള്ളടക്കത്തിലേക്ക് പോകുക"
+  "shell.skip_to_content": "പ്രധാന ഉള്ളടക്കത്തിലേക്ക് പോകുക",
+  "shell.theme.dark": "ഡാർക്ക്",
+  "shell.theme.label": "കാഴ്ച",
+  "shell.theme.light": "ലൈറ്റ്"
 }

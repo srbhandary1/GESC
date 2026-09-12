@@ -3,7 +3,7 @@ import {
   resolveMessage,
   type MessageKey,
 } from '@global-english/localization'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -79,11 +79,12 @@ describe('deterministic learner journey', () => {
       />,
     )
 
-    expect(
-      await screen.findByRole('heading', {
-        name: t('learner.onboarding.title'),
-      }),
-    ).toHaveFocus()
+    const onboardingTitle = await screen.findByRole('heading', {
+      name: t('learner.onboarding.title'),
+    })
+    await waitFor(() => {
+      expect(onboardingTitle).toHaveFocus()
+    })
 
     await user.click(
       screen.getByRole('checkbox', {

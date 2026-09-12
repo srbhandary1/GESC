@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "ಈ ಕಲಿಕಾ ಮಾರ್ಗಕ್ಕೆ ಒಂದು ಗುರಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ. AI ಇಲ್ಲದೇ ಅಭ್ಯಾಸ ಮಾಡಬಹುದು.",
   "learner.onboarding.saving": "ಉಳಿಸಲಾಗುತ್ತಿದೆ",
   "learner.onboarding.title": "ನಿಮ್ಮ ಕಲಿಕಾ ಗುರಿಯನ್ನು ಹೊಂದಿಸಿ",
+  "learner.progress.empty": "ಇನ್ನೂ ತೋರಿಸಲು ಗುರಿ ಪ್ರಗತಿ ಇಲ್ಲ.",
   "learner.progress.title": "ಗುರಿಯ ಪ್ರಗತಿ",
   "learner.recording.blocked": "ಮೈಕ್ರೊಫೋನ್ ರೆಕಾರ್ಡಿಂಗ್ ಲಭ್ಯವಿಲ್ಲ.",
   "learner.recording.cancel": "ರೆಕಾರ್ಡಿಂಗ್ ರದ್ದುಮಾಡಿ",
@@ -411,5 +412,8 @@
   "shell.locale_label": "ಬಳಕೆಪರದೆಯ ಭಾಷೆ",
   "shell.navigation_label": "ಮುಖ್ಯ ಸಂಚರಣೆ",
   "shell.profile_label": "ಪ್ರೊಫೈಲ್",
-  "shell.skip_to_content": "ಮುಖ್ಯ ವಿಷಯಕ್ಕೆ ಹೋಗಿ"
+  "shell.skip_to_content": "ಮುಖ್ಯ ವಿಷಯಕ್ಕೆ ಹೋಗಿ",
+  "shell.theme.dark": "ಡಾರ್ಕ್",
+  "shell.theme.label": "ಗೋಚರತೆ",
+  "shell.theme.light": "ಲೈಟ್"
 }

@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "இந்தக் கற்றல் பாதைக்கு ஒரு இலக்கைத் தேர்ந்தெடுக்கவும். AI இல்லாமலும் பயிற்சி செய்யலாம்.",
   "learner.onboarding.saving": "சேமிக்கப்படுகிறது",
   "learner.onboarding.title": "உங்கள் கற்றல் இலக்கை அமைக்கவும்",
+  "learner.progress.empty": "காட்ட இலக்கு முன்னேற்றம் இல்லை.",
   "learner.progress.title": "இலக்கின் முன்னேற்றம்",
   "learner.recording.blocked": "மைக்ரோஃபோன் பதிவு கிடைக்கவில்லை.",
   "learner.recording.cancel": "பதிவை ரத்து செய்க",
@@ -411,5 +412,8 @@
   "shell.locale_label": "இடைமுக மொழி",
   "shell.navigation_label": "முதன்மை வழிசெலுத்தல்",
   "shell.profile_label": "சுயவிவரம்",
-  "shell.skip_to_content": "முதன்மை உள்ளடக்கத்திற்குச் செல்க"
+  "shell.skip_to_content": "முதன்மை உள்ளடக்கத்திற்குச் செல்க",
+  "shell.theme.dark": "இருள்",
+  "shell.theme.label": "தோற்றம்",
+  "shell.theme.light": "ஒளி"
 }

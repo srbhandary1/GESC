@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "Choose one goal for this learning path. You can practise without AI.",
   "learner.onboarding.saving": "Saving",
   "learner.onboarding.title": "Set up your learning goal",
+  "learner.progress.empty": "No objective progress to show yet.",
   "learner.progress.title": "Objective progress",
   "learner.recording.blocked": "Microphone recording is unavailable.",
   "learner.recording.cancel": "Cancel recording",
@@ -411,5 +412,8 @@
   "shell.locale_label": "Interface language",
   "shell.navigation_label": "Primary navigation",
   "shell.profile_label": "Profile",
-  "shell.skip_to_content": "Skip to main content"
+  "shell.skip_to_content": "Skip to main content",
+  "shell.theme.dark": "Dark",
+  "shell.theme.label": "Appearance",
+  "shell.theme.light": "Light"
 }

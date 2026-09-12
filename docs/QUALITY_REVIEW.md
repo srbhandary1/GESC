@@ -2916,8 +2916,10 @@ accept and Play public release remain unauthorized.
 - Learn leading with the mission, then a compact room list;
 - relocation of attendance, notices and institute-about copy off the primary
   student path;
-- UI catalogue additions at revision `ui-*-2026-09-12.1`;
-- design-system mobile primary navigation as a bottom bar.
+- UI catalogue additions at revision `ui-*-2026-09-12.2`;
+- design-system mobile primary navigation as a floating bar;
+- light/dark appearance tokens, 48px targets, and skeleton/error/retry
+  on async student surfaces.
 
 ### Review result
 

@@ -315,6 +315,7 @@
   "learner.onboarding.introduction": "ఈ అభ్యాస మార్గానికి ఒక లక్ష్యాన్ని ఎంచుకోండి. AI లేకుండానే అభ్యాసం చేయవచ్చు.",
   "learner.onboarding.saving": "సేవ్ అవుతోంది",
   "learner.onboarding.title": "మీ అభ్యాస లక్ష్యాన్ని సెట్ చేయండి",
+  "learner.progress.empty": "ఇంకా చూపించడానికి లక్ష్య పురోగతి లేదు.",
   "learner.progress.title": "లక్ష్య పురోగతి",
   "learner.recording.blocked": "మైక్రోఫోన్ రికార్డింగ్ అందుబాటులో లేదు.",
   "learner.recording.cancel": "రికార్డింగ్‌ను రద్దు చేయండి",
@@ -411,5 +412,8 @@
   "shell.locale_label": "ఇంటర్‌ఫేస్ భాష",
   "shell.navigation_label": "ప్రధాన నావిగేషన్",
   "shell.profile_label": "ప్రొఫైల్",
-  "shell.skip_to_content": "ప్రధాన విషయానికి వెళ్లండి"
+  "shell.skip_to_content": "ప్రధాన విషయానికి వెళ్లండి",
+  "shell.theme.dark": "డార్క్",
+  "shell.theme.label": "రూపం",
+  "shell.theme.light": "లైట్"
 }

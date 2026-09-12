@@ -8,7 +8,7 @@ import {
 } from '@global-english/localization'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import type {
   AuthenticationAdapter,
@@ -17,10 +17,17 @@ import type {
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { createLocalDemoRuntime } from './demo/localDemo'
 
+beforeEach(() => {
+  document.documentElement.removeAttribute('data-theme')
+  window.localStorage.removeItem('ge-ui-color-scheme')
+})
+
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   document.documentElement.lang = DEFAULT_LOCALE
+  document.documentElement.removeAttribute('data-theme')
+  window.localStorage.removeItem('ge-ui-color-scheme')
   vi.restoreAllMocks()
 })
 
@@ -74,6 +81,34 @@ describe('localized application shell', () => {
     expect(
       screen.getByText('Global English Local Demo'),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(text('shell.theme.label')),
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('toggles a persisted light/dark appearance without touching credentials', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    const toggle = screen.getByRole('button', {
+      name: new RegExp(text('shell.theme.label')),
+    })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(toggle)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(window.localStorage.getItem('ge-ui-color-scheme')).toBe('dark')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('opens Friend speaking practice from the demo primary navigation', async () => {

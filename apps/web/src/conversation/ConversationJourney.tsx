@@ -929,15 +929,24 @@ export function ConversationJourney({
       ) : null}
 
       {state.kind === 'error' || speechError ? (
-        <p role="alert">
-          <LocalizedMessage
-            resolution={message(
-              speechError && demoMode
-                ? 'conversation.demo.recognition_unavailable'
-                : 'conversation.error',
-            )}
-          />
-        </p>
+        <div className="ge-async-error conversation-journey__error">
+          <p role="alert">
+            <LocalizedMessage
+              resolution={message(
+                speechError && demoMode
+                  ? 'conversation.demo.recognition_unavailable'
+                  : 'conversation.error',
+              )}
+            />
+          </p>
+          <button
+            className="ge-button ge-button--primary"
+            onClick={restart}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.retry')} />
+          </button>
+        </div>
       ) : null}
     </section>
   )

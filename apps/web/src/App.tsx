@@ -1,5 +1,7 @@
 import {
   ApplicationFrame,
+  ThemeToggle,
+  useColorScheme,
   type PrimaryDestination,
 } from '@global-english/design-system'
 import {
@@ -155,6 +157,7 @@ function App({
   const [practiceSurface, setPracticeSurface] = useState<
     'confidence' | 'roleplay'
   >('confidence')
+  const { scheme, toggleScheme } = useColorScheme()
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -395,6 +398,13 @@ function App({
               <LocalizedMessage resolution={message('shell.profile_label')} />
             </a>
           ) : null}
+          <ThemeToggle
+            darkLabel={message('shell.theme.dark').text}
+            label={message('shell.theme.label').text}
+            lightLabel={message('shell.theme.light').text}
+            onToggle={toggleScheme}
+            scheme={scheme}
+          />
           <div className="shell-locale-control">
           <label
             className="shell-locale-control__label"
@@ -449,7 +459,7 @@ function App({
         <LocalizedMessage resolution={skipToContent} />
       }
     >
-      <div className="shell-content">
+      <div className="shell-content" data-destination={destination}>
         {demoMode ? (
           <aside
             className="shell-demo"
