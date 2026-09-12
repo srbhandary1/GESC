@@ -61,7 +61,9 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByText('I can speak English. Can I help you?'),
   ).toBeVisible()
-  await expect(page.getByText('I can speak English.')).toBeVisible()
+  await expect(
+    page.getByText('I can speak English.', { exact: true }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Back' }).click()
 
   // Secondary student links from Home.
