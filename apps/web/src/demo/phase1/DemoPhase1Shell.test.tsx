@@ -218,7 +218,7 @@ describe('DemoPhase1Shell', () => {
       screen.getByText('I can speak English. Can I help you?'),
     ).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Back' }))
-    await user.click(screen.getByRole('button', { name: /^Level 2\b/i }))
+    await user.click(screen.getByRole('button', { name: /Level 2 Locked/i }))
     await user.click(screen.getByRole('button', { name: /Audio Lessons/i }))
     expect(screen.getByRole('heading', { name: 'Should' })).toBeVisible()
     expect(screen.getByText('You should drink some water.')).toBeVisible()

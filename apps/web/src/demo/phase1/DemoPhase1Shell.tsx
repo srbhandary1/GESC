@@ -1057,6 +1057,7 @@ function LevelsHub({
                 onClick={() => setSelectedLevelId(level.id)}
               >
                 <strong lang={title.resolvedLocale}>{title.text}</strong>
+                {' '}
                 <span>
                   <LocalizedMessage
                     resolution={message(levelStatusKeys[level.status])}
