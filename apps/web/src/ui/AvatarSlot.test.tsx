@@ -14,6 +14,7 @@ describe('AvatarSlot', () => {
 
     const slot = screen.getByRole('img', { name: 'AI Teacher' })
     expect(slot).toHaveAttribute('data-avatar-slot', 'home-teacher')
+    expect(slot.className).toContain('max-w-full')
     expect(slot.querySelector('img, svg, video, canvas')).toBeNull()
     expect(container.querySelector('[data-avatar-slot]')).toBe(slot)
   })
