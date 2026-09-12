@@ -26,10 +26,12 @@ provider path or authorize production deployment.
 - Demo fixtures remain in-memory, synthetic and reset on reload. The demo
   registers no service worker, writes no `localStorage`, IndexedDB,
   service-worker cache or other device storage. Ordinary product API routes
-  are unused. Under D-0092, the **local Vite demo process only** may call
-  Azure Speech TTS through `POST /demo/tts` when credentials are present in
-  process env; the browser never receives the key. Static `dist-demo` and
-  the Android APK still ship without secrets.
+  are unused. Under D-0092 / D-0116, the local Vite demo process **and**
+  the demo-client static server may call Azure Speech TTS through
+  `POST /demo/tts` when credentials are present in process env; the browser
+  never receives the key. Static `dist-demo` and the Android APK still ship
+  without secrets. Optional `VITE_DEMO_TTS_ORIGIN` points the APK at that
+  host.
 - The visible synthetic-demo notice remains on **Profile** (`Demo status`)
   while `demoMode` is on. Home, Learn, Practice and Progress no longer show
   a page-wide demo banner. All five translated notices remain implementation
@@ -45,8 +47,9 @@ provider path or authorize production deployment.
   Attendance, AI Teacher (scripted replies + Azure/browser voice), Daily
   Activity, My Levels and Notice Board. Generative AI and approved curriculum
   remain deferred; Friend replies stay deterministic pattern scripting.
-- Speech preference order (D-0092 / D-0079): Azure neural TTS via local
-  `/demo/tts` when configured, else on-device `speechSynthesis`. Optional
+- Speech preference order (D-0092 / D-0116 / D-0079): Azure neural TTS via
+  `/demo/tts` when the demo host is configured, else on-device
+  `speechSynthesis`. Optional
   spoken turns still use browser `SpeechRecognition`. Production STT/TTS
   remains behind the project-owned provider ports (PR-009+) and is unchanged
   by this presentation exception. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).

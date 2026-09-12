@@ -12,6 +12,8 @@ import { speakDemoText, stopDemoSpeech } from './demoTts'
 import {
   FOUNDATION_LESSON_GROUPS,
   FOUNDATION_LESSONS,
+  foundationLessonById,
+  lessonIdFromHash,
   lessonsInGroup,
   type FoundationLesson,
   type FoundationLessonGroup,
@@ -27,15 +29,23 @@ const groupTitleKeys = {
 export interface FoundationLessonCatalogProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
-  readonly onPractise?: () => void
+  readonly variant?: 'full' | 'home'
+  readonly syncHash?: boolean
+  readonly onOpen?: (lesson: FoundationLesson) => void
+  readonly onPractise?: (lesson: FoundationLesson) => void
 }
 
 export function FoundationLessonCatalog({
   locale,
   localizationPolicy,
+  variant = 'full',
+  syncHash = false,
+  onOpen,
   onPractise,
 }: FoundationLessonCatalogProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    syncHash ? lessonIdFromHash(globalThis.location?.hash) : null,
+  )
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
 
@@ -45,14 +55,45 @@ export function FoundationLessonCatalog({
     }
   }, [])
 
-  const selected =
-    FOUNDATION_LESSONS.find((lesson) => lesson.id === selectedId) ?? null
+  useEffect(() => {
+    if (!syncHash) {
+      return
+    }
+
+    const onHash = () => {
+      setSelectedId(lessonIdFromHash(globalThis.location.hash))
+    }
+    globalThis.addEventListener('hashchange', onHash)
+    return () => globalThis.removeEventListener('hashchange', onHash)
+  }, [syncHash])
+
+  const selected = foundationLessonById(selectedId)
 
   const playModel = async (lesson: FoundationLesson) => {
     await speakDemoText(lesson.modelEn, 'en-IN')
   }
 
-  if (selected !== null) {
+  const selectLesson = (id: string | null) => {
+    setSelectedId(id)
+    if (!syncHash) {
+      return
+    }
+
+    const url = new URL(globalThis.location.href)
+    url.hash = id === null ? 'learn' : `learn/${id}`
+    globalThis.history.pushState(null, '', url)
+    globalThis.dispatchEvent(new Event('hashchange'))
+  }
+
+  const openLesson = (lesson: FoundationLesson) => {
+    if (onOpen !== undefined) {
+      onOpen(lesson)
+      return
+    }
+    selectLesson(lesson.id)
+  }
+
+  if (variant === 'full' && selected !== null) {
     return (
       <section
         className="foundation-lessons foundation-lessons--detail"
@@ -62,7 +103,7 @@ export function FoundationLessonCatalog({
         <button
           type="button"
           className="phase1-text-link"
-          onClick={() => setSelectedId(null)}
+          onClick={() => selectLesson(null)}
         >
           <LocalizedMessage resolution={message('demo.learn.back')} />
         </button>
@@ -110,8 +151,8 @@ export function FoundationLessonCatalog({
         {onPractise === undefined ? null : (
           <button
             type="button"
-            className="ge-button ge-button--primary"
-            onClick={onPractise}
+            className="ge-button ge-button--primary foundation-lessons__practise"
+            onClick={() => onPractise(selected)}
           >
             <LocalizedMessage resolution={message('demo.learn.practise')} />
           </button>
@@ -122,7 +163,11 @@ export function FoundationLessonCatalog({
 
   return (
     <section
-      className="foundation-lessons"
+      className={
+        variant === 'home'
+          ? 'foundation-lessons foundation-lessons--home'
+          : 'foundation-lessons'
+      }
       aria-labelledby="foundation-lessons-title"
       data-demo-lessons="synthetic"
     >
@@ -132,67 +177,108 @@ export function FoundationLessonCatalog({
       <p className="foundation-lessons__lead">
         <LocalizedMessage resolution={message('demo.learn.lessons_lead')} />
       </p>
-      {FOUNDATION_LESSON_GROUPS.map((group) => (
-        <section
-          key={group}
-          className="foundation-lessons__group"
-          aria-label={message(groupTitleKeys[group]).text}
-        >
-          <h3 className="foundation-lessons__group-title">
-            <LocalizedMessage resolution={message(groupTitleKeys[group])} />
-          </h3>
-          <ol className="foundation-lessons__list">
-            {lessonsInGroup(group).map((lesson) => (
-              <li key={lesson.id}>
-                <div className="foundation-lessons__row">
-                  <button
-                    type="button"
-                    aria-label={`${message('demo.learn.open').text} ${lesson.title}`}
-                    className="foundation-lessons__open"
-                    onClick={() => setSelectedId(lesson.id)}
-                  >
-                    <span className="foundation-lessons__number">
-                      {lesson.number}
-                    </span>
-                    <span className="foundation-lessons__copy">
-                      <strong lang="en-IN">{lesson.title}</strong>
-                      <span className="foundation-lessons__minutes">
-                        <LocalizedMessage
-                          resolution={message('learner.home.estimated_minutes', {
-                            minutes: lesson.minutes,
-                          })}
-                        />
-                      </span>
-                    </span>
-                  </button>
-                  <TapToPlay
-                    idleLabel={
-                      <LocalizedMessage
-                        resolution={message('demo.learn.play', {
-                          number: lesson.number,
-                        })}
-                      />
-                    }
+      {variant === 'home' ? (
+        <ol className="foundation-lessons__grid">
+          {FOUNDATION_LESSONS.map((lesson) => (
+            <li key={lesson.id}>
+              <LessonTile
+                lesson={lesson}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                onOpen={() => openLesson(lesson)}
+                onPlay={() => playModel(lesson)}
+              />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        FOUNDATION_LESSON_GROUPS.map((group) => (
+          <section
+            key={group}
+            className="foundation-lessons__group"
+            aria-label={message(groupTitleKeys[group]).text}
+          >
+            <h3 className="foundation-lessons__group-title">
+              <LocalizedMessage resolution={message(groupTitleKeys[group])} />
+            </h3>
+            <ol className="foundation-lessons__list">
+              {lessonsInGroup(group).map((lesson) => (
+                <li key={lesson.id}>
+                  <LessonTile
+                    lesson={lesson}
+                    locale={locale}
+                    localizationPolicy={localizationPolicy}
+                    onOpen={() => openLesson(lesson)}
                     onPlay={() => playModel(lesson)}
-                    playingLabel={
-                      <LocalizedMessage
-                        resolution={message('demo.learn.playing', {
-                          number: lesson.number,
-                        })}
-                      />
-                    }
-                    unavailableLabel={
-                      <LocalizedMessage
-                        resolution={message('shell.listen.unavailable')}
-                      />
-                    }
                   />
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))
+      )}
     </section>
+  )
+}
+
+interface LessonTileProps {
+  readonly lesson: FoundationLesson
+  readonly locale: SupportedLocale
+  readonly localizationPolicy: ResolutionPolicy
+  readonly onOpen: () => void
+  readonly onPlay: () => Promise<void>
+}
+
+function LessonTile({
+  lesson,
+  locale,
+  localizationPolicy,
+  onOpen,
+  onPlay,
+}: LessonTileProps) {
+  const message = (key: MessageKey, parameters: MessageParameters = {}) =>
+    resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
+
+  return (
+    <div className="foundation-lessons__row">
+      <button
+        type="button"
+        aria-label={`${message('demo.learn.open').text} ${lesson.title}`}
+        className="foundation-lessons__open"
+        onClick={onOpen}
+      >
+        <span className="foundation-lessons__number">{lesson.number}</span>
+        <span className="foundation-lessons__copy">
+          <strong lang="en-IN">{lesson.title}</strong>
+          <span className="foundation-lessons__minutes">
+            <LocalizedMessage
+              resolution={message('learner.home.estimated_minutes', {
+                minutes: lesson.minutes,
+              })}
+            />
+          </span>
+        </span>
+      </button>
+      <TapToPlay
+        idleLabel={
+          <LocalizedMessage
+            resolution={message('demo.learn.play', {
+              number: lesson.number,
+            })}
+          />
+        }
+        onPlay={onPlay}
+        playingLabel={
+          <LocalizedMessage
+            resolution={message('demo.learn.playing', {
+              number: lesson.number,
+            })}
+          />
+        }
+        unavailableLabel={
+          <LocalizedMessage resolution={message('shell.listen.unavailable')} />
+        }
+      />
+    </div>
   )
 }

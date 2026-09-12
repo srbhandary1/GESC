@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_MOBILE_OAUTH_TOKEN_URL?: string
   readonly VITE_MOBILE_OAUTH_CLIENT_ID?: string
   readonly VITE_MOBILE_OAUTH_REDIRECT_URI?: string
+  readonly VITE_DEMO_TTS_ORIGIN?: string
 }
 
 interface ImportMeta {

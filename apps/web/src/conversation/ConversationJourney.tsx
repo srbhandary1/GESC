@@ -52,6 +52,7 @@ export interface ConversationJourneyProps {
    * browser speech for model lines as a non-evidence interim aid.
    */
   readonly demoMode?: boolean
+  readonly listenLines?: readonly string[]
 }
 
 type ConfidenceStage = 'warmup' | 'listen' | 'talk' | 'reflect'
@@ -111,7 +112,12 @@ export function ConversationJourney({
   api = defaultConversationJourneyApi,
   createClientId = createRandomClientId,
   demoMode = false,
+  listenLines,
 }: ConversationJourneyProps) {
+  const modelLines =
+    listenLines !== undefined && listenLines.length > 0
+      ? listenLines
+      : CONFIDENCE_LISTEN_LINES
   const [state, setState] = useState<ConversationState>({ kind: 'idle' })
   const [utterance, setUtterance] = useState('')
   const [coachingMode, setCoachingMode] = useState<
@@ -299,7 +305,7 @@ export function ConversationJourney({
   }
 
   const playModelLines = () => {
-    speakEnglish(CONFIDENCE_LISTEN_LINES.join(' '))
+    speakEnglish(modelLines.join(' '))
   }
 
   const advanceStage = (stage: ConfidenceStage) => {
@@ -402,7 +408,7 @@ export function ConversationJourney({
   const carrySentence =
     lastTurn?.priority_correction?.correction_en ??
     lastTurn?.assistant_reply ??
-    CONFIDENCE_LISTEN_LINES[0]
+    modelLines[0]
 
   return (
     <section
@@ -624,12 +630,12 @@ export function ConversationJourney({
               }
             />
             <p className="conversation-journey__prompt-text" lang="en-IN">
-              {CONFIDENCE_LISTEN_LINES[0]}
+              {modelLines[0]}
             </p>
           </div>
-          {CONFIDENCE_LISTEN_LINES.length > 1 ? (
+          {modelLines.length > 1 ? (
             <ol className="conversation-journey__model-lines" lang="en-IN">
-              {CONFIDENCE_LISTEN_LINES.slice(1).map((line) => (
+              {modelLines.slice(1).map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ol>

@@ -172,3 +172,36 @@ export function lessonsInGroup(
 ): readonly FoundationLesson[] {
   return FOUNDATION_LESSONS.filter((lesson) => lesson.group === group)
 }
+
+export function foundationLessonById(
+  id: string | null | undefined,
+): FoundationLesson | null {
+  if (id === null || id === undefined || id === '') {
+    return null
+  }
+
+  return FOUNDATION_LESSONS.find((lesson) => lesson.id === id) ?? null
+}
+
+export function lessonIdFromHash(hash: string | undefined): string | null {
+  const value = (hash ?? '').replace(/^#/u, '')
+  const match = /^(?:learn|practice)\/([a-z0-9-]+)$/u.exec(value)
+  if (match === null) {
+    return null
+  }
+
+  return foundationLessonById(match[1])?.id ?? null
+}
+
+export function destinationFromLessonHash(
+  hash: string | undefined,
+): 'learn' | 'practice' | null {
+  const value = (hash ?? '').replace(/^#/u, '')
+  if (value.startsWith('learn/') && lessonIdFromHash(hash) !== null) {
+    return 'learn'
+  }
+  if (value.startsWith('practice/') && lessonIdFromHash(hash) !== null) {
+    return 'practice'
+  }
+  return null
+}

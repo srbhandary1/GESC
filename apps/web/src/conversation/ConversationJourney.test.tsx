@@ -141,6 +141,42 @@ describe('deterministic Friend prototype', () => {
     expect(api.events).toHaveBeenCalledWith(turn.events_url)
   })
 
+  it('uses a lesson model line on Listen when provided', async () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'lesson-command'}
+        listenLines={['Hello, my name is Ravi. I am pleased to meet you.']}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Start Confidence Conversation',
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to listen' }),
+    )
+    expect(
+      screen.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText('I went to the market this morning.'),
+    ).not.toBeInTheDocument()
+  })
+
   it('exposes browser speech actions in the disclosed demo mode', async () => {
     class FakeUtterance {
       lang = ''

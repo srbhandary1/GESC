@@ -197,6 +197,39 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens a foundation lesson from the Learn hash and Speak practice from the lesson hash', async () => {
+    window.history.replaceState(null, '', '/#learn/greetings')
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Greetings and introductions',
+      }),
+    ).toBeVisible()
+    expect(
+      screen.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
+    ).toBeVisible()
+
+    window.history.replaceState(null, '', '/#practice/greetings')
+    globalThis.dispatchEvent(new Event('hashchange'))
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('demo.page.practice.title'),
+      }),
+    ).toBeVisible()
+  })
+
   it('renders Kannada first with semantic landmarks and inert destinations', async () => {
     const authentication = anonymousAuthentication()
 

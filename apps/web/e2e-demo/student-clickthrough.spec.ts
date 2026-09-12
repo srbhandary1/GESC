@@ -50,6 +50,31 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('link', { name: 'Download Android demo' }),
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+  await expect(
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Tap to Play lesson 16', exact: true }),
+  ).toBeVisible()
+  await page
+    .getByRole('button', { name: /Open Greetings and introductions/ })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Greetings and introductions' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Practise on Speak' }).click()
+  const about = page.getByRole('button', { name: 'Got it' })
+  if (await about.isVisible()) {
+    await about.click()
+  }
+  await page
+    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .click()
+  await page.getByRole('button', { name: 'Continue to listen' }).click()
+  await expect(
+    page.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Home' }).click()
 
   // Secondary student links from Home.
   for (const item of ['My Levels', 'AI Teacher', 'Profile']) {

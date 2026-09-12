@@ -18,6 +18,7 @@ import {
   persistSpeakingComfort,
   readFirstRunDismissed,
 } from '../../ui/firstRunPreference'
+import { FoundationLessonCatalog } from '../FoundationLessonCatalog'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_FOCUS_AI_TOPICS,
@@ -434,6 +435,25 @@ export function DemoPhase1Shell({
             </p>
             <AndroidDemoDownload message={message} />
           </article>
+          <FoundationLessonCatalog
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            variant="home"
+            onOpen={(lesson) => {
+              const url = new URL(globalThis.location.href)
+              url.hash = `learn/${lesson.id}`
+              globalThis.history.pushState(null, '', url)
+              globalThis.dispatchEvent(new Event('hashchange'))
+              globalThis.scrollTo(0, 0)
+            }}
+            onPractise={(lesson) => {
+              const url = new URL(globalThis.location.href)
+              url.hash = `practice/${lesson.id}`
+              globalThis.history.pushState(null, '', url)
+              globalThis.dispatchEvent(new Event('hashchange'))
+              globalThis.scrollTo(0, 0)
+            }}
+          />
           <aside className="phase1-home__tip">
             <span aria-hidden="true" className="phase1-home__tip-glyph">
               <svg

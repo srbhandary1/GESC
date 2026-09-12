@@ -51,11 +51,12 @@ describe('FoundationLessonCatalog', () => {
     const user = userEvent.setup()
     const { speakDemoText } = await import('./demoTts')
 
+    const onPractise = vi.fn()
     render(
       <FoundationLessonCatalog
         locale="en-IN"
         localizationPolicy="development-preview"
-        onPractise={vi.fn()}
+        onPractise={onPractise}
       />,
     )
 
@@ -77,10 +78,39 @@ describe('FoundationLessonCatalog', () => {
       'Hello, my name is Ravi. I am pleased to meet you.',
       'en-IN',
     )
+    await user.click(screen.getByRole('button', { name: 'Practise on Speak' }))
+    expect(onPractise).toHaveBeenCalledWith(FOUNDATION_LESSONS[0])
 
     await user.click(screen.getByRole('button', { name: 'All lessons' }))
     expect(
       screen.getByRole('heading', { name: '16 speaking lessons' }),
     ).toBeVisible()
+  })
+
+  it('shows all 16 lessons in a home grid that opens a selected lesson', async () => {
+    const user = userEvent.setup()
+    const onOpen = vi.fn()
+
+    render(
+      <FoundationLessonCatalog
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onOpen={onOpen}
+        variant="home"
+      />,
+    )
+
+    expect(screen.queryByRole('heading', { name: 'Foundations' })).toBeNull()
+    expect(
+      screen.getByRole('button', { name: /Open Greetings and introductions/ }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Tap to Play lesson 16' }),
+    ).toBeVisible()
+
+    await user.click(
+      screen.getByRole('button', { name: /Open Greetings and introductions/ }),
+    )
+    expect(onOpen).toHaveBeenCalledWith(FOUNDATION_LESSONS[0])
   })
 })

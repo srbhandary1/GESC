@@ -1,6 +1,7 @@
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
+import { handleDemoTtsRequest } from '../apps/web/vite-plugins/demoAzureTtsHandler.mjs'
 
 const [listenHost, listenPortInput, publicHost, rootDirInput, apkPathInput] =
   process.argv.slice(2)
@@ -92,6 +93,10 @@ async function sendFile(response, filePath, method) {
 
 const server = http.createServer(async (request, response) => {
   try {
+    if (await handleDemoTtsRequest(request, response)) {
+      return
+    }
+
     const method = request.method ?? 'GET'
     if (method !== 'GET' && method !== 'HEAD') {
       response.writeHead(405, { allow: 'GET, HEAD', 'content-length': '0' })
@@ -178,4 +183,7 @@ server.listen(listenPort, listenHost, () => {
   if (apkPath !== null) {
     process.stdout.write(`APK download: http://${publicHost}:${listenPort}${apkRoute}\n`)
   }
+  process.stdout.write(
+    'Demo TTS: GET /demo/tts/status and POST /demo/tts (Azure neural when AZURE_SPEECH_* is set)\n',
+  )
 })

@@ -2983,6 +2983,42 @@ Not production or Play evidence.
 - Speaking comfort is not an enrollment or mastery field.
 - F0 DoD, production and Play remain unauthorized.
 
+---
+
+## PR #6 learner-UX regression restore (presentation)
+
+### What broke
+
+- Tunnel / `dist-demo` / APK speech fell through to robotic browser
+  `speechSynthesis` because `/demo/tts` existed only on Vite middleware
+  (D-0092). Azure keys were never in the static host. Sarvam and
+  ElevenLabs are not in this repository.
+- Goal cards, lesson tiles, Speak CTAs and transcript bubbles hugged the
+  start edge after the redesign (`justify-self: start` on every Speak
+  button; stacked left-aligned lesson rows).
+- The 16 listen-and-learn lessons were only a Learn list plus a Home
+  “More” text link; Practise opened generic Friend lines, so the catalog
+  felt replaced by today’s hero.
+
+### What was restored
+
+- Shared Azure `/demo/tts` handler on Vite **and**
+  `scripts/demo-client-static-server.mjs`; optional `VITE_DEMO_TTS_ORIGIN`
+  for the APK. Browser speech remains fallback only.
+- Wonder-aligned card padding: trailing radios, selected green goal
+  icons, 2-column Home lesson grid, horizontal Learn tiles, centered
+  Speak column and 86% transcript bubbles.
+- All 16 lessons on Home and Learn; `#learn/<id>` detail with Mira
+  Tap to Play; `#practice/<id>` uses that lesson’s English model on
+  Speak Listen.
+
+### Known limitations
+
+- Neural voice still requires operator `AZURE_SPEECH_*` on the demo
+  host. This environment cannot invent keys. No Sarvam or ElevenLabs
+  stack was added.
+- F0 DoD, production and Play remain unauthorized.
+
 
 
 

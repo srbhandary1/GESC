@@ -1,6 +1,11 @@
 /**
- * Demo speech playback: Azure neural TTS via local `/demo/tts` first,
+ * Demo speech playback: Azure neural TTS via `/demo/tts` first,
  * then on-device browser speech as fallback. Presentation-only.
+ *
+ * Same-origin `/demo/tts` is the product path (Vite middleware and the
+ * static demo-client server). Optional `VITE_DEMO_TTS_ORIGIN` lets the
+ * Android WebView call that host without embedding Azure secrets.
+ * Sarvam and ElevenLabs are not implemented in this repository.
  */
 
 import {
@@ -14,6 +19,20 @@ export type DemoSpeechSource = 'azure' | 'browser'
 let currentAudio: HTMLAudioElement | null = null
 let currentObjectUrl: string | null = null
 let azureConfiguredCache: boolean | null = null
+
+export function demoTtsOrigin(): string {
+  const configured = import.meta.env.VITE_DEMO_TTS_ORIGIN
+  if (typeof configured !== 'string') {
+    return ''
+  }
+
+  return configured.trim().replace(/\/$/u, '')
+}
+
+export function demoTtsUrl(path: '/demo/tts' | '/demo/tts/status'): string {
+  const origin = demoTtsOrigin()
+  return origin === '' ? path : `${origin}${path}`
+}
 
 export function stopDemoSpeech(): void {
   if (currentAudio !== null) {
@@ -38,7 +57,7 @@ export async function demoAzureTtsConfigured(): Promise<boolean> {
   }
 
   try {
-    const response = await fetch('/demo/tts/status', {
+    const response = await fetch(demoTtsUrl('/demo/tts/status'), {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     })
@@ -64,7 +83,7 @@ async function speakWithAzureTts(
   text: string,
   locale: string,
 ): Promise<void> {
-  const response = await fetch('/demo/tts', {
+  const response = await fetch(demoTtsUrl('/demo/tts'), {
     method: 'POST',
     headers: {
       Accept: 'audio/wav',

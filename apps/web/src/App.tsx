@@ -31,6 +31,10 @@ import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { FoundationLessonCatalog } from './demo/FoundationLessonCatalog'
+import {
+  foundationLessonById,
+  lessonIdFromHash,
+} from './demo/foundationLessons'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import { PHASE1_SECONDARY_HASHES } from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
@@ -381,6 +385,9 @@ function App({
     authentication.transport === 'passport-pkce'
       ? (authentication as AndroidPkceAuthentication)
       : null
+  const practiceLesson = foundationLessonById(
+    lessonIdFromHash(globalThis.location?.hash),
+  )
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -595,9 +602,10 @@ function App({
               <FoundationLessonCatalog
                 locale={locale}
                 localizationPolicy={localizationPolicy}
-                onPractise={() => {
+                syncHash
+                onPractise={(lesson) => {
                   const url = new URL(globalThis.location.href)
-                  url.hash = 'practice'
+                  url.hash = `practice/${lesson.id}`
                   globalThis.history.pushState(null, '', url)
                   globalThis.dispatchEvent(new Event('hashchange'))
                   globalThis.scrollTo(0, 0)
@@ -646,6 +654,11 @@ function App({
                 api={conversationApi}
                 createClientId={createClientId}
                 demoMode={demoMode}
+                listenLines={
+                  practiceLesson === null
+                    ? undefined
+                    : [practiceLesson.modelEn]
+                }
                 locale={locale}
                 localizationPolicy={localizationPolicy}
               />
@@ -786,14 +799,15 @@ function destinationFromHash(
   hash: string | undefined,
 ): PrimaryDestination | null {
   const candidate = hash?.replace(/^#/u, '')
+  const destination = candidate?.split('/')[0]
 
   if (
-    candidate === 'home' ||
-    candidate === 'learn' ||
-    candidate === 'practice' ||
-    candidate === 'progress'
+    destination === 'home' ||
+    destination === 'learn' ||
+    destination === 'practice' ||
+    destination === 'progress'
   ) {
-    return candidate
+    return destination
   }
 
   if (

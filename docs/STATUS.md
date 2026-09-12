@@ -513,10 +513,13 @@ review and do not waive pre-production specialist gates.
   replies resolve from the selected interface locale (`en`/`kn`/`hi`/`ml`/
   `ta`/`te`); the AI toggle is that locale’s endonym vs English. English quiz
   stems remain English learning content.
-- Under D-0092, local `make demo` may synthesize Azure neural TTS for AI
-  Teacher, Daily audio, Friend Listen and model audio via `/demo/tts`, with
-  voice selected from the UI language map; browser speech is fallback. See
-  [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Under D-0092 / D-0116, `make demo` **and** the demo-client static server
+  may synthesize Azure neural TTS for AI Teacher, Daily audio, Friend Listen,
+  the 16 foundation lessons and model audio via `/demo/tts`, with voice
+  selected from the UI language map; browser speech is fallback only when
+  Azure is unconfigured. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+  Home and Learn both list all 16 foundation lessons; `#learn/<id>` and
+  `#practice/<id>` open listen + lesson-scoped Speak practice.
 - Under D-0094, local `make demo` Practice Friend may call OpenRouter free
   models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
   scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).

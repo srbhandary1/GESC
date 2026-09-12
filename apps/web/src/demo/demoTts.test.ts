@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  demoTtsUrl,
   resetDemoAzureTtsStatusCache,
   speakDemoText,
   stopDemoSpeech,
@@ -56,6 +57,12 @@ describe('demo Azure-first speech helper', () => {
 
     expect(source).toBe('azure')
     expect(fetchMock).toHaveBeenCalledWith(
+      '/demo/tts/status',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+      }),
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
       '/demo/tts',
       expect.objectContaining({
         method: 'POST',
@@ -103,5 +110,10 @@ describe('demo Azure-first speech helper', () => {
 
     expect(source).toBe('browser')
     expect(speak).toHaveBeenCalledOnce()
+  })
+
+  it('keeps same-origin /demo/tts unless VITE_DEMO_TTS_ORIGIN is set', () => {
+    expect(demoTtsUrl('/demo/tts')).toBe('/demo/tts')
+    expect(demoTtsUrl('/demo/tts/status')).toBe('/demo/tts/status')
   })
 })

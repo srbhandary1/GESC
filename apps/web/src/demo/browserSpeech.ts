@@ -2,7 +2,8 @@
  * Browser Web Speech helpers for the disclosed synthetic demo.
  *
  * Prefer `speakDemoText` from `./demoTts` for playback: Azure neural TTS via
- * local `/demo/tts` first, then these browser adapters as fallback (D-0092).
+ * `/demo/tts` first (Vite or the demo-client static server), then these
+ * browser adapters as fallback (D-0092 / D-0116).
  * Recognition remains on-device only. Production product speech remains behind
  * the project-owned STT/TTS ports (PR-009+) and is unchanged.
  */
