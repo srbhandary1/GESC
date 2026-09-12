@@ -177,18 +177,17 @@ test('student click-through exercises every demo page and control', async ({
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
   await page.getByRole('link', { name: 'Speak' }).click()
-  const aboutDialog = page.getByRole('dialog', {
-    name: 'About this practice Friend',
-  })
-  if (await aboutDialog.isVisible()) {
-    await page.getByRole('button', { name: 'Got it' }).click()
-  }
+  const gotIt = page.getByRole('button', { name: 'Got it' })
+  await gotIt.click({ timeout: 5_000 }).catch(() => undefined)
+  await expect(page.locator('.ge-sheet-backdrop')).toHaveCount(0)
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
     await coaching.selectOption({ label: 'Fluency' })
     await coaching.selectOption({ label: 'Gentle' })
   }
+  await gotIt.click({ timeout: 1_000 }).catch(() => undefined)
+  await expect(page.locator('.ge-sheet-backdrop')).toHaveCount(0)
   await page.getByRole('button', { name: 'Start speaking practice' }).click()
   await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue to listen' }).click()
