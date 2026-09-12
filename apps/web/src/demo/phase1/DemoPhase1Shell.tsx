@@ -151,11 +151,19 @@ export function DemoPhase1Shell({
   compact = false,
   forcedModule,
 }: DemoPhase1ShellProps) {
-  const [module, setModule] = useState<Phase1Module>(
-    () => forcedModule ?? moduleFromHash(globalThis.location?.hash ?? ''),
+  const [hashModule, setHashModule] = useState<Phase1Module>(() =>
+    moduleFromHash(globalThis.location?.hash ?? ''),
   )
+  const module = forcedModule ?? hashModule
+  const [aiLanguageLocale, setAiLanguageLocale] = useState(locale)
   const [aiUsesEnglish, setAiUsesEnglish] = useState(false)
-  const [activeTopicId, setActiveTopicId] = useState(PHASE1_FOCUS_AI_TOPICS[0])
+  if (aiLanguageLocale !== locale) {
+    setAiLanguageLocale(locale)
+    setAiUsesEnglish(false)
+  }
+  const [activeTopicId, setActiveTopicId] = useState<
+    (typeof PHASE1_FOCUS_AI_TOPICS)[number]
+  >(PHASE1_FOCUS_AI_TOPICS[0])
   const [selectedLevelId, setSelectedLevelId] = useState(currentLevel.id)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
@@ -177,19 +185,9 @@ export function DemoPhase1Shell({
 
   useEffect(() => {
     if (forcedModule !== undefined) {
-      setModule(forcedModule)
-    }
-  }, [forcedModule])
-
-  useEffect(() => {
-    setAiUsesEnglish(false)
-  }, [locale])
-
-  useEffect(() => {
-    if (forcedModule !== undefined) {
       return
     }
-    const onHash = () => setModule(moduleFromHash(globalThis.location.hash))
+    const onHash = () => setHashModule(moduleFromHash(globalThis.location.hash))
     globalThis.addEventListener('hashchange', onHash)
     return () => globalThis.removeEventListener('hashchange', onHash)
   }, [forcedModule])
@@ -243,7 +241,7 @@ export function DemoPhase1Shell({
     url.hash = next === 'dashboard' ? 'home' : next
     globalThis.history.pushState(null, '', url)
     if (next !== 'practice') {
-      setModule(next)
+      setHashModule(next)
     }
     globalThis.dispatchEvent(new Event('hashchange'))
   }
