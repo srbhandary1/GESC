@@ -261,10 +261,10 @@
   min-block-size: var(--ge-target-minimum);
   min-inline-size: var(--ge-target-minimum);
   padding: var(--ge-space-2) var(--ge-space-4);
-  border: 1px solid var(--ge-color-action);
+  border: 1px solid var(--ge-color-mint, var(--ge-color-action));
   border-radius: var(--ge-radius-pill);
   background: var(--ge-color-surface);
-  color: var(--ge-color-action);
+  color: var(--ge-color-mint, var(--ge-color-action));
   font-weight: 700;
   line-height: 1.3;
   cursor: pointer;

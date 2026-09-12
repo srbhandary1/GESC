@@ -5,6 +5,11 @@
   max-width: none;
 }
 
+.conversation-journey__presence {
+  display: flex;
+  justify-content: center;
+}
+
 .conversation-journey__notice,
 .conversation-journey__result,
 .conversation-journey__correction,

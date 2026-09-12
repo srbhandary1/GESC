@@ -20,6 +20,7 @@
   --ge-color-text-muted: #3d5348;
   --ge-color-border: #c5d4cc;
   --ge-color-action: #006b3f;
+  --ge-color-mint: #006b3f;
   --ge-color-action-hover: #005533;
   --ge-color-action-text: #ffffff;
   --ge-color-focus: #0f766e;
@@ -59,7 +60,7 @@
   --ge-color-text-muted: #8fa099;
   --ge-color-border: #24332c;
   --ge-color-action: #006b3f;
-  --ge-color-action-hover: #05824e;
+  --ge-color-action-hover: #3ddc97;
   --ge-color-action-text: #ffffff;
   --ge-color-focus: #3ddc97;
   --ge-color-status: #12241c;
@@ -83,7 +84,7 @@
     --ge-color-text-muted: #8fa099;
     --ge-color-border: #24332c;
     --ge-color-action: #006b3f;
-    --ge-color-action-hover: #05824e;
+    --ge-color-action-hover: #3ddc97;
     --ge-color-action-text: #ffffff;
     --ge-color-focus: #3ddc97;
     --ge-color-status: #12241c;

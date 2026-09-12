@@ -20,13 +20,13 @@ test('walks Grove first-run one question at a time before Home', async ({
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
   await page.getByRole('radio', { name: 'English' }).check()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
   await page
     .getByRole('radio', { name: 'Speak with confidence at work' })
     .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
   await page.getByRole('radio', { name: /I am just starting/ }).check()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
 
   await expect(
     page.getByRole('heading', { level: 1, name: 'Today' }),

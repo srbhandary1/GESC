@@ -1,0 +1,29 @@
+[data-avatar-slot] {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8f3ec;
+  box-shadow: 0 0 0 2px rgb(0 107 63 / 60%);
+}
+
+[data-avatar-slot] img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+[data-avatar-slot][data-avatar-size='sm'] {
+  width: 4rem;
+  height: 4rem;
+}
+
+[data-avatar-slot][data-avatar-size='md'] {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+[data-avatar-slot][data-avatar-size='lg'] {
+  width: min(9.25rem, 46vw);
+  height: min(9.25rem, 46vw);
+}

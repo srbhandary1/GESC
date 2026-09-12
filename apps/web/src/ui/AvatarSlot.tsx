@@ -1,4 +1,5 @@
 import miraPortrait from './avatars/mira.jpg'
+import './AvatarSlot.css'
 
 export type AvatarRole = 'teacher' | 'friend' | 'coach'
 
@@ -7,13 +8,6 @@ export interface AvatarSlotProps {
   readonly size?: 'sm' | 'md' | 'lg'
   readonly slot: 'home-teacher' | 'ai-teacher' | 'ai-friend' | 'ai-coach'
 }
-
-const sizeClass: Readonly<Record<NonNullable<AvatarSlotProps['size']>, string>> =
-  {
-    sm: 'w-16',
-    md: 'w-[4.5rem]',
-    lg: 'w-[min(9.25rem,46vw)]',
-  }
 
 /**
  * Mira coach portrait. Static licensed-free Wonder still — no avatar SDK.
@@ -26,7 +20,7 @@ export function AvatarSlot({
   return (
     <div
       aria-label={label}
-      className={`${sizeClass[size]} aspect-square max-w-full overflow-hidden rounded-full bg-[#e8f3ec] shadow-[0_0_0_2px_rgb(0_107_63_/_60%)]`}
+      data-avatar-size={size}
       data-avatar-slot={slot}
       role="img"
     >

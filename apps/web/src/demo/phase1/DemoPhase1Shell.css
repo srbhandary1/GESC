@@ -109,7 +109,7 @@
 }
 
 .phase1-card__hint {
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
   font-size: 0.9rem;
   font-weight: 650;
 }
@@ -135,8 +135,8 @@
   margin: 0;
   padding: 0.25rem 0.6rem;
   border-radius: var(--ge-radius-pill);
-  background: color-mix(in srgb, var(--ge-color-action) 14%, transparent);
-  color: var(--ge-color-action);
+  background: color-mix(in srgb, var(--ge-color-accent, #3ddc97) 16%, transparent);
+  color: var(--ge-color-accent, #3ddc97);
   font-size: 0.68rem;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -223,7 +223,7 @@
   min-block-size: var(--ge-target-minimum);
   align-items: center;
   justify-content: center;
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 0.18em;
@@ -308,7 +308,7 @@
   padding: 0 0.35rem;
   border: 0;
   background: none;
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
   font: inherit;
   font-weight: 650;
   text-align: start;
@@ -497,7 +497,7 @@
 .phase1-quiz-result {
   margin: 0;
   font-weight: 700;
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
 }
 
 .phase1-levels-hub {
@@ -628,7 +628,7 @@
 
 .phase1-notices__meta {
   margin: 0 0 0.25rem;
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
   font-size: 0.75rem;
   font-weight: 750;
   letter-spacing: 0.05em;
@@ -690,7 +690,7 @@
 }
 
 .demo-tts-admin__status li[data-configured='true'] strong {
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-action));
 }
 
 .demo-tts-admin__form {

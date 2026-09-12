@@ -212,7 +212,7 @@ test('student click-through exercises every demo page and control', async ({
     await expect(send).toBeEnabled({ timeout: 5_000 })
     await send.click()
     await expect(
-      page.getByRole('heading', { name: 'Friend reply' }),
+      page.getByRole('heading', { name: 'Mira' }),
     ).toBeVisible({ timeout: 15_000 })
   }
 
@@ -243,7 +243,7 @@ test('student click-through exercises every demo page and control', async ({
   // Fresh Practice-play entry after Confidence Conversation.
   await page.goto('/#practice')
   await page.getByLabel('Interface language').selectOption('en-IN')
-  await page.getByRole('tab', { name: 'A situation' }).click()
+  await page.getByRole('button', { name: 'Role-play (synthetic)' }).click()
   await page.getByRole('button', { name: 'Start this situation' }).click()
   await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible({
     timeout: 10_000,

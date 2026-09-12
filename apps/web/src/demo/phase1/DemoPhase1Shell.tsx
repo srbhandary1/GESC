@@ -390,7 +390,7 @@ export function DemoPhase1Shell({
             </a>
             <button
               type="button"
-              className="ge-button phase1-home__cta"
+              className="ge-button ge-button--primary phase1-home__cta"
               onClick={() => go('daily-activity')}
             >
               <span className="phase1-home__cta-label">
