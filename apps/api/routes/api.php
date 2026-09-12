@@ -9,6 +9,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InstitutionInviteController;
 use App\Http\Controllers\LearnerAttemptController;
 use App\Http\Controllers\LearnerHomeController;
+use App\Http\Controllers\LearnerLevelSessionController;
 use App\Http\Controllers\LearnerMediaController;
 use App\Http\Controllers\LearnerMemoryController;
 use App\Http\Controllers\LearnerMissionController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\LearnerOfflineController;
 use App\Http\Controllers\LearnerOnboardingController;
 use App\Http\Controllers\MobileAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
+use App\Http\Controllers\OperatorLessonPracticeController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
@@ -125,6 +127,46 @@ Route::prefix('v1')->group(function (): void {
             [LearnerMediaController::class, 'show'],
         )->whereUlid('asset')
             ->name('api.v1.media-assets.content.show');
+        Route::get(
+            '/me/levels',
+            [LearnerLevelSessionController::class, 'index'],
+        )->name('api.v1.me.levels.index');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions',
+            [LearnerLevelSessionController::class, 'sessions'],
+        )->whereNumber('levelNumber')
+            ->name('api.v1.me.levels.sessions.index');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions/{partId}',
+            [LearnerLevelSessionController::class, 'show'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.show');
+        Route::get(
+            '/me/levels/{levelNumber}/sessions/{partId}/audio',
+            [LearnerLevelSessionController::class, 'audio'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.audio.show');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/completions',
+            [LearnerLevelSessionController::class, 'complete'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.completions.store');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/check-submissions',
+            [LearnerLevelSessionController::class, 'submitCheck'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->name('api.v1.me.levels.sessions.check-submissions.store');
+        Route::post(
+            '/me/levels/{levelNumber}/sessions/{partId}/conversation-sessions',
+            [LearnerLevelSessionController::class, 'startConversation'],
+        )->whereNumber('levelNumber')
+            ->whereIn('partId', ['introduction', 'practice', 'conversation', 'interaction'])
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.me.levels.sessions.conversation-sessions.store');
         Route::post(
             '/conversation-sessions',
             [ConversationController::class, 'start'],
@@ -190,6 +232,25 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('recording')
             ->name('api.v1.voice-recordings.deletion.show');
 
+        Route::post(
+            '/operator/lesson-practice/blueprints',
+            [OperatorLessonPracticeController::class, 'store'],
+        )->name('api.v1.operator.lesson-practice.blueprints.store');
+        Route::get(
+            '/operator/lesson-practice/blueprints/{blueprint}',
+            [OperatorLessonPracticeController::class, 'show'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.show');
+        Route::post(
+            '/operator/lesson-practice/blueprints/{blueprint}/reviews',
+            [OperatorLessonPracticeController::class, 'storeReview'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.reviews.store');
+        Route::post(
+            '/operator/lesson-practice/blueprints/{blueprint}/attachments',
+            [OperatorLessonPracticeController::class, 'storeAttachments'],
+        )->whereUlid('blueprint')
+            ->name('api.v1.operator.lesson-practice.blueprints.attachments.store');
         Route::get(
             '/operator/content/drafts',
             [OperatorContentController::class, 'drafts'],

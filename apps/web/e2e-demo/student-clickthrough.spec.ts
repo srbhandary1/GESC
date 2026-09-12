@@ -97,20 +97,20 @@ test('student click-through exercises every demo page and control', async ({
 
   // AI Teacher — language toggles, focused prompts, Listen.
   await page.getByRole('button', { name: 'AI Teacher' }).click()
+  await expect(page.getByRole('heading', { name: 'Can' })).toBeVisible()
   await expect(
-    page.getByText(
-      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
-    ),
+    page.getByText('I can speak English. Can I help you?').first(),
   ).toBeVisible()
   const englishButtons = page.getByRole('button', { name: 'English' })
   await englishButtons.first().click()
   if ((await englishButtons.count()) > 1) {
     await englishButtons.nth(1).click()
   }
-  for (const prompt of ["Today’s task", 'My level', 'Next step']) {
-    await page.getByRole('button', { name: prompt }).click()
-  }
-  await page.getByRole('button', { name: 'Tap to Play' }).click()
+  await expect(
+    page.getByText(
+      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
+    ),
+  ).toHaveCount(0)
 
   // Daily Activity — audio + full quiz from the Home CTA.
   await page.getByRole('button', { name: 'Back' }).click()
@@ -157,9 +157,11 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /Pre-Level 1/i }).click()
   await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Be' })).toBeVisible()
   await expect(
-    page.getByText(/No authored listen-learn session/i),
+    page.getByText('I am a student. This is my book.').first(),
   ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
 
   // Learn is My Levels only — no synthetic Introduce-yourself mission.
   await page.getByRole('link', { name: 'Learn' }).click()

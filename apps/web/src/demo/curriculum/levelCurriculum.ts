@@ -3,8 +3,8 @@
  *
  * Level 1 Can: `9818fe2` localDemo sessionDetail + LPL-01 blueprint.
  * Levels 2–17: `c4c810f` AuthoredFoundationLessons.php (APP-0065/0066/0067).
- * Pre-Level 1 and Pre-Level 2 have no authored LessonPractice session in
- * that archive — do not invent greetings/coffee fillers.
+ * Pre-Level 1 Be and Pre-Level 2 This/That: newly authored to close the
+ * archive gap (same Phase 1 foundation pattern; not greetings/coffee).
  */
 export type CurriculumAvailability = 'authored' | 'missing'
 
@@ -41,35 +41,111 @@ export const LEVEL_CURRICULUM: readonly LevelCurriculum[] = [
     id: 'pre-1',
     kind: 'pre',
     number: 1,
-    availability: 'missing',
-    source: null,
-    conceptKey: null,
-    title: 'Pre-Level 1',
-    objective: null,
-    targetPatterns: [],
-    modelLine: null,
-    fallbackTurns: [],
-    scenario: null,
-    kannadaSummary: null,
-    applyTask: null,
-    questions: [],
+    availability: 'authored',
+    source: 'AuthoredPreLevels.php be — newly authored (absent from CC archive)',
+    conceptKey: 'be',
+    title: 'Be',
+    objective:
+      'By the end of this lesson, the learner can use I am, You are and This is to name a person or thing in a short classroom or workplace exchange.',
+    targetPatterns: [
+      'I am + noun / adjective.',
+      'You are + noun / adjective.',
+      'This is + noun.',
+      'Is this + noun?',
+    ],
+    modelLine: 'I am a student. This is my book.',
+    fallbackTurns: [
+      'I am a student. This is my book.',
+      'Is this your pen?',
+      'Yes, it is.',
+    ],
+    scenario:
+      'In a classroom or office, name yourself and one object on the table.',
+    kannadaSummary:
+      'ಈ ಪಾಠದಲ್ಲಿ I am, You are ಮತ್ತು This is ಬಳಸಿ ವ್ಯಕ್ತಿ ಅಥವಾ ವಸ್ತುವನ್ನು ಹೆಸರಿಸಿ.',
+    applyTask:
+      'Record a 20–30 second exchange: say who you are, name one object with This is, and ask one Is this…? question.',
+    questions: [
+      {
+        id: 'be-01',
+        prompt: 'Choose the correct identity sentence.',
+        options: ['I am a teacher.', 'I are a teacher.', 'I be a teacher.'],
+        correctIndex: 0,
+      },
+      {
+        id: 'be-02',
+        prompt: 'Choose the correct naming sentence.',
+        options: ['This is my desk.', 'This are my desk.', 'This my desk.'],
+        correctIndex: 0,
+      },
+      {
+        id: 'be-03',
+        prompt: 'Choose the question for a nearby object.',
+        options: ['Is this your bag?', 'This is your bag?', 'Are this your bag?'],
+        correctIndex: 0,
+      },
+    ],
   },
   {
     id: 'pre-2',
     kind: 'pre',
     number: 2,
-    availability: 'missing',
-    source: null,
-    conceptKey: null,
-    title: 'Pre-Level 2',
-    objective: null,
-    targetPatterns: [],
-    modelLine: null,
-    fallbackTurns: [],
-    scenario: null,
-    kannadaSummary: null,
-    applyTask: null,
-    questions: [],
+    availability: 'authored',
+    source: 'AuthoredPreLevels.php this_that — newly authored (absent from CC archive)',
+    conceptKey: 'this_that',
+    title: 'This / That',
+    objective:
+      'By the end of this lesson, the learner can use this and that to point to a near or far object at work or in class and ask which one it is.',
+    targetPatterns: [
+      'This is + noun.',
+      'That is + noun.',
+      'Is this / that + noun?',
+      'These are / Those are + noun.',
+    ],
+    modelLine: 'This is my desk. That is your chair.',
+    fallbackTurns: [
+      'This is my desk. That is your chair.',
+      'Is that the form?',
+      'No, that is the handbook.',
+    ],
+    scenario:
+      'At a shared desk, point to a near object and a far object and check which one a colleague needs.',
+    kannadaSummary:
+      'ಈ ಪಾಠದಲ್ಲಿ this (ಹತ್ತಿರ) ಮತ್ತು that (ದೂರ) ಬಳಸಿ ವಸ್ತುಗಳನ್ನು ತೋರಿಸಿ.',
+    applyTask:
+      'Record a 20–30 second exchange: name one near object with this, one far object with that, and ask one Is that…? question.',
+    questions: [
+      {
+        id: 'this_that-01',
+        prompt: 'Choose the sentence for a nearby object.',
+        options: [
+          'This is my notebook.',
+          'That is my notebook here.',
+          'These is my notebook.',
+        ],
+        correctIndex: 0,
+      },
+      {
+        id: 'this_that-02',
+        prompt: 'Choose the sentence for a farther object.',
+        options: [
+          'That is the door.',
+          'This is the door over there.',
+          'Those is the door.',
+        ],
+        correctIndex: 0,
+      },
+      {
+        id: 'this_that-03',
+        prompt: 'Choose the question about a farther object.',
+        options: [
+          'Is that your file?',
+          'Are that your file?',
+          'This that your file?',
+        ],
+        correctIndex: 0,
+      },
+    ],
   },
   {
     id: 'level-1',

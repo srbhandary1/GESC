@@ -8,7 +8,7 @@
 | Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
 | Updated date | 12 September 2026 |
-| Git branch | `codex/confidence-conversation` |
+| Git branch | `cursor/learner-ux-elevate-5f47` (PR #6; LessonPractice restored from `codex/confidence-conversation` @ `9818fe2`) |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
 | Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |

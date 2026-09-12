@@ -31,6 +31,16 @@ return [
             'scenario_key' => 'everyday-friend-prototype',
             'mode' => 'friend',
         ],
+        'skill_focus' => [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'everyday-friend-prototype',
+            'mode' => 'friend',
+        ],
+        'review' => [
+            'persona_key' => 'patient-friend-prototype',
+            'scenario_key' => 'everyday-friend-prototype',
+            'mode' => 'friend',
+        ],
         'roleplay' => [
             'persona_key' => 'clinic-reception-roleplay-prototype',
             'scenario_key' => 'clinic-reception-roleplay-scenario',

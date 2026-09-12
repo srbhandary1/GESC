@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Conversation\Evaluation\AiEvaluationRunner;
+use App\Curriculum\LessonPractice\App0063LevelsCommissioner;
+use App\Curriculum\LessonPractice\App0065AuthoredLevelsReplacer;
+use App\Curriculum\LessonPractice\App0066EnglishReviewReplacer;
+use App\Curriculum\LessonPractice\App0067KannadaReviewReplacer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
@@ -245,6 +249,155 @@ Artisan::command(
         return $report['status'] === 'completed' ? 0 : 1;
     },
 )->purpose('Run the locked deterministic AI prompt evaluation suite');
+
+Artisan::command(
+    'lesson-practice:commission-app0063-levels
+        {--inventory= : Path to levels-1-17 teaching-audio hash inventory JSON}
+        {--approval=APP-0063 : Must be APP-0063}',
+    function (): int {
+        $inventory = $this->option('inventory');
+        $approval = $this->option('approval');
+        if (
+            ! is_string($inventory) || ! is_file($inventory)
+            || ! is_string($approval) || $approval !== 'APP-0063'
+        ) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0063_commission_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0063LevelsCommissioner::class)
+                ->commission($inventory);
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0063_commission_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0063 private auto-commission Levels 2–17 blueprints/reviews/attachments');
+
+Artisan::command(
+    'lesson-practice:replace-app0065-authored-levels
+        {--approval=APP-0065 : Must be APP-0065}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0065') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0065_replace_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0065AuthoredLevelsReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0065_replace_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0065 replace Levels 2–17 provisional templates with authored lesson text');
+
+Artisan::command(
+    'lesson-practice:record-app0066-english-review
+        {--approval=APP-0066 : Must be APP-0066}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0066') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0066_review_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0066EnglishReviewReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0066_review_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0066 record named English academic review of authored Levels 2–17');
+
+Artisan::command(
+    'lesson-practice:record-app0067-kannada-review
+        {--approval=APP-0067 : Must be APP-0067}',
+    function (): int {
+        $approval = $this->option('approval');
+        if (! is_string($approval) || $approval !== 'APP-0067') {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0067_review_options_invalid',
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        try {
+            $result = app(App0067KannadaReviewReplacer::class)
+                ->replace();
+        } catch (Throwable $exception) {
+            $this->error(json_encode([
+                'status' => 'blocked',
+                'safe_error_code' => 'app0067_review_rejected',
+                'detail' => $exception->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return 2;
+        }
+
+        $this->info(json_encode([
+            'status' => 'completed',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return 0;
+    },
+)->purpose('APP-0067 record named Kannada review of authored Levels 2–17');
 
 Schedule::command('voice:purge-expired')
     ->everyFiveMinutes()

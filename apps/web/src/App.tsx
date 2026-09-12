@@ -48,9 +48,11 @@ import {
 } from './localization/interfaceLocalization'
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
-import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
+import { LearnerLevelsSurface } from './learner/LearnerLevelsSurface'
+import type { LevelSessionsApi } from './learner/LevelSessionsApi'
+import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import { browserOfflineLearningStore } from './offline/BrowserOfflineLearningStore'
 import type {
   OfflineLearningStore,
@@ -73,6 +75,7 @@ interface AppProps {
   createClientId?: () => string
   demoMode?: boolean
   learnerJourneyApi?: LearnerJourneyApi
+  levelSessionsApi?: LevelSessionsApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
   operatorConsoleApi?: OperatorConsoleApi
@@ -148,6 +151,7 @@ function App({
   createClientId,
   demoMode = false,
   learnerJourneyApi = defaultLearnerJourneyApi,
+  levelSessionsApi = defaultLevelSessionsApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
   operatorConsoleApi = defaultOperatorConsoleApi,
@@ -604,6 +608,7 @@ function App({
             conversationApi={conversationApi}
             demoMode={demoMode}
             demoOrganization={demoOrganization}
+            levelSessionsApi={levelSessionsApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
             onLocaleChange={setLocale}
@@ -616,20 +621,20 @@ function App({
                 demoMode={demoMode}
                 demoOrganization={demoOrganization}
                 forcedModule="levels"
+                levelSessionsApi={levelSessionsApi}
                 locale={locale}
                 localizationPolicy={localizationPolicy}
                 onLocaleChange={setLocale}
               />
             ) : (
-              <LearnerJourney
-                api={learnerJourneyApi}
-                audioRecorder={audioRecorder}
-                createClientId={createClientId}
+              <LearnerLevelsSurface
+                conversationApi={conversationApi}
+                demoMode={demoMode}
+                demoOrganization={demoOrganization}
+                levelSessionsApi={levelSessionsApi}
                 locale={locale}
                 localizationPolicy={localizationPolicy}
-                offlineBinding={offlineBinding}
-                offlineStore={offlineStore}
-                resumeBundle={offlineResume?.storedBundle}
+                onLocaleChange={setLocale}
               />
             )}
           </>

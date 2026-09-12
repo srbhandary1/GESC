@@ -58,6 +58,8 @@ export interface ConversationJourneyProps {
   readonly openingLine?: string
   readonly autoStart?: boolean
   readonly speakOpening?: boolean
+  /** Bound ConversationOrchestrator session from `/me/levels/.../conversation-sessions`. */
+  readonly initialSession?: FriendSession
 }
 
 type ConfidenceStage = 'warmup' | 'listen' | 'talk' | 'reflect'
@@ -122,6 +124,7 @@ export function ConversationJourney({
   openingLine,
   autoStart = false,
   speakOpening = true,
+  initialSession,
 }: ConversationJourneyProps) {
   const modelLines =
     listenLines !== undefined && listenLines.length > 0
@@ -129,7 +132,16 @@ export function ConversationJourney({
       : openingLine !== undefined && openingLine.trim() !== ''
         ? [openingLine]
         : CONFIDENCE_LISTEN_LINES
-  const [state, setState] = useState<ConversationState>({ kind: 'idle' })
+  const [state, setState] = useState<ConversationState>(() =>
+    initialSession === undefined
+      ? { kind: 'idle' }
+      : {
+          kind: 'ready',
+          session: initialSession,
+          stage: 'talk',
+          completedTurns: 0,
+        },
+  )
   const [utterance, setUtterance] = useState('')
   const [coachingMode, setCoachingMode] = useState<
     'gentle' | 'tutor' | 'fluency'
@@ -236,7 +248,21 @@ export function ConversationJourney({
   }
 
   useEffect(() => {
-    if (!autoStart || autoStarted.current) {
+    if (
+      openingSpoken.current ||
+      initialSession === undefined ||
+      openingLine === undefined ||
+      openingLine.trim() === '' ||
+      !speakOpening
+    ) {
+      return
+    }
+    openingSpoken.current = true
+    speakEnglish(openingLine)
+  })
+
+  useEffect(() => {
+    if (!autoStart || autoStarted.current || initialSession !== undefined) {
       return
     }
     autoStarted.current = true
@@ -760,24 +786,24 @@ export function ConversationJourney({
 
       {session !== undefined && stage === 'talk' ? (
         <>
-          {demoMode ? null : (
-            <>
-              <VoicePracticePanel
-                api={api}
-                createClientId={createClientId}
-                locale={locale}
-                onTranscriptSelected={setUtterance}
-                sessionId={session.id}
-                text={text}
-              />
-              <AiMemoryPanel
-                api={api}
-                createClientId={createClientId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                text={text}
-              />
-            </>
+          {api.uploadVoiceRecording === undefined ? null : (
+            <VoicePracticePanel
+              api={api}
+              createClientId={createClientId}
+              locale={locale}
+              onTranscriptSelected={setUtterance}
+              sessionId={session.id}
+              text={text}
+            />
+          )}
+          {demoMode || api.listAiMemory === undefined ? null : (
+            <AiMemoryPanel
+              api={api}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              text={text}
+            />
           )}
 
           <div

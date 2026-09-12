@@ -3129,17 +3129,56 @@ The APK is not committed.
 - Chapter replies: OpenRouter `/demo/chat` with chapter system extra, or
   `chapterFriendReply` when unconfigured.
 
-### Not copied onto this branch
+### Later closed on this branch (D-0121)
 
-- Laravel `LessonPractice` / `LevelSessionDeliveryService` /
-  `LevelSessionAudioStreamer` (`c4c810f`) — stored MP3 needs API + seed.
-- `IndicHttpSpeechToTextProvider` (`fb0748c` / `09e3345`) — demo Talk
-  still uses browser `SpeechRecognition` in `en-IN`.
-- Grove `foundationLessons` catalog (`e07eba0`) — still excluded.
+Laravel LessonPractice, the streamer, Indic STT DI, and Pre-Level Be /
+This-That are restored or newly authored. See the following section.
 
-### Still missing
+---
 
-- Pre-Level 1 and Pre-Level 2: no historical LessonPractice copy.
+## PR #6 LessonPractice + Pre-Level close (product path)
+
+### Restored from `codex/confidence-conversation` (`9818fe2` / `c4c810f` / `fb0748c`)
+
+- Laravel `LessonPractice`, `LevelSessionDeliveryService`,
+  `LevelSessionAudioStreamer`, `LearnerLevelSessionController`,
+  APP-0063/65/66/67 commands, Indic HTTP STT provider + `voice.indic`.
+- Web `WebLevelSessionsApi`, `LevelPathPanel`, authenticated-media
+  `ModelAudioPlayer`.
+- Routes: `/api/v1/me/levels/*` and operator lesson-practice blueprints.
+- Conversation prototype key `skill_focus` (persona/scenario reuse the
+  reviewed friend prototype already seeded on this branch).
+
+### Newly authored (not in CC history)
+
+- Pre-Level 1 **Be** and Pre-Level 2 **This / That** in
+  `levelCurriculum.ts` and `AuthoredPreLevels.php`. Identity / pointing
+  foundation — not greetings or coffee-shop fixtures.
+
+### Client behaviour
+
+- Learn prefers API `LevelPathPanel` when `GET /me/levels` returns an
+  available level; otherwise Phase 1 rooms.
+- Rooms play stored audio when `audio_stream_path` is present, else
+  `/demo/tts`.
+- Chapter chat uses bound conversation-sessions when
+  `startConversation` succeeds; else demo `ConversationJourney`.
+- Home AI Teacher is the current-level chapter session (Level 1 Can).
+- `VoicePracticePanel` shows when `uploadVoiceRecording` exists.
+
+### Known limitations
+
+- OpenAPI / generated `@global-english/contracts` types were not
+  regenerated; `WebLevelSessionsApi` talks to the restored routes
+  directly.
+- Pre-Levels are not numeric streamer levels 1–17; they play via TTS
+  until commissioned with media.
+- Soft-launch Azure STT/TTS DI from CC is present as classes but not
+  rebound (this branch lacks the extra SoftLaunch conversation config).
+- F0 DoD, production and Play remain unauthorized.
+
+Runbook: [DEMO_LESSON_PRACTICE.md](DEMO_LESSON_PRACTICE.md).
+Catalogue revision `ui-*-2026-09-12.14`.
 
 
 

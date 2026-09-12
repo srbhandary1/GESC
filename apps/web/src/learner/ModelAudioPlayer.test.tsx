@@ -68,4 +68,74 @@ describe('ModelAudioPlayer', () => {
     )
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
   })
+
+  it('keeps play disabled until authenticated audio is in a blob URL', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(
+      'blob:authenticated-model-audio',
+    )
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    let finishLoad: ((audio: Blob) => void) | undefined
+    const loadSource = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          finishLoad = resolve
+        }),
+    )
+
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/mpeg"
+        source="/api/v1/me/levels/1/sessions/introduction/audio"
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Loading' }),
+    ).toBeDisabled()
+    expect(screen.queryByTestId('model-audio-element')).toBeNull()
+
+    finishLoad?.(new Blob(['audio'], { type: 'audio/mpeg' }))
+
+    await screen.findByTestId('model-audio-element')
+    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
+  })
+
+  it('loads authenticated audio into a revocable object URL', async () => {
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:authenticated-model-audio')
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const loadSource = vi.fn(async () => new Blob(['audio']))
+
+    const view = render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/wav"
+        source="https://api.example.test/api/v1/media/model-audio"
+      />,
+    )
+
+    expect(screen.queryByTestId('model-audio-element')).toBeNull()
+
+    await screen.findByTestId('model-audio-element')
+
+    expect(loadSource).toHaveBeenCalledWith(
+      'https://api.example.test/api/v1/media/model-audio',
+      expect.any(AbortSignal),
+    )
+    expect(createObjectUrl).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByTestId('model-audio-element').querySelector('source'),
+    ).toHaveAttribute('src', 'blob:authenticated-model-audio')
+
+    view.unmount()
+    expect(revokeObjectUrl).toHaveBeenCalledWith(
+      'blob:authenticated-model-audio',
+    )
+  })
 })

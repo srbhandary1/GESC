@@ -6,9 +6,14 @@ import type {
 } from '@global-english/localization'
 import { useEffect, useMemo, useState } from 'react'
 import { ConversationJourney } from '../../conversation/ConversationJourney'
-import type { ConversationJourneyApi } from '../../conversation/ConversationJourneyApi'
+import type {
+  ConversationJourneyApi,
+  FriendSession,
+} from '../../conversation/ConversationJourneyApi'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
+import { isDemoSpeechUrl } from '../browserSpeech'
+import { DemoSpeechPlayer } from '../DemoSpeechPlayer'
 import {
   bindChapterPractice,
   chapterFromCurriculum,
@@ -16,6 +21,12 @@ import {
   chapterOpeningLine,
 } from '../chapterPractice'
 import { speakDemoText, stopDemoSpeech } from '../demoTts'
+import { ModelAudioPlayer } from '../../learner/ModelAudioPlayer'
+import type {
+  LevelSessionDetail,
+  LevelSessionsApi,
+} from '../../learner/LevelSessionsApi'
+import { createClientId as createRandomClientId } from '../../shared/createClientId'
 import {
   MISSING_LEVEL_NOTICE,
   type LevelCurriculum,
@@ -36,6 +47,32 @@ export interface LevelSessionPanelProps {
   readonly mode?: LevelSessionMode
   readonly conversationApi?: ConversationJourneyApi
   readonly demoMode?: boolean
+  readonly levelSessionsApi?: LevelSessionsApi
+  readonly createClientId?: () => string
+}
+
+function lessonAudioLabels(
+  message: (key: MessageKey, parameters?: MessageParameters) => {
+    readonly text: string
+  },
+) {
+  return {
+    endedStatus: message('learner.audio.ended_status').text,
+    error: message('learner.audio.error').text,
+    errorStatus: message('learner.audio.error_status').text,
+    loading: message('learner.audio.loading').text,
+    loadingStatus: message('learner.audio.loading_status').text,
+    pause: message('learner.audio.pause').text,
+    pausedStatus: message('learner.audio.paused_status').text,
+    play: message('learner.audio.play').text,
+    playingStatus: message('learner.audio.playing_status').text,
+    readyStatus: message('learner.audio.ready_status').text,
+    region: message('learner.audio.region').text,
+    replay: message('learner.audio.replay').text,
+    resume: message('learner.audio.resume').text,
+    unavailable: message('learner.audio.unavailable').text,
+    unavailableStatus: message('learner.audio.unavailable_status').text,
+  }
 }
 
 export function LevelSessionPanel({
@@ -46,13 +83,18 @@ export function LevelSessionPanel({
   mode = 'audio',
   conversationApi,
   demoMode = false,
+  levelSessionsApi,
+  createClientId = createRandomClientId,
 }: LevelSessionPanelProps) {
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [apiDetail, setApiDetail] = useState<LevelSessionDetail | null>(null)
+  const [boundSession, setBoundSession] = useState<FriendSession | null>(null)
   const chapter = useMemo(() => chapterFromCurriculum(session), [session])
+  const apiLevelNumber = session.kind === 'level' ? session.number : null
 
   useEffect(() => {
     bindChapterPractice(chapter)
@@ -61,6 +103,74 @@ export function LevelSessionPanel({
       stopDemoSpeech()
     }
   }, [chapter])
+
+  useEffect(() => {
+    setApiDetail(null)
+    setBoundSession(null)
+    if (levelSessionsApi === undefined || apiLevelNumber === null) {
+      return
+    }
+    const controller = new AbortController()
+    void levelSessionsApi
+      .sessionDetail(apiLevelNumber, 'introduction', controller.signal)
+      .then((detail) => {
+        if (!controller.signal.aborted) {
+          setApiDetail(detail)
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setApiDetail(null)
+        }
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [apiLevelNumber, levelSessionsApi])
+
+  useEffect(() => {
+    if (
+      levelSessionsApi === undefined ||
+      apiLevelNumber === null ||
+      conversationApi === undefined
+    ) {
+      return
+    }
+    const controller = new AbortController()
+    void levelSessionsApi
+      .startConversation(
+        apiLevelNumber,
+        'introduction',
+        locale,
+        createClientId(),
+        controller.signal,
+      )
+      .then((started) => {
+        if (!controller.signal.aborted) {
+          setBoundSession(started)
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setBoundSession(null)
+        }
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [
+    apiLevelNumber,
+    conversationApi,
+    createClientId,
+    levelSessionsApi,
+    locale,
+  ])
+
+  const streamPath =
+    apiDetail?.audio_stream_path !== undefined &&
+    apiDetail.audio_stream_path !== ''
+      ? apiDetail.audio_stream_path
+      : null
 
   const playModel = () => {
     if (session.modelLine === null) {
@@ -78,7 +188,8 @@ export function LevelSessionPanel({
   useEffect(() => {
     if (
       chapter === null ||
-      (mode !== 'audio' && mode !== 'content')
+      (mode !== 'audio' && mode !== 'content') ||
+      streamPath !== null
     ) {
       return
     }
@@ -89,7 +200,7 @@ export function LevelSessionPanel({
       .finally(() => {
         setSpeaking(false)
       })
-  }, [chapter, mode])
+  }, [chapter, mode, streamPath])
 
   const score = submitted
     ? session.questions.reduce(
@@ -133,17 +244,35 @@ export function LevelSessionPanel({
               ))}
             </ul>
           )}
-          <button
-            type="button"
-            className="ge-button ge-button--primary"
-            onClick={playModel}
-            disabled={speaking}
-            aria-busy={speaking}
-          >
-            <LocalizedMessage
-              resolution={message('demo.phase1.daily.audio_play')}
-            />
-          </button>
+          {streamPath !== null ? (
+            isDemoSpeechUrl(streamPath) ? (
+              <DemoSpeechPlayer
+                labels={lessonAudioLabels(message)}
+                source={streamPath}
+              />
+            ) : (
+              <ModelAudioPlayer
+                labels={lessonAudioLabels(message)}
+                loadSource={levelSessionsApi?.downloadAudio}
+                mimeType="audio/mpeg"
+                onEnded={() => setSpeaking(false)}
+                onPlaying={() => setSpeaking(true)}
+                source={streamPath}
+              />
+            )
+          ) : (
+            <button
+              type="button"
+              className="ge-button ge-button--primary"
+              onClick={playModel}
+              disabled={speaking}
+              aria-busy={speaking}
+            >
+              <LocalizedMessage
+                resolution={message('demo.phase1.daily.audio_play')}
+              />
+            </button>
+          )}
           {showQuiz ? (
             <article className="phase1-subpanel">
               <h3>
@@ -208,9 +337,11 @@ export function LevelSessionPanel({
           {showTalk && conversationApi !== undefined && chapter !== null ? (
             <ConversationJourney
               api={conversationApi}
-              autoStart
+              autoStart={boundSession === null}
               demoMode={demoMode}
               embedded
+              initialSession={boundSession ?? undefined}
+              key={boundSession?.id ?? session.id}
               listenLines={chapterListenLines(chapter)}
               locale={locale}
               localizationPolicy={localizationPolicy}

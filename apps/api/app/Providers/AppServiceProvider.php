@@ -27,6 +27,7 @@ use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
+use App\Conversation\Voice\Providers\Indic\IndicHttpSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Health\DatabaseReadinessProbe;
 use App\Health\ReadinessChecker;
@@ -109,11 +110,19 @@ class AppServiceProvider extends ServiceProvider
             $this->app->environment('local')
             || $this->app->environment('testing')
         ) && config('voice.provider_driver') === 'deterministic-test';
+        $indicVoiceEnabled = (
+            $this->app->environment('local')
+            || $this->app->environment('testing')
+            || $this->app->environment('soft-launch')
+        ) && filter_var(config('voice.upload_enabled'), FILTER_VALIDATE_BOOL)
+            && config('voice.provider_driver') === 'indic';
         $this->app->bind(
             RecordedSpeechToTextProvider::class,
-            $testingVoiceEnabled
-                ? DeterministicTestingSpeechToTextProvider::class
-                : DisabledRecordedSpeechToTextProvider::class,
+            match (true) {
+                $testingVoiceEnabled => DeterministicTestingSpeechToTextProvider::class,
+                $indicVoiceEnabled => IndicHttpSpeechToTextProvider::class,
+                default => DisabledRecordedSpeechToTextProvider::class,
+            },
         );
         $this->app->bind(OtpDeliveryAdapter::class, function (): OtpDeliveryAdapter {
             if (config('authentication.otp.driver') !== 'local') {

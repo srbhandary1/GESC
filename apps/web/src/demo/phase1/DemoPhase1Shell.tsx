@@ -6,11 +6,11 @@ import type {
 } from '@global-english/localization'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConversationJourneyApi } from '../../conversation/ConversationJourneyApi'
+import type { LevelSessionsApi } from '../../learner/LevelSessionsApi'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
 import { SUPPORTED_LOCALES } from '@global-english/localization'
 import { AvatarSlot } from '../../ui/AvatarSlot'
-import { TapToPlay } from '../../ui/TapToPlay'
 import { OnboardingStepper } from '../../ui/OnboardingStepper'
 import { AndroidDemoDownload } from '../AndroidDemoDownload'
 import {
@@ -24,9 +24,7 @@ import { LevelSessionPanel } from '../curriculum/LevelSessionPanel'
 import { DemoTtsAdminSettings } from '../DemoTtsAdminSettings'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
-  PHASE1_FOCUS_AI_TOPICS,
   moduleFromHash,
-  phase1AiTopics,
   phase1Attendance,
   phase1DailyActivity,
   phase1LevelRooms,
@@ -47,6 +45,7 @@ export interface DemoPhase1ShellProps {
   readonly onLocaleChange?: (locale: SupportedLocale) => void
   readonly conversationApi?: ConversationJourneyApi
   readonly demoMode?: boolean
+  readonly levelSessionsApi?: LevelSessionsApi
 }
 
 const moduleTitleKeys: Readonly<Record<Phase1Module, MessageKey>> = {
@@ -116,24 +115,6 @@ const noticeBodyKeys = {
   n6: 'demo.phase1.notices.n6.body',
 } as const satisfies Record<(typeof phase1Notices)[number]['id'], MessageKey>
 
-const aiTopicLabelKeys = {
-  welcome: 'demo.phase1.ai.topic.welcome.label',
-  structure: 'demo.phase1.ai.topic.structure.label',
-  level: 'demo.phase1.ai.topic.level.label',
-  attendance: 'demo.phase1.ai.topic.attendance.label',
-  score: 'demo.phase1.ai.topic.score.label',
-  motivate: 'demo.phase1.ai.topic.motivate.label',
-} as const satisfies Record<(typeof phase1AiTopics)[number]['id'], MessageKey>
-
-const aiTopicReplyKeys = {
-  welcome: 'demo.phase1.ai.topic.welcome.reply',
-  structure: 'demo.phase1.ai.topic.structure.reply',
-  level: 'demo.phase1.ai.topic.level.reply',
-  attendance: 'demo.phase1.ai.topic.attendance.reply',
-  score: 'demo.phase1.ai.topic.score.reply',
-  motivate: 'demo.phase1.ai.topic.motivate.reply',
-} as const satisfies Record<(typeof phase1AiTopics)[number]['id'], MessageKey>
-
 const localeEndonymKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
   'en-IN': 'locale.en_IN',
   'hi-IN': 'locale.hi_IN',
@@ -173,6 +154,7 @@ export function DemoPhase1Shell({
   onLocaleChange,
   conversationApi,
   demoMode = false,
+  levelSessionsApi,
 }: DemoPhase1ShellProps) {
   const [hashModule, setHashModule] = useState<Phase1Module>(() =>
     moduleFromHash(globalThis.location?.hash ?? ''),
@@ -184,9 +166,6 @@ export function DemoPhase1Shell({
     setAiLanguageLocale(locale)
     setAiUsesEnglish(false)
   }
-  const [activeTopicId, setActiveTopicId] = useState<
-    (typeof PHASE1_FOCUS_AI_TOPICS)[number]
-  >(PHASE1_FOCUS_AI_TOPICS[0])
   const [selectedLevelId, setSelectedLevelId] = useState(currentLevel.id)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
@@ -206,12 +185,6 @@ export function DemoPhase1Shell({
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
 
   const aiLocale: SupportedLocale = aiUsesEnglish ? 'en-IN' : locale
-  const aiMessage = (key: MessageKey) =>
-    resolveInterfaceMessage(key, aiLocale, localizationPolicy)
-
-  const activeTopic =
-    phase1AiTopics.find((topic) => topic.id === activeTopicId) ??
-    phase1AiTopics[0]!
 
   useEffect(() => {
     if (forcedModule !== undefined) {
@@ -239,17 +212,6 @@ export function DemoPhase1Shell({
       cancelled = true
     }
   }, [])
-
-  const listenAiReply = async () => {
-    const reply = aiMessage(aiTopicReplyKeys[activeTopic.id]).text
-    stopDemoSpeech()
-    try {
-      const source = await speakDemoText(reply, aiLocale)
-      setUsedBrowserFallback(source === 'browser')
-    } catch {
-      setUsedBrowserFallback(true)
-    }
-  }
 
   const playDailyAudio = () => {
     stopDemoSpeech()
@@ -651,46 +613,6 @@ export function DemoPhase1Shell({
               label={message('shell.avatar.teacher').text}
               slot="ai-teacher"
             />
-            <blockquote
-              className="phase1-ai-reply min-w-0 flex-1"
-              lang={aiLocale}
-            >
-              <LocalizedMessage
-                resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
-              />
-              <TapToPlay
-                idleLabel={
-                  <LocalizedMessage resolution={message('shell.listen')} />
-                }
-                onPlay={listenAiReply}
-                playingLabel={
-                  <LocalizedMessage
-                    resolution={message('shell.listen.playing')}
-                  />
-                }
-                unavailableLabel={
-                  <LocalizedMessage
-                    resolution={message('shell.listen.unavailable')}
-                  />
-                }
-              />
-            </blockquote>
-          </div>
-          <div className="phase1-ai-topics">
-            {PHASE1_FOCUS_AI_TOPICS.map((topicId) => (
-              <button
-                key={topicId}
-                type="button"
-                className={activeTopicId === topicId ? 'is-active' : undefined}
-                onClick={() => setActiveTopicId(topicId)}
-              >
-                <LocalizedMessage
-                  resolution={aiMessage(aiTopicLabelKeys[topicId])}
-                />
-              </button>
-            ))}
-          </div>
-          <div className="phase1-ai-toolbar">
             <div
               className="phase1-ai-lang"
               role="group"
@@ -716,18 +638,19 @@ export function DemoPhase1Shell({
               </button>
             </div>
           </div>
-          <p className="phase1-muted">
-            <LocalizedMessage
-              resolution={message('demo.phase1.ai.scripted_notice')}
-            />
-          </p>
-          {usedBrowserFallback ? (
-            <p className="phase1-muted" role="status">
-              <LocalizedMessage
-                resolution={message('demo.speech.azure_unavailable')}
-              />
-            </p>
-          ) : null}
+          <LevelSessionPanel
+            conversationApi={conversationApi}
+            demoMode={demoMode}
+            levelSessionsApi={levelSessionsApi}
+            locale={aiLocale}
+            localizationPolicy={localizationPolicy}
+            mode="ai-teacher"
+            roomTitle={message('demo.phase1.nav.ai_teacher')}
+            session={
+              curriculumByLevelId(currentLevel.id) ??
+              curriculumByLevelId('level-1')!
+            }
+          />
         </section>
       ) : null}
 
@@ -847,6 +770,7 @@ export function DemoPhase1Shell({
             <LevelSessionPanel
               conversationApi={conversationApi}
               demoMode={demoMode}
+              levelSessionsApi={levelSessionsApi}
               locale={locale}
               localizationPolicy={localizationPolicy}
               mode={

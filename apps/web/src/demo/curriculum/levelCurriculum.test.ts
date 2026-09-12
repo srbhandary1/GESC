@@ -6,11 +6,19 @@ import {
 } from './levelCurriculum'
 
 describe('levelCurriculum', () => {
-  it('restores Can plus APP-0065 Levels 2–17 and flags missing Pre-Levels', () => {
+  it('restores Can plus APP-0065 Levels 2–17 and authored Pre-Levels', () => {
     expect(LEVEL_CURRICULUM).toHaveLength(19)
-    expect(authoredLevelCount()).toBe(17)
-    expect(curriculumByLevelId('pre-1')?.availability).toBe('missing')
-    expect(curriculumByLevelId('pre-2')?.availability).toBe('missing')
+    expect(authoredLevelCount()).toBe(19)
+    expect(curriculumByLevelId('pre-1')).toMatchObject({
+      conceptKey: 'be',
+      title: 'Be',
+      modelLine: 'I am a student. This is my book.',
+    })
+    expect(curriculumByLevelId('pre-2')).toMatchObject({
+      conceptKey: 'this_that',
+      title: 'This / That',
+      modelLine: 'This is my desk. That is your chair.',
+    })
     expect(curriculumByLevelId('level-1')).toMatchObject({
       conceptKey: 'can',
       title: 'Can',

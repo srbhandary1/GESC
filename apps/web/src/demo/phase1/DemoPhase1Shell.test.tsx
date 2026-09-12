@@ -181,23 +181,18 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.getByRole('img', { name: 'AI Teacher' }),
     ).toHaveAttribute('data-avatar-slot', 'ai-teacher')
+    expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
     expect(
-      screen.getByText(
+      screen.getByText('I can speak English. Can I help you?').first(),
+    ).toBeVisible()
+    expect(
+      screen.queryByText(
         'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
       ),
-    ).toBeInTheDocument()
+    ).not.toBeInTheDocument()
     expect(
-      screen.getByText(/Welcome\. You are on Level 1/),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: "Today’s task" }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'My level' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Next step' }),
-    ).toBeInTheDocument()
+      screen.queryByRole('button', { name: "Today’s task" }),
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Explain the course' }),
     ).not.toBeInTheDocument()
@@ -248,9 +243,10 @@ describe('DemoPhase1Shell', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'AI ಶಿಕ್ಷಕ' }))
+    expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
     expect(
-      screen.getByText(/ಸ್ವಾಗತ\. ನೀವು Level 1 ರಲ್ಲಿದ್ದೀರಿ/),
-    ).toBeInTheDocument()
+      screen.getByText('I can speak English. Can I help you?').first(),
+    ).toBeVisible()
     expect(screen.queryByText(/Svagata|Neevu Level/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'ಕನ್ನಡ' })).toHaveClass(
       'is-active',
@@ -277,7 +273,7 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('heading', { level: 1, name: 'आज' }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'AI शिक्षक' }))
-    expect(screen.getByText(/स्वागत है। आप Level 1 पर हैं/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'हिन्दी' })).toHaveClass(
       'is-active',
     )

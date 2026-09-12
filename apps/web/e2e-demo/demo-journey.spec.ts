@@ -101,19 +101,16 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: 'AI Teacher' }).click()
+  await expect(page.getByRole('heading', { name: 'Can' })).toBeVisible()
+  await expect(
+    page.getByText('I can speak English. Can I help you?').first(),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'English' }).first().click()
   await expect(
     page.getByText(
       'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
     ),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'English' }).first().click()
-  await expect(
-    page.getByText('Welcome. You are on Level 1.', { exact: false }),
-  ).toBeVisible()
-  for (const prompt of ["Today’s task", 'My level', 'Next step']) {
-    await page.getByRole('button', { name: prompt }).click()
-  }
-  await page.getByRole('button', { name: 'Tap to Play' }).click()
+  ).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /Continue today’s lesson/ }).click()
