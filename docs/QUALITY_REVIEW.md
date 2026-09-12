@@ -3261,6 +3261,7 @@ Theme-only; LessonPractice restore preserved.
 | Demo e2e first-run + LessonPractice | Pass | `demo-journey` 2 specs; API `:8000` down, rooms fall back |
 | Demo e2e student click-through | Fail (not curriculum) | Role-play **Perform** shows **Continue** before **Type instead**. Confidence Conversation listen / type / Mira / hint already passed in the same spec. Theme not reverted. |
 | Sideload APK | Pass | `make demo-android` bundled `https://localhost`; **6145419** bytes |
+| `pnpm audit --audit-level=high` | Pass locally | Overrides `js-yaml@4.3.2`, `@xmldom/xmldom@0.9.12`, `nanoid@<3.3.18`→`3.3.18`. Lockfile-only; 2 moderate remain (below the verify gate). |
 | Production / Play | Not authorized | D-0123 |
 
 
