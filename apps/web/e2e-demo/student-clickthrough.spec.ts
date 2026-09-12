@@ -50,29 +50,19 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('link', { name: 'Download Android demo' }),
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+  await expect(page.getByRole('button', { name: 'Attendance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Notice Board' })).toBeVisible()
+  await expect(page.getByText('Can', { exact: true })).toBeVisible()
   await expect(
     page.getByRole('heading', { name: '16 speaking lessons' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: 'Daily Activity' }).click()
+  await expect(page.getByText("Today's 5-mark check")).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Tap to Play lesson 16', exact: true }),
+    page.getByText('I can speak English. Can I help you?'),
   ).toBeVisible()
-  await page
-    .getByRole('button', { name: /Open Greetings and introductions/ })
-    .click()
-  await expect(
-    page.getByRole('heading', { name: 'Greetings and introductions' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Practise on Speak' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'About this practice Friend' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Got it' }).click()
-  await page.getByRole('button', { name: 'Start speaking practice' }).click()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await expect(
-    page.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
-  ).toBeVisible()
-  await page.getByRole('link', { name: 'Home' }).click()
+  await expect(page.getByText('I can speak English.')).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
 
   // Secondary student links from Home.
   for (const item of ['My Levels', 'AI Teacher', 'Profile']) {
@@ -141,17 +131,16 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('Conversation Room')).toBeVisible()
   await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
 
-  // Learn mission (demo skips onboarding) plus the 16 speaking lessons.
+  // Learn shows course levels; the synthetic mission remains below.
   await page.getByRole('link', { name: 'Learn' }).click()
   await expect(
+    page.getByRole('heading', { name: 'My Levels' }),
+  ).toBeVisible()
+  await expect(page.getByText('Pre-Level 1')).toBeVisible()
+  await expect(page.getByText('Audio Lessons')).toBeVisible()
+  await expect(
     page.getByRole('heading', { name: '16 speaking lessons' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('button', { name: /Open Greetings and introductions/ }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('button', { name: 'Tap to Play lesson 1', exact: true }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await page.getByRole('button', { name: 'Start mission' }).click()
   await page.getByRole('button', { name: 'Play model audio' }).click()
   await page

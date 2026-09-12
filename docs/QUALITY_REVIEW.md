@@ -3059,6 +3059,37 @@ Wonder alignment, 16 lessons, and Profile Voice providers are the same
 UI as web. The existing Home download URL is
 `/downloads/global-english-demo.apk`. The APK is not committed.
 
+---
+
+## PR #6 Can curriculum restore (presentation)
+
+### What was wrong
+
+Home and Learn were occupied by the Grove 16-card `foundationLessons`
+catalog (lesson 1 = Greetings / Order coffee). That displaced the Phase 1
+dashboard and the Level 1 **Can** listen/check content that existed on
+`9818fe2` (`localDemo.ts` + LPL-01 blueprint).
+
+### What was restored
+
+- Home module grid from `8ebacba`: Attendance, AI Teacher, Daily
+  Activity, My Levels, Notice Board (Mira / GESC green polish kept).
+- Learn destination opens My Levels / rooms, not the 16-card catalog.
+- Daily audio title **Can**; model line
+  `I can speak English. Can I help you?`; five-question check from
+  LPL-01 `can-01`–`can-03` plus two `cannot` / `Can I sit here?`
+  pattern items.
+- Catalogue revision `ui-*-2026-09-12.13`.
+
+### Known limitations
+
+- Laravel LessonPractice / `09e3345` Indic STT is not on this demo
+  branch. The PR-006 LearnerJourney mission remains the synthetic
+  “Introduce yourself” fixture.
+- te-IN / ml-IN Can chrome lines reuse English pending independent
+  review.
+- F0 DoD, production and Play remain unauthorized.
+
 
 
 

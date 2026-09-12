@@ -30,7 +30,6 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
-import { FoundationLessonCatalog } from './demo/FoundationLessonCatalog'
 import {
   foundationLessonById,
   lessonIdFromHash,
@@ -599,17 +598,12 @@ function App({
         ) : canLearn ? (
           <>
             {showDemoLearnHub ? (
-              <FoundationLessonCatalog
+              <DemoPhase1Shell
+                demoOrganization={demoOrganization}
+                forcedModule="levels"
                 locale={locale}
                 localizationPolicy={localizationPolicy}
-                syncHash
-                onPractise={(lesson) => {
-                  const url = new URL(globalThis.location.href)
-                  url.hash = `practice/${lesson.id}`
-                  globalThis.history.pushState(null, '', url)
-                  globalThis.dispatchEvent(new Event('hashchange'))
-                  globalThis.scrollTo(0, 0)
-                }}
+                onLocaleChange={setLocale}
               />
             ) : null}
             <LearnerJourney

@@ -59,10 +59,10 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('navigation', {
+      screen.getByRole('navigation', {
         name: text('demo.phase1.nav_label'),
       }),
-    ).not.toBeInTheDocument()
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', {
         name: new RegExp(text('demo.phase1.home.next_action')),
@@ -197,8 +197,8 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens a foundation lesson from the Learn hash and Speak practice from the lesson hash', async () => {
-    window.history.replaceState(null, '', '/#learn/greetings')
+  it('opens My Levels from Learn and Speak practice from the practice hash', async () => {
+    window.history.replaceState(null, '', '/#learn')
     const demo = createLocalDemoRuntime()
 
     render(
@@ -212,14 +212,17 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Greetings and introductions',
+        name: text('demo.phase1.nav.levels'),
       }),
     ).toBeVisible()
     expect(
-      screen.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
+      screen.getByText(text('demo.phase1.rooms.audio.title')),
     ).toBeVisible()
+    expect(
+      screen.queryByRole('heading', { name: '16 speaking lessons' }),
+    ).not.toBeInTheDocument()
 
-    window.history.replaceState(null, '', '/#practice/greetings')
+    window.history.replaceState(null, '', '/#practice')
     globalThis.dispatchEvent(new Event('hashchange'))
 
     expect(

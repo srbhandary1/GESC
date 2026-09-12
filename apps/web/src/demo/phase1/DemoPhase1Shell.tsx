@@ -18,7 +18,6 @@ import {
   persistSpeakingComfort,
   readFirstRunDismissed,
 } from '../../ui/firstRunPreference'
-import { FoundationLessonCatalog } from '../FoundationLessonCatalog'
 import { DemoTtsAdminSettings } from '../DemoTtsAdminSettings'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
@@ -188,7 +187,10 @@ export function DemoPhase1Shell({
   const [audioSpeaking, setAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
   const [welcomeOpen, setWelcomeOpen] = useState(
-    () => !compact && !readFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY),
+    () =>
+      !compact &&
+      forcedModule === undefined &&
+      !readFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY),
   )
   const welcomeTitleRef = useRef<HTMLHeadingElement | null>(null)
 
@@ -242,11 +244,9 @@ export function DemoPhase1Shell({
   }
 
   const playDailyAudio = () => {
-    const title = message('demo.phase1.daily.audio_lesson_title').text
-    const summary = message('demo.phase1.daily.audio_lesson_summary').text
     stopDemoSpeech()
     setAudioSpeaking(true)
-    void speakDemoText(`${title}. ${summary}`, locale)
+    void speakDemoText(phase1DailyActivity.modelLine, 'en-IN')
       .then((source) => {
         setAudioPlayed(true)
         setUsedBrowserFallback(source === 'browser')
@@ -436,25 +436,58 @@ export function DemoPhase1Shell({
             </p>
             <AndroidDemoDownload message={message} />
           </article>
-          <FoundationLessonCatalog
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            variant="home"
-            onOpen={(lesson) => {
-              const url = new URL(globalThis.location.href)
-              url.hash = `learn/${lesson.id}`
-              globalThis.history.pushState(null, '', url)
-              globalThis.dispatchEvent(new Event('hashchange'))
-              globalThis.scrollTo(0, 0)
-            }}
-            onPractise={(lesson) => {
-              const url = new URL(globalThis.location.href)
-              url.hash = `practice/${lesson.id}`
-              globalThis.history.pushState(null, '', url)
-              globalThis.dispatchEvent(new Event('hashchange'))
-              globalThis.scrollTo(0, 0)
-            }}
-          />
+          <nav
+            className="phase1-grid"
+            aria-label={message('demo.phase1.nav_label').text}
+          >
+            {(
+              [
+                [
+                  'attendance',
+                  'demo.phase1.dashboard.attendance',
+                  `${phase1Attendance.percentage}%`,
+                ],
+                [
+                  'ai-teacher',
+                  'demo.phase1.dashboard.ai_teacher',
+                  message('demo.phase1.dashboard.level_current').text,
+                ],
+                [
+                  'daily-activity',
+                  'demo.phase1.dashboard.daily',
+                  `${phase1DailyActivity.monthlyScore}/${phase1DailyActivity.monthlyMaximum}`,
+                ],
+                [
+                  'levels',
+                  'demo.phase1.dashboard.levels',
+                  message('demo.phase1.dashboard.level_progress').text,
+                ],
+                [
+                  'notices',
+                  'demo.phase1.dashboard.notices',
+                  String(phase1Notices.length),
+                ],
+              ] as const
+            ).map(([id, key, value]) => (
+              <button
+                key={id}
+                type="button"
+                className="phase1-card phase1-card--action"
+                aria-label={message(key).text}
+                onClick={() => go(id)}
+              >
+                <span className="phase1-card__label">
+                  <LocalizedMessage resolution={message(key)} />
+                </span>
+                <strong className="phase1-card__value">{value}</strong>
+                <span className="phase1-card__hint">
+                  <LocalizedMessage
+                    resolution={message('demo.phase1.dashboard.open')}
+                  />
+                </span>
+              </button>
+            ))}
+          </nav>
           <aside className="phase1-home__tip">
             <span aria-hidden="true" className="phase1-home__tip-glyph">
               <svg
@@ -500,28 +533,6 @@ export function DemoPhase1Shell({
                 >
                   <LocalizedMessage
                     resolution={message('demo.phase1.home.lessons')}
-                  />
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="phase1-text-link"
-                  onClick={() => go('levels')}
-                >
-                  <LocalizedMessage
-                    resolution={message('demo.phase1.dashboard.levels')}
-                  />
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="phase1-text-link"
-                  onClick={() => go('ai-teacher')}
-                >
-                  <LocalizedMessage
-                    resolution={message('demo.phase1.nav.ai_teacher')}
                   />
                 </button>
               </li>
@@ -719,6 +730,7 @@ export function DemoPhase1Shell({
                 resolution={message('demo.phase1.daily.audio_lesson_title')}
               />
             </p>
+            <p lang="en-IN">{phase1DailyActivity.modelLine}</p>
             <p className="phase1-muted">
               <LocalizedMessage
                 resolution={message('demo.phase1.daily.audio_lesson_duration')}

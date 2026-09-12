@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.12`.
+  `ui-en-IN-2026-09-12.13`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.12`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.13`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -522,9 +522,11 @@ review and do not waive pre-production specialist gates.
   is also read (never committed). ElevenLabs needs only
   `ELEVENLABS_API_KEY`; voice id is optional. Browser speech is
   last-resort fallback.
-  See [DEMO_TTS.md](DEMO_TTS.md). Home and Learn both list all 16
-  foundation lessons; `#learn/<id>` and `#practice/<id>` open listen +
-  lesson-scoped Speak practice.
+  See [DEMO_TTS.md](DEMO_TTS.md). Home is the Phase 1 dashboard
+  (Attendance, AI Teacher, Daily Activity, My Levels, Notice Board).
+  Learn opens My Levels. Daily audio lesson 1 is **Can**
+  (`I can speak English. Can I help you?`) restored from `9818fe2`
+  / LPL-01. The Grove 16-card foundation catalog is not the course.
 - Under D-0094, local `make demo` Practice Friend may call OpenRouter free
   models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
   scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
@@ -654,11 +656,13 @@ identity — not a purple Supernova clone.
   prompt card, transcript bubbles, and a green mic control.
 - Demo Home and first-run include a **Download Android demo** link to
   `/downloads/global-english-demo.apk` for client sideload testing.
-- Learn lists the first **16 speaking lessons** of the §6.2 foundation
-  pathway with Mira Tap to Play on each English model. Home **More** has a
-  **16 lessons** shortcut. Presentation fixtures only — not approved
-  curriculum. Modules 17–20 remain later pathway work.
-- UI catalogues at revision `ui-*-2026-09-12.12`.
+- Home restores the Phase 1 module grid (Attendance, AI Teacher, Daily
+  Activity, My Levels, Notice Board) from `8ebacba`, keeping Mira / GESC
+  green polish. Learn opens **My Levels** (Pre-Level 1 … Level 17 and the
+  eight rooms). Daily Activity first audio is the Level 1 **Can** lesson
+  from `9818fe2` / LPL-01. The Grove 16-card foundation catalog no longer
+  occupies Home or Learn.
+- UI catalogues at revision `ui-*-2026-09-12.13`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
 

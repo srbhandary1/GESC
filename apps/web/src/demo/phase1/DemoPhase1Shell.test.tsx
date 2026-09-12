@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { speakDemoText } from '../demoTts'
 import { DemoPhase1Shell } from './DemoPhase1Shell'
 import {
   GROVE_WELCOME_STORAGE_KEY,
@@ -51,8 +52,8 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('img', { name: 'AI Teacher' }),
     ).toHaveAttribute('data-avatar-slot', 'home-teacher')
     expect(
-      screen.queryByRole('navigation', { name: 'Phase 1 modules' }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('navigation', { name: 'Phase 1 modules' }),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /Continue today’s lesson/i }),
     ).toBeInTheDocument()
@@ -68,30 +69,37 @@ describe('DemoPhase1Shell', () => {
         'Same synthetic demo for phone testing. Sideload only — not Play Store.',
       ),
     ).toBeVisible()
+    expect(screen.getByText('Can')).toBeVisible()
     expect(
-      screen.getByRole('heading', { name: '16 speaking lessons' }),
-    ).toBeVisible()
+      screen.queryByText('I can speak English. Can I help you?'),
+    ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Open Greetings and introductions/ }),
-    ).toBeVisible()
+      screen.queryByRole('heading', { name: '16 speaking lessons' }),
+    ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Tap to Play lesson 16' }),
-    ).toBeVisible()
+      screen.queryByRole('button', { name: /Open Greetings and introductions/ }),
+    ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: '16 lessons' }),
+      screen.getByRole('button', { name: 'Attendance' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'AI Teacher' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Daily Activity' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'My Levels' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Profile' }),
+      screen.getByRole('button', { name: 'Notice Board' }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /Notice Board/i }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('button', { name: 'Course levels' }),
+    ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /^Attendance$/i }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('button', { name: 'Profile' }),
+    ).toBeInTheDocument()
   })
 
   it('keeps attendance and notices on Profile, not on Home', async () => {
@@ -152,7 +160,21 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('button', { name: /Continue today’s lesson/i }),
     )
     expect(screen.getByText("Today's 5-mark check")).toBeInTheDocument()
+    expect(screen.getByText('Can')).toBeVisible()
+    expect(
+      screen.getByText('I can speak English. Can I help you?'),
+    ).toBeVisible()
+    expect(screen.getByText('Choose the correct sentence.')).toBeVisible()
+    expect(screen.getByText('I can speak English.')).toBeVisible()
     expect(screen.getAllByRole('radio').length).toBe(15)
+
+    await user.click(
+      screen.getByRole('button', { name: 'Play model audio (demo)' }),
+    )
+    expect(speakDemoText).toHaveBeenCalledWith(
+      'I can speak English. Can I help you?',
+      'en-IN',
+    )
 
     await user.click(screen.getByRole('button', { name: 'Back' }))
     await user.click(screen.getByRole('button', { name: 'AI Teacher' }))
@@ -208,8 +230,8 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('img', { name: 'AI ಶಿಕ್ಷಕ' }),
     ).toHaveAttribute('data-avatar-slot', 'home-teacher')
     expect(
-      screen.queryByRole('navigation', { name: 'Phase 1 ಮಾಡ್ಯೂಲ್‌ಗಳು' }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('navigation', { name: 'Phase 1 ಮಾಡ್ಯೂಲ್‌ಗಳು' }),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /ಇಂದಿನ ಪಾಠ ಮುಂದುವರಿಸಿ/ }),
     ).toBeInTheDocument()
