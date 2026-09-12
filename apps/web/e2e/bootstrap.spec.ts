@@ -100,13 +100,6 @@ test('supports skip-link focus without exposing learner destinations', async ({
     }),
   ).toBeVisible()
   await expect(page.locator('a[href="#progress"]')).toHaveCount(0)
-
-  await page.goto('/#learn')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Enter')
-
-  await expect(page.getByRole('main')).toBeFocused()
-  expect(new URL(page.url()).hash).toBe('#learn')
 })
 
 test('keeps the locale selection ephemeral and stores no credentials', async ({

@@ -26,12 +26,12 @@ export function PreSignInSplash({
   return (
     <section
       aria-labelledby="splash-title"
-      className="mx-auto grid max-w-md justify-items-center gap-5 py-6 text-center"
+      className="mx-auto grid w-full min-w-0 max-w-full justify-items-center gap-5 py-6 text-center"
       data-pre-sign-in={status}
     >
       <AvatarSlot label={teacherLabel} slot="home-teacher" />
       <h1
-        className="max-w-sm text-balance text-3xl font-extrabold tracking-tight text-ink"
+        className="w-full min-w-0 text-balance text-2xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] sm:text-3xl"
         id="splash-title"
         tabIndex={-1}
       >
@@ -46,7 +46,7 @@ export function PreSignInSplash({
 
       {status === 'anonymous' ? (
         <button
-          className="ge-button ge-button--primary min-h-target min-w-target px-8"
+          className="ge-button ge-button--primary min-h-target min-w-target px-6"
           onClick={() => {
             if (canStartAuthorization) {
               onSignIn()
@@ -77,7 +77,7 @@ export function PreSignInSplash({
 
       {status === 'anonymous' ? (
         <details
-          className="w-full max-w-sm rounded-lg border border-line/70 bg-surface p-3 text-start text-sm text-muted"
+          className="w-full min-w-0 rounded-lg border border-line/70 bg-surface p-3 text-start text-sm text-muted"
           ref={sessionDetails}
         >
           <summary className="min-h-target cursor-pointer font-semibold text-ink">
