@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { writeFileSync } from 'node:fs'
 import {
   CLEAR_SECRET,
+  DEFAULT_ELEVENLABS_VOICE_ID,
   defaultProviderOrder,
   maskSecret,
   mergeSettingsUpdate,
@@ -15,6 +17,7 @@ import {
 function isolateSettings() {
   const directory = mkdtempSync(path.join(tmpdir(), 'ge-demo-tts-settings-'))
   vi.stubEnv('DEMO_TTS_SETTINGS_FILE', path.join(directory, 'settings.json'))
+  vi.stubEnv('DEMO_TTS_ENV_FILE', path.join(directory, 'missing.tts.env'))
   vi.stubEnv('AZURE_SPEECH_ENDPOINT', '')
   vi.stubEnv('AZURE_SPEECH_KEY', '')
   vi.stubEnv('AZURE_SPEECH_SECRET_FILE', '')
@@ -110,10 +113,35 @@ describe('demo TTS settings store', () => {
     rmSync(directory, { recursive: true, force: true })
   })
 
-  it('does not treat ElevenLabs as configured without a voice id', () => {
+  it('treats ElevenLabs as configured from an API key and a public default voice', () => {
     const directory = isolateSettings()
     writeDemoTtsSettingsFile({ elevenlabs_api_key: 'eleven-only-key' })
-    expect(resolveDemoTtsBundle().elevenlabs).toBeNull()
+    const bundle = resolveDemoTtsBundle()
+    expect(bundle.elevenlabs?.key).toBe('eleven-only-key')
+    expect(bundle.elevenlabs?.voiceId).toBe(DEFAULT_ELEVENLABS_VOICE_ID)
+    rmSync(directory, { recursive: true, force: true })
+  })
+
+  it('loads allowlisted host tts.env names without overriding process env', () => {
+    const directory = isolateSettings()
+    const envFile = path.join(directory, 'tts.env')
+    writeFileSync(
+      envFile,
+      [
+        'SARVAM_API_KEY=file-sarvam-key',
+        'ELEVENLABS_API_KEY=file-eleven-key',
+        'IGNORED_SECRET=should-not-load',
+        '',
+      ].join('\n'),
+      { mode: 0o600 },
+    )
+    vi.stubEnv('DEMO_TTS_ENV_FILE', envFile)
+    vi.stubEnv('SARVAM_API_KEY', 'env-sarvam-key')
+
+    const bundle = resolveDemoTtsBundle()
+    expect(bundle.sarvam?.key).toBe('env-sarvam-key')
+    expect(bundle.elevenlabs?.key).toBe('file-eleven-key')
+    expect(process.env.IGNORED_SECRET).toBeUndefined()
     rmSync(directory, { recursive: true, force: true })
   })
 })

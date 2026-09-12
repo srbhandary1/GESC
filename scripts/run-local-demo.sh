@@ -38,13 +38,35 @@ if [ -z "${AZURE_SPEECH_ENDPOINT:-}" ] && [ -f "$speech_env" ]; then
   echo "info: loaded Azure demo TTS settings from $speech_env" >&2
 fi
 
+# Host-only multi-provider TTS env (D-0117). Never commit this file.
+tts_env="${DEMO_TTS_ENV_FILE:-$HOME/ge-demo-tts/tts.env}"
+if [ -f "$tts_env" ]; then
+  # shellcheck disable=SC1090
+  set -a
+  . "$tts_env"
+  set +a
+  echo "info: loaded demo TTS env names from $tts_env" >&2
+fi
+
+if [ -n "${SARVAM_API_KEY:-}" ] || [ -n "${SARVAM_API_KEY_FILE:-}" ]; then
+  echo "info: Sarvam demo TTS key detected for /demo/tts." >&2
+else
+  echo "warning: SARVAM_API_KEY is not configured." >&2
+fi
+
+if [ -n "${ELEVENLABS_API_KEY:-}" ] || [ -n "${ELEVENLABS_API_KEY_FILE:-}" ]; then
+  echo "info: ElevenLabs demo TTS key detected for /demo/tts." >&2
+else
+  echo "warning: ELEVENLABS_API_KEY is not configured." >&2
+fi
+
 if [ -z "${AZURE_SPEECH_ENDPOINT:-}" ] || {
   [ -z "${AZURE_SPEECH_KEY:-}" ] && [ -z "${AZURE_SPEECH_SECRET_FILE:-}" ]
 }; then
   echo "warning: Azure demo TTS is not configured." >&2
   echo "  Set AZURE_SPEECH_ENDPOINT and AZURE_SPEECH_KEY (or AZURE_SPEECH_SECRET_FILE)," >&2
   echo "  or configure \$HOME/ge-speech-benchmark/env/speech-benchmark.env." >&2
-  echo "  See docs/DEMO_AZURE_TTS.md. Browser speech remains the fallback." >&2
+  echo "  See docs/DEMO_TTS.md. Browser speech remains last-resort fallback." >&2
 else
   echo "info: Azure demo TTS credentials detected for /demo/tts." >&2
 fi

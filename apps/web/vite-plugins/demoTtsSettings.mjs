@@ -13,8 +13,28 @@ import path from 'node:path'
 export const DEMO_TTS_PROVIDERS = ['sarvam', 'elevenlabs', 'azure']
 export const DEMO_TTS_SETTINGS_PATH = '/demo/tts/settings'
 export const CLEAR_SECRET = '__clear__'
+/** Public ElevenLabs catalog voice (Rachel). Not a secret; override with ELEVENLABS_VOICE_ID. */
+export const DEFAULT_ELEVENLABS_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
 const SARVAM_ALLOWED_HOSTS = new Set(['api.sarvam.ai'])
 const ELEVENLABS_ALLOWED_HOSTS = new Set(['api.elevenlabs.io'])
+const HOST_TTS_ENV_KEYS = new Set([
+  'AZURE_SPEECH_ENDPOINT',
+  'AZURE_SPEECH_KEY',
+  'AZURE_SPEECH_SECRET_FILE',
+  'SARVAM_API_KEY',
+  'SARVAM_API_KEY_FILE',
+  'SARVAM_BASE_URL',
+  'SARVAM_SPEAKER',
+  'SARVAM_MODEL',
+  'ELEVENLABS_API_KEY',
+  'ELEVENLABS_API_KEY_FILE',
+  'ELEVENLABS_VOICE_ID',
+  'ELEVENLABS_MODEL_ID',
+  'ELEVENLABS_BASE_URL',
+  'TTS_PROVIDER_ORDER',
+  'DEMO_TTS_ADMIN_TOKEN',
+  'DEMO_TTS_ADMIN_TOKEN_FILE',
+])
 
 export function demoTtsSettingsFilePath() {
   const configured = (process.env.DEMO_TTS_SETTINGS_FILE ?? '').trim()
@@ -23,6 +43,58 @@ export function demoTtsSettingsFilePath() {
   }
 
   return path.join(homedir(), 'ge-demo-tts', 'settings.json')
+}
+
+export function demoTtsEnvFilePath() {
+  const configured = (process.env.DEMO_TTS_ENV_FILE ?? '').trim()
+  if (configured !== '') {
+    return configured
+  }
+
+  return path.join(homedir(), 'ge-demo-tts', 'tts.env')
+}
+
+export function applyHostTtsEnvFile() {
+  const filePath = demoTtsEnvFilePath()
+  if (!existsSync(filePath)) {
+    return
+  }
+
+  let text = ''
+  try {
+    text = readFileSync(filePath, 'utf8')
+  } catch {
+    return
+  }
+
+  for (const rawLine of text.split(/\r?\n/u)) {
+    const line = rawLine.trim()
+    if (line === '' || line.startsWith('#')) {
+      continue
+    }
+
+    const separator = line.indexOf('=')
+    if (separator < 1) {
+      continue
+    }
+
+    const key = line.slice(0, separator).trim()
+    if (!HOST_TTS_ENV_KEYS.has(key)) {
+      continue
+    }
+    if (trimString(process.env[key]) !== '') {
+      continue
+    }
+
+    let value = line.slice(separator + 1).trim()
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    process.env[key] = value
+  }
 }
 
 function trimString(value) {
@@ -138,6 +210,7 @@ export function resolveProviderOrder(locale, explicitOrder) {
 }
 
 export function resolveDemoTtsBundle() {
+  applyHostTtsEnvFile()
   const stored = readDemoTtsSettingsFile()
   const azureEndpoint = firstNonEmpty(
     process.env.AZURE_SPEECH_ENDPOINT,
@@ -166,6 +239,7 @@ export function resolveDemoTtsBundle() {
   const elevenVoiceId = firstNonEmpty(
     process.env.ELEVENLABS_VOICE_ID,
     stored.elevenlabs_voice_id,
+    DEFAULT_ELEVENLABS_VOICE_ID,
   )
   const elevenBaseUrl = allowlistedHttpsUrl(
     firstNonEmpty(process.env.ELEVENLABS_BASE_URL, stored.elevenlabs_base_url),
@@ -196,7 +270,7 @@ export function resolveDemoTtsBundle() {
           }
         : null,
     elevenlabs:
-      elevenKey !== '' && elevenVoiceId !== '' && elevenBaseUrl !== ''
+      elevenKey !== '' && elevenBaseUrl !== ''
         ? {
             key: elevenKey,
             voiceId: elevenVoiceId,
@@ -229,6 +303,7 @@ export function anyNeuralConfigured(bundle = resolveDemoTtsBundle()) {
 }
 
 export function resolveAdminToken() {
+  applyHostTtsEnvFile()
   return firstNonEmpty(
     process.env.DEMO_TTS_ADMIN_TOKEN,
     readSecretFile(process.env.DEMO_TTS_ADMIN_TOKEN_FILE),

@@ -30,6 +30,7 @@ function createResponse() {
 function isolateSettings() {
   const directory = mkdtempSync(path.join(tmpdir(), 'ge-demo-tts-'))
   vi.stubEnv('DEMO_TTS_SETTINGS_FILE', path.join(directory, 'settings.json'))
+  vi.stubEnv('DEMO_TTS_ENV_FILE', path.join(directory, 'missing.tts.env'))
   vi.stubEnv('AZURE_SPEECH_ENDPOINT', '')
   vi.stubEnv('AZURE_SPEECH_KEY', '')
   vi.stubEnv('AZURE_SPEECH_SECRET_FILE', '')
@@ -97,6 +98,26 @@ describe('demo multi-provider TTS handler', () => {
     expect(JSON.stringify(body)).not.toMatch(/api[_-]?key|subscription|secret/i)
     expect(res.headers.get('cache-control')).toBe('no-store')
     expect(resolveDemoTtsCredentials()).toBeNull()
+    rmSync(directory, { recursive: true, force: true })
+  })
+
+  it('reports Sarvam and ElevenLabs as configured from env names only', async () => {
+    const directory = isolateSettings()
+    vi.stubEnv('SARVAM_API_KEY', 'sarvam-env-fixture-key')
+    vi.stubEnv('ELEVENLABS_API_KEY', 'eleven-env-fixture-key')
+    const req = { method: 'GET', url: '/demo/tts/status', headers: {} }
+    const res = createResponse()
+
+    expect(await handleDemoTtsRequest(req as never, res as never)).toBe(true)
+    const body = JSON.parse(res.body())
+    expect(body.configured).toBe(true)
+    expect(body.providers).toEqual({
+      azure: false,
+      sarvam: true,
+      elevenlabs: true,
+    })
+    expect(JSON.stringify(body)).not.toContain('sarvam-env-fixture-key')
+    expect(JSON.stringify(body)).not.toContain('eleven-env-fixture-key')
     rmSync(directory, { recursive: true, force: true })
   })
 

@@ -68,8 +68,11 @@ export interface DemoTtsMaskedSettings {
 export declare const DEMO_TTS_PROVIDERS: readonly DemoTtsProviderId[]
 export declare const DEMO_TTS_SETTINGS_PATH: '/demo/tts/settings'
 export declare const CLEAR_SECRET: '__clear__'
+export declare const DEFAULT_ELEVENLABS_VOICE_ID: string
 
 export declare function demoTtsSettingsFilePath(): string
+export declare function demoTtsEnvFilePath(): string
+export declare function applyHostTtsEnvFile(): void
 export declare function readSecretFile(filePath: string | undefined): string
 export declare function readDemoTtsSettingsFile(): DemoTtsFileSettings
 export declare function writeDemoTtsSettingsFile(next: DemoTtsFileSettings): void

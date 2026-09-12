@@ -81,15 +81,27 @@ export SARVAM_API_KEY='<sarvam-key>'
 # optional: SARVAM_API_KEY_FILE, SARVAM_BASE_URL, SARVAM_SPEAKER, SARVAM_MODEL
 
 export ELEVENLABS_API_KEY='<elevenlabs-key>'
-export ELEVENLABS_VOICE_ID='<voice-id>'
+# optional override; otherwise the public catalog voice Rachel is used:
+# export ELEVENLABS_VOICE_ID='<voice-id>'
 # optional: ELEVENLABS_API_KEY_FILE, ELEVENLABS_MODEL_ID, ELEVENLABS_BASE_URL
 
 # optional explicit order, comma-separated:
 # export TTS_PROVIDER_ORDER='sarvam,elevenlabs,azure'
 ```
 
-`make demo` / `scripts/run-local-demo.sh` still auto-loads
-`$HOME/ge-speech-benchmark/env/speech-benchmark.env` when present.
+`make demo` / `scripts/run-local-demo.sh` auto-loads, when present:
+
+- `$HOME/ge-speech-benchmark/env/speech-benchmark.env` (Azure)
+- `$HOME/ge-demo-tts/tts.env` (or `DEMO_TTS_ENV_FILE`) for
+  `SARVAM_API_KEY`, `ELEVENLABS_API_KEY`, Azure, admin token, and
+  `TTS_PROVIDER_ORDER`
+
+Vite / the static server also read that host file at request time. The
+file is gitignored. Never put these names in `VITE_*`.
+
+ElevenLabs is configured from the API key alone. The public catalog
+voice `21m00Tcm4TlvDq8ikWAM` (Rachel) is the default until
+`ELEVENLABS_VOICE_ID` or Admin sets another id. That id is not a secret.
 
 Optional `VITE_DEMO_TTS_ORIGIN` (no trailing slash) lets the Android
 WebView call that host’s `/demo/tts`. It is an origin only — never a key.

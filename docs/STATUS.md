@@ -517,8 +517,11 @@ review and do not waive pre-production specialist gates.
   static server may synthesize neural TTS (Sarvam, ElevenLabs, Azure with
   failover) for AI Teacher, Daily audio, Friend Listen, the 16 foundation
   lessons and model audio via `/demo/tts`. `/demo/tts/status` reports
-  provider booleans only. Profile Admin can store host keys when
-  `DEMO_TTS_ADMIN_TOKEN` is set. Browser speech is last-resort fallback.
+  provider booleans only.   Profile Admin can store host keys when
+  `DEMO_TTS_ADMIN_TOKEN` is set. Host file `$HOME/ge-demo-tts/tts.env`
+  is also read (never committed). ElevenLabs needs only
+  `ELEVENLABS_API_KEY`; voice id is optional. Browser speech is
+  last-resort fallback.
   See [DEMO_TTS.md](DEMO_TTS.md). Home and Learn both list all 16
   foundation lessons; `#learn/<id>` and `#practice/<id>` open listen +
   lesson-scoped Speak practice.
