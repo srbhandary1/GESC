@@ -184,7 +184,7 @@
 .phase1-ai-topics {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.5rem;
   align-items: center;
 }
 
@@ -415,8 +415,9 @@
   display: grid;
   gap: 0.15rem;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0.5rem;
   list-style: none;
+  border-block-end: 1px solid rgba(12, 31, 24, 0.08);
 }
 
 @media (max-width: 40rem) {

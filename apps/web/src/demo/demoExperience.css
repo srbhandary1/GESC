@@ -39,6 +39,27 @@
   padding-block: var(--ge-space-4);
 }
 
+@media (max-width: 40rem) {
+  .demo-experience .ge-application-frame__header-inner {
+    min-block-size: 3.25rem;
+    padding-block: var(--ge-space-2);
+    align-items: flex-start;
+  }
+
+  .demo-experience .ge-application-frame__brand {
+    font-size: 1.15rem;
+    line-height: 1.25;
+  }
+
+  .demo-experience .ge-primary-navigation__list {
+    padding-block: 0;
+  }
+
+  .demo-experience .ge-application-frame__main {
+    padding-block-start: var(--ge-space-3);
+  }
+}
+
 .demo-experience .ge-application-frame__brand {
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
     serif;

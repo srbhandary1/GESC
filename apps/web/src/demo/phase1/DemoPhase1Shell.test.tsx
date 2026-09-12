@@ -64,6 +64,10 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Profile' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Attendance report' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Notices' })).toBeInTheDocument()
     expect(screen.getByText('About this school')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Attendance report' }))

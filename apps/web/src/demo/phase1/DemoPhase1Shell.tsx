@@ -244,6 +244,7 @@ export function DemoPhase1Shell({
       setHashModule(next)
     }
     globalThis.dispatchEvent(new Event('hashchange'))
+    globalThis.scrollTo(0, 0)
   }
 
   const quizScore = useMemo(() => {
@@ -464,19 +465,35 @@ export function DemoPhase1Shell({
 
       {module === 'ai-teacher' ? (
         <section className="phase1-panel">
-          <div className="phase1-ai-toolbar">
-            <p className="phase1-muted">
-              <LocalizedMessage
-                resolution={message('demo.phase1.ai.scripted_notice')}
-              />
-            </p>
-            {usedBrowserFallback ? (
-              <p className="phase1-muted" role="status">
+          <div className="phase1-ai-topics">
+            {PHASE1_FOCUS_AI_TOPICS.map((topicId) => (
+              <button
+                key={topicId}
+                type="button"
+                className={activeTopicId === topicId ? 'is-active' : undefined}
+                onClick={() => setActiveTopicId(topicId)}
+              >
                 <LocalizedMessage
-                  resolution={message('demo.speech.azure_unavailable')}
+                  resolution={aiMessage(aiTopicLabelKeys[topicId])}
                 />
-              </p>
-            ) : null}
+              </button>
+            ))}
+          </div>
+          <blockquote className="phase1-ai-reply" lang={aiLocale}>
+            <LocalizedMessage
+              resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
+            />
+          </blockquote>
+          <div className="phase1-ai-toolbar">
+            <button
+              type="button"
+              className="ge-button ge-button--primary"
+              onClick={listenAiReply}
+              disabled={aiSpeaking}
+              aria-busy={aiSpeaking}
+            >
+              <LocalizedMessage resolution={message('demo.phase1.ai.listen')} />
+            </button>
             <div
               className="phase1-ai-lang"
               role="group"
@@ -502,34 +519,18 @@ export function DemoPhase1Shell({
               </button>
             </div>
           </div>
-          <div className="phase1-ai-topics">
-            {PHASE1_FOCUS_AI_TOPICS.map((topicId) => (
-              <button
-                key={topicId}
-                type="button"
-                className={activeTopicId === topicId ? 'is-active' : undefined}
-                onClick={() => setActiveTopicId(topicId)}
-              >
-                <LocalizedMessage
-                  resolution={aiMessage(aiTopicLabelKeys[topicId])}
-                />
-              </button>
-            ))}
-          </div>
-          <blockquote className="phase1-ai-reply" lang={aiLocale}>
+          <p className="phase1-muted">
             <LocalizedMessage
-              resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
+              resolution={message('demo.phase1.ai.scripted_notice')}
             />
-          </blockquote>
-          <button
-            type="button"
-            className="ge-button ge-button--primary"
-            onClick={listenAiReply}
-            disabled={aiSpeaking}
-            aria-busy={aiSpeaking}
-          >
-            <LocalizedMessage resolution={message('demo.phase1.ai.listen')} />
-          </button>
+          </p>
+          {usedBrowserFallback ? (
+            <p className="phase1-muted" role="status">
+              <LocalizedMessage
+                resolution={message('demo.speech.azure_unavailable')}
+              />
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -686,23 +687,6 @@ export function DemoPhase1Shell({
 
       {module === 'profile' ? (
         <section className="phase1-panel phase1-profile">
-          <article>
-            <h2>
-              <LocalizedMessage
-                resolution={message('demo.phase1.profile.about_title')}
-              />
-            </h2>
-            <p>
-              <LocalizedMessage
-                resolution={message('demo.phase1.profile.about_body')}
-              />
-            </p>
-            <p className="phase1-muted">
-              <LocalizedMessage
-                resolution={message('demo.phase1.profile.course_structure')}
-              />
-            </p>
-          </article>
           <ul className="phase1-profile__links">
             <li>
               <button
@@ -727,6 +711,23 @@ export function DemoPhase1Shell({
               </button>
             </li>
           </ul>
+          <article>
+            <h2>
+              <LocalizedMessage
+                resolution={message('demo.phase1.profile.about_title')}
+              />
+            </h2>
+            <p>
+              <LocalizedMessage
+                resolution={message('demo.phase1.profile.about_body')}
+              />
+            </p>
+            <p className="phase1-muted">
+              <LocalizedMessage
+                resolution={message('demo.phase1.profile.course_structure')}
+              />
+            </p>
+          </article>
         </section>
       ) : null}
     </div>

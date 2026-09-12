@@ -29,6 +29,23 @@
     padding-inline: var(--ge-space-1);
     font-size: 0.82rem;
   }
+
+  .shell-content {
+    gap: var(--ge-space-3);
+  }
+
+  .shell-locale-control__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    margin: -1px;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+  }
 }
 
 .shell-header-tools {

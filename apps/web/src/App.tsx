@@ -269,7 +269,8 @@ function App({
       const titleNode =
         destinationTitle.current ??
         document.getElementById('destination-title')
-      titleNode?.focus()
+      titleNode?.focus({ preventScroll: true })
+      globalThis.scrollTo(0, 0)
       previousDestination.current = destination
     }
   }, [destination])
