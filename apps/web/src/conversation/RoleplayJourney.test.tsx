@@ -52,11 +52,11 @@ describe('synthetic Role-play journey', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('region', { name: 'Clinic reception Role-play' }),
+      screen.getByRole('region', { name: 'Role-play practice' }),
     ).toHaveAttribute('data-review-status', 'synthetic_unreviewed')
 
     await user.click(
-      screen.getByRole('button', { name: 'Start Role-play' }),
+      screen.getByRole('button', { name: 'Start this situation' }),
     )
     expect(
       await screen.findByRole('heading', { name: 'Observe' }),

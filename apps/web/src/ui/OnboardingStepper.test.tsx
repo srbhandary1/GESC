@@ -37,7 +37,7 @@ describe('OnboardingStepper', () => {
       screen.getByText('Global English is for learners aged 18 and over.'),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Continue' }),
+      screen.getByRole('button', { name: 'Save and continue' }),
     ).toBeDisabled()
 
     await user.click(
@@ -45,7 +45,7 @@ describe('OnboardingStepper', () => {
         name: 'I confirm that I am 18 years old or older.',
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     expect(
       screen.getByRole('heading', {
@@ -57,12 +57,12 @@ describe('OnboardingStepper', () => {
         name: 'Speak with confidence at work',
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     await user.click(
       screen.getByRole('radio', { name: /I am just starting/ }),
     )
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
       adultConfirmed: true,

@@ -36,7 +36,7 @@ describe('PreSignInSplash', () => {
     expect(
       screen.queryByRole('heading', { name: 'Secure session' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByText('Secure sign-in is ready.')).toBeInTheDocument()
+    expect(screen.getByText('Sign in to continue learning.')).toBeInTheDocument()
   })
 
   it('shows a calm checking skeleton without sign-in or session chrome', () => {

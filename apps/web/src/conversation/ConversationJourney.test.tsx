@@ -43,27 +43,27 @@ describe('deterministic Friend prototype', () => {
 
     expect(
       screen.getByText(
-        'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+        'Mira is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+        'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
       ),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Got it' }))
     expect(
-      screen.queryByRole('dialog', { name: 'About this AI prototype' }),
+      screen.queryByRole('dialog', { name: 'About Mira' }),
     ).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'About' }))
     expect(
-      screen.getByRole('dialog', { name: 'About this AI prototype' }),
+      screen.getByRole('dialog', { name: 'About Mira' }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Got it' }))
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Mira',
       }),
     )
     expect(
@@ -114,7 +114,7 @@ describe('deterministic Friend prototype', () => {
     ).toHaveAttribute('lang', 'kn-IN')
     expect(
       screen.getByText(
-        'The English text above is enough. Playback is optional.',
+        'Listen first. You can also read the English.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
@@ -163,7 +163,7 @@ describe('deterministic Friend prototype', () => {
     await user.click(screen.getByRole('button', { name: 'Got it' }))
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Mira',
       }),
     )
     await user.click(
@@ -325,14 +325,14 @@ describe('deterministic Friend prototype', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Mira',
       }),
     )
 
     expect(
       await screen.findByRole('alert'),
     ).toHaveTextContent(
-      'The AI Friend prototype is unavailable. Try again.',
+      'Mira is unavailable. Try again.',
     )
   })
 })

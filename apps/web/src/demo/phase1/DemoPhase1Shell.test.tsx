@@ -302,13 +302,13 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('link', { name: 'Download Android demo' }),
     ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
     await user.click(
       screen.getByRole('radio', { name: 'Speak with confidence at work' }),
     )
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
     await user.click(screen.getByRole('radio', { name: /I am just starting/ }))
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Today' }),

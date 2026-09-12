@@ -19,6 +19,7 @@ describe('BrowserAudioRecorder', () => {
     vi.stubGlobal('navigator', {
       mediaDevices: { getUserMedia },
     })
+    vi.stubGlobal('MediaRecorder', class {})
     vi.stubGlobal('AudioContext', class {})
 
     const starting = new BrowserAudioRecorder().start()

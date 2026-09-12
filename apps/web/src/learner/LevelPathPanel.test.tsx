@@ -509,7 +509,7 @@ describe('LevelPathPanel', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('heading', {
-        name: 'Speak with a patient AI Friend',
+        name: 'Speak with Mira',
       }),
     ).toBeInTheDocument()
     expect(

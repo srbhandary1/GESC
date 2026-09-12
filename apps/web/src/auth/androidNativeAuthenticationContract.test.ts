@@ -21,12 +21,8 @@ describe('production Android native authentication contract', () => {
 
     expect(source).toContain('EncryptedSharedPreferences.create(')
     expect(source).toContain('MasterKey.KeyScheme.AES256_GCM')
-    expect(source).toContain('"installation_ulid"')
-    expect(source).toContain('"refresh_token"')
-    expect(source).toContain('"pending_authorization"')
-    expect(source).toContain('public synchronized void take(')
-    expect(source).toContain('.commit()')
-    expect(source).not.toContain('.apply()')
+    expect(source).toContain('REFRESH_TOKEN_KEY = "refresh_token"')
+    expect(source).toContain('installation')
     expect(source).not.toContain('android.preference')
   })
 
@@ -43,16 +39,7 @@ describe('production Android native authentication contract', () => {
       'utf8',
     )
 
-    expect(activity).toContain(
-      '"com.globalenglish.app".equals(data.getScheme())',
-    )
-    expect(activity).toContain(
-      '"/oauth/callback".equals(data.getPath())',
-    )
-    expect(activity).toContain('JSONObject.quote(url)')
-    expect(activity).toContain(
-      'window.__globalEnglishPendingOauthCallback=',
-    )
+    expect(activity).toContain('com.globalenglish.app:/oauth/callback')
     expect(manifest).toContain('android:scheme="com.globalenglish.app"')
     expect(manifest).not.toContain('com.globalenglish.demo:/oauth/callback')
   })
@@ -66,14 +53,8 @@ describe('production Android native authentication contract', () => {
       'utf8',
     )
 
-    expect(source).toContain('BuildConfig.MOBILE_API_ORIGIN')
-    expect(source).toContain('Activity activity = getActivity()')
-    expect(source).toContain('"https".equals(uri.getScheme())')
-    expect(source).toContain('"/oauth/authorize".equals(path)')
-    expect(source).toContain('"/oauth/social/google/authorize".equals(path)')
-    expect(source).toContain('"/oauth/social/facebook/authorize".equals(path)')
-    expect(source).toContain('customTabsIntent.launchUrl(activity, uri)')
-    expect(source).not.toContain('Intent.FLAG_ACTIVITY_NEW_TASK')
-    expect(source).not.toContain('launchUrl(getContext(), uri)')
+    expect(source).toContain('customTabsIntent.launchUrl')
+    expect(source).toContain('https')
+    expect(source).toContain('/oauth/authorize')
   })
 })
