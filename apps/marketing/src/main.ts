@@ -33,6 +33,15 @@ function setupMobileNav(): void {
   panel.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
       close()
+      const href = link.getAttribute('href')
+      if (href?.startsWith('#')) {
+        document.querySelector<HTMLElement>(href)?.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto'
+            : 'smooth',
+          block: 'start',
+        })
+      }
     })
   })
 

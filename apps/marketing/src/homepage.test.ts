@@ -46,6 +46,7 @@ describe('marketing homepage source', () => {
     expect(css).toContain('--target: 3rem')
     expect(css).toContain('min-height: var(--target)')
     expect(css).toContain(':focus-visible')
+    expect(css).toContain('scroll-padding-top: 6rem')
     expect(script).toContain('data-nav-toggle')
     expect(script).toContain('aria-expanded')
   })
