@@ -7,7 +7,7 @@
 | Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
 | Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 7 August 2026 |
+| Updated date | 12 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-08-06.8`.
+  `ui-en-IN-2026-09-12.6`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.8`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.6`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -588,6 +588,40 @@ review and do not waive pre-production specialist gates.
 - No real learner data, captured audio, unlicensed media, provider SDK or
   later-checkpoint authoritative record was added.
 
+## Student-facing IA (presentation)
+
+The disclosed demo learner shell was decluttered for day-to-day student use.
+This is a UI/UX refinement of the existing D-0081 Phase 1 presentation
+surface. It does not authorize production, Play, real providers or F0 DoD.
+
+What moved:
+
+- **Home** shows one next-lesson CTA, a short level/streak summary, and
+  secondary links (Speak, Levels, AI Teacher, Profile). The six-module
+  dashboard dump and Phase 1 pill nav are gone.
+- **Learn** still runs the deterministic mission first, then a compact
+  current-level room list.
+- **Profile / About** holds institute orientation, attendance reports and
+  notices.
+- **AI Teacher** keeps today’s task, current-level reminder and next-step
+  motivation. Course-structure copy lives on Profile.
+- Student chrome now uses design-system dark mode, 48px targets, and
+  skeleton/error/retry on Learn, Progress and Practice async states.
+- Narrow viewports show the short wordmark **Global English**; Friend
+  about-copy sits in a first-run sheet (`ge-ui-practice-about-dismissed`).
+- Student web chrome uses Tailwind CSS 4 (Vite plugin, no Preflight) mapped
+  onto live `--ge-*` tokens. Home and AI Teacher reserve an empty
+  `data-avatar-slot` hook (`shell.avatar.teacher`); no face or avatar SDK.
+  Demo CSS went from 40.04 kB / 6.84 kB gzip to 44.12 kB / 7.71 kB gzip
+  (+0.87 kB gzip). Presentation-only; not F0 or Play evidence.
+- Anonymous / checking / unavailable (non-demo, no offline resume) is a
+  compact pre-sign-in splash: short wordmark, one tagline, one Sign in
+  action (Android PKCE `beginAuthorization` when that transport exists),
+  language + appearance in the header, and no Home/Learn/Practice/Progress
+  nav. Session detail sits in a disclosure; `unavailable` shows retry only.
+  Local demo still auto-authenticates and does not reintroduce a global
+  demo banner. Auth protocol unchanged.
+
 ## Local synthetic demo
 
 - `make demo` starts a Vite-development-only preview on `127.0.0.1:5173`.
@@ -603,10 +637,11 @@ review and do not waive pre-production specialist gates.
   destination, and returns deterministic zero-cost text-only Friend replies
   (rotating follow-up questions plus a tiny curated set of gentle pattern
   tips that are scripted demo content, not grammar analysis).
-- A visible localized notice states that the fixtures are synthetic and use
-  no learner data, real AI, approved curriculum or production service. All
-  five non-English notices remain implementation drafts pending independent
-  human review.
+- The synthetic-demo disclosure (`demo.label` + `demo.notice`) lives on
+  Profile under **Demo status**. Home, Learn, Practice and Progress no longer
+  show a page-wide demo banner. The notice is not deleted; it remains
+  findable while `demoMode` is on. All five non-English notices remain
+  implementation drafts pending independent human review.
 - `VITE_LOCAL_DEMO=true` is effective only in a Vite development runtime or
   in the explicit `vite build --mode demo` distribution build (D-0077). The
   ordinary production build mode cannot activate the demo adapters; unit and

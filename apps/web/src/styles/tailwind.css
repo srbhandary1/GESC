@@ -1,0 +1,45 @@
+/*
+  Student-facing Tailwind layer (Vite + Tailwind CSS 4).
+
+  Design-system tokens remain the palette. `@theme inline` points utilities
+  at live `--ge-*` variables so light/dark updates without a second palette.
+  Preflight is omitted so DS base/components keep the document reset.
+  Content scanning is limited to student sources; operator/admin is excluded.
+*/
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../../src/**/*.{tsx,ts}";
+@source not "../../src/operator/**/*";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-canvas: var(--ge-color-canvas);
+  --color-surface: var(--ge-color-surface);
+  --color-surface-high: var(--ge-color-surface-high);
+  --color-ink: var(--ge-color-text);
+  --color-muted: var(--ge-color-text-muted);
+  --color-line: var(--ge-color-border);
+  --color-action: var(--ge-color-action);
+  --color-action-hover: var(--ge-color-action-hover);
+  --color-on-action: var(--ge-color-action-text);
+  --color-focus: var(--ge-color-focus);
+  --color-status: var(--ge-color-status);
+  --color-glow: var(--ge-color-glow);
+  --color-danger: var(--ge-color-danger);
+  --font-sans: var(--ge-font-family-ui);
+  --font-display: var(--ge-font-family-display);
+  --radius-sm: var(--ge-radius-sm);
+  --radius-md: var(--ge-radius-md);
+  --radius-lg: var(--ge-radius-lg);
+  --radius-xl: var(--ge-radius-xl);
+  --radius-pill: var(--ge-radius-pill);
+  --shadow-elevation-1: var(--ge-elevation-1);
+  --shadow-elevation-2: var(--ge-elevation-2);
+  --spacing-target: var(--ge-target-minimum);
+  --max-width-content: var(--ge-content-width);
+}

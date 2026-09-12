@@ -15,3 +15,18 @@ review variant so Kannada rendering can be checked without weakening the
 production default.
 
 Use the repository-root `make` commands for bootstrap, verification and builds.
+
+## Student Tailwind
+
+`apps/web` uses Tailwind CSS 4 through `@tailwindcss/vite`. The entry is
+`src/styles/tailwind.css`:
+
+- `@theme inline` maps utilities to live `@global-english/design-system`
+  `--ge-*` tokens (one palette; dark mode follows `data-theme`).
+- Preflight is not imported, so DS base/components keep the document reset.
+- `@source` scans student TS/TSX and excludes `src/operator`.
+- Unused utilities are omitted from the production CSS. A demo production
+  build measured 44.12 kB CSS / 7.71 kB gzip versus 40.04 kB / 6.84 kB
+  before Tailwind (+0.87 kB gzip).
+
+Do not introduce a second colour system or a runtime CSS-in-JS theme.

@@ -1,5 +1,7 @@
 import {
   ApplicationFrame,
+  ThemeToggle,
+  useColorScheme,
   type PrimaryDestination,
 } from '@global-english/design-system'
 import {
@@ -25,9 +27,11 @@ import type {
 } from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import { PHASE1_SECONDARY_HASHES } from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
@@ -154,6 +158,7 @@ function App({
   const [practiceSurface, setPracticeSurface] = useState<
     'confidence' | 'roleplay'
   >('confidence')
+  const { scheme, toggleScheme } = useColorScheme()
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -265,13 +270,22 @@ function App({
 
   useEffect(() => {
     if (previousDestination.current !== destination) {
-      destinationTitle.current?.focus()
+      const titleNode =
+        destinationTitle.current ??
+        document.getElementById('destination-title')
+      titleNode?.focus({ preventScroll: true })
+      globalThis.scrollTo(0, 0)
       previousDestination.current = destination
     }
   }, [destination])
 
   const brand = resolveInterfaceMessage(
     'app.name',
+    'en-IN',
+    localizationPolicy,
+  )
+  const compactBrand = resolveInterfaceMessage(
+    'app.short_name',
     'en-IN',
     localizationPolicy,
   )
@@ -356,6 +370,16 @@ function App({
     isOperatorSession &&
     (destination === 'home' || destination === 'learn')
   const showDemoPhase1 = demoMode && destination === 'home'
+  const showDemoLearnHub = demoMode && canLearn
+  const hideDemoIntroduction = demoMode
+  const showPreSignInGate =
+    !demoMode &&
+    session.status !== 'authenticated' &&
+    offlineResume === null
+  const androidAuth =
+    authentication.transport === 'passport-pkce'
+      ? (authentication as AndroidPkceAuthentication)
+      : null
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -378,10 +402,24 @@ function App({
     <ApplicationFrame
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
+      compactBrandLabel={compactBrand.text}
       currentDestination={destination}
-      hidePrimaryNavigation={false}
+      hidePrimaryNavigation={showPreSignInGate}
       headerActions={
-        <div className="shell-locale-control">
+        <div className="shell-header-tools">
+          {demoMode ? (
+            <a className="shell-profile-link" href="#profile">
+              <LocalizedMessage resolution={message('shell.profile_label')} />
+            </a>
+          ) : null}
+          <ThemeToggle
+            darkLabel={message('shell.theme.dark').text}
+            label={message('shell.theme.label').text}
+            lightLabel={message('shell.theme.light').text}
+            onToggle={toggleScheme}
+            scheme={scheme}
+          />
+          <div className="shell-locale-control">
           <label
             className="shell-locale-control__label"
             htmlFor="interface-locale"
@@ -425,6 +463,7 @@ function App({
               />
             )}
           </p>
+          </div>
         </div>
       }
       navigationLabel={navigationLabel.text}
@@ -434,27 +473,10 @@ function App({
         <LocalizedMessage resolution={skipToContent} />
       }
     >
-      <div className="shell-content">
-        {demoMode ? (
-          <aside
-            className="shell-demo"
-            aria-label={message('demo.label').text}
-            data-demo-mode="synthetic-local"
-          >
-            <strong>
-              <LocalizedMessage resolution={message('demo.label')} />
-            </strong>
-            <span>
-              <LocalizedMessage resolution={message('demo.notice')} />
-            </span>
-            {demoOrganization === undefined ? null : (
-              <span className="shell-demo__organization">
-                {demoOrganization}
-              </span>
-            )}
-          </aside>
-        ) : null}
-
+      <div
+        className="shell-content mx-auto w-full max-w-content"
+        data-destination={destination}
+      >
         {previewNotice.isPreview ? (
           <aside
             className="shell-preview"
@@ -485,7 +507,59 @@ function App({
           </aside>
         ) : null}
 
-        {showDemoPhase1 ? null : (
+        {showPreSignInGate ? (
+          <PreSignInSplash
+            canStartAuthorization={androidAuth !== null}
+            message={message}
+            onRetry={() => {
+              setSession({ status: 'checking' })
+              authentication
+                .current()
+                .then((snapshot) => {
+                  setOfflineResume(null)
+                  setSession(snapshot)
+                })
+                .catch(() => {
+                  setSession({ status: 'unavailable' })
+                })
+            }}
+            onSignIn={() => {
+              if (androidAuth === null) {
+                return
+              }
+
+              void androidAuth.beginAuthorization().catch(() => {
+                setSession({ status: 'unavailable' })
+              })
+            }}
+            status={
+              session.status === 'unavailable'
+                ? 'unavailable'
+                : session.status === 'checking'
+                  ? 'checking'
+                  : 'anonymous'
+            }
+          />
+        ) : hideDemoIntroduction && destination === 'learn' ? (
+          <h1
+            className="visually-hidden"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : hideDemoIntroduction &&
+          (destination === 'practice' || destination === 'progress') ? (
+          <h1
+            className="shell-title shell-title--compact"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : hideDemoIntroduction ? null : (
           <section
             className="shell-introduction"
             aria-labelledby="destination-title"
@@ -507,22 +581,33 @@ function App({
           </section>
         )}
 
-        {showDemoPhase1 ? (
+        {showPreSignInGate ? null : showDemoPhase1 ? (
           <DemoPhase1Shell
+            demoOrganization={demoOrganization}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />
         ) : canLearn ? (
-          <LearnerJourney
-            api={learnerJourneyApi}
-            audioRecorder={audioRecorder}
-            createClientId={createClientId}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            offlineBinding={offlineBinding}
-            offlineStore={offlineStore}
-            resumeBundle={offlineResume?.storedBundle}
-          />
+          <>
+            <LearnerJourney
+              api={learnerJourneyApi}
+              audioRecorder={audioRecorder}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              offlineBinding={offlineBinding}
+              offlineStore={offlineStore}
+              resumeBundle={offlineResume?.storedBundle}
+            />
+            {showDemoLearnHub ? (
+              <DemoPhase1Shell
+                compact
+                forcedModule="levels"
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+              />
+            ) : null}
+          </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
             <RoleplayJourney
@@ -579,7 +664,7 @@ function App({
           </p>
         )}
 
-        {demoMode ? null : (
+        {demoMode || session.status !== 'authenticated' ? null : (
           <SessionSummary
             authentication={authentication}
             message={message}
@@ -702,6 +787,13 @@ function destinationFromHash(
     candidate === 'progress'
   ) {
     return candidate
+  }
+
+  if (
+    candidate !== undefined &&
+    (PHASE1_SECONDARY_HASHES as readonly string[]).includes(candidate)
+  ) {
+    return 'home'
   }
 
   return null

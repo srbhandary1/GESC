@@ -8,19 +8,29 @@ import {
 } from '@global-english/localization'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import type {
+  AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
 } from './auth/AuthenticationAdapter'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { createLocalDemoRuntime } from './demo/localDemo'
 
+beforeEach(() => {
+  document.documentElement.removeAttribute('data-theme')
+  window.localStorage.removeItem('ge-ui-color-scheme')
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
+})
+
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   document.documentElement.lang = DEFAULT_LOCALE
+  document.documentElement.removeAttribute('data-theme')
+  window.localStorage.removeItem('ge-ui-color-scheme')
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
 })
 
@@ -38,18 +48,23 @@ describe('localized application shell', () => {
     )
 
     expect(
-      screen.getByRole('complementary', {
+      screen.queryByRole('complementary', {
         name: text('demo.label'),
       }),
-    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    ).not.toBeInTheDocument()
     expect(
       await screen.findByRole('heading', {
-        name: text('demo.phase1.nav.dashboard'),
+        name: text('demo.phase1.home.title'),
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('navigation', {
+      screen.queryByRole('navigation', {
         name: text('demo.phase1.nav_label'),
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(text('demo.phase1.home.next_action')),
       }),
     ).toBeInTheDocument()
     expect(
@@ -67,8 +82,53 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('nav.progress') }),
     ).toHaveAttribute('href', '#progress')
     expect(
+      screen.queryByText('Global English Local Demo'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(text('shell.theme.label')),
+      }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('link', { name: text('shell.profile_label') }),
+    )
+    expect(
+      screen.getByRole('heading', {
+        name: text('demo.phase1.profile.demo_status'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('complementary', {
+        name: text('demo.label'),
+      }),
+    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    expect(
       screen.getByText('Global English Local Demo'),
     ).toBeInTheDocument()
+  })
+
+  it('toggles a persisted light/dark appearance without touching credentials', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    const toggle = screen.getByRole('button', {
+      name: new RegExp(text('shell.theme.label')),
+    })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(toggle)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(window.localStorage.getItem('ge-ui-color-scheme')).toBe('dark')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('opens Friend speaking practice from the demo primary navigation', async () => {
@@ -143,22 +203,28 @@ describe('localized application shell', () => {
       screen.getByRole('banner').querySelector('[lang="en-IN"]'),
     ).toHaveTextContent(text('app.name', 'en-IN'))
     expect(
-      screen.getByRole('navigation', {
+      screen.queryByRole('navigation', {
         name: text('shell.navigation_label'),
       }),
-    ).toHaveAttribute('lang', DEFAULT_LOCALE)
-    expect(
-      screen.getByRole('link', { name: text('nav.home') }),
-    ).toHaveAttribute('aria-current', 'page')
+    ).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('page.home.title'),
+        name: text('shell.splash.tagline'),
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(text('shell.checkpoint_notice')),
+      await screen.findByRole('button', { name: text('session.sign_in') }),
     ).toBeInTheDocument()
+    expect(
+      screen.queryByText(text('shell.checkpoint_notice')),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: text('session.label') }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(text('shell.eyebrow')),
+    ).not.toBeInTheDocument()
     expect(
       await screen.findByText(text('session.anonymous')),
     ).toHaveAttribute('lang', DEFAULT_LOCALE)
@@ -189,28 +255,16 @@ describe('localized application shell', () => {
 
     expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
     expect(
-      screen.getByRole('navigation', {
+      screen.getByRole('heading', {
+        level: 1,
+        name: text('shell.splash.tagline', 'en-IN'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', {
         name: text('shell.navigation_label', 'en-IN'),
       }),
-    ).toHaveAttribute('lang', 'en-IN')
-
-    await user.click(
-      screen.getByRole('link', {
-        name: text('nav.practice', 'en-IN'),
-      }),
-    )
-
-    const practiceTitle = await screen.findByRole('heading', {
-      level: 1,
-      name: text('page.practice.title', 'en-IN'),
-    })
-
-    await waitFor(() => expect(practiceTitle).toHaveFocus())
-    expect(
-      screen.getByRole('link', {
-        name: text('nav.practice', 'en-IN'),
-      }),
-    ).toHaveAttribute('aria-current', 'page')
+    ).not.toBeInTheDocument()
     expect(localStorageWrite).not.toHaveBeenCalled()
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
   })
@@ -236,7 +290,7 @@ describe('localized application shell', () => {
         screen
           .getByRole('heading', {
             level: 1,
-            name: text('page.home.title', locale),
+            name: text('shell.splash.tagline', locale),
           })
           .querySelector(`[lang="${locale}"]`),
       ).toBeInTheDocument()
@@ -278,7 +332,7 @@ describe('localized application shell', () => {
       screen.getByRole('heading', {
         level: 1,
         name: text(
-          'page.home.title',
+          'shell.splash.tagline',
           DEFAULT_LOCALE,
           'approved-only',
         ),
@@ -444,9 +498,60 @@ describe('localized application shell', () => {
     render(<App authentication={authentication} />)
 
     expect(
-      await screen.findByText(text('session.unavailable')),
+      await screen.findByRole('alert'),
+    ).toHaveTextContent(text('session.unavailable'))
+    expect(
+      screen.getByRole('button', { name: text('session.retry') }),
     ).toBeInTheDocument()
     expect(screen.queryByText('sensitive provider detail')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', {
+        name: text('shell.navigation_label'),
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('starts Android PKCE authorization from the splash Sign in action', async () => {
+    const beginAuthorization = vi.fn(async () => undefined)
+    const authentication: AndroidPkceAuthentication = {
+      transport: 'passport-pkce',
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      logout: vi.fn(async () => undefined),
+      beginAuthorization,
+      completeAuthorization: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      refresh: vi.fn(async () => undefined),
+    }
+    const user = userEvent.setup()
+
+    render(<App authentication={authentication} />)
+
+    await user.click(
+      await screen.findByRole('button', { name: text('session.sign_in') }),
+    )
+    expect(beginAuthorization).toHaveBeenCalledOnce()
+  })
+
+  it('opens session details from Sign in when PKCE is not available', async () => {
+    const user = userEvent.setup()
+
+    render(<App authentication={anonymousAuthentication()} />)
+
+    const signIn = await screen.findByRole('button', {
+      name: text('session.sign_in'),
+    })
+    const details = screen.getByText(text('session.details')).closest('details')
+
+    expect(details).not.toHaveAttribute('open')
+    await user.click(signIn)
+    expect(details).toHaveAttribute('open')
   })
 })
 

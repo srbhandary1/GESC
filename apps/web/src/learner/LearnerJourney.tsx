@@ -1,4 +1,8 @@
-import { MixedLanguageText } from '@global-english/design-system'
+import {
+  AsyncError,
+  MixedLanguageText,
+  SkeletonStatus,
+} from '@global-english/design-system'
 import type {
   MessageKey,
   ResolutionPolicy,
@@ -526,35 +530,21 @@ export function LearnerJourney({
 
   if (state.kind === 'loading') {
     return (
-      <p
-        className="learner-status"
-        role="status"
-      >
-        <LocalizedMessage resolution={message('learner.loading')} />
-      </p>
+      <SkeletonStatus
+        label={<LocalizedMessage resolution={message('learner.loading')} />}
+      />
     )
   }
 
   if (state.kind === 'error') {
     return (
-      <section
-        aria-labelledby="learner-error-title"
-        className="learner-card"
+      <AsyncError
+        actionLabel={<LocalizedMessage resolution={message('learner.retry')} />}
+        onRetry={loadHome}
+        title={<LocalizedMessage resolution={message('learner.error.title')} />}
       >
-        <h2 id="learner-error-title">
-          <LocalizedMessage resolution={message('learner.error.title')} />
-        </h2>
-        <p role="alert">
-          <LocalizedMessage resolution={message('learner.error.message')} />
-        </p>
-        <button
-          className="ge-button ge-button--primary"
-          onClick={loadHome}
-          type="button"
-        >
-          <LocalizedMessage resolution={message('learner.retry')} />
-        </button>
-      </section>
+        <LocalizedMessage resolution={message('learner.error.message')} />
+      </AsyncError>
     )
   }
 
@@ -684,7 +674,7 @@ export function LearnerJourney({
   return (
     <section
       aria-labelledby="learner-home-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         className="learner-section-title"
@@ -851,6 +841,10 @@ function OnboardingForm({
   const pendingInput = useRef<OnboardingInput | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+
+  useEffect(() => {
+    titleRef.current?.focus({ preventScroll: true })
+  }, [titleRef])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -1098,7 +1092,7 @@ function MissionExperience({
   return (
     <article
       aria-labelledby="mission-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <header>
         <p className="learner-eyebrow">
@@ -1210,7 +1204,7 @@ function MissionExperience({
       {step === 'speak' ? (
         <section
           aria-labelledby="mission-speak-title"
-          className="learner-stack"
+          className="learner-stack max-w-content"
         >
           <h3
             id="mission-speak-title"
@@ -1376,7 +1370,7 @@ function MissionResultView({
   return (
     <section
       aria-labelledby="mission-result-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         id="mission-result-title"

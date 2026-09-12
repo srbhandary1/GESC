@@ -4,7 +4,15 @@
   max-width: 48rem;
 }
 
-.conversation-journey__heading,
+.conversation-journey__heading {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__about {
+  justify-self: start;
+}
+
 .conversation-journey__notice,
 .conversation-journey__result,
 .conversation-journey__correction,
@@ -37,9 +45,10 @@
 
 .conversation-journey__memory {
   background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-lg);
   padding: var(--ge-space-4);
+  box-shadow: var(--ge-elevation-1);
 }
 
 .conversation-journey__memory-list {

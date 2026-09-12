@@ -1,32 +1,25 @@
-/* Professional presentation surface for the disclosed synthetic demo.
-   Scoped to .demo-experience so the ordinary product shell is unchanged. */
+/* Student product surface for the disclosed synthetic demo.
+   Uses design-system tokens so light/dark stay one language. */
 
 .demo-experience {
-  --ge-color-canvas: #f3f6f4;
-  --ge-color-surface: #ffffff;
-  --ge-color-text: #0c1f18;
-  --ge-color-text-muted: #3d5248;
-  --ge-color-border: #c5d2cb;
-  --ge-color-action: #0b6b4a;
-  --ge-color-action-hover: #085338;
-  --ge-color-action-text: #ffffff;
-  --ge-color-focus: #0b6b4a;
-  --ge-color-status: #e5f3ec;
-  --ge-radius-sm: 0.5rem;
-  --ge-radius-md: 1rem;
-  --demo-ink: #0c1f18;
-  --demo-panel: rgba(255, 255, 255, 0.92);
-  --demo-shadow: 0 18px 48px rgba(12, 31, 24, 0.08);
-  --demo-accent-soft: #d8efe4;
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino,
-    "Book Antiqua", "Noto Serif", Georgia, serif;
+  --ge-font-family-display: "Noto Sans", "Noto Sans Kannada Variable",
+    ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--ge-font-family-ui);
 }
 
 .demo-experience .ge-application-frame {
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, #cfe8da 0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, #e7f1ea 0%, transparent 45%),
-    linear-gradient(180deg, #f7faf8 0%, #eef3f0 48%, #f3f6f4 100%);
+    radial-gradient(
+      ellipse 90% 55% at 8% -8%,
+      color-mix(in srgb, var(--ge-color-action) 22%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 100% 0%,
+      color-mix(in srgb, var(--ge-color-focus) 16%, transparent),
+      transparent 50%
+    ),
+    var(--ge-color-canvas);
 }
 
 .demo-experience .ge-application-frame__header {
@@ -35,206 +28,117 @@
 }
 
 .demo-experience .ge-application-frame__header-inner {
-  min-block-size: 5rem;
-  padding-block: var(--ge-space-4);
+  min-block-size: var(--ge-target-minimum);
+  padding-block: var(--ge-space-2);
 }
 
 .demo-experience .ge-application-frame__brand {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
-    serif;
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--ge-font-family-display);
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
 }
 
 .demo-experience .ge-primary-navigation {
   border-block-end: 0;
-  background: transparent;
-}
-
-.demo-experience .ge-primary-navigation__list {
-  gap: var(--ge-space-2);
-  padding-block: 0 var(--ge-space-4);
 }
 
 .demo-experience .ge-primary-navigation__link {
-  border: 1px solid transparent;
-  background: transparent;
-  font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
-    system-ui, sans-serif;
-  font-weight: 600;
-}
-
-.demo-experience .ge-primary-navigation__link:hover {
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.demo-experience .ge-primary-navigation__link[aria-current='page'] {
-  border-color: var(--ge-color-border);
-  box-shadow: none;
-  background: var(--ge-color-surface);
+  font-weight: 650;
 }
 
 .demo-experience .ge-application-frame__main {
-  padding-block: var(--ge-space-4) var(--ge-space-6);
+  padding-block: var(--ge-space-3) var(--ge-space-6);
 }
 
 .demo-experience .shell-content {
-  gap: var(--ge-space-5);
-}
-
-.demo-experience .shell-demo {
-  display: grid;
-  gap: var(--ge-space-1);
-  padding: var(--ge-space-3) var(--ge-space-4);
-  border: 1px solid #b7d4c5;
-  border-radius: 999px;
-  background: rgba(232, 244, 237, 0.9);
-  font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
-    system-ui, sans-serif;
-  font-size: var(--ge-font-size-sm);
-  line-height: 1.45;
-}
-
-.demo-experience .shell-demo strong {
-  font-size: var(--ge-font-size-sm);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.demo-experience .shell-demo__organization {
-  color: var(--ge-color-text-muted);
+  gap: var(--ge-space-4);
 }
 
 .demo-experience .shell-preview {
   border-radius: var(--ge-radius-md);
-  background: #fff7e8;
-  font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
-    system-ui, sans-serif;
+  background: color-mix(in srgb, #f5c16c 22%, var(--ge-color-surface));
 }
 
 .demo-experience .shell-introduction {
-  padding: var(--ge-space-5) 0 var(--ge-space-2);
+  padding: var(--ge-space-2) 0;
 }
 
 .demo-experience .shell-eyebrow {
-  font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .demo-experience .shell-title {
-  max-width: 14ch;
-  font-size: clamp(2.4rem, 8vw, 4rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  max-width: 18ch;
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
 }
 
 .demo-experience .shell-description {
   max-width: 36rem;
-  font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
-    system-ui, sans-serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 .demo-experience .learner-card,
 .demo-experience .learner-offline,
 .demo-experience .conversation-journey__notice,
-.demo-experience .conversation-journey__result {
-  border: 1px solid rgba(12, 31, 24, 0.08);
-  border-radius: 1.25rem;
-  background: var(--demo-panel);
-  box-shadow: var(--demo-shadow);
-}
-
-.demo-experience .learner-stack,
-.demo-experience .conversation-journey {
-  font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
-    system-ui, sans-serif;
+.demo-experience .conversation-journey__result,
+.demo-experience .conversation-journey__memory,
+.demo-experience .conversation-journey__form {
+  border: 1px solid color-mix(in srgb, var(--ge-color-border) 70%, transparent);
+  border-radius: var(--ge-radius-lg);
+  background: color-mix(in srgb, var(--ge-color-surface) 92%, transparent);
+  box-shadow: var(--ge-elevation-1);
 }
 
 .demo-experience .learner-eyebrow,
 .demo-experience .conversation-journey__eyebrow {
   color: var(--ge-color-action);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 750;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-.demo-experience .ge-button {
-  border-radius: 999px;
-  font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
-  transition:
-    background 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.demo-experience .ge-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.demo-experience .ge-button--primary {
-  box-shadow: 0 10px 24px rgba(11, 107, 74, 0.22);
 }
 
 .demo-experience .learner-guidance {
   padding: var(--ge-space-4);
   border-inline-start: 4px solid var(--ge-color-action);
   border-radius: var(--ge-radius-md);
-  background: var(--demo-accent-soft);
-  font-size: 1.15rem;
-  line-height: 1.7;
+  background: var(--ge-color-status);
+  font-size: 1.1rem;
+  line-height: 1.6;
 }
 
 .demo-experience .learner-model-text {
   margin: 0;
   padding: var(--ge-space-5);
   border: 0;
-  border-radius: var(--ge-radius-md);
-  background: #0c1f18;
-  color: #f4faf7;
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
-  font-weight: 600;
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-color-text);
+  color: var(--ge-color-canvas);
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+  font-weight: 650;
   line-height: 1.4;
 }
 
-.demo-experience .demo-speech-caption {
-  margin: 0 0 var(--ge-space-3);
-  color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
-}
-
-.demo-experience .conversation-journey__form {
-  display: grid;
-  gap: var(--ge-space-3);
-  padding: var(--ge-space-5);
-  border: 1px solid rgba(12, 31, 24, 0.08);
-  border-radius: 1.25rem;
-  background: var(--demo-panel);
-  box-shadow: var(--demo-shadow);
+.demo-experience .conversation-journey__form textarea,
+.demo-experience .conversation-journey__start select {
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface-high);
+  color: var(--ge-color-text);
 }
 
 .demo-experience .conversation-journey__form textarea {
   width: 100%;
   min-block-size: 7rem;
   padding: var(--ge-space-3) var(--ge-space-4);
-  border: 1px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  background: #fbfdfc;
   font: inherit;
   resize: vertical;
-}
-
-.demo-experience .conversation-journey__speech-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ge-space-3);
 }
 
 .demo-experience .conversation-journey__listening {
@@ -243,41 +147,11 @@
   font-weight: 700;
 }
 
-.demo-experience .conversation-journey__result dl {
-  display: grid;
-  gap: var(--ge-space-4);
-}
-
-.demo-experience .conversation-journey__result dt {
-  color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.demo-experience .conversation-journey__result dd {
-  margin: var(--ge-space-1) 0 0;
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
-  font-size: 1.25rem;
-  line-height: 1.5;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .demo-experience .ge-button {
-    transition: none;
-  }
-
-  .demo-experience .ge-button:hover:not(:disabled) {
-    transform: none;
-  }
+.demo-experience .conversation-journey__error {
+  justify-items: start;
 }
 
 @media (max-width: 40rem) {
-  .demo-experience .shell-demo {
-    border-radius: var(--ge-radius-md);
-  }
-
   .demo-experience .shell-title {
     max-width: none;
   }

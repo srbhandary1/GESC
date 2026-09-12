@@ -5,10 +5,17 @@
   overflow-wrap: anywhere;
 }
 
-.ge-application-frame__brand,
+.ge-application-frame__header-inner {
+  flex-wrap: wrap;
+}
+
 .ge-application-frame__header-actions {
   min-width: 0;
   max-width: 100%;
+}
+
+.ge-application-frame__brand {
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 
@@ -19,12 +26,77 @@
   );
 }
 
-.shell-locale-control {
-  display: grid;
-  width: min(100%, 12rem);
+@media (max-width: 40rem) {
+  .ge-primary-navigation__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ge-space-1);
+  }
+
+  .ge-primary-navigation__link {
+    padding-inline: var(--ge-space-1);
+    font-size: 0.82rem;
+  }
+
+  .shell-content {
+    gap: var(--ge-space-3);
+  }
+
+  .shell-locale-control__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    margin: -1px;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+.shell-header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ge-space-2);
   min-width: 0;
   max-width: 100%;
-  gap: var(--ge-space-1);
+}
+
+.shell-profile-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--ge-target-minimum);
+  min-inline-size: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    background var(--ge-motion-fast) var(--ge-ease),
+    transform var(--ge-motion-fast) var(--ge-ease);
+}
+
+.shell-profile-link:hover {
+  background: var(--ge-color-status);
+}
+
+.shell-profile-link:active {
+  transform: scale(0.97);
+}
+
+.shell-locale-control {
+  display: grid;
+  flex: 1 1 8rem;
+  width: min(100%, 9.5rem);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .shell-locale-control__label {
@@ -50,8 +122,34 @@
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--ge-space-6);
+  gap: var(--ge-space-5);
   overflow-wrap: anywhere;
+  animation: ge-destination-enter var(--ge-motion-med) var(--ge-ease);
+}
+
+[data-pre-sign-in] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-pre-sign-in] h1,
+[data-pre-sign-in] .ge-button,
+[data-pre-sign-in] details {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
+@keyframes ge-destination-enter {
+  from {
+    opacity: 0.55;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .shell-preview {
@@ -112,9 +210,15 @@
 
 .shell-title {
   margin: 0;
-  font-size: clamp(2rem, 10vw, 4.5rem);
-  line-height: 1.15;
+  font-size: clamp(1.75rem, 7vw, 2.75rem);
+  line-height: 1.2;
   overflow-wrap: anywhere;
+}
+
+.shell-title--compact {
+  margin: 0 0 var(--ge-space-2);
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  letter-spacing: -0.04em;
 }
 
 .shell-description {
@@ -231,8 +335,14 @@
 }
 
 @media (max-width: 30rem) {
+  .shell-header-tools {
+    width: auto;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
   .shell-locale-control {
-    width: 100%;
+    width: min(100%, 8.5rem);
   }
 
   .shell-locale-control__select {

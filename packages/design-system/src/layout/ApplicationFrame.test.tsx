@@ -45,10 +45,58 @@ describe('ApplicationFrame', () => {
     expect(
       screen.getByRole('heading', { name: 'ಅಭ್ಯಾಸ' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Global English')).toHaveAttribute(
-      'lang',
-      'en-IN',
+    expect(
+      document.querySelector('.ge-application-frame__brand'),
+    ).toHaveAttribute('lang', 'en-IN')
+    expect(screen.getByText('Global English')).toBeInTheDocument()
+  })
+
+  it('keeps the full name in the tree and exposes a compact mobile wordmark', () => {
+    render(
+      <ApplicationFrame
+        brandLabel="Global English Speaking Course"
+        brandLabelLocale="en-IN"
+        compactBrandLabel="Global English"
+        currentDestination="home"
+        navigationLabel="Primary navigation"
+        navigationLabelLocale="en-IN"
+        navigationLinks={navigationLinks}
+        skipToContentLabel="Skip"
+      >
+        <h1>Home</h1>
+      </ApplicationFrame>,
     )
+
+    expect(
+      screen.getByText('Global English Speaking Course'),
+    ).toBeInTheDocument()
+    const shortMark = document.querySelector(
+      '.ge-application-frame__brand-short',
+    )
+    expect(shortMark).toHaveTextContent('Global English')
+    expect(shortMark).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('can hide primary destination navigation', () => {
+    render(
+      <ApplicationFrame
+        brandLabel="Global English"
+        brandLabelLocale="en-IN"
+        currentDestination="home"
+        hidePrimaryNavigation
+        navigationLabel="Primary navigation"
+        navigationLabelLocale="en-IN"
+        navigationLinks={navigationLinks}
+        skipToContentLabel="Skip"
+      >
+        <h1>Speak English with confidence.</h1>
+      </ApplicationFrame>,
+    )
+
+    expect(
+      screen.queryByRole('navigation', { name: 'Primary navigation' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'ಮುಖಪುಟ' })).not.toBeInTheDocument()
   })
 
   it('focuses main content without replacing an application route hash', async () => {

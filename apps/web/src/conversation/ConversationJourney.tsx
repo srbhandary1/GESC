@@ -31,6 +31,11 @@ import {
   CONFIDENCE_LISTEN_LINES,
   CONFIDENCE_MIN_TURNS_BEFORE_REFLECT,
 } from './confidenceContent'
+import {
+  PRACTICE_ABOUT_STORAGE_KEY,
+  persistFirstRunDismissed,
+  readFirstRunDismissed,
+} from '../ui/firstRunPreference'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -116,6 +121,9 @@ export function ConversationJourney({
   const [showHint, setShowHint] = useState(false)
   const [showSilenceNudge, setShowSilenceNudge] = useState(false)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('type')
+  const [aboutOpen, setAboutOpen] = useState(
+    () => !readFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY),
+  )
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
   const stopRecognition = useRef<(() => void) | null>(null)
@@ -418,43 +426,70 @@ export function ConversationJourney({
             )}
           />
         </h2>
+        <button
+          className="ge-button ge-button--quiet conversation-journey__about"
+          onClick={() => setAboutOpen(true)}
+          type="button"
+        >
+          <LocalizedMessage
+            resolution={message('conversation.about_action')}
+          />
+        </button>
       </div>
 
-      <aside
-        className="conversation-journey__notice"
-        aria-labelledby="conversation-disclosure"
-      >
-        <h3 id="conversation-disclosure">
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.disclosure_title'
-                : 'conversation.disclosure_title',
-            )}
-          />
-        </h3>
-        <p>
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.prototype_notice'
-                : 'conversation.prototype_notice',
-            )}
-          />
-        </p>
-        <p>
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.browser_speech_notice'
-                : 'conversation.privacy_notice',
-            )}
-          />
-        </p>
-      </aside>
+      {aboutOpen ? (
+        <div className="ge-sheet-backdrop">
+          <aside
+            aria-labelledby="conversation-disclosure"
+            aria-modal="true"
+            className="ge-sheet conversation-journey__notice"
+            role="dialog"
+          >
+            <h3 id="conversation-disclosure">
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.disclosure_title'
+                    : 'conversation.disclosure_title',
+                )}
+              />
+            </h3>
+            <p>
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.prototype_notice'
+                    : 'conversation.prototype_notice',
+                )}
+              />
+            </p>
+            <p>
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.browser_speech_notice'
+                    : 'conversation.privacy_notice',
+                )}
+              />
+            </p>
+            <button
+              className="ge-button ge-button--primary"
+              onClick={() => {
+                persistFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY)
+                setAboutOpen(false)
+              }}
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message('conversation.about_continue')}
+              />
+            </button>
+          </aside>
+        </div>
+      ) : null}
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
-        <div className="conversation-journey__start">
+        <div className="conversation-journey__start rounded-xl border border-line/70 bg-surface p-5 shadow-elevation-1">
           <label htmlFor="coaching-mode">
             <LocalizedMessage
               resolution={message('conversation.coaching_mode.label')}
@@ -929,15 +964,24 @@ export function ConversationJourney({
       ) : null}
 
       {state.kind === 'error' || speechError ? (
-        <p role="alert">
-          <LocalizedMessage
-            resolution={message(
-              speechError && demoMode
-                ? 'conversation.demo.recognition_unavailable'
-                : 'conversation.error',
-            )}
-          />
-        </p>
+        <div className="ge-async-error conversation-journey__error">
+          <p role="alert">
+            <LocalizedMessage
+              resolution={message(
+                speechError && demoMode
+                  ? 'conversation.demo.recognition_unavailable'
+                  : 'conversation.error',
+              )}
+            />
+          </p>
+          <button
+            className="ge-button ge-button--primary"
+            onClick={restart}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.retry')} />
+          </button>
+        </div>
       ) : null}
     </section>
   )
