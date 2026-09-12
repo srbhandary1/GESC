@@ -540,14 +540,6 @@ function App({
           />
         ) : canLearn ? (
           <>
-            {showDemoLearnHub ? (
-              <DemoPhase1Shell
-                compact
-                forcedModule="levels"
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-              />
-            ) : null}
             <LearnerJourney
               api={learnerJourneyApi}
               audioRecorder={audioRecorder}
@@ -558,6 +550,14 @@ function App({
               offlineStore={offlineStore}
               resumeBundle={offlineResume?.storedBundle}
             />
+            {showDemoLearnHub ? (
+              <DemoPhase1Shell
+                compact
+                forcedModule="levels"
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+              />
+            ) : null}
           </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
