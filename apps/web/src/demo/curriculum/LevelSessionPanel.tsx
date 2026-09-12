@@ -68,9 +68,11 @@ export function LevelSessionPanel({
     }
     stopDemoSpeech()
     setSpeaking(true)
-    void speakDemoText(session.modelLine, 'en-IN').finally(() => {
-      setSpeaking(false)
-    })
+    void speakDemoText(session.modelLine, 'en-IN')
+      .catch(() => undefined)
+      .finally(() => {
+        setSpeaking(false)
+      })
   }
 
   useEffect(() => {
@@ -82,9 +84,11 @@ export function LevelSessionPanel({
     }
     stopDemoSpeech()
     setSpeaking(true)
-    void speakDemoText(chapter.modelLine, 'en-IN').finally(() => {
-      setSpeaking(false)
-    })
+    void speakDemoText(chapter.modelLine, 'en-IN')
+      .catch(() => undefined)
+      .finally(() => {
+        setSpeaking(false)
+      })
   }, [chapter, mode])
 
   const score = submitted
