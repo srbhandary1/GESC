@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { isLessonPracticeProbe } from './productPathProbes'
+
 test('walks Grove first-run one question at a time before Home', async ({
   page,
 }) => {
@@ -38,7 +40,7 @@ test('walks Grove first-run one question at a time before Home', async ({
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 })
 
-test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
+test('runs the disclosed Phase 1 dashboard demo with LessonPractice fallback', async ({
   page,
 }) => {
   const apiRequests: string[] = []
@@ -150,7 +152,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
     page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
 
-  expect(apiRequests).toEqual([])
+  expect(apiRequests.every(isLessonPracticeProbe)).toBe(true)
   expect(
     await page.evaluate(() =>
       Object.keys(window.localStorage).every((key) => key.startsWith('ge-ui-')),

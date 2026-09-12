@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
+import { isLessonPracticeProbe } from './productPathProbes'
+
 /**
  * Full student click-through of the synthetic demo shell:
  * every Phase 1 module, Learn mission, Practice Friend + Role-play,
@@ -271,7 +273,7 @@ test('student click-through exercises every demo page and control', async ({
     page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
 
-  expect(apiRequests).toEqual([])
+  expect(apiRequests.every(isLessonPracticeProbe)).toBe(true)
   expect(
     await page.evaluate(() =>
       Object.keys(window.localStorage).every((key) => key.startsWith('ge-ui-')),
