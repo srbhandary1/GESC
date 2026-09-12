@@ -28,6 +28,7 @@ export interface DemoPhase1ShellProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
   readonly compact?: boolean
+  readonly demoOrganization?: string
   readonly forcedModule?: Phase1Module
 }
 
@@ -150,6 +151,7 @@ export function DemoPhase1Shell({
   locale,
   localizationPolicy,
   compact = false,
+  demoOrganization,
   forcedModule,
 }: DemoPhase1ShellProps) {
   const [hashModule, setHashModule] = useState<Phase1Module>(() =>
@@ -707,6 +709,28 @@ export function DemoPhase1Shell({
 
       {module === 'profile' ? (
         <section className="phase1-panel phase1-profile">
+          <article className="grid gap-2">
+            <h2>
+              <LocalizedMessage
+                resolution={message('demo.phase1.profile.demo_status')}
+              />
+            </h2>
+            <aside
+              aria-label={message('demo.label').text}
+              className="grid gap-2 rounded-xl border border-line/70 bg-surface-high p-4 text-sm leading-relaxed text-ink"
+              data-demo-mode="synthetic-local"
+            >
+              <strong className="text-action">
+                <LocalizedMessage resolution={message('demo.label')} />
+              </strong>
+              <span>
+                <LocalizedMessage resolution={message('demo.notice')} />
+              </span>
+              {demoOrganization === undefined ? null : (
+                <span className="text-muted">{demoOrganization}</span>
+              )}
+            </aside>
+          </article>
           <ul className="phase1-profile__links">
             <li>
               <button

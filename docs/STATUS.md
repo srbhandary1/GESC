@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.4`.
+  `ui-en-IN-2026-09-12.5`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.4`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.5`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -630,10 +630,11 @@ What moved:
   destination, and returns deterministic zero-cost text-only Friend replies
   (rotating follow-up questions plus a tiny curated set of gentle pattern
   tips that are scripted demo content, not grammar analysis).
-- A visible localized notice states that the fixtures are synthetic and use
-  no learner data, real AI, approved curriculum or production service. All
-  five non-English notices remain implementation drafts pending independent
-  human review.
+- The synthetic-demo disclosure (`demo.label` + `demo.notice`) lives on
+  Profile under **Demo status**. Home, Learn, Practice and Progress no longer
+  show a page-wide demo banner. The notice is not deleted; it remains
+  findable while `demoMode` is on. All five non-English notices remain
+  implementation drafts pending independent human review.
 - `VITE_LOCAL_DEMO=true` is effective only in a Vite development runtime or
   in the explicit `vite build --mode demo` distribution build (D-0077). The
   ordinary production build mode cannot activate the demo adapters; unit and

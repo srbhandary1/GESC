@@ -68,6 +68,12 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('heading', { level: 1, name: 'Profile' }),
     ).toBeInTheDocument()
     expect(
+      screen.getByRole('heading', { name: 'Demo status' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('complementary', { name: 'Synthetic local demo' }),
+    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    expect(
       screen.getByRole('button', { name: 'Attendance report' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Notices' })).toBeInTheDocument()

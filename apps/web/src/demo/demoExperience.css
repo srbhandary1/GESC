@@ -55,31 +55,6 @@
   gap: var(--ge-space-4);
 }
 
-.demo-experience .shell-demo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.65rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid color-mix(in srgb, var(--ge-color-border) 80%, transparent);
-  border-radius: var(--ge-radius-pill);
-  background: color-mix(in srgb, var(--ge-color-surface) 82%, transparent);
-  color: var(--ge-color-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
-.demo-experience .shell-demo strong {
-  color: var(--ge-color-action);
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.demo-experience .shell-demo__organization {
-  color: var(--ge-color-text-muted);
-}
-
 .demo-experience .shell-preview {
   border-radius: var(--ge-radius-md);
   background: color-mix(in srgb, #f5c16c 22%, var(--ge-color-surface));

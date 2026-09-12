@@ -468,26 +468,6 @@ function App({
         className="shell-content mx-auto w-full max-w-content"
         data-destination={destination}
       >
-        {demoMode ? (
-          <aside
-            className="shell-demo"
-            aria-label={message('demo.label').text}
-            data-demo-mode="synthetic-local"
-          >
-            <strong>
-              <LocalizedMessage resolution={message('demo.label')} />
-            </strong>
-            <span>
-              <LocalizedMessage resolution={message('demo.notice')} />
-            </span>
-            {demoOrganization === undefined ? null : (
-              <span className="shell-demo__organization">
-                {demoOrganization}
-              </span>
-            )}
-          </aside>
-        ) : null}
-
         {previewNotice.isPreview ? (
           <aside
             className="shell-preview"
@@ -565,6 +545,7 @@ function App({
 
         {showDemoPhase1 ? (
           <DemoPhase1Shell
+            demoOrganization={demoOrganization}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />

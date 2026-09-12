@@ -23,7 +23,7 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('combobox').selectOption('en-IN')
   await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
 
   // Locale cycle (all Phase 1 interface options), then return to English.
   for (const locale of [
@@ -56,6 +56,10 @@ test('student click-through exercises every demo page and control', async ({
 
   // Profile holds attendance and notices.
   await page.getByRole('link', { name: 'Profile' }).click()
+  await expect(page.getByRole('heading', { name: 'Demo status' })).toBeVisible()
+  await expect(
+    page.getByRole('complementary', { name: 'Synthetic local demo' }),
+  ).toContainText('does not use learner data')
   await expect(page.getByText('About this school')).toBeVisible()
   await page.getByRole('button', { name: 'Attendance report' }).click()
   await expect(page.getByText('75%').or(page.getByText('75 %'))).toBeVisible()

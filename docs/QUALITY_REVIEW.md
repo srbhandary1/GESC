@@ -2916,7 +2916,8 @@ accept and Play public release remain unauthorized.
 - Learn leading with the mission, then a compact room list;
 - relocation of attendance, notices and institute-about copy off the primary
   student path;
-- UI catalogue additions at revision `ui-*-2026-09-12.4`;
+- UI catalogue additions at revision `ui-*-2026-09-12.5`;
+- synthetic-demo disclosure moved from global chrome to Profile;
 - Tailwind CSS 4 on student surfaces, mapped to design-system tokens;
 - design-system mobile primary navigation as a floating bar;
 - light/dark appearance tokens, 48px targets, and skeleton/error/retry
@@ -2937,6 +2938,7 @@ bilingual guidance) is unchanged. Not production or Play evidence.
   in localStorage (UI chrome only; not credentials or learner records).
 - Teacher avatar slots are empty composition hooks only; no face, Lottie,
   video or third-party avatar SDK ships in this revision.
+- The synthetic-demo notice is Profile-only; primary tabs have no banner.
 - F0 DoD, production and Play remain unauthorized.
 
 

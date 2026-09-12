@@ -14,10 +14,10 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await page.goto('/')
   await page.getByRole('combobox').selectOption('en-IN')
 
+  await expect(page.locator('.demo-experience')).toBeVisible()
   await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
-  ).toContainText('does not use learner data')
-  await expect(page.locator('.demo-experience')).toBeVisible()
+  ).toHaveCount(0)
   await expect(
     page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
@@ -29,6 +29,12 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(
     page.getByRole('heading', { level: 1, name: 'Profile' }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Demo status' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('complementary', { name: 'Synthetic local demo' }),
+  ).toContainText('does not use learner data')
   await page.getByRole('button', { name: 'Attendance report' }).click()
   await expect(
     page.getByRole('heading', { level: 1, name: 'Attendance' }),

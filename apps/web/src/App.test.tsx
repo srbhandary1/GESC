@@ -47,10 +47,10 @@ describe('localized application shell', () => {
     )
 
     expect(
-      screen.getByRole('complementary', {
+      screen.queryByRole('complementary', {
         name: text('demo.label'),
       }),
-    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    ).not.toBeInTheDocument()
     expect(
       await screen.findByRole('heading', {
         name: text('demo.phase1.home.title'),
@@ -81,12 +81,29 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('nav.progress') }),
     ).toHaveAttribute('href', '#progress')
     expect(
-      screen.getByText('Global English Local Demo'),
-    ).toBeInTheDocument()
+      screen.queryByText('Global English Local Demo'),
+    ).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', {
         name: new RegExp(text('shell.theme.label')),
       }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('link', { name: text('shell.profile_label') }),
+    )
+    expect(
+      screen.getByRole('heading', {
+        name: text('demo.phase1.profile.demo_status'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('complementary', {
+        name: text('demo.label'),
+      }),
+    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    expect(
+      screen.getByText('Global English Local Demo'),
     ).toBeInTheDocument()
   })
 

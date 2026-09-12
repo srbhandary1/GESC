@@ -30,9 +30,10 @@ provider path or authorize production deployment.
   Azure Speech TTS through `POST /demo/tts` when credentials are present in
   process env; the browser never receives the key. Static `dist-demo` and
   the Android APK still ship without secrets.
-- The visible synthetic-demo notice remains part of every demo surface. All
-  five translated notices remain implementation drafts pending independent
-  review; English is the reviewed source.
+- The visible synthetic-demo notice remains on **Profile** (`Demo status`)
+  while `demoMode` is on. Home, Learn, Practice and Progress no longer show
+  a page-wide demo banner. All five translated notices remain implementation
+  drafts pending independent review; English is the reviewed source.
 - The demo distribution is an explicitly requested review artifact and sets
   `VITE_UI_TRANSLATION_PREVIEW=true`, so the Kannada-first interface and the
   other draft locales render with the existing visible preview notice
