@@ -147,6 +147,7 @@ export function FoundationLessonCatalog({
                 <div className="foundation-lessons__row">
                   <button
                     type="button"
+                    aria-label={`${message('demo.learn.open').text} ${lesson.title}`}
                     className="foundation-lessons__open"
                     onClick={() => setSelectedId(lesson.id)}
                   >
@@ -154,11 +155,6 @@ export function FoundationLessonCatalog({
                       {lesson.number}
                     </span>
                     <span className="foundation-lessons__copy">
-                      <span className="visually-hidden">
-                        <LocalizedMessage
-                          resolution={message('demo.learn.open')}
-                        />{' '}
-                      </span>
                       <strong lang="en-IN">{lesson.title}</strong>
                       <span className="foundation-lessons__minutes">
                         <LocalizedMessage
