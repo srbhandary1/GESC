@@ -3230,6 +3230,33 @@ the Mira / GESC-green system is re-applied on top.
 | `make verify` | In CI after overlapping-model restore; not claimed locally (Node 22 vs pin 24.18.1) |
 | Static-IP Android access | Demo APK may live-load `http://117.254.108.143:8080` via `make demo-android-remote`. Soft-launch HTTP Caddy serves `/downloads/*.apk` and proxies `/oauth` + `/auth/mobile`. Restored missing `level1-authored-blueprint-draft.json` for PHPUnit. |
 
+## PR #6 theme-only Mira / GESC-green leftover remap (D-0123)
+
+Theme-only; LessonPractice restore preserved.
+
+### Scope
+
+- Live dark tokens in `themeTokens.css` no longer resolve Futuristic cyan /
+  violet / navy leftovers (`#22d3ee`, `#a78bfa`, `#0b1020`). Values are
+  GESC green `#006B3F`, nocturnal `#0B1210` / `#0F1F17`, mint `#3DDC97`.
+- `index.html` first-paint default matches `interfaceTheme.ts` (dark,
+  `theme-color` `#0B1210`).
+- Onboarding cards, Speak FAB glow, Mira avatar rings are chrome-only.
+- No LessonPractice / LevelSession / ConversationOrchestrator / `/demo/tts`
+  / Phase 1 destination edits.
+- CC tips `9818fe2..1a02330` were **not** re-cherry-picked (already on
+  branch as `c2b6014`…`c9f6b8d`). Skipped a blind merge of
+  `origin/codex/confidence-conversation`.
+- Superdesign drafts unread; Wonder editor disconnected.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| LessonPractice / curriculum files | Untouched | No `LessonPractice`, `LevelSession`, `AuthoredFoundation`, or `localDemo` session edits |
+| Theme surface | Pass | `themeTokens.css`, `index.html`, design-system onboarding/FAB, AvatarSlot, LearnerJourney slow-chip |
+| Production / Play | Not authorized | D-0123 |
+
 
 
 
