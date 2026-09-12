@@ -1,10 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  resolveMessage,
-  type MessageKey,
-} from '@global-english/localization'
+import type { MessageKey } from '@global-english/localization'
+import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { PreSignInSplash } from './PreSignInSplash'
 
 afterEach(() => {
@@ -12,10 +10,7 @@ afterEach(() => {
 })
 
 const message = (key: MessageKey) =>
-  resolveMessage(key, {
-    policy: 'development-preview',
-    requestedLocale: 'en-IN',
-  })
+  resolveInterfaceMessage(key, 'en-IN', 'development-preview')
 
 describe('PreSignInSplash', () => {
   it('shows a single sign-in action without a session essay', () => {

@@ -533,9 +533,11 @@ function App({
               })
             }}
             status={
-              session.status === 'authenticated'
-                ? 'anonymous'
-                : session.status
+              session.status === 'unavailable'
+                ? 'unavailable'
+                : session.status === 'checking'
+                  ? 'checking'
+                  : 'anonymous'
             }
           />
         ) : hideDemoIntroduction && destination === 'learn' ? (

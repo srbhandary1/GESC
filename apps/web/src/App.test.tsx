@@ -522,7 +522,11 @@ describe('localized application shell', () => {
       ),
       logout: vi.fn(async () => undefined),
       beginAuthorization,
-      completeAuthorization: vi.fn(async () => ({ status: 'anonymous' })),
+      completeAuthorization: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
       refresh: vi.fn(async () => undefined),
     }
     const user = userEvent.setup()
