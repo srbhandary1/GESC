@@ -217,9 +217,9 @@ export function VoicePracticePanel({
       aria-labelledby="secure-voice-title"
       className="conversation-journey__voice"
     >
-      <h3 id="secure-voice-title">
+      <h2 id="secure-voice-title">
         {text('conversation.voice.title')}
-      </h3>
+      </h2>
       <p>{text('conversation.voice.optional')}</p>
 
       {state.kind === 'idle' ? (

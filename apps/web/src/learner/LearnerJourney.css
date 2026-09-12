@@ -397,7 +397,8 @@
 .learner-notice {
   padding: var(--ge-space-3);
   border-radius: var(--ge-radius-sm);
-  background: #fff8dd;
+  background: var(--ge-notice-background, var(--ge-color-surface-elevated));
+  color: var(--ge-color-ink);
 }
 
 .learner-offline,

@@ -454,10 +454,10 @@
   gap: var(--ge-space-2);
   margin: 0;
   padding: var(--ge-space-3) var(--ge-space-4);
-  border: 1px solid var(--ge-color-border);
+  border: 1px solid var(--ge-notice-border, var(--ge-color-border));
   border-radius: var(--ge-radius-sm);
-  background: #fff8dd;
-  color: var(--ge-color-text);
+  background: var(--ge-notice-background, var(--ge-color-surface-elevated));
+  color: var(--ge-color-ink);
   line-height: 1.5;
 }
 
@@ -1151,7 +1151,9 @@
 .operator-workspace {
   display: grid;
   min-width: 0;
+  max-width: 100%;
   gap: var(--ge-space-5);
+  overflow-x: clip;
 }
 
 .operator-workspace--sectioned {
@@ -2189,7 +2191,7 @@
 .operator-people__editor summary {
   min-block-size: var(--ge-target-minimum);
   padding-block: var(--ge-space-2);
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-ink));
   font-weight: 750;
   cursor: pointer;
 }
@@ -2305,7 +2307,7 @@
 .operator-content-studio__action-disclosure > summary {
   min-block-size: var(--ge-target-minimum);
   padding-block: var(--ge-space-3);
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-ink));
   font-weight: 800;
   cursor: pointer;
 }

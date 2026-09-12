@@ -88,6 +88,10 @@ const OPERATOR_ROLE_KEYS = new Set([
   'trainer',
   'organization_admin',
   'content_reviewer',
+  'institution-admin',
+  'content-governor',
+  'governed-media-operator',
+  'custom-governed-operator',
 ])
 
 const destinationMessages: Readonly<
@@ -367,10 +371,11 @@ function App({
   const isOperatorSession =
     !demoMode &&
     session.status === 'authenticated' &&
-    (session.identity.current_membership?.role_keys.some((roleKey) =>
+    session.identity.current_membership !== null &&
+    session.identity.current_membership.membership_type !== 'learner' &&
+    session.identity.current_membership.role_keys.some((roleKey) =>
       OPERATOR_ROLE_KEYS.has(roleKey),
-    ) ??
-      false)
+    )
   const canLearn =
     destination === 'learn' &&
     (demoMode || isLearnerSession || offlineResume !== null)
@@ -429,7 +434,7 @@ function App({
       brandLabelLocale={brand.resolvedLocale}
       compactBrandLabel={compactBrand.text}
       currentDestination={destination}
-      hidePrimaryNavigation={showPreSignInGate}
+      hidePrimaryNavigation={showPreSignInGate || canShowOperatorConsole}
       headerActions={
         <div className="shell-header-tools">
           {demoMode ? (
@@ -568,6 +573,15 @@ function App({
             />
             <MarketingLanding locale={locale} message={message} />
           </>
+        ) : canShowOperatorConsole ? (
+          <h1
+            className="shell-title"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={message('operator.shell.title')} />
+          </h1>
         ) : hideDemoIntroduction && destination === 'learn' ? (
           <h1
             className="visually-hidden"

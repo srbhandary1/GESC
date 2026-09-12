@@ -101,7 +101,7 @@
   max-inline-size: 44rem;
   font-size: var(--ge-font-size-md);
   line-height: var(--ge-line-height-ui);
-  color: var(--ge-color-text-muted);
+  color: var(--ge-color-ink);
 }
 
 .marketing-button {

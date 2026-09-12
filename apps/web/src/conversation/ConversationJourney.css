@@ -68,6 +68,7 @@
   padding-inline-start: 1.1rem;
 }
 
+.conversation-journey__heading h1,
 .conversation-journey__heading h2,
 .conversation-journey__heading h3 {
   margin: 0;
@@ -92,7 +93,7 @@
 
 .conversation-journey__progress {
   font-weight: 650;
-  color: var(--ge-color-action);
+  color: var(--ge-color-accent, var(--ge-color-ink));
 }
 
 .conversation-journey__example {

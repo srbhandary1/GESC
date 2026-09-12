@@ -287,7 +287,7 @@
   --ge-color-surface-elevated: #1a2620;
   --ge-color-ink: #f7fbf9;
   --ge-color-text: #f7fbf9;
-  --ge-color-text-muted: #8fa099;
+  --ge-color-text-muted: #c4d0c9;
   --ge-color-border: #24332c;
   --ge-color-border-strong: #006b3f;
   --ge-color-action: #006b3f;
@@ -311,8 +311,8 @@
     rgb(255 255 255 / 0.04) 100%
   );
   --ge-panel-border: rgb(61 220 151 / 0.16);
-  --ge-notice-background: rgb(251 191 36 / 0.12);
-  --ge-notice-border: rgb(251 191 36 / 0.35);
+  --ge-notice-background: #243018;
+  --ge-notice-border: #8a7320;
 
   --ge-body-background-image:
     radial-gradient(

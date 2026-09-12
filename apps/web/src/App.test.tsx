@@ -136,6 +136,7 @@ describe('localized application shell', () => {
   })
 
   it('opens Friend speaking practice from the demo primary navigation', async () => {
+    window.localStorage.setItem('ge-ui-practice-about-dismissed', '1')
     const user = userEvent.setup()
     const demo = createLocalDemoRuntime()
 
@@ -155,15 +156,9 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.practice.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
         name: text('conversation.demo.title'),
       }),
-    ).toBeInTheDocument()
+    ).toBeVisible()
   })
 
   it('opens My Levels from the demo Phase 1 module hash', async () => {
@@ -227,13 +222,14 @@ describe('localized application shell', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText('Introduce yourself')).not.toBeInTheDocument()
 
+    window.localStorage.setItem('ge-ui-practice-about-dismissed', '1')
     window.history.replaceState(null, '', '/#practice')
     globalThis.dispatchEvent(new Event('hashchange'))
 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.practice.title'),
+        name: text('conversation.demo.title'),
       }),
     ).toBeVisible()
   })
@@ -534,6 +530,26 @@ describe('localized application shell', () => {
       screen.getByText(text('shell.checkpoint_notice')),
     ).toBeInTheDocument()
     expect(home).not.toHaveBeenCalled()
+  })
+
+  it('opens the operator console for a hyphenated institution-admin role', async () => {
+    render(
+      <App
+        authentication={membershipAuthentication('organization_admin', [
+          'institution-admin',
+        ])}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('operator.shell.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(text('shell.checkpoint_notice')),
+    ).not.toBeInTheDocument()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {

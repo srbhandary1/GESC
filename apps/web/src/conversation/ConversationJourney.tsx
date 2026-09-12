@@ -542,13 +542,23 @@ export function ConversationJourney({
             )}
           />
         </p>
-        <h2 id="conversation-title">
-          <LocalizedMessage
-            resolution={message(
-              demoMode ? 'conversation.demo.title' : 'conversation.title',
-            )}
-          />
-        </h2>
+        {embedded ? (
+          <h2 id="conversation-title">
+            <LocalizedMessage
+              resolution={message(
+                demoMode ? 'conversation.demo.title' : 'conversation.title',
+              )}
+            />
+          </h2>
+        ) : (
+          <h1 id="conversation-title">
+            <LocalizedMessage
+              resolution={message(
+                demoMode ? 'conversation.demo.title' : 'conversation.title',
+              )}
+            />
+          </h1>
+        )}
         {embedded ? null : (
         <button
           className="ge-button ge-button--quiet conversation-journey__about"
@@ -680,11 +690,11 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-warmup"
         >
-          <h3 id="confidence-warmup">
+          <h2 id="confidence-warmup">
             <LocalizedMessage
               resolution={message('conversation.confidence.warmup_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.warmup_lead')}
@@ -712,11 +722,11 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-listen"
         >
-          <h3 id="confidence-listen">
+          <h2 id="confidence-listen">
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_lead')}
@@ -791,11 +801,11 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-reflect"
         >
-          <h3 id="confidence-reflect">
+          <h2 id="confidence-reflect">
             <LocalizedMessage
               resolution={message('conversation.confidence.reflect_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.reflect_lead')}
@@ -995,11 +1005,11 @@ export function ConversationJourney({
         >
           {state.turn.status === 'completed' ? (
             <>
-              <h3 id="conversation-reply">
+              <h2 id="conversation-reply">
                 <LocalizedMessage
                   resolution={message('conversation.reply_title')}
                 />
-              </h3>
+              </h2>
               <dl className="conversation-journey__transcript">
                 <div className="conversation-journey__bubble conversation-journey__bubble--you">
                   <dt>
@@ -1125,16 +1135,16 @@ export function ConversationJourney({
               </div>
             </>
           ) : (
-            <h3 id="conversation-reply">
+            <h2 id="conversation-reply">
               <LocalizedMessage resolution={message('conversation.failed')} />
-            </h3>
+            </h2>
           )}
 
-          <h4>
+          <h3>
             <LocalizedMessage
               resolution={message('conversation.events_title')}
             />
-          </h4>
+          </h3>
           <ol className="conversation-journey__events">
             {state.events.map((turnEvent) => (
               <li key={turnEvent.sequence}>
