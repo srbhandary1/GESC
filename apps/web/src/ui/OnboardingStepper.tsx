@@ -257,7 +257,7 @@ export function OnboardingStepper({
                       resolution={message(levelKeys[candidate].label)}
                     />
                   </strong>
-                  <span className="ge-select-card__hint">
+                  <span aria-hidden="true" className="ge-select-card__hint">
                     <LocalizedMessage
                       resolution={message(levelKeys[candidate].hint)}
                     />

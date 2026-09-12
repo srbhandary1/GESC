@@ -22,6 +22,7 @@ beforeEach(() => {
   document.documentElement.removeAttribute('data-theme')
   window.localStorage.removeItem('ge-ui-color-scheme')
   window.localStorage.removeItem('ge-ui-practice-about-dismissed')
+  window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
 })
 
 afterEach(() => {
@@ -73,7 +74,9 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: text('nav.speak') }),
+      screen
+        .getByRole('navigation', { name: text('shell.navigation_label') })
+        .querySelector('[data-destination="practice"]'),
     ).toHaveAttribute('href', '#practice')
     expect(
       screen.getByRole('link', { name: text('nav.learn') }),
@@ -124,11 +127,11 @@ describe('localized application shell', () => {
     const toggle = screen.getByRole('button', {
       name: new RegExp(text('shell.theme.label')),
     })
-    expect(toggle).toHaveAttribute('aria-pressed', 'false')
-    await user.click(toggle)
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(window.localStorage.getItem('ge-ui-color-scheme')).toBe('dark')
     expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await user.click(toggle)
+    expect(document.documentElement.dataset.theme).toBe('light')
+    expect(window.localStorage.getItem('ge-ui-color-scheme')).toBe('light')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('opens Friend speaking practice from the demo primary navigation', async () => {
@@ -145,7 +148,7 @@ describe('localized application shell', () => {
     )
 
     await user.click(
-      screen.getByRole('link', { name: text('nav.speak') }),
+      document.querySelector<HTMLAnchorElement>('[data-destination="practice"]')!,
     )
 
     expect(

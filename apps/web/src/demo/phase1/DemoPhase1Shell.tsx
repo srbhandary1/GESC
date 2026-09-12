@@ -182,7 +182,6 @@ export function DemoPhase1Shell({
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [audioPlayed, setAudioPlayed] = useState(false)
-  const [aiSpeaking, setAiSpeaking] = useState(false)
   const [audioSpeaking, setAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
   const [welcomeOpen, setWelcomeOpen] = useState(
@@ -228,16 +227,15 @@ export function DemoPhase1Shell({
     }
   }, [])
 
-  const listenAiReply = () => {
+  const listenAiReply = async () => {
     const reply = aiMessage(aiTopicReplyKeys[activeTopic.id]).text
     stopDemoSpeech()
-    setAiSpeaking(true)
-    void speakDemoText(reply, aiLocale)
-      .then((source) => {
-        setUsedBrowserFallback(source === 'browser')
-      })
-      .catch(() => setUsedBrowserFallback(true))
-      .finally(() => setAiSpeaking(false))
+    try {
+      const source = await speakDemoText(reply, aiLocale)
+      setUsedBrowserFallback(source === 'browser')
+    } catch {
+      setUsedBrowserFallback(true)
+    }
   }
 
   const playDailyAudio = () => {
@@ -576,7 +574,7 @@ export function DemoPhase1Shell({
             ))}
           </div>
           <div className="phase1-ai-toolbar">
-            <div>
+            <div
               className="phase1-ai-lang"
               role="group"
               aria-label={message('demo.phase1.ai.lang_group').text}

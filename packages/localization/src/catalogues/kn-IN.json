@@ -393,7 +393,7 @@
   "nav.learn": "ಕಲಿಯಿರಿ",
   "nav.practice": "ಅಭ್ಯಾಸ",
   "nav.progress": "ಪ್ರಗತಿ",
-  "nav.speak": "ಈಗ ಮಾತನಾಡಿ",
+  "nav.speak": "ಮಾತನಾಡಿ",
   "operator.audit.empty": "No privileged content-workflow audit events yet.",
   "operator.audit.title": "Audit trail",
   "operator.console.error": "The operator content workflow is unavailable. Try again.",

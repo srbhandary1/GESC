@@ -16,7 +16,7 @@
     "kn-IN": {
       "locale": "kn-IN",
       "revision": "ui-kn-IN-2026-09-12.7",
-      "catalogueHash": "sha256:51373d2045430ba2836520a1a25edfe951a118e81c0b751defd837529ba9a397",
+      "catalogueHash": "sha256:c7b2590b79ddc85d3548a0bdc9cc74baeb776bf65d18489c906945aebef49be6",
       "sourceLocale": "en-IN",
       "sourceRevision": "ui-en-IN-2026-09-12.7",
       "sourceHash": "sha256:546dd0f77818ab2b78c0ba8cbb476139192ced8ac8059fb8fdb78914551ddd0b",
@@ -68,7 +68,7 @@
     "hi-IN": {
       "locale": "hi-IN",
       "revision": "ui-hi-IN-2026-09-12.7",
-      "catalogueHash": "sha256:4fb4cd966b295f213762f13410dfcefde702ff559bfdd23b6e42c2985a875006",
+      "catalogueHash": "sha256:652f6e22a27a1ed672752aa11f71844b54f5f67e6412bd4c583c204d4a158a8d",
       "sourceLocale": "en-IN",
       "sourceRevision": "ui-en-IN-2026-09-12.7",
       "sourceHash": "sha256:546dd0f77818ab2b78c0ba8cbb476139192ced8ac8059fb8fdb78914551ddd0b",
