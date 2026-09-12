@@ -2956,7 +2956,7 @@ bilingual guidance) is unchanged. Not production or Play evidence.
 - brand-green / charcoal dark tokens (`#006B3F`, `#0F1F17`) and mint tints;
 - original AI Teacher / Friend / Coach SVG portraits in avatar slots;
 - one-question-per-screen onboarding with sticky Continue;
-- demo first-run stepper (language, goal, speaking comfort);
+- demo first-run stepper (language, goal, speaking comfort) as a full-screen overlay;
 - elevated Speak destination in primary navigation;
 - Listen chips wired to existing demo/browser TTS;
 - MD3 empty / error / success surfaces.

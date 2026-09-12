@@ -149,7 +149,9 @@ export function OnboardingStepper({
           resolution={message(
             step === 'adult'
               ? 'learner.onboarding.adult_hint'
-              : 'learner.onboarding.introduction',
+              : step === 'language'
+                ? 'learner.onboarding.language_hint'
+                : 'learner.onboarding.introduction',
           )}
         />
       </p>

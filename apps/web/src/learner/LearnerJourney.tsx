@@ -889,6 +889,7 @@ function OnboardingForm({
   }
 
   return (
+    <div className="ge-onboarding-screen" data-grove-first-run="open">
     <OnboardingStepper
       busy={busy}
       commandLocked={commandLocked}
@@ -907,6 +908,7 @@ function OnboardingForm({
       steps={['adult', 'goal', 'level']}
       titleRef={titleRef}
     />
+    </div>
   )
 }
 

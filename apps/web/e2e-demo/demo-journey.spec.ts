@@ -1,6 +1,37 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+test('walks Grove first-run one question at a time before Home', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await expect(
+    page.getByRole('heading', { name: 'Interface language' }).or(
+      page.getByRole('heading', { name: 'ಬಳಕೆಪರದೆಯ ಭಾಷೆ' }),
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Today' }),
+  ).toHaveCount(0)
+
+  await page.getByRole('radio', { name: 'English' }).check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page
+    .getByRole('radio', { name: 'Speak with confidence at work' })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('radio', { name: /I am just starting/ }).check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Today' }),
+  ).toBeVisible()
+  await expect(page.getByRole('img', { name: 'AI Teacher' })).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /Continue today’s lesson/ }),
+  ).toBeVisible()
+})
+
 test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   page,
 }) => {

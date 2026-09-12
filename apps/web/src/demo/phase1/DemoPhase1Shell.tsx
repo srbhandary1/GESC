@@ -287,7 +287,11 @@ export function DemoPhase1Shell({
 
   if (welcomeOpen && !compact) {
     return (
-      <div className="phase1-shell" data-demo-phase1="synthetic">
+      <div
+        className="phase1-shell phase1-first-run"
+        data-demo-phase1="synthetic"
+        data-grove-first-run="open"
+      >
         <h1 className="visually-hidden" id="destination-title" tabIndex={-1}>
           <LocalizedMessage
             resolution={message('demo.phase1.first_run.title')}
@@ -324,7 +328,7 @@ export function DemoPhase1Shell({
           <div className="flex items-center gap-4">
             <AvatarSlot
               label={message('shell.avatar.teacher').text}
-              size="md"
+              size="lg"
               slot="home-teacher"
             />
             <div className="grid min-w-0 gap-1">

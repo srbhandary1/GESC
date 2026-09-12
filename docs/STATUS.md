@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.7`.
+  `ui-en-IN-2026-09-12.8`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.7`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.8`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -639,7 +639,7 @@ Listen chips on AI text, and MD3 empty/error/success surfaces.
   dismissed via `ge-ui-grove-welcome-dismissed`.
 - Practice destination visible label is **Speak**, with a wave glyph FAB on
   narrow viewports.
-- UI catalogues at revision `ui-*-2026-09-12.7`.
+- UI catalogues at revision `ui-*-2026-09-12.8`.
 - Presentation-only; not F0, production or Play evidence.
 
 ## Local synthetic demo
