@@ -220,8 +220,16 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     )
     .toMatchObject({ revokedUrls: 2, stoppedTracks: 2 })
   await expect
-    .poll(() => page.evaluate(() => window.localStorage.length))
-    .toBe(0)
+    .poll(() =>
+      page.evaluate(() =>
+        Object.keys(window.localStorage).filter(
+          (key) =>
+            !key.startsWith('ge-ui-') &&
+            !key.startsWith('ge-interface-'),
+        ),
+      ),
+    )
+    .toEqual([])
   await expect
     .poll(() =>
       page.evaluate(async () => (await indexedDB.databases()).length),

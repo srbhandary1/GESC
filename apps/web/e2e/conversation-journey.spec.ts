@@ -35,19 +35,15 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     .selectOption('en-IN')
 
   await expect(
-    page.getByText(
-      'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
-    ),
+    page.getByText(messageEn('conversation.prototype_notice')),
   ).toBeVisible()
   await expect(
-    page.getByText(
-      'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
-    ),
+    page.getByText(messageEn('conversation.privacy_notice')),
   ).toBeVisible()
   await dismissPracticeAboutSheet(page)
 
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: messageEn('conversation.start') })
     .click()
   await expect(
     page.getByText('I am a deterministic AI prototype, not a human.'),
@@ -118,12 +114,16 @@ test('shows separate optional voice purposes before microphone capture', async (
     .selectOption('en-IN')
   await dismissPracticeAboutSheet(page)
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: messageEn('conversation.start') })
     .click()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
   await page
-    .getByRole('button', { name: 'Set up optional voice practice' })
+    .getByRole('button', { name: messageEn('conversation.confidence.warmup_continue') })
+    .click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.confidence.listen_continue') })
+    .click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.voice.setup') })
     .click()
 
   await expect(
@@ -168,30 +168,22 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
-  await page.getByRole('tab', { name: 'A situation' }).click()
-  await page.getByRole('button', { name: 'Start this situation' }).click()
-  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible()
-  await page.getByRole('button', { name: 'Type instead' }).click()
+  await dismissPracticeAboutSheet(page)
   await page
-    .getByRole('button', { name: 'Role-play (synthetic)' })
+    .getByRole('button', { name: messageEn('conversation.roleplay.entry_button') })
     .click()
-
   await expect(
-    page.getByText(
-      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
-    ),
+    page.getByText(messageEn('conversation.roleplay.prototype_notice')),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.roleplay.start') })
+    .click()
   await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
   await expect(
     page.getByText('Advisory feedback', { exact: true }),
@@ -570,5 +562,12 @@ function message(key: MessageKey): string {
   return resolveMessage(key, {
     policy: 'development-preview',
     requestedLocale: 'kn-IN',
+  }).text
+}
+
+function messageEn(key: MessageKey): string {
+  return resolveMessage(key, {
+    policy: 'development-preview',
+    requestedLocale: 'en-IN',
   }).text
 }

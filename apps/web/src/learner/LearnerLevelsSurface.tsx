@@ -34,8 +34,8 @@ export interface LearnerLevelsSurfaceProps {
 
 /**
  * Prefer commissioned LessonPractice levels from the Laravel API.
- * When the API is down or no level is attached, fall back to the authored
- * Phase 1 rooms (TTS + chapter conversation).
+ * Demo mode falls back to authored Phase 1 rooms. Production keeps the
+ * existing LearnerJourney mission path when levels are uncommissioned.
  */
 export function LearnerLevelsSurface({
   locale,
@@ -124,16 +124,31 @@ export function LearnerLevelsSurface({
     )
   }
 
+  if (demoMode) {
+    return (
+      <DemoPhase1Shell
+        conversationApi={conversationApi}
+        demoMode={demoMode}
+        demoOrganization={demoOrganization}
+        forcedModule="levels"
+        levelSessionsApi={levelSessionsApi}
+        locale={locale}
+        localizationPolicy={localizationPolicy}
+        onLocaleChange={onLocaleChange}
+      />
+    )
+  }
+
   return (
-    <DemoPhase1Shell
-      conversationApi={conversationApi}
-      demoMode={demoMode}
-      demoOrganization={demoOrganization}
-      forcedModule="levels"
-      levelSessionsApi={levelSessionsApi}
+    <LearnerJourney
+      api={learnerJourneyApi}
+      audioRecorder={audioRecorder}
+      createClientId={createClientId}
       locale={locale}
       localizationPolicy={localizationPolicy}
-      onLocaleChange={onLocaleChange}
+      offlineBinding={offlineBinding}
+      offlineStore={offlineStore}
+      resumeBundle={resumeBundle}
     />
   )
 }

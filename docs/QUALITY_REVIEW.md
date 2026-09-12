@@ -3266,6 +3266,7 @@ Theme-only; LessonPractice restore preserved.
 | Phase 1 My Levels visibility | Pass | First-run hid Attendance / AI Teacher / Daily Activity / My Levels (Pre-1…L17) / Notice Board behind a 3-step sheet that also covered Learn. Demo first-run now offers **Skip and open My Levels**. Learn still lists Pre-Level 1…Level 17 plus the eight rooms. Grove 16-card catalog remains excluded. |
 | Web typecheck | Pass locally after contract restore | `8f45ae2` verify failed: PrivilegedMfa / OperatorMedia / OperatorPublicationStatus fields missing from generated clients. Restored `docs/api/openapi.yaml` from `1a02330` and regenerated `packages/contracts/src/generated/*`. Local `tsc -b` and Redocly lint passed. |
 | Locale governance | Pass after hash stamp | `dc8cc64` verify failed `locale:check` with `catalogue-hash-mismatch` on all six locales. `demo.phase1.first_run.skip` was added in `59baa4b` without recomputing `sha256-canonical-json-v1`. Governance now stamps `ui-*-2026-09-12.17` and current source hashes. |
+| Production e2e after verify | In CI | `91d5f9d` `make verify` passed. `make e2e` failed 12 Playwright specs: splash missing MarketingLanding notice, conversation About-sheet / Mira start copy, onboarded Learn falling through to DemoPhase1Shell, operator console only on Home/Learn, and `ge-ui-*` first-run keys in learner localStorage. Production-only repairs; demo My Levels path unchanged. |
 | Production / Play | Not authorized | D-0123 |
 
 

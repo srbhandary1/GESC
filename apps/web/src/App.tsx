@@ -29,6 +29,7 @@ import type {
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { PreSignInSplash } from './auth/PreSignInSplash'
+import { MarketingLanding } from './marketing/MarketingLanding'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { curriculumByLevelId } from './demo/curriculum/levelCurriculum'
@@ -379,9 +380,7 @@ function App({
     demoMode && destination === 'progress' && isLearnerSession
   const canShowLevelProgress =
     !demoMode && destination === 'progress' && isLearnerSession
-  const canShowOperatorConsole =
-    isOperatorSession &&
-    (destination === 'home' || destination === 'learn')
+  const canShowOperatorConsole = isOperatorSession
   const showDemoPhase1 = demoMode && destination === 'home'
   const showDemoLearnHub = demoMode && canLearn
   const hideDemoIntroduction = demoMode
@@ -534,38 +533,41 @@ function App({
         ) : null}
 
         {showPreSignInGate ? (
-          <PreSignInSplash
-            canStartAuthorization={androidAuth !== null}
-            message={message}
-            onRetry={() => {
-              setSession({ status: 'checking' })
-              authentication
-                .current()
-                .then((snapshot) => {
-                  setOfflineResume(null)
-                  setSession(snapshot)
-                })
-                .catch(() => {
+          <>
+            <PreSignInSplash
+              canStartAuthorization={androidAuth !== null}
+              message={message}
+              onRetry={() => {
+                setSession({ status: 'checking' })
+                authentication
+                  .current()
+                  .then((snapshot) => {
+                    setOfflineResume(null)
+                    setSession(snapshot)
+                  })
+                  .catch(() => {
+                    setSession({ status: 'unavailable' })
+                  })
+              }}
+              onSignIn={() => {
+                if (androidAuth === null) {
+                  return
+                }
+
+                void androidAuth.beginAuthorization().catch(() => {
                   setSession({ status: 'unavailable' })
                 })
-            }}
-            onSignIn={() => {
-              if (androidAuth === null) {
-                return
+              }}
+              status={
+                session.status === 'unavailable'
+                  ? 'unavailable'
+                  : session.status === 'checking'
+                    ? 'checking'
+                    : 'anonymous'
               }
-
-              void androidAuth.beginAuthorization().catch(() => {
-                setSession({ status: 'unavailable' })
-              })
-            }}
-            status={
-              session.status === 'unavailable'
-                ? 'unavailable'
-                : session.status === 'checking'
-                  ? 'checking'
-                  : 'anonymous'
-            }
-          />
+            />
+            <MarketingLanding locale={locale} message={message} />
+          </>
         ) : hideDemoIntroduction && destination === 'learn' ? (
           <h1
             className="visually-hidden"
