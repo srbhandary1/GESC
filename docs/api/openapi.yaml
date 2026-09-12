@@ -7019,6 +7019,58 @@ components:
       description: Mission ULID used to authorize the requested model-audio asset.
       schema:
         $ref: "#/components/schemas/Ulid"
+    CurriculumVersionPath:
+      name: curriculumVersion
+      in: path
+      required: true
+      description: Organization-owned curriculum-version ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    IfRange:
+      name: If-Range
+      in: header
+      required: false
+      description: |
+        Strong lesson-video ETag returned by an earlier response. The range
+        is honored only on an exact strong match; weak tags and dates receive
+        the complete representation.
+      schema:
+        type: string
+      example: '"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"'
+    LessonQueryId:
+      name: lesson_id
+      in: query
+      required: true
+      description: Lesson ULID used to authorize the requested lesson-video asset.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    OperatorCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Encrypted continuation bound to tenant, purpose and filters.
+      schema:
+        $ref: "#/components/schemas/OperatorCursor"
+    OperatorPageLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of tenant-bound rows to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 25
+        default: 25
+    Range:
+      name: Range
+      in: header
+      required: false
+      description: |
+        Optional single RFC byte range. Multiple or malformed ranges are
+        ignored and receive the complete representation.
+      schema:
+        type: string
+      example: bytes=0-1048575
   headers:
     CorrelationId:
       required: true
@@ -7035,6 +7087,30 @@ components:
       schema:
         type: string
         pattern: '(^|,\s*)no-store(\s*,|$)'
+    AcceptByteRanges:
+      required: true
+      description: The lesson-video endpoint accepts byte ranges.
+      schema:
+        type: string
+        const: bytes
+    LessonVideoEntityTag:
+      required: true
+      description: Strong entity tag derived from the governed SHA-256.
+      schema:
+        type: string
+        pattern: '^"[0-9a-f]{64}"$'
+    SatisfiedContentRange:
+      required: true
+      description: Inclusive served byte offsets and complete object length.
+      schema:
+        type: string
+        pattern: '^bytes [0-9]+-[0-9]+/[0-9]+$'
+    UnsatisfiedContentRange:
+      required: true
+      description: Complete object length for an unsatisfiable range.
+      schema:
+        type: string
+        pattern: '^bytes \*/[0-9]+$'
   responses:
     Problem:
       description: The request could not be completed.
@@ -7063,6 +7139,83 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+    ContentPublicationLifecycleCreated:
+      description: Publication-lifecycle command completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
+    ContentPublicationLifecycleReplay:
+      description: Exact publication-lifecycle command replay returned.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
+    ContentWorkspaceCommandCreated:
+      description: Governed append-only content command completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
+    ContentWorkspaceCommandReplay:
+      description: Exact actor, operation, target and body replay returned.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
+    ContentWorkspaceProblem:
+      description: The governed content-workspace request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ContentWorkspaceProblemDetails"
+    LearnerAdministrationProblem:
+      description: The learner-administration request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/LearnerAdministrationProblemDetails"
+    OrganizationAdministrationProblem:
+      description: The organization-administration request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/OrganizationAdministrationProblemDetails"
   securitySchemes:
     sanctumSession:
       type: apiKey
@@ -7781,6 +7934,8 @@ components:
       required:
         - onboarding
         - enrollment
+        - streak
+        - due_review
         - next_mission
       properties:
         onboarding:
@@ -7788,6 +7943,12 @@ components:
         enrollment:
           oneOf:
             - $ref: "#/components/schemas/ActiveLearnerEnrollment"
+            - type: "null"
+        streak:
+          $ref: "#/components/schemas/MeaningfulSpeakingStreak"
+        due_review:
+          oneOf:
+            - $ref: "#/components/schemas/LearnerDueReview"
             - type: "null"
         next_mission:
           oneOf:
@@ -13421,3 +13582,233 @@ components:
         correlation_id:
           type: string
           format: uuid
+    LearnerLevelVideoCatalog:
+      type: object
+      additionalProperties: false
+      required:
+        - enrollment_id
+        - videos
+      properties:
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        videos:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerLevelVideo"
+    OperatorTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - membership_id
+        - display_name
+        - preferred_window
+        - topic
+        - notes
+        - status
+        - created_at
+        - acknowledged_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+        display_name:
+          type:
+            - string
+            - "null"
+        preferred_window:
+          type: string
+        topic:
+          type: string
+        notes:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - submitted
+            - acknowledged
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        acknowledged_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorTuitionRequestListing:
+      type: object
+      additionalProperties: false
+      required:
+        - requests
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorTuitionRequest"
+    ContentWorkspaceProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.content_workspace.not_found
+                - problem.content_workspace.stale_version
+                - problem.content_workspace.idempotency_conflict
+                - problem.content_workspace.state_conflict
+                - problem.content_workspace.head_conflict
+                - problem.content_workspace.concurrent_change
+      example:
+        type: urn:global-english:problem:content-workspace-stale-version
+        title: Content state changed
+        status: 409
+        detail: Reload the content workspace and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.content_workspace.stale_version
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+    LearnerAdministrationProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.learner_administration.stale_state
+                - problem.learner_administration.idempotency_conflict
+                - problem.learner_administration.active_dependency
+                - problem.learner_administration.unsafe_role
+      example:
+        type: urn:global-english:problem:learner-administration-stale-state
+        title: Resource state changed
+        status: 409
+        detail: Reload the learner relationship and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.learner_administration.stale_state
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+    LearnerLevelVideo:
+      type: object
+      additionalProperties: false
+      required:
+        - lesson_id
+        - enrollment_id
+        - publication_id
+        - level_label
+        - title
+        - video
+      properties:
+        lesson_id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        publication_id:
+          $ref: "#/components/schemas/Ulid"
+        level_label:
+          type: string
+          minLength: 1
+          maxLength: 120
+        title:
+          type: object
+          additionalProperties: false
+          required:
+            - locale
+            - text
+          properties:
+            locale:
+              type: string
+              const: en-IN
+            text:
+              type: string
+              minLength: 1
+              maxLength: 200
+        video:
+          $ref: "#/components/schemas/LearnerLessonVideoMedia"
+    OrganizationAdministrationProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.fresh_mfa_required
+                - problem.organization_administration.stale_state
+                - problem.organization_administration.idempotency_conflict
+                - problem.organization_administration.last_manager_required
+                - problem.organization_administration.active_dependency
+                - problem.organization_administration.self_target_forbidden
+      example:
+        type: urn:global-english:problem:organization-administration-stale-state
+        title: Resource state changed
+        status: 409
+        detail: Reload the resource and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.organization_administration.stale_state
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+    LearnerLessonVideoMedia:
+      type: object
+      additionalProperties: false
+      required:
+        - asset_id
+        - stream_url
+        - mime_type
+        - byte_size
+      properties:
+        asset_id:
+          $ref: "#/components/schemas/Ulid"
+        stream_url:
+          type: string
+          format: uri-reference
+        mime_type:
+          type: string
+          enum:
+            - video/mp4
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 20000000

@@ -19,2051 +19,6 @@ export const SupportedLocaleSchema = {
     ]
 } as const;
 
-export const OperatorMediaAssetKindSchema = {
-    type: 'string',
-    enum: [
-        'model_audio',
-        'lesson_audio',
-        'lesson_video'
-    ]
-} as const;
-
-export const OperatorMediaAttachableUsageKeySchema = {
-    type: 'string',
-    description: 'Media usages currently attachable before the LPL-02 lesson-practice source schema exists.',
-    enum: [
-        'model_audio',
-        'lesson_video'
-    ]
-} as const;
-
-export const OperatorMediaAssetStateSchema = {
-    type: 'string',
-    enum: [
-        'active',
-        'retired'
-    ]
-} as const;
-
-export const OperatorMediaUploadStateSchema = {
-    type: 'string',
-    enum: [
-        'uploading',
-        'finalized',
-        'scan_clean',
-        'accepted',
-        'rejected',
-        'expired',
-        'inspection_failed',
-        'scan_failed',
-        'promotion_failed'
-    ]
-} as const;
-
-export const OperatorMediaActionSchema = {
-    type: 'string',
-    enum: [
-        'start_upload',
-        'review_quarantine',
-        'manage_metadata',
-        'record_replacement',
-        'retire_asset',
-        'record_rights_decision',
-        'adopt_asset',
-        'translate_metadata',
-        'review_metadata_en',
-        'review_metadata_kn',
-        'attach_asset'
-    ]
-} as const;
-
-export const OperatorMediaStableKeySchema = {
-    type: 'string',
-    minLength: 1,
-    maxLength: 100,
-    pattern: '^[a-z][a-z0-9_.-]*$'
-} as const;
-
-export const OperatorMediaManifestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'generated_at',
-        'organization_id',
-        'allowed_actions',
-        'limits',
-        'supported_kinds',
-        'rights_attestation'
-    ],
-    properties: {
-        generated_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        organization_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAction'
-            }
-        },
-        limits: {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'part_size_bytes',
-                'model_audio_maximum_bytes',
-                'lesson_audio_maximum_bytes',
-                'lesson_video_maximum_bytes',
-                'upload_expiry_hours',
-                'clean_review_expiry_days'
-            ],
-            properties: {
-                part_size_bytes: {
-                    type: 'integer',
-                    minimum: 65536,
-                    maximum: 20000000
-                },
-                model_audio_maximum_bytes: {
-                    type: 'integer',
-                    const: 10000000
-                },
-                lesson_audio_maximum_bytes: {
-                    type: 'integer',
-                    const: 20000000
-                },
-                lesson_video_maximum_bytes: {
-                    type: 'integer',
-                    const: 20000000
-                },
-                upload_expiry_hours: {
-                    type: 'integer',
-                    const: 24
-                },
-                clean_review_expiry_days: {
-                    type: 'integer',
-                    const: 7
-                }
-            }
-        },
-        supported_kinds: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAssetKind'
-            }
-        },
-        rights_attestation: {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'approval_reference',
-                'evidence_sha256',
-                'creates_asset_approval'
-            ],
-            properties: {
-                approval_reference: {
-                    type: 'string',
-                    minLength: 1,
-                    maxLength: 120
-                },
-                evidence_sha256: {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                creates_asset_approval: {
-                    type: 'boolean',
-                    const: false
-                }
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaAssetSummarySchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'media_asset_id',
-        'asset_kind',
-        'asset_hash',
-        'mime_type',
-        'byte_size',
-        'state',
-        'lifecycle_version',
-        'selected_scan_id',
-        'predecessor_media_asset_id',
-        'operator_label',
-        'metadata_revision_id',
-        'metadata_version',
-        'metadata_content_hash',
-        'uploaded_at',
-        'updated_at'
-    ],
-    properties: {
-        media_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        asset_kind: {
-            $ref: '#/components/schemas/OperatorMediaAssetKind'
-        },
-        asset_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        mime_type: {
-            type: 'string',
-            enum: [
-                'audio/wav',
-                'audio/mpeg',
-                'audio/ogg',
-                'audio/mp4',
-                'audio/webm',
-                'video/mp4'
-            ]
-        },
-        byte_size: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        },
-        state: {
-            $ref: '#/components/schemas/OperatorMediaAssetState'
-        },
-        lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        selected_scan_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        predecessor_media_asset_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        operator_label: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 160
-        },
-        metadata_revision_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        metadata_version: {
-            type: [
-                'integer',
-                'null'
-            ],
-            minimum: 1
-        },
-        metadata_content_hash: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        uploaded_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        updated_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaAssetListingSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'data',
-        'next_cursor',
-        'allowed_actions'
-    ],
-    properties: {
-        data: {
-            type: 'array',
-            maxItems: 25,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAssetSummary'
-            }
-        },
-        next_cursor: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 4096
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAction'
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaMetadataRevisionSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'revision_number',
-        'operator_label',
-        'transcript',
-        'text_alternative',
-        'content_hash',
-        'authored_at',
-        'metadata_version'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        revision_number: {
-            type: 'integer',
-            minimum: 1
-        },
-        operator_label: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 160
-        },
-        transcript: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 65536
-        },
-        text_alternative: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 8000
-        },
-        content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        authored_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        metadata_version: {
-            type: 'integer',
-            minimum: 1
-        }
-    }
-} as const;
-
-export const OperatorMediaMetadataVariantSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'revision_number',
-        'locale',
-        'source_content_hash',
-        'transcript',
-        'text_alternative',
-        'content_hash',
-        'translated_at',
-        'variant_version'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        revision_number: {
-            type: 'integer',
-            minimum: 1
-        },
-        locale: {
-            type: 'string',
-            const: 'kn-IN'
-        },
-        source_content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        transcript: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 65536
-        },
-        text_alternative: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 8000
-        },
-        content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        translated_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        variant_version: {
-            type: 'integer',
-            minimum: 1
-        }
-    }
-} as const;
-
-export const OperatorMediaMetadataReviewSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'program_id',
-        'metadata_revision_id',
-        'review_kind',
-        'metadata_variant_id',
-        'decision',
-        'rationale_key',
-        'reviewer_membership_id',
-        'authority_appointment_id',
-        'reviewed_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        program_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        metadata_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        review_kind: {
-            type: 'string',
-            enum: [
-                'academic_en',
-                'kannada'
-            ]
-        },
-        metadata_variant_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        decision: {
-            type: 'string',
-            enum: [
-                'approved',
-                'rejected',
-                'withdrawn'
-            ]
-        },
-        rationale_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        reviewer_membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        authority_appointment_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        reviewed_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaRightsRevisionSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'program_id',
-        'parent_revision_id',
-        'revision_number',
-        'evidence_status',
-        'evidence_hash',
-        'rights_holder_reference',
-        'provenance_reference',
-        'rights_basis_key',
-        'license_or_contract_reference',
-        'permitted_release_channels',
-        'permitted_territories',
-        'learner_delivery_allowed',
-        'sharing_allowed',
-        'derivative_use_allowed',
-        'effective_at',
-        'expires_at',
-        'retention_policy_key',
-        'deletion_constraint_key',
-        'confirmed_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        program_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        parent_revision_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        revision_number: {
-            type: 'integer',
-            minimum: 1
-        },
-        evidence_status: {
-            type: 'string',
-            enum: [
-                'pending',
-                'approved',
-                'rejected',
-                'withdrawn'
-            ]
-        },
-        evidence_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        rights_holder_reference: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        provenance_reference: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        rights_basis_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        license_or_contract_reference: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 240
-        },
-        permitted_release_channels: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 4,
-            uniqueItems: true,
-            items: {
-                type: 'string',
-                enum: [
-                    'android',
-                    'web'
-                ]
-            }
-        },
-        permitted_territories: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 8,
-            uniqueItems: true,
-            items: {
-                type: 'string',
-                pattern: '^[A-Z]{2}$'
-            }
-        },
-        learner_delivery_allowed: {
-            type: 'boolean'
-        },
-        sharing_allowed: {
-            type: 'boolean'
-        },
-        derivative_use_allowed: {
-            type: 'boolean'
-        },
-        effective_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        expires_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        retention_policy_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        deletion_constraint_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        confirmed_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaUsageSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'curriculum_version_id',
-        'content_revision_id',
-        'usage_key',
-        'sequence',
-        'created_at'
-    ],
-    properties: {
-        curriculum_version_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        content_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        usage_key: {
-            $ref: '#/components/schemas/OperatorMediaAttachableUsageKey'
-        },
-        sequence: {
-            type: 'integer',
-            minimum: 1
-        },
-        created_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaHistoryEventSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'event_type',
-        'lifecycle_version',
-        'selected_scan_id',
-        'related_media_asset_id',
-        'media_upload_id',
-        'actor_membership_id',
-        'reason_key',
-        'occurred_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        event_type: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        selected_scan_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        related_media_asset_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        media_upload_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        actor_membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        reason_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        occurred_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaAssetDetailSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'media_asset_id',
-        'asset_kind',
-        'mime_type',
-        'byte_size',
-        'asset_hash',
-        'uploaded_at',
-        'lifecycle',
-        'scan',
-        'metadata',
-        'kannada_variant',
-        'metadata_reviews',
-        'rights_revisions',
-        'usages',
-        'events'
-    ],
-    properties: {
-        media_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        asset_kind: {
-            $ref: '#/components/schemas/OperatorMediaAssetKind'
-        },
-        mime_type: {
-            type: 'string'
-        },
-        byte_size: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        },
-        asset_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        uploaded_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        lifecycle: {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'state',
-                'version',
-                'selected_scan_id',
-                'predecessor_media_asset_id',
-                'managed_at',
-                'retired_at',
-                'retirement_reason_key'
-            ],
-            properties: {
-                state: {
-                    $ref: '#/components/schemas/OperatorMediaAssetState'
-                },
-                version: {
-                    type: 'integer',
-                    minimum: 1
-                },
-                selected_scan_id: {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                predecessor_media_asset_id: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/Ulid'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                },
-                managed_at: {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                retired_at: {
-                    type: [
-                        'string',
-                        'null'
-                    ],
-                    format: 'date-time'
-                },
-                retirement_reason_key: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/OperatorMediaStableKey'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                }
-            }
-        },
-        scan: {
-            type: [
-                'object',
-                'null'
-            ],
-            additionalProperties: true
-        },
-        metadata: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaMetadataRevision'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        kannada_variant: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaMetadataVariant'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        metadata_reviews: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorMediaMetadataReview'
-            }
-        },
-        rights_revisions: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorMediaRightsRevision'
-            }
-        },
-        usages: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorMediaUsage'
-            }
-        },
-        events: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorMediaHistoryEvent'
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaAssetResponseSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'data',
-        'allowed_actions'
-    ],
-    properties: {
-        data: {
-            $ref: '#/components/schemas/OperatorMediaAssetDetail'
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAction'
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaUploadSummarySchema = {
-    type: 'object',
-    required: [
-        'id',
-        'candidate_asset_id',
-        'asset_kind',
-        'safe_label',
-        'state',
-        'version',
-        'total_bytes',
-        'whole_object_hash',
-        'part_size_bytes',
-        'expected_part_count',
-        'received_part_count',
-        'selected_scan_id',
-        'accepted_asset_id',
-        'expires_at',
-        'review_expires_at',
-        'decision_reason_key',
-        'decided_at',
-        'updated_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        candidate_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        asset_kind: {
-            $ref: '#/components/schemas/OperatorMediaAssetKind'
-        },
-        safe_label: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 160
-        },
-        state: {
-            $ref: '#/components/schemas/OperatorMediaUploadState'
-        },
-        version: {
-            type: 'integer',
-            minimum: 1
-        },
-        total_bytes: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        },
-        whole_object_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        part_size_bytes: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        },
-        expected_part_count: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 1000
-        },
-        received_part_count: {
-            type: 'integer',
-            minimum: 0,
-            maximum: 1000
-        },
-        selected_scan_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        accepted_asset_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        expires_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        review_expires_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        decision_reason_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        decided_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        updated_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorMediaUploadListingSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'data',
-        'next_cursor',
-        'allowed_actions'
-    ],
-    properties: {
-        data: {
-            type: 'array',
-            maxItems: 25,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaUploadSummary'
-            }
-        },
-        next_cursor: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 4096
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAction'
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaUploadDetailSchema = {
-    allOf: [
-        {
-            $ref: '#/components/schemas/OperatorMediaUploadSummary'
-        },
-        {
-            type: 'object',
-            required: [
-                'created_by_membership_id',
-                'decided_by_membership_id',
-                'created_at',
-                'parts',
-                'scans',
-                'events'
-            ],
-            properties: {
-                created_by_membership_id: {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                decided_by_membership_id: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/Ulid'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                },
-                created_at: {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                parts: {
-                    type: 'array',
-                    maxItems: 1000,
-                    items: {
-                        type: 'object',
-                        additionalProperties: true
-                    }
-                },
-                scans: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        additionalProperties: true
-                    }
-                },
-                events: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        additionalProperties: true
-                    }
-                }
-            }
-        }
-    ]
-} as const;
-
-export const OperatorMediaUploadResponseSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'data',
-        'allowed_actions'
-    ],
-    properties: {
-        data: {
-            $ref: '#/components/schemas/OperatorMediaUploadDetail'
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaAction'
-            }
-        }
-    }
-} as const;
-
-export const OperatorMediaCommandResultSchema = {
-    type: 'object',
-    additionalProperties: true,
-    required: [
-        'result_type',
-        'result_id',
-        'replayed'
-    ],
-    properties: {
-        result_type: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        result_id: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        replayed: {
-            type: 'boolean'
-        }
-    }
-} as const;
-
-export const OperatorMediaTranscriptionSegmentSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'sequence',
-        'text',
-        'offset_milliseconds',
-        'duration_milliseconds',
-        'confidence_bps'
-    ],
-    properties: {
-        sequence: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 4096
-        },
-        text: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 32000
-        },
-        offset_milliseconds: {
-            type: 'integer',
-            minimum: 0
-        },
-        duration_milliseconds: {
-            type: 'integer',
-            minimum: 1
-        },
-        confidence_bps: {
-            type: 'integer',
-            minimum: 0,
-            maximum: 10000
-        }
-    }
-} as const;
-
-export const OperatorMediaTranscriptionCandidateSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'campaign_id',
-        'campaign_asset_id',
-        'media_asset_id',
-        'part_key',
-        'sequence',
-        'state',
-        'version',
-        'candidate_sha256',
-        'candidate_expires_at',
-        'source_sha256',
-        'source_duration_milliseconds',
-        'locale',
-        'transcript',
-        'segments'
-    ],
-    properties: {
-        campaign_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        campaign_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        media_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        part_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        },
-        sequence: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 4
-        },
-        state: {
-            type: 'string',
-            const: 'candidate_ready'
-        },
-        version: {
-            type: 'integer',
-            minimum: 1
-        },
-        candidate_sha256: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        candidate_expires_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        source_sha256: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        source_duration_milliseconds: {
-            type: 'integer',
-            minimum: 1
-        },
-        locale: {
-            type: 'string',
-            const: 'en-IN'
-        },
-        transcript: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 32000
-        },
-        segments: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 4096,
-            items: {
-                $ref: '#/components/schemas/OperatorMediaTranscriptionSegment'
-            }
-        }
-    }
-} as const;
-
-export const ReconcileOperatorMediaTranscriptionCandidateRequestSchema = {
-    oneOf: [
-        {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'expected_asset_version',
-                'candidate_sha256',
-                'outcome',
-                'operator_label',
-                'expected_metadata_version'
-            ],
-            properties: {
-                expected_asset_version: {
-                    type: 'integer',
-                    minimum: 1
-                },
-                candidate_sha256: {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                outcome: {
-                    type: 'string',
-                    const: 'confirmed'
-                },
-                operator_label: {
-                    type: 'string',
-                    minLength: 1,
-                    maxLength: 160
-                },
-                expected_head_revision_id: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/Ulid'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                },
-                expected_metadata_version: {
-                    type: 'integer',
-                    minimum: 0
-                }
-            }
-        },
-        {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'expected_asset_version',
-                'candidate_sha256',
-                'outcome',
-                'operator_label',
-                'corrected_transcript',
-                'expected_metadata_version'
-            ],
-            properties: {
-                expected_asset_version: {
-                    type: 'integer',
-                    minimum: 1
-                },
-                candidate_sha256: {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                outcome: {
-                    type: 'string',
-                    const: 'corrected'
-                },
-                operator_label: {
-                    type: 'string',
-                    minLength: 1,
-                    maxLength: 160
-                },
-                corrected_transcript: {
-                    type: 'string',
-                    minLength: 1,
-                    maxLength: 32000
-                },
-                expected_head_revision_id: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/Ulid'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                },
-                expected_metadata_version: {
-                    type: 'integer',
-                    minimum: 0
-                }
-            }
-        },
-        {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'expected_asset_version',
-                'candidate_sha256',
-                'outcome',
-                'expected_metadata_version'
-            ],
-            properties: {
-                expected_asset_version: {
-                    type: 'integer',
-                    minimum: 1
-                },
-                candidate_sha256: {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                outcome: {
-                    type: 'string',
-                    enum: [
-                        'discarded',
-                        'needs_attention'
-                    ]
-                },
-                expected_head_revision_id: {
-                    oneOf: [
-                        {
-                            $ref: '#/components/schemas/Ulid'
-                        },
-                        {
-                            type: 'null'
-                        }
-                    ]
-                },
-                expected_metadata_version: {
-                    type: 'integer',
-                    minimum: 0
-                }
-            }
-        }
-    ]
-} as const;
-
-export const OperatorMediaTranscriptionReconciliationResultSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'result_type',
-        'result_id',
-        'replayed',
-        'campaign_id',
-        'campaign_asset_id',
-        'reconciliation_id',
-        'outcome',
-        'metadata_revision_id',
-        'metadata_content_hash'
-    ],
-    properties: {
-        result_type: {
-            type: 'string',
-            const: 'media_transcription_reconciliation'
-        },
-        result_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        replayed: {
-            type: 'boolean'
-        },
-        campaign_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        campaign_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        reconciliation_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        outcome: {
-            type: 'string',
-            enum: [
-                'confirmed',
-                'corrected',
-                'discarded',
-                'needs_attention'
-            ]
-        },
-        asset_version: {
-            type: 'integer',
-            minimum: 2
-        },
-        metadata_revision_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        metadata_content_hash: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        }
-    }
-} as const;
-
-export const OperatorMediaRightsDecisionResultSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'media_rights_revision_id',
-        'action'
-    ],
-    properties: {
-        media_rights_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        action: {
-            type: 'string',
-            enum: [
-                'confirm',
-                'reject',
-                'withdraw'
-            ]
-        }
-    }
-} as const;
-
-export const StartOperatorMediaUploadRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'asset_kind',
-        'safe_label',
-        'total_bytes',
-        'whole_object_hash'
-    ],
-    properties: {
-        asset_kind: {
-            $ref: '#/components/schemas/OperatorMediaAssetKind'
-        },
-        safe_label: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 160
-        },
-        total_bytes: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        },
-        whole_object_hash: {
-            $ref: '#/components/schemas/Sha256'
-        }
-    }
-} as const;
-
-export const FinalizeOperatorMediaUploadRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'expected_upload_version'
-    ],
-    properties: {
-        expected_upload_version: {
-            type: 'integer',
-            minimum: 1
-        }
-    }
-} as const;
-
-export const DecideOperatorMediaUploadRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'expected_upload_version'
-    ],
-    properties: {
-        expected_upload_version: {
-            type: 'integer',
-            minimum: 1
-        }
-    }
-} as const;
-
-export const RejectOperatorMediaUploadRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'expected_upload_version',
-        'reason_key'
-    ],
-    properties: {
-        expected_upload_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        reason_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        }
-    }
-} as const;
-
-export const AdoptOperatorMediaAssetRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'selected_asset_hash'
-    ],
-    properties: {
-        selected_asset_hash: {
-            $ref: '#/components/schemas/Sha256'
-        }
-    }
-} as const;
-
-export const AppendOperatorMediaMetadataRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'expected_head_revision_id',
-        'expected_metadata_version',
-        'operator_label',
-        'transcript',
-        'text_alternative'
-    ],
-    properties: {
-        expected_head_revision_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        expected_metadata_version: {
-            type: 'integer',
-            minimum: 0
-        },
-        operator_label: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 160
-        },
-        transcript: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 65536
-        },
-        text_alternative: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 8000
-        }
-    }
-} as const;
-
-export const AppendOperatorMediaKannadaRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'source_content_hash',
-        'expected_head_variant_id',
-        'expected_variant_version',
-        'transcript',
-        'text_alternative'
-    ],
-    properties: {
-        source_content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        expected_head_variant_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        expected_variant_version: {
-            type: 'integer',
-            minimum: 0
-        },
-        transcript: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 65536
-        },
-        text_alternative: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 8000
-        }
-    }
-} as const;
-
-export const ReviewOperatorMediaMetadataRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'program_id',
-        'metadata_revision_id',
-        'source_content_hash',
-        'review_kind',
-        'metadata_variant_id',
-        'variant_content_hash',
-        'decision',
-        'rationale_key',
-        'authority_appointment_id'
-    ],
-    properties: {
-        program_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        metadata_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        source_content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        review_kind: {
-            type: 'string',
-            enum: [
-                'academic_en',
-                'kannada'
-            ]
-        },
-        metadata_variant_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        variant_content_hash: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        decision: {
-            type: 'string',
-            enum: [
-                'approved',
-                'rejected',
-                'withdrawn'
-            ]
-        },
-        rationale_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        authority_appointment_id: {
-            $ref: '#/components/schemas/Ulid'
-        }
-    }
-} as const;
-
-export const DecideOperatorMediaRightsRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'action',
-        'program_id',
-        'media_asset_id',
-        'selected_asset_hash',
-        'parent_revision_id',
-        'evidence_hash',
-        'rights_holder_reference',
-        'provenance_reference',
-        'rights_basis_key',
-        'license_or_contract_reference',
-        'permitted_release_channels',
-        'permitted_territories',
-        'learner_delivery_allowed',
-        'sharing_allowed',
-        'derivative_use_allowed',
-        'effective_at',
-        'expires_at',
-        'retention_policy_key',
-        'deletion_constraint_key',
-        'authority_appointment_id'
-    ],
-    properties: {
-        action: {
-            type: 'string',
-            enum: [
-                'confirm',
-                'reject',
-                'withdraw'
-            ]
-        },
-        program_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        media_asset_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        selected_asset_hash: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Sha256'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        parent_revision_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        evidence_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        rights_holder_reference: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 120
-        },
-        provenance_reference: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 120
-        },
-        rights_basis_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        license_or_contract_reference: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 240
-        },
-        permitted_release_channels: {
-            type: [
-                'array',
-                'null'
-            ],
-            minItems: 1,
-            maxItems: 4,
-            uniqueItems: true,
-            items: {
-                type: 'string',
-                enum: [
-                    'android',
-                    'web'
-                ]
-            }
-        },
-        permitted_territories: {
-            type: [
-                'array',
-                'null'
-            ],
-            minItems: 1,
-            maxItems: 8,
-            uniqueItems: true,
-            items: {
-                type: 'string',
-                pattern: '^[A-Z]{2}$'
-            }
-        },
-        learner_delivery_allowed: {
-            type: [
-                'boolean',
-                'null'
-            ]
-        },
-        sharing_allowed: {
-            type: [
-                'boolean',
-                'null'
-            ]
-        },
-        derivative_use_allowed: {
-            type: [
-                'boolean',
-                'null'
-            ]
-        },
-        effective_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        expires_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        retention_policy_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        deletion_constraint_key: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorMediaStableKey'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        authority_appointment_id: {
-            $ref: '#/components/schemas/Ulid'
-        }
-    }
-} as const;
-
-export const AttachOperatorMediaRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'program_id',
-        'curriculum_version_id',
-        'source_revision_id',
-        'usage_key',
-        'expected_workspace_version',
-        'expected_lifecycle_version',
-        'metadata_revision_id',
-        'metadata_content_hash',
-        'english_review_id',
-        'metadata_variant_id',
-        'variant_content_hash',
-        'kannada_review_id',
-        'media_rights_revision_id'
-    ],
-    properties: {
-        program_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        curriculum_version_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        source_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        usage_key: {
-            $ref: '#/components/schemas/OperatorMediaAttachableUsageKey'
-        },
-        expected_workspace_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        expected_lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        metadata_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        metadata_content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        english_review_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        metadata_variant_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        variant_content_hash: {
-            $ref: '#/components/schemas/Sha256'
-        },
-        kannada_review_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        media_rights_revision_id: {
-            $ref: '#/components/schemas/Ulid'
-        }
-    }
-} as const;
-
-export const ReplaceOperatorMediaAssetRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'successor_media_asset_id',
-        'expected_predecessor_lifecycle_version',
-        'expected_successor_lifecycle_version'
-    ],
-    properties: {
-        successor_media_asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        expected_predecessor_lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        expected_successor_lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        }
-    }
-} as const;
-
-export const RetireOperatorMediaAssetRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'expected_lifecycle_version',
-        'reason_key'
-    ],
-    properties: {
-        expected_lifecycle_version: {
-            type: 'integer',
-            minimum: 1
-        },
-        reason_key: {
-            $ref: '#/components/schemas/OperatorMediaStableKey'
-        }
-    }
-} as const;
-
 export const OtpRequestSchema = {
     type: 'object',
     additionalProperties: false,
@@ -2533,214 +488,6 @@ export const OtpVerificationSchema = {
     }
 } as const;
 
-export const PrivilegedMfaStatusSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'factor_status',
-        'factor_id',
-        'pending_expires_at',
-        'recovery_codes_remaining',
-        'fresh_assertion_scope',
-        'fresh_assertion_expires_at',
-        'can_enroll',
-        'requires_support'
-    ],
-    properties: {
-        factor_status: {
-            type: 'string',
-            enum: [
-                'none',
-                'pending',
-                'active',
-                'support_required'
-            ]
-        },
-        factor_id: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/Ulid'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        pending_expires_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        recovery_codes_remaining: {
-            type: 'integer',
-            minimum: 0,
-            maximum: 10
-        },
-        fresh_assertion_scope: {
-            type: [
-                'string',
-                'null'
-            ],
-            enum: [
-                'privileged_actions',
-                'factor_replacement',
-                null
-            ]
-        },
-        fresh_assertion_expires_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        can_enroll: {
-            type: 'boolean'
-        },
-        requires_support: {
-            type: 'boolean'
-        }
-    }
-} as const;
-
-export const PrivilegedMfaEnrollmentSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'factor_id',
-        'challenge_id',
-        'provisioning_uri',
-        'expires_at'
-    ],
-    properties: {
-        factor_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        challenge_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        provisioning_uri: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^otpauth://totp/',
-            description: 'Shown once; contains the pending TOTP secret.'
-        },
-        expires_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const PrivilegedMfaEnrollmentConfirmationSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'challenge_id',
-        'code'
-    ],
-    properties: {
-        challenge_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        code: {
-            type: 'string',
-            pattern: '^[0-9]{6}$'
-        }
-    }
-} as const;
-
-export const PrivilegedMfaChallengeSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'challenge_id',
-        'expires_at'
-    ],
-    properties: {
-        challenge_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        expires_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const PrivilegedMfaVerificationSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'method',
-        'code'
-    ],
-    properties: {
-        method: {
-            type: 'string',
-            enum: [
-                'totp',
-                'recovery_code'
-            ]
-        },
-        code: {
-            type: 'string',
-            minLength: 6,
-            maxLength: 64,
-            description: 'Six-digit TOTP or one 128-bit recovery code.'
-        }
-    }
-} as const;
-
-export const PrivilegedMfaVerificationResultSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'verified_at',
-        'scope'
-    ],
-    properties: {
-        verified_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        scope: {
-            type: 'string',
-            enum: [
-                'privileged_actions',
-                'factor_replacement'
-            ]
-        }
-    }
-} as const;
-
-export const PrivilegedMfaRecoveryCodeIssuanceSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'recovery_codes',
-        'sessions_revoked'
-    ],
-    properties: {
-        recovery_codes: {
-            type: 'array',
-            minItems: 10,
-            maxItems: 10,
-            uniqueItems: true,
-            description: 'Shown once and never returned by a later status call.',
-            items: {
-                type: 'string',
-                pattern: '^[0-9a-f]{8}(?:-[0-9a-f]{8}){3}$'
-            }
-        },
-        sessions_revoked: {
-            type: 'boolean'
-        }
-    }
-} as const;
-
 export const UserIdentitySummarySchema = {
     type: 'object',
     additionalProperties: false,
@@ -2796,11 +543,7 @@ export const WebSessionSummarySchema = {
         'created_at',
         'last_activity_at',
         'expires_at',
-        'privileged',
-        'mfa_verified_at',
-        'mfa_verified_method',
-        'mfa_verified_scope',
-        'password_confirmed_at'
+        'privileged'
     ],
     properties: {
         id: {
@@ -2825,35 +568,6 @@ export const WebSessionSummarySchema = {
             type: 'boolean'
         },
         mfa_verified_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        mfa_verified_method: {
-            type: [
-                'string',
-                'null'
-            ],
-            enum: [
-                'totp',
-                'recovery_code',
-                null
-            ]
-        },
-        mfa_verified_scope: {
-            type: [
-                'string',
-                'null'
-            ],
-            enum: [
-                'privileged_actions',
-                'factor_replacement',
-                null
-            ]
-        },
-        password_confirmed_at: {
             type: [
                 'string',
                 'null'
@@ -4372,108 +2086,6 @@ export const LearnerModelAudioSchema = {
     }
 } as const;
 
-export const LearnerLessonVideoMediaSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'asset_id',
-        'stream_url',
-        'mime_type',
-        'byte_size'
-    ],
-    properties: {
-        asset_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        stream_url: {
-            type: 'string',
-            format: 'uri-reference'
-        },
-        mime_type: {
-            type: 'string',
-            enum: [
-                'video/mp4'
-            ]
-        },
-        byte_size: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20000000
-        }
-    }
-} as const;
-
-export const LearnerLevelVideoSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'lesson_id',
-        'enrollment_id',
-        'publication_id',
-        'level_label',
-        'title',
-        'video'
-    ],
-    properties: {
-        lesson_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        enrollment_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        publication_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        level_label: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        title: {
-            type: 'object',
-            additionalProperties: false,
-            required: [
-                'locale',
-                'text'
-            ],
-            properties: {
-                locale: {
-                    type: 'string',
-                    const: 'en-IN'
-                },
-                text: {
-                    type: 'string',
-                    minLength: 1,
-                    maxLength: 200
-                }
-            }
-        },
-        video: {
-            $ref: '#/components/schemas/LearnerLessonVideoMedia'
-        }
-    }
-} as const;
-
-export const LearnerLevelVideoCatalogSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'enrollment_id',
-        'videos'
-    ],
-    properties: {
-        enrollment_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        videos: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/LearnerLevelVideo'
-            }
-        }
-    }
-} as const;
-
 export const LearnerMissionCheckOptionSchema = {
     type: 'object',
     additionalProperties: false,
@@ -5174,8 +2786,6 @@ export const StartConversationSessionRequestSchema = {
             type: 'string',
             enum: [
                 'everyday-friend-prototype',
-                'past-tense-skill-focus-prototype',
-                'carry-sentence-review-prototype',
                 'clinic-reception-roleplay-scenario'
             ]
         },
@@ -5283,8 +2893,6 @@ export const ConversationScenarioSnapshotSchema = {
             type: 'string',
             enum: [
                 'everyday-friend-prototype',
-                'past-tense-skill-focus-prototype',
-                'carry-sentence-review-prototype',
                 'clinic-reception-roleplay-scenario'
             ]
         },
@@ -5299,8 +2907,6 @@ export const ConversationScenarioSnapshotSchema = {
             type: 'string',
             enum: [
                 'everyday-conversation',
-                'grammar-past-simple',
-                'carry-sentence-review',
                 'clinic-reception'
             ]
         },
@@ -5462,32 +3068,7 @@ export const CreateConversationTurnRequestSchema = {
         prototype_utterance: {
             type: 'string',
             minLength: 1,
-            maxLength: 500,
-            description: 'Typed text or a transcript explicitly accepted/corrected by the\nlearner through the separate voice-recording review lifecycle.\n'
-        }
-    }
-} as const;
-
-export const SynthesizeConversationSpeechRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'purpose',
-        'text'
-    ],
-    properties: {
-        purpose: {
-            type: 'string',
-            enum: [
-                'model_en',
-                'guidance_l1'
-            ]
-        },
-        text: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 400,
-            description: 'One short model or guidance line. The server does not persist this\ntext. Soft-launch Azure neural TTS may return a WAV for playback.\n'
+            maxLength: 500
         }
     }
 } as const;
@@ -5501,50 +3082,12 @@ export const ConversationSpeechResultSchema = {
     ],
     properties: {
         playback_available: {
-            type: 'boolean'
+            type: 'boolean',
+            const: false
         },
         rendering_mode: {
             type: 'string',
-            enum: [
-                'deterministic-fake-text-only',
-                'client-text-to-speech-fallback',
-                'azure-soft-launch-guidance-wav',
-                'azure-private-wav'
-            ]
-        },
-        model_audio_base64: {
-            type: [
-                'string',
-                'null'
-            ],
-            description: 'Optional base64 WAV for the English model line when soft-launch\nguidance TTS is authorized. Null when playback falls back to text.\n'
-        },
-        model_audio_mime_type: {
-            type: [
-                'string',
-                'null'
-            ],
-            enum: [
-                'audio/wav',
-                null
-            ]
-        },
-        guidance_audio_base64: {
-            type: [
-                'string',
-                'null'
-            ],
-            description: 'Optional base64 WAV for L1 guidance/correction when soft-launch\nguidance TTS is authorized.\n'
-        },
-        guidance_audio_mime_type: {
-            type: [
-                'string',
-                'null'
-            ],
-            enum: [
-                'audio/wav',
-                null
-            ]
+            const: 'deterministic-fake-text-only'
         }
     }
 } as const;
@@ -5568,7 +3111,7 @@ export const ConversationUsageSummarySchema = {
         },
         estimated_cost_microunits: {
             type: 'integer',
-            minimum: 0
+            const: 0
         }
     }
 } as const;
@@ -5673,211 +3216,6 @@ export const LearnerAiMemoryListingSchema = {
             maxItems: 5,
             items: {
                 $ref: '#/components/schemas/LearnerAiMemoryFactListingItem'
-            }
-        }
-    }
-} as const;
-
-export const CreateLearnerTuitionRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'preferred_window',
-        'topic'
-    ],
-    properties: {
-        preferred_window: {
-            type: 'string',
-            minLength: 3,
-            maxLength: 120
-        },
-        topic: {
-            type: 'string',
-            minLength: 3,
-            maxLength: 200
-        },
-        notes: {
-            type: [
-                'string',
-                'null'
-            ],
-            maxLength: 500
-        }
-    }
-} as const;
-
-export const LearnerTuitionRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'preferred_window',
-        'topic',
-        'notes',
-        'status',
-        'created_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        preferred_window: {
-            type: 'string'
-        },
-        topic: {
-            type: 'string'
-        },
-        notes: {
-            type: [
-                'string',
-                'null'
-            ]
-        },
-        status: {
-            type: 'string',
-            enum: [
-                'submitted',
-                'acknowledged'
-            ]
-        },
-        created_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const LearnerTuitionRequestListingSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'requests',
-        'institute_contact'
-    ],
-    properties: {
-        requests: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/LearnerTuitionRequest'
-            }
-        },
-        institute_contact: {
-            $ref: '#/components/schemas/InstituteContact'
-        }
-    }
-} as const;
-
-export const InstituteContactSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'phone',
-        'whatsapp',
-        'email'
-    ],
-    description: 'Governed institute contact for the 1:1 destination. Null fields are\nomitted from the learner UI. This is not an in-app call or booking.\n',
-    properties: {
-        phone: {
-            type: [
-                'string',
-                'null'
-            ],
-            description: 'E.164 telephone number for a tel: link.'
-        },
-        whatsapp: {
-            type: [
-                'string',
-                'null'
-            ],
-            description: 'Digits only for a https://wa.me/ link.'
-        },
-        email: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'email'
-        }
-    }
-} as const;
-
-export const OperatorTuitionRequestSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'id',
-        'membership_id',
-        'display_name',
-        'preferred_window',
-        'topic',
-        'notes',
-        'status',
-        'created_at',
-        'acknowledged_at'
-    ],
-    properties: {
-        id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        display_name: {
-            type: [
-                'string',
-                'null'
-            ]
-        },
-        preferred_window: {
-            type: 'string'
-        },
-        topic: {
-            type: 'string'
-        },
-        notes: {
-            type: [
-                'string',
-                'null'
-            ]
-        },
-        status: {
-            type: 'string',
-            enum: [
-                'submitted',
-                'acknowledged'
-            ]
-        },
-        created_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        },
-        acknowledged_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorTuitionRequestListingSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'requests'
-    ],
-    properties: {
-        requests: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorTuitionRequest'
             }
         }
     }
@@ -11583,11 +8921,6 @@ export const OperatorPublicationStatusSchema = {
         'manifest_hash',
         'is_head',
         'head_version',
-        'publication_head_version',
-        'lifecycle_status',
-        'effective_at',
-        'publication_suspended',
-        'allowed_actions',
         'created_at'
     ],
     properties: {
@@ -11631,35 +8964,6 @@ export const OperatorPublicationStatusSchema = {
                 }
             ]
         },
-        publication_head_version: {
-            type: 'integer',
-            minimum: 0
-        },
-        lifecycle_status: {
-            type: 'string',
-            enum: [
-                'scheduled',
-                'cancelled',
-                'active',
-                'superseded',
-                'retired',
-                'suspended'
-            ]
-        },
-        effective_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        publication_suspended: {
-            type: 'boolean'
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorContentAction'
-            }
-        },
         created_at: {
             type: 'string',
             format: 'date-time'
@@ -11671,33 +8975,13 @@ export const OperatorPublicationListingSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
-        'items',
-        'next_cursor',
-        'allowed_actions'
+        'items'
     ],
     properties: {
         items: {
             type: 'array',
-            maxItems: 25,
             items: {
                 $ref: '#/components/schemas/OperatorPublicationStatus'
-            }
-        },
-        next_cursor: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorCursor'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        allowed_actions: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                $ref: '#/components/schemas/OperatorContentAction'
             }
         }
     }
@@ -11710,8 +8994,7 @@ export const RecordEnglishContentReviewRequestSchema = {
         'source_revision_id',
         'source_content_hash',
         'authority_appointment_id',
-        'decision',
-        'rationale_key'
+        'decision'
     ],
     properties: {
         source_revision_id: {
@@ -11731,11 +9014,14 @@ export const RecordEnglishContentReviewRequestSchema = {
             ]
         },
         rationale_key: {
-            type: 'string',
-            enum: [
-                'meets_standard',
-                'accuracy_revision_required',
-                'english_only_justified'
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
             ]
         }
     }
@@ -11750,8 +9036,7 @@ export const RecordKannadaContentReviewRequestSchema = {
         'localized_variant_id',
         'localized_content_hash',
         'authority_appointment_id',
-        'decision',
-        'rationale_key'
+        'decision'
     ],
     properties: {
         source_revision_id: {
@@ -11777,10 +9062,14 @@ export const RecordKannadaContentReviewRequestSchema = {
             ]
         },
         rationale_key: {
-            type: 'string',
-            enum: [
-                'meets_standard',
-                'language_revision_required'
+            oneOf: [
+                {
+                    type: 'string',
+                    pattern: '^[a-z][a-z0-9_]{0,119}$'
+                },
+                {
+                    type: 'null'
+                }
             ]
         }
     }
@@ -11933,26 +9222,14 @@ export const OperatorAuditEventListingSchema = {
     type: 'object',
     additionalProperties: false,
     required: [
-        'items',
-        'next_cursor'
+        'items'
     ],
     properties: {
         items: {
             type: 'array',
-            maxItems: 100,
             items: {
                 $ref: '#/components/schemas/OperatorAuditEvent'
             }
-        },
-        next_cursor: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/OperatorCursor'
-                },
-                {
-                    type: 'null'
-                }
-            ]
         }
     }
 } as const;
@@ -12043,398 +9320,6 @@ export const OperatorPilotAnalyticsSummarySchema = {
     }
 } as const;
 
-export const OperatorSupportDiagnosticsSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'generated_at',
-        'items'
-    ],
-    properties: {
-        generated_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        items: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorSupportDiagnosticItem'
-            }
-        }
-    }
-} as const;
-
-export const OperatorSupportDiagnosticItemSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'kind',
-        'subject_type',
-        'subject_id',
-        'status',
-        'observed_at'
-    ],
-    properties: {
-        kind: {
-            type: 'string',
-            enum: [
-                'stuck_in_progress',
-                'provider_failed_recoverable',
-                'open_deletion'
-            ]
-        },
-        subject_type: {
-            type: 'string',
-            enum: [
-                'learner_attempt',
-                'voice_recording',
-                'voice_deletion_request'
-            ]
-        },
-        subject_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        status: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 64
-        },
-        observed_at: {
-            type: 'string',
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorPrivacyScopeSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'kind',
-        'organization_id',
-        'membership_id'
-    ],
-    properties: {
-        kind: {
-            type: 'string',
-            const: 'organization_membership'
-        },
-        organization_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        }
-    }
-} as const;
-
-export const OperatorPrivacyRecordSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'record_id',
-        'attributes'
-    ],
-    properties: {
-        record_id: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 160
-        },
-        attributes: {
-            type: 'object',
-            additionalProperties: {
-                oneOf: [
-                    {
-                        type: 'string'
-                    },
-                    {
-                        type: 'integer'
-                    },
-                    {
-                        type: 'number'
-                    },
-                    {
-                        type: 'boolean'
-                    },
-                    {
-                        type: 'null'
-                    }
-                ]
-            }
-        }
-    }
-} as const;
-
-export const OperatorPrivacyRecordGroupSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'record_class',
-        'scope',
-        'record_count',
-        'export_disposition',
-        'erasure_disposition',
-        'retention_basis',
-        'records'
-    ],
-    properties: {
-        record_class: {
-            type: 'string',
-            pattern: '^[a-z0-9_.]+$',
-            minLength: 1,
-            maxLength: 160
-        },
-        scope: {
-            type: 'string',
-            enum: [
-                'global_identity',
-                'global_authentication',
-                'organization_membership',
-                'organization_actor_link',
-                'organization_accountability',
-                'external_object',
-                'client_device'
-            ]
-        },
-        record_count: {
-            type: 'integer',
-            minimum: 0
-        },
-        export_disposition: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        erasure_disposition: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        retention_basis: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 500
-        },
-        records: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorPrivacyRecord'
-            }
-        }
-    }
-} as const;
-
-export const OperatorPrivacyExportSummarySchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'inventory_version',
-        'scope',
-        'excluded_sensitive_values',
-        'record_groups'
-    ],
-    properties: {
-        inventory_version: {
-            type: 'string',
-            enum: [
-                'learner-privacy-v2',
-                'learner-privacy-v1',
-                'legacy-privacy-v0'
-            ]
-        },
-        scope: {
-            $ref: '#/components/schemas/OperatorPrivacyScope'
-        },
-        excluded_sensitive_values: {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                type: 'string',
-                enum: [
-                    'authentication_credentials',
-                    'cryptographic_digests',
-                    'raw_audio',
-                    'raw_transcripts',
-                    'provider_secret_payloads'
-                ]
-            }
-        },
-        record_groups: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorPrivacyRecordGroup'
-            }
-        },
-        privacy_erased_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorPrivacyExportSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'export_request_id',
-        'target_membership_id',
-        'status',
-        'summary',
-        'requested_at',
-        'completed_at'
-    ],
-    properties: {
-        export_request_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        target_membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        status: {
-            type: 'string',
-            enum: [
-                'pending',
-                'completed',
-                'failed'
-            ]
-        },
-        summary: {
-            $ref: '#/components/schemas/OperatorPrivacyExportSummary'
-        },
-        requested_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        completed_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
-export const OperatorPrivacyErasureRecordOutcomeSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'record_class',
-        'record_count',
-        'action',
-        'retention_basis'
-    ],
-    properties: {
-        record_class: {
-            type: 'string',
-            pattern: '^[a-z0-9_.]+$',
-            minLength: 1,
-            maxLength: 160
-        },
-        record_count: {
-            type: 'integer',
-            minimum: 0
-        },
-        action: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 120
-        },
-        retention_basis: {
-            type: 'string',
-            minLength: 1,
-            maxLength: 500
-        }
-    }
-} as const;
-
-export const OperatorPrivacyErasureOutcomeSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'inventory_version',
-        'scope',
-        'record_outcomes'
-    ],
-    properties: {
-        inventory_version: {
-            type: 'string',
-            enum: [
-                'learner-privacy-v2',
-                'learner-privacy-v1',
-                'legacy-privacy-v0'
-            ]
-        },
-        scope: {
-            $ref: '#/components/schemas/OperatorPrivacyScope'
-        },
-        record_outcomes: {
-            type: 'array',
-            items: {
-                $ref: '#/components/schemas/OperatorPrivacyErasureRecordOutcome'
-            }
-        }
-    }
-} as const;
-
-export const OperatorPrivacyErasureSchema = {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-        'erasure_request_id',
-        'target_membership_id',
-        'status',
-        'outcome',
-        'voice_recording_count',
-        'voice_deletion_completed_count',
-        'requested_at',
-        'completed_at'
-    ],
-    properties: {
-        erasure_request_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        target_membership_id: {
-            $ref: '#/components/schemas/Ulid'
-        },
-        status: {
-            type: 'string',
-            enum: [
-                'pending',
-                'completed',
-                'partially_completed',
-                'restricted'
-            ]
-        },
-        outcome: {
-            $ref: '#/components/schemas/OperatorPrivacyErasureOutcome'
-        },
-        voice_recording_count: {
-            type: 'integer',
-            minimum: 0
-        },
-        voice_deletion_completed_count: {
-            type: 'integer',
-            minimum: 0
-        },
-        requested_at: {
-            type: 'string',
-            format: 'date-time'
-        },
-        completed_at: {
-            type: [
-                'string',
-                'null'
-            ],
-            format: 'date-time'
-        }
-    }
-} as const;
-
 export const ProblemDetailsSchema = {
     type: 'object',
     additionalProperties: true,
@@ -12474,6 +9359,248 @@ export const ProblemDetailsSchema = {
         correlation_id: {
             type: 'string',
             format: 'uuid'
+        }
+    }
+} as const;
+
+export const LearnerLevelVideoCatalogSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'enrollment_id',
+        'videos'
+    ],
+    properties: {
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        videos: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerLevelVideo'
+            }
+        }
+    }
+} as const;
+
+export const OperatorTuitionRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'membership_id',
+        'display_name',
+        'preferred_window',
+        'topic',
+        'notes',
+        'status',
+        'created_at',
+        'acknowledged_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        membership_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        display_name: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        preferred_window: {
+            type: 'string'
+        },
+        topic: {
+            type: 'string'
+        },
+        notes: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        status: {
+            type: 'string',
+            enum: [
+                'submitted',
+                'acknowledged'
+            ]
+        },
+        created_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        },
+        acknowledged_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorTuitionRequestListingSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'requests'
+    ],
+    properties: {
+        requests: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorTuitionRequest'
+            }
+        }
+    }
+} as const;
+
+export const ContentWorkspaceProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.content_workspace.not_found',
+                        'problem.content_workspace.stale_version',
+                        'problem.content_workspace.idempotency_conflict',
+                        'problem.content_workspace.state_conflict',
+                        'problem.content_workspace.head_conflict',
+                        'problem.content_workspace.concurrent_change'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:content-workspace-stale-version',
+        title: 'Content state changed',
+        status: 409,
+        detail: 'Reload the content workspace and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.content_workspace.stale_version',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const LearnerAdministrationProblemDetailsSchema = {
+    allOf: [
+        {
+            $ref: '#/components/schemas/ProblemDetails'
+        },
+        {
+            type: 'object',
+            required: [
+                'message_key'
+            ],
+            properties: {
+                message_key: {
+                    type: 'string',
+                    enum: [
+                        'problem.bad_request',
+                        'problem.unauthenticated',
+                        'problem.forbidden',
+                        'problem.not_found',
+                        'problem.method_not_allowed',
+                        'problem.conflict',
+                        'problem.validation_failed',
+                        'problem.too_many_requests',
+                        'problem.service_unavailable',
+                        'problem.internal_error',
+                        'problem.request_failed',
+                        'problem.learner_administration.stale_state',
+                        'problem.learner_administration.idempotency_conflict',
+                        'problem.learner_administration.active_dependency',
+                        'problem.learner_administration.unsafe_role'
+                    ]
+                }
+            }
+        }
+    ],
+    example: {
+        type: 'urn:global-english:problem:learner-administration-stale-state',
+        title: 'Resource state changed',
+        status: 409,
+        detail: 'Reload the learner relationship and retry the request.',
+        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
+        message_key: 'problem.learner_administration.stale_state',
+        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
+    }
+} as const;
+
+export const LearnerLevelVideoSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'lesson_id',
+        'enrollment_id',
+        'publication_id',
+        'level_label',
+        'title',
+        'video'
+    ],
+    properties: {
+        lesson_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        publication_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        level_label: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 120
+        },
+        title: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+                'locale',
+                'text'
+            ],
+            properties: {
+                locale: {
+                    type: 'string',
+                    const: 'en-IN'
+                },
+                text: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 200
+                }
+            }
+        },
+        video: {
+            $ref: '#/components/schemas/LearnerLessonVideoMedia'
         }
     }
 } as const;
@@ -12525,145 +9652,34 @@ export const OrganizationAdministrationProblemDetailsSchema = {
     }
 } as const;
 
-export const LearnerAdministrationProblemDetailsSchema = {
-    allOf: [
-        {
-            $ref: '#/components/schemas/ProblemDetails'
-        },
-        {
-            type: 'object',
-            required: [
-                'message_key'
-            ],
-            properties: {
-                message_key: {
-                    type: 'string',
-                    enum: [
-                        'problem.bad_request',
-                        'problem.unauthenticated',
-                        'problem.forbidden',
-                        'problem.not_found',
-                        'problem.method_not_allowed',
-                        'problem.conflict',
-                        'problem.validation_failed',
-                        'problem.too_many_requests',
-                        'problem.service_unavailable',
-                        'problem.internal_error',
-                        'problem.request_failed',
-                        'problem.learner_administration.stale_state',
-                        'problem.learner_administration.idempotency_conflict',
-                        'problem.learner_administration.active_dependency',
-                        'problem.learner_administration.unsafe_role'
-                    ]
-                }
-            }
-        }
+export const LearnerLessonVideoMediaSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'asset_id',
+        'stream_url',
+        'mime_type',
+        'byte_size'
     ],
-    example: {
-        type: 'urn:global-english:problem:learner-administration-stale-state',
-        title: 'Resource state changed',
-        status: 409,
-        detail: 'Reload the learner relationship and retry the request.',
-        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
-        message_key: 'problem.learner_administration.stale_state',
-        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
-    }
-} as const;
-
-export const ContentWorkspaceProblemDetailsSchema = {
-    allOf: [
-        {
-            $ref: '#/components/schemas/ProblemDetails'
+    properties: {
+        asset_id: {
+            $ref: '#/components/schemas/Ulid'
         },
-        {
-            type: 'object',
-            required: [
-                'message_key'
-            ],
-            properties: {
-                message_key: {
-                    type: 'string',
-                    enum: [
-                        'problem.bad_request',
-                        'problem.unauthenticated',
-                        'problem.forbidden',
-                        'problem.not_found',
-                        'problem.method_not_allowed',
-                        'problem.conflict',
-                        'problem.validation_failed',
-                        'problem.too_many_requests',
-                        'problem.service_unavailable',
-                        'problem.internal_error',
-                        'problem.request_failed',
-                        'problem.content_workspace.not_found',
-                        'problem.content_workspace.stale_version',
-                        'problem.content_workspace.idempotency_conflict',
-                        'problem.content_workspace.state_conflict',
-                        'problem.content_workspace.head_conflict',
-                        'problem.content_workspace.concurrent_change'
-                    ]
-                }
-            }
-        }
-    ],
-    example: {
-        type: 'urn:global-english:problem:content-workspace-stale-version',
-        title: 'Content state changed',
-        status: 409,
-        detail: 'Reload the content workspace and retry the request.',
-        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
-        message_key: 'problem.content_workspace.stale_version',
-        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
-    }
-} as const;
-
-export const MediaLibraryProblemDetailsSchema = {
-    allOf: [
-        {
-            $ref: '#/components/schemas/ProblemDetails'
+        stream_url: {
+            type: 'string',
+            format: 'uri-reference'
         },
-        {
-            type: 'object',
-            required: [
-                'message_key'
-            ],
-            properties: {
-                message_key: {
-                    type: 'string',
-                    enum: [
-                        'problem.bad_request',
-                        'problem.unauthenticated',
-                        'problem.forbidden',
-                        'problem.not_found',
-                        'problem.method_not_allowed',
-                        'problem.conflict',
-                        'problem.validation_failed',
-                        'problem.too_many_requests',
-                        'problem.service_unavailable',
-                        'problem.internal_error',
-                        'problem.request_failed',
-                        'problem.media_library.not_found',
-                        'problem.media_library.stale_upload',
-                        'problem.media_library.stale_metadata',
-                        'problem.media_library.stale_lifecycle',
-                        'problem.media_library.stale_workspace',
-                        'problem.media_library.idempotency_conflict',
-                        'problem.media_library.duplicate_use',
-                        'problem.media_library.storage_failure',
-                        'problem.media_library.concurrent_change'
-                    ]
-                }
-            }
+        mime_type: {
+            type: 'string',
+            enum: [
+                'video/mp4'
+            ]
+        },
+        byte_size: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 20000000
         }
-    ],
-    example: {
-        type: 'urn:global-english:problem:media-library-stale-upload',
-        title: 'Upload state changed',
-        status: 409,
-        detail: 'Reload the upload and retry the request.',
-        instance: 'urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77',
-        message_key: 'problem.media_library.stale_upload',
-        correlation_id: '1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77'
     }
 } as const;
 
