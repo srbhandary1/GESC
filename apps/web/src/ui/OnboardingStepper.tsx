@@ -196,6 +196,9 @@ export function OnboardingStepper({
                 data-selected={locale === candidate ? 'true' : undefined}
                 key={candidate}
               >
+                <span lang={candidate}>
+                  <LocalizedMessage resolution={message(localeKeys[candidate])} />
+                </span>
                 <input
                   checked={locale === candidate}
                   disabled={busy || commandLocked}
@@ -204,9 +207,6 @@ export function OnboardingStepper({
                   type="radio"
                   value={candidate}
                 />
-                <span lang={candidate}>
-                  <LocalizedMessage resolution={message(localeKeys[candidate])} />
-                </span>
               </label>
             ))}
           </fieldset>
@@ -244,14 +244,6 @@ export function OnboardingStepper({
                 data-selected={goal === candidate ? 'true' : undefined}
                 key={candidate}
               >
-                <input
-                  checked={goal === candidate}
-                  disabled={busy || commandLocked}
-                  name="learner-goal"
-                  onChange={() => setGoal(candidate)}
-                  type="radio"
-                  value={candidate}
-                />
                 <span aria-hidden="true" className="ge-select-card__icon">
                   <GoalCardIcon goal={candidate} />
                 </span>
@@ -267,6 +259,14 @@ export function OnboardingStepper({
                     />
                   </span>
                 </span>
+                <input
+                  checked={goal === candidate}
+                  disabled={busy || commandLocked}
+                  name="learner-goal"
+                  onChange={() => setGoal(candidate)}
+                  type="radio"
+                  value={candidate}
+                />
               </label>
             ))}
           </fieldset>
@@ -285,14 +285,6 @@ export function OnboardingStepper({
                 data-selected={level === candidate ? 'true' : undefined}
                 key={candidate}
               >
-                <input
-                  checked={level === candidate}
-                  disabled={busy || commandLocked}
-                  name="speaking-comfort"
-                  onChange={() => setLevel(candidate)}
-                  type="radio"
-                  value={candidate}
-                />
                 <span>
                   <strong>
                     <LocalizedMessage
@@ -305,6 +297,14 @@ export function OnboardingStepper({
                     />
                   </span>
                 </span>
+                <input
+                  checked={level === candidate}
+                  disabled={busy || commandLocked}
+                  name="speaking-comfort"
+                  onChange={() => setLevel(candidate)}
+                  type="radio"
+                  value={candidate}
+                />
               </label>
             ))}
           </fieldset>

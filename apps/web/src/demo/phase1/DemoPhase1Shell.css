@@ -144,6 +144,7 @@
 .phase1-home__speak {
   min-block-size: 3.25rem;
   border-radius: 0.875rem;
+  text-decoration: none;
 }
 
 .phase1-home__cta {

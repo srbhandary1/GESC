@@ -464,7 +464,7 @@
   min-width: 0;
   align-items: center;
   padding: 1rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.875rem;
   border: 2px solid var(--ge-color-border);
   border-radius: 1.25rem;
@@ -485,6 +485,10 @@
   border-color: #006b3f;
   box-shadow: 0 0 0 4px rgb(0 107 63 / 18%);
   background: color-mix(in srgb, #006b3f 10%, var(--ge-color-surface));
+}
+
+.ge-select-card:has(.ge-select-card__icon) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .ge-select-card input {

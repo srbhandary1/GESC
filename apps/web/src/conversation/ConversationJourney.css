@@ -109,8 +109,11 @@
   padding-inline-start: 1.25rem;
 }
 
-.conversation-journey__progress {
-  font-weight: 600;
+.conversation-journey__progress,
+.conversation-journey__identity {
+  color: var(--ge-color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 550;
 }
 
 .conversation-journey__memory {
