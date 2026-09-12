@@ -509,8 +509,7 @@ function App({
           </aside>
         ) : null}
 
-        {hideDemoIntroduction &&
-        (destination === 'learn' || destination === 'home') ? (
+        {hideDemoIntroduction && destination === 'learn' ? (
           <h1
             className="visually-hidden"
             id="destination-title"
