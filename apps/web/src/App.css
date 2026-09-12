@@ -19,6 +19,18 @@
   );
 }
 
+@media (max-width: 40rem) {
+  .ge-primary-navigation__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ge-space-1);
+  }
+
+  .ge-primary-navigation__link {
+    padding-inline: var(--ge-space-1);
+    font-size: 0.82rem;
+  }
+}
+
 .shell-header-tools {
   display: flex;
   flex-wrap: wrap;
@@ -254,8 +266,14 @@
 }
 
 @media (max-width: 30rem) {
-  .shell-locale-control {
+  .shell-header-tools {
     width: 100%;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .shell-locale-control {
+    width: min(100%, 11rem);
   }
 
   .shell-locale-control__select {

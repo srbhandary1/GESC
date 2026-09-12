@@ -102,7 +102,14 @@
 @media (max-width: 40rem) {
   .ge-application-frame {
     padding-block-end: calc(
-      var(--ge-target-minimum) + var(--ge-space-5) +
+      var(--ge-target-minimum) + var(--ge-space-6) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .ge-application-frame__main {
+    padding-block-end: calc(
+      var(--ge-target-minimum) + var(--ge-space-6) +
         env(safe-area-inset-bottom, 0px)
     );
   }

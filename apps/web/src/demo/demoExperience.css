@@ -86,15 +86,15 @@
 
 .demo-experience .shell-demo {
   display: grid;
-  gap: var(--ge-space-1);
-  padding: var(--ge-space-3) var(--ge-space-4);
+  gap: 0.15rem;
+  padding: var(--ge-space-2) var(--ge-space-3);
   border: 1px solid #b7d4c5;
-  border-radius: 999px;
+  border-radius: var(--ge-radius-md);
   background: rgba(232, 244, 237, 0.9);
   font-family: "Noto Sans", "Noto Sans Kannada Variable", ui-sans-serif,
     system-ui, sans-serif;
-  font-size: var(--ge-font-size-sm);
-  line-height: 1.45;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .demo-experience .shell-demo strong {

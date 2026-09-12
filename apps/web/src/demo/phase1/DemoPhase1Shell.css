@@ -70,13 +70,15 @@
   font-weight: 650;
 }
 
-.phase1-home__more,
-.phase1-home__more ul {
+.phase1-home__more {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .phase1-home__more ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
