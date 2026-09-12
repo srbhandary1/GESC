@@ -79,7 +79,7 @@ provider path or authorize production deployment.
 | `make demo-client-tunnel` | Temporary HTTPS Cloudflare tunnel for mic-capable remote review |
 | `make demo-e2e` | Chromium journey against the development-server demo |
 | `make demo-dist-e2e` | Chromium journey against the built bundle |
-| `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` |
+| `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` and copy it to `apps/web/dist-demo/downloads/global-english-demo.apk` for the Home download link |
 
 Client presentation disclosure/walkthrough:
 [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md). Path from presentation to
