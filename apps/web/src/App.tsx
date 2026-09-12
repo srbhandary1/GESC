@@ -27,6 +27,7 @@ import type {
 } from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
@@ -371,6 +372,14 @@ function App({
   const showDemoPhase1 = demoMode && destination === 'home'
   const showDemoLearnHub = demoMode && canLearn
   const hideDemoIntroduction = demoMode
+  const showPreSignInGate =
+    !demoMode &&
+    session.status !== 'authenticated' &&
+    offlineResume === null
+  const androidAuth =
+    authentication.transport === 'passport-pkce'
+      ? (authentication as AndroidPkceAuthentication)
+      : null
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -395,7 +404,7 @@ function App({
       brandLabelLocale={brand.resolvedLocale}
       compactBrandLabel={compactBrand.text}
       currentDestination={destination}
-      hidePrimaryNavigation={false}
+      hidePrimaryNavigation={showPreSignInGate}
       headerActions={
         <div className="shell-header-tools">
           {demoMode ? (
@@ -498,7 +507,38 @@ function App({
           </aside>
         ) : null}
 
-        {hideDemoIntroduction && destination === 'learn' ? (
+        {showPreSignInGate ? (
+          <PreSignInSplash
+            canStartAuthorization={androidAuth !== null}
+            message={message}
+            onRetry={() => {
+              setSession({ status: 'checking' })
+              authentication
+                .current()
+                .then((snapshot) => {
+                  setOfflineResume(null)
+                  setSession(snapshot)
+                })
+                .catch(() => {
+                  setSession({ status: 'unavailable' })
+                })
+            }}
+            onSignIn={() => {
+              if (androidAuth === null) {
+                return
+              }
+
+              void androidAuth.beginAuthorization().catch(() => {
+                setSession({ status: 'unavailable' })
+              })
+            }}
+            status={
+              session.status === 'authenticated'
+                ? 'anonymous'
+                : session.status
+            }
+          />
+        ) : hideDemoIntroduction && destination === 'learn' ? (
           <h1
             className="visually-hidden"
             id="destination-title"
@@ -507,10 +547,8 @@ function App({
           >
             <LocalizedMessage resolution={title} />
           </h1>
-        ) : null}
-
-        {hideDemoIntroduction &&
-        (destination === 'practice' || destination === 'progress') ? (
+        ) : hideDemoIntroduction &&
+          (destination === 'practice' || destination === 'progress') ? (
           <h1
             className="shell-title shell-title--compact"
             id="destination-title"
@@ -519,9 +557,7 @@ function App({
           >
             <LocalizedMessage resolution={title} />
           </h1>
-        ) : null}
-
-        {hideDemoIntroduction ? null : (
+        ) : hideDemoIntroduction ? null : (
           <section
             className="shell-introduction"
             aria-labelledby="destination-title"
@@ -543,7 +579,7 @@ function App({
           </section>
         )}
 
-        {showDemoPhase1 ? (
+        {showPreSignInGate ? null : showDemoPhase1 ? (
           <DemoPhase1Shell
             demoOrganization={demoOrganization}
             locale={locale}
@@ -626,7 +662,7 @@ function App({
           </p>
         )}
 
-        {demoMode ? null : (
+        {demoMode || session.status !== 'authenticated' ? null : (
           <SessionSummary
             authentication={authentication}
             message={message}

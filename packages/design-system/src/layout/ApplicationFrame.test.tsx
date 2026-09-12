@@ -77,6 +77,28 @@ describe('ApplicationFrame', () => {
     expect(shortMark).toHaveAttribute('aria-hidden', 'true')
   })
 
+  it('can hide primary destination navigation', () => {
+    render(
+      <ApplicationFrame
+        brandLabel="Global English"
+        brandLabelLocale="en-IN"
+        currentDestination="home"
+        hidePrimaryNavigation
+        navigationLabel="Primary navigation"
+        navigationLabelLocale="en-IN"
+        navigationLinks={navigationLinks}
+        skipToContentLabel="Skip"
+      >
+        <h1>Speak English with confidence.</h1>
+      </ApplicationFrame>,
+    )
+
+    expect(
+      screen.queryByRole('navigation', { name: 'Primary navigation' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'ಮುಖಪುಟ' })).not.toBeInTheDocument()
+  })
+
   it('focuses main content without replacing an application route hash', async () => {
     const user = userEvent.setup()
     window.history.replaceState(null, '', '/#learn')

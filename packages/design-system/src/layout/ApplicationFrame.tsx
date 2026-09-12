@@ -23,8 +23,9 @@ export interface ApplicationFrameProps {
   skipToContentLabel: ReactNode
   headerActions?: ReactNode
   /**
-   * When true, omits the primary destination navigation. Used by the demo
-   * Phase-1 shell, which renders its own module navigation.
+   * When true, omits the primary destination navigation. Used for the
+   * pre-sign-in splash and by the demo Phase-1 shell, which renders its
+   * own module navigation.
    */
   hidePrimaryNavigation?: boolean
   mainId?: string

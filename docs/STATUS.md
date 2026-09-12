@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.5`.
+  `ui-en-IN-2026-09-12.6`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.5`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.6`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -614,6 +614,13 @@ What moved:
   `data-avatar-slot` hook (`shell.avatar.teacher`); no face or avatar SDK.
   Demo CSS went from 40.04 kB / 6.84 kB gzip to 44.12 kB / 7.71 kB gzip
   (+0.87 kB gzip). Presentation-only; not F0 or Play evidence.
+- Anonymous / checking / unavailable (non-demo, no offline resume) is a
+  compact pre-sign-in splash: short wordmark, one tagline, one Sign in
+  action (Android PKCE `beginAuthorization` when that transport exists),
+  language + appearance in the header, and no Home/Learn/Practice/Progress
+  nav. Session detail sits in a disclosure; `unavailable` shows retry only.
+  Local demo still auto-authenticates and does not reintroduce a global
+  demo banner. Auth protocol unchanged.
 
 ## Local synthetic demo
 
