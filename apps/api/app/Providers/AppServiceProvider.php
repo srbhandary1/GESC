@@ -10,8 +10,6 @@ use App\Authentication\Federated\FakeFederatedIdentityProvider;
 use App\Authentication\Federated\FederatedIdentityProvider;
 use App\Authentication\Federated\HttpOidcFederatedIdentityProvider;
 use App\Authentication\Mfa\PrivilegedMfaVerifier;
-use App\Authentication\Mfa\Rfc6238PrivilegedMfaVerifier;
-use App\Authentication\Mobile\MobileOAuthClient;
 use App\Authentication\Mobile\MobilePasswordAuthorizationServerFactory;
 use App\Authentication\Mobile\MobilePasswordTokenIssuer;
 use App\Authentication\Otp\LocalFixedOtpCodeGenerator;
@@ -26,6 +24,7 @@ use App\Billing\DisabledPaymentProvider;
 use App\Billing\DummyPaymentProvider;
 use App\Billing\PaymentProvider;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
+use App\Conversation\Providers\ConfirmedTextSpeechToTextProvider;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledConversationModelProvider;
 use App\Conversation\Providers\Disabled\DisabledSpeechToTextProvider;
@@ -36,6 +35,7 @@ use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
 use App\Conversation\Providers\SoftLaunch\SoftLaunchGuidanceAzureTextToSpeechProvider;
 use App\Conversation\Providers\SoftLaunch\SoftLaunchRecordedAzureSpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
+use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
@@ -129,9 +129,11 @@ class AppServiceProvider extends ServiceProvider
             && $conversationDriver === 'azure-openai-dev';
         $this->app->bind(
             SpeechToTextProvider::class,
-            $fakeConversationEnabled
-                ? DeterministicFakeSpeechToTextProvider::class
-                : DisabledSpeechToTextProvider::class,
+            match (true) {
+                $fakeConversationEnabled => DeterministicFakeSpeechToTextProvider::class,
+                $azureConversationEnabled => ConfirmedTextSpeechToTextProvider::class,
+                default => DisabledSpeechToTextProvider::class,
+            },
         );
         $this->app->bind(
             ConversationModelProvider::class,
@@ -152,6 +154,7 @@ class AppServiceProvider extends ServiceProvider
             match (true) {
                 $fakeConversationEnabled => DeterministicFakeTextToSpeechProvider::class,
                 $guidanceTtsLive => SoftLaunchGuidanceAzureTextToSpeechProvider::class,
+                $azureConversationEnabled => TextFirstTextToSpeechProvider::class,
                 default => DisabledTextToSpeechProvider::class,
             },
         );

@@ -3204,7 +3204,7 @@ the Mira / GESC-green system is re-applied on top.
 
 | Check | Result | Evidence |
 |---|---|---|
-| Cherry-picks landed | Pass | `c2b6014`…`c9f6b8d` on `cursor/learner-ux-elevate-5f47` |
+| Cherry-picks landed | Pass | `c2b6014`…`c9f6b8d` on `cursor/learner-ux-elevate-5f47`; `origin/codex/confidence-conversation` fetched at `1a02330` (equivalent tips, not a full-branch merge) |
 | Web typecheck | Pass | `pnpm --filter @global-english/web typecheck` |
 | Web unit tests | Pass | 331 passed |
 | Localization tests | Pass | 35 passed |
@@ -3223,7 +3223,9 @@ the Mira / GESC-green system is re-applied on top.
 | `pnpm --filter @global-english/localization test` | 31 passed |
 | Demo Chromium e2e on `127.0.0.1:4180` (3 specs) | passed; rooms probe `/api/v1/me/levels` then fall back |
 | `make demo-android` | passed; sideload APK `5819193` bytes at `/downloads/global-english-demo.apk` |
-| `make verify` | Not run (Node 22 vs pin 24.18.1; PHP toolchain not on this VM) |
+| Laravel Pint on SoftLaunch/conversation leftovers | Pass (`pint --test` on the 4 previously dirty files) |
+| SoftLaunch STT/TTS binds | `ConfirmedTextSpeechToTextProvider` / `TextFirstTextToSpeechProvider` restored for `azure-openai-dev` |
+| `make verify` | In CI after Pint fix; not claimed locally (Node 22 vs pin 24.18.1) |
 
 
 
