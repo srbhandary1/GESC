@@ -70,7 +70,7 @@ Defaults:
 | Public port | `8080` (port `8000` is already used by another local demo) |
 | Bundle | `apps/web/dist-demo` (built automatically if missing) |
 | APK download | `/downloads/global-english-demo.apk` when the debug APK exists (`make demo`, `make demo-serve`, `make demo-client`, and soft-launch Caddy after `make demo-android-remote`) |
-| Android live origin | `make demo-android-remote` sets Capacitor `server.url` to `http://117.254.108.143:8080` so the installed app opens the same host as the browser |
+| Android live origin | `make demo-android-remote` sets Capacitor `server.url` to `http://117.254.108.143:8080` so the installed app opens the same host as the browser. That HTTP origin cannot use `getUserMedia`. Sideload `make demo-android` (bundled `https://localhost`) for Speak / hold-to-talk. |
 
 Useful commands:
 

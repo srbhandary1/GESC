@@ -11,6 +11,7 @@ import {
   type CapturedAudio,
 } from './BrowserAudioRecorder'
 import type { LocalRecordingMetadata } from './LearnerJourneyApi'
+import { canAttemptMicrophoneCapture } from './canAttemptMicrophoneCapture'
 import { isValidLocalCapture } from './LocalCaptureReceipt'
 
 export interface RecordingTurnLabels {
@@ -49,7 +50,9 @@ export function RecordingTurn({
   recorder,
 }: RecordingTurnProps) {
   const [state, setState] = useState<RecordingControlState>(
-    recorder.isSupported() ? 'ready' : 'blocked',
+    recorder.isSupported() || canAttemptMicrophoneCapture()
+      ? 'ready'
+      : 'blocked',
   )
   const [capture, setCapture] = useState<LocalCapture | null>(null)
   const sessionRef = useRef<AudioRecordingSession | null>(null)

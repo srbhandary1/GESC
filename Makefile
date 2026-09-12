@@ -119,8 +119,7 @@ demo-client-tunnel-stop:
 # Android SDK with platform 36. See README "Android demo APK".
 # Explicitly clears CAPACITOR_APP so the demo tree/identity is never overwritten.
 demo-android: demo-build
-	cd $(WEB_DIR) && env -u CAPACITOR_APP \
-		GE_ANDROID_REMOTE_ORIGIN="$${GE_ANDROID_REMOTE_ORIGIN:-}" \
+	cd $(WEB_DIR) && env -u CAPACITOR_APP -u GE_ANDROID_REMOTE_ORIGIN \
 		$(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android && ./gradlew assembleDebug
 	mkdir -p $(WEB_DIR)/dist-demo/downloads $(WEB_DIR)/dist/downloads

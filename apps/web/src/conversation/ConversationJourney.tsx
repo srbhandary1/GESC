@@ -14,6 +14,11 @@ import {
   recognizeWithBrowserSpeech,
   speakWithBrowserSpeech,
 } from '../demo/browserSpeech'
+import {
+  defaultAudioRecorder,
+  type AudioRecordingSession,
+} from '../learner/BrowserAudioRecorder'
+import { canAttemptMicrophoneCapture } from '../learner/canAttemptMicrophoneCapture'
 import { speakDemoText, stopDemoSpeech } from '../demo/demoTts'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
@@ -37,6 +42,7 @@ import {
   readFirstRunDismissed,
 } from '../ui/firstRunPreference'
 import { AvatarSlot } from '../ui/AvatarSlot'
+import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
 import { TapToPlay } from '../ui/TapToPlay'
 import './ConversationJourney.css'
 
@@ -161,6 +167,8 @@ export function ConversationJourney({
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
   const stopRecognition = useRef<(() => void) | null>(null)
+  const micSession = useRef<AudioRecordingSession | null>(null)
+  const holdLimitTimer = useRef<number | null>(null)
   const utteranceFieldRef = useRef<HTMLTextAreaElement | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
@@ -329,32 +337,63 @@ export function ConversationJourney({
   }
 
   const startListening = () => {
-    if (!demoMode || !browserSpeechRecognitionAvailable()) {
+    setSpeechError(false)
+    setInputMode('speak')
+
+    if (browserSpeechRecognitionAvailable()) {
+      setListening(true)
+      const recognition = recognizeWithBrowserSpeech('en-IN')
+      stopRecognition.current = recognition.stop
+      void recognition.promise
+        .then(({ transcript }) => {
+          if (transcript !== '') {
+            setUtterance(transcript)
+          }
+        })
+        .catch(() => setSpeechError(true))
+        .finally(() => {
+          setListening(false)
+          stopRecognition.current = null
+        })
+      return
+    }
+
+    if (
+      !defaultAudioRecorder.isSupported() &&
+      !canAttemptMicrophoneCapture()
+    ) {
       setSpeechError(true)
       return
     }
 
-    setSpeechError(false)
     setListening(true)
-    setInputMode('speak')
-    const recognition = recognizeWithBrowserSpeech('en-IN')
-    stopRecognition.current = recognition.stop
-    void recognition.promise
-      .then(({ transcript }) => {
-        if (transcript !== '') {
-          setUtterance(transcript)
-        }
+    void defaultAudioRecorder
+      .start()
+      .then((session) => {
+        micSession.current = session
+        holdLimitTimer.current = window.setTimeout(() => {
+          stopListening()
+        }, HOLD_MAXIMUM_DURATION_MS)
       })
-      .catch(() => setSpeechError(true))
-      .finally(() => {
+      .catch(() => {
         setListening(false)
-        stopRecognition.current = null
+        setSpeechError(true)
       })
   }
 
   const stopListening = () => {
     stopRecognition.current?.()
+    stopRecognition.current = null
+    if (holdLimitTimer.current !== null) {
+      window.clearTimeout(holdLimitTimer.current)
+      holdLimitTimer.current = null
+    }
+    const session = micSession.current
+    micSession.current = null
     setListening(false)
+    if (session !== null) {
+      void session.stop().catch(() => undefined)
+    }
   }
 
   const playReply = () => {
@@ -427,11 +466,13 @@ export function ConversationJourney({
   }
 
   const restart = () => {
+    stopListening()
     sessionCommandId.current = createClientId()
     turnCommandId.current = createClientId()
     setState({ kind: 'idle' })
     setUtterance('')
     setShowHint(false)
+    setSpeechError(false)
   }
 
   const session =

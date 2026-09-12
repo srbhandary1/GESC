@@ -1,3 +1,5 @@
+import { canAttemptMicrophoneCapture } from './canAttemptMicrophoneCapture'
+
 export interface CapturedAudio {
   readonly blob: Blob
   readonly durationMs: number
@@ -33,22 +35,32 @@ export class RecordingUnavailableError extends Error {
 
 export class BrowserAudioRecorder implements AudioRecorder {
   isSupported(): boolean {
-    return (
-      typeof navigator !== 'undefined' &&
-      navigator.mediaDevices?.getUserMedia !== undefined &&
-      typeof MediaRecorder !== 'undefined'
-    )
+    if (typeof navigator === 'undefined' || typeof MediaRecorder === 'undefined') {
+      return false
+    }
+
+    if (typeof navigator.mediaDevices?.getUserMedia === 'function') {
+      return true
+    }
+
+    // Capacitor https://localhost is a secure context; getUserMedia appears
+    // after the WebView grants the runtime RECORD_AUDIO prompt.
+    return canAttemptMicrophoneCapture()
   }
 
   async start(): Promise<AudioRecordingSession> {
-    if (!this.isSupported()) {
+    const getUserMedia = navigator.mediaDevices?.getUserMedia?.bind(
+      navigator.mediaDevices,
+    )
+
+    if (typeof getUserMedia !== 'function') {
       throw new RecordingUnavailableError()
     }
 
     let stream: MediaStream
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      stream = await getUserMedia({
         audio: true,
         video: false,
       })

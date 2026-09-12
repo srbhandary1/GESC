@@ -26,11 +26,14 @@ const demoConfig: CapacitorConfig = {
   android: {
     path: 'android',
   },
-  ...(demoRemoteServer === undefined
-    ? {}
-    : {
-        server: demoRemoteServer,
-      }),
+  // Bundled APK must stay on https://localhost so getUserMedia is a
+  // secure context. HTTP live-load (demo-android-remote) cannot record.
+  server:
+    demoRemoteServer ??
+    ({
+      androidScheme: 'https',
+      hostname: 'localhost',
+    } satisfies NonNullable<CapacitorConfig['server']>),
 }
 
 const productionConfig: CapacitorConfig = {
