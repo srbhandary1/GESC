@@ -3205,8 +3205,13 @@ the Mira / GESC-green system is re-applied on top.
 | Check | Result | Evidence |
 |---|---|---|
 | Cherry-picks landed | Pass | `c2b6014`…`c9f6b8d` on `cursor/learner-ux-elevate-5f47` |
-| Web typecheck | Recorded in this slice | `pnpm --filter @global-english/web typecheck` |
+| Web typecheck | Pass | `pnpm --filter @global-english/web typecheck` |
+| Web unit tests | Pass | 331 passed |
+| Localization tests | Pass | 35 passed |
+| Design-system tests | Pass | 16 passed |
+| Demo e2e first-run + Phase 1 axe | Pass | `demo-journey` first-run and LessonPractice specs |
 | Grove catalog excluded | Pass | Demo Learn remains Phase 1 My Levels |
+| Sideload APK | Pass | `5984482` bytes at `/downloads/global-english-demo.apk` |
 | Production / Play | Not authorized | D-0122 |
 
 ### Verification (this close)
