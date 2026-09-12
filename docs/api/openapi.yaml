@@ -68,8 +68,11 @@ tags:
       formative attempts, mastery projection and review scheduling.
   - name: Conversation
     description: |
-      Tenant-scoped PR-008 Friend prototype using deterministic local/testing
-      fake STT, conversation-model and text-only TTS adapters.
+      Tenant-scoped Friend and Role-play practice. Local/testing uses
+      deterministic adapters; the allowlisted non-production soft-launch path
+      accepts typed or learner-confirmed transcripts for a gated Azure OpenAI
+      model and reports text-first/on-device playback while Azure Speech
+      ordinary-product DI remains separately gated.
   - name: Voice
     description: |
       Tenant-scoped PR-009 consent, secure PCM/WAV recording, transcript review
@@ -80,9 +83,13 @@ tags:
       and delete. Facts are purpose-bound and never hidden from the learner.
   - name: Operator
     description: |
-      Tenant-scoped PR-013 operator content-workflow and audit digests. Wraps
-      existing curriculum review/publish commands. No sampled speaking review,
-      learner PII export, or privacy-deletion workflows.
+      Tenant-scoped operator content, privacy, support and audit surfaces.
+      Every route is web-session-only and rechecks selected organization,
+      role, permission and resource scope. Routine work uses the signed-in
+      session without password re-entry. Staff invitations, role-group
+      definitions, staff role assignment and staff membership lifecycle are
+      administrator-authority changes and additionally require current-
+      password confirmation. Passport bearers are denied.
 paths:
   /health/live:
     get:
@@ -1077,6 +1084,7 @@ paths:
           $ref: "#/components/responses/Problem"
   /auth/otp/requests:
     post:
+      deprecated: true
       operationId: requestOtp
       summary: Request a short-lived local OTP challenge
       description: |
@@ -1114,6 +1122,7 @@ paths:
           $ref: "#/components/responses/Problem"
   /auth/otp/verifications:
     post:
+      deprecated: true
       operationId: verifyOtp
       summary: Verify an OTP and create a web session
       description: |
@@ -1242,6 +1251,260 @@ paths:
             Cache-Control:
               $ref: "#/components/headers/NoStore"
         "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa:
+    get:
+      deprecated: true
+      operationId: getPrivilegedMfaStatus
+      summary: Get the current privileged MFA state
+      description: |
+        Web-session only. Returns factor lifecycle state, remaining recovery
+        code count, and the current session's non-secret assertion scope. TOTP
+        secrets and recovery-code values are never returned here.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Current privileged MFA state.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/enrollments:
+    post:
+      deprecated: true
+      operationId: beginPrivilegedMfaEnrollment
+      summary: Begin enrollment or authorized replacement of a TOTP factor
+      description: |
+        The otpauth URI is returned once and expires with its confirmation
+        challenge after five minutes. Replacing an active factor first requires
+        a fresh TOTP assertion or a recovery-code factor-replacement assertion.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "201":
+          description: Pending TOTP enrollment created; the URI is shown once.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaEnrollment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/enrollments/{factor_id}/confirm:
+    post:
+      deprecated: true
+      operationId: confirmPrivilegedMfaEnrollment
+      summary: Confirm a pending TOTP factor and issue recovery codes
+      description: |
+        Activates the factor only when its current TOTP is accepted. Exactly ten
+        128-bit one-time recovery codes are returned once. Factor replacement
+        globally revokes all web sessions and Android token families.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: factor_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivilegedMfaEnrollmentConfirmation"
+      responses:
+        "200":
+          description: Factor activated and recovery codes shown once.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaRecoveryCodeIssuance"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/challenges:
+    post:
+      deprecated: true
+      operationId: createPrivilegedMfaChallenge
+      summary: Create a five-minute MFA assertion challenge
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "201":
+          description: Session-bound MFA challenge created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaChallenge"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/challenges/{challenge_id}/verify:
+    post:
+      deprecated: true
+      operationId: verifyPrivilegedMfaChallenge
+      summary: Verify TOTP or consume one recovery code
+      description: |
+        TOTP creates a privileged-actions assertion. A recovery code creates
+        only a factor-replacement assertion and cannot authorize operator or
+        recovery-regeneration actions. The response is enumeration-safe.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: challenge_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivilegedMfaVerification"
+      responses:
+        "200":
+          description: The scoped fresh assertion was established.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaVerificationResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/recovery-codes/regenerate:
+    post:
+      deprecated: true
+      operationId: regeneratePrivilegedMfaRecoveryCodes
+      summary: Replace every recovery code after fresh TOTP
+      description: |
+        Returns ten new codes once, invalidates every prior code and globally
+        revokes all web sessions and Android token families.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Recovery codes replaced and sessions revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivilegedMfaRecoveryCodeIssuance"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/mfa/factor:
+    delete:
+      deprecated: true
+      operationId: revokePrivilegedMfaFactor
+      summary: Revoke the active TOTP factor after fresh TOTP
+      description: |
+        Invalidates recovery codes and globally revokes all web sessions and
+        Android token families. Re-enrollment then requires reviewed support;
+        primary SMS OTP alone cannot reset the privileged factor.
+      tags:
+        - Authentication
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "204":
+          description: Factor and every credential family were revoked.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "429":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -2034,6 +2297,56 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/speech:
+    post:
+      operationId: synthesizeConversationSpeech
+      summary: Synthesize one bounded model or guidance line for a live session
+      description: |
+        Speaks one short English model line or L1 guidance line through the
+        project-owned guidance TTS port for a learner-owned active session.
+        Soft-launch returns an optional Azure neural WAV; text remains the
+        primary surface and failures fall back without audio. Persistent rows
+        do not store utterance text or audio bytes.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SynthesizeConversationSpeechRequest"
+      responses:
+        "200":
+          description: Guidance TTS returned playback metadata for this line.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSpeechResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /conversation-turns/{conversation_turn_id}/events:
     get:
       operationId: streamConversationTurnEvents
@@ -2229,6 +2542,95 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/tuition-requests:
+    get:
+      operationId: listLearnerTuitionRequests
+      summary: List the learner's 1:1 tuition requests
+      description: |
+        Returns org-scoped waitlist requests created by the authenticated
+        learner membership, plus governed institute contact links when
+        configured. This is not a booking, calendar, payment or in-app call
+        API.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: The learner's tuition requests.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequestListing"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createLearnerTuitionRequest
+      summary: Submit a 1:1 tuition waitlist request
+      description: |
+        Creates one org-scoped request for live speaking help. No payment,
+        trainer assignment or calendar booking is performed.
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearnerTuitionRequest"
+      responses:
+        "201":
+          description: Tuition request created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequest"
+        "200":
+          description: Idempotent replay of the same create command.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerTuitionRequest"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -6592,8 +6994,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
       responses:
@@ -6610,6 +7010,8 @@ paths:
                 $ref: "#/components/schemas/OperatorContentDraftListing"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         default:
@@ -6625,10 +7027,10 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorPageLimit"
+        - $ref: "#/components/parameters/OperatorCursor"
       responses:
         "200":
           description: Organization publication status listing.
@@ -6642,6 +7044,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/OperatorPublicationListing"
         "401":
+          $ref: "#/components/responses/Problem"
+        "403":
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
@@ -6657,8 +7061,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -6693,6 +7095,8 @@ paths:
                 $ref: "#/components/schemas/OperatorPublicationResult"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         "409":
@@ -6712,8 +7116,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -6737,6 +7139,8 @@ paths:
                 $ref: "#/components/schemas/OperatorContentReviewResult"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         "409":
@@ -6756,8 +7160,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -6781,6 +7183,8 @@ paths:
                 $ref: "#/components/schemas/OperatorContentReviewResult"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         "409":
@@ -6800,8 +7204,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -6836,6 +7238,8 @@ paths:
                 $ref: "#/components/schemas/OperatorPublicationResult"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         "409":
@@ -6844,6 +7248,808 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /operator/media/manifest:
+    get:
+      operationId: getOperatorMediaManifest
+      summary: Get private Media Library limits and semantic actions
+      description: |
+        Returns only server-derived current-organization actions, upload
+        policy and the reusable owner-attestation reference. The attestation
+        is evidence and never creates per-asset rights approval.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Current Media Library policy and semantic actions.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaManifest"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets:
+    get:
+      operationId: listOperatorMediaAssets
+      summary: List bounded accepted private media assets
+      description: |
+        Returns a tenant- and filter-bound keyset page. Storage keys,
+        transcript bodies and provider payloads are excluded.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorPageLimit"
+        - $ref: "#/components/parameters/OperatorCursor"
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OperatorMediaAssetKind"
+        - name: state
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OperatorMediaAssetState"
+      responses:
+        "200":
+          description: Bounded accepted-asset page.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaAssetListing"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}:
+    get:
+      operationId: getOperatorMediaAsset
+      summary: Get exact private media asset governance detail
+      description: |
+        Returns the exact lifecycle, selected scan, current accessibility
+        heads and bounded append-only governance evidence for one active-
+        organization asset.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+      responses:
+        "200":
+          description: Exact governed media asset detail.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaAssetResponse"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/preview:
+    get:
+      operationId: previewOperatorMediaAsset
+      summary: Stream one hash-verified accepted private media asset
+      description: |
+        Re-verifies the accepted object and streams it without disclosing its
+        storage key. Lesson audio and lesson video support one bounded byte
+        range.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/Range"
+        - $ref: "#/components/parameters/IfRange"
+      responses:
+        "200":
+          $ref: "#/components/responses/OperatorMediaPreview"
+        "206":
+          description: One satisfiable range from verified private long-form lesson media.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            Accept-Ranges:
+              $ref: "#/components/headers/AcceptByteRanges"
+            Content-Range:
+              $ref: "#/components/headers/SatisfiedContentRange"
+            X-Content-SHA256:
+              required: true
+              schema:
+                $ref: "#/components/schemas/Sha256"
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/mp4:
+              schema:
+                type: string
+                format: binary
+            audio/ogg:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+            audio/webm:
+              schema:
+                type: string
+                format: binary
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "416":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads:
+    get:
+      operationId: listOperatorMediaUploads
+      summary: List bounded private upload and quarantine state
+      description: Returns a tenant- and state-bound keyset page without object keys.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorPageLimit"
+        - $ref: "#/components/parameters/OperatorCursor"
+        - name: state
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OperatorMediaUploadState"
+      responses:
+        "200":
+          description: Bounded private upload page.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaUploadListing"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+    post:
+      operationId: startOperatorMediaUpload
+      summary: Start one resumable private quarantine upload
+      description: Server allocates every identifier and private object key.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartOperatorMediaUploadRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}:
+    get:
+      operationId: getOperatorMediaUpload
+      summary: Get exact private upload and scan history
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+      responses:
+        "200":
+          description: Exact private upload detail.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}/preview:
+    get:
+      operationId: previewOperatorMediaUpload
+      summary: Stream one exact clean quarantine candidate for human review
+      description: Only scan-clean, unexpired candidate bytes are previewable.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+        - $ref: "#/components/parameters/Range"
+        - $ref: "#/components/parameters/IfRange"
+      responses:
+        "200":
+          $ref: "#/components/responses/OperatorMediaPreview"
+        "206":
+          description: One satisfiable range from verified quarantine long-form lesson media.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            Accept-Ranges:
+              $ref: "#/components/headers/AcceptByteRanges"
+            Content-Range:
+              $ref: "#/components/headers/SatisfiedContentRange"
+            X-Content-SHA256:
+              required: true
+              schema:
+                $ref: "#/components/schemas/Sha256"
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/mp4:
+              schema:
+                type: string
+                format: binary
+            audio/ogg:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+            audio/webm:
+              schema:
+                type: string
+                format: binary
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "416":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}/parts:
+    post:
+      operationId: storeOperatorMediaUploadPart
+      summary: Store one exact sequential binary upload part
+      description: |
+        The raw body is hash-, index-, optimistic-version- and idempotency-
+        bound. Parts never enter JSON, logs, URLs or browser persistence.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/OperatorMediaPartNumber"
+        - $ref: "#/components/parameters/OperatorMediaPartSha256"
+        - $ref: "#/components/parameters/OperatorMediaUploadVersion"
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              minLength: 1
+              maxLength: 20000000
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}/finalizations:
+    post:
+      operationId: finalizeOperatorMediaUpload
+      summary: Assemble, inspect and scan exact quarantine bytes
+      description: Missing, stale, unavailable or failed inspection/scanning fails closed.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeOperatorMediaUploadRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}/acceptances:
+    post:
+      operationId: acceptOperatorMediaUpload
+      summary: Accept one exact scan-clean quarantine candidate
+      description: Human acceptance promotes and re-verifies bytes before creating an asset.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecideOperatorMediaUploadRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/uploads/{upload}/rejections:
+    post:
+      operationId: rejectOperatorMediaUpload
+      summary: Reject one exact quarantine candidate and queue cleanup
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaUploadPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectOperatorMediaUploadRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/adoptions:
+    post:
+      operationId: adoptOperatorMediaAsset
+      summary: Inspect, scan and adopt one exact existing private asset
+      description: Does not import reference/public media or inherit rights/review authority.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdoptOperatorMediaAssetRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/metadata-revisions:
+    post:
+      operationId: appendOperatorMediaMetadata
+      summary: Append one exact English accessibility metadata revision
+      description: Transcript and alternative bodies remain out of logs, audit and search.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppendOperatorMediaMetadataRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/metadata-revisions/{revision}/kannada-variants:
+    post:
+      operationId: appendOperatorMediaKannadaVariant
+      summary: Append one Kannada accessibility variant for an exact English hash
+      description: The translator must differ from the English source author.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaMetadataRevisionPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppendOperatorMediaKannadaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/metadata-reviews:
+    post:
+      operationId: reviewOperatorMediaMetadata
+      summary: Record appointed exact-hash accessibility review evidence
+      description: |
+        English and Kannada decisions are append-only and require the exact
+        current source/variant hashes and an accepted in-scope appointment.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewOperatorMediaMetadataRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/rights-decisions:
+    post:
+      operationId: decideOperatorMediaRights
+      summary: Confirm, reject or withdraw appointed program rights evidence
+      description: |
+        Confirmation binds exact active clean bytes, program, use scope,
+        channels, territories, time, retention and an accepted rights-confirmer
+        appointment. Umbrella owner evidence never auto-approves an asset.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecideOperatorMediaRightsRequest"
+      responses:
+        "201":
+          description: Append-only rights decision recorded.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaRightsDecisionResult"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/attachments:
+    post:
+      operationId: attachOperatorMediaAsset
+      summary: Attach exact reviewed media evidence to one draft source
+      description: |
+        Requires exact workspace/lifecycle heads and current approved English,
+        Kannada and program-rights evidence. It advances the draft workspace
+        without copying bytes or authority.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachOperatorMediaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/replacements:
+    post:
+      operationId: replaceOperatorMediaAsset
+      summary: Record immutable same-kind replacement lineage
+      description: No scan, metadata, review, rights, attachment or publication authority is inherited.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceOperatorMediaAssetRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/assets/{asset}/retirements:
+    post:
+      operationId: retireOperatorMediaAsset
+      summary: Retire one exact asset from future attachment and publication
+      description: Prior immutable publications and enrollment pins remain unchanged.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/OperatorMediaAssetPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetireOperatorMediaAssetRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MediaLibraryCommandReplay"
+        "201":
+          $ref: "#/components/responses/MediaLibraryCommandCreated"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
   /operator/audit-events:
     get:
       operationId: listOperatorAuditEvents
@@ -6857,8 +8063,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
         - name: limit
@@ -6869,6 +8073,11 @@ paths:
             minimum: 1
             maximum: 100
             default: 50
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OperatorCursor"
       responses:
         "200":
           description: Organization audit digest listing.
@@ -6882,6 +8091,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/OperatorAuditEventListing"
         "401":
+          $ref: "#/components/responses/Problem"
+        "403":
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
@@ -6902,8 +8113,6 @@ paths:
         - Operator
       security:
         - sanctumSession: []
-        - passportOAuth:
-            - mobile:api
       parameters:
         - $ref: "#/components/parameters/CorrelationId"
       responses:
@@ -6920,10 +8129,337 @@ paths:
                 $ref: "#/components/schemas/OperatorPilotAnalyticsSummary"
         "401":
           $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /operator/support/diagnostics:
+    get:
+      operationId: listOperatorSupportDiagnostics
+      summary: List org-scoped support diagnostics digests
+      description: |
+        Returns digests for stuck attempts, recoverable voice failures, and open
+        deletion requests. Never returns transcripts, audio, or conversation
+        bodies. Requires support.diagnostics.read.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Support diagnostics digests.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorSupportDiagnostics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/exports:
+    post:
+      operationId: createOperatorPrivacyExport
+      summary: Create an org-scoped learner privacy export
+      description: |
+        Creates a versioned inventory of all learner-owned or linked record
+        classes for one organization membership. Safe structured values are
+        included without silent truncation. Credentials, cryptographic digests,
+        raw audio, transcripts, object keys, and provider secret payloads are
+        never included. Requires privacy.export.request.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - target_membership_id
+              properties:
+                target_membership_id:
+                  $ref: "#/components/schemas/Ulid"
+      responses:
+        "201":
+          description: Privacy export created or replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyExport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/exports/{export_request_id}:
+    get:
+      operationId: getOperatorPrivacyExport
+      summary: Get an org-scoped privacy export request
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: export_request_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Privacy export status and versioned record inventory.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyExport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/erasures:
+    post:
+      operationId: createOperatorPrivacyErasure
+      summary: Create an org-scoped account-erasure request
+      description: |
+        Starts a deterministic organization-membership erasure workflow. The
+        response records the outcome for every inventoried class, including
+        retained authoritative evidence and ADR-0007 voice deletion receipts.
+        Requires privacy.erasure.request.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - target_membership_id
+              properties:
+                target_membership_id:
+                  $ref: "#/components/schemas/Ulid"
+      responses:
+        "201":
+          description: Privacy erasure created or replayed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyErasure"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/privacy/erasures/{erasure_request_id}:
+    get:
+      operationId: getOperatorPrivacyErasure
+      summary: Get an org-scoped privacy erasure request
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: erasure_request_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Privacy erasure status.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorPrivacyErasure"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/candidate:
+    get:
+      operationId: getOperatorMediaTranscriptionCandidate
+      summary: Read one short-lived governed transcription candidate
+      description: |
+        Returns the application-encrypted candidate only to a current-
+        organization signed-in web operator with media.metadata.manage.
+        The response is non-authoritative and must be checked against the
+        complete exact audio before reconciliation.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: campaign
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+        - name: campaign_asset
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Exact unexpired candidate and bounded phrase evidence.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaTranscriptionCandidate"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
+  /operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/reconciliations:
+    post:
+      operationId: reconcileOperatorMediaTranscriptionCandidate
+      summary: Reconcile one exact provider candidate through a human
+      description: |
+        Requires current-organization web authentication, selected membership,
+        media.metadata.manage, optimistic version and candidate digest.
+        Confirmed or corrected outcomes atomically create an immutable
+        English media-metadata revision; no outcome is academic approval.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: campaign
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+        - name: campaign_asset
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileOperatorMediaTranscriptionCandidateRequest"
+      responses:
+        "200":
+          description: Exact reconciliation command replay returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaTranscriptionReconciliationResult"
+        "201":
+          description: Candidate reconciliation completed atomically.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorMediaTranscriptionReconciliationResult"
+        "401":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "403":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "404":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "409":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        "422":
+          $ref: "#/components/responses/MediaLibraryProblem"
+        default:
+          $ref: "#/components/responses/MediaLibraryProblem"
 components:
   parameters:
     CorrelationId:
@@ -6946,6 +8482,76 @@ components:
         minLength: 26
         maxLength: 36
         pattern: "^[0-9A-HJKMNP-TV-Z]{26}$|^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        example: 018f6f12-6a09-7d8a-8f28-a5910041319e
+    OperatorPageLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of tenant-bound rows to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 25
+        default: 25
+    OperatorCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Encrypted continuation bound to tenant, purpose and filters.
+      schema:
+        $ref: "#/components/schemas/OperatorCursor"
+    CurriculumVersionPath:
+      name: curriculumVersion
+      in: path
+      required: true
+      description: Organization-owned curriculum-version ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    OperatorMediaAssetPath:
+      name: asset
+      in: path
+      required: true
+      description: Active-organization managed media-asset ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    OperatorMediaUploadPath:
+      name: upload
+      in: path
+      required: true
+      description: Active-organization private media-upload ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    OperatorMediaMetadataRevisionPath:
+      name: revision
+      in: path
+      required: true
+      description: Exact active-organization English media-metadata revision ULID.
+      schema:
+        $ref: "#/components/schemas/Ulid"
+    OperatorMediaPartNumber:
+      name: Media-Part-Number
+      in: header
+      required: true
+      description: One-based exact sequential upload-part number.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+    OperatorMediaPartSha256:
+      name: Media-Part-SHA256
+      in: header
+      required: true
+      description: Lowercase SHA-256 of the exact binary request body.
+      schema:
+        $ref: "#/components/schemas/Sha256"
+    OperatorMediaUploadVersion:
+      name: Media-Upload-Version
+      in: header
+      required: true
+      description: Expected optimistic upload version before accepting this part.
+      schema:
+        type: integer
+        minimum: 1
     SessionId:
       name: session_id
       in: path
@@ -7019,13 +8625,23 @@ components:
       description: Mission ULID used to authorize the requested model-audio asset.
       schema:
         $ref: "#/components/schemas/Ulid"
-    CurriculumVersionPath:
-      name: curriculumVersion
-      in: path
+    LessonQueryId:
+      name: lesson_id
+      in: query
       required: true
-      description: Organization-owned curriculum-version ULID.
+      description: Lesson ULID used to authorize the requested lesson-video asset.
       schema:
         $ref: "#/components/schemas/Ulid"
+    Range:
+      name: Range
+      in: header
+      required: false
+      description: |
+        Optional single RFC byte range. Multiple or malformed ranges are
+        ignored and receive the complete representation.
+      schema:
+        type: string
+      example: bytes=0-1048575
     IfRange:
       name: If-Range
       in: header
@@ -7037,40 +8653,6 @@ components:
       schema:
         type: string
       example: '"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"'
-    LessonQueryId:
-      name: lesson_id
-      in: query
-      required: true
-      description: Lesson ULID used to authorize the requested lesson-video asset.
-      schema:
-        $ref: "#/components/schemas/Ulid"
-    OperatorCursor:
-      name: cursor
-      in: query
-      required: false
-      description: Encrypted continuation bound to tenant, purpose and filters.
-      schema:
-        $ref: "#/components/schemas/OperatorCursor"
-    OperatorPageLimit:
-      name: limit
-      in: query
-      required: false
-      description: Maximum number of tenant-bound rows to return.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 25
-        default: 25
-    Range:
-      name: Range
-      in: header
-      required: false
-      description: |
-        Optional single RFC byte range. Multiple or malformed ranges are
-        ignored and receive the complete representation.
-      schema:
-        type: string
-      example: bytes=0-1048575
   headers:
     CorrelationId:
       required: true
@@ -7123,6 +8705,142 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/ProblemDetails"
+    OrganizationAdministrationProblem:
+      description: The organization-administration request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/OrganizationAdministrationProblemDetails"
+    LearnerAdministrationProblem:
+      description: The learner-administration request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/LearnerAdministrationProblemDetails"
+    ContentWorkspaceProblem:
+      description: The governed content-workspace request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ContentWorkspaceProblemDetails"
+    MediaLibraryProblem:
+      description: The governed private-media request could not be completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/MediaLibraryProblemDetails"
+    MediaLibraryCommandReplay:
+      description: Exact actor, operation, target and request replay returned.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorMediaCommandResult"
+    MediaLibraryCommandCreated:
+      description: Governed private-media command completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorMediaCommandResult"
+    OperatorMediaPreview:
+      description: Hash-verified private audio or complete MP4 object.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        Content-Length:
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20000000
+        X-Content-SHA256:
+          required: true
+          schema:
+            $ref: "#/components/schemas/Sha256"
+      content:
+        "audio/*":
+          schema:
+            type: string
+            format: binary
+        video/mp4:
+          schema:
+            type: string
+            format: binary
+    ContentWorkspaceCommandReplay:
+      description: Exact actor, operation, target and body replay returned.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
+    ContentWorkspaceCommandCreated:
+      description: Governed append-only content command completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
+    ContentPublicationLifecycleReplay:
+      description: Exact publication-lifecycle command replay returned.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
+    ContentPublicationLifecycleCreated:
+      description: Publication-lifecycle command completed.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
     OAuthProblem:
       description: The OAuth request could not be completed.
       headers:
@@ -7139,83 +8857,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
-    ContentPublicationLifecycleCreated:
-      description: Publication-lifecycle command completed.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
-    ContentPublicationLifecycleReplay:
-      description: Exact publication-lifecycle command replay returned.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/OperatorContentPublicationLifecycleResult"
-    ContentWorkspaceCommandCreated:
-      description: Governed append-only content command completed.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
-    ContentWorkspaceCommandReplay:
-      description: Exact actor, operation, target and body replay returned.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/OperatorContentWorkspaceCommandResult"
-    ContentWorkspaceProblem:
-      description: The governed content-workspace request could not be completed.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ContentWorkspaceProblemDetails"
-    LearnerAdministrationProblem:
-      description: The learner-administration request could not be completed.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/LearnerAdministrationProblemDetails"
-    OrganizationAdministrationProblem:
-      description: The organization-administration request could not be completed.
-      headers:
-        X-Correlation-ID:
-          $ref: "#/components/headers/CorrelationId"
-        Cache-Control:
-          $ref: "#/components/headers/NoStore"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/OrganizationAdministrationProblemDetails"
   securitySchemes:
     sanctumSession:
       type: apiKey
@@ -7223,7 +8864,11 @@ components:
       name: __Host-global_english_session
       description: |
         Secure, HttpOnly same-origin session cookie. Browser JavaScript never
-        reads or persists this credential.
+        reads or persists this credential. Routine operator work relies on the
+        signed-in session plus command-time role/permission enforcement.
+        Credential, recovery-contact and administrator-authority changes may
+        additionally require current-password confirmation no more than five
+        minutes old and bound to the current credential version.
     passportOAuth:
       type: oauth2
       description: Android Authorization Code flow with S256 PKCE.
@@ -7248,6 +8893,1391 @@ components:
         - ta-IN
         - te-IN
         - hi-IN
+    OperatorMediaAssetKind:
+      type: string
+      enum:
+        - model_audio
+        - lesson_audio
+        - lesson_video
+    OperatorMediaAttachableUsageKey:
+      type: string
+      description: Media usages currently attachable before the LPL-02 lesson-practice source schema exists.
+      enum:
+        - model_audio
+        - lesson_video
+    OperatorMediaAssetState:
+      type: string
+      enum:
+        - active
+        - retired
+    OperatorMediaUploadState:
+      type: string
+      enum:
+        - uploading
+        - finalized
+        - scan_clean
+        - accepted
+        - rejected
+        - expired
+        - inspection_failed
+        - scan_failed
+        - promotion_failed
+    OperatorMediaAction:
+      type: string
+      enum:
+        - start_upload
+        - review_quarantine
+        - manage_metadata
+        - record_replacement
+        - retire_asset
+        - record_rights_decision
+        - adopt_asset
+        - translate_metadata
+        - review_metadata_en
+        - review_metadata_kn
+        - attach_asset
+    OperatorMediaStableKey:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: "^[a-z][a-z0-9_.-]*$"
+    OperatorMediaManifest:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - organization_id
+        - allowed_actions
+        - limits
+        - supported_kinds
+        - rights_attestation
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        organization_id:
+          $ref: "#/components/schemas/Ulid"
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAction"
+        limits:
+          type: object
+          additionalProperties: false
+          required:
+            - part_size_bytes
+            - model_audio_maximum_bytes
+            - lesson_audio_maximum_bytes
+            - lesson_video_maximum_bytes
+            - upload_expiry_hours
+            - clean_review_expiry_days
+          properties:
+            part_size_bytes:
+              type: integer
+              minimum: 65536
+              maximum: 20000000
+            model_audio_maximum_bytes:
+              type: integer
+              const: 10000000
+            lesson_audio_maximum_bytes:
+              type: integer
+              const: 20000000
+            lesson_video_maximum_bytes:
+              type: integer
+              const: 20000000
+            upload_expiry_hours:
+              type: integer
+              const: 24
+            clean_review_expiry_days:
+              type: integer
+              const: 7
+        supported_kinds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAssetKind"
+        rights_attestation:
+          type: object
+          additionalProperties: false
+          required:
+            - approval_reference
+            - evidence_sha256
+            - creates_asset_approval
+          properties:
+            approval_reference:
+              type: string
+              minLength: 1
+              maxLength: 120
+            evidence_sha256:
+              $ref: "#/components/schemas/Sha256"
+            creates_asset_approval:
+              type: boolean
+              const: false
+    OperatorMediaAssetSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - media_asset_id
+        - asset_kind
+        - asset_hash
+        - mime_type
+        - byte_size
+        - state
+        - lifecycle_version
+        - selected_scan_id
+        - predecessor_media_asset_id
+        - operator_label
+        - metadata_revision_id
+        - metadata_version
+        - metadata_content_hash
+        - uploaded_at
+        - updated_at
+      properties:
+        media_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        asset_kind:
+          $ref: "#/components/schemas/OperatorMediaAssetKind"
+        asset_hash:
+          $ref: "#/components/schemas/Sha256"
+        mime_type:
+          type: string
+          enum:
+            - audio/wav
+            - audio/mpeg
+            - audio/ogg
+            - audio/mp4
+            - audio/webm
+            - video/mp4
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+        state:
+          $ref: "#/components/schemas/OperatorMediaAssetState"
+        lifecycle_version:
+          type: integer
+          minimum: 1
+        selected_scan_id:
+          $ref: "#/components/schemas/Ulid"
+        predecessor_media_asset_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        operator_label:
+          type:
+            - string
+            - "null"
+          maxLength: 160
+        metadata_revision_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        metadata_version:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        metadata_content_hash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256"
+            - type: "null"
+        uploaded_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OperatorMediaAssetListing:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - next_cursor
+        - allowed_actions
+      properties:
+        data:
+          type: array
+          maxItems: 25
+          items:
+            $ref: "#/components/schemas/OperatorMediaAssetSummary"
+        next_cursor:
+          type:
+            - string
+            - "null"
+          maxLength: 4096
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAction"
+    OperatorMediaMetadataRevision:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision_number
+        - operator_label
+        - transcript
+        - text_alternative
+        - content_hash
+        - authored_at
+        - metadata_version
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        revision_number:
+          type: integer
+          minimum: 1
+        operator_label:
+          type: string
+          minLength: 1
+          maxLength: 160
+        transcript:
+          type: string
+          minLength: 1
+          maxLength: 65536
+        text_alternative:
+          type:
+            - string
+            - "null"
+          maxLength: 8000
+        content_hash:
+          $ref: "#/components/schemas/Sha256"
+        authored_at:
+          type: string
+          format: date-time
+        metadata_version:
+          type: integer
+          minimum: 1
+    OperatorMediaMetadataVariant:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision_number
+        - locale
+        - source_content_hash
+        - transcript
+        - text_alternative
+        - content_hash
+        - translated_at
+        - variant_version
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        revision_number:
+          type: integer
+          minimum: 1
+        locale:
+          type: string
+          const: kn-IN
+        source_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        transcript:
+          type: string
+          minLength: 1
+          maxLength: 65536
+        text_alternative:
+          type:
+            - string
+            - "null"
+          maxLength: 8000
+        content_hash:
+          $ref: "#/components/schemas/Sha256"
+        translated_at:
+          type: string
+          format: date-time
+        variant_version:
+          type: integer
+          minimum: 1
+    OperatorMediaMetadataReview:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - program_id
+        - metadata_revision_id
+        - review_kind
+        - metadata_variant_id
+        - decision
+        - rationale_key
+        - reviewer_membership_id
+        - authority_appointment_id
+        - reviewed_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        program_id:
+          $ref: "#/components/schemas/Ulid"
+        metadata_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        review_kind:
+          type: string
+          enum:
+            - academic_en
+            - kannada
+        metadata_variant_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        decision:
+          type: string
+          enum:
+            - approved
+            - rejected
+            - withdrawn
+        rationale_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        reviewer_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        authority_appointment_id:
+          $ref: "#/components/schemas/Ulid"
+        reviewed_at:
+          type: string
+          format: date-time
+    OperatorMediaRightsRevision:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - program_id
+        - parent_revision_id
+        - revision_number
+        - evidence_status
+        - evidence_hash
+        - rights_holder_reference
+        - provenance_reference
+        - rights_basis_key
+        - license_or_contract_reference
+        - permitted_release_channels
+        - permitted_territories
+        - learner_delivery_allowed
+        - sharing_allowed
+        - derivative_use_allowed
+        - effective_at
+        - expires_at
+        - retention_policy_key
+        - deletion_constraint_key
+        - confirmed_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        program_id:
+          $ref: "#/components/schemas/Ulid"
+        parent_revision_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        revision_number:
+          type: integer
+          minimum: 1
+        evidence_status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - rejected
+            - withdrawn
+        evidence_hash:
+          $ref: "#/components/schemas/Sha256"
+        rights_holder_reference:
+          type: string
+          minLength: 1
+          maxLength: 120
+        provenance_reference:
+          type: string
+          minLength: 1
+          maxLength: 120
+        rights_basis_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        license_or_contract_reference:
+          type: string
+          minLength: 1
+          maxLength: 240
+        permitted_release_channels:
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - android
+              - web
+        permitted_territories:
+          type: array
+          minItems: 1
+          maxItems: 8
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        learner_delivery_allowed:
+          type: boolean
+        sharing_allowed:
+          type: boolean
+        derivative_use_allowed:
+          type: boolean
+        effective_at:
+          type: string
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        retention_policy_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        deletion_constraint_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        confirmed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorMediaUsage:
+      type: object
+      additionalProperties: false
+      required:
+        - curriculum_version_id
+        - content_revision_id
+        - usage_key
+        - sequence
+        - created_at
+      properties:
+        curriculum_version_id:
+          $ref: "#/components/schemas/Ulid"
+        content_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        usage_key:
+          $ref: "#/components/schemas/OperatorMediaAttachableUsageKey"
+        sequence:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+    OperatorMediaHistoryEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - event_type
+        - lifecycle_version
+        - selected_scan_id
+        - related_media_asset_id
+        - media_upload_id
+        - actor_membership_id
+        - reason_key
+        - occurred_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        event_type:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        lifecycle_version:
+          type: integer
+          minimum: 1
+        selected_scan_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        related_media_asset_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        media_upload_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        actor_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        reason_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        occurred_at:
+          type: string
+          format: date-time
+    OperatorMediaAssetDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - media_asset_id
+        - asset_kind
+        - mime_type
+        - byte_size
+        - asset_hash
+        - uploaded_at
+        - lifecycle
+        - scan
+        - metadata
+        - kannada_variant
+        - metadata_reviews
+        - rights_revisions
+        - usages
+        - events
+      properties:
+        media_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        asset_kind:
+          $ref: "#/components/schemas/OperatorMediaAssetKind"
+        mime_type:
+          type: string
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+        asset_hash:
+          $ref: "#/components/schemas/Sha256"
+        uploaded_at:
+          type: string
+          format: date-time
+        lifecycle:
+          type: object
+          additionalProperties: false
+          required:
+            - state
+            - version
+            - selected_scan_id
+            - predecessor_media_asset_id
+            - managed_at
+            - retired_at
+            - retirement_reason_key
+          properties:
+            state:
+              $ref: "#/components/schemas/OperatorMediaAssetState"
+            version:
+              type: integer
+              minimum: 1
+            selected_scan_id:
+              $ref: "#/components/schemas/Ulid"
+            predecessor_media_asset_id:
+              oneOf:
+                - $ref: "#/components/schemas/Ulid"
+                - type: "null"
+            managed_at:
+              type: string
+              format: date-time
+            retired_at:
+              type:
+                - string
+                - "null"
+              format: date-time
+            retirement_reason_key:
+              oneOf:
+                - $ref: "#/components/schemas/OperatorMediaStableKey"
+                - type: "null"
+        scan:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+        metadata:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaMetadataRevision"
+            - type: "null"
+        kannada_variant:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaMetadataVariant"
+            - type: "null"
+        metadata_reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorMediaMetadataReview"
+        rights_revisions:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorMediaRightsRevision"
+        usages:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorMediaUsage"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorMediaHistoryEvent"
+    OperatorMediaAssetResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - allowed_actions
+      properties:
+        data:
+          $ref: "#/components/schemas/OperatorMediaAssetDetail"
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAction"
+    OperatorMediaUploadSummary:
+      type: object
+      required:
+        - id
+        - candidate_asset_id
+        - asset_kind
+        - safe_label
+        - state
+        - version
+        - total_bytes
+        - whole_object_hash
+        - part_size_bytes
+        - expected_part_count
+        - received_part_count
+        - selected_scan_id
+        - accepted_asset_id
+        - expires_at
+        - review_expires_at
+        - decision_reason_key
+        - decided_at
+        - updated_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        candidate_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        asset_kind:
+          $ref: "#/components/schemas/OperatorMediaAssetKind"
+        safe_label:
+          type: string
+          minLength: 1
+          maxLength: 160
+        state:
+          $ref: "#/components/schemas/OperatorMediaUploadState"
+        version:
+          type: integer
+          minimum: 1
+        total_bytes:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+        whole_object_hash:
+          $ref: "#/components/schemas/Sha256"
+        part_size_bytes:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+        expected_part_count:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        received_part_count:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        selected_scan_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        accepted_asset_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        expires_at:
+          type: string
+          format: date-time
+        review_expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        decision_reason_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        decided_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OperatorMediaUploadListing:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - next_cursor
+        - allowed_actions
+      properties:
+        data:
+          type: array
+          maxItems: 25
+          items:
+            $ref: "#/components/schemas/OperatorMediaUploadSummary"
+        next_cursor:
+          type:
+            - string
+            - "null"
+          maxLength: 4096
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAction"
+    OperatorMediaUploadDetail:
+      allOf:
+        - $ref: "#/components/schemas/OperatorMediaUploadSummary"
+        - type: object
+          required:
+            - created_by_membership_id
+            - decided_by_membership_id
+            - created_at
+            - parts
+            - scans
+            - events
+          properties:
+            created_by_membership_id:
+              $ref: "#/components/schemas/Ulid"
+            decided_by_membership_id:
+              oneOf:
+                - $ref: "#/components/schemas/Ulid"
+                - type: "null"
+            created_at:
+              type: string
+              format: date-time
+            parts:
+              type: array
+              maxItems: 1000
+              items:
+                type: object
+                additionalProperties: true
+            scans:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            events:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+    OperatorMediaUploadResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - allowed_actions
+      properties:
+        data:
+          $ref: "#/components/schemas/OperatorMediaUploadDetail"
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorMediaAction"
+    OperatorMediaCommandResult:
+      type: object
+      additionalProperties: true
+      required:
+        - result_type
+        - result_id
+        - replayed
+      properties:
+        result_type:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        result_id:
+          type: string
+          minLength: 1
+          maxLength: 120
+        replayed:
+          type: boolean
+    OperatorMediaTranscriptionSegment:
+      type: object
+      additionalProperties: false
+      required:
+        - sequence
+        - text
+        - offset_milliseconds
+        - duration_milliseconds
+        - confidence_bps
+      properties:
+        sequence:
+          type: integer
+          minimum: 1
+          maximum: 4096
+        text:
+          type: string
+          minLength: 1
+          maxLength: 32000
+        offset_milliseconds:
+          type: integer
+          minimum: 0
+        duration_milliseconds:
+          type: integer
+          minimum: 1
+        confidence_bps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+    OperatorMediaTranscriptionCandidate:
+      type: object
+      additionalProperties: false
+      required:
+        - campaign_id
+        - campaign_asset_id
+        - media_asset_id
+        - part_key
+        - sequence
+        - state
+        - version
+        - candidate_sha256
+        - candidate_expires_at
+        - source_sha256
+        - source_duration_milliseconds
+        - locale
+        - transcript
+        - segments
+      properties:
+        campaign_id:
+          $ref: "#/components/schemas/Ulid"
+        campaign_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        media_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        part_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+        sequence:
+          type: integer
+          minimum: 1
+          maximum: 4
+        state:
+          type: string
+          const: candidate_ready
+        version:
+          type: integer
+          minimum: 1
+        candidate_sha256:
+          $ref: "#/components/schemas/Sha256"
+        candidate_expires_at:
+          type: string
+          format: date-time
+        source_sha256:
+          $ref: "#/components/schemas/Sha256"
+        source_duration_milliseconds:
+          type: integer
+          minimum: 1
+        locale:
+          type: string
+          const: en-IN
+        transcript:
+          type: string
+          minLength: 1
+          maxLength: 32000
+        segments:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items:
+            $ref: "#/components/schemas/OperatorMediaTranscriptionSegment"
+    ReconcileOperatorMediaTranscriptionCandidateRequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - expected_asset_version
+            - candidate_sha256
+            - outcome
+            - operator_label
+            - expected_metadata_version
+          properties:
+            expected_asset_version:
+              type: integer
+              minimum: 1
+            candidate_sha256:
+              $ref: "#/components/schemas/Sha256"
+            outcome:
+              type: string
+              const: confirmed
+            operator_label:
+              type: string
+              minLength: 1
+              maxLength: 160
+            expected_head_revision_id:
+              oneOf:
+                - $ref: "#/components/schemas/Ulid"
+                - type: "null"
+            expected_metadata_version:
+              type: integer
+              minimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+            - expected_asset_version
+            - candidate_sha256
+            - outcome
+            - operator_label
+            - corrected_transcript
+            - expected_metadata_version
+          properties:
+            expected_asset_version:
+              type: integer
+              minimum: 1
+            candidate_sha256:
+              $ref: "#/components/schemas/Sha256"
+            outcome:
+              type: string
+              const: corrected
+            operator_label:
+              type: string
+              minLength: 1
+              maxLength: 160
+            corrected_transcript:
+              type: string
+              minLength: 1
+              maxLength: 32000
+            expected_head_revision_id:
+              oneOf:
+                - $ref: "#/components/schemas/Ulid"
+                - type: "null"
+            expected_metadata_version:
+              type: integer
+              minimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+            - expected_asset_version
+            - candidate_sha256
+            - outcome
+            - expected_metadata_version
+          properties:
+            expected_asset_version:
+              type: integer
+              minimum: 1
+            candidate_sha256:
+              $ref: "#/components/schemas/Sha256"
+            outcome:
+              type: string
+              enum:
+                - discarded
+                - needs_attention
+            expected_head_revision_id:
+              oneOf:
+                - $ref: "#/components/schemas/Ulid"
+                - type: "null"
+            expected_metadata_version:
+              type: integer
+              minimum: 0
+    OperatorMediaTranscriptionReconciliationResult:
+      type: object
+      additionalProperties: false
+      required:
+        - result_type
+        - result_id
+        - replayed
+        - campaign_id
+        - campaign_asset_id
+        - reconciliation_id
+        - outcome
+        - metadata_revision_id
+        - metadata_content_hash
+      properties:
+        result_type:
+          type: string
+          const: media_transcription_reconciliation
+        result_id:
+          $ref: "#/components/schemas/Ulid"
+        replayed:
+          type: boolean
+        campaign_id:
+          $ref: "#/components/schemas/Ulid"
+        campaign_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        reconciliation_id:
+          $ref: "#/components/schemas/Ulid"
+        outcome:
+          type: string
+          enum:
+            - confirmed
+            - corrected
+            - discarded
+            - needs_attention
+        asset_version:
+          type: integer
+          minimum: 2
+        metadata_revision_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        metadata_content_hash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256"
+            - type: "null"
+    OperatorMediaRightsDecisionResult:
+      type: object
+      additionalProperties: false
+      required:
+        - media_rights_revision_id
+        - action
+      properties:
+        media_rights_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        action:
+          type: string
+          enum:
+            - confirm
+            - reject
+            - withdraw
+    StartOperatorMediaUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - asset_kind
+        - safe_label
+        - total_bytes
+        - whole_object_hash
+      properties:
+        asset_kind:
+          $ref: "#/components/schemas/OperatorMediaAssetKind"
+        safe_label:
+          type: string
+          minLength: 1
+          maxLength: 160
+        total_bytes:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+        whole_object_hash:
+          $ref: "#/components/schemas/Sha256"
+    FinalizeOperatorMediaUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expected_upload_version
+      properties:
+        expected_upload_version:
+          type: integer
+          minimum: 1
+    DecideOperatorMediaUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expected_upload_version
+      properties:
+        expected_upload_version:
+          type: integer
+          minimum: 1
+    RejectOperatorMediaUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expected_upload_version
+        - reason_key
+      properties:
+        expected_upload_version:
+          type: integer
+          minimum: 1
+        reason_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
+    AdoptOperatorMediaAssetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - selected_asset_hash
+      properties:
+        selected_asset_hash:
+          $ref: "#/components/schemas/Sha256"
+    AppendOperatorMediaMetadataRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expected_head_revision_id
+        - expected_metadata_version
+        - operator_label
+        - transcript
+        - text_alternative
+      properties:
+        expected_head_revision_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        expected_metadata_version:
+          type: integer
+          minimum: 0
+        operator_label:
+          type: string
+          minLength: 1
+          maxLength: 160
+        transcript:
+          type: string
+          minLength: 1
+          maxLength: 65536
+        text_alternative:
+          type:
+            - string
+            - "null"
+          maxLength: 8000
+    AppendOperatorMediaKannadaRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - source_content_hash
+        - expected_head_variant_id
+        - expected_variant_version
+        - transcript
+        - text_alternative
+      properties:
+        source_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        expected_head_variant_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        expected_variant_version:
+          type: integer
+          minimum: 0
+        transcript:
+          type: string
+          minLength: 1
+          maxLength: 65536
+        text_alternative:
+          type:
+            - string
+            - "null"
+          maxLength: 8000
+    ReviewOperatorMediaMetadataRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - program_id
+        - metadata_revision_id
+        - source_content_hash
+        - review_kind
+        - metadata_variant_id
+        - variant_content_hash
+        - decision
+        - rationale_key
+        - authority_appointment_id
+      properties:
+        program_id:
+          $ref: "#/components/schemas/Ulid"
+        metadata_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        source_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        review_kind:
+          type: string
+          enum:
+            - academic_en
+            - kannada
+        metadata_variant_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        variant_content_hash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256"
+            - type: "null"
+        decision:
+          type: string
+          enum:
+            - approved
+            - rejected
+            - withdrawn
+        rationale_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        authority_appointment_id:
+          $ref: "#/components/schemas/Ulid"
+    DecideOperatorMediaRightsRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - action
+        - program_id
+        - media_asset_id
+        - selected_asset_hash
+        - parent_revision_id
+        - evidence_hash
+        - rights_holder_reference
+        - provenance_reference
+        - rights_basis_key
+        - license_or_contract_reference
+        - permitted_release_channels
+        - permitted_territories
+        - learner_delivery_allowed
+        - sharing_allowed
+        - derivative_use_allowed
+        - effective_at
+        - expires_at
+        - retention_policy_key
+        - deletion_constraint_key
+        - authority_appointment_id
+      properties:
+        action:
+          type: string
+          enum:
+            - confirm
+            - reject
+            - withdraw
+        program_id:
+          $ref: "#/components/schemas/Ulid"
+        media_asset_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        selected_asset_hash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256"
+            - type: "null"
+        parent_revision_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        evidence_hash:
+          $ref: "#/components/schemas/Sha256"
+        rights_holder_reference:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+        provenance_reference:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+        rights_basis_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        license_or_contract_reference:
+          type: string
+          minLength: 1
+          maxLength: 240
+        permitted_release_channels:
+          type:
+            - array
+            - "null"
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - android
+              - web
+        permitted_territories:
+          type:
+            - array
+            - "null"
+          minItems: 1
+          maxItems: 8
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        learner_delivery_allowed:
+          type:
+            - boolean
+            - "null"
+        sharing_allowed:
+          type:
+            - boolean
+            - "null"
+        derivative_use_allowed:
+          type:
+            - boolean
+            - "null"
+        effective_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        retention_policy_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        deletion_constraint_key:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorMediaStableKey"
+            - type: "null"
+        authority_appointment_id:
+          $ref: "#/components/schemas/Ulid"
+    AttachOperatorMediaRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - program_id
+        - curriculum_version_id
+        - source_revision_id
+        - usage_key
+        - expected_workspace_version
+        - expected_lifecycle_version
+        - metadata_revision_id
+        - metadata_content_hash
+        - english_review_id
+        - metadata_variant_id
+        - variant_content_hash
+        - kannada_review_id
+        - media_rights_revision_id
+      properties:
+        program_id:
+          $ref: "#/components/schemas/Ulid"
+        curriculum_version_id:
+          $ref: "#/components/schemas/Ulid"
+        source_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        usage_key:
+          $ref: "#/components/schemas/OperatorMediaAttachableUsageKey"
+        expected_workspace_version:
+          type: integer
+          minimum: 1
+        expected_lifecycle_version:
+          type: integer
+          minimum: 1
+        metadata_revision_id:
+          $ref: "#/components/schemas/Ulid"
+        metadata_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        english_review_id:
+          $ref: "#/components/schemas/Ulid"
+        metadata_variant_id:
+          $ref: "#/components/schemas/Ulid"
+        variant_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        kannada_review_id:
+          $ref: "#/components/schemas/Ulid"
+        media_rights_revision_id:
+          $ref: "#/components/schemas/Ulid"
+    ReplaceOperatorMediaAssetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - successor_media_asset_id
+        - expected_predecessor_lifecycle_version
+        - expected_successor_lifecycle_version
+      properties:
+        successor_media_asset_id:
+          $ref: "#/components/schemas/Ulid"
+        expected_predecessor_lifecycle_version:
+          type: integer
+          minimum: 1
+        expected_successor_lifecycle_version:
+          type: integer
+          minimum: 1
+    RetireOperatorMediaAssetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expected_lifecycle_version
+        - reason_key
+      properties:
+        expected_lifecycle_version:
+          type: integer
+          minimum: 1
+        reason_key:
+          $ref: "#/components/schemas/OperatorMediaStableKey"
     OtpRequest:
       type: object
       additionalProperties: false
@@ -7574,6 +10604,151 @@ components:
           description: |
             Optional single-use institution invite secret. The server never
             stores or logs the raw value.
+    PrivilegedMfaStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - factor_status
+        - factor_id
+        - pending_expires_at
+        - recovery_codes_remaining
+        - fresh_assertion_scope
+        - fresh_assertion_expires_at
+        - can_enroll
+        - requires_support
+      properties:
+        factor_status:
+          type: string
+          enum:
+            - none
+            - pending
+            - active
+            - support_required
+        factor_id:
+          oneOf:
+            - $ref: "#/components/schemas/Ulid"
+            - type: "null"
+        pending_expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        recovery_codes_remaining:
+          type: integer
+          minimum: 0
+          maximum: 10
+        fresh_assertion_scope:
+          type:
+            - string
+            - "null"
+          enum:
+            - privileged_actions
+            - factor_replacement
+            - null
+        fresh_assertion_expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        can_enroll:
+          type: boolean
+        requires_support:
+          type: boolean
+    PrivilegedMfaEnrollment:
+      type: object
+      additionalProperties: false
+      required:
+        - factor_id
+        - challenge_id
+        - provisioning_uri
+        - expires_at
+      properties:
+        factor_id:
+          $ref: "#/components/schemas/Ulid"
+        challenge_id:
+          $ref: "#/components/schemas/Ulid"
+        provisioning_uri:
+          type: string
+          format: uri
+          pattern: "^otpauth://totp/"
+          description: Shown once; contains the pending TOTP secret.
+        expires_at:
+          type: string
+          format: date-time
+    PrivilegedMfaEnrollmentConfirmation:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_id
+        - code
+      properties:
+        challenge_id:
+          $ref: "#/components/schemas/Ulid"
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+    PrivilegedMfaChallenge:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_id
+        - expires_at
+      properties:
+        challenge_id:
+          $ref: "#/components/schemas/Ulid"
+        expires_at:
+          type: string
+          format: date-time
+    PrivilegedMfaVerification:
+      type: object
+      additionalProperties: false
+      required:
+        - method
+        - code
+      properties:
+        method:
+          type: string
+          enum:
+            - totp
+            - recovery_code
+        code:
+          type: string
+          minLength: 6
+          maxLength: 64
+          description: Six-digit TOTP or one 128-bit recovery code.
+    PrivilegedMfaVerificationResult:
+      type: object
+      additionalProperties: false
+      required:
+        - verified_at
+        - scope
+      properties:
+        verified_at:
+          type: string
+          format: date-time
+        scope:
+          type: string
+          enum:
+            - privileged_actions
+            - factor_replacement
+    PrivilegedMfaRecoveryCodeIssuance:
+      type: object
+      additionalProperties: false
+      required:
+        - recovery_codes
+        - sessions_revoked
+      properties:
+        recovery_codes:
+          type: array
+          minItems: 10
+          maxItems: 10
+          uniqueItems: true
+          description: Shown once and never returned by a later status call.
+          items:
+            type: string
+            pattern: "^[0-9a-f]{8}(?:-[0-9a-f]{8}){3}$"
+        sessions_revoked:
+          type: boolean
     UserIdentitySummary:
       type: object
       additionalProperties: false
@@ -7613,6 +10788,10 @@ components:
         - last_activity_at
         - expires_at
         - privileged
+        - mfa_verified_at
+        - mfa_verified_method
+        - mfa_verified_scope
+        - password_confirmed_at
       properties:
         id:
           $ref: "#/components/schemas/Ulid"
@@ -7630,6 +10809,27 @@ components:
         privileged:
           type: boolean
         mfa_verified_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        mfa_verified_method:
+          type:
+            - string
+            - "null"
+          enum:
+            - totp
+            - recovery_code
+            - null
+        mfa_verified_scope:
+          type:
+            - string
+            - "null"
+          enum:
+            - privileged_actions
+            - factor_replacement
+            - null
+        password_confirmed_at:
           type:
             - string
             - "null"
@@ -8634,6 +11834,78 @@ components:
           type: integer
           minimum: 250
           maximum: 300000
+    LearnerLessonVideoMedia:
+      type: object
+      additionalProperties: false
+      required:
+        - asset_id
+        - stream_url
+        - mime_type
+        - byte_size
+      properties:
+        asset_id:
+          $ref: "#/components/schemas/Ulid"
+        stream_url:
+          type: string
+          format: uri-reference
+        mime_type:
+          type: string
+          enum:
+            - video/mp4
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 20000000
+    LearnerLevelVideo:
+      type: object
+      additionalProperties: false
+      required:
+        - lesson_id
+        - enrollment_id
+        - publication_id
+        - level_label
+        - title
+        - video
+      properties:
+        lesson_id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        publication_id:
+          $ref: "#/components/schemas/Ulid"
+        level_label:
+          type: string
+          minLength: 1
+          maxLength: 120
+        title:
+          type: object
+          additionalProperties: false
+          required:
+            - locale
+            - text
+          properties:
+            locale:
+              type: string
+              const: en-IN
+            text:
+              type: string
+              minLength: 1
+              maxLength: 200
+        video:
+          $ref: "#/components/schemas/LearnerLessonVideoMedia"
+    LearnerLevelVideoCatalog:
+      type: object
+      additionalProperties: false
+      required:
+        - enrollment_id
+        - videos
+      properties:
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        videos:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerLevelVideo"
     LearnerMissionCheckOption:
       type: object
       additionalProperties: false
@@ -9138,6 +12410,8 @@ components:
           type: string
           enum:
             - everyday-friend-prototype
+            - past-tense-skill-focus-prototype
+            - carry-sentence-review-prototype
             - clinic-reception-roleplay-scenario
         coaching_mode:
           type: string
@@ -9216,6 +12490,8 @@ components:
           type: string
           enum:
             - everyday-friend-prototype
+            - past-tense-skill-focus-prototype
+            - carry-sentence-review-prototype
             - clinic-reception-roleplay-scenario
         version_id:
           $ref: "#/components/schemas/Ulid"
@@ -9226,6 +12502,8 @@ components:
           type: string
           enum:
             - everyday-conversation
+            - grammar-past-simple
+            - carry-sentence-review
             - clinic-reception
         definition_hash:
           $ref: "#/components/schemas/Sha256"
@@ -9340,6 +12618,28 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+          description: |
+            Typed text or a transcript explicitly accepted/corrected by the
+            learner through the separate voice-recording review lifecycle.
+    SynthesizeConversationSpeechRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - text
+      properties:
+        purpose:
+          type: string
+          enum:
+            - model_en
+            - guidance_l1
+        text:
+          type: string
+          minLength: 1
+          maxLength: 400
+          description: |
+            One short model or guidance line. The server does not persist this
+            text. Soft-launch Azure neural TTS may return a WAV for playback.
     ConversationSpeechResult:
       type: object
       additionalProperties: false
@@ -9349,10 +12649,41 @@ components:
       properties:
         playback_available:
           type: boolean
-          const: false
         rendering_mode:
           type: string
-          const: deterministic-fake-text-only
+          enum:
+            - deterministic-fake-text-only
+            - client-text-to-speech-fallback
+            - azure-soft-launch-guidance-wav
+            - azure-private-wav
+        model_audio_base64:
+          type:
+            - string
+            - 'null'
+          description: |
+            Optional base64 WAV for the English model line when soft-launch
+            guidance TTS is authorized. Null when playback falls back to text.
+        model_audio_mime_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - audio/wav
+            - null
+        guidance_audio_base64:
+          type:
+            - string
+            - 'null'
+          description: |
+            Optional base64 WAV for L1 guidance/correction when soft-launch
+            guidance TTS is authorized.
+        guidance_audio_mime_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - audio/wav
+            - null
     ConversationUsageSummary:
       type: object
       additionalProperties: false
@@ -9369,7 +12700,7 @@ components:
           minimum: 0
         estimated_cost_microunits:
           type: integer
-          const: 0
+          minimum: 0
     CreateLearnerAiMemoryFactRequest:
       type: object
       additionalProperties: false
@@ -9444,6 +12775,151 @@ components:
           maxItems: 5
           items:
             $ref: "#/components/schemas/LearnerAiMemoryFactListingItem"
+    CreateLearnerTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - preferred_window
+        - topic
+      properties:
+        preferred_window:
+          type: string
+          minLength: 3
+          maxLength: 120
+        topic:
+          type: string
+          minLength: 3
+          maxLength: 200
+        notes:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+    LearnerTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - preferred_window
+        - topic
+        - notes
+        - status
+        - created_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        preferred_window:
+          type: string
+        topic:
+          type: string
+        notes:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - submitted
+            - acknowledged
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    LearnerTuitionRequestListing:
+      type: object
+      additionalProperties: false
+      required:
+        - requests
+        - institute_contact
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerTuitionRequest"
+        institute_contact:
+          $ref: "#/components/schemas/InstituteContact"
+    InstituteContact:
+      type: object
+      additionalProperties: false
+      required:
+        - phone
+        - whatsapp
+        - email
+      description: |
+        Governed institute contact for the 1:1 destination. Null fields are
+        omitted from the learner UI. This is not an in-app call or booking.
+      properties:
+        phone:
+          type:
+            - string
+            - "null"
+          description: "E.164 telephone number for a tel: link."
+        whatsapp:
+          type:
+            - string
+            - "null"
+          description: "Digits only for a https://wa.me/ link."
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+    OperatorTuitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - membership_id
+        - display_name
+        - preferred_window
+        - topic
+        - notes
+        - status
+        - created_at
+        - acknowledged_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+        display_name:
+          type:
+            - string
+            - "null"
+        preferred_window:
+          type: string
+        topic:
+          type: string
+        notes:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - submitted
+            - acknowledged
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        acknowledged_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorTuitionRequestListing:
+      type: object
+      additionalProperties: false
+      required:
+        - requests
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorTuitionRequest"
     LearnerAiMemoryFactListingItem:
       type: object
       additionalProperties: false
@@ -13286,6 +16762,11 @@ components:
         - manifest_hash
         - is_head
         - head_version
+        - publication_head_version
+        - lifecycle_status
+        - effective_at
+        - publication_suspended
+        - allowed_actions
         - created_at
       properties:
         publication_id:
@@ -13314,6 +16795,28 @@ components:
             - type: integer
               minimum: 1
             - type: "null"
+        publication_head_version:
+          type: integer
+          minimum: 0
+        lifecycle_status:
+          type: string
+          enum:
+            - scheduled
+            - cancelled
+            - active
+            - superseded
+            - retired
+            - suspended
+        effective_at:
+          type: string
+          format: date-time
+        publication_suspended:
+          type: boolean
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorContentAction"
         created_at:
           type: string
           format: date-time
@@ -13322,11 +16825,23 @@ components:
       additionalProperties: false
       required:
         - items
+        - next_cursor
+        - allowed_actions
       properties:
         items:
           type: array
+          maxItems: 25
           items:
             $ref: "#/components/schemas/OperatorPublicationStatus"
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorCursor"
+            - type: "null"
+        allowed_actions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OperatorContentAction"
     RecordEnglishContentReviewRequest:
       type: object
       additionalProperties: false
@@ -13335,6 +16850,7 @@ components:
         - source_content_hash
         - authority_appointment_id
         - decision
+        - rationale_key
       properties:
         source_revision_id:
           $ref: "#/components/schemas/Ulid"
@@ -13348,10 +16864,11 @@ components:
             - approved
             - rejected
         rationale_key:
-          oneOf:
-            - type: string
-              pattern: "^[a-z][a-z0-9_]{0,119}$"
-            - type: "null"
+          type: string
+          enum:
+            - meets_standard
+            - accuracy_revision_required
+            - english_only_justified
     RecordKannadaContentReviewRequest:
       type: object
       additionalProperties: false
@@ -13362,6 +16879,7 @@ components:
         - localized_content_hash
         - authority_appointment_id
         - decision
+        - rationale_key
       properties:
         source_revision_id:
           $ref: "#/components/schemas/Ulid"
@@ -13379,10 +16897,10 @@ components:
             - approved
             - rejected
         rationale_key:
-          oneOf:
-            - type: string
-              pattern: "^[a-z][a-z0-9_]{0,119}$"
-            - type: "null"
+          type: string
+          enum:
+            - meets_standard
+            - language_revision_required
     PublishOperatorCurriculumRequest:
       type: object
       additionalProperties: false
@@ -13482,11 +17000,17 @@ components:
       additionalProperties: false
       required:
         - items
+        - next_cursor
       properties:
         items:
           type: array
+          maxItems: 100
           items:
             $ref: "#/components/schemas/OperatorAuditEvent"
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/OperatorCursor"
+            - type: "null"
     OperatorPilotAnalyticsSummary:
       type: object
       additionalProperties: false
@@ -13550,6 +17074,285 @@ components:
         distinction_note:
           type: string
           const: usage_counts_are_not_demonstrated_learning
+    OperatorSupportDiagnostics:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - items
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorSupportDiagnosticItem"
+    OperatorSupportDiagnosticItem:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - subject_type
+        - subject_id
+        - status
+        - observed_at
+      properties:
+        kind:
+          type: string
+          enum:
+            - stuck_in_progress
+            - provider_failed_recoverable
+            - open_deletion
+        subject_type:
+          type: string
+          enum:
+            - learner_attempt
+            - voice_recording
+            - voice_deletion_request
+        subject_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          minLength: 1
+          maxLength: 64
+        observed_at:
+          type: string
+          format: date-time
+    OperatorPrivacyScope:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - organization_id
+        - membership_id
+      properties:
+        kind:
+          type: string
+          const: organization_membership
+        organization_id:
+          $ref: "#/components/schemas/Ulid"
+        membership_id:
+          $ref: "#/components/schemas/Ulid"
+    OperatorPrivacyRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - record_id
+        - attributes
+      properties:
+        record_id:
+          type: string
+          minLength: 1
+          maxLength: 160
+        attributes:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: integer
+              - type: number
+              - type: boolean
+              - type: "null"
+    OperatorPrivacyRecordGroup:
+      type: object
+      additionalProperties: false
+      required:
+        - record_class
+        - scope
+        - record_count
+        - export_disposition
+        - erasure_disposition
+        - retention_basis
+        - records
+      properties:
+        record_class:
+          type: string
+          pattern: "^[a-z0-9_.]+$"
+          minLength: 1
+          maxLength: 160
+        scope:
+          type: string
+          enum:
+            - global_identity
+            - global_authentication
+            - organization_membership
+            - organization_actor_link
+            - organization_accountability
+            - external_object
+            - client_device
+        record_count:
+          type: integer
+          minimum: 0
+        export_disposition:
+          type: string
+          minLength: 1
+          maxLength: 120
+        erasure_disposition:
+          type: string
+          minLength: 1
+          maxLength: 120
+        retention_basis:
+          type: string
+          minLength: 1
+          maxLength: 500
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorPrivacyRecord"
+    OperatorPrivacyExportSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - inventory_version
+        - scope
+        - excluded_sensitive_values
+        - record_groups
+      properties:
+        inventory_version:
+          type: string
+          enum:
+            - learner-privacy-v2
+            - learner-privacy-v1
+            - legacy-privacy-v0
+        scope:
+          $ref: "#/components/schemas/OperatorPrivacyScope"
+        excluded_sensitive_values:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - authentication_credentials
+              - cryptographic_digests
+              - raw_audio
+              - raw_transcripts
+              - provider_secret_payloads
+        record_groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorPrivacyRecordGroup"
+        privacy_erased_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorPrivacyExport:
+      type: object
+      additionalProperties: false
+      required:
+        - export_request_id
+        - target_membership_id
+        - status
+        - summary
+        - requested_at
+        - completed_at
+      properties:
+        export_request_id:
+          $ref: "#/components/schemas/Ulid"
+        target_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+        summary:
+          $ref: "#/components/schemas/OperatorPrivacyExportSummary"
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorPrivacyErasureRecordOutcome:
+      type: object
+      additionalProperties: false
+      required:
+        - record_class
+        - record_count
+        - action
+        - retention_basis
+      properties:
+        record_class:
+          type: string
+          pattern: "^[a-z0-9_.]+$"
+          minLength: 1
+          maxLength: 160
+        record_count:
+          type: integer
+          minimum: 0
+        action:
+          type: string
+          minLength: 1
+          maxLength: 120
+        retention_basis:
+          type: string
+          minLength: 1
+          maxLength: 500
+    OperatorPrivacyErasureOutcome:
+      type: object
+      additionalProperties: false
+      required:
+        - inventory_version
+        - scope
+        - record_outcomes
+      properties:
+        inventory_version:
+          type: string
+          enum:
+            - learner-privacy-v2
+            - learner-privacy-v1
+            - legacy-privacy-v0
+        scope:
+          $ref: "#/components/schemas/OperatorPrivacyScope"
+        record_outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorPrivacyErasureRecordOutcome"
+    OperatorPrivacyErasure:
+      type: object
+      additionalProperties: false
+      required:
+        - erasure_request_id
+        - target_membership_id
+        - status
+        - outcome
+        - voice_recording_count
+        - voice_deletion_completed_count
+        - requested_at
+        - completed_at
+      properties:
+        erasure_request_id:
+          $ref: "#/components/schemas/Ulid"
+        target_membership_id:
+          $ref: "#/components/schemas/Ulid"
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - partially_completed
+            - restricted
+        outcome:
+          $ref: "#/components/schemas/OperatorPrivacyErasureOutcome"
+        voice_recording_count:
+          type: integer
+          minimum: 0
+        voice_deletion_completed_count:
+          type: integer
+          minimum: 0
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
     ProblemDetails:
       type: object
       additionalProperties: true
@@ -13582,179 +17385,6 @@ components:
         correlation_id:
           type: string
           format: uuid
-    LearnerLevelVideoCatalog:
-      type: object
-      additionalProperties: false
-      required:
-        - enrollment_id
-        - videos
-      properties:
-        enrollment_id:
-          $ref: "#/components/schemas/Ulid"
-        videos:
-          type: array
-          items:
-            $ref: "#/components/schemas/LearnerLevelVideo"
-    OperatorTuitionRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - membership_id
-        - display_name
-        - preferred_window
-        - topic
-        - notes
-        - status
-        - created_at
-        - acknowledged_at
-      properties:
-        id:
-          $ref: "#/components/schemas/Ulid"
-        membership_id:
-          $ref: "#/components/schemas/Ulid"
-        display_name:
-          type:
-            - string
-            - "null"
-        preferred_window:
-          type: string
-        topic:
-          type: string
-        notes:
-          type:
-            - string
-            - "null"
-        status:
-          type: string
-          enum:
-            - submitted
-            - acknowledged
-        created_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        acknowledged_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-    OperatorTuitionRequestListing:
-      type: object
-      additionalProperties: false
-      required:
-        - requests
-      properties:
-        requests:
-          type: array
-          items:
-            $ref: "#/components/schemas/OperatorTuitionRequest"
-    ContentWorkspaceProblemDetails:
-      allOf:
-        - $ref: "#/components/schemas/ProblemDetails"
-        - type: object
-          required:
-            - message_key
-          properties:
-            message_key:
-              type: string
-              enum:
-                - problem.bad_request
-                - problem.unauthenticated
-                - problem.forbidden
-                - problem.not_found
-                - problem.method_not_allowed
-                - problem.conflict
-                - problem.validation_failed
-                - problem.too_many_requests
-                - problem.service_unavailable
-                - problem.internal_error
-                - problem.request_failed
-                - problem.content_workspace.not_found
-                - problem.content_workspace.stale_version
-                - problem.content_workspace.idempotency_conflict
-                - problem.content_workspace.state_conflict
-                - problem.content_workspace.head_conflict
-                - problem.content_workspace.concurrent_change
-      example:
-        type: urn:global-english:problem:content-workspace-stale-version
-        title: Content state changed
-        status: 409
-        detail: Reload the content workspace and retry the request.
-        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
-        message_key: problem.content_workspace.stale_version
-        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
-    LearnerAdministrationProblemDetails:
-      allOf:
-        - $ref: "#/components/schemas/ProblemDetails"
-        - type: object
-          required:
-            - message_key
-          properties:
-            message_key:
-              type: string
-              enum:
-                - problem.bad_request
-                - problem.unauthenticated
-                - problem.forbidden
-                - problem.not_found
-                - problem.method_not_allowed
-                - problem.conflict
-                - problem.validation_failed
-                - problem.too_many_requests
-                - problem.service_unavailable
-                - problem.internal_error
-                - problem.request_failed
-                - problem.learner_administration.stale_state
-                - problem.learner_administration.idempotency_conflict
-                - problem.learner_administration.active_dependency
-                - problem.learner_administration.unsafe_role
-      example:
-        type: urn:global-english:problem:learner-administration-stale-state
-        title: Resource state changed
-        status: 409
-        detail: Reload the learner relationship and retry the request.
-        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
-        message_key: problem.learner_administration.stale_state
-        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
-    LearnerLevelVideo:
-      type: object
-      additionalProperties: false
-      required:
-        - lesson_id
-        - enrollment_id
-        - publication_id
-        - level_label
-        - title
-        - video
-      properties:
-        lesson_id:
-          $ref: "#/components/schemas/Ulid"
-        enrollment_id:
-          $ref: "#/components/schemas/Ulid"
-        publication_id:
-          $ref: "#/components/schemas/Ulid"
-        level_label:
-          type: string
-          minLength: 1
-          maxLength: 120
-        title:
-          type: object
-          additionalProperties: false
-          required:
-            - locale
-            - text
-          properties:
-            locale:
-              type: string
-              const: en-IN
-            text:
-              type: string
-              minLength: 1
-              maxLength: 200
-        video:
-          $ref: "#/components/schemas/LearnerLessonVideoMedia"
     OrganizationAdministrationProblemDetails:
       allOf:
         - $ref: "#/components/schemas/ProblemDetails"
@@ -13790,25 +17420,109 @@ components:
         instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
         message_key: problem.organization_administration.stale_state
         correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
-    LearnerLessonVideoMedia:
-      type: object
-      additionalProperties: false
-      required:
-        - asset_id
-        - stream_url
-        - mime_type
-        - byte_size
-      properties:
-        asset_id:
-          $ref: "#/components/schemas/Ulid"
-        stream_url:
-          type: string
-          format: uri-reference
-        mime_type:
-          type: string
-          enum:
-            - video/mp4
-        byte_size:
-          type: integer
-          minimum: 1
-          maximum: 20000000
+    LearnerAdministrationProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.learner_administration.stale_state
+                - problem.learner_administration.idempotency_conflict
+                - problem.learner_administration.active_dependency
+                - problem.learner_administration.unsafe_role
+      example:
+        type: urn:global-english:problem:learner-administration-stale-state
+        title: Resource state changed
+        status: 409
+        detail: Reload the learner relationship and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.learner_administration.stale_state
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+    ContentWorkspaceProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.content_workspace.not_found
+                - problem.content_workspace.stale_version
+                - problem.content_workspace.idempotency_conflict
+                - problem.content_workspace.state_conflict
+                - problem.content_workspace.head_conflict
+                - problem.content_workspace.concurrent_change
+      example:
+        type: urn:global-english:problem:content-workspace-stale-version
+        title: Content state changed
+        status: 409
+        detail: Reload the content workspace and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.content_workspace.stale_version
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+    MediaLibraryProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - message_key
+          properties:
+            message_key:
+              type: string
+              enum:
+                - problem.bad_request
+                - problem.unauthenticated
+                - problem.forbidden
+                - problem.not_found
+                - problem.method_not_allowed
+                - problem.conflict
+                - problem.validation_failed
+                - problem.too_many_requests
+                - problem.service_unavailable
+                - problem.internal_error
+                - problem.request_failed
+                - problem.media_library.not_found
+                - problem.media_library.stale_upload
+                - problem.media_library.stale_metadata
+                - problem.media_library.stale_lifecycle
+                - problem.media_library.stale_workspace
+                - problem.media_library.idempotency_conflict
+                - problem.media_library.duplicate_use
+                - problem.media_library.storage_failure
+                - problem.media_library.concurrent_change
+      example:
+        type: urn:global-english:problem:media-library-stale-upload
+        title: Upload state changed
+        status: 409
+        detail: Reload the upload and retry the request.
+        instance: urn:global-english:problem-instance:1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
+        message_key: problem.media_library.stale_upload
+        correlation_id: 1d21ce8c-b815-4fc6-9fc4-8d1d530c2c77
