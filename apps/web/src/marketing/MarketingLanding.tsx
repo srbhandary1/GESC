@@ -147,6 +147,13 @@ export function MarketingLanding({
               <LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} />
               <span aria-hidden="true">→</span>
             </a>
+            <a
+              className="marketing-button marketing-button--android"
+              download={ANDROID_APK_FILENAME}
+              href={ANDROID_APK_HREF}
+            >
+              <LocalizedMessage resolution={message('marketing.android.download')} />
+            </a>
             <a className="marketing-button marketing-button--ghost" href="#how-it-works">
               <LocalizedMessage resolution={message('marketing.hero.cta_learn')} />
             </a>

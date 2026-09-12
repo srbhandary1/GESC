@@ -12,7 +12,7 @@ describe('MarketingLanding studio hero', () => {
     cleanup()
   })
 
-  it('presents one stable first screen with two actions and disclosed AI', () => {
+  it('presents one stable first screen with sign-in, APK download, and disclosed AI', () => {
     render(<MarketingLanding locale="en-IN" message={message} />)
 
     expect(
@@ -39,6 +39,14 @@ describe('MarketingLanding studio hero', () => {
         name: message('marketing.hero.cta_learn').text,
       }),
     ).toHaveAttribute('href', '#how-it-works')
+    const apkLinks = screen.getAllByRole('link', {
+      name: message('marketing.android.download').text,
+    })
+    expect(apkLinks.length).toBeGreaterThanOrEqual(2)
+    for (const link of apkLinks) {
+      expect(link).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+      expect(link).toHaveAttribute('download', 'global-english-demo.apk')
+    }
     expect(
       screen.getByText(message('conversation.prototype_notice').text),
     ).toBeInTheDocument()
