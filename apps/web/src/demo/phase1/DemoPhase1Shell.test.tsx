@@ -57,6 +57,9 @@ describe('DemoPhase1Shell', () => {
       ),
     ).toBeVisible()
     expect(
+      screen.getByRole('button', { name: '16 lessons' }),
+    ).toBeInTheDocument()
+    expect(
       screen.getByRole('button', { name: 'My Levels' }),
     ).toBeInTheDocument()
     expect(

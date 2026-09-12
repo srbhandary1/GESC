@@ -2958,7 +2958,7 @@ bilingual guidance) is unchanged. Not production or Play evidence.
 - Fraunces display type and the static Mira coach portrait;
 - one-question-per-screen onboarding with Mira, icon goal cards, sticky Continue;
 - demo first-run stepper (language, goal, speaking comfort) as a full-screen overlay;
-- home lesson hero, streak chip, Speak now, Mira tip card, and homepage Android demo download (`/downloads/global-english-demo.apk`);
+- home lesson hero, streak chip, Speak now, Mira tip card, homepage Android demo download, and a Learn catalog of 16 foundation lessons with Mira Tap to Play;
 - circular brand-green Speak FAB on a 4-destination dock (Profile stays header);
 - Tap to Play chips and a centered Mira speak session with green mic;
 - MD3 empty / error / success surfaces.
@@ -2970,7 +2970,9 @@ Presentation-only. Authoritative onboarding still submits only
 Product goals remain the three API keys. Destinations remain four.
 Homepage and first-run expose `Download Android demo` at
 `/downloads/global-english-demo.apk` (synthetic sideload only).
-Catalogue revision `ui-*-2026-09-12.10`.
+Catalogue revision `ui-*-2026-09-12.11`.
+Learn exposes the first 16 §6.2 foundation lessons with scripted
+English models and Mira speech. Not approved curriculum.
 Not production or Play evidence.
 
 ### Known limitations

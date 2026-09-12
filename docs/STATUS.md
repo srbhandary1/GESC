@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.10`.
+  `ui-en-IN-2026-09-12.11`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.10`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.11`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -646,7 +646,11 @@ identity — not a purple Supernova clone.
   prompt card, transcript bubbles, and a green mic control.
 - Demo Home and first-run include a **Download Android demo** link to
   `/downloads/global-english-demo.apk` for client sideload testing.
-- UI catalogues at revision `ui-*-2026-09-12.10`.
+- Learn lists the first **16 speaking lessons** of the §6.2 foundation
+  pathway with Mira Tap to Play on each English model. Home **More** has a
+  **16 lessons** shortcut. Presentation fixtures only — not approved
+  curriculum. Modules 17–20 remain later pathway work.
+- UI catalogues at revision `ui-*-2026-09-12.11`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
 

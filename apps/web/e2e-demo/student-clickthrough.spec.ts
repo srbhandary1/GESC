@@ -115,8 +115,17 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('Conversation Room')).toBeVisible()
   await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
 
-  // Learn mission (demo skips onboarding).
+  // Learn mission (demo skips onboarding) plus the 16 speaking lessons.
   await page.getByRole('link', { name: 'Learn' }).click()
+  await expect(
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /Open Greetings and introductions/ }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Tap to Play lesson 1' }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Start mission' }).click()
   await page.getByRole('button', { name: 'Play model audio' }).click()
   await page

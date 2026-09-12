@@ -67,6 +67,15 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(
     page.getByRole('link', { name: 'Download Android demo' }),
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+  await expect(page.getByRole('button', { name: '16 lessons' })).toBeVisible()
+  await page.getByRole('button', { name: '16 lessons' }).click()
+  await expect(
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Tap to Play lesson 16' }),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Home' }).click()
 
   await page.getByRole('button', { name: 'Profile' }).click()
   await expect(

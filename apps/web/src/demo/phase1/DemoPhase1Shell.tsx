@@ -253,11 +253,11 @@ export function DemoPhase1Shell({
       .finally(() => setAudioSpeaking(false))
   }
 
-  const go = (next: Phase1Module | 'practice') => {
+  const go = (next: Phase1Module | 'practice' | 'learn') => {
     const url = new URL(globalThis.location.href)
     url.hash = next === 'dashboard' ? 'home' : next
     globalThis.history.pushState(null, '', url)
-    if (next !== 'practice') {
+    if (next !== 'practice' && next !== 'learn') {
       setHashModule(next)
     }
     globalThis.dispatchEvent(new Event('hashchange'))
@@ -471,6 +471,17 @@ export function DemoPhase1Shell({
               />
             </p>
             <ul>
+              <li>
+                <button
+                  type="button"
+                  className="phase1-text-link"
+                  onClick={() => go('learn')}
+                >
+                  <LocalizedMessage
+                    resolution={message('demo.phase1.home.lessons')}
+                  />
+                </button>
+              </li>
               <li>
                 <button
                   type="button"

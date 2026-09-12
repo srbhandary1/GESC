@@ -30,6 +30,7 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
+import { FoundationLessonCatalog } from './demo/FoundationLessonCatalog'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
 import { PHASE1_SECONDARY_HASHES } from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
@@ -601,11 +602,16 @@ function App({
               resumeBundle={offlineResume?.storedBundle}
             />
             {showDemoLearnHub ? (
-              <DemoPhase1Shell
-                compact
-                forcedModule="levels"
+              <FoundationLessonCatalog
                 locale={locale}
                 localizationPolicy={localizationPolicy}
+                onPractise={() => {
+                  const url = new URL(globalThis.location.href)
+                  url.hash = 'practice'
+                  globalThis.history.pushState(null, '', url)
+                  globalThis.dispatchEvent(new Event('hashchange'))
+                  globalThis.scrollTo(0, 0)
+                }}
               />
             ) : null}
           </>
