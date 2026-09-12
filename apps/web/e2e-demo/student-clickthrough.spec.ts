@@ -145,12 +145,10 @@ test('student click-through exercises every demo page and control', async ({
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
   await page.getByRole('link', { name: 'Practice' }).click()
-  const aboutSheet = page.getByRole('dialog', {
-    name: 'About this practice Friend',
-  })
-  if (await aboutSheet.isVisible().catch(() => false)) {
-    await page.getByRole('button', { name: 'Got it' }).click()
-  }
+  await expect(
+    page.getByRole('dialog', { name: 'About this practice Friend' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Got it' }).click()
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
