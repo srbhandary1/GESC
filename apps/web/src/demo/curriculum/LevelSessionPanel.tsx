@@ -13,7 +13,6 @@ export interface LevelSessionPanelProps {
   readonly localizationPolicy: ResolutionPolicy
   readonly roomTitle: ReturnType<typeof resolveInterfaceMessage>
   readonly session: LevelCurriculum
-  readonly onBack: () => void
 }
 
 export function LevelSessionPanel({
@@ -21,7 +20,6 @@ export function LevelSessionPanel({
   localizationPolicy,
   roomTitle,
   session,
-  onBack,
 }: LevelSessionPanelProps) {
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -50,9 +48,6 @@ export function LevelSessionPanel({
 
   return (
     <section className="phase1-panel phase1-daily" data-curriculum={session.id}>
-      <button type="button" className="phase1-text-link phase1-back" onClick={onBack}>
-        <LocalizedMessage resolution={message('demo.phase1.back')} />
-      </button>
       <p className="phase1-muted">
         <span lang={roomTitle.resolvedLocale}>{roomTitle.text}</span>
       </p>

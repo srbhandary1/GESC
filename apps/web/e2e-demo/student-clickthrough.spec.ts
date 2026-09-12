@@ -137,17 +137,17 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByText('I can speak English. Can I help you?'),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /^Level 2\b/i }).click()
   await page.getByRole('button', { name: /Audio Lessons/i }).click()
   await expect(page.getByRole('heading', { name: 'Should' })).toBeVisible()
   await expect(page.getByText('You should drink some water.')).toBeVisible()
-  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /Level 17/i }).click()
   await page.getByRole('button', { name: /Audio Lessons/i }).click()
   await expect(page.getByRole('heading', { name: 'Used to' })).toBeVisible()
   await expect(page.getByText('I used to walk to school.')).toBeVisible()
-  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /Pre-Level 1/i }).click()
   await page.getByRole('button', { name: /Audio Lessons/i }).click()
   await expect(

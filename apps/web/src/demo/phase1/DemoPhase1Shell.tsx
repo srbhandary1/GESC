@@ -566,7 +566,13 @@ export function DemoPhase1Shell({
           <button
             type="button"
             className="phase1-text-link phase1-back"
-            onClick={() => go('dashboard')}
+            onClick={() => {
+              if (activeRoom !== null) {
+                setActiveRoom(null)
+                return
+              }
+              go('dashboard')
+            }}
           >
             <LocalizedMessage resolution={message('demo.phase1.back')} />
           </button>
@@ -844,7 +850,6 @@ export function DemoPhase1Shell({
             <LevelSessionPanel
               locale={locale}
               localizationPolicy={localizationPolicy}
-              onBack={() => setActiveRoom(null)}
               roomTitle={message(roomTitleKeys[activeRoom])}
               session={
                 curriculumByLevelId(selectedLevelId) ?? {
