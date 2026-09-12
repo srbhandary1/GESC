@@ -107,7 +107,7 @@ export function DemoLearnerProgress({
   return (
     <section
       aria-labelledby="demo-progress-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         className="learner-section-title"

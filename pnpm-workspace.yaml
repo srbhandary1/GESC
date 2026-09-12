@@ -12,3 +12,6 @@ overrides:
 minimumReleaseAgeExclude:
   - jsdom@30.0.1
   - '@redocly/cli@2.41.2'
+
+allowBuilds:
+  '@tailwindcss/oxide': true

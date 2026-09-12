@@ -7,6 +7,7 @@ import type {
 import { useEffect, useMemo, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
+import { AvatarSlot } from '../../ui/AvatarSlot'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_FOCUS_AI_TOPICS,
@@ -278,20 +279,30 @@ export function DemoPhase1Shell({
     >
       {compact ? null : module === 'dashboard' ? (
         <header className="phase1-home">
-          <h1
-            className="phase1-home__title"
-            id="destination-title"
-            tabIndex={-1}
-          >
-            <LocalizedMessage resolution={message('demo.phase1.home.title')} />
-          </h1>
-          <p className="phase1-home__level">
-            <LocalizedMessage
-              resolution={message('demo.phase1.home.level_line', {
-                level: currentLevelTitle.text,
-              })}
+          <div className="flex items-center gap-4">
+            <AvatarSlot
+              label={message('shell.avatar.teacher').text}
+              slot="home-teacher"
             />
-          </p>
+            <div className="grid min-w-0 gap-1">
+              <h1
+                className="phase1-home__title"
+                id="destination-title"
+                tabIndex={-1}
+              >
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.title')}
+                />
+              </h1>
+              <p className="phase1-home__level">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.level_line', {
+                    level: currentLevelTitle.text,
+                  })}
+                />
+              </p>
+            </div>
+          </div>
           <button
             type="button"
             className="ge-button ge-button--primary phase1-home__cta"
@@ -465,6 +476,20 @@ export function DemoPhase1Shell({
 
       {module === 'ai-teacher' ? (
         <section className="phase1-panel">
+          <div className="flex items-start gap-4">
+            <AvatarSlot
+              label={message('shell.avatar.teacher').text}
+              slot="ai-teacher"
+            />
+            <blockquote
+              className="phase1-ai-reply min-w-0 flex-1"
+              lang={aiLocale}
+            >
+              <LocalizedMessage
+                resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
+              />
+            </blockquote>
+          </div>
           <div className="phase1-ai-topics">
             {PHASE1_FOCUS_AI_TOPICS.map((topicId) => (
               <button
@@ -479,11 +504,6 @@ export function DemoPhase1Shell({
               </button>
             ))}
           </div>
-          <blockquote className="phase1-ai-reply" lang={aiLocale}>
-            <LocalizedMessage
-              resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
-            />
-          </blockquote>
           <div className="phase1-ai-toolbar">
             <button
               type="button"

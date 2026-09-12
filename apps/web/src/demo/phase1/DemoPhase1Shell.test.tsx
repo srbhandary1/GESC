@@ -27,6 +27,9 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('heading', { level: 1, name: 'Today' }),
     ).toBeInTheDocument()
     expect(
+      screen.getByRole('img', { name: 'AI Teacher' }),
+    ).toHaveAttribute('data-avatar-slot', 'home-teacher')
+    expect(
       screen.queryByRole('navigation', { name: 'Phase 1 modules' }),
     ).not.toBeInTheDocument()
     expect(
@@ -104,6 +107,9 @@ describe('DemoPhase1Shell', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }))
     await user.click(screen.getByRole('button', { name: 'AI Teacher' }))
     expect(
+      screen.getByRole('img', { name: 'AI Teacher' }),
+    ).toHaveAttribute('data-avatar-slot', 'ai-teacher')
+    expect(
       screen.getByText(
         'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
       ),
@@ -148,6 +154,9 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'ಇಂದು' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', { name: 'AI ಶಿಕ್ಷಕ' }),
+    ).toHaveAttribute('data-avatar-slot', 'home-teacher')
     expect(
       screen.queryByRole('navigation', { name: 'Phase 1 ಮಾಡ್ಯೂಲ್‌ಗಳು' }),
     ).not.toBeInTheDocument()

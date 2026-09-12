@@ -489,7 +489,7 @@ export function ConversationJourney({
       ) : null}
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
-        <div className="conversation-journey__start">
+        <div className="conversation-journey__start rounded-xl border border-line/70 bg-surface p-5 shadow-elevation-1">
           <label htmlFor="coaching-mode">
             <LocalizedMessage
               resolution={message('conversation.coaching_mode.label')}

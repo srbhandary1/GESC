@@ -464,7 +464,10 @@ function App({
         <LocalizedMessage resolution={skipToContent} />
       }
     >
-      <div className="shell-content" data-destination={destination}>
+      <div
+        className="shell-content mx-auto w-full max-w-content"
+        data-destination={destination}
+      >
         {demoMode ? (
           <aside
             className="shell-demo"

@@ -674,7 +674,7 @@ export function LearnerJourney({
   return (
     <section
       aria-labelledby="learner-home-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         className="learner-section-title"
@@ -1092,7 +1092,7 @@ function MissionExperience({
   return (
     <article
       aria-labelledby="mission-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <header>
         <p className="learner-eyebrow">
@@ -1204,7 +1204,7 @@ function MissionExperience({
       {step === 'speak' ? (
         <section
           aria-labelledby="mission-speak-title"
-          className="learner-stack"
+          className="learner-stack max-w-content"
         >
           <h3
             id="mission-speak-title"
@@ -1370,7 +1370,7 @@ function MissionResultView({
   return (
     <section
       aria-labelledby="mission-result-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         id="mission-result-title"

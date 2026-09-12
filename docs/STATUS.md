@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.3`.
+  `ui-en-IN-2026-09-12.4`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.3`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.4`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -609,7 +609,11 @@ What moved:
   skeleton/error/retry on Learn, Progress and Practice async states.
 - Narrow viewports show the short wordmark **Global English**; Friend
   about-copy sits in a first-run sheet (`ge-ui-practice-about-dismissed`).
-  Presentation-only; not F0 or Play evidence.
+- Student web chrome uses Tailwind CSS 4 (Vite plugin, no Preflight) mapped
+  onto live `--ge-*` tokens. Home and AI Teacher reserve an empty
+  `data-avatar-slot` hook (`shell.avatar.teacher`); no face or avatar SDK.
+  Demo CSS went from 40.04 kB / 6.84 kB gzip to 44.12 kB / 7.71 kB gzip
+  (+0.87 kB gzip). Presentation-only; not F0 or Play evidence.
 
 ## Local synthetic demo
 

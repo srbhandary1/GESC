@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { configDefaults, defineConfig } from 'vitest/config'
 import { demoAzureTtsPlugin } from './vite-plugins/demoAzureTts.ts'
@@ -17,7 +18,12 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: mode === 'demo' ? 'dist-demo' : 'dist',
   },
-  plugins: [react(), demoAzureTtsPlugin(), demoOpenRouterChatPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    demoAzureTtsPlugin(),
+    demoOpenRouterChatPlugin(),
+  ],
   server: {
     host: '127.0.0.1',
     port: 5173,

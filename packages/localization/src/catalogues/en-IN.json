@@ -409,6 +409,7 @@
   "session.organization_label": "Organization",
   "session.select_membership": "Select an organization membership to continue.",
   "session.unavailable": "Secure sign-in is temporarily unavailable.",
+  "shell.avatar.teacher": "AI Teacher",
   "shell.checkpoint_notice": "This accessible shell does not yet contain lessons or speaking activities.",
   "shell.eyebrow": "Accessible learning foundation",
   "shell.locale_changed": "Interface language changed.",

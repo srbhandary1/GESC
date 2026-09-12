@@ -2916,7 +2916,8 @@ accept and Play public release remain unauthorized.
 - Learn leading with the mission, then a compact room list;
 - relocation of attendance, notices and institute-about copy off the primary
   student path;
-- UI catalogue additions at revision `ui-*-2026-09-12.3`;
+- UI catalogue additions at revision `ui-*-2026-09-12.4`;
+- Tailwind CSS 4 on student surfaces, mapped to design-system tokens;
 - design-system mobile primary navigation as a floating bar;
 - light/dark appearance tokens, 48px targets, and skeleton/error/retry
   on async student surfaces.
@@ -2934,6 +2935,8 @@ bilingual guidance) is unchanged. Not production or Play evidence.
   content exists.
 - Friend first-run about-copy is persisted as `ge-ui-practice-about-dismissed`
   in localStorage (UI chrome only; not credentials or learner records).
+- Teacher avatar slots are empty composition hooks only; no face, Lottie,
+  video or third-party avatar SDK ships in this revision.
 - F0 DoD, production and Play remain unauthorized.
 
 
