@@ -44,9 +44,9 @@
 }
 
 .phase1-home__cta-hint {
-  color: color-mix(in srgb, var(--ge-color-action-text) 82%, transparent);
+  color: var(--ge-color-action-text);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .phase1-home__stats {
