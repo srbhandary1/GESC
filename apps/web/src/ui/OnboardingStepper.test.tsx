@@ -70,4 +70,26 @@ describe('OnboardingStepper', () => {
       level: 'just-starting',
     })
   })
+
+  it('exposes skip only when the demo first-run asks for it', async () => {
+    const user = userEvent.setup()
+    const onSkip = vi.fn()
+
+    render(
+      <OnboardingStepper
+        locale="en-IN"
+        message={message}
+        onSkip={onSkip}
+        onSubmit={vi.fn()}
+        skipLabel={message('demo.phase1.first_run.skip')}
+        steps={['language', 'goal', 'level']}
+        titleRef={createRef<HTMLHeadingElement>()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Skip and open My Levels' }),
+    )
+    expect(onSkip).toHaveBeenCalledOnce()
+  })
 })

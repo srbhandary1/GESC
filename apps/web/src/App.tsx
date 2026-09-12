@@ -372,7 +372,7 @@ function App({
       false)
   const canLearn =
     destination === 'learn' &&
-    (isLearnerSession || offlineResume !== null)
+    (demoMode || isLearnerSession || offlineResume !== null)
   const canPractice =
     destination === 'practice' && (isLearnerSession || demoMode)
   const canShowDemoProgress =

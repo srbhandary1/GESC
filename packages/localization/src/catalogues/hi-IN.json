@@ -276,6 +276,7 @@
   "demo.phase1.dashboard.notices": "सूचना पट्ट",
   "demo.phase1.dashboard.open": "मॉड्यूल खोलें",
   "demo.phase1.eyebrow": "Phase 1 शिक्षार्थी शेल",
+  "demo.phase1.first_run.skip": "Skip and open My Levels",
   "demo.phase1.first_run.title": "A few questions to start",
   "demo.phase1.home.android_download": "Download Android demo",
   "demo.phase1.home.android_download_hint": "Same synthetic demo for phone testing. Sideload only — not Play Store.",

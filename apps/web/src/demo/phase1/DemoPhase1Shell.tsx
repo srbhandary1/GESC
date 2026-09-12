@@ -286,6 +286,10 @@ export function DemoPhase1Shell({
           locales={SUPPORTED_LOCALES}
           message={message}
           onLocaleChange={onLocaleChange}
+          onSkip={() => {
+            persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
+            setWelcomeOpen(false)
+          }}
           onSubmit={({ level }) => {
             if (level !== null) {
               persistSpeakingComfort(level)
@@ -293,6 +297,7 @@ export function DemoPhase1Shell({
             persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
             setWelcomeOpen(false)
           }}
+          skipLabel={message('demo.phase1.first_run.skip')}
           steps={['language', 'goal', 'level']}
           titleRef={welcomeTitleRef}
         />

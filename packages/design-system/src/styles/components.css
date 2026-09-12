@@ -620,6 +620,15 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
+@media (max-width: 40rem) {
+  .ge-onboarding__dock {
+    bottom: calc(
+      var(--ge-target-minimum) + var(--ge-space-6) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
 .ge-onboarding__continue {
   display: inline-flex;
   flex: 1 1 12rem;

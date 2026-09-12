@@ -3263,6 +3263,7 @@ Theme-only; LessonPractice restore preserved.
 | Sideload APK | Pass | `make demo-android` bundled `https://localhost`; **6145419** bytes |
 | `pnpm audit --audit-level=high` | Pass locally | Overrides `js-yaml@4.3.2`, `@xmldom/xmldom@0.9.12`, `nanoid@<3.3.18`→`3.3.18`. Lockfile-only; 2 moderate remain (below the verify gate). |
 | `pnpm run lint` | Pass locally | CI `34716225218` failed after OpenAPI restore on `set-state-in-effect` (AiMemoryPanel, ConversationJourney silence nudge, LevelSessionPanel bind/autoplay), `no-control-regex` in demo TTS/chat validators, unused `no-console` disables, `no-useless-assignment` in `demoTtsSettings.mjs`, and OnboardingStepper refresh export. Fixes are comments or unused-assignment cleanup only. |
+| Phase 1 My Levels visibility | Pass | First-run hid Attendance / AI Teacher / Daily Activity / My Levels (Pre-1…L17) / Notice Board behind a 3-step sheet that also covered Learn. Demo first-run now offers **Skip and open My Levels**. Learn still lists Pre-Level 1…Level 17 plus the eight rooms. Grove 16-card catalog remains excluded. |
 | Production / Play | Not authorized | D-0123 |
 
 

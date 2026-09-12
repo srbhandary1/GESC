@@ -37,7 +37,9 @@ interface OnboardingStepperProps {
     parameters?: MessageParameters,
   ) => InterfaceMessageResolution
   readonly onLocaleChange?: (locale: SupportedLocale) => void
+  readonly onSkip?: () => void
   readonly onSubmit: (selection: OnboardingSelection) => void
+  readonly skipLabel?: InterfaceMessageResolution
   readonly steps: readonly OnboardingStepId[]
   readonly titleRef: RefObject<HTMLHeadingElement | null>
 }
@@ -100,7 +102,9 @@ export function OnboardingStepper({
   locales = [],
   message,
   onLocaleChange,
+  onSkip,
   onSubmit,
+  skipLabel,
   steps,
   titleRef,
 }: OnboardingStepperProps) {
@@ -315,6 +319,16 @@ export function OnboardingStepper({
         )}
 
         <div className="ge-onboarding__dock">
+          {onSkip !== undefined && skipLabel !== undefined ? (
+            <button
+              className="ge-button"
+              disabled={busy}
+              onClick={onSkip}
+              type="button"
+            >
+              <LocalizedMessage resolution={skipLabel} />
+            </button>
+          ) : null}
           {stepIndex > 0 && !commandLocked ? (
             <button
               className="ge-button"
