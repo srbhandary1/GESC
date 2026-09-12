@@ -1,29 +1,67 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { Connect } from 'vite'
+export type DemoTtsProviderId = 'azure' | 'sarvam' | 'elevenlabs'
 
-export const DEMO_TTS_PATH: '/demo/tts'
-export const DEMO_TTS_STATUS_PATH: '/demo/tts/status'
-export const DEMO_AZURE_VOICES: {
-  readonly 'en-IN': 'en-IN-NeerjaNeural'
-  readonly 'hi-IN': 'hi-IN-SwaraNeural'
-  readonly 'kn-IN': 'kn-IN-SapnaNeural'
-  readonly 'ml-IN': 'ml-IN-SobhanaNeural'
-  readonly 'ta-IN': 'ta-IN-PallaviNeural'
-  readonly 'te-IN': 'te-IN-ShrutiNeural'
-}
-
-export function requestPath(url: string | undefined): string
-export function isDemoTtsPath(pathname: string): boolean
-export function resolveDemoTtsCredentials(): {
+export interface DemoTtsAzureCredentials {
   readonly endpoint: string
   readonly key: string
-} | null
-export function applyDemoTtsCors(
-  res: ServerResponse,
-  req: IncomingMessage,
+}
+
+export interface DemoTtsSarvamCredentials {
+  readonly key: string
+  readonly baseUrl: string
+  readonly speaker: string
+  readonly model: string
+}
+
+export interface DemoTtsElevenLabsCredentials {
+  readonly key: string
+  readonly voiceId: string
+  readonly modelId: string
+  readonly baseUrl: string
+}
+
+export interface DemoTtsBundle {
+  readonly azure: DemoTtsAzureCredentials | null
+  readonly sarvam: DemoTtsSarvamCredentials | null
+  readonly elevenlabs: DemoTtsElevenLabsCredentials | null
+  readonly providerOrder: string
+}
+
+export interface DemoTtsSuccess {
+  readonly audio: ArrayBuffer | Buffer
+  readonly contentType: string
+  readonly voice: string
+  readonly provider: DemoTtsProviderId
+}
+
+export declare const DEMO_TTS_PATH: '/demo/tts'
+export declare const DEMO_TTS_STATUS_PATH: '/demo/tts/status'
+export declare const DEMO_AZURE_VOICES: Readonly<Record<string, string>>
+
+export declare function requestPath(url: string | undefined): string
+export declare function isDemoTtsPath(pathname: string): boolean
+export declare function resolveDemoTtsCredentials(): DemoTtsAzureCredentials | null
+export declare function applyDemoTtsCors(
+  res: { setHeader(name: string, value: string): void },
+  req: { headers?: { origin?: string } },
 ): void
-export function handleDemoTtsRequest(
-  req: IncomingMessage,
-  res: ServerResponse,
+export declare function synthesizeWithFailover(
+  locale: string,
+  text: string,
+  bundle: DemoTtsBundle,
+): Promise<DemoTtsSuccess>
+export declare function handleDemoTtsRequest(
+  req: {
+    method?: string
+    url?: string
+    headers?: { [key: string]: string | string[] | undefined }
+    on?(event: string, listener: (...args: unknown[]) => void): void
+  },
+  res: {
+    statusCode: number
+    setHeader(name: string, value: string): void
+    end(body?: string | Buffer): void
+  },
 ): Promise<boolean>
-export function attachDemoTtsMiddleware(middlewares: Connect.Server): void
+export declare function attachDemoTtsMiddleware(middlewares: {
+  use(handler: (req: unknown, res: unknown, next: () => void) => void): void
+}): void

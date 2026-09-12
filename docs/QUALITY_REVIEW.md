@@ -2970,7 +2970,7 @@ Presentation-only. Authoritative onboarding still submits only
 Product goals remain the three API keys. Destinations remain four.
 Homepage and first-run expose `Download Android demo` at
 `/downloads/global-english-demo.apk` (synthetic sideload only).
-Catalogue revision `ui-*-2026-09-12.11`.
+Catalogue revision `ui-*-2026-09-12.12`.
 Learn exposes the first 16 §6.2 foundation lessons with scripted
 English models and Mira speech. Not approved curriculum.
 Not production or Play evidence.
@@ -2991,8 +2991,9 @@ Not production or Play evidence.
 
 - Tunnel / `dist-demo` / APK speech fell through to robotic browser
   `speechSynthesis` because `/demo/tts` existed only on Vite middleware
-  (D-0092). Azure keys were never in the static host. Sarvam and
-  ElevenLabs are not in this repository.
+  (D-0092). Azure keys were never in the static host. Git history had
+  Sarvam as Indic **STT** on another lineage and ElevenLabs as an
+  explicitly deferred product path — not a demo TTS proxy on this branch.
 - Goal cards, lesson tiles, Speak CTAs and transcript bubbles hugged the
   start edge after the redesign (`justify-self: start` on every Speak
   button; stacked left-aligned lesson rows).
@@ -3002,9 +3003,10 @@ Not production or Play evidence.
 
 ### What was restored
 
-- Shared Azure `/demo/tts` handler on Vite **and**
-  `scripts/demo-client-static-server.mjs`; optional `VITE_DEMO_TTS_ORIGIN`
-  for the APK. Browser speech remains fallback only.
+- Shared `/demo/tts` handler on Vite **and**
+  `scripts/demo-client-static-server.mjs` with Sarvam / ElevenLabs / Azure
+  failover; optional `VITE_DEMO_TTS_ORIGIN` for the APK. Browser speech
+  remains last-resort fallback only.
 - Wonder-aligned card padding: trailing radios, selected green goal
   icons, 2-column Home lesson grid, horizontal Learn tiles, centered
   Speak column and 86% transcript bubbles.
@@ -3014,10 +3016,37 @@ Not production or Play evidence.
 
 ### Known limitations
 
-- Neural voice still requires operator `AZURE_SPEECH_*` on the demo
-  host. This environment cannot invent keys. No Sarvam or ElevenLabs
-  stack was added.
+- Neural voice still requires operator keys on the demo host (env or
+  Profile Admin). This environment cannot invent keys. Secrets stay
+  server-side; `/demo/tts/status` is booleans only (D-0117).
 - F0 DoD, production and Play remain unauthorized.
+
+---
+
+## PR #6 multi-provider demo TTS (presentation)
+
+### History vs this slice
+
+- This branch had no Sarvam or ElevenLabs **TTS** product path.
+- `09e3345` (other lineage) wired Sarvam as Indic HTTP **STT**, not TTS.
+- `85c0124` recorded ElevenLabs as not accepted for ordinary product TTS.
+- Demo-local Sarvam + ElevenLabs TTS is therefore newly implemented under
+  the existing D-0092 host exception, not restored from Laravel DI.
+
+### Behaviour
+
+- Neural providers are preferred over `speechSynthesis` whenever any is
+  configured. Default order: Sarvam → ElevenLabs → Azure for `en-IN`;
+  Sarvam → Azure → ElevenLabs for Indic locales. Explicit Admin / env
+  order overrides; failover on provider error.
+- Profile **Voice providers** writes `/demo/tts/settings` with an admin
+  token. Keys are stored in `$HOME/ge-demo-tts/settings.json` or env.
+  Responses mask secrets. The admin token is not persisted in the browser.
+
+### Known limitations
+
+- No live provider keys are present in this environment. Routing tests
+  mock `fetch`. Ordinary ADR-0008 provider binding remains unchanged.
 
 
 

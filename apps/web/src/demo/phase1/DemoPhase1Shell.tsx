@@ -19,6 +19,7 @@ import {
   readFirstRunDismissed,
 } from '../../ui/firstRunPreference'
 import { FoundationLessonCatalog } from '../FoundationLessonCatalog'
+import { DemoTtsAdminSettings } from '../DemoTtsAdminSettings'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_FOCUS_AI_TOPICS,
@@ -904,6 +905,10 @@ export function DemoPhase1Shell({
               </button>
             </li>
           </ul>
+          <DemoTtsAdminSettings
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
           <article>
             <h2>
               <LocalizedMessage

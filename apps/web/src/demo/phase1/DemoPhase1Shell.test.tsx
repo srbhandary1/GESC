@@ -8,7 +8,7 @@ import {
 } from '../../ui/firstRunPreference'
 
 vi.mock('../demoTts', () => ({
-  speakDemoText: vi.fn().mockResolvedValue('azure'),
+  speakDemoText: vi.fn().mockResolvedValue('neural'),
   stopDemoSpeech: vi.fn(),
   demoAzureTtsConfigured: vi.fn().mockResolvedValue(true),
 }))
@@ -17,10 +17,21 @@ afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   window.localStorage.removeItem(GROVE_WELCOME_STORAGE_KEY)
+  vi.unstubAllGlobals()
 })
 
 beforeEach(() => {
   persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        configured: false,
+        providers: { azure: false, sarvam: false, elevenlabs: false },
+      }),
+    }),
+  )
 })
 
 describe('DemoPhase1Shell', () => {
@@ -107,6 +118,9 @@ describe('DemoPhase1Shell', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Notices' })).toBeInTheDocument()
     expect(screen.getByText('About this school')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Voice providers' }),
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Attendance report' }))
     expect(

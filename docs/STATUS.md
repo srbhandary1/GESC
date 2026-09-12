@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.11`.
+  `ui-en-IN-2026-09-12.12`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.11`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.12`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -513,13 +513,15 @@ review and do not waive pre-production specialist gates.
   replies resolve from the selected interface locale (`en`/`kn`/`hi`/`ml`/
   `ta`/`te`); the AI toggle is that locale’s endonym vs English. English quiz
   stems remain English learning content.
-- Under D-0092 / D-0116, `make demo` **and** the demo-client static server
-  may synthesize Azure neural TTS for AI Teacher, Daily audio, Friend Listen,
-  the 16 foundation lessons and model audio via `/demo/tts`, with voice
-  selected from the UI language map; browser speech is fallback only when
-  Azure is unconfigured. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
-  Home and Learn both list all 16 foundation lessons; `#learn/<id>` and
-  `#practice/<id>` open listen + lesson-scoped Speak practice.
+- Under D-0092 / D-0116 / D-0117, `make demo` **and** the demo-client
+  static server may synthesize neural TTS (Sarvam, ElevenLabs, Azure with
+  failover) for AI Teacher, Daily audio, Friend Listen, the 16 foundation
+  lessons and model audio via `/demo/tts`. `/demo/tts/status` reports
+  provider booleans only. Profile Admin can store host keys when
+  `DEMO_TTS_ADMIN_TOKEN` is set. Browser speech is last-resort fallback.
+  See [DEMO_TTS.md](DEMO_TTS.md). Home and Learn both list all 16
+  foundation lessons; `#learn/<id>` and `#practice/<id>` open listen +
+  lesson-scoped Speak practice.
 - Under D-0094, local `make demo` Practice Friend may call OpenRouter free
   models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
   scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
@@ -653,7 +655,7 @@ identity — not a purple Supernova clone.
   pathway with Mira Tap to Play on each English model. Home **More** has a
   **16 lessons** shortcut. Presentation fixtures only — not approved
   curriculum. Modules 17–20 remain later pathway work.
-- UI catalogues at revision `ui-*-2026-09-12.11`.
+- UI catalogues at revision `ui-*-2026-09-12.12`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
 

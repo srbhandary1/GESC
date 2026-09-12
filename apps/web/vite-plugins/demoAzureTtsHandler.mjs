@@ -1,8 +1,23 @@
-import { readFileSync } from 'node:fs'
+import {
+  adminTokenMatches,
+  anyNeuralConfigured,
+  DEMO_TTS_SETTINGS_PATH,
+  defaultProviderOrder,
+  maskedSettingsView,
+  mergeSettingsUpdate,
+  neuralProvidersConfigured,
+  readAdminTokenFromRequest,
+  readDemoTtsSettingsFile,
+  resolveAdminToken,
+  resolveDemoTtsBundle,
+  resolveProviderOrder,
+  writeDemoTtsSettingsFile,
+} from './demoTtsSettings.mjs'
 
 /**
- * Shared demo Azure TTS handler for Vite middleware and the static
- * demo-client server. Credentials stay in process env / secret files.
+ * Demo TTS for Vite middleware and the static demo-client server.
+ * Azure, Sarvam and ElevenLabs stay in process env / the host settings
+ * file — never in the browser bundle.
  */
 
 export const DEMO_TTS_PATH = '/demo/tts'
@@ -25,36 +40,15 @@ export function requestPath(url) {
 }
 
 export function isDemoTtsPath(pathname) {
-  return pathname === DEMO_TTS_PATH || pathname === DEMO_TTS_STATUS_PATH
+  return (
+    pathname === DEMO_TTS_PATH ||
+    pathname === DEMO_TTS_STATUS_PATH ||
+    pathname === DEMO_TTS_SETTINGS_PATH
+  )
 }
 
 export function resolveDemoTtsCredentials() {
-  const endpoint = (process.env.AZURE_SPEECH_ENDPOINT ?? '')
-    .trim()
-    .replace(/\/$/u, '')
-  if (endpoint === '') {
-    return null
-  }
-
-  const inlineKey = (process.env.AZURE_SPEECH_KEY ?? '').trim()
-  if (inlineKey !== '') {
-    return { endpoint, key: inlineKey }
-  }
-
-  const secretFile = (process.env.AZURE_SPEECH_SECRET_FILE ?? '').trim()
-  if (secretFile === '') {
-    return null
-  }
-
-  try {
-    const key = readFileSync(secretFile, 'utf8').trim()
-    if (key === '') {
-      return null
-    }
-    return { endpoint, key }
-  } catch {
-    return null
-  }
+  return resolveDemoTtsBundle().azure
 }
 
 function isDemoLocale(value) {
@@ -77,7 +71,10 @@ export function applyDemoTtsCors(res, req) {
     typeof origin === 'string' && origin !== '' ? origin : '*',
   )
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Accept, Content-Type')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Accept, Content-Type, Authorization, X-Demo-Tts-Admin',
+  )
   res.setHeader('Vary', 'Origin')
 }
 
@@ -128,12 +125,189 @@ async function synthesizeAzure(credentials, locale, text) {
     throw new Error(`azure_http_${response.status}`)
   }
 
-  return response.arrayBuffer()
+  return {
+    audio: await response.arrayBuffer(),
+    contentType: 'audio/wav',
+    voice,
+  }
+}
+
+async function synthesizeSarvam(credentials, locale, text) {
+  const response = await fetch(`${credentials.baseUrl}/text-to-speech`, {
+    method: 'POST',
+    headers: {
+      'api-subscription-key': credentials.key,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': 'global-spoken-english-demo-tts',
+    },
+    body: JSON.stringify({
+      text,
+      target_language_code: locale,
+      speaker: credentials.speaker,
+      model: credentials.model,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`sarvam_http_${response.status}`)
+  }
+
+  const body = (await response.json())
+  const encoded = Array.isArray(body.audios) ? body.audios[0] : null
+  if (typeof encoded !== 'string' || encoded === '') {
+    throw new Error('sarvam_empty')
+  }
+
+  return {
+    audio: Buffer.from(encoded, 'base64'),
+    contentType: 'audio/mpeg',
+    voice: credentials.speaker,
+  }
+}
+
+async function synthesizeElevenLabs(credentials, text) {
+  const url =
+    `${credentials.baseUrl}/v1/text-to-speech/${encodeURIComponent(credentials.voiceId)}` +
+    '?output_format=mp3_44100_128'
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': credentials.key,
+      'Content-Type': 'application/json',
+      Accept: 'audio/mpeg',
+      'User-Agent': 'global-spoken-english-demo-tts',
+    },
+    body: JSON.stringify({
+      text,
+      model_id: credentials.modelId,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`elevenlabs_http_${response.status}`)
+  }
+
+  const audio = await response.arrayBuffer()
+  if (audio.byteLength === 0) {
+    throw new Error('elevenlabs_empty')
+  }
+
+  return {
+    audio,
+    contentType: 'audio/mpeg',
+    voice: credentials.voiceId,
+  }
+}
+
+export async function synthesizeWithFailover(locale, text, bundle) {
+  const order = resolveProviderOrder(locale, bundle.providerOrder)
+  const failures = []
+
+  for (const provider of order) {
+    if (provider === 'sarvam' && bundle.sarvam !== null) {
+      try {
+        const result = await synthesizeSarvam(bundle.sarvam, locale, text)
+        return { ...result, provider }
+      } catch (error) {
+        failures.push(
+          error instanceof Error ? error.message : 'sarvam_failed',
+        )
+      }
+    }
+
+    if (provider === 'elevenlabs' && bundle.elevenlabs !== null) {
+      try {
+        const result = await synthesizeElevenLabs(bundle.elevenlabs, text)
+        return { ...result, provider }
+      } catch (error) {
+        failures.push(
+          error instanceof Error ? error.message : 'elevenlabs_failed',
+        )
+      }
+    }
+
+    if (provider === 'azure' && bundle.azure !== null) {
+      try {
+        const result = await synthesizeAzure(bundle.azure, locale, text)
+        return { ...result, provider }
+      } catch (error) {
+        failures.push(error instanceof Error ? error.message : 'azure_failed')
+      }
+    }
+  }
+
+  const error = new Error('all_tts_providers_failed')
+  error.failures = failures
+  throw error
+}
+
+function statusPayload() {
+  const bundle = resolveDemoTtsBundle()
+  const providers = neuralProvidersConfigured(bundle)
+
+  return {
+    configured: anyNeuralConfigured(bundle),
+    providers,
+    order: bundle.providerOrder === ''
+      ? { mode: 'locale-aware', 'en-IN': defaultProviderOrder('en-IN'), indic: defaultProviderOrder('hi-IN') }
+      : { mode: 'explicit', value: resolveProviderOrder('en-IN', bundle.providerOrder) },
+    region: 'centralindia',
+    voices: DEMO_AZURE_VOICES,
+  }
+}
+
+async function handleSettings(req, res, method) {
+  if (resolveAdminToken() === '') {
+    sendJson(res, req, 503, {
+      error: 'admin_unconfigured',
+      message:
+        'Set DEMO_TTS_ADMIN_TOKEN or DEMO_TTS_ADMIN_TOKEN_FILE on the demo host before using Admin voice settings.',
+    })
+    return
+  }
+
+  if (method === 'GET') {
+    if (!adminTokenMatches(readAdminTokenFromRequest(req))) {
+      sendJson(res, req, 401, { error: 'admin_unauthorized' })
+      return
+    }
+
+    sendJson(res, req, 200, maskedSettingsView())
+    return
+  }
+
+  if (method !== 'POST') {
+    applyDemoTtsCors(res, req)
+    res.statusCode = 405
+    res.setHeader('Allow', 'GET, POST, OPTIONS')
+    res.end()
+    return
+  }
+
+  let payload
+  try {
+    payload = JSON.parse(await readBody(req))
+  } catch {
+    sendJson(res, req, 400, { error: 'invalid_json' })
+    return
+  }
+
+  if (!adminTokenMatches(readAdminTokenFromRequest(req, payload))) {
+    sendJson(res, req, 401, { error: 'admin_unauthorized' })
+    return
+  }
+
+  const next = mergeSettingsUpdate(readDemoTtsSettingsFile(), payload)
+  writeDemoTtsSettingsFile(next)
+  sendJson(res, req, 200, {
+    saved: true,
+    settings: maskedSettingsView(),
+  })
 }
 
 /**
- * Handle `/demo/tts` and `/demo/tts/status`. Returns true when the request
- * was consumed so the caller must not write another response.
+ * Handle `/demo/tts`, `/demo/tts/status` and `/demo/tts/settings`.
  */
 export async function handleDemoTtsRequest(req, res) {
   const url = requestPath(req.url)
@@ -151,13 +325,13 @@ export async function handleDemoTtsRequest(req, res) {
     return true
   }
 
+  if (url === DEMO_TTS_SETTINGS_PATH) {
+    await handleSettings(req, res, method)
+    return true
+  }
+
   if (url === DEMO_TTS_STATUS_PATH && method === 'GET') {
-    const credentials = resolveDemoTtsCredentials()
-    sendJson(res, req, 200, {
-      configured: credentials !== null,
-      region: 'centralindia',
-      voices: DEMO_AZURE_VOICES,
-    })
+    sendJson(res, req, 200, statusPayload())
     return true
   }
 
@@ -170,12 +344,12 @@ export async function handleDemoTtsRequest(req, res) {
     return true
   }
 
-  const credentials = resolveDemoTtsCredentials()
-  if (credentials === null) {
+  const bundle = resolveDemoTtsBundle()
+  if (!anyNeuralConfigured(bundle)) {
     sendJson(res, req, 503, {
-      error: 'azure_tts_unconfigured',
+      error: 'tts_unconfigured',
       message:
-        'Set AZURE_SPEECH_ENDPOINT and AZURE_SPEECH_KEY or AZURE_SPEECH_SECRET_FILE for demo TTS.',
+        'Configure Sarvam, ElevenLabs or Azure on the demo host (env or Admin voice settings).',
     })
     return true
   }
@@ -206,22 +380,28 @@ export async function handleDemoTtsRequest(req, res) {
   }
 
   try {
-    const audio = await synthesizeAzure(credentials, locale, text)
+    const result = await synthesizeWithFailover(locale, text, bundle)
     // eslint-disable-next-line no-console -- intentional demo spend telemetry
     console.info(
-      `[demo-tts] locale=${locale} voice=${DEMO_AZURE_VOICES[locale]} chars=${[...text].length}`,
+      `[demo-tts] provider=${result.provider} locale=${locale} voice=${result.voice} chars=${[...text].length}`,
     )
     applyDemoTtsCors(res, req)
     res.statusCode = 200
-    res.setHeader('Content-Type', 'audio/wav')
+    res.setHeader('Content-Type', result.contentType)
     res.setHeader('Cache-Control', 'no-store')
-    res.setHeader('X-Demo-Tts-Voice', DEMO_AZURE_VOICES[locale])
-    res.end(Buffer.from(audio))
+    res.setHeader('X-Demo-Tts-Provider', result.provider)
+    res.setHeader('X-Demo-Tts-Voice', result.voice)
+    res.end(Buffer.from(result.audio))
   } catch (error) {
-    const detail = error instanceof Error ? error.message : 'azure_failed'
+    const detail = error instanceof Error ? error.message : 'tts_failed'
+    const failures = error instanceof Error ? error.failures : undefined
     // eslint-disable-next-line no-console -- intentional demo diagnostics
     console.warn(`[demo-tts] synthesis failed: ${detail}`)
-    sendJson(res, req, 502, { error: 'azure_tts_failed', detail })
+    sendJson(res, req, 502, {
+      error: 'tts_failed',
+      detail,
+      failures: Array.isArray(failures) ? failures : [],
+    })
   }
 
   return true

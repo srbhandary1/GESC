@@ -91,6 +91,9 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
     page.getByRole('heading', { name: 'Demo status' }),
   ).toBeVisible()
   await expect(
+    page.getByRole('heading', { name: 'Voice providers' }),
+  ).toBeVisible()
+  await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
   ).toContainText('does not use learner data')
   await page.getByRole('button', { name: 'Attendance report' }).click()

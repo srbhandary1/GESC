@@ -1,11 +1,10 @@
 /**
- * Demo speech playback: Azure neural TTS via `/demo/tts` first,
- * then on-device browser speech as fallback. Presentation-only.
+ * Demo speech playback: neural TTS via `/demo/tts` first (Sarvam,
+ * ElevenLabs, Azure with failover), then browser speech as fallback.
  *
- * Same-origin `/demo/tts` is the product path (Vite middleware and the
- * static demo-client server). Optional `VITE_DEMO_TTS_ORIGIN` lets the
- * Android WebView call that host without embedding Azure secrets.
- * Sarvam and ElevenLabs are not implemented in this repository.
+ * Same-origin `/demo/tts` is the product path. Optional
+ * `VITE_DEMO_TTS_ORIGIN` lets the Android WebView call that host.
+ * Provider secrets never enter this bundle.
  */
 
 import {
@@ -14,7 +13,7 @@ import {
   stopBrowserSpeech,
 } from './browserSpeech'
 
-export type DemoSpeechSource = 'azure' | 'browser'
+export type DemoSpeechSource = 'neural' | 'browser'
 
 let currentAudio: HTMLAudioElement | null = null
 let currentObjectUrl: string | null = null
@@ -29,7 +28,9 @@ export function demoTtsOrigin(): string {
   return configured.trim().replace(/\/$/u, '')
 }
 
-export function demoTtsUrl(path: '/demo/tts' | '/demo/tts/status'): string {
+export function demoTtsUrl(
+  path: '/demo/tts' | '/demo/tts/status' | '/demo/tts/settings',
+): string {
   const origin = demoTtsOrigin()
   return origin === '' ? path : `${origin}${path}`
 }
@@ -154,14 +155,14 @@ export async function speakDemoText(
   if (azureReady) {
     try {
       await speakWithAzureTts(trimmed, locale)
-      return 'azure'
+      return 'neural'
     } catch {
       // Fall through to browser speech.
     }
   }
 
   if (!browserSpeechSynthesisAvailable()) {
-    throw new Error('Azure and browser speech are both unavailable.')
+    throw new Error('Neural TTS and browser speech are both unavailable.')
   }
 
   await speakWithBrowserSpeech(trimmed, locale)

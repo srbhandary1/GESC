@@ -4,12 +4,13 @@
 
 Let a remote client open the disclosed synthetic Global English Speaking
 Course demo over the workstation static public IP. This is presentation
-packaging only: in-memory fixtures, Azure neural TTS when the local demo
-process is configured (D-0092) otherwise on-device browser speech, no learner
-accounts, no ordinary application API and no production data.
+packaging only: in-memory fixtures, neural TTS (Sarvam / ElevenLabs / Azure)
+when the local demo process is configured (D-0092 / D-0117) otherwise
+on-device browser speech, no learner accounts, no ordinary application API
+and no production data.
 
 Ordinary local commands remain loopback-only (`make demo`, `make demo-serve`).
-For Azure voice setup on `make demo`, see [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+For voice setup on `make demo`, see [DEMO_TTS.md](DEMO_TTS.md).
 This runbook is an explicit opt-in for remote review.
 
 For the path from this presentation to real Azure Speech evidence, see

@@ -55,7 +55,7 @@ describe('demo Azure-first speech helper', () => {
 
     const source = await speakDemoText('ಸ್ವಾಗತ', 'kn-IN')
 
-    expect(source).toBe('azure')
+    expect(source).toBe('neural')
     expect(fetchMock).toHaveBeenCalledWith(
       '/demo/tts/status',
       expect.objectContaining({

@@ -617,6 +617,58 @@
   border-block-end: 1px solid color-mix(in srgb, var(--ge-color-border) 60%, transparent);
 }
 
+.demo-tts-admin {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 0 0.25rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--ge-color-border) 60%, transparent);
+}
+
+.demo-tts-admin__status {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-tts-admin__status li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--ge-radius-md);
+  background: color-mix(in srgb, var(--ge-color-status) 55%, transparent);
+  text-transform: capitalize;
+}
+
+.demo-tts-admin__status li[data-configured='true'] strong {
+  color: var(--ge-color-action);
+}
+
+.demo-tts-admin__form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.demo-tts-admin__form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 650;
+}
+
+.demo-tts-admin__form input,
+.demo-tts-admin__form select {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface-high, #fff);
+  color: inherit;
+  font: inherit;
+}
+
 .phase1-shell,
 .phase1-home,
 .phase1-panel {

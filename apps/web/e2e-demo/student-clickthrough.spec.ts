@@ -87,6 +87,9 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('link', { name: 'Profile' }).click()
   await expect(page.getByRole('heading', { name: 'Demo status' })).toBeVisible()
   await expect(
+    page.getByRole('heading', { name: 'Voice providers' }),
+  ).toBeVisible()
+  await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
   ).toContainText('does not use learner data')
   await expect(page.getByText('About this school')).toBeVisible()

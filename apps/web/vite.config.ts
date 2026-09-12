@@ -10,9 +10,9 @@ import { demoOpenRouterChatPlugin } from './vite-plugins/demoOpenRouterChat.ts'
 // bundle works from static hosting and the Capacitor Android wrapper.
 // The ordinary production build (`dist`) is unchanged and can never
 // activate the demo runtime.
-// Demo-only Azure TTS (`/demo/tts`) and OpenRouter chat (`/demo/chat`) are
-// local presentation middleware; credentials stay in process env and are
-// never shipped in the bundle.
+// Demo-only multi-provider TTS (`/demo/tts`) and OpenRouter chat
+// (`/demo/chat`) are local presentation middleware; credentials stay in
+// process env / the host settings file and are never shipped in the bundle.
 export default defineConfig(({ mode }) => ({
   base: mode === 'demo' ? './' : '/',
   build: {

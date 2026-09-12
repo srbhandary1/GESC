@@ -184,6 +184,6 @@ server.listen(listenPort, listenHost, () => {
     process.stdout.write(`APK download: http://${publicHost}:${listenPort}${apkRoute}\n`)
   }
   process.stdout.write(
-    'Demo TTS: GET /demo/tts/status and POST /demo/tts (Azure neural when AZURE_SPEECH_* is set)\n',
+    'Demo TTS: GET /demo/tts/status, GET|POST /demo/tts/settings, POST /demo/tts (Sarvam / ElevenLabs / Azure when configured)\n',
   )
 })

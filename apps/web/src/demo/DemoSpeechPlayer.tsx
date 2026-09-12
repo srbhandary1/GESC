@@ -16,8 +16,9 @@ export interface DemoSpeechPlayerProps {
 }
 
 /**
- * Demo-only model-audio player. Prefers Azure neural TTS via `/demo/tts`,
- * then falls back to on-device browser speech for `demo-speech:` URLs.
+ * Demo-only model-audio player. Prefers neural TTS via `/demo/tts`
+ * (Sarvam / ElevenLabs / Azure), then falls back to on-device browser
+ * speech for `demo-speech:` URLs.
  */
 export function DemoSpeechPlayer({
   labels,
