@@ -44,6 +44,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
       'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
     ),
   ).toBeVisible()
+  await dismissPracticeAboutSheet(page)
 
   await page
     .getByRole('button', { name: 'Start Confidence Conversation' })
@@ -89,8 +90,14 @@ test('completes the disclosed deterministic fake-provider conversation journey',
       .every(({ postData }) => postData !== null),
   ).toBe(true)
   await expect
-    .poll(() => page.evaluate(() => window.localStorage.length))
-    .toBe(0)
+    .poll(() =>
+      page.evaluate(() =>
+        Object.keys(window.localStorage).every((key) =>
+          key.startsWith('ge-ui-'),
+        ),
+      ),
+    )
+    .toBe(true)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
@@ -111,6 +118,7 @@ test('shows separate optional voice purposes before microphone capture', async (
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await dismissPracticeAboutSheet(page)
   await page
     .getByRole('button', { name: 'Start Confidence Conversation' })
     .click()
@@ -162,6 +170,7 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await dismissPracticeAboutSheet(page)
   await page
     .getByRole('button', { name: 'Role-play (synthetic)' })
     .click()
@@ -200,6 +209,13 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
 })
+
+async function dismissPracticeAboutSheet(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await page.getByRole('button', { name: 'Got it' }).click()
+  await expect(dialog).toHaveCount(0)
+}
 
 async function mockConversationApi(
   page: Page,

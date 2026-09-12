@@ -79,6 +79,10 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   // Primary shell destinations also available to a student in the demo.
   await page.getByRole('link', { name: 'Learn' }).click()
   await page.getByRole('link', { name: 'Practice' }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'About this practice Friend' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Got it' }).click()
   await page.getByRole('link', { name: 'Progress' }).click()
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
@@ -86,7 +90,11 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])
-  expect(await page.evaluate(() => window.localStorage.length)).toBe(0)
+  expect(
+    await page.evaluate(() =>
+      Object.keys(window.localStorage).every((key) => key.startsWith('ge-ui-')),
+    ),
+  ).toBe(true)
   expect(
     await page.evaluate(async () => {
       const registrations =

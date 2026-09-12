@@ -234,7 +234,11 @@ test('student click-through exercises every demo page and control', async ({
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])
-  expect(await page.evaluate(() => window.localStorage.length)).toBe(0)
+  expect(
+    await page.evaluate(() =>
+      Object.keys(window.localStorage).every((key) => key.startsWith('ge-ui-')),
+    ),
+  ).toBe(true)
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
 })

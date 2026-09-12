@@ -2932,6 +2932,8 @@ bilingual guidance) is unchanged. Not production or Play evidence.
   few new Profile strings; short chrome is localized.
 - Non-demo authenticated Home remains the checkpoint shell until published
   content exists.
+- Friend first-run about-copy is persisted as `ge-ui-practice-about-dismissed`
+  in localStorage (UI chrome only; not credentials or learner records).
 - F0 DoD, production and Play remain unauthorized.
 
 
