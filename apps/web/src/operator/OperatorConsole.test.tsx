@@ -282,92 +282,39 @@ describe('operator console', () => {
       generated_at: '2026-08-09T10:00:00+00:00',
       items: [
         {
-          program_id: '01J00000000000000000000001',
-          program_key: 'synthetic-foundation-preview',
-          program_internal_name: 'Synthetic Foundation Preview',
-          curriculum_version_id: '01J00000000000000000000002',
-          version_key: 'draft-1',
-          publication_status: 'unpublished' as const,
-          head_version: 0,
-          head_publication_id: null,
-          head_manifest_hash: null,
-          head_publication_number: null,
-          latest_english_decision: null,
-          latest_kannada_decision: null,
+          kind: 'stuck_in_progress' as const,
+          subject_type: 'learner_attempt' as const,
+          subject_id: '01J00000000000000000000006',
+          status: 'in_progress',
+          observed_at: '2026-08-09T09:00:00+00:00',
         },
-      ]),
-      listPublications: vi.fn(async () => [
-        {
-          publication_id: '01J00000000000000000000003',
-          program_id: '01J00000000000000000000001',
-          program_key: 'synthetic-foundation-preview',
-          curriculum_version_id: '01J00000000000000000000002',
-          version_key: 'draft-1',
-          publication_number: 1,
-          manifest_hash: 'a'.repeat(64),
-          is_head: true,
-          head_version: 1,
-          created_at: '2026-08-07T10:00:00+00:00',
-        },
-      ]),
-      listAuditEvents: vi.fn(async () => [
-        {
-          id: '01J00000000000000000000004',
-          action: 'curriculum.publication.activated',
-          subject_type: 'curriculum_publication',
-          subject_id: '01J00000000000000000000003',
-          actor_membership_id: '01J00000000000000000000005',
-          correlation_id: '11111111-1111-4111-8111-111111111111',
-          occurred_at: '2026-08-07T10:00:00+00:00',
-        },
-      ]),
-      getPilotAnalytics: vi.fn(async () => ({
-        generated_at: '2026-08-07T10:00:00+00:00',
-        usage: {
-          learner_membership_count: 2,
-          conversation_session_count: 3,
-          conversation_sessions_by_status: { active: 1, ended: 2 },
-          formative_attempt_count: 4,
-          formative_attempts_by_status: { submitted: 4 },
-        },
-        demonstrated_learning: {
-          mastery_state_count: 5,
-          mastery_by_knowledge_state: { mastered: 2, emerging: 3 },
-          review_schedule_count: 1,
-        },
-        distinction_note:
-          'usage_counts_are_not_demonstrated_learning' as const,
+      ],
+    }))
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: ['overview', 'operations'] as const,
+        organization: organization(),
+        panels: ['support_diagnostics'] as const,
+        search_available: true,
       })),
-    }
+      getPilotAnalytics,
+      listAuditEvents,
+      listDrafts,
+      listPublications,
+      listSupportDiagnostics,
+    })
 
-    render(
-      <OperatorConsole
-        api={api}
-        locale="en-IN"
-        localizationPolicy="development-preview"
-      />,
-    )
+    renderConsole(api)
 
     expect(
       await screen.findByRole('heading', {
         name: 'Organization signals',
       }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Overview' })).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Pilot analytics' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/learners=2/)).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'Review queue' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/unpublished/)).toBeInTheDocument()
-    expect(screen.getByText(/EN pending/)).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'Publish status' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/#1 · head/)).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'Audit trail' }),
+      screen.getByRole('link', { name: 'Operations' }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('link', { name: 'Learning' }),
@@ -628,3 +575,89 @@ describe('operator console', () => {
     expect(listDrafts).not.toHaveBeenCalled()
   })
 })
+
+function renderConsole(api: OperatorConsoleApi) {
+  return render(
+    <OperatorConsole
+      api={api}
+      locale="en-IN"
+      localizationPolicy="development-preview"
+    />,
+  )
+}
+
+function operatorApi(
+  overrides: Partial<OperatorConsoleApi> = {},
+): OperatorConsoleApi {
+  return {
+    getOverview: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      navigation: ['overview', 'learning'] as const,
+      organization: organization(),
+      panels: ['review_queue', 'publish_status'] as const,
+      search_available: true,
+    })),
+    getPilotAnalytics: vi.fn(async () => pilotAnalytics()),
+    listAuditEvents: vi.fn(async () => ({
+      items: [],
+      next_cursor: null,
+    })),
+    listDrafts: vi.fn(async () => []),
+    listPublications: vi.fn(async () => []),
+    listSupportDiagnostics: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+    })),
+    search: vi.fn(async () => ({
+      generated_at: '2026-08-09T10:00:00+00:00',
+      items: [],
+      next_cursor: null,
+    })),
+    ...overrides,
+  }
+}
+
+function organization() {
+  return {
+    id: '01J00000000000000000000003',
+    name: 'Hithaishi Learning Hub',
+    timezone: 'Asia/Kolkata',
+  }
+}
+
+function pilotAnalytics() {
+  return {
+    demonstrated_learning: {
+      mastery_by_knowledge_state: { emerging: 3, mastered: 2 },
+      mastery_state_count: 5,
+      review_schedule_count: 1,
+    },
+    distinction_note: 'usage_counts_are_not_demonstrated_learning' as const,
+    generated_at: '2026-08-09T10:00:00+00:00',
+    usage: {
+      conversation_session_count: 3,
+      conversation_sessions_by_status: { active: 1, ended: 2 },
+      formative_attempt_count: 4,
+      formative_attempts_by_status: { submitted: 4 },
+      learner_membership_count: 2,
+    },
+  }
+}
+
+function auditEvent(id: string, kind: 'activated' | 'reviewed') {
+  return {
+    action:
+      kind === 'activated'
+        ? 'curriculum.publication.activated'
+        : 'curriculum.content_review.recorded',
+    actor_membership_id: '01J00000000000000000000005',
+    correlation_id: '11111111-1111-4111-8111-111111111111',
+    id,
+    occurred_at: '2026-08-09T10:00:00+00:00',
+    subject_id: '01J00000000000000000000003',
+    subject_type:
+      kind === 'activated'
+        ? 'curriculum_publication'
+        : 'content_review',
+  }
+}

@@ -721,3 +721,17 @@
 .phase1-panel {
   animation: ge-destination-enter var(--ge-motion-med) var(--ge-ease);
 }
+
+.phase1-card--action,
+.phase1-home__lesson,
+.phase1-panel {
+  border-radius: var(--ge-radius-xl);
+}
+
+.phase1-home__lesson .ge-button--primary,
+.phase1-daily .ge-button--primary {
+  position: sticky;
+  inset-block-end: 1rem;
+  z-index: 1;
+  border-radius: var(--ge-radius-xl);
+}

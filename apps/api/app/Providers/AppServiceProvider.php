@@ -33,6 +33,8 @@ use App\Conversation\Providers\Disabled\DisabledTextToSpeechProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeConversationModelProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeSpeechToTextProvider;
 use App\Conversation\Providers\Fake\DeterministicFakeTextToSpeechProvider;
+use App\Conversation\Providers\SoftLaunch\SoftLaunchGuidanceAzureTextToSpeechProvider;
+use App\Conversation\Providers\SoftLaunch\SoftLaunchRecordedAzureSpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
@@ -118,9 +120,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DailyMissionReader::class, PinnedDailyMissionReader::class);
         $this->app->bind(PrivilegedMfaVerifier::class, UnavailablePrivilegedMfaVerifier::class);
         $conversationDriver = (string) config('conversation.provider_driver');
-        $nonProductionConversationEnv = $this->app->environment('local')
-            || $this->app->environment('testing')
-            || $this->app->environment('conversation-model-dev');
+        $nonProductionConversationEnv = $this->app->environment(
+            ...self::conversationNonProductionEnvironments(),
+        );
         $fakeConversationEnabled = $nonProductionConversationEnv
             && $conversationDriver === 'fake';
         $azureConversationEnabled = $nonProductionConversationEnv
@@ -139,16 +141,27 @@ class AppServiceProvider extends ServiceProvider
                 default => DisabledConversationModelProvider::class,
             },
         );
+        $guidanceTtsLive = $azureConversationEnabled
+            && $this->app->environment('soft-launch')
+            && filter_var(
+                config('conversation.guidance_tts.live_requests_enabled'),
+                FILTER_VALIDATE_BOOL,
+            );
         $this->app->bind(
             TextToSpeechProvider::class,
-            $fakeConversationEnabled
-                ? DeterministicFakeTextToSpeechProvider::class
-                : DisabledTextToSpeechProvider::class,
+            match (true) {
+                $fakeConversationEnabled => DeterministicFakeTextToSpeechProvider::class,
+                $guidanceTtsLive => SoftLaunchGuidanceAzureTextToSpeechProvider::class,
+                default => DisabledTextToSpeechProvider::class,
+            },
         );
         $testingVoiceEnabled = (
             $this->app->environment('local')
             || $this->app->environment('testing')
         ) && config('voice.provider_driver') === 'deterministic-test';
+        $softLaunchVoiceEnabled = $this->app->environment('soft-launch')
+            && filter_var(config('voice.upload_enabled'), FILTER_VALIDATE_BOOL)
+            && config('voice.provider_driver') === 'azure';
         $indicVoiceEnabled = (
             $this->app->environment('local')
             || $this->app->environment('testing')
@@ -324,5 +337,22 @@ class AppServiceProvider extends ServiceProvider
                 ->make(HttpRequestLogger::class)
                 ->handle($event),
         );
+    }
+
+    /**
+     * Environments that may bind non-disabled conversation providers.
+     * Production is intentionally absent.
+     *
+     * @return list<string>
+     */
+    public static function conversationNonProductionEnvironments(): array
+    {
+        return [
+            'local',
+            'testing',
+            'conversation-model-dev',
+            'staging',
+            'soft-launch',
+        ];
     }
 }

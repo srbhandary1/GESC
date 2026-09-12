@@ -1,6 +1,10 @@
 import type { CapturedAudio } from '../learner/BrowserAudioRecorder'
+import {
+  encodeMonoPcmWav,
+  PCM_WAV_SAMPLE_RATE,
+  resampleMono,
+} from '../shared/pcmWav'
 
-const TARGET_SAMPLE_RATE = 16_000
 const MAXIMUM_DURATION_MS = 120_000
 
 export async function audioToPcmWav(
@@ -42,22 +46,15 @@ export async function audioToPcmWav(
       await capture.blob.arrayBuffer(),
     )
     const sourceLength = decoded.length
-    const targetLength = Math.max(
-      1,
-      Math.round(decoded.duration * TARGET_SAMPLE_RATE),
-    )
-    const mono = new Float32Array(targetLength)
+    const mixed = new Float32Array(sourceLength)
 
-    for (let targetIndex = 0; targetIndex < targetLength; targetIndex += 1) {
-      const sourcePosition =
-        targetIndex * decoded.sampleRate / TARGET_SAMPLE_RATE
-      const leftIndex = Math.min(
-        sourceLength - 1,
-        Math.floor(sourcePosition),
-      )
-      const rightIndex = Math.min(sourceLength - 1, leftIndex + 1)
-      const fraction = sourcePosition - leftIndex
+    for (let index = 0; index < sourceLength; index += 1) {
       let sample = 0
+      for (let channel = 0; channel < decoded.numberOfChannels; channel += 1) {
+        sample += decoded.getChannelData(channel)[index] ?? 0
+      }
+      mixed[index] = sample / decoded.numberOfChannels
+    }
 
     const mono = resampleMono(mixed, decoded.sampleRate, PCM_WAV_SAMPLE_RATE)
     const maximumSamples = Math.floor(

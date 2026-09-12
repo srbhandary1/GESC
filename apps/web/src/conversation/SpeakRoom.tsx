@@ -24,10 +24,6 @@ export interface SpeakRoomProps {
   readonly demoMode?: boolean
   readonly initialMode?: SpeakMode
   readonly initialSession?: FriendSession
-  readonly allowsRoleplay?: boolean
-  readonly onLiveAiUsageChanged?: () => void
-  readonly roleplayStatusMessageKey?: MessageKey
-  readonly voiceUnavailableMessageKey?: MessageKey
 }
 
 export function SpeakRoom({
@@ -38,15 +34,8 @@ export function SpeakRoom({
   demoMode = false,
   initialMode = 'everyday',
   initialSession,
-  allowsRoleplay = true,
-  onLiveAiUsageChanged,
-  roleplayStatusMessageKey,
-  voiceUnavailableMessageKey,
 }: SpeakRoomProps) {
-  const [requestedMode, setRequestedMode] = useState<SpeakMode>(
-    allowsRoleplay ? initialMode : 'everyday',
-  )
-  const mode: SpeakMode = allowsRoleplay ? requestedMode : 'everyday'
+  const [mode, setMode] = useState<SpeakMode>(initialMode)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
@@ -64,18 +53,14 @@ export function SpeakRoom({
           ] as const
         ).map((tab) => {
           const selected = mode === tab.id
-          const locked = tab.id === 'situation' && !allowsRoleplay
           return (
             <button
               aria-controls={`speak-panel-${tab.id}`}
               aria-selected={selected}
-              disabled={locked}
               id={`speak-tab-${tab.id}`}
               key={tab.id}
               onClick={() => {
-                if (!locked) {
-                  setRequestedMode(tab.id)
-                }
+                setMode(tab.id)
               }}
               role="tab"
               tabIndex={selected ? 0 : -1}
@@ -86,13 +71,6 @@ export function SpeakRoom({
           )
         })}
       </div>
-      {roleplayStatusMessageKey !== undefined ? (
-        <p className="speak-room__upgrade" role="status">
-          <LocalizedMessage
-            resolution={message(roleplayStatusMessageKey)}
-          />
-        </p>
-      ) : null}
       <div
         aria-labelledby={`speak-tab-${mode}`}
         id={`speak-panel-${mode}`}
@@ -104,9 +82,8 @@ export function SpeakRoom({
             createClientId={createClientId}
             locale={locale}
             localizationPolicy={localizationPolicy}
-            onLiveAiUsageChanged={onLiveAiUsageChanged}
             onBack={() => {
-              setRequestedMode('everyday')
+              setMode('everyday')
             }}
           />
         ) : (
@@ -118,8 +95,6 @@ export function SpeakRoom({
             key={initialSession?.id ?? 'unbound-speak'}
             locale={locale}
             localizationPolicy={localizationPolicy}
-            onLiveAiUsageChanged={onLiveAiUsageChanged}
-            voiceUnavailableMessageKey={voiceUnavailableMessageKey}
           />
         )}
       </div>

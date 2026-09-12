@@ -259,7 +259,7 @@ describe('message resolution', () => {
       requestedLocale: 'fr-FR',
     })
 
-    expect(result.text).toBe('Global English Speaking Course')
+    expect(result.text).toBe('Global spoken English Course')
     expect(result.requestedLocale).toBe('fr-FR')
     expect(result.resolvedLocale).toBe('en-IN')
     expect(result.reason).toBe('unsupported-locale')

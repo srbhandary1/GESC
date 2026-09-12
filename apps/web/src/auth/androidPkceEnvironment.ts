@@ -16,24 +16,40 @@ const DEFAULT_CLIENT_ID = 'public-android-client'
 export function resolveAndroidPkceEnvironment(
   env: ImportMetaEnv | Record<string, string | undefined> = import.meta.env,
 ): AndroidPkceEnvironment | null {
-  const origin = trimTrailingSlash(
-    read(env, 'VITE_MOBILE_API_ORIGIN') ?? '',
+  const origin = normalizeApiOrigin(
+    read(env, 'VITE_MOBILE_API_ORIGIN'),
   )
 
-  if (origin === '') {
+  if (origin === null) {
+    return null
+  }
+
+  const authorizationEndpoint = normalizeOAuthEndpoint(
+    read(env, 'VITE_MOBILE_OAUTH_AUTHORIZE_URL') ??
+      `${origin}/oauth/authorize`,
+    origin,
+  )
+  const tokenEndpoint = normalizeOAuthEndpoint(
+    read(env, 'VITE_MOBILE_OAUTH_TOKEN_URL') ?? `${origin}/oauth/token`,
+    origin,
+  )
+  const redirectUri =
+    read(env, 'VITE_MOBILE_OAUTH_REDIRECT_URI') ?? DEFAULT_REDIRECT_URI
+
+  if (
+    authorizationEndpoint === null ||
+    tokenEndpoint === null ||
+    redirectUri !== DEFAULT_REDIRECT_URI
+  ) {
     return null
   }
 
   return {
     apiBaseUrl: `${origin}/api/v1`,
-    authorizationEndpoint:
-      read(env, 'VITE_MOBILE_OAUTH_AUTHORIZE_URL') ??
-      `${origin}/oauth/authorize`,
+    authorizationEndpoint,
     clientId: read(env, 'VITE_MOBILE_OAUTH_CLIENT_ID') ?? DEFAULT_CLIENT_ID,
-    redirectUri:
-      read(env, 'VITE_MOBILE_OAUTH_REDIRECT_URI') ?? DEFAULT_REDIRECT_URI,
-    tokenEndpoint:
-      read(env, 'VITE_MOBILE_OAUTH_TOKEN_URL') ?? `${origin}/oauth/token`,
+    redirectUri,
+    tokenEndpoint,
   }
 }
 

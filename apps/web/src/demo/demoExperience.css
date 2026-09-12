@@ -2,8 +2,8 @@
    Uses design-system tokens so light/dark stay one language. */
 
 .demo-experience {
-  --ge-font-family-display: "Noto Sans", "Noto Sans Kannada Variable",
-    ui-sans-serif, system-ui, sans-serif;
+  --ge-font-family-display: "Fraunces", "Fraunces Fallback",
+    var(--ge-font-family-ui);
   font-family: var(--ge-font-family-ui);
 }
 

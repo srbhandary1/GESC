@@ -418,6 +418,8 @@ export const replacePlatformRecoveryContact = <ThrowOnError extends boolean = fa
  * whether the normalized mobile number already belongs to an identity.
  * PR-003 uses only the fake/local OTP adapter.
  *
+ *
+ * @deprecated
  */
 export const requestOtp = <ThrowOnError extends boolean = false>(options: Options<RequestOtpData, ThrowOnError>): RequestResult<RequestOtpResponses, RequestOtpErrors, ThrowOnError> => (options.client ?? client).post<RequestOtpResponses, RequestOtpErrors, ThrowOnError>({
     url: '/auth/otp/requests',
@@ -439,6 +441,8 @@ export const requestOtp = <ThrowOnError extends boolean = false>(options: Option
  * disclosed by the public error response. The response never contains
  * the cookie credential.
  *
+ *
+ * @deprecated
  */
 export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpData, ThrowOnError>): RequestResult<VerifyOtpResponses, VerifyOtpErrors, ThrowOnError> => (options.client ?? client).post<VerifyOtpResponses, VerifyOtpErrors, ThrowOnError>({
     url: '/auth/otp/verifications',
@@ -498,6 +502,148 @@ export const revokeWebSession = <ThrowOnError extends boolean = false>(options: 
             type: 'apiKey'
         }],
     url: '/auth/sessions/{session_id}',
+    ...options
+});
+
+/**
+ * Get the current privileged MFA state
+ *
+ * Web-session only. Returns factor lifecycle state, remaining recovery
+ * code count, and the current session's non-secret assertion scope. TOTP
+ * secrets and recovery-code values are never returned here.
+ *
+ *
+ * @deprecated
+ */
+export const getPrivilegedMfaStatus = <ThrowOnError extends boolean = false>(options?: Options<GetPrivilegedMfaStatusData, ThrowOnError>): RequestResult<GetPrivilegedMfaStatusResponses, GetPrivilegedMfaStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetPrivilegedMfaStatusResponses, GetPrivilegedMfaStatusErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa',
+    ...options
+});
+
+/**
+ * Begin enrollment or authorized replacement of a TOTP factor
+ *
+ * The otpauth URI is returned once and expires with its confirmation
+ * challenge after five minutes. Replacing an active factor first requires
+ * a fresh TOTP assertion or a recovery-code factor-replacement assertion.
+ *
+ *
+ * @deprecated
+ */
+export const beginPrivilegedMfaEnrollment = <ThrowOnError extends boolean = false>(options?: Options<BeginPrivilegedMfaEnrollmentData, ThrowOnError>): RequestResult<BeginPrivilegedMfaEnrollmentResponses, BeginPrivilegedMfaEnrollmentErrors, ThrowOnError> => (options?.client ?? client).post<BeginPrivilegedMfaEnrollmentResponses, BeginPrivilegedMfaEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/enrollments',
+    ...options
+});
+
+/**
+ * Confirm a pending TOTP factor and issue recovery codes
+ *
+ * Activates the factor only when its current TOTP is accepted. Exactly ten
+ * 128-bit one-time recovery codes are returned once. Factor replacement
+ * globally revokes all web sessions and Android token families.
+ *
+ *
+ * @deprecated
+ */
+export const confirmPrivilegedMfaEnrollment = <ThrowOnError extends boolean = false>(options: Options<ConfirmPrivilegedMfaEnrollmentData, ThrowOnError>): RequestResult<ConfirmPrivilegedMfaEnrollmentResponses, ConfirmPrivilegedMfaEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<ConfirmPrivilegedMfaEnrollmentResponses, ConfirmPrivilegedMfaEnrollmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/enrollments/{factor_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a five-minute MFA assertion challenge
+ *
+ * @deprecated
+ */
+export const createPrivilegedMfaChallenge = <ThrowOnError extends boolean = false>(options?: Options<CreatePrivilegedMfaChallengeData, ThrowOnError>): RequestResult<CreatePrivilegedMfaChallengeResponses, CreatePrivilegedMfaChallengeErrors, ThrowOnError> => (options?.client ?? client).post<CreatePrivilegedMfaChallengeResponses, CreatePrivilegedMfaChallengeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/challenges',
+    ...options
+});
+
+/**
+ * Verify TOTP or consume one recovery code
+ *
+ * TOTP creates a privileged-actions assertion. A recovery code creates
+ * only a factor-replacement assertion and cannot authorize operator or
+ * recovery-regeneration actions. The response is enumeration-safe.
+ *
+ *
+ * @deprecated
+ */
+export const verifyPrivilegedMfaChallenge = <ThrowOnError extends boolean = false>(options: Options<VerifyPrivilegedMfaChallengeData, ThrowOnError>): RequestResult<VerifyPrivilegedMfaChallengeResponses, VerifyPrivilegedMfaChallengeErrors, ThrowOnError> => (options.client ?? client).post<VerifyPrivilegedMfaChallengeResponses, VerifyPrivilegedMfaChallengeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/challenges/{challenge_id}/verify',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Replace every recovery code after fresh TOTP
+ *
+ * Returns ten new codes once, invalidates every prior code and globally
+ * revokes all web sessions and Android token families.
+ *
+ *
+ * @deprecated
+ */
+export const regeneratePrivilegedMfaRecoveryCodes = <ThrowOnError extends boolean = false>(options?: Options<RegeneratePrivilegedMfaRecoveryCodesData, ThrowOnError>): RequestResult<RegeneratePrivilegedMfaRecoveryCodesResponses, RegeneratePrivilegedMfaRecoveryCodesErrors, ThrowOnError> => (options?.client ?? client).post<RegeneratePrivilegedMfaRecoveryCodesResponses, RegeneratePrivilegedMfaRecoveryCodesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/recovery-codes/regenerate',
+    ...options
+});
+
+/**
+ * Revoke the active TOTP factor after fresh TOTP
+ *
+ * Invalidates recovery codes and globally revokes all web sessions and
+ * Android token families. Re-enrollment then requires reviewed support;
+ * primary SMS OTP alone cannot reset the privileged factor.
+ *
+ *
+ * @deprecated
+ */
+export const revokePrivilegedMfaFactor = <ThrowOnError extends boolean = false>(options?: Options<RevokePrivilegedMfaFactorData, ThrowOnError>): RequestResult<RevokePrivilegedMfaFactorResponses, RevokePrivilegedMfaFactorErrors, ThrowOnError> => (options?.client ?? client).delete<RevokePrivilegedMfaFactorResponses, RevokePrivilegedMfaFactorErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/auth/mfa/factor',
     ...options
 });
 
@@ -868,6 +1014,30 @@ export const createConversationTurn = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
+ * Synthesize one bounded model or guidance line for a live session
+ *
+ * Speaks one short English model line or L1 guidance line through the
+ * project-owned guidance TTS port for a learner-owned active session.
+ * Soft-launch returns an optional Azure neural WAV; text remains the
+ * primary surface and failures fall back without audio. Persistent rows
+ * do not store utterance text or audio bytes.
+ *
+ */
+export const synthesizeConversationSpeech = <ThrowOnError extends boolean = false>(options: Options<SynthesizeConversationSpeechData, ThrowOnError>): RequestResult<SynthesizeConversationSpeechResponses, SynthesizeConversationSpeechErrors, ThrowOnError> => (options.client ?? client).post<SynthesizeConversationSpeechResponses, SynthesizeConversationSpeechErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/conversation-sessions/{conversation_session_id}/speech',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Stream the safe deterministic state history for one Friend turn
  *
  * Returns a bounded SSE stream of already-recorded safe state metadata.
@@ -946,6 +1116,46 @@ export const updateLearnerAiMemoryFact = <ThrowOnError extends boolean = false>(
             type: 'apiKey'
         }, { scheme: 'bearer', type: 'http' }],
     url: '/me/ai-memory/{fact}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the learner's 1:1 tuition requests
+ *
+ * Returns org-scoped waitlist requests created by the authenticated
+ * learner membership, plus governed institute contact links when
+ * configured. This is not a booking, calendar, payment or in-app call
+ * API.
+ *
+ */
+export const listLearnerTuitionRequests = <ThrowOnError extends boolean = false>(options?: Options<ListLearnerTuitionRequestsData, ThrowOnError>): RequestResult<ListLearnerTuitionRequestsResponses, ListLearnerTuitionRequestsErrors, ThrowOnError> => (options?.client ?? client).get<ListLearnerTuitionRequestsResponses, ListLearnerTuitionRequestsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/tuition-requests',
+    ...options
+});
+
+/**
+ * Submit a 1:1 tuition waitlist request
+ *
+ * Creates one org-scoped request for live speaking help. No payment,
+ * trainer assignment or calendar booking is performed.
+ *
+ */
+export const createLearnerTuitionRequest = <ThrowOnError extends boolean = false>(options: Options<CreateLearnerTuitionRequestData, ThrowOnError>): RequestResult<CreateLearnerTuitionRequestResponses, CreateLearnerTuitionRequestErrors, ThrowOnError> => (options.client ?? client).post<CreateLearnerTuitionRequestResponses, CreateLearnerTuitionRequestErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/tuition-requests',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -1116,6 +1326,121 @@ export const streamLearnerModelAudio = <ThrowOnError extends boolean = false>(op
             type: 'apiKey'
         }, { scheme: 'bearer', type: 'http' }],
     url: '/media-assets/{asset_id}/content',
+    ...options
+});
+
+/**
+ * List data-driven level shells and availability
+ *
+ * Returns Levels 1–N from configuration. A level is `available` only when
+ * the selected organization has an attached four-part lesson-practice
+ * blueprint for that level's concept key. Otherwise it is
+ * `commissioning_pending`. No level count is hard-coded in domain code.
+ *
+ */
+export const listLearnerLevels = <ThrowOnError extends boolean = false>(options?: Options<ListLearnerLevelsData, ThrowOnError>): RequestResult<ListLearnerLevelsResponses, ListLearnerLevelsErrors, ThrowOnError> => (options?.client ?? client).get<ListLearnerLevelsResponses, ListLearnerLevelsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/levels',
+    ...options
+});
+
+/**
+ * Show one four-session level part for private pilot delivery
+ */
+export const showLearnerLevelSession = <ThrowOnError extends boolean = false>(options: Options<ShowLearnerLevelSessionData, ThrowOnError>): RequestResult<ShowLearnerLevelSessionResponses, ShowLearnerLevelSessionErrors, ThrowOnError> => (options.client ?? client).get<ShowLearnerLevelSessionResponses, ShowLearnerLevelSessionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/levels/{levelNumber}/sessions/{partId}',
+    ...options
+});
+
+/**
+ * Stream attached lesson audio for one level session part
+ *
+ * Streams the organization-scoped lesson_audio attachment for the
+ * requested level part after membership authorization. Does not use
+ * enrollment/mission media content gates; level-session delivery is
+ * the authority for private pilot path audio.
+ *
+ */
+export const streamLearnerLevelSessionAudio = <ThrowOnError extends boolean = false>(options: Options<StreamLearnerLevelSessionAudioData, ThrowOnError>): RequestResult<StreamLearnerLevelSessionAudioResponses, StreamLearnerLevelSessionAudioErrors, ThrowOnError> => (options.client ?? client).get<StreamLearnerLevelSessionAudioResponses, StreamLearnerLevelSessionAudioErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/levels/{levelNumber}/sessions/{partId}/audio',
+    ...options
+});
+
+/**
+ * Start a bound Confidence Conversation for a level session part
+ *
+ * Starts an organization-scoped conversation session using the
+ * level-part prototype binding. Local/testing uses the deterministic
+ * fake provider; production remains fail-closed.
+ *
+ */
+export const startLearnerLevelSessionConversation = <ThrowOnError extends boolean = false>(options: Options<StartLearnerLevelSessionConversationData, ThrowOnError>): RequestResult<StartLearnerLevelSessionConversationResponses, StartLearnerLevelSessionConversationErrors, ThrowOnError> => (options.client ?? client).post<StartLearnerLevelSessionConversationResponses, StartLearnerLevelSessionConversationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/levels/{levelNumber}/sessions/{partId}/conversation-sessions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List pin-gated lesson videos for an enrollment
+ *
+ * Returns lesson-video catalog rows from the learner's exact immutable
+ * publication pin where media usage_key is lesson_video and current
+ * rights allow learner delivery. The catalog is data-driven; missing
+ * source videos simply omit rows. Does not hard-code a level count.
+ *
+ */
+export const listLearnerLevelVideos = <ThrowOnError extends boolean = false>(options: Options<ListLearnerLevelVideosData, ThrowOnError>): RequestResult<ListLearnerLevelVideosResponses, ListLearnerLevelVideosErrors, ThrowOnError> => (options.client ?? client).get<ListLearnerLevelVideosResponses, ListLearnerLevelVideosErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/me/level-videos',
+    ...options
+});
+
+/**
+ * Stream exact governed lesson-video bytes
+ *
+ * Authorizes through the learner's exact enrollment and lesson pin,
+ * verifies the stored bytes against the published size and SHA-256, and
+ * streams those same verified bytes in fixed-size chunks without a
+ * full-file response buffer or storage-key disclosure. One satisfiable
+ * byte range returns 206. A stale or weak If-Range, a malformed range,
+ * or a multi-range request returns the complete 200 representation;
+ * syntactically valid ranges outside the object return 416. Separate
+ * from model-audio streaming (ADR-0013).
+ *
+ */
+export const streamLearnerLessonVideo = <ThrowOnError extends boolean = false>(options: Options<StreamLearnerLessonVideoData, ThrowOnError>): RequestResult<StreamLearnerLessonVideoResponses, StreamLearnerLessonVideoErrors, ThrowOnError> => (options.client ?? client).get<StreamLearnerLessonVideoResponses, StreamLearnerLessonVideoErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/media-assets/{asset_id}/lesson-video',
     ...options
 });
 
@@ -2438,7 +2763,7 @@ export const listOperatorContentDrafts = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/drafts',
     ...options
 });
@@ -2455,7 +2780,7 @@ export const listOperatorContentPublications = <ThrowOnError extends boolean = f
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/publications',
     ...options
 });
@@ -2472,7 +2797,7 @@ export const publishOperatorCurriculum = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/publications',
     ...options,
     headers: {
@@ -2493,7 +2818,7 @@ export const recordOperatorEnglishContentReview = <ThrowOnError extends boolean 
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/reviews/english',
     ...options,
     headers: {
@@ -2514,7 +2839,7 @@ export const recordOperatorKannadaContentReview = <ThrowOnError extends boolean 
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/reviews/kannada',
     ...options,
     headers: {
@@ -2535,8 +2860,378 @@ export const rollbackOperatorCurriculum = <ThrowOnError extends boolean = false>
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/content/rollbacks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get private Media Library limits and semantic actions
+ *
+ * Returns only server-derived current-organization actions, upload
+ * policy and the reusable owner-attestation reference. The attestation
+ * is evidence and never creates per-asset rights approval.
+ *
+ */
+export const getOperatorMediaManifest = <ThrowOnError extends boolean = false>(options?: Options<GetOperatorMediaManifestData, ThrowOnError>): RequestResult<GetOperatorMediaManifestResponses, GetOperatorMediaManifestErrors, ThrowOnError> => (options?.client ?? client).get<GetOperatorMediaManifestResponses, GetOperatorMediaManifestErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/manifest',
+    ...options
+});
+
+/**
+ * List bounded accepted private media assets
+ *
+ * Returns a tenant- and filter-bound keyset page. Storage keys,
+ * transcript bodies and provider payloads are excluded.
+ *
+ */
+export const listOperatorMediaAssets = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorMediaAssetsData, ThrowOnError>): RequestResult<ListOperatorMediaAssetsResponses, ListOperatorMediaAssetsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorMediaAssetsResponses, ListOperatorMediaAssetsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets',
+    ...options
+});
+
+/**
+ * Get exact private media asset governance detail
+ *
+ * Returns the exact lifecycle, selected scan, current accessibility
+ * heads and bounded append-only governance evidence for one active-
+ * organization asset.
+ *
+ */
+export const getOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaAssetData, ThrowOnError>): RequestResult<GetOperatorMediaAssetResponses, GetOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaAssetResponses, GetOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}',
+    ...options
+});
+
+/**
+ * Stream one hash-verified accepted private media asset
+ *
+ * Re-verifies the accepted object and streams it without disclosing its
+ * storage key. Lesson audio and lesson video support one bounded byte
+ * range.
+ *
+ */
+export const previewOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<PreviewOperatorMediaAssetData, ThrowOnError>): RequestResult<PreviewOperatorMediaAssetResponses, PreviewOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).get<PreviewOperatorMediaAssetResponses, PreviewOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/preview',
+    ...options
+});
+
+/**
+ * List bounded private upload and quarantine state
+ *
+ * Returns a tenant- and state-bound keyset page without object keys.
+ */
+export const listOperatorMediaUploads = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorMediaUploadsData, ThrowOnError>): RequestResult<ListOperatorMediaUploadsResponses, ListOperatorMediaUploadsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorMediaUploadsResponses, ListOperatorMediaUploadsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads',
+    ...options
+});
+
+/**
+ * Start one resumable private quarantine upload
+ *
+ * Server allocates every identifier and private object key.
+ */
+export const startOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<StartOperatorMediaUploadData, ThrowOnError>): RequestResult<StartOperatorMediaUploadResponses, StartOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<StartOperatorMediaUploadResponses, StartOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get exact private upload and scan history
+ */
+export const getOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaUploadData, ThrowOnError>): RequestResult<GetOperatorMediaUploadResponses, GetOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaUploadResponses, GetOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}',
+    ...options
+});
+
+/**
+ * Stream one exact clean quarantine candidate for human review
+ *
+ * Only scan-clean, unexpired candidate bytes are previewable.
+ */
+export const previewOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<PreviewOperatorMediaUploadData, ThrowOnError>): RequestResult<PreviewOperatorMediaUploadResponses, PreviewOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).get<PreviewOperatorMediaUploadResponses, PreviewOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/preview',
+    ...options
+});
+
+/**
+ * Store one exact sequential binary upload part
+ *
+ * The raw body is hash-, index-, optimistic-version- and idempotency-
+ * bound. Parts never enter JSON, logs, URLs or browser persistence.
+ *
+ */
+export const storeOperatorMediaUploadPart = <ThrowOnError extends boolean = false>(options: Options<StoreOperatorMediaUploadPartData, ThrowOnError>): RequestResult<StoreOperatorMediaUploadPartResponses, StoreOperatorMediaUploadPartErrors, ThrowOnError> => (options.client ?? client).post<StoreOperatorMediaUploadPartResponses, StoreOperatorMediaUploadPartErrors, ThrowOnError>({
+    bodySerializer: null,
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/parts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Assemble, inspect and scan exact quarantine bytes
+ *
+ * Missing, stale, unavailable or failed inspection/scanning fails closed.
+ */
+export const finalizeOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<FinalizeOperatorMediaUploadData, ThrowOnError>): RequestResult<FinalizeOperatorMediaUploadResponses, FinalizeOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<FinalizeOperatorMediaUploadResponses, FinalizeOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/finalizations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Accept one exact scan-clean quarantine candidate
+ *
+ * Human acceptance promotes and re-verifies bytes before creating an asset.
+ */
+export const acceptOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<AcceptOperatorMediaUploadData, ThrowOnError>): RequestResult<AcceptOperatorMediaUploadResponses, AcceptOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<AcceptOperatorMediaUploadResponses, AcceptOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/acceptances',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject one exact quarantine candidate and queue cleanup
+ */
+export const rejectOperatorMediaUpload = <ThrowOnError extends boolean = false>(options: Options<RejectOperatorMediaUploadData, ThrowOnError>): RequestResult<RejectOperatorMediaUploadResponses, RejectOperatorMediaUploadErrors, ThrowOnError> => (options.client ?? client).post<RejectOperatorMediaUploadResponses, RejectOperatorMediaUploadErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/uploads/{upload}/rejections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Inspect, scan and adopt one exact existing private asset
+ *
+ * Does not import reference/public media or inherit rights/review authority.
+ */
+export const adoptOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<AdoptOperatorMediaAssetData, ThrowOnError>): RequestResult<AdoptOperatorMediaAssetResponses, AdoptOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<AdoptOperatorMediaAssetResponses, AdoptOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/adoptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one exact English accessibility metadata revision
+ *
+ * Transcript and alternative bodies remain out of logs, audit and search.
+ */
+export const appendOperatorMediaMetadata = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorMediaMetadataData, ThrowOnError>): RequestResult<AppendOperatorMediaMetadataResponses, AppendOperatorMediaMetadataErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorMediaMetadataResponses, AppendOperatorMediaMetadataErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/metadata-revisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Append one Kannada accessibility variant for an exact English hash
+ *
+ * The translator must differ from the English source author.
+ */
+export const appendOperatorMediaKannadaVariant = <ThrowOnError extends boolean = false>(options: Options<AppendOperatorMediaKannadaVariantData, ThrowOnError>): RequestResult<AppendOperatorMediaKannadaVariantResponses, AppendOperatorMediaKannadaVariantErrors, ThrowOnError> => (options.client ?? client).post<AppendOperatorMediaKannadaVariantResponses, AppendOperatorMediaKannadaVariantErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/metadata-revisions/{revision}/kannada-variants',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record appointed exact-hash accessibility review evidence
+ *
+ * English and Kannada decisions are append-only and require the exact
+ * current source/variant hashes and an accepted in-scope appointment.
+ *
+ */
+export const reviewOperatorMediaMetadata = <ThrowOnError extends boolean = false>(options: Options<ReviewOperatorMediaMetadataData, ThrowOnError>): RequestResult<ReviewOperatorMediaMetadataResponses, ReviewOperatorMediaMetadataErrors, ThrowOnError> => (options.client ?? client).post<ReviewOperatorMediaMetadataResponses, ReviewOperatorMediaMetadataErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/metadata-reviews',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirm, reject or withdraw appointed program rights evidence
+ *
+ * Confirmation binds exact active clean bytes, program, use scope,
+ * channels, territories, time, retention and an accepted rights-confirmer
+ * appointment. Umbrella owner evidence never auto-approves an asset.
+ *
+ */
+export const decideOperatorMediaRights = <ThrowOnError extends boolean = false>(options: Options<DecideOperatorMediaRightsData, ThrowOnError>): RequestResult<DecideOperatorMediaRightsResponses, DecideOperatorMediaRightsErrors, ThrowOnError> => (options.client ?? client).post<DecideOperatorMediaRightsResponses, DecideOperatorMediaRightsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/rights-decisions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Attach exact reviewed media evidence to one draft source
+ *
+ * Requires exact workspace/lifecycle heads and current approved English,
+ * Kannada and program-rights evidence. It advances the draft workspace
+ * without copying bytes or authority.
+ *
+ */
+export const attachOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<AttachOperatorMediaAssetData, ThrowOnError>): RequestResult<AttachOperatorMediaAssetResponses, AttachOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<AttachOperatorMediaAssetResponses, AttachOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/attachments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record immutable same-kind replacement lineage
+ *
+ * No scan, metadata, review, rights, attachment or publication authority is inherited.
+ */
+export const replaceOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<ReplaceOperatorMediaAssetData, ThrowOnError>): RequestResult<ReplaceOperatorMediaAssetResponses, ReplaceOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<ReplaceOperatorMediaAssetResponses, ReplaceOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/replacements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retire one exact asset from future attachment and publication
+ *
+ * Prior immutable publications and enrollment pins remain unchanged.
+ */
+export const retireOperatorMediaAsset = <ThrowOnError extends boolean = false>(options: Options<RetireOperatorMediaAssetData, ThrowOnError>): RequestResult<RetireOperatorMediaAssetResponses, RetireOperatorMediaAssetErrors, ThrowOnError> => (options.client ?? client).post<RetireOperatorMediaAssetResponses, RetireOperatorMediaAssetErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/assets/{asset}/retirements',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -2558,7 +3253,7 @@ export const listOperatorAuditEvents = <ThrowOnError extends boolean = false>(op
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/audit-events',
     ...options
 });
@@ -2577,7 +3272,140 @@ export const getOperatorPilotAnalytics = <ThrowOnError extends boolean = false>(
             in: 'cookie',
             name: '__Host-global_english_session',
             type: 'apiKey'
-        }, { scheme: 'bearer', type: 'http' }],
+        }],
     url: '/operator/pilot-analytics',
     ...options
+});
+
+/**
+ * List org-scoped support diagnostics digests
+ *
+ * Returns digests for stuck attempts, recoverable voice failures, and open
+ * deletion requests. Never returns transcripts, audio, or conversation
+ * bodies. Requires support.diagnostics.read.
+ *
+ */
+export const listOperatorSupportDiagnostics = <ThrowOnError extends boolean = false>(options?: Options<ListOperatorSupportDiagnosticsData, ThrowOnError>): RequestResult<ListOperatorSupportDiagnosticsResponses, ListOperatorSupportDiagnosticsErrors, ThrowOnError> => (options?.client ?? client).get<ListOperatorSupportDiagnosticsResponses, ListOperatorSupportDiagnosticsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/support/diagnostics',
+    ...options
+});
+
+/**
+ * Create an org-scoped learner privacy export
+ *
+ * Creates a versioned inventory of all learner-owned or linked record
+ * classes for one organization membership. Safe structured values are
+ * included without silent truncation. Credentials, cryptographic digests,
+ * raw audio, transcripts, object keys, and provider secret payloads are
+ * never included. Requires privacy.export.request.
+ *
+ */
+export const createOperatorPrivacyExport = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyExportData, ThrowOnError>): RequestResult<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyExportResponses, CreateOperatorPrivacyExportErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/privacy/exports',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an org-scoped privacy export request
+ */
+export const getOperatorPrivacyExport = <ThrowOnError extends boolean = false>(options: Options<GetOperatorPrivacyExportData, ThrowOnError>): RequestResult<GetOperatorPrivacyExportResponses, GetOperatorPrivacyExportErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorPrivacyExportResponses, GetOperatorPrivacyExportErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/privacy/exports/{export_request_id}',
+    ...options
+});
+
+/**
+ * Create an org-scoped account-erasure request
+ *
+ * Starts a deterministic organization-membership erasure workflow. The
+ * response records the outcome for every inventoried class, including
+ * retained authoritative evidence and ADR-0007 voice deletion receipts.
+ * Requires privacy.erasure.request.
+ *
+ */
+export const createOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(options: Options<CreateOperatorPrivacyErasureData, ThrowOnError>): RequestResult<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError> => (options.client ?? client).post<CreateOperatorPrivacyErasureResponses, CreateOperatorPrivacyErasureErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/privacy/erasures',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an org-scoped privacy erasure request
+ */
+export const getOperatorPrivacyErasure = <ThrowOnError extends boolean = false>(options: Options<GetOperatorPrivacyErasureData, ThrowOnError>): RequestResult<GetOperatorPrivacyErasureResponses, GetOperatorPrivacyErasureErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorPrivacyErasureResponses, GetOperatorPrivacyErasureErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/privacy/erasures/{erasure_request_id}',
+    ...options
+});
+
+/**
+ * Read one short-lived governed transcription candidate
+ *
+ * Returns the application-encrypted candidate only to a current-
+ * organization signed-in web operator with media.metadata.manage.
+ * The response is non-authoritative and must be checked against the
+ * complete exact audio before reconciliation.
+ *
+ */
+export const getOperatorMediaTranscriptionCandidate = <ThrowOnError extends boolean = false>(options: Options<GetOperatorMediaTranscriptionCandidateData, ThrowOnError>): RequestResult<GetOperatorMediaTranscriptionCandidateResponses, GetOperatorMediaTranscriptionCandidateErrors, ThrowOnError> => (options.client ?? client).get<GetOperatorMediaTranscriptionCandidateResponses, GetOperatorMediaTranscriptionCandidateErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/candidate',
+    ...options
+});
+
+/**
+ * Reconcile one exact provider candidate through a human
+ *
+ * Requires current-organization web authentication, selected membership,
+ * media.metadata.manage, optimistic version and candidate digest.
+ * Confirmed or corrected outcomes atomically create an immutable
+ * English media-metadata revision; no outcome is academic approval.
+ *
+ */
+export const reconcileOperatorMediaTranscriptionCandidate = <ThrowOnError extends boolean = false>(options: Options<ReconcileOperatorMediaTranscriptionCandidateData, ThrowOnError>): RequestResult<ReconcileOperatorMediaTranscriptionCandidateResponses, ReconcileOperatorMediaTranscriptionCandidateErrors, ThrowOnError> => (options.client ?? client).post<ReconcileOperatorMediaTranscriptionCandidateResponses, ReconcileOperatorMediaTranscriptionCandidateErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-global_english_session',
+            type: 'apiKey'
+        }],
+    url: '/operator/media/transcription-campaigns/{campaign}/assets/{campaign_asset}/reconciliations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

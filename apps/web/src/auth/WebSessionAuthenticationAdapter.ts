@@ -1,12 +1,24 @@
 import {
+  beginPrivilegedMfaEnrollment,
+  confirmPrivilegedMfaEnrollment,
+  createPrivilegedMfaChallenge,
   getCurrentUser,
+  getPrivilegedMfaStatus,
   listWebSessions,
   logoutWebSession,
+  regeneratePrivilegedMfaRecoveryCodes,
   requestOtp as requestOtpOperation,
   revokeAllWebSessions,
+  revokePrivilegedMfaFactor,
   revokeWebSession,
+  verifyPrivilegedMfaChallenge,
   verifyOtp as verifyOtpOperation,
   type OtpChallenge,
+  type PrivilegedMfaChallenge,
+  type PrivilegedMfaEnrollment,
+  type PrivilegedMfaRecoveryCodeIssuance,
+  type PrivilegedMfaStatus,
+  type PrivilegedMfaVerificationResult,
   type WebSessionSummary,
 } from '@global-english/contracts'
 import {
@@ -309,6 +321,123 @@ export class WebSessionAuthenticationAdapter
     }
   }
 
+  async privilegedMfaStatus(): Promise<PrivilegedMfaStatus> {
+    const result = await getPrivilegedMfaStatus({
+      ...this.#commonOptions(),
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async beginPrivilegedMfaEnrollment(): Promise<PrivilegedMfaEnrollment> {
+    const result = await beginPrivilegedMfaEnrollment({
+      ...this.#commonOptions(),
+      headers: await this.#csrfHeaders(),
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async confirmPrivilegedMfaEnrollment(
+    factorId: string,
+    challengeId: string,
+    code: string,
+  ): Promise<PrivilegedMfaRecoveryCodeIssuance> {
+    const result = await confirmPrivilegedMfaEnrollment({
+      ...this.#commonOptions(),
+      body: {
+        challenge_id: challengeId,
+        code,
+      },
+      headers: await this.#csrfHeaders(),
+      path: {
+        factor_id: factorId,
+      },
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async createPrivilegedMfaChallenge(): Promise<PrivilegedMfaChallenge> {
+    const result = await createPrivilegedMfaChallenge({
+      ...this.#commonOptions(),
+      headers: await this.#csrfHeaders(),
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async verifyPrivilegedMfaChallenge(
+    challengeId: string,
+    method: 'totp' | 'recovery_code',
+    code: string,
+  ): Promise<PrivilegedMfaVerificationResult> {
+    const result = await verifyPrivilegedMfaChallenge({
+      ...this.#commonOptions(),
+      body: {
+        method,
+        code,
+      },
+      headers: await this.#csrfHeaders(),
+      path: {
+        challenge_id: challengeId,
+      },
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async regeneratePrivilegedMfaRecoveryCodes(): Promise<PrivilegedMfaRecoveryCodeIssuance> {
+    const result = await regeneratePrivilegedMfaRecoveryCodes({
+      ...this.#commonOptions(),
+      headers: await this.#csrfHeaders(),
+      throwOnError: false,
+    })
+
+    if (result.data === undefined) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return result.data
+  }
+
+  async revokePrivilegedMfaFactor(): Promise<void> {
+    const result = await revokePrivilegedMfaFactor({
+      ...this.#commonOptions(),
+      headers: await this.#csrfHeaders(),
+      throwOnError: false,
+    })
+
+    if (result.response?.ok !== true) {
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
   async logout(): Promise<void> {
     await this.#beforeLogout()
 
@@ -351,6 +480,27 @@ export class WebSessionAuthenticationAdapter
 
     return {
       'X-XSRF-TOKEN': token,
+    }
+  }
+
+  async #credentialRequest(
+    path: string,
+    method: 'POST' | 'PUT',
+    body: Readonly<Record<string, string>>,
+  ): Promise<void> {
+    const response = await this.#fetch(`${this.#baseUrl ?? ''}${path}`, {
+      method,
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(await this.#csrfHeaders()),
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
     }
   }
 

@@ -9,6 +9,7 @@ import {
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme')
+  document.documentElement.removeAttribute('data-ge-theme')
   document.documentElement.style.colorScheme = ''
   window.localStorage.removeItem(COLOR_SCHEME_STORAGE_KEY)
 })
@@ -21,6 +22,7 @@ describe('colorScheme', () => {
 
     applyColorScheme('dark')
     expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.dataset.geTheme).toBe('dark')
     expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 })

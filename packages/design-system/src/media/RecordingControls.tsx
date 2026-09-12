@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+
 export type RecordingControlState =
   | 'idle'
   | 'ready'
@@ -7,6 +9,8 @@ export type RecordingControlState =
   | 'processing'
   | 'blocked'
   | 'error'
+
+export type RecordingCaptureMode = 'tap' | 'hold'
 
 export interface RecordingControlLabels {
   region: string
@@ -23,11 +27,15 @@ export interface RecordingControlLabels {
   processing: string
   blocked: string
   error: string
+  hold?: string
+  holding?: string
+  release?: string
 }
 
 export interface RecordingControlsProps {
   labels: RecordingControlLabels
   state: RecordingControlState
+  captureMode?: RecordingCaptureMode
   onRequestCancel: () => void
   onRequestPause: () => void
   onRequestResume: () => void
@@ -38,6 +46,7 @@ export interface RecordingControlsProps {
 export function RecordingControls({
   labels,
   state,
+  captureMode = 'tap',
   onRequestCancel,
   onRequestPause,
   onRequestResume,
@@ -193,7 +202,7 @@ export function RecordingControls({
       <div className="ge-media-controls__actions">
         {canStart ? (
           <button
-            className="ge-button ge-button--primary"
+            className="ge-button ge-button--primary ge-button--speak"
             onClick={onRequestStart}
             type="button"
           >

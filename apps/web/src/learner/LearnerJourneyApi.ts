@@ -41,7 +41,9 @@ export type OfflineCompletionInput = CompleteOfflineMissionRequest
 export interface LearnerJourneyApi {
   home(signal?: AbortSignal): Promise<LearnerHome>
 
-  progressDashboard(signal?: AbortSignal): Promise<LearnerProgressDashboard>
+  progressDashboard(
+    signal?: AbortSignal,
+  ): Promise<LearnerProgressDashboard>
 
   updateOnboarding(
     input: OnboardingInput,

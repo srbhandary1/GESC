@@ -14,14 +14,14 @@ describe('interfaceTheme', () => {
     window.localStorage.removeItem(INTERFACE_THEME_STORAGE_KEY)
   })
 
-  it('defaults to light when nothing is stored', () => {
-    expect(readInterfaceThemePreference()).toBe('light')
+  it('defaults to nocturnal dark when nothing is stored', () => {
+    expect(readInterfaceThemePreference()).toBe('dark')
   })
 
-  it('ignores the previous dark storage key after the academy template reset', () => {
-    window.localStorage.setItem('ge-interface-theme-preference', 'dark')
+  it('ignores the previous storage key after the academy template reset', () => {
+    window.localStorage.setItem('ge-interface-theme-preference', 'light')
 
-    expect(readInterfaceThemePreference()).toBe('light')
+    expect(readInterfaceThemePreference()).toBe('dark')
   })
 
   it('resolves explicit light and dark preferences', () => {
@@ -36,19 +36,20 @@ describe('interfaceTheme', () => {
 
     expect(document.documentElement.dataset.geTheme).toBe('light')
     expect(document.documentElement.dataset.geThemePreference).toBe('light')
+    expect(document.documentElement.dataset.theme).toBe('light')
     expect(document.documentElement.style.colorScheme).toBe('light')
   })
 
-  it('sets the Studio ink browser chrome colour for light and dark', () => {
+  it('sets GESC green browser chrome for light and nocturnal dark', () => {
     const themeColor = document.createElement('meta')
     themeColor.setAttribute('name', 'theme-color')
     document.head.append(themeColor)
 
     applyInterfaceTheme('light', false)
-    expect(themeColor.content).toBe('#040713')
+    expect(themeColor.content).toBe('#E8F3EC')
 
     applyInterfaceTheme('dark', true)
-    expect(themeColor.content).toBe('#040713')
+    expect(themeColor.content).toBe('#0B1210')
 
     themeColor.remove()
   })

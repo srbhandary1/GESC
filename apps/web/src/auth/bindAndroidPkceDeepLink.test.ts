@@ -43,6 +43,7 @@ describe('bindAndroidPkceDeepLink', () => {
       beginFederatedLink: vi.fn(async () => undefined),
       unlinkFederated: vi.fn(async () => undefined),
       logout: vi.fn(),
+      onAuthenticationInvalidated: vi.fn(() => () => undefined),
       refresh: vi.fn(),
       requestPasswordRecovery: vi.fn(),
       signIn: vi.fn(),
@@ -50,11 +51,12 @@ describe('bindAndroidPkceDeepLink', () => {
 
     let listener: ((event: { url: string }) => void) | undefined
     const onAuthenticated = vi.fn()
+    const onError = vi.fn()
 
     const dispose = await bindAndroidPkceDeepLink(
       authentication,
       onAuthenticated,
-      undefined,
+      onError,
       {
         addListener: async (_name, next) => {
           listener = next
@@ -68,9 +70,11 @@ describe('bindAndroidPkceDeepLink', () => {
       },
     )
 
-    listener?.({
+    const event = {
       url: 'com.globalenglish.app:/oauth/callback?code=auth-code&state=xyz',
-    })
+    }
+    listener?.(event)
+    listener?.(event)
 
     await vi.waitFor(() => {
       expect(completeAuthorization).toHaveBeenCalledWith(
@@ -78,6 +82,9 @@ describe('bindAndroidPkceDeepLink', () => {
       )
       expect(onAuthenticated).toHaveBeenCalled()
     })
+    expect(completeAuthorization).toHaveBeenCalledTimes(1)
+    expect(onAuthenticated).toHaveBeenCalledTimes(1)
+    expect(onError).not.toHaveBeenCalled()
 
     dispose()
   })

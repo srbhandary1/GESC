@@ -8,11 +8,11 @@ export const INTERFACE_THEME_PREFERENCES: readonly InterfaceThemePreference[] =
 
 /** Keep the application default storage-free and compatible with existing surfaces. */
 export const DEFAULT_INTERFACE_THEME_PREFERENCE: InterfaceThemePreference =
-  'light'
+  'dark'
 
 const THEME_COLOR: Readonly<Record<InterfaceTheme, string>> = {
-  dark: '#040713',
-  light: '#040713',
+  dark: '#0B1210',
+  light: '#E8F3EC',
 }
 
 function canUseLocalStorage(): boolean {
@@ -78,6 +78,7 @@ export function applyInterfaceTheme(
 
   document.documentElement.dataset.geTheme = resolved
   document.documentElement.dataset.geThemePreference = preference
+  document.documentElement.dataset.theme = resolved
   document.documentElement.style.colorScheme = resolved
 
   const themeColor = document.querySelector('meta[name="theme-color"]')

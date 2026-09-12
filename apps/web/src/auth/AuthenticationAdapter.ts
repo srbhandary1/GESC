@@ -1,6 +1,11 @@
 import type {
   CurrentUserResponse,
   OtpChallenge,
+  PrivilegedMfaChallenge,
+  PrivilegedMfaEnrollment,
+  PrivilegedMfaRecoveryCodeIssuance,
+  PrivilegedMfaStatus,
+  PrivilegedMfaVerificationResult,
   WebSessionSummary,
 } from '@global-english/contracts'
 
@@ -124,11 +129,20 @@ export interface AndroidPkceAuthentication
     FederatedAccountAuthentication {
   readonly transport: 'passport-pkce'
 
+  /**
+   * The only Android path for authenticated API and private-media requests.
+   * Implementations keep the bearer in memory, restore through the reviewed
+   * native refresh store, and perform at most one refresh/replay after a 401.
+   */
+  readonly authenticatedFetch: typeof fetch
+
   beginAuthorization(): Promise<void>
 
   completeAuthorization(callbackUrl: string): Promise<AuthenticationSnapshot>
 
   refresh(): Promise<void>
+
+  onAuthenticationInvalidated(listener: () => void): () => void
 }
 
 export function isPasswordFormAuthentication(

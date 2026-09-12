@@ -17,10 +17,18 @@ export async function registerOfflineShell(): Promise<void> {
   }
 
   try {
+    if (import.meta.env.DEV) {
+      await disableDevelopmentOfflineShell()
+
+      return
+    }
+
     const registration =
       await navigator.serviceWorker.register(serviceWorkerPath(), {
         scope: '/',
+        updateViaCache: 'none',
       })
+    await registration.update()
     const worker =
       registration.active ??
       registration.waiting ??
@@ -37,8 +45,9 @@ export async function registerOfflineShell(): Promise<void> {
 
       if (
         url.origin === location.origin &&
-        !url.pathname.startsWith('/api/') &&
-        !url.pathname.startsWith('/sanctum/')
+        !AUTHENTICATED_PATH_PREFIXES.some((prefix) =>
+          url.pathname.startsWith(prefix),
+        )
       ) {
         urls.add(`${url.pathname}${url.search}`)
       }

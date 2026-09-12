@@ -3,7 +3,15 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
+import type { WebSessionAuthentication } from '../auth/AuthenticationAdapter'
+import { createClientId as createRandomClientId } from '../shared/createClientId'
 import {
   resolveInterfaceMessage,
   type InterfaceMessageResolution,
@@ -13,8 +21,12 @@ import type {
   OperatorAuditEvent,
   OperatorConsoleApi,
   OperatorContentDraft,
+  OperatorNavigationKey,
   OperatorPilotAnalyticsSummary,
   OperatorPublicationStatus,
+  OperatorSearchResult,
+  OperatorSearchResultKind,
+  OperatorSupportDiagnosticItem,
 } from './OperatorConsoleApi'
 import {
   OperatorOrganizationAdministration,
@@ -49,6 +61,9 @@ import {
 
 export interface OperatorConsoleProps {
   api: OperatorConsoleApi
+  contentApi?: OperatorContentStudioApi
+  createCommandId?: () => string
+  currentMembershipId?: string
   locale: SupportedLocale
   localizationPolicy: ResolutionPolicy
   learnerApi?: OperatorLearnerApi
@@ -211,50 +226,43 @@ function formatGroupedCounts(
   return entries.map(([key, value]) => `${key}=${String(value)}`).join(', ')
 }
 
-export function OperatorConsole({
-  api,
-  locale,
-  localizationPolicy,
-}: OperatorConsoleProps) {
-  const message = (key: MessageKey): InterfaceMessageResolution =>
-    resolveInterfaceMessage(key, locale, localizationPolicy)
-  const [state, setState] = useState<LoadState>('loading')
-  const [drafts, setDrafts] = useState<readonly OperatorContentDraft[]>([])
-  const [publications, setPublications] = useState<
-    readonly OperatorPublicationStatus[]
-  >([])
-  const [auditEvents, setAuditEvents] = useState<
-    readonly OperatorAuditEvent[]
-  >([])
-  const [pilotAnalytics, setPilotAnalytics] =
-    useState<OperatorPilotAnalyticsSummary | null>(null)
+function formatDateTime(value: string, locale: SupportedLocale): string {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.valueOf())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function useOperatorResource<T>(
+  load: (signal: AbortSignal) => Promise<T>,
+): Readonly<{
+  retry: () => void
+  state: ResourceState<T>
+}> {
+  const [attempt, setAttempt] = useState(0)
+  const [state, setState] = useState<ResourceState<T>>({
+    status: 'loading',
+  })
 
   useEffect(() => {
     const controller = new AbortController()
     let active = true
 
-    Promise.all([
-      api.listDrafts(controller.signal),
-      api.listPublications(controller.signal),
-      api.listAuditEvents(controller.signal),
-      api.getPilotAnalytics(controller.signal),
-    ])
-      .then(
-        ([nextDrafts, nextPublications, nextAudit, nextAnalytics]) => {
-          if (!active) {
-            return
-          }
-
-          setDrafts(nextDrafts)
-          setPublications(nextPublications)
-          setAuditEvents(nextAudit)
-          setPilotAnalytics(nextAnalytics)
-          setState('ready')
-        },
-      )
-      .catch(() => {
+    void load(controller.signal)
+      .then((value) => {
         if (active) {
-          setState('error')
+          setState({ status: 'ready', value })
+        }
+      })
+      .catch(() => {
+        if (active && !controller.signal.aborted) {
+          setState({ status: 'error' })
         }
       })
 
@@ -301,20 +309,27 @@ export function OperatorConsole({
   return (
     <div
       className="operator-console"
-      data-operator-console="content-workflow"
+      data-operator-console="permission-aware-workspace"
     >
       {overview.state.status === 'loading' ? (
         <div className="operator-console__shell-state" role="status">
           <LocalizedMessage
             resolution={message('operator.console.loading')}
           />
-        </p>
+        </div>
       ) : null}
 
-      {state === 'error' ? (
-        <p role="alert">
-          <LocalizedMessage resolution={message('operator.console.error')} />
-        </p>
+      {overview.state.status === 'error' ? (
+        <div className="operator-console__shell-state" role="alert">
+          <p>
+            <LocalizedMessage
+              resolution={message('operator.console.error')}
+            />
+          </p>
+          <button onClick={overview.retry} type="button">
+            <LocalizedMessage resolution={message('operator.retry')} />
+          </button>
+        </div>
       ) : null}
 
       {overview.state.status === 'ready' ? (
@@ -1073,7 +1088,7 @@ function AuditDetail({
           <div>
             <dt>
               <LocalizedMessage
-                resolution={message('operator.pilot_analytics.title')}
+                resolution={message('operator.audit.field.action')}
               />
             </dt>
             <dd>{event.action}</dd>
@@ -1375,153 +1390,104 @@ function OperatorSearch({
           <div role="alert">
             <p>
               <LocalizedMessage
-                resolution={message('operator.pilot_analytics.lead')}
+                resolution={message('operator.search.error')}
               />
             </p>
-            {pilotAnalytics === null ? (
-              <p>
-                <LocalizedMessage
-                  resolution={message('operator.pilot_analytics.empty')}
-                />
-              </p>
-            ) : (
-              <ul className="operator-console__list">
-                <li>
-                  <LocalizedMessage
-                    resolution={message('operator.pilot_analytics.usage')}
-                  />
-                  {': '}
-                  learners=
-                  {String(pilotAnalytics.usage.learner_membership_count)}
-                  {'; sessions='}
-                  {String(pilotAnalytics.usage.conversation_session_count)}
-                  {'; attempts='}
-                  {String(pilotAnalytics.usage.formative_attempt_count)}
-                </li>
-                <li>
-                  <LocalizedMessage
-                    resolution={message(
-                      'operator.pilot_analytics.learning',
-                    )}
-                  />
-                  {': '}
-                  mastery=
-                  {String(
-                    pilotAnalytics.demonstrated_learning.mastery_state_count,
-                  )}
-                  {'; reviews='}
-                  {String(
-                    pilotAnalytics.demonstrated_learning.review_schedule_count,
-                  )}
-                  {' · '}
-                  {formatGroupedCounts(
-                    pilotAnalytics.demonstrated_learning
-                      .mastery_by_knowledge_state,
-                  )}
-                </li>
-              </ul>
-            )}
-          </section>
-          <section
-            aria-labelledby="operator-review-queue-title"
-            className="operator-console__panel"
-          >
-            <h3 id="operator-review-queue-title">
+            <button
+              onClick={() => {
+                executeSearch(activeQuery, undefined, false)
+              }}
+              type="button"
+            >
+              <LocalizedMessage resolution={message('operator.retry')} />
+            </button>
+          </div>
+        ) : null}
+        {state?.status === 'ready' && state.value.length === 0 ? (
+          <p>
+            <LocalizedMessage resolution={message('operator.search.empty')} />
+          </p>
+        ) : null}
+        {state?.status === 'ready' && state.value.length > 0 ? (
+          <>
+            <p className="operator-search__summary">
               <LocalizedMessage
-                resolution={message('operator.review_queue.title')}
+                resolution={message('operator.search.results')}
               />
-            </h3>
-            {drafts.length === 0 ? (
-              <p>
+              {': '}
+              <strong>{state.value.length}</strong>
+            </p>
+            <ul className="operator-search__list">
+              {state.value.map((result) => (
+                <SearchResult
+                  key={`${result.kind}:${result.id}`}
+                  locale={locale}
+                  message={message}
+                  result={result}
+                />
+              ))}
+            </ul>
+            {loadMoreFailed ? (
+              <p className="operator-panel__inline-error" role="alert">
                 <LocalizedMessage
-                  resolution={message('operator.review_queue.empty')}
+                  resolution={message('operator.search.more_error')}
                 />
               </p>
-            ) : (
-              <ul className="operator-console__list">
-                {drafts.map((draft) => (
-                  <li key={draft.curriculum_version_id}>
-                    <strong>
-                      {draft.program_key} / {draft.version_key}
-                    </strong>
-                    <span>
-                      {' '}
-                      · {draft.publication_status}
-                      {' · EN '}
-                      {draft.latest_english_decision ?? 'pending'}
-                      {' · KN '}
-                      {draft.latest_kannada_decision ?? 'pending'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section
-            aria-labelledby="operator-publish-status-title"
-            className="operator-console__panel"
-          >
-            <h3 id="operator-publish-status-title">
-              <LocalizedMessage
-                resolution={message('operator.publish_status.title')}
-              />
-            </h3>
-            {publications.length === 0 ? (
-              <p>
+            ) : null}
+            {nextCursor === null ? null : (
+              <button
+                className="operator-panel__more"
+                disabled={loadingMore}
+                onClick={() => {
+                  executeSearch(activeQuery, nextCursor, true)
+                }}
+                type="button"
+              >
                 <LocalizedMessage
-                  resolution={message('operator.publish_status.empty')}
+                  resolution={message(
+                    loadingMore
+                      ? 'operator.loading_more'
+                      : 'operator.load_more',
+                  )}
                 />
-              </p>
-            ) : (
-              <ul className="operator-console__list">
-                {publications.map((publication) => (
-                  <li key={publication.publication_id}>
-                    <strong>
-                      {publication.program_key} / {publication.version_key}
-                    </strong>
-                    <span>
-                      {' '}
-                      · #{publication.publication_number}
-                      {publication.is_head ? ' · head' : ''}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              </button>
             )}
-          </section>
-
-          <section
-            aria-labelledby="operator-audit-title"
-            className="operator-console__panel"
-          >
-            <h3 id="operator-audit-title">
-              <LocalizedMessage
-                resolution={message('operator.audit.title')}
-              />
-            </h3>
-            {auditEvents.length === 0 ? (
-              <p>
-                <LocalizedMessage
-                  resolution={message('operator.audit.empty')}
-                />
-              </p>
-            ) : (
-              <ul className="operator-console__list">
-                {auditEvents.map((event) => (
-                  <li key={event.id}>
-                    <strong>{event.action}</strong>
-                    <span>
-                      {' '}
-                      · {event.subject_type}:{event.subject_id}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      ) : null}
+          </>
+        ) : null}
+      </div>
     </section>
+  )
+}
+
+function SearchResult({
+  locale,
+  message,
+  result,
+}: Readonly<{
+  locale: SupportedLocale
+  message: MessageResolver
+  result: OperatorSearchResult
+}>) {
+  return (
+    <li>
+      <a href={`#${navigationMetadata[result.section].anchor}`}>
+        <span className="operator-search__kind">
+          <LocalizedMessage
+            resolution={message(searchKindMessages[result.kind])}
+          />
+        </span>
+        <bdi className="operator-search__primary" lang="">
+          {result.primary_text}
+        </bdi>
+        <bdi className="operator-search__secondary" lang="">
+          {result.secondary_text}
+        </bdi>
+        {result.occurred_at === null ? null : (
+          <time dateTime={result.occurred_at}>
+            {formatDateTime(result.occurred_at, locale)}
+          </time>
+        )}
+      </a>
+    </li>
   )
 }

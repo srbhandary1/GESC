@@ -8,6 +8,7 @@ export interface GlobalEnglishSecureCredentialsPlugin {
   get(options: { key: string }): Promise<{ value: string | null }>
   set(options: { key: string; value: string }): Promise<void>
   remove(options: { key: string }): Promise<void>
+  take(options: { key: string }): Promise<{ value: string | null }>
   clearAuthentication(): Promise<void>
 }
 

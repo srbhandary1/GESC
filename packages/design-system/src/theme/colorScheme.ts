@@ -40,9 +40,10 @@ export function applyColorScheme(scheme: ColorScheme): void {
   }
 
   root.dataset.theme = scheme
+  root.dataset.geTheme = scheme
   root.style.colorScheme = scheme
 }
 
 export function resolveColorScheme(): ColorScheme {
-  return readStoredColorScheme() ?? systemColorScheme()
+  return readStoredColorScheme() ?? 'dark'
 }

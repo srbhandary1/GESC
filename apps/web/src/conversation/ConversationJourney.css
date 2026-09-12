@@ -110,9 +110,15 @@
 
 .speak-room {
   display: grid;
+  justify-items: center;
   gap: var(--ge-space-4);
-  width: 100%;
+  width: min(36rem, 100%);
   max-width: none;
+  margin-inline: auto;
+}
+
+.speak-room > * {
+  width: 100%;
 }
 
 .level-session__part-hint {
@@ -242,4 +248,11 @@
   gap: var(--ge-space-2);
   margin: 0;
   padding-inline-start: 1.5rem;
+}
+
+@media (min-width: 720px) {
+  .conversation-journey--speak {
+    width: min(36rem, 100%);
+    margin-inline: auto;
+  }
 }

@@ -1,6 +1,7 @@
 import {
   getCurrentUser,
   revokeMobileTokenFamily,
+  type CurrentUserResponse,
   type MobileAuthorizationCodeExchange,
   type MobileRefreshTokenExchange,
   type MobileTokenResponse,
@@ -14,6 +15,7 @@ import {
   type FederatedProviderAvailability,
   type PasswordAuthenticationStatus,
 } from './AuthenticationAdapter'
+import { formDataWithFileParts } from './formDataWithFileParts'
 
 interface PendingAuthorization {
   state: string
@@ -54,7 +56,14 @@ export class AndroidPkceAuthenticationAdapter
   readonly #options: AndroidPkceAuthenticationOptions
   readonly #fetch: typeof fetch
   #accessToken: string | null = null
+  #authorizationCompletionTail: Promise<void> = Promise.resolve()
+  #credentialGeneration = 0
+  #invalidationNotified = false
+  readonly #invalidationListeners = new Set<() => void>()
   #refreshInFlight: Promise<void> | null = null
+
+  readonly authenticatedFetch: typeof fetch = async (input, init) =>
+    this.#authenticatedApiFetch(input, await this.#withNativeMultipart(init))
 
   constructor(options: AndroidPkceAuthenticationOptions) {
     this.#options = options
@@ -397,8 +406,23 @@ export class AndroidPkceAuthenticationAdapter
   async completeAuthorization(
     callbackUrl: string,
   ): Promise<AuthenticationSnapshot> {
-    const pending =
-      await this.#options.secureStore.takePendingAuthorization()
+    const completion = this.#authorizationCompletionTail.then(
+      () => this.#completeAuthorization(callbackUrl),
+      () => this.#completeAuthorization(callbackUrl),
+    )
+
+    this.#authorizationCompletionTail = completion.then(
+      () => undefined,
+      () => undefined,
+    )
+
+    return completion
+  }
+
+  async #completeAuthorization(
+    callbackUrl: string,
+  ): Promise<AuthenticationSnapshot> {
+    const credentialGeneration = this.#credentialGeneration
     let callback: URL
     let expectedRedirect: URL
 
@@ -406,7 +430,7 @@ export class AndroidPkceAuthenticationAdapter
       callback = new URL(callbackUrl)
       expectedRedirect = new URL(this.#options.redirectUri)
     } catch {
-      await this.#clearAuthentication()
+      // Malformed deliveries must not wipe an in-flight PKCE attempt.
       throw new AuthenticationUnavailableError()
     }
 
@@ -437,11 +461,24 @@ export class AndroidPkceAuthenticationAdapter
       return this.#completeFederatedTicket(ticket, credentialGeneration)
     }
 
+    // Validate shape before consuming pending authorization so raced Custom
+    // Tab / delayed native redeliveries cannot destroy a still-valid verifier.
     if (
       callback.searchParams.getAll('code').length !== 1 ||
       code === null
     ) {
-      await this.#clearAuthentication()
+      throw new AuthenticationUnavailableError()
+    }
+
+    const pending =
+      await this.#options.secureStore.takePendingAuthorization()
+
+    if (pending === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!constantTimeEqual(returnedState, pending.state)) {
+      await this.#options.secureStore.writePendingAuthorization(pending)
       throw new AuthenticationUnavailableError()
     }
 
@@ -458,13 +495,16 @@ export class AndroidPkceAuthenticationAdapter
         redirect_uri: this.#options.redirectUri,
       })
 
-      await this.#acceptTokens(tokens)
+      await this.#acceptTokens(tokens, credentialGeneration)
+
+      // Identity load stays inside the same failure boundary so a malformed
+      // /me body (e.g. Capacitor Content-Length: 0 → {}) cannot leave a
+      // half-authenticated secure-store refresh token behind.
+      return await this.current()
     } catch {
       await this.#clearAuthentication()
       throw new AuthenticationUnavailableError()
     }
-
-    return this.current()
   }
 
   async #completeFederatedTicket(
@@ -516,19 +556,47 @@ export class AndroidPkceAuthenticationAdapter
 
   async current(): Promise<AuthenticationSnapshot> {
     if (this.#accessToken === null) {
-      return { status: 'anonymous' }
+      let refreshToken: string | null
+
+      try {
+        refreshToken =
+          await this.#options.secureStore.readRefreshToken()
+      } catch {
+        throw new AuthenticationUnavailableError()
+      }
+
+      if (refreshToken === null) {
+        return { status: 'anonymous' }
+      }
+
+      try {
+        await this.refresh()
+      } catch {
+        // A terminal OAuth rejection clears the secure credential and is an
+        // anonymous session. Network/server failure preserves it for retry.
+        if (
+          (await this.#readRefreshTokenOrUnavailable()) === null
+        ) {
+          return { status: 'anonymous' }
+        }
+
+        throw new AuthenticationUnavailableError()
+      }
     }
 
-    const result = await getCurrentUser({
-      baseUrl: this.#options.apiBaseUrl,
-      fetch: this.#fetch,
-      headers: {
-        Authorization: `Bearer ${this.#accessToken}`,
-      },
-      throwOnError: false,
-    })
+    let result
 
-    if (result.data !== undefined) {
+    try {
+      result = await getCurrentUser({
+        baseUrl: this.#options.apiBaseUrl,
+        fetch: this.authenticatedFetch,
+        throwOnError: false,
+      })
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (isCurrentUserIdentity(result.data)) {
       return {
         status: 'authenticated',
         identity: result.data,
@@ -554,6 +622,14 @@ export class AndroidPkceAuthenticationAdapter
     })
 
     return this.#refreshInFlight
+  }
+
+  onAuthenticationInvalidated(listener: () => void): () => void {
+    this.#invalidationListeners.add(listener)
+
+    return () => {
+      this.#invalidationListeners.delete(listener)
+    }
   }
 
   async logout(): Promise<void> {
@@ -595,7 +671,189 @@ export class AndroidPkceAuthenticationAdapter
     }
   }
 
+  async #withNativeMultipart(
+    init?: RequestInit,
+  ): Promise<RequestInit | undefined> {
+    if (init === undefined || !(init.body instanceof FormData)) {
+      return init
+    }
+
+    return {
+      ...init,
+      body: formDataWithFileParts(init.body),
+    }
+  }
+
+  async #authenticatedApiFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const formBody = init?.body instanceof FormData ? init.body : null
+    const request = this.#apiRequest(
+      input,
+      formBody === null ? init : { ...init, body: undefined },
+    )
+
+    if (this.#accessToken === null) {
+      const refreshToken = await this.#readRefreshTokenOrUnavailable()
+
+      if (refreshToken !== null) {
+        try {
+          await this.refresh()
+        } catch {
+          if ((await this.#readRefreshTokenOrUnavailable()) !== null) {
+            throw new AuthenticationUnavailableError()
+          }
+        }
+      }
+    }
+
+    const firstAccessToken = this.#accessToken
+    const retryRequest = request.clone()
+    const response = await this.#sendAuthorized(
+      request,
+      firstAccessToken,
+      formBody,
+    )
+
+    if (response.status !== 401 || firstAccessToken === null) {
+      return response
+    }
+
+    if (this.#accessToken === firstAccessToken) {
+      try {
+        await this.refresh()
+      } catch {
+        if ((await this.#readRefreshTokenOrUnavailable()) !== null) {
+          throw new AuthenticationUnavailableError()
+        }
+
+        await this.#clearAuthentication()
+        this.#notifyAuthenticationInvalidated()
+
+        return response
+      }
+    }
+
+    const replacementAccessToken = this.#accessToken
+
+    if (replacementAccessToken === null) {
+      return response
+    }
+
+    const retried = await this.#sendAuthorized(
+      retryRequest,
+      replacementAccessToken,
+      formBody,
+    )
+
+    if (retried.status === 401) {
+      await this.#clearAuthentication()
+      this.#notifyAuthenticationInvalidated()
+    }
+
+    return retried
+  }
+
+  /**
+   * Capacitor's fetch interceptor reads `init.body`. A pre-built Request turns
+   * FormData into a ReadableStream, which it UTF-8-decodes and corrupts.
+   */
+  #sendAuthorized(
+    request: Request,
+    accessToken: string | null,
+    formBody: FormData | null,
+  ): Promise<Response> {
+    if (formBody !== null) {
+      return this.#fetch(request.url, {
+        body: formBody,
+        credentials: 'omit',
+        headers: this.#authorizedHeaders(request, accessToken),
+        method: request.method,
+      })
+    }
+
+    return this.#fetch(this.#authorizedRequest(request, accessToken))
+  }
+
+  #apiRequest(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Request {
+    const base = new URL(this.#options.apiBaseUrl)
+    const candidate = this.#resolveApiUrl(input, base)
+    const basePath = base.pathname.replace(/\/+$/u, '')
+
+    if (
+      candidate.origin !== base.origin ||
+      (candidate.pathname !== basePath &&
+        !candidate.pathname.startsWith(`${basePath}/`))
+    ) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const normalizedInput =
+      input instanceof Request
+        ? new Request(candidate.toString(), input)
+        : candidate.toString()
+
+    return new Request(normalizedInput, init)
+  }
+
+  /**
+   * Capacitor serves the WebView from https://localhost. Relative `/api/v1`
+   * fetches can be resolved against that origin before this adapter runs.
+   * Map only that WebView origin back onto the baked API origin; other hosts
+   * stay rejected.
+   */
+  #resolveApiUrl(input: RequestInfo | URL, base: URL): URL {
+    const candidate =
+      input instanceof Request
+        ? new URL(input.url)
+        : new URL(input.toString(), `${base.origin}/`)
+    const webViewHosts = new Set(['localhost', '127.0.0.1'])
+
+    if (
+      !webViewHosts.has(candidate.hostname) ||
+      (candidate.protocol !== 'https:' && candidate.protocol !== 'http:')
+    ) {
+      return candidate
+    }
+
+    const rewritten = new URL(candidate.href)
+    rewritten.protocol = base.protocol
+    rewritten.host = base.host
+
+    return rewritten
+  }
+
+  #authorizedHeaders(
+    request: Request,
+    accessToken: string | null,
+  ): Headers {
+    const headers = new Headers(request.headers)
+
+    if (accessToken === null) {
+      headers.delete('Authorization')
+    } else {
+      headers.set('Authorization', `Bearer ${accessToken}`)
+    }
+
+    return headers
+  }
+
+  #authorizedRequest(
+    request: Request,
+    accessToken: string | null,
+  ): Request {
+    return new Request(request, {
+      credentials: 'omit',
+      headers: this.#authorizedHeaders(request, accessToken),
+    })
+  }
+
   async #performRefresh(): Promise<void> {
+    const credentialGeneration = this.#credentialGeneration
     const refreshToken =
       await this.#options.secureStore.readRefreshToken()
 
@@ -613,9 +871,15 @@ export class AndroidPkceAuthenticationAdapter
         refresh_token: refreshToken,
       })
 
-      await this.#acceptTokens(tokens)
-    } catch {
-      await this.#clearAuthentication()
+      await this.#acceptTokens(tokens, credentialGeneration)
+    } catch (error) {
+      if (
+        !(error instanceof TokenExchangeError) ||
+        error.invalidatesCredential
+      ) {
+        await this.#clearAuthentication()
+      }
+
       throw new AuthenticationUnavailableError()
     }
   }
@@ -623,35 +887,71 @@ export class AndroidPkceAuthenticationAdapter
   async #exchangeToken(
     fields: MobileAuthorizationCodeExchange | MobileRefreshTokenExchange,
   ): Promise<MobileTokenResponse> {
-    const response = await this.#fetch(this.#options.tokenEndpoint, {
-      body: new URLSearchParams(Object.entries(fields)),
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      method: 'POST',
-    })
+    let response: Response
 
-    if (!response.ok) {
-      throw new AuthenticationUnavailableError()
+    try {
+      response = await this.#fetch(this.#options.tokenEndpoint, {
+        body: new URLSearchParams(Object.entries(fields)),
+        credentials: 'omit',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+      })
+    } catch {
+      throw new TokenExchangeError(false)
     }
 
-    const body: unknown = await response.json()
+    if (!response.ok) {
+      throw new TokenExchangeError(
+        response.status === 400 || response.status === 401,
+      )
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      // A successful response may already have rotated the refresh token.
+      throw new TokenExchangeError(true)
+    }
+
     const tokens = parseTokenResponse(body)
 
     if (tokens === null) {
-      throw new AuthenticationUnavailableError()
+      throw new TokenExchangeError(true)
     }
 
     return tokens
   }
 
-  async #acceptTokens(tokens: MobileTokenResponse): Promise<void> {
-    this.#accessToken = tokens.access_token
+  async #acceptTokens(
+    tokens: MobileTokenResponse,
+    credentialGeneration: number,
+  ): Promise<void> {
     await this.#options.secureStore.writeRefreshToken(tokens.refresh_token)
+
+    if (credentialGeneration !== this.#credentialGeneration) {
+      await this.#clearAuthentication()
+      throw new TokenExchangeError(true)
+    }
+
+    this.#accessToken = tokens.access_token
+    this.#invalidationNotified = false
+  }
+
+  async #readRefreshTokenOrUnavailable(): Promise<string | null> {
+    try {
+      return await this.#options.secureStore.readRefreshToken()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
   }
 
   async #clearAuthentication(): Promise<void> {
+    this.#credentialGeneration += 1
     this.#accessToken = null
     await this.#options.secureStore.clearAuthentication()
   }
@@ -710,15 +1010,42 @@ export class AndroidPkceAuthenticationAdapter
       body: {
         installation_id: installationId,
       },
-      fetch: this.#fetch,
-      headers: {
-        Authorization: `Bearer ${this.#accessToken}`,
-      },
+      fetch: this.authenticatedFetch,
       throwOnError: false,
     })
 
     return result.response?.status
   }
+}
+
+class TokenExchangeError extends Error {
+  readonly invalidatesCredential: boolean
+
+  constructor(invalidatesCredential: boolean) {
+    super('The OAuth token exchange failed.')
+    this.name = 'TokenExchangeError'
+    this.invalidatesCredential = invalidatesCredential
+  }
+}
+
+function isCurrentUserIdentity(
+  value: unknown,
+): value is CurrentUserResponse {
+  if (value === null || typeof value !== 'object') {
+    return false
+  }
+
+  const candidate = value as Record<string, unknown>
+  const user = candidate.user
+
+  return (
+    user !== null &&
+    typeof user === 'object' &&
+    typeof (user as { id?: unknown }).id === 'string' &&
+    (user as { id: string }).id !== '' &&
+    'current_membership' in candidate &&
+    Array.isArray(candidate.memberships)
+  )
 }
 
 function parseTokenResponse(value: unknown): MobileTokenResponse | null {

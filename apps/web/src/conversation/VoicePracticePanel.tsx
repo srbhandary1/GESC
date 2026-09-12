@@ -1,12 +1,10 @@
 import type {
   MessageKey,
-  MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
 import { useRef, useState } from 'react'
 import {
   defaultAudioRecorder,
-  type AudioRecorder,
   type CapturedAudio,
 } from '../learner/BrowserAudioRecorder'
 import { RecordingTurn } from '../learner/RecordingTurn'
@@ -16,27 +14,14 @@ import type {
   VoiceConsents,
 } from './ConversationJourneyApi'
 import { audioToPcmWav } from './audioToPcmWav'
-import {
-  abandonSpeakLoop,
-  markSpeakLoop,
-  type SpeakLoopPhase,
-} from './speakLoopTimings'
-import { isAbortError } from '../shared/isAbortError'
-import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
-import { conversationErrorMessageKey } from './conversationErrorMessage'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
   readonly createClientId: () => string
   readonly locale: SupportedLocale
   readonly onTranscriptSelected: (transcript: string) => void
-  readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
-  readonly onCancelInFlight?: () => void
-  readonly recorder?: AudioRecorder
-  readonly resetEpoch?: number
   readonly sessionId: string
-  readonly text: (key: MessageKey, parameters?: MessageParameters) => string
-  readonly unavailableMessageKey?: MessageKey
+  readonly text: (key: MessageKey) => string
 }
 
 type VoicePanelState =
@@ -65,71 +50,13 @@ export function VoicePracticePanel({
   createClientId,
   locale,
   onTranscriptSelected,
-  onLoopPhase,
-  onCancelInFlight,
-  recorder = defaultAudioRecorder,
-  resetEpoch = 0,
   sessionId,
   text,
-  unavailableMessageKey,
 }: VoicePracticePanelProps) {
   const [state, setState] = useState<VoicePanelState>({ kind: 'idle' })
   const [correctedTranscript, setCorrectedTranscript] = useState('')
-  const [correcting, setCorrecting] = useState(false)
-  const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
-  const [localResetEpoch, setLocalResetEpoch] = useState(0)
-  const [uploadError, setUploadError] = useState<MessageKey | null>(null)
-  const uploadCommand = useRef('')
-  const reviewCommand = useRef('')
-  const uploadAbort = useRef<AbortController | null>(null)
-
-  const setPhase = (phase: SpeakLoopPhase) => {
-    setLoopPhase(phase)
-    onLoopPhase?.(phase)
-  }
-
-  const releaseHold = () => {
-    setLocalResetEpoch((epoch) => epoch + 1)
-    setPhase('waiting')
-  }
-
-  const cancelInFlight = () => {
-    uploadAbort.current?.abort()
-    uploadAbort.current = null
-    abandonSpeakLoop()
-    onCancelInFlight?.()
-    releaseHold()
-  }
-
-  useEffect(() => {
-    if (api.voiceConsents === undefined) {
-      return
-    }
-
-    let cancelled = false
-
-    void (async () => {
-      try {
-        const listing = await api.voiceConsents!(locale)
-        if (cancelled) {
-          return
-        }
-        setState(
-          requiredPurposesGranted(listing)
-            ? { kind: 'recording', listing }
-            : { kind: 'consent', listing },
-        )
-      } catch {
-        if (!cancelled) {
-          setState({ kind: 'unavailable' })
-        }
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [api, locale])
+  const uploadCommand = useRef(createClientId())
+  const reviewCommand = useRef(createClientId())
 
   if (
     api.voiceConsents === undefined ||
@@ -140,18 +67,6 @@ export function VoicePracticePanel({
     api.deleteVoiceRecording === undefined
   ) {
     return null
-  }
-
-  if (unavailableMessageKey !== undefined) {
-    return (
-      <section
-        aria-labelledby="secure-voice-title"
-        className="conversation-journey__voice"
-      >
-        <h3 id="secure-voice-title">{text('conversation.voice.title')}</h3>
-        <p role="alert">{text(unavailableMessageKey)}</p>
-      </section>
-    )
   }
 
   const loadConsent = async () => {
@@ -195,53 +110,28 @@ export function VoicePracticePanel({
     listing: VoiceConsents,
     capture: CapturedAudio,
   ) => {
-    setUploadError(null)
-    setPhase('processing')
-    uploadAbort.current?.abort()
-    const controller = new AbortController()
-    uploadAbort.current = controller
+    setState({ kind: 'loading' })
 
     try {
-      if (uploadCommand.current === '') {
-        uploadCommand.current = createClientId()
-      }
-      const wav = await audioToPcmWav(capture, HOLD_MAXIMUM_DURATION_MS)
-      markSpeakLoop('wav_ready')
+      const wav = await audioToPcmWav(capture)
       const recording = await api.uploadVoiceRecording!(
         sessionId,
         wav,
         uploadCommand.current,
-        controller.signal,
       )
-      markSpeakLoop('upload_done')
 
       if (
         recording.status !== 'awaiting_learner_confirmation' ||
         recording.transcript === null
       ) {
-        uploadCommand.current = createClientId()
-        setUploadError('conversation.voice.error')
-        setState({ kind: 'recording', listing })
-        releaseHold()
+        setState({ kind: 'error', listing })
         return
       }
 
       setCorrectedTranscript(recording.transcript)
-      setCorrecting(false)
       setState({ kind: 'candidate', listing, recording })
-      releaseHold()
-    } catch (error) {
-      if (isAbortError(error) || controller.signal.aborted) {
-        releaseHold()
-        return
-      }
-
-      uploadCommand.current = createClientId()
-      setUploadError(
-        conversationErrorMessageKey(error, 'conversation.voice.error'),
-      )
-      setState({ kind: 'recording', listing })
-      releaseHold()
+    } catch {
+      setState({ kind: 'error', listing })
     }
   }
 
@@ -262,45 +152,6 @@ export function VoicePracticePanel({
     } catch {
       setState({ kind: 'error', listing })
     }
-  }
-
-  const acceptTranscript = async (
-    listing: VoiceConsents,
-    recording: SecureVoiceRecording,
-    action: 'accept' | 'correct' = 'accept',
-    signal?: AbortSignal,
-  ) => {
-    if (reviewCommand.current === '') {
-      reviewCommand.current = createClientId()
-    }
-    const result = await api.reviewVoiceTranscript!(
-      recording.id,
-      {
-        action,
-        corrected_transcript:
-          action === 'correct' ? correctedTranscript.trim() : null,
-      },
-      reviewCommand.current,
-      signal,
-    )
-
-    const selected =
-      action === 'correct'
-        ? correctedTranscript.trim()
-        : recording.transcript
-
-    if (selected !== null && selected !== '') {
-      markSpeakLoop('transcript_ready')
-      setPhase('preparing')
-      onTranscriptSelected(selected)
-    }
-
-    reviewCommand.current = createClientId()
-    uploadCommand.current = createClientId()
-    setCorrecting(false)
-    setState({ kind: 'recording', listing })
-
-    return result
   }
 
   const review = async (
@@ -387,22 +238,6 @@ export function VoicePracticePanel({
         </div>
       ) : null}
 
-      {state.kind === 'recording' && loopPhase !== 'waiting' ? (
-        <p role="status" data-speak-loop-phase={loopPhase}>
-          {text(
-            loopPhase === 'listening'
-              ? 'conversation.loop.listening'
-              : loopPhase === 'processing'
-                ? 'conversation.loop.processing'
-                : loopPhase === 'preparing'
-                  ? 'conversation.loop.preparing'
-                  : loopPhase === 'speaking'
-                    ? 'conversation.loop.speaking'
-                    : 'conversation.voice.processing',
-          )}
-        </p>
-      ) : null}
-
       {state.kind === 'consent' ? (
         <>
           <aside
@@ -450,12 +285,7 @@ export function VoicePracticePanel({
 
       {state.kind === 'recording' ? (
         <>
-          {uploadError !== null ? (
-            <p role="alert">{text(uploadError)}</p>
-          ) : null}
           <RecordingTurn
-            key={`${resetEpoch}-${localResetEpoch}`}
-            captureMode="hold"
             createClientId={createClientId}
             labels={{
               controls: {
@@ -486,9 +316,6 @@ export function VoicePracticePanel({
               playbackHelp: text('conversation.voice.playback_help'),
               playbackLabel: text('learner.recording.playback_label'),
               retry: text('learner.recording.retry'),
-              holdRemaining: text('conversation.voice.hold_remaining', {
-                seconds: '{seconds}',
-              }),
             }}
             onAudioCaptureChange={(capture) =>
               setState({
@@ -498,19 +325,10 @@ export function VoicePracticePanel({
               })
             }
             onCaptureChange={() => undefined}
-            onCancelInFlight={cancelInFlight}
-            onContinueWithoutRecording={() => onPreferTyping?.()}
-            onHoldPhaseChange={(phase) => {
-              if (phase === 'listening') {
-                setPhase('listening')
-              } else if (phase === 'processing') {
-                setPhase('processing')
-              } else if (loopPhase !== 'preparing' && loopPhase !== 'speaking') {
-                setPhase('waiting')
-              }
-            }}
-            recorder={recorder}
-            skipReviewPlayback
+            onContinueWithoutRecording={() =>
+              setState({ kind: 'idle' })
+            }
+            recorder={defaultAudioRecorder}
           />
           <button
             disabled={state.capture === null}

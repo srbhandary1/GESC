@@ -24,15 +24,15 @@
   --ge-color-text: #151948;
   --ge-color-text-muted: #5e629c;
   --ge-color-border: #d9e8e2;
-  --ge-color-border-strong: #08745f;
-  --ge-color-action: #08745f;
-  --ge-color-action-hover: #065e4e;
+  --ge-color-border-strong: #006b3f;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #005533;
   --ge-color-action-text: #ffffff;
-  --ge-color-accent: #c2412d;
-  --ge-color-accent-hover: #a93422;
+  --ge-color-accent: #006b3f;
+  --ge-color-accent-hover: #005533;
   --ge-color-brass: #d4a017;
   --ge-color-brass-soft: #ffe44d;
-  --ge-color-focus: #08745f;
+  --ge-color-focus: #0f766e;
   --ge-color-status: #e3fff2;
   --ge-color-glow-emerald: rgb(11 107 76 / 0.12);
   --ge-color-glow-brass: rgb(143 111 40 / 0.1);
@@ -50,9 +50,9 @@
 
   --ge-body-background-image: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
 
-  --ge-shell-header-bg: #08745f;
+  --ge-shell-header-bg: #006b3f;
   --ge-shell-header-border: rgb(255 255 255 / 0.12);
-  --ge-nav-bg: #08745f;
+  --ge-nav-bg: #006b3f;
   --ge-nav-border: rgb(255 255 255 / 0.16);
   --ge-brand-text-gradient: linear-gradient(120deg, #ffffff 0%, #e3fff2 100%);
   --ge-nav-link-hover-bg: rgb(255 255 255 / 0.12);
@@ -63,7 +63,7 @@
   --ge-nav-current-shadow: inset 0 -0.18rem 0 #ffffff;
   --ge-accent-brand: var(--ge-color-action);
   --ge-accent-brand-strong: #065e4e;
-  --ge-button-primary-bg: #c2412d;
+  --ge-button-primary-bg: #006b3f;
   --ge-button-primary-text: var(--ge-color-action-text);
   --ge-button-quiet-bg: var(--ge-color-surface);
   --ge-button-quiet-border: var(--ge-color-border);
@@ -147,7 +147,7 @@
   --ge-promo-cta-shadow: 0 14px 28px color-mix(in srgb, var(--ge-color-accent) 35%, transparent);
   --ge-marketing-hero-bg: #ffffff;
   --ge-marketing-hero-text: #151948;
-  --ge-marketing-hero-title: #08745f;
+  --ge-marketing-hero-title: #006b3f;
   --ge-marketing-hero-lede: #5e629c;
   --ge-marketing-hero-scrim: linear-gradient(
     112deg,
@@ -281,26 +281,26 @@
 [data-ge-theme='dark'] {
   color-scheme: dark;
 
-  --ge-color-canvas: #050816;
-  --ge-color-canvas-deep: #02040c;
-  --ge-color-surface: rgb(255 255 255 / 0.05);
-  --ge-color-surface-elevated: rgb(14 20 38 / 0.92);
-  --ge-color-ink: #f1f5ff;
-  --ge-color-text: #dbe4ff;
-  --ge-color-text-muted: #94a3c6;
-  --ge-color-border: rgb(148 163 196 / 0.22);
-  --ge-color-border-strong: rgb(148 163 196 / 0.38);
-  --ge-color-action: #22d3ee;
-  --ge-color-action-hover: #06b6d4;
-  --ge-color-action-text: #041018;
-  --ge-color-accent: #fb7185;
-  --ge-color-accent-hover: #f43f5e;
-  --ge-color-brass: #fbbf24;
-  --ge-color-brass-soft: #fde68a;
-  --ge-color-focus: #c4b5fd;
-  --ge-color-status: rgb(34 211 238 / 0.12);
-  --ge-color-glow-emerald: rgb(34 211 238 / 0.18);
-  --ge-color-glow-brass: rgb(251 191 36 / 0.16);
+  --ge-color-canvas: #0b1210;
+  --ge-color-canvas-deep: #0f1f17;
+  --ge-color-surface: #12241c;
+  --ge-color-surface-elevated: #1a2620;
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #8fa099;
+  --ge-color-border: #24332c;
+  --ge-color-border-strong: #006b3f;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #05824e;
+  --ge-color-action-text: #ffffff;
+  --ge-color-accent: #3ddc97;
+  --ge-color-accent-hover: #2ec986;
+  --ge-color-brass: #3ddc97;
+  --ge-color-brass-soft: #b8ecd0;
+  --ge-color-focus: #3ddc97;
+  --ge-color-status: #12241c;
+  --ge-color-glow-emerald: rgb(0 107 63 / 0.4);
+  --ge-color-glow-brass: rgb(61 220 151 / 0.16);
   --ge-shadow-soft: 0 1px 0 rgb(255 255 255 / 0.04),
     0 24px 60px rgb(2 6 23 / 0.55);
   --ge-shadow-panel: 0 1px 0 rgb(255 255 255 / 0.08) inset,
@@ -330,44 +330,40 @@
       rgb(244 63 94 / 0.16),
       transparent 58%
     ),
-    linear-gradient(180deg, #050816 0%, #0a1024 48%, #060912 100%);
+    linear-gradient(180deg, #0b1210 0%, #0f1f17 48%, #0b1210 100%);
 
-  --ge-shell-header-bg: rgb(8 12 28 / 0.72);
+  --ge-shell-header-bg: rgb(11 18 16 / 0.88);
   --ge-shell-header-border: rgb(255 255 255 / 0.08);
-  --ge-nav-bg: rgb(8 12 28 / 0.78);
+  --ge-nav-bg: rgb(11 18 16 / 0.92);
   --ge-nav-border: rgb(255 255 255 / 0.06);
   --ge-brand-text-gradient: linear-gradient(
     120deg,
     #fff 0%,
-    #c4b5fd 45%,
-    #22d3ee 100%
+    #b8ecd0 45%,
+    #3ddc97 100%
   );
   --ge-nav-link-hover-bg: rgb(255 255 255 / 0.05);
   --ge-nav-link-hover-border: rgb(255 255 255 / 0.08);
   --ge-nav-current-bg: linear-gradient(
     135deg,
-    rgb(34 211 238 / 0.22),
-    rgb(167 139 250 / 0.24)
+    rgb(0 107 63 / 0.45),
+    rgb(61 220 151 / 0.22)
   );
-  --ge-nav-current-border: rgb(34 211 238 / 0.35);
+  --ge-nav-current-border: rgb(61 220 151 / 0.45);
   --ge-nav-current-text: #fff;
   --ge-nav-current-shadow: 0 0 0 1px rgb(255 255 255 / 0.06) inset,
     0 12px 28px rgb(34 211 238 / 0.18);
-  --ge-accent-brand: var(--ge-futura-cyan);
-  --ge-accent-brand-strong: #38bdf8;
-  --ge-button-primary-bg: linear-gradient(
-    135deg,
-    var(--ge-futura-cyan),
-    #38bdf8
-  );
-  --ge-button-primary-text: #041018;
+  --ge-accent-brand: #006b3f;
+  --ge-accent-brand-strong: #05824e;
+  --ge-button-primary-bg: #006b3f;
+  --ge-button-primary-text: #ffffff;
   --ge-button-quiet-bg: rgb(255 255 255 / 0.04);
   --ge-button-quiet-border: rgb(255 255 255 / 0.14);
   --ge-button-quiet-text: var(--ge-color-text);
   --ge-input-bg: rgb(255 255 255 / 0.06);
   --ge-input-border: rgb(255 255 255 / 0.14);
   --ge-input-text: var(--ge-color-ink);
-  --ge-input-focus-border: var(--ge-futura-cyan);
+  --ge-input-focus-border: #3ddc97;
   --ge-input-focus-ring: rgb(34 211 238 / 0.18);
   --ge-chip-bg: linear-gradient(
     135deg,

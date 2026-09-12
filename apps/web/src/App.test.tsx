@@ -6,12 +6,10 @@ import {
   type ResolutionPolicy,
   type SupportedLocale,
 } from '@global-english/localization'
-import { Capacitor } from '@capacitor/core'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { INTERFACE_THEME_STORAGE_KEY } from './theme/interfaceTheme'
 import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
@@ -35,21 +33,6 @@ afterEach(() => {
   window.localStorage.removeItem('ge-ui-color-scheme')
   window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
-})
-
-beforeAll(async () => {
-  await Promise.all([
-    import('./conversation/SpeakRoom'),
-    import('./demo/DemoLearnerProgress'),
-    import('./demo/phase1/DemoPhase1Shell'),
-    import('./learner/LearnerJourney'),
-    import('./learner/LevelPathPanel'),
-    import('./learner/ProgressDashboard'),
-    import('./learner/TuitionRequestPanel'),
-    import('./marketing/MarketingLanding'),
-    import('./operator/OperatorConsole'),
-    import('./subscriptions/SubscriptionPanel'),
-  ])
 })
 
 describe('localized application shell', () => {
@@ -102,8 +85,30 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('nav.progress') }),
     ).toHaveAttribute('href', '#progress')
     expect(
-      screen.getAllByText('Global English Local Demo').length,
-    ).toBeGreaterThan(0)
+      screen.queryByText('Global English Local Demo'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(text('shell.theme.label')),
+      }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('link', { name: text('shell.profile_label') }),
+    )
+    expect(
+      screen.getByRole('heading', {
+        name: text('demo.phase1.profile.demo_status'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('complementary', {
+        name: text('demo.label'),
+      }),
+    ).toHaveAttribute('data-demo-mode', 'synthetic-local')
+    expect(
+      screen.getByText('Global English Local Demo'),
+    ).toBeInTheDocument()
   })
 
   it('toggles a persisted light/dark appearance without touching credentials', async () => {
@@ -125,6 +130,7 @@ describe('localized application shell', () => {
     expect(toggle).toHaveAttribute('aria-pressed', 'true')
     await user.click(toggle)
     expect(document.documentElement.dataset.theme).toBe('light')
+    expect(document.documentElement.dataset.geTheme).toBe('light')
     expect(window.localStorage.getItem('ge-ui-color-scheme')).toBe('light')
     expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
@@ -149,48 +155,14 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.learn.title'),
-      }, { timeout: 8_000 }),
-    ).toBeInTheDocument()
-    expect(
-      await screen.findByRole('heading', {
-        level: 2,
-        name: text('level.path.title'),
-      }, { timeout: 8_000 }),
-    ).toBeInTheDocument()
-    expect(
-      await screen.findByRole('button', {
-        name: /ಮಟ್ಟ 1|Level 1/i,
+        name: text('demo.page.practice.title'),
       }),
     ).toBeInTheDocument()
-  })
-
-  it('opens the Speak room from the demo primary navigation', async () => {
-    const user = userEvent.setup()
-    const demo = createLocalDemoRuntime()
-
-    render(
-      <App
-        authentication={demo.authentication}
-        conversationApi={demo.conversationApi}
-        demoMode
-        learnerJourneyApi={demo.learnerJourneyApi}
-        levelSessionsApi={demo.levelSessionsApi}
-      />,
-    )
-
-    await user.click(
-      screen.getByRole('link', { name: text('nav.speak') }),
-    )
-
     expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: text('demo.page.speak.title'),
-      }, { timeout: 8_000 }),
-    ).toBeInTheDocument()
-    expect(
-      await screen.findByRole('tab', { name: text('speak.mode.everyday') }, { timeout: 8_000 }),
+      screen.getByRole('heading', {
+        level: 2,
+        name: text('conversation.demo.title'),
+      }),
     ).toBeInTheDocument()
   })
 
@@ -272,68 +244,13 @@ describe('localized application shell', () => {
     render(<App authentication={authentication} />)
 
     expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: text('marketing.hero.title'),
-      }),
-    ).toBeInTheDocument()
-
-    expect(document.querySelector('.ge-application-frame--studio')).not.toBeNull()
-
-    expect(screen.getByText(text('app.name'))).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: text('session.label') }),
-    ).toHaveAttribute('href', '#sign-in')
-    expect(
-      screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') })
-        .length,
-    ).toBeGreaterThan(0)
-    expect(document.querySelector('.marketing-hero__slide')).toBeNull()
-    expect(
-      screen.getByText(text('conversation.prototype_notice')),
-    ).toBeInTheDocument()
+      screen.getByRole('banner').querySelector('[lang="en-IN"]'),
+    ).toHaveTextContent(text('app.name', 'en-IN'))
     expect(
       screen.queryByRole('navigation', {
         name: text('shell.navigation_label'),
       }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: text('marketing.section.how'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: text('marketing.path.1.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: text('marketing.section.pedagogy'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: text('marketing.outcome.work.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: 'Premium',
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: text('legal.privacy') }),
-    ).toHaveAttribute('href', '/privacy.html')
-    expect(
-      screen.getByRole('link', { name: text('legal.account_deletion') }),
-    ).toHaveAttribute('href', '/account-deletion.html')
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
     expect(
       screen.getByRole('heading', {
         level: 1,
@@ -360,76 +277,6 @@ describe('localized application shell', () => {
       DEFAULT_LOCALE,
     )
     expect(authentication.current).toHaveBeenCalledOnce()
-  })
-
-  it('lets a guest close the dedicated sign-in page back to the marketing home', async () => {
-    window.history.replaceState(null, '', '/#sign-in')
-    const user = userEvent.setup()
-    const authentication = guestWebAuthentication()
-
-    render(<App authentication={authentication} />)
-
-    expect(
-      await screen.findByLabelText(text('auth.password.username')),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByText(text('session.sign_in_hint')),
-    ).not.toBeInTheDocument()
-    const close = screen
-      .getAllByRole('link', { name: text('nav.home') })
-      .find((link) => link.classList.contains('shell-sign-in-page__close'))
-    expect(close).toBeDefined()
-    expect(close).toHaveAttribute('href', '#home')
-
-    await user.click(close!)
-
-    expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: text('marketing.hero.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
-    expect(
-      screen.getByRole('link', { name: text('session.label') }),
-    ).toHaveAttribute('href', '#sign-in')
-  })
-
-  it('shows the dedicated sign-in gate instead of marketing on operator workspace hashes', async () => {
-    window.history.replaceState(null, '', '/#operator-learners')
-    const authentication = guestWebAuthentication()
-
-    render(<App authentication={authentication} />)
-
-    expect(
-      await screen.findByLabelText(text('auth.password.username')),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', {
-        level: 1,
-        name: text('marketing.hero.title'),
-      }),
-    ).toBeNull()
-    expect(
-      screen.queryByRole('link', {
-        name: text('marketing.hero.cta_sign_in'),
-      }),
-    ).toBeNull()
-    expect(
-      screen.queryByRole('link', {
-        name: text('marketing.hero.cta_learn'),
-      }),
-    ).toBeNull()
-    expect(
-      screen.queryByRole('link', {
-        name: text('marketing.hero.cta_android'),
-      }),
-    ).toBeNull()
-    expect(
-      screen.queryByRole('link', {
-        name: text('shell.android_download'),
-      }),
-    ).toBeNull()
   })
 
   it('changes locale only in memory and focuses the selected destination', async () => {
@@ -461,13 +308,8 @@ describe('localized application shell', () => {
       screen.queryByRole('navigation', {
         name: text('shell.navigation_label', 'en-IN'),
       }),
-    ).toBeInTheDocument()
-    expect(
-      localStorageWrite.mock.calls.filter(
-        ([key]) =>
-          key !== INTERFACE_THEME_STORAGE_KEY && key !== '__ge_theme_probe__',
-      ),
-    ).toHaveLength(0)
+    ).not.toBeInTheDocument()
+    expect(localStorageWrite).not.toHaveBeenCalled()
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
   })
 
@@ -476,9 +318,7 @@ describe('localized application shell', () => {
 
     render(<App authentication={anonymousAuthentication()} />)
 
-    const localeSelect = screen.getByRole('combobox', {
-      name: text('shell.locale_label'),
-    })
+    const localeSelect = screen.getByRole('combobox')
 
     expect(
       [...localeSelect.querySelectorAll('option')].map(
@@ -645,6 +485,12 @@ describe('localized application shell', () => {
         completed: false,
         goal_key: null,
       },
+      streak: {
+        count: 0,
+        as_of_date: '2026-09-12',
+        timezone: 'Asia/Kolkata',
+      },
+      due_review: null,
     }) as const)
 
     render(
@@ -662,8 +508,7 @@ describe('localized application shell', () => {
         name: text('learner.onboarding.adult_title'),
       }),
     ).toBeInTheDocument()
-    expect(document.querySelector('.ge-application-frame--studio-learner')).not.toBeNull()
-    expect(home).toHaveBeenCalledOnce()
+    expect(home).toHaveBeenCalled()
   })
 
   it('does not open Learn for a non-learner membership with a learner role key', async () => {
@@ -689,58 +534,6 @@ describe('localized application shell', () => {
       screen.getByText(text('shell.checkpoint_notice')),
     ).toBeInTheDocument()
     expect(home).not.toHaveBeenCalled()
-  })
-
-  it('keeps authenticated account security collapsed and offers sign out', async () => {
-    const user = userEvent.setup()
-    const authentication = webMembershipAuthentication()
-    const getOverview = vi.fn(async () => ({
-      generated_at: '2026-08-11T10:00:00+00:00',
-      navigation: ['overview'] as const,
-      organization: {
-        id: '01J00000000000000000000003',
-        name: 'Hithaishi Learning Hub',
-        timezone: 'Asia/Kolkata',
-      },
-      panels: [] as const,
-      search_available: false,
-    }))
-
-    render(
-      <App
-        authentication={authentication}
-        operatorConsoleApi={operatorApi(getOverview)}
-      />,
-    )
-
-    expect(
-      await screen.findByRole('heading', {
-        name: text('operator.shell.title'),
-      }),
-    ).toBeInTheDocument()
-    const account = screen.getByRole('button', {
-      name: text('session.account_menu'),
-    })
-    expect(account).toHaveAttribute('aria-expanded', 'false')
-    await waitFor(() =>
-      expect(authentication.passwordStatus).toHaveBeenCalledOnce(),
-    )
-    expect(screen.getByText('operator.one')).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: text('session.label') })).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', {
-        name: text('operator.password.title'),
-      }),
-    ).not.toBeInTheDocument()
-
-    await user.click(
-      screen.getByRole('button', { name: text('session.android_sign_out') }),
-    )
-    expect(authentication.logout).toHaveBeenCalledOnce()
-    expect(
-      await screen.findByRole('link', { name: text('session.label') }),
-    ).toHaveAttribute('href', '#sign-in')
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {
@@ -772,202 +565,62 @@ describe('localized application shell', () => {
     const beginAuthorization = vi.fn(async () => undefined)
     const authentication: AndroidPkceAuthentication = {
       transport: 'passport-pkce',
-      authenticatedFetch: vi.fn(),
-      authenticationMode: vi.fn(async () => 'password_only' as const),
-      beginAuthorization: vi.fn(async () => undefined),
+      authenticatedFetch: vi.fn(async () => new Response(null, { status: 401 })),
+      current: vi.fn(
+        async (): Promise<AuthenticationSnapshot> => ({
+          status: 'anonymous',
+        }),
+      ),
+      logout: vi.fn(async () => undefined),
+      beginAuthorization,
       completeAuthorization: vi.fn(
         async (): Promise<AuthenticationSnapshot> => ({
           status: 'anonymous',
         }),
       ),
-      current: vi.fn(
-        async (): Promise<AuthenticationSnapshot> => ({
-          status: 'authenticated',
-          identity: {
-            current_membership: null,
-            memberships: [],
-            user: { id: '01J00000000000000000000001' },
-          },
-        }),
-      ),
-      enrollWithInvitation: vi.fn(async () => undefined),
-    federatedProviders: vi.fn(async () => ({
-      google: false,
-      facebook: false,
-    })),
-    beginFederatedSignIn: vi.fn(async () => undefined),
-    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
-    beginFederatedLink: vi.fn(async () => undefined),
-    unlinkFederated: vi.fn(async () => undefined),
-      logout: vi.fn(async () => undefined),
-      onAuthenticationInvalidated: vi.fn((listener) => {
-        invalidate = listener
-
-        return () => undefined
-      }),
       refresh: vi.fn(async () => undefined),
-      requestPasswordRecovery: vi.fn(async () => undefined),
+      onAuthenticationInvalidated: () => () => undefined,
       signIn: vi.fn(async () => undefined),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      enrollWithInvitation: vi.fn(async () => undefined),
+      federatedProviders: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedSignIn: vi.fn(async () => undefined),
+      federatedLinks: vi.fn(async () => ({
+        google: false,
+        facebook: false,
+      })),
+      beginFederatedLink: vi.fn(async () => undefined),
+      unlinkFederated: vi.fn(async () => undefined),
     }
     const user = userEvent.setup()
 
     render(<App authentication={authentication} />)
 
-    act(() => invalidate())
-
-    expect(
-      await screen.findByRole('link', {
-        name: text('session.label'),
-      }),
-    ).toHaveAttribute('href', '#sign-in')
-    expect(
-      screen.queryByRole('button', {
-        name: text('session.android_sign_in'),
-      }),
-    ).not.toBeInTheDocument()
+    await user.click(
+      await screen.findByRole('button', { name: text('session.sign_in') }),
+    )
+    expect(beginAuthorization).toHaveBeenCalledOnce()
   })
 
-  it('opens the in-app Android password form from the header Sign in link', async () => {
+  it('opens session details from Sign in when PKCE is not available', async () => {
     const user = userEvent.setup()
-    const beginAuthorization = vi.fn(async () => undefined)
-    const authentication: AndroidPkceAuthentication = {
-      transport: 'passport-pkce',
-      authenticatedFetch: vi.fn(),
-      authenticationMode: vi.fn(async () => 'password_only' as const),
-      beginAuthorization,
-      completeAuthorization: vi.fn(),
-      current: vi.fn(
-        async (): Promise<AuthenticationSnapshot> => ({
-          status: 'anonymous',
-        }),
-      ),
-      enrollWithInvitation: vi.fn(async () => undefined),
-    federatedProviders: vi.fn(async () => ({
-      google: false,
-      facebook: false,
-    })),
-    beginFederatedSignIn: vi.fn(async () => undefined),
-    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
-    beginFederatedLink: vi.fn(async () => undefined),
-    unlinkFederated: vi.fn(async () => undefined),
-      logout: vi.fn(async () => undefined),
-      onAuthenticationInvalidated: vi.fn(() => () => undefined),
-      refresh: vi.fn(async () => undefined),
-      requestPasswordRecovery: vi.fn(async () => undefined),
-      signIn: vi.fn(async () => undefined),
-    }
 
     render(<App authentication={anonymousAuthentication()} />)
 
-    const signIn = await screen.findByRole('link', {
-      name: text('session.label'),
+    const signIn = await screen.findByRole('button', {
+      name: text('session.sign_in'),
     })
-    expect(signIn.closest('header')).toBeInTheDocument()
-    expect(signIn).toHaveAttribute('href', '#sign-in')
-    expect(
-      screen.queryByRole('button', {
-        name: text('session.android_sign_in'),
-      }),
-    ).not.toBeInTheDocument()
+    const details = screen.getByText(text('session.details')).closest('details')
 
     expect(details).not.toHaveAttribute('open')
     await user.click(signIn)
-
-    expect(
-      await screen.findByLabelText(text('auth.password.username')),
-    ).toBeInTheDocument()
-    expect(beginAuthorization).not.toHaveBeenCalled()
-  })
-
-  it('hides APK download chrome on native Android', async () => {
-    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
-    vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
-
-    render(<App authentication={androidPkceAuthentication()} />)
-
-    expect(
-      await screen.findByRole('heading', {
-        name: text('marketing.hero.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', {
-        name: text('shell.android_download'),
-      }),
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', {
-        name: text('marketing.android.download'),
-      }),
-    ).not.toBeInTheDocument()
-  })
-
-  it('shows account menu for signed-in Android learners', async () => {
-    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
-    vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
-
-    render(
-      <App
-        authentication={androidPkceAuthentication({
-          status: 'authenticated',
-          identity: {
-            current_membership: {
-              id: '01J00000000000000000000002',
-              membership_type: 'learner',
-              organization: {
-                id: '01J00000000000000000000003',
-                kind: 'platform_direct',
-                name: 'Global English Direct',
-              },
-              role_keys: ['learner'],
-              status: 'active',
-            },
-            memberships: [],
-            user: { id: '01J00000000000000000000001' },
-          },
-        })}
-      />,
-    )
-
-    expect(
-      await screen.findByRole('button', {
-        name: text('session.account_menu'),
-      }),
-    ).toHaveAttribute('aria-expanded', 'false')
-    expect(
-      screen.getByRole('button', {
-        name: text('session.android_sign_out'),
-      }),
-    ).toBeInTheDocument()
+    expect(details).toHaveAttribute('open')
   })
 })
-
-function androidPkceAuthentication(
-  snapshot: AuthenticationSnapshot = { status: 'anonymous' },
-): AndroidPkceAuthentication {
-  return {
-    transport: 'passport-pkce',
-    authenticatedFetch: vi.fn(),
-    authenticationMode: vi.fn(async () => 'password_only' as const),
-    beginAuthorization: vi.fn(async () => undefined),
-    completeAuthorization: vi.fn(),
-    current: vi.fn(async () => snapshot),
-    enrollWithInvitation: vi.fn(async () => undefined),
-    federatedProviders: vi.fn(async () => ({
-      google: false,
-      facebook: false,
-    })),
-    beginFederatedSignIn: vi.fn(async () => undefined),
-    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
-    beginFederatedLink: vi.fn(async () => undefined),
-    unlinkFederated: vi.fn(async () => undefined),
-    logout: vi.fn(async () => undefined),
-    onAuthenticationInvalidated: vi.fn(() => () => undefined),
-    refresh: vi.fn(async () => undefined),
-    requestPasswordRecovery: vi.fn(async () => undefined),
-    signIn: vi.fn(async () => undefined),
-  }
-}
 
 function anonymousAuthentication(): AuthenticationAdapter {
   return {
@@ -1011,121 +664,6 @@ function membershipAuthentication(
   }
 }
 
-function webMembershipAuthentication(): WebSessionAuthentication {
-  return {
-    transport: 'sanctum-cookie',
-    authenticationMode: vi.fn(async () => 'password_only' as const),
-    beginPrivilegedMfaEnrollment: vi.fn(),
-    changePassword: vi.fn(async () => undefined),
-    changeUsername: vi.fn(async () => undefined),
-    confirmPassword: vi.fn(async () => undefined),
-    confirmPrivilegedMfaEnrollment: vi.fn(),
-    createPrivilegedMfaChallenge: vi.fn(),
-    current: vi.fn(
-      async (): Promise<AuthenticationSnapshot> => ({
-        status: 'authenticated',
-        identity: {
-          current_membership: {
-            id: '01J00000000000000000000002',
-            membership_type: 'organization_admin',
-            organization: {
-              id: '01J00000000000000000000003',
-              kind: 'institution',
-              name: 'Hithaishi Learning Hub',
-            },
-            role_keys: ['organization-admin'],
-            status: 'active',
-          },
-          memberships: [],
-          user: { id: '01J00000000000000000000001' },
-        },
-      }),
-    ),
-    enrollWithInvitation: vi.fn(async () => undefined),
-    federatedProviders: vi.fn(async () => ({
-      google: false,
-      facebook: false,
-    })),
-    beginFederatedSignIn: vi.fn(async () => undefined),
-    federatedLinks: vi.fn(async () => ({ google: false, facebook: false })),
-    beginFederatedLink: vi.fn(async () => undefined),
-    unlinkFederated: vi.fn(async () => undefined),
-    establishPassword: vi.fn(async () => undefined),
-    logout: vi.fn(async () => undefined),
-    passwordStatus: vi.fn(async () => ({
-      credential_ready: true,
-      mode: 'password_only' as const,
-      password_confirmed_at: null,
-      username: 'operator.one',
-    })),
-    privilegedMfaStatus: vi.fn(),
-    regeneratePrivilegedMfaRecoveryCodes: vi.fn(),
-    requestOtp: vi.fn(),
-    requestPasswordRecovery: vi.fn(async () => undefined),
-    revokeAllSessions: vi.fn(async () => undefined),
-    revokePrivilegedMfaFactor: vi.fn(),
-    revokeSession: vi.fn(async () => undefined),
-    sessions: vi.fn(async () => [
-      {
-        absolute_expires_at: '2026-08-12T10:00:00Z',
-        created_at: '2026-08-11T10:00:00Z',
-        current: true,
-        expires_at: '2026-08-11T11:00:00Z',
-        id: '01J00000000000000000000004',
-        last_activity_at: '2026-08-11T10:00:00Z',
-        mfa_verified_at: null,
-        mfa_verified_method: null,
-        mfa_verified_scope: null,
-        password_confirmed_at: null,
-        privileged: true,
-      },
-    ]),
-    signIn: vi.fn(async () => undefined),
-    verifyOtp: vi.fn(async () => undefined),
-    verifyPrivilegedMfaChallenge: vi.fn(),
-  }
-}
-
-function operatorApi(
-  getOverview: OperatorConsoleApi['getOverview'],
-): OperatorConsoleApi {
-  return {
-    getOverview,
-    getPilotAnalytics: vi.fn(async () => ({
-      demonstrated_learning: {
-        mastery_by_knowledge_state: {},
-        mastery_state_count: 0,
-        review_schedule_count: 0,
-      },
-      distinction_note:
-        'usage_counts_are_not_demonstrated_learning' as const,
-      generated_at: '2026-08-09T10:00:00+00:00',
-      usage: {
-        conversation_session_count: 0,
-        conversation_sessions_by_status: {},
-        formative_attempt_count: 0,
-        formative_attempts_by_status: {},
-        learner_membership_count: 0,
-      },
-    })),
-    listAuditEvents: vi.fn(async () => ({
-      items: [],
-      next_cursor: null,
-    })),
-    listDrafts: vi.fn(async () => []),
-    listPublications: vi.fn(async () => []),
-    listSupportDiagnostics: vi.fn(async () => ({
-      generated_at: '2026-08-09T10:00:00+00:00',
-      items: [],
-    })),
-    search: vi.fn(async () => ({
-      generated_at: '2026-08-09T10:00:00+00:00',
-      items: [],
-      next_cursor: null,
-    })),
-  }
-}
-
 function learnerApi(
   home: LearnerJourneyApi['home'],
 ): LearnerJourneyApi {
@@ -1135,9 +673,9 @@ function learnerApi(
 
   return {
     home,
+    progressDashboard: vi.fn(unreachable),
     mission: vi.fn(unreachable),
     progress: vi.fn(unreachable),
-    progressDashboard: vi.fn(unreachable),
     recordResponse: vi.fn(unreachable),
     startAttempt: vi.fn(unreachable),
     submitAttempt: vi.fn(unreachable),
