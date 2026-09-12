@@ -2906,6 +2906,37 @@ APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
 accept and Play public release remain unauthorized.
 
+## Public marketing homepage (`apps/marketing`)
+
+### Scope reviewed
+
+- Superdesign draft `2f31af01-afcd-4ede-8746-8756d1a720f8` implemented as a
+  clean static Vite site;
+- isolation from the learner app;
+- live-site typo and `maximum-scale` issues not reproduced;
+- deploy/DNS still required on the existing Plesk host.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Marketing isolated from `apps/web` | Pass | `apps/marketing` only |
+| Superdesign structure and brand tokens | Pass | Homepage sections and CSS variables |
+| Preview runtime stripped | Pass | No petite-vue / Superdesign bridge |
+| Local preview documented | Pass | `apps/marketing/README.md`, `make marketing` |
+| Live domain already pointed | Fail / not claimed | Plesk PHP site still serves the domain |
+
+### Security, privacy and tenancy
+
+- No learner data, credentials, or institute marketing inside the learner app.
+- No tracking pixels copied from the live PHP site.
+- `/login` is the existing institute path, not Sanctum/Passport.
+
+### Known limitations
+
+- Paid checkout and the product demo are not wired.
+- DNS/hosting cutover is an operations step outside this repository.
+
 
 
 

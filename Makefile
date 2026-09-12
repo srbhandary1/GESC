@@ -8,11 +8,12 @@ DOCKER_COMPOSE ?= docker compose
 API_DIR := apps/api
 WEB_DIR := apps/web
 WEB_FILTER := @global-english/web
+MARKETING_FILTER := @global-english/marketing
 COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run marketing marketing-build
 
 help:
 	@printf '%s\n' \
@@ -34,7 +35,9 @@ help:
 		'make openapi       Validate OpenAPI and check generated-client drift' \
 		'make migrate       Apply local Laravel migrations' \
 		'make seed          Load safe local Laravel seed data' \
-		'make build         Build the API configuration and React production bundle' \
+		'make build         Build the API configuration, React production bundle and marketing site' \
+		'make marketing     Start the public marketing homepage on 127.0.0.1:5174' \
+		'make marketing-build  Build the static marketing homepage into apps/marketing/dist' \
 		'make load-soak     PH-06 health load/soak harness (requires reachable API)' \
 		'make backup-restore-drill  PH-07 non-production Postgres dump/restore drill' \
 		'make staged-deploy-dry-run PH-09 build + staged deploy dry-run evidence'
@@ -169,6 +172,13 @@ build:
 		fi; \
 		test $$build_status -eq 0 && test $$cleanup_status -eq 0
 	$(PNPM) --filter $(WEB_FILTER) build
+	$(PNPM) --filter $(MARKETING_FILTER) build
+
+marketing:
+	$(PNPM) --filter $(MARKETING_FILTER) dev
+
+marketing-build:
+	$(PNPM) --filter $(MARKETING_FILTER) build
 
 load-soak:
 	@chmod +x scripts/run-load-soak.sh

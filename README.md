@@ -101,6 +101,12 @@ provider credential or published curriculum, run:
 make demo
 ```
 
+The public marketing homepage is a separate static Vite site in
+`apps/marketing`. It is not the learner app. Preview it with
+`make marketing` (`http://127.0.0.1:5174`). See
+[apps/marketing/README.md](apps/marketing/README.md). DNS for
+`globalspokenenglish.com` still points at the existing Plesk PHP host.
+
 The demo starts only the Vite development server on `127.0.0.1:5173`, opens
 directly on a populated synthetic lesson and provides the deterministic
 text-only Friend journey. Its authentication, lesson, result and conversation
