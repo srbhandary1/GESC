@@ -513,6 +513,7 @@
   "operator.publish_status.title": "Publish status",
   "operator.review_queue.empty": "No curriculum drafts are available in this organization.",
   "operator.review_queue.title": "Review queue",
+  "page.home.continue_practice": "ആമുഖം, പരിശീലനം, സംഭാഷണം, ഇടപെടൽ തുടരാൻ പഠിക്കുക തുറക്കുക.",
   "page.home.description": "നിങ്ങളുടെ പഠന ഹോം തയ്യാറാണ്. അവലോകനം ചെയ്ത ഉള്ളടക്കം പ്രസിദ്ധീകരിച്ചതിന് ശേഷം ഇവിടെ എത്തും.",
   "page.home.title": "ഹോം",
   "page.learn.description": "അവലോകനം ചെയ്ത പാഠങ്ങൾ പ്രസിദ്ധീകരിച്ചതിന് ശേഷം ഇവിടെ പ്രത്യക്ഷപ്പെടും.",
@@ -549,6 +550,11 @@
   "shell.mira.name": "Mira",
   "shell.mira.role": "Your AI coach · Mira",
   "shell.navigation_label": "പ്രധാന നാവിഗേഷൻ",
+  "shell.practice.aria_label": "Practice surfaces",
+  "shell.practice.confidence": "Confidence conversation",
+  "shell.practice.levels": "Levels path",
+  "shell.practice.roleplay": "Role-play",
+  "shell.practice.speak": "സംസാരിക്കുക",
   "shell.profile_label": "പ്രൊഫൈൽ",
   "shell.skip_to_content": "പ്രധാന ഉള്ളടക്കത്തിലേക്ക് പോകുക",
   "shell.splash.brand": "Global English",
@@ -556,5 +562,12 @@
   "shell.success.title": "You're ready",
   "shell.theme.dark": "ഡാർക്ക്",
   "shell.theme.label": "കാഴ്ച",
-  "shell.theme.light": "ലൈറ്റ്"
+  "shell.theme.light": "ലൈറ്റ്",
+  "speak.mode.everyday": "ദൈനംദിന സംസാരം",
+  "speak.mode.situation": "ഒരു സാഹചര്യം",
+  "tutor.greeting": "Hi — I am Swathi, your English teacher. Listen, then answer me out loud. I will explain mistakes in your language.",
+  "tutor.listening": "I am listening",
+  "tutor.name": "Swathi",
+  "tutor.ready": "Ready when you are",
+  "tutor.speaking": "I am speaking"
 }

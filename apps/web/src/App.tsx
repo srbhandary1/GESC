@@ -628,13 +628,19 @@ function App({
               />
             ) : (
               <LearnerLevelsSurface
+                audioRecorder={audioRecorder}
                 conversationApi={conversationApi}
+                createClientId={createClientId}
                 demoMode={demoMode}
                 demoOrganization={demoOrganization}
+                learnerJourneyApi={learnerJourneyApi}
                 levelSessionsApi={levelSessionsApi}
                 locale={locale}
                 localizationPolicy={localizationPolicy}
+                offlineBinding={offlineBinding}
+                offlineStore={offlineStore}
                 onLocaleChange={setLocale}
+                resumeBundle={offlineResume?.storedBundle}
               />
             )}
           </>

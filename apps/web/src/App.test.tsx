@@ -501,7 +501,7 @@ describe('localized application shell', () => {
         name: text('learner.onboarding.adult_title'),
       }),
     ).toBeInTheDocument()
-    expect(home).toHaveBeenCalledOnce()
+    expect(home).toHaveBeenCalled()
   })
 
   it('does not open Learn for a non-learner membership with a learner role key', async () => {

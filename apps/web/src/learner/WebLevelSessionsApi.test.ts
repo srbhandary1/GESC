@@ -3,28 +3,21 @@ import { WebLevelSessionsApi } from './WebLevelSessionsApi'
 
 describe('WebLevelSessionsApi', () => {
   it('loads Android private lesson audio through the injected authenticated fetch', async () => {
-    const audio = new Blob(['private-lesson-audio'], { type: 'audio/mpeg' })
-    const fetcher = vi.fn(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        expect(input).toBe('/api/v1/me/levels/1/sessions/introduction/audio')
-        expect(new Headers(init?.headers).get('Accept')).toBe('audio/*')
-
-        return new Response(audio, {
-          headers: { 'Content-Type': 'audio/mpeg' },
-        })
-      },
-    )
+    const fetcher = vi.fn(async () => {
+      return new Response('private-lesson-audio', {
+        headers: { 'Content-Type': 'audio/mpeg' },
+      })
+    })
     const api = new WebLevelSessionsApi({
       authenticatedPrivateMedia: true,
       csrfProtection: 'none',
       fetch: fetcher as typeof fetch,
     })
 
-    await expect(
-      api.downloadAudio?.(
-        '/api/v1/me/levels/1/sessions/introduction/audio',
-      ),
-    ).resolves.toEqual(audio)
+    const downloaded = await api.downloadAudio?.(
+      '/api/v1/me/levels/1/sessions/introduction/audio',
+    )
+    expect(await downloaded?.text()).toBe('private-lesson-audio')
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 

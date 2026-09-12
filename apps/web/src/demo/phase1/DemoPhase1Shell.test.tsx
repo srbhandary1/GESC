@@ -183,7 +183,7 @@ describe('DemoPhase1Shell', () => {
     ).toHaveAttribute('data-avatar-slot', 'ai-teacher')
     expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
     expect(
-      screen.getByText('I can speak English. Can I help you?').first(),
+      screen.getAllByText('I can speak English. Can I help you?')[0],
     ).toBeVisible()
     expect(
       screen.queryByText(
@@ -245,7 +245,7 @@ describe('DemoPhase1Shell', () => {
     await user.click(screen.getByRole('button', { name: 'AI ಶಿಕ್ಷಕ' }))
     expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
     expect(
-      screen.getByText('I can speak English. Can I help you?').first(),
+      screen.getAllByText('I can speak English. Can I help you?')[0],
     ).toBeVisible()
     expect(screen.queryByText(/Svagata|Neevu Level/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'ಕನ್ನಡ' })).toHaveClass(

@@ -679,9 +679,6 @@ function LevelSessionJourney({
               {isDemoSpeechUrl(visibleDetail.audio_stream_path) ? (
                 <DemoSpeechPlayer
                   labels={lessonAudioLabels(message)}
-                  onEnded={handleLessonAudioEnded}
-                  onPause={() => setLessonPlaying(false)}
-                  onPlaying={markLessonAudioHeard}
                   source={visibleDetail.audio_stream_path}
                 />
               ) : (

@@ -426,7 +426,7 @@ describe('LevelPathPanel', () => {
       scenario: {
         definition_hash: 'b'.repeat(64),
         id: '01J00000000000000000000004',
-        key: 'past-tense-skill-focus-prototype' as const,
+        key: 'everyday-friend-prototype' as const,
         review_status: 'synthetic_unreviewed' as const,
         topic_code: 'everyday-conversation' as const,
         version: 1,
@@ -509,9 +509,11 @@ describe('LevelPathPanel', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('heading', {
-        name: 'Speak with Swathi',
+        name: 'Speak with a patient AI Friend',
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Can I use your pen?')).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('heading', { name: 'Listen' }).length,
+    ).toBeGreaterThan(0)
   })
 })

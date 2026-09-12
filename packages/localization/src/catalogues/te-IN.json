@@ -513,6 +513,7 @@
   "operator.publish_status.title": "Publish status",
   "operator.review_queue.empty": "No curriculum drafts are available in this organization.",
   "operator.review_queue.title": "Review queue",
+  "page.home.continue_practice": "పరిచయం, అభ్యాసం, సంభాషణ, పరస్పర చర్య కొనసాగించడానికి నేర్చుకోండి తెరవండి.",
   "page.home.description": "మీ అభ్యాస హోమ్ సిద్ధంగా ఉంది. సమీక్షించిన విషయం ప్రచురణ తర్వాత ఇక్కడకు వస్తుంది.",
   "page.home.title": "హోమ్",
   "page.learn.description": "సమీక్షించిన పాఠాలు ప్రచురణ తర్వాత ఇక్కడ కనిపిస్తాయి.",
@@ -549,6 +550,11 @@
   "shell.mira.name": "Mira",
   "shell.mira.role": "Your AI coach · Mira",
   "shell.navigation_label": "ప్రధాన నావిగేషన్",
+  "shell.practice.aria_label": "Practice surfaces",
+  "shell.practice.confidence": "Confidence conversation",
+  "shell.practice.levels": "Levels path",
+  "shell.practice.roleplay": "Role-play",
+  "shell.practice.speak": "మాట్లాడండి",
   "shell.profile_label": "ప్రొఫైల్",
   "shell.skip_to_content": "ప్రధాన విషయానికి వెళ్లండి",
   "shell.splash.brand": "Global English",
@@ -556,5 +562,12 @@
   "shell.success.title": "You're ready",
   "shell.theme.dark": "డార్క్",
   "shell.theme.label": "రూపం",
-  "shell.theme.light": "లైట్"
+  "shell.theme.light": "లైట్",
+  "speak.mode.everyday": "రోజువారీ మాట",
+  "speak.mode.situation": "ఒక పరిస్థితి",
+  "tutor.greeting": "Hi — I am Swathi, your English teacher. Listen, then answer me out loud. I will explain mistakes in your language.",
+  "tutor.listening": "I am listening",
+  "tutor.name": "Swathi",
+  "tutor.ready": "Ready when you are",
+  "tutor.speaking": "I am speaking"
 }

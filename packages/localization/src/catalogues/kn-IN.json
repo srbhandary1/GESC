@@ -513,6 +513,7 @@
   "operator.publish_status.title": "Publish status",
   "operator.review_queue.empty": "No curriculum drafts are available in this organization.",
   "operator.review_queue.title": "Review queue",
+  "page.home.continue_practice": "ಪರಿಚಯ, ಅಭ್ಯಾಸ, ಸಂಭಾಷಣೆ ಮತ್ತು ಪರಸ್ಪರ ಕ್ರಿಯೆಯನ್ನು ಮುಂದುವರಿಸಲು ಕಲಿಯಿರಿ ತೆರೆಯಿರಿ.",
   "page.home.description": "ನಿಮ್ಮ ಕಲಿಕೆಯ ಮುಖಪುಟ ಸಿದ್ಧವಾಗಿದೆ. ಪರಿಶೀಲಿಸಿದ ವಿಷಯ ಪ್ರಕಟವಾದ ನಂತರ ಕಲಿಕಾ ವಿಷಯ ಇಲ್ಲಿ ಲಭ್ಯವಾಗುತ್ತದೆ.",
   "page.home.title": "ಮುಖಪುಟ",
   "page.learn.description": "ಪರಿಶೀಲಿಸಿದ ಪಾಠಗಳು ಪ್ರಕಟವಾದ ನಂತರ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.",
@@ -549,6 +550,11 @@
   "shell.mira.name": "Mira",
   "shell.mira.role": "Your AI coach · Mira",
   "shell.navigation_label": "ಮುಖ್ಯ ಸಂಚರಣೆ",
+  "shell.practice.aria_label": "ಅಭ್ಯಾಸ ಮೇಲ್ಮೈಗಳು",
+  "shell.practice.confidence": "ವಿಶ್ವಾಸ ಸಂಭಾಷಣೆ",
+  "shell.practice.levels": "ಮಟ್ಟಗಳ ಪಥ",
+  "shell.practice.roleplay": "ಪಾತ್ರಾಭಿನಯ",
+  "shell.practice.speak": "ಮಾತನಾಡಿ",
   "shell.profile_label": "ಪ್ರೊಫೈಲ್",
   "shell.skip_to_content": "ಮುಖ್ಯ ವಿಷಯಕ್ಕೆ ಹೋಗಿ",
   "shell.splash.brand": "ಗ್ಲೋಬಲ್ ಇಂಗ್ಲಿಷ್",
@@ -556,5 +562,12 @@
   "shell.success.title": "You're ready",
   "shell.theme.dark": "ಡಾರ್ಕ್",
   "shell.theme.label": "ಗೋಚರತೆ",
-  "shell.theme.light": "ಲೈಟ್"
+  "shell.theme.light": "ಲೈಟ್",
+  "speak.mode.everyday": "ದೈನಂದಿನ ಮಾತು",
+  "speak.mode.situation": "ಒಂದು ಪರಿಸ್ಥಿತಿ",
+  "tutor.greeting": "ನಮಸ್ಕಾರ — ನಾನು ಸ್ವಾತಿ, ನಿಮ್ಮ ಇಂಗ್ಲಿಷ್ ಶಿಕ್ಷಕಿ. ಪಾಠ ಕೇಳಿ, ನಂತರ ಗಟ್ಟಿಯಾಗಿ ಉತ್ತರಿಸಿ. ತಪ್ಪಾದರೆ ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ವಿವರಿಸುತ್ತೇನೆ.",
+  "tutor.listening": "ನಾನು ಕೇಳುತ್ತಿದ್ದೇನೆ",
+  "tutor.name": "ಸ್ವಾತಿ",
+  "tutor.ready": "ನೀವು ಸಿದ್ಧರಾದಾಗ",
+  "tutor.speaking": "ನಾನು ಮಾತನಾಡುತ್ತಿದ್ದೇನೆ"
 }

@@ -513,6 +513,7 @@
   "operator.publish_status.title": "Publish status",
   "operator.review_queue.empty": "No curriculum drafts are available in this organization.",
   "operator.review_queue.title": "Review queue",
+  "page.home.continue_practice": "परिचय, अभ्यास, बातचीत और संवाद जारी रखने के लिए सीखें खोलें।",
   "page.home.description": "आपका सीखने का होम तैयार है। समीक्षा के बाद प्रकाशित सामग्री यहाँ आएगी।",
   "page.home.title": "होम",
   "page.learn.description": "समीक्षित पाठ प्रकाशन के बाद यहाँ दिखाई देंगे।",
@@ -549,6 +550,11 @@
   "shell.mira.name": "Mira",
   "shell.mira.role": "Your AI coach · Mira",
   "shell.navigation_label": "मुख्य नेविगेशन",
+  "shell.practice.aria_label": "Practice surfaces",
+  "shell.practice.confidence": "Confidence conversation",
+  "shell.practice.levels": "Levels path",
+  "shell.practice.roleplay": "Role-play",
+  "shell.practice.speak": "बोलें",
   "shell.profile_label": "प्रोफ़ाइल",
   "shell.skip_to_content": "मुख्य सामग्री पर जाएँ",
   "shell.splash.brand": "ग्लोबल इंग्लिश",
@@ -556,5 +562,12 @@
   "shell.success.title": "You're ready",
   "shell.theme.dark": "डार्क",
   "shell.theme.label": "दिखावट",
-  "shell.theme.light": "लाइट"
+  "shell.theme.light": "लाइट",
+  "speak.mode.everyday": "रोज़मर्रा की बात",
+  "speak.mode.situation": "एक स्थिति",
+  "tutor.greeting": "Hi — I am Swathi, your English teacher. Listen, then answer me out loud. I will explain mistakes in your language.",
+  "tutor.listening": "I am listening",
+  "tutor.name": "Swathi",
+  "tutor.ready": "Ready when you are",
+  "tutor.speaking": "I am speaking"
 }

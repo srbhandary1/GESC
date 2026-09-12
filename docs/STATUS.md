@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.13`.
+  `ui-en-IN-2026-09-12.14`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.13`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.14`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -663,11 +663,12 @@ identity — not a purple Supernova clone.
   from `9818fe2` / LPL-01. Levels 2–17 Audio / Content / Activity / AI
   Teacher rooms use APP-0065 authored sessions from `c4c810f` and now
   auto-play `/demo/tts` plus an embedded chapter Friend (listen → talk →
-  locale-aware `explanation_l1`). Pre-Level 1–2 are explicit gaps. Learn
-  no longer mounts the Introduce-yourself mission. The Grove 16-card
-  foundation catalog no longer occupies Home or Learn. Laravel
-  LessonPractice / Indic STT remain on `codex/confidence-conversation`.
-- UI catalogues at revision `ui-*-2026-09-12.13`.
+  locale-aware `explanation_l1`). Pre-Level 1 Be and Pre-Level 2 This/That
+  are newly authored. Learn no longer mounts the Introduce-yourself
+  mission. The Grove 16-card foundation catalog no longer occupies Home
+  or Learn. Laravel LessonPractice / Indic STT / `/me/levels` are restored
+  onto this branch (D-0121); demo TTS is fallback when the API is down.
+- UI catalogues at revision `ui-*-2026-09-12.14`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
 

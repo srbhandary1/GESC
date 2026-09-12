@@ -1,7 +1,4 @@
-import {
-  defaultAuthenticationRuntime,
-  type ApiCsrfProtection,
-} from '../auth/defaultAuthentication'
+import { defaultAuthentication } from '../auth/defaultAuthentication'
 import type { FriendSession } from '../conversation/ConversationJourneyApi'
 import type {
   CheckSubmissionResult,
@@ -11,6 +8,8 @@ import type {
   LevelSummary,
   SessionPartId,
 } from './LevelSessionsApi'
+
+export type ApiCsrfProtection = 'sanctum-cookie' | 'none'
 
 export interface WebLevelSessionsApiOptions {
   readonly authenticatedPrivateMedia?: boolean
@@ -139,8 +138,8 @@ export class WebLevelSessionsApi implements LevelSessionsApi {
         headers: { Accept: 'audio/*' },
         signal,
       })
-    } catch {
-      throw new Error('level_sessions_audio_unavailable')
+    } catch (cause) {
+      throw new Error('level_sessions_audio_unavailable', { cause })
     }
 
     if (!response.ok) {
@@ -250,8 +249,10 @@ function isLevelSessionAudioUrl(url: string): boolean {
 
 export const defaultLevelSessionsApi = new WebLevelSessionsApi({
   authenticatedPrivateMedia:
-    defaultAuthenticationRuntime.privateMediaRequiresFetch,
-  baseUrl: defaultAuthenticationRuntime.apiBaseUrl,
-  csrfProtection: defaultAuthenticationRuntime.csrfProtection,
-  fetch: defaultAuthenticationRuntime.apiFetch,
+    defaultAuthentication.transport === 'passport-pkce',
+  baseUrl: '/api/v1',
+  csrfProtection:
+    defaultAuthentication.transport === 'passport-pkce'
+      ? 'none'
+      : 'sanctum-cookie',
 })
