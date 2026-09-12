@@ -3090,6 +3090,11 @@ dashboard and the Level 1 **Can** listen/check content that existed on
   review.
 - F0 DoD, production and Play remain unauthorized.
 
+`make demo-android` after this restore refreshed
+`apps/web/dist-demo/downloads/global-english-demo.apk` and
+`/downloads/global-english-demo.apk` (5.4 MB, `com.globalenglish.demo`).
+The APK is not committed.
+
 
 
 
