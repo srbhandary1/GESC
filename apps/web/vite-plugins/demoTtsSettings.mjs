@@ -60,7 +60,7 @@ export function applyHostTtsEnvFile() {
     return
   }
 
-  let text = ''
+  let text
   try {
     text = readFileSync(filePath, 'utf8')
   } catch {

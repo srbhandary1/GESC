@@ -201,6 +201,7 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
     if (
       message === '' ||
       [...message].length > MAXIMUM_MESSAGE_CHARS ||
+      // eslint-disable-next-line no-control-regex -- reject C0 controls in chat text
       /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(message)
     ) {
       sendJson(res, 400, { error: 'invalid_message' })
@@ -217,7 +218,6 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
 
     try {
       const reply = await callOpenRouter(apiKey, model, message, chapterExtra)
-      // eslint-disable-next-line no-console -- intentional demo telemetry
       console.info(
         `[demo-chat] provider=openrouter model=${model} chars_in=${[...message].length} chars_out=${[...reply].length}`,
       )
@@ -228,7 +228,6 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
       })
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'openrouter_failed'
-      // eslint-disable-next-line no-console -- intentional demo diagnostics
       console.warn(`[demo-chat] failed: ${detail}`)
       sendJson(res, 502, { error: 'openrouter_failed', detail })
     }

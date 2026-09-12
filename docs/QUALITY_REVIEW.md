@@ -3262,6 +3262,7 @@ Theme-only; LessonPractice restore preserved.
 | Demo e2e student click-through | Fail (not curriculum) | Role-play **Perform** shows **Continue** before **Type instead**. Confidence Conversation listen / type / Mira / hint already passed in the same spec. Theme not reverted. |
 | Sideload APK | Pass | `make demo-android` bundled `https://localhost`; **6145419** bytes |
 | `pnpm audit --audit-level=high` | Pass locally | Overrides `js-yaml@4.3.2`, `@xmldom/xmldom@0.9.12`, `nanoid@<3.3.18`→`3.3.18`. Lockfile-only; 2 moderate remain (below the verify gate). |
+| `pnpm run lint` | Pass locally | CI `34716225218` failed after OpenAPI restore on `set-state-in-effect` (AiMemoryPanel, ConversationJourney silence nudge, LevelSessionPanel bind/autoplay), `no-control-regex` in demo TTS/chat validators, unused `no-console` disables, `no-useless-assignment` in `demoTtsSettings.mjs`, and OnboardingStepper refresh export. Fixes are comments or unused-assignment cleanup only. |
 | Production / Play | Not authorized | D-0123 |
 
 

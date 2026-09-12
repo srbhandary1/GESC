@@ -183,6 +183,7 @@ export function ConversationJourney({
 
   useEffect(() => {
     if (state.kind !== 'ready' || state.stage !== 'talk') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- leave talk stage must hide the nudge
       setShowSilenceNudge(false)
       return
     }

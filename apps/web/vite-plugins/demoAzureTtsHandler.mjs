@@ -373,6 +373,7 @@ export async function handleDemoTtsRequest(req, res) {
   if (
     text === '' ||
     [...text].length > MAXIMUM_CHARACTERS ||
+    // eslint-disable-next-line no-control-regex -- reject C0 controls in TTS text
     /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)
   ) {
     sendJson(res, req, 400, { error: 'invalid_text' })
@@ -381,7 +382,6 @@ export async function handleDemoTtsRequest(req, res) {
 
   try {
     const result = await synthesizeWithFailover(locale, text, bundle)
-    // eslint-disable-next-line no-console -- intentional demo spend telemetry
     console.info(
       `[demo-tts] provider=${result.provider} locale=${locale} voice=${result.voice} chars=${[...text].length}`,
     )
@@ -395,7 +395,6 @@ export async function handleDemoTtsRequest(req, res) {
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'tts_failed'
     const failures = error instanceof Error ? error.failures : undefined
-    // eslint-disable-next-line no-console -- intentional demo diagnostics
     console.warn(`[demo-tts] synthesis failed: ${detail}`)
     sendJson(res, req, 502, {
       error: 'tts_failed',

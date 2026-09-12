@@ -10,7 +10,7 @@ import type { LearnerGoal } from '../learner/LearnerJourneyApi'
 import { LEARNER_GOALS } from '../learner/LearnerJourneyApi'
 import { AvatarSlot } from './AvatarSlot'
 
-export const SPEAKING_COMFORT_LEVELS = [
+export const SPEAKING_COMFORT_LEVELS = [ // eslint-disable-line react-refresh/only-export-components -- shared onboarding constants
   'just-starting',
   'some-english',
   'work-study',

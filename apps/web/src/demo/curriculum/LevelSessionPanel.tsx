@@ -105,6 +105,7 @@ export function LevelSessionPanel({
   }, [chapter])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear prior level detail when the bound level changes
     setApiDetail(null)
     setBoundSession(null)
     if (levelSessionsApi === undefined || apiLevelNumber === null) {
@@ -194,6 +195,7 @@ export function LevelSessionPanel({
       return
     }
     stopDemoSpeech()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- autoplay model line when chapter audio mode starts
     setSpeaking(true)
     void speakDemoText(chapter.modelLine, 'en-IN')
       .catch(() => undefined)
