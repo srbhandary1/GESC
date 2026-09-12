@@ -7,7 +7,7 @@ afterEach(() => {
 })
 
 describe('AvatarSlot', () => {
-  it('reserves an empty accessible teacher hook without a face', () => {
+  it('renders the Mira portrait in an accessible teacher slot', () => {
     const { container } = render(
       <AvatarSlot label="AI Teacher" slot="home-teacher" />,
     )
@@ -15,7 +15,7 @@ describe('AvatarSlot', () => {
     const slot = screen.getByRole('img', { name: 'AI Teacher' })
     expect(slot).toHaveAttribute('data-avatar-slot', 'home-teacher')
     expect(slot.className).toContain('max-w-full')
-    expect(slot.querySelector('svg')).not.toBeNull()
+    expect(slot.querySelector('img')).not.toBeNull()
     expect(slot.querySelector('video, canvas')).toBeNull()
     expect(container.querySelector('[data-avatar-slot]')).toBe(slot)
   })

@@ -7,7 +7,8 @@
     "Noto Sans Malayalam", "Noto Sans Tamil", "Noto Sans Telugu",
     "Noto Sans Devanagari", "Noto Sans", ui-sans-serif, system-ui,
     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --ge-font-family-display: var(--ge-font-family-ui);
+  --ge-font-family-display:
+    "Fraunces", "Fraunces Fallback", var(--ge-font-family-ui);
   --ge-font-size-sm: 0.875rem;
   --ge-font-size-md: 1rem;
   --ge-font-size-lg: 1.25rem;
@@ -51,19 +52,19 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ge-color-canvas: #0f1f17;
-  --ge-color-surface: #15241c;
-  --ge-color-surface-high: #1c2e25;
-  --ge-color-text: #e8f5ee;
-  --ge-color-text-muted: #9bb5a8;
-  --ge-color-border: #2a3f36;
-  --ge-color-action: #3ddc97;
-  --ge-color-action-hover: #6ee7b7;
-  --ge-color-action-text: #062117;
-  --ge-color-focus: #7dd3b8;
-  --ge-color-status: #173528;
-  --ge-color-mint: #1f4a38;
-  --ge-color-glow: rgb(61 220 151 / 22%);
+  --ge-color-canvas: #0b1210;
+  --ge-color-surface: #12241c;
+  --ge-color-surface-high: #1a2620;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #8fa099;
+  --ge-color-border: #24332c;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #05824e;
+  --ge-color-action-text: #ffffff;
+  --ge-color-focus: #3ddc97;
+  --ge-color-status: #12241c;
+  --ge-color-mint: #3ddc97;
+  --ge-color-glow: rgb(0 107 63 / 40%);
   --ge-color-danger: #fda4af;
   --ge-color-success: #3ddc97;
   --ge-elevation-1:
@@ -75,19 +76,19 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --ge-color-canvas: #0f1f17;
-    --ge-color-surface: #15241c;
-    --ge-color-surface-high: #1c2e25;
-    --ge-color-text: #e8f5ee;
-    --ge-color-text-muted: #9bb5a8;
-    --ge-color-border: #2a3f36;
-    --ge-color-action: #3ddc97;
-    --ge-color-action-hover: #6ee7b7;
-    --ge-color-action-text: #062117;
-    --ge-color-focus: #7dd3b8;
-    --ge-color-status: #173528;
-    --ge-color-mint: #1f4a38;
-    --ge-color-glow: rgb(61 220 151 / 22%);
+    --ge-color-canvas: #0b1210;
+    --ge-color-surface: #12241c;
+    --ge-color-surface-high: #1a2620;
+    --ge-color-text: #f7fbf9;
+    --ge-color-text-muted: #8fa099;
+    --ge-color-border: #24332c;
+    --ge-color-action: #006b3f;
+    --ge-color-action-hover: #05824e;
+    --ge-color-action-text: #ffffff;
+    --ge-color-focus: #3ddc97;
+    --ge-color-status: #12241c;
+    --ge-color-mint: #3ddc97;
+    --ge-color-glow: rgb(0 107 63 / 40%);
     --ge-color-danger: #fda4af;
     --ge-color-success: #3ddc97;
     --ge-elevation-1:

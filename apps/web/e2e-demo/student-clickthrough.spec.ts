@@ -89,7 +89,7 @@ test('student click-through exercises every demo page and control', async ({
   for (const prompt of ["Today’s task", 'My level', 'Next step']) {
     await page.getByRole('button', { name: prompt }).click()
   }
-  await page.getByRole('button', { name: 'Listen' }).click()
+  await page.getByRole('button', { name: 'Tap to Play' }).click()
 
   // Daily Activity — audio + full quiz from the Home CTA.
   await page.getByRole('button', { name: 'Back' }).click()

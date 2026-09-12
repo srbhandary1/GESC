@@ -42,10 +42,21 @@ interface OnboardingStepperProps {
   readonly titleRef: RefObject<HTMLHeadingElement | null>
 }
 
-const goalKeys: Readonly<Record<LearnerGoal, MessageKey>> = {
-  'everyday-conversation': 'learner.onboarding.goal_everyday',
-  'travel-confidence': 'learner.onboarding.goal_travel',
-  'workplace-confidence': 'learner.onboarding.goal_workplace',
+const goalKeys: Readonly<
+  Record<LearnerGoal, { readonly label: MessageKey; readonly hint: MessageKey }>
+> = {
+  'everyday-conversation': {
+    label: 'learner.onboarding.goal_everyday',
+    hint: 'learner.onboarding.goal_everyday_hint',
+  },
+  'travel-confidence': {
+    label: 'learner.onboarding.goal_travel',
+    hint: 'learner.onboarding.goal_travel_hint',
+  },
+  'workplace-confidence': {
+    label: 'learner.onboarding.goal_workplace',
+    hint: 'learner.onboarding.goal_workplace_hint',
+  },
 }
 
 const levelKeys: Readonly<
@@ -126,21 +137,38 @@ export function OnboardingStepper({
       aria-labelledby="onboarding-title"
       className="learner-card learner-onboarding ge-onboarding"
     >
+      <div className="ge-onboarding__dots" aria-hidden="true">
+        {steps.map((candidate, index) => (
+          <span
+            className="ge-onboarding__dot"
+            data-active={index === stepIndex ? 'true' : undefined}
+            key={candidate}
+          />
+        ))}
+      </div>
       <div className="ge-onboarding__presence">
         <AvatarSlot
-          label={message('shell.avatar.teacher').text}
-          size="lg"
+          label={message('shell.mira.name').text}
+          size="sm"
           slot="home-teacher"
         />
-        <p className="ge-onboarding__step" role="status">
-          <LocalizedMessage
-            resolution={message('learner.onboarding.step', {
-              current: String(stepIndex + 1),
-              total: String(steps.length),
-            })}
-          />
-        </p>
+        <div className="ge-onboarding__coach">
+          <p className="ge-onboarding__coach-role">
+            <LocalizedMessage resolution={message('shell.mira.role')} />
+          </p>
+          <p className="ge-onboarding__coach-line">
+            <LocalizedMessage resolution={message('shell.mira.intro')} />
+          </p>
+        </div>
       </div>
+      <p className="ge-onboarding__step visually-hidden" role="status">
+        <LocalizedMessage
+          resolution={message('learner.onboarding.step', {
+            current: String(stepIndex + 1),
+            total: String(steps.length),
+          })}
+        />
+      </p>
       <h2 id="onboarding-title" ref={titleRef} tabIndex={-1}>
         <LocalizedMessage resolution={message(stepTitles[step])} />
       </h2>
@@ -224,8 +252,20 @@ export function OnboardingStepper({
                   type="radio"
                   value={candidate}
                 />
+                <span aria-hidden="true" className="ge-select-card__icon">
+                  <GoalCardIcon goal={candidate} />
+                </span>
                 <span>
-                  <LocalizedMessage resolution={message(goalKeys[candidate])} />
+                  <strong>
+                    <LocalizedMessage
+                      resolution={message(goalKeys[candidate].label)}
+                    />
+                  </strong>
+                  <span aria-hidden="true" className="ge-select-card__hint">
+                    <LocalizedMessage
+                      resolution={message(goalKeys[candidate].hint)}
+                    />
+                  </span>
                 </span>
               </label>
             ))}
@@ -299,10 +339,76 @@ export function OnboardingStepper({
                   : 'learner.onboarding.continue',
               )}
             />
+            {busy ? null : (
+              <span aria-hidden="true" className="ge-onboarding__continue-arrow">
+                <svg
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </span>
+            )}
           </button>
         </div>
       </form>
     </section>
+  )
+}
+
+function GoalCardIcon({ goal }: { readonly goal: LearnerGoal }) {
+  if (goal === 'workplace-confidence') {
+    return (
+      <svg
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <rect height="14" rx="2" ry="2" width="20" x="2" y="7" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    )
+  }
+
+  if (goal === 'travel-confidence') {
+    return (
+      <svg
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+        <line x1="8" x2="8" y1="2" y2="18" />
+        <line x1="16" x2="16" y1="6" y2="22" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
   )
 }
 

@@ -328,16 +328,11 @@ export function DemoPhase1Shell({
     >
       {compact ? null : module === 'dashboard' ? (
         <header className="phase1-home">
-          <div className="flex items-center gap-4">
-            <AvatarSlot
-              label={message('shell.avatar.teacher').text}
-              size="lg"
-              slot="home-teacher"
-            />
-            <div className="grid min-w-0 gap-1">
-              <p className="phase1-home__eyebrow">
+          <div className="phase1-home__hello">
+            <div className="phase1-home__hello-copy">
+              <p className="phase1-home__greeting">
                 <LocalizedMessage
-                  resolution={message('demo.phase1.home.hero_label')}
+                  resolution={message('demo.phase1.home.greeting')}
                 />
               </p>
               <h1
@@ -349,65 +344,108 @@ export function DemoPhase1Shell({
                   resolution={message('demo.phase1.home.title')}
                 />
               </h1>
-              <p className="phase1-home__level">
-                <LocalizedMessage
-                  resolution={message('demo.phase1.home.level_line', {
-                    level: currentLevelTitle.text,
-                  })}
-                />
-              </p>
             </div>
-          </div>
-          <div
-            className="phase1-home__progress"
-            role="img"
-            aria-label={message('demo.phase1.dashboard.level_progress').text}
-          >
-            <span className="phase1-home__progress-bar" />
-          </div>
-          <button
-            type="button"
-            className="ge-button ge-button--primary phase1-home__cta"
-            onClick={() => go('daily-activity')}
-          >
-            <span className="phase1-home__cta-label">
-              <LocalizedMessage
-                resolution={message('demo.phase1.home.next_action')}
-              />
-            </span>
-            <span className="phase1-home__cta-hint">
-              <LocalizedMessage
-                resolution={message('demo.phase1.daily.audio_lesson_title')}
-              />
-              {' · '}
-              <LocalizedMessage
-                resolution={message('demo.phase1.daily.audio_lesson_duration')}
-              />
-            </span>
-          </button>
-          <a href="#practice" className="ge-button phase1-home__speak">
-            <LocalizedMessage
-              resolution={message('demo.phase1.home.speak')}
-            />
-          </a>
-          <ul className="phase1-home__stats">
-            <li>
-              <LocalizedMessage
-                resolution={message('demo.phase1.dashboard.level_progress')}
-              />
-            </li>
-            <li>
+            <p className="phase1-home__streak">
+              <span aria-hidden="true" className="phase1-home__streak-glyph">
+                <svg
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              </span>
               <LocalizedMessage
                 resolution={message('demo.phase1.home.streak', {
                   count: phase1Attendance.streakDays,
                 })}
               />
-            </li>
-            <li>
-              {phase1DailyActivity.monthlyScore}/
-              {phase1DailyActivity.monthlyMaximum}
-            </li>
-          </ul>
+            </p>
+            <AvatarSlot
+              label={message('shell.avatar.teacher').text}
+              size="sm"
+              slot="home-teacher"
+            />
+          </div>
+          <article className="phase1-home__lesson">
+            <div className="phase1-home__lesson-meta">
+              <p className="phase1-home__eyebrow">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.hero_label')}
+                />
+              </p>
+              <p className="phase1-home__duration">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.daily.audio_lesson_duration')}
+                />
+              </p>
+            </div>
+            <p className="phase1-home__lesson-title">
+              <LocalizedMessage
+                resolution={message('demo.phase1.daily.audio_lesson_title')}
+              />
+            </p>
+            <p className="phase1-home__level">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.level_line', {
+                  level: currentLevelTitle.text,
+                })}
+              />
+            </p>
+            <div
+              className="phase1-home__progress"
+              role="img"
+              aria-label={message('demo.phase1.dashboard.level_progress').text}
+            >
+              <span className="phase1-home__progress-bar" />
+            </div>
+            <a href="#practice" className="ge-button ge-button--primary phase1-home__speak">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.speak')}
+              />
+            </a>
+            <button
+              type="button"
+              className="ge-button phase1-home__cta"
+              onClick={() => go('daily-activity')}
+            >
+              <span className="phase1-home__cta-label">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.next_action')}
+                />
+              </span>
+            </button>
+          </article>
+          <aside className="phase1-home__tip">
+            <span aria-hidden="true" className="phase1-home__tip-glyph">
+              <svg
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            </span>
+            <div>
+              <p className="phase1-home__tip-title">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.tip_title')}
+                />
+              </p>
+              <p className="phase1-home__tip-body">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.tip_body')}
+                />
+              </p>
+            </div>
+          </aside>
           <nav
             className="phase1-home__more"
             aria-label={message('demo.phase1.home.more_label').text}

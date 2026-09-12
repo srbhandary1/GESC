@@ -89,7 +89,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   for (const prompt of ["Today’s task", 'My level', 'Next step']) {
     await page.getByRole('button', { name: prompt }).click()
   }
-  await page.getByRole('button', { name: 'Listen' }).click()
+  await page.getByRole('button', { name: 'Tap to Play' }).click()
 
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: /Continue today’s lesson/ }).click()

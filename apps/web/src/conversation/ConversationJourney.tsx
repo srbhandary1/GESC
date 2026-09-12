@@ -412,10 +412,13 @@ export function ConversationJourney({
       data-confidence-stage={stage}
     >
       <div className="conversation-journey__heading">
-        <AvatarSlot
-          label={text('shell.avatar.friend')}
-          slot="ai-friend"
-        />
+        <div className="conversation-journey__presence">
+          <AvatarSlot
+            label={text('shell.mira.name')}
+            size="lg"
+            slot="ai-friend"
+          />
+        </div>
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message(
@@ -603,11 +606,34 @@ export function ConversationJourney({
               resolution={message('conversation.confidence.listen_lead')}
             />
           </p>
-          <ol className="conversation-journey__model-lines" lang="en-IN">
-            {CONFIDENCE_LISTEN_LINES.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ol>
+          <div className="conversation-journey__prompt">
+            <TapToPlay
+              idleLabel={
+                <LocalizedMessage resolution={message('shell.listen')} />
+              }
+              onPlay={playModelLines}
+              playingLabel={
+                <LocalizedMessage
+                  resolution={message('shell.listen.playing')}
+                />
+              }
+              unavailableLabel={
+                <LocalizedMessage
+                  resolution={message('shell.listen.unavailable')}
+                />
+              }
+            />
+            <p className="conversation-journey__prompt-text" lang="en-IN">
+              {CONFIDENCE_LISTEN_LINES[0]}
+            </p>
+          </div>
+          {CONFIDENCE_LISTEN_LINES.length > 1 ? (
+            <ol className="conversation-journey__model-lines" lang="en-IN">
+              {CONFIDENCE_LISTEN_LINES.slice(1).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ol>
+          ) : null}
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_text_first')}
@@ -785,31 +811,48 @@ export function ConversationJourney({
               onChange={(event) => setUtterance(event.currentTarget.value)}
             />
             {demoMode ? (
-              <div className="conversation-journey__speech-actions">
+              <div className="conversation-journey__mic-dock">
+                <p className="conversation-journey__mic-hint">
+                  <LocalizedMessage
+                    resolution={message(
+                      listening
+                        ? 'conversation.demo.listening'
+                        : 'conversation.demo.hold_to_speak',
+                    )}
+                  />
+                </p>
                 <button
-                  className="ge-button"
+                  className="ge-mic-button"
+                  data-listening={listening ? 'true' : undefined}
                   type="button"
                   disabled={state.kind === 'sending'}
                   onClick={listening ? stopListening : startListening}
                 >
-                  <LocalizedMessage
-                    resolution={message(
-                      listening
-                        ? 'conversation.demo.stop_listening'
-                        : 'conversation.demo.speak_turn',
-                    )}
-                  />
-                </button>
-                {listening ? (
-                  <p
-                    className="conversation-journey__listening"
-                    role="status"
-                  >
+                  <span aria-hidden="true" className="ge-mic-button__glyph">
+                    <svg
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" x2="12" y1="19" y2="23" />
+                      <line x1="8" x2="16" y1="23" y2="23" />
+                    </svg>
+                  </span>
+                  <span className="visually-hidden">
                     <LocalizedMessage
-                      resolution={message('conversation.demo.listening')}
+                      resolution={message(
+                        listening
+                          ? 'conversation.demo.stop_listening'
+                          : 'conversation.demo.speak_turn',
+                      )}
                     />
-                  </p>
-                ) : null}
+                  </span>
+                </button>
               </div>
             ) : null}
             <button
@@ -841,19 +884,19 @@ export function ConversationJourney({
                   resolution={message('conversation.reply_title')}
                 />
               </h3>
-              <dl>
-                <div>
+              <dl className="conversation-journey__transcript">
+                <div className="conversation-journey__bubble conversation-journey__bubble--you">
                   <dt>
                     <LocalizedMessage
-                      resolution={message('conversation.transcript_label')}
+                      resolution={message('conversation.transcript.you')}
                     />
                   </dt>
                   <dd lang="en-IN">{state.turn.transcript}</dd>
                 </div>
-                <div>
+                <div className="conversation-journey__bubble conversation-journey__bubble--mira">
                   <dt>
                     <LocalizedMessage
-                      resolution={message('conversation.friend_label')}
+                      resolution={message('shell.mira.name')}
                     />
                   </dt>
                   <dd lang="en-IN">

@@ -2938,8 +2938,8 @@ bilingual guidance) is unchanged. Not production or Play evidence.
   content exists.
 - Friend first-run about-copy is persisted as `ge-ui-practice-about-dismissed`
   in localStorage (UI chrome only; not credentials or learner records).
-- Teacher avatar slots now ship original static SVG portraits (Grove Teacher /
-  Friend / Coach). No Lottie, video or third-party avatar SDK.
+- Teacher avatar slots now ship the static Mira coach portrait. No Lottie,
+  video or third-party avatar SDK.
 - The synthetic-demo notice is Profile-only; primary tabs have no banner.
 - Non-demo anonymous splash hides primary nav; web Sign in opens the
   Session disclosure rather than inventing an OTP form. Android PKCE
@@ -2953,24 +2953,28 @@ bilingual guidance) is unchanged. Not production or Play evidence.
 
 ### Scope reviewed
 
-- brand-green / charcoal dark tokens (`#006B3F`, `#0F1F17`) and mint tints;
-- original AI Teacher / Friend / Coach SVG portraits in avatar slots;
-- one-question-per-screen onboarding with sticky Continue;
+- Wonder GESC learner artboards as visual north star (structure + GESC green);
+- brand-green / dark tokens (`#006B3F`, `#0B1210`, `#0F1F17`) and mint `#3DDC97`;
+- Fraunces display type and the static Mira coach portrait;
+- one-question-per-screen onboarding with Mira, icon goal cards, sticky Continue;
 - demo first-run stepper (language, goal, speaking comfort) as a full-screen overlay;
-- elevated Speak destination in primary navigation;
-- Listen chips wired to existing demo/browser TTS;
+- home lesson hero, streak chip, Speak now, and Mira tip card;
+- circular brand-green Speak FAB on a 4-destination dock (Profile stays header);
+- Tap to Play chips and a centered Mira speak session with green mic;
 - MD3 empty / error / success surfaces.
 
 ### Review result
 
 Presentation-only. Authoritative onboarding still submits only
 `adult_confirmed` + `goal_key`. Speaking comfort is local chrome.
+Product goals remain the three API keys. Destinations remain four.
 Not production or Play evidence.
 
 ### Known limitations
 
-- New Indic strings for the Grove pass are implementation drafts; some
-  longer kn-IN / hi-IN lines reuse English until independent review.
+- New Indic strings for the Mira / Wonder pass are implementation drafts;
+  several chrome lines reuse English until independent review.
+- Superdesign drafts were unread (403 / unauthenticated).
 - Speaking comfort is not an enrollment or mastery field.
 - F0 DoD, production and Play remain unauthorized.
 

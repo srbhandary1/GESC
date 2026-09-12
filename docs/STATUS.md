@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.8`.
+  `ui-en-IN-2026-09-12.9`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.8`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.9`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -624,23 +624,29 @@ What moved:
 
 ## Grove learner visual language (presentation)
 
-A follow-on student UX pass on the decluttered shell. Distinct from any
-purple / 3D-avatar / paywall reference: forest green + charcoal, original
-illustrated tutor portraits, one-question onboarding, elevated Speak tab,
-Listen chips on AI text, and MD3 empty/error/success surfaces.
+A follow-on student UX pass on the decluttered shell. Visual north star is
+the Wonder GESC learner artboards (onboarding, home, speak) with GESC green
+identity — not a purple Supernova clone.
 
-- Tokens: action `#006B3F`, dark canvas `#0F1F17`, mint tints, emerald glow.
+- Tokens: action `#006B3F`, dark canvas `#0B1210` / `#0F1F17`, mint `#3DDC97`,
+  Fraunces display + Noto/system sans.
 - Dark-first when the OS does not explicitly prefer light.
-- Avatar slots now render original static SVG portraits (Teacher / Friend /
-  Coach). No avatar SDK.
-- Learner onboarding is one question per screen (adult → goal → speaking
-  comfort). Adult + goal remain the only API payload; comfort is chrome-only.
+- Avatar slots render the static Mira coach portrait. No avatar SDK.
+- Learner onboarding is one question per screen with Mira presence, icon
+  goal cards, and sticky Continue. Adult + goal remain the only API payload;
+  comfort is chrome-only. Three product goals only (no Interviews goal).
 - Demo first-run uses the same stepper (language → goal → comfort) and is
   dismissed via `ge-ui-grove-welcome-dismissed`.
-- Practice destination visible label is **Speak**, with a wave glyph FAB on
-  narrow viewports.
-- UI catalogues at revision `ui-*-2026-09-12.8`.
-- Presentation-only; not F0, production or Play evidence.
+- Home uses a greeting (no personal name), streak chip, today’s lesson hero,
+  Speak now, and a Mira tip card. Profile stays a header/home action.
+- Practice destination visible label is **Speak**, with a circular brand-green
+  mic FAB on narrow viewports. Destinations remain Home / Learn / Speak /
+  Progress (not a 5-tab dock).
+- AI text uses **Tap to Play** chips; the Speak session centers Mira, a
+  prompt card, transcript bubbles, and a green mic control.
+- UI catalogues at revision `ui-*-2026-09-12.9`.
+- Superdesign drafts were unread (unauthenticated). Wonder is the
+  implemented source. Presentation-only; not F0, production or Play evidence.
 
 ## Local synthetic demo
 

@@ -6,8 +6,77 @@
 
 .conversation-journey__heading {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: var(--ge-space-2);
+  text-align: center;
+}
+
+.conversation-journey__presence {
+  display: grid;
+  justify-items: center;
+}
+
+.conversation-journey__prompt {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1.25rem;
+  background: var(--ge-color-surface);
+}
+
+.conversation-journey__prompt-text {
+  margin: 0;
+  font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.conversation-journey__transcript {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.conversation-journey__bubble {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1.1rem;
+  background: var(--ge-color-surface);
+}
+
+.conversation-journey__bubble dt {
+  color: var(--ge-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.conversation-journey__bubble--mira {
+  justify-self: start;
+  background: color-mix(in srgb, var(--ge-color-action) 10%, var(--ge-color-surface));
+}
+
+.conversation-journey__bubble--you {
+  justify-self: end;
+}
+
+.conversation-journey__mic-dock {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  padding-block: 0.5rem;
+}
+
+.conversation-journey__mic-hint {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
 }
 
 .conversation-journey__about {
