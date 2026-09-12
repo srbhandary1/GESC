@@ -23,7 +23,7 @@ describe('FoundationLessonCatalog', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: '16 speaking lessons' }),
+      screen.getByRole('heading', { name: 'Course levels' }),
     ).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Foundations' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Daily life' })).toBeVisible()
@@ -83,7 +83,7 @@ describe('FoundationLessonCatalog', () => {
 
     await user.click(screen.getByRole('button', { name: 'All lessons' }))
     expect(
-      screen.getByRole('heading', { name: '16 speaking lessons' }),
+      screen.getByRole('heading', { name: 'Course levels' }),
     ).toBeVisible()
   })
 
