@@ -6,6 +6,7 @@
 
 .conversation-journey__heading {
   display: grid;
+  justify-items: start;
   gap: var(--ge-space-2);
 }
 

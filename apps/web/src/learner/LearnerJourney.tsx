@@ -30,7 +30,6 @@ import {
 import type {
   AttemptResponseInput,
   GovernedContent,
-  LearnerGoal,
   LearnerHome,
   LearnerJourneyApi,
   LearnerMission,
@@ -41,10 +40,13 @@ import type {
   OfflineCompletionInput,
   OnboardingInput,
 } from './LearnerJourneyApi'
+import { LearnerJourneyUnavailableError } from './LearnerJourneyApi'
 import {
-  LEARNER_GOALS,
-  LearnerJourneyUnavailableError,
-} from './LearnerJourneyApi'
+  OnboardingStepper,
+  type SpeakingComfort,
+} from '../ui/OnboardingStepper'
+import { persistSpeakingComfort } from '../ui/firstRunPreference'
+import { AvatarSlot } from '../ui/AvatarSlot'
 import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
@@ -676,14 +678,20 @@ export function LearnerJourney({
       aria-labelledby="learner-home-title"
       className="learner-stack max-w-content"
     >
-      <h2
-        className="learner-section-title"
-        id="learner-home-title"
-        ref={stateTitle}
-        tabIndex={-1}
-      >
-        <LocalizedMessage resolution={message('learner.home.title')} />
-      </h2>
+      <div className="flex items-center gap-4">
+        <AvatarSlot
+          label={message('shell.avatar.teacher').text}
+          slot="home-teacher"
+        />
+        <h2
+          className="learner-section-title"
+          id="learner-home-title"
+          ref={stateTitle}
+          tabIndex={-1}
+        >
+          <LocalizedMessage resolution={message('learner.home.title')} />
+        </h2>
+      </div>
       {state.home.enrollment === null ||
       state.home.next_mission === null ? (
         <p className="learner-card">
@@ -832,27 +840,25 @@ function OnboardingForm({
   onComplete,
   titleRef,
 }: OnboardingFormProps) {
-  const [adultConfirmed, setAdultConfirmed] = useState(false)
-  const [goal, setGoal] = useState<LearnerGoal | null>(null)
   const [busy, setBusy] = useState(false)
   const [commandLocked, setCommandLocked] = useState(false)
   const [error, setError] = useState(false)
   const commandId = useRef(createClientId())
   const pendingInput = useRef<OnboardingInput | null>(null)
-  const message = (key: MessageKey) =>
-    resolveInterfaceMessage(key, locale, localizationPolicy)
+  const message = (
+    key: MessageKey,
+    parameters?: Parameters<typeof resolveInterfaceMessage>[3],
+  ) => resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
 
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true })
   }, [titleRef])
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
+  const submit = async (adultConfirmed: boolean, goal: OnboardingInput['goal_key'] | null, level: SpeakingComfort | null) => {
     let input = pendingInput.current
 
     if (input === null) {
-      if (!adultConfirmed || goal === null) {
+      if (!adultConfirmed || goal === null || level === null) {
         setError(true)
         return
       }
@@ -862,6 +868,7 @@ function OnboardingForm({
         goal_key: goal,
       } satisfies OnboardingInput
       pendingInput.current = input
+      persistSpeakingComfort(level)
       setCommandLocked(true)
     }
     setBusy(true)
@@ -882,87 +889,24 @@ function OnboardingForm({
   }
 
   return (
-    <section
-      aria-labelledby="onboarding-title"
-      className="learner-card learner-onboarding"
-    >
-      <h2
-        id="onboarding-title"
-        ref={titleRef}
-        tabIndex={-1}
-      >
-        <LocalizedMessage
-          resolution={message('learner.onboarding.title')}
-        />
-      </h2>
-      <p>
-        <LocalizedMessage
-          resolution={message('learner.onboarding.introduction')}
-        />
-      </p>
-      <form onSubmit={(event) => void submit(event)}>
-        <label className="learner-choice learner-choice--confirmation">
-          <input
-            checked={adultConfirmed}
-            disabled={busy || commandLocked}
-            onChange={(event) =>
-              setAdultConfirmed(event.currentTarget.checked)
-            }
-            type="checkbox"
-          />
+    <OnboardingStepper
+      busy={busy}
+      commandLocked={commandLocked}
+      error={
+        error ? (
           <LocalizedMessage
-            resolution={message('learner.onboarding.adult_confirmation')}
+            resolution={message('learner.onboarding.error')}
           />
-        </label>
-
-        <fieldset className="learner-fieldset">
-          <legend>
-            <LocalizedMessage
-              resolution={message('learner.onboarding.goal_legend')}
-            />
-          </legend>
-          {LEARNER_GOALS.map((candidate) => (
-            <label
-              className="learner-choice"
-              key={candidate}
-            >
-              <input
-                checked={goal === candidate}
-                disabled={busy || commandLocked}
-                name="learner-goal"
-                onChange={() => setGoal(candidate)}
-                type="radio"
-                value={candidate}
-              />
-              <LocalizedMessage
-                resolution={message(goalMessageKey(candidate))}
-              />
-            </label>
-          ))}
-        </fieldset>
-
-        {error ? (
-          <p role="alert">
-            <LocalizedMessage
-              resolution={message('learner.onboarding.error')}
-            />
-          </p>
-        ) : null}
-        <button
-          className="ge-button ge-button--primary"
-          disabled={busy}
-          type="submit"
-        >
-          <LocalizedMessage
-            resolution={message(
-              busy
-                ? 'learner.onboarding.saving'
-                : 'learner.onboarding.continue',
-            )}
-          />
-        </button>
-      </form>
-    </section>
+        ) : null
+      }
+      locale={locale}
+      message={message}
+      onSubmit={({ adultConfirmed, goal, level }) => {
+        void submit(adultConfirmed, goal, level)
+      }}
+      steps={['adult', 'goal', 'level']}
+      titleRef={titleRef}
+    />
   )
 }
 
@@ -1630,14 +1574,6 @@ function GovernedText({ content }: { readonly content: GovernedContent }) {
       segments={[{ locale: content.locale, text: content.text }]}
     />
   )
-}
-
-function goalMessageKey(goal: LearnerGoal): MessageKey {
-  return {
-    'everyday-conversation': 'learner.onboarding.goal_everyday',
-    'travel-confidence': 'learner.onboarding.goal_travel',
-    'workplace-confidence': 'learner.onboarding.goal_workplace',
-  }[goal] as MessageKey
 }
 
 function offlineStatusMessageKey(

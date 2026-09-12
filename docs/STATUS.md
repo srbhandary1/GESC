@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.6`.
+  `ui-en-IN-2026-09-12.7`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.6`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.7`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -621,6 +621,26 @@ What moved:
   nav. Session detail sits in a disclosure; `unavailable` shows retry only.
   Local demo still auto-authenticates and does not reintroduce a global
   demo banner. Auth protocol unchanged.
+
+## Grove learner visual language (presentation)
+
+A follow-on student UX pass on the decluttered shell. Distinct from any
+purple / 3D-avatar / paywall reference: forest green + charcoal, original
+illustrated tutor portraits, one-question onboarding, elevated Speak tab,
+Listen chips on AI text, and MD3 empty/error/success surfaces.
+
+- Tokens: action `#006B3F`, dark canvas `#0F1F17`, mint tints, emerald glow.
+- Dark-first when the OS does not explicitly prefer light.
+- Avatar slots now render original static SVG portraits (Teacher / Friend /
+  Coach). No avatar SDK.
+- Learner onboarding is one question per screen (adult → goal → speaking
+  comfort). Adult + goal remain the only API payload; comfort is chrome-only.
+- Demo first-run uses the same stepper (language → goal → comfort) and is
+  dismissed via `ge-ui-grove-welcome-dismissed`.
+- Practice destination visible label is **Speak**, with a wave glyph FAB on
+  narrow viewports.
+- UI catalogues at revision `ui-*-2026-09-12.7`.
+- Presentation-only; not F0, production or Play evidence.
 
 ## Local synthetic demo
 

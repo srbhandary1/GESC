@@ -1,4 +1,14 @@
 export const PRACTICE_ABOUT_STORAGE_KEY = 'ge-ui-practice-about-dismissed'
+export const GROVE_WELCOME_STORAGE_KEY = 'ge-ui-grove-welcome-dismissed'
+export const SPEAKING_COMFORT_STORAGE_KEY = 'ge-ui-speaking-comfort'
+
+export function persistSpeakingComfort(level: string): void {
+  try {
+    globalThis.localStorage?.setItem(SPEAKING_COMFORT_STORAGE_KEY, level)
+  } catch {
+    // Speaking comfort is chrome-only and never a credential.
+  }
+}
 
 export function readFirstRunDismissed(key: string): boolean {
   try {

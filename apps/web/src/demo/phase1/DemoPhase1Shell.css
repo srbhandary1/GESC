@@ -22,11 +22,40 @@
   line-height: 1.08;
 }
 
+.phase1-home__eyebrow {
+  margin: 0;
+  color: var(--ge-color-action);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .phase1-home__level {
   margin: 0;
   color: var(--ge-color-text-muted);
   font-size: 1.05rem;
   line-height: 1.45;
+}
+
+.phase1-home__progress {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-status);
+}
+
+.phase1-home__progress-bar {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ge-color-action);
+  box-shadow: 0 0 16px var(--ge-color-glow);
+}
+
+.phase1-home__speak {
+  justify-self: start;
 }
 
 .phase1-home__cta {

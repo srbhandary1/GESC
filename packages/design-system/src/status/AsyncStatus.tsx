@@ -45,15 +45,37 @@ export function AsyncError({
 }
 
 export interface EmptyStateProps {
+  readonly action?: ReactNode
   readonly children: ReactNode
   readonly title: ReactNode
 }
 
-export function EmptyState({ children, title }: EmptyStateProps) {
+export function EmptyState({ action, children, title }: EmptyStateProps) {
   return (
     <section className="ge-empty-state">
       <h2 className="ge-empty-state__title">{title}</h2>
       <p className="ge-empty-state__message">{children}</p>
+      {action === undefined ? null : (
+        <div className="ge-empty-state__action">{action}</div>
+      )}
+    </section>
+  )
+}
+
+export interface SuccessStateProps {
+  readonly action?: ReactNode
+  readonly children: ReactNode
+  readonly title: ReactNode
+}
+
+export function SuccessState({ action, children, title }: SuccessStateProps) {
+  return (
+    <section className="ge-success-state" data-state="success">
+      <h2 className="ge-success-state__title">{title}</h2>
+      <p className="ge-success-state__message">{children}</p>
+      {action === undefined ? null : (
+        <div className="ge-success-state__action">{action}</div>
+      )}
     </section>
   )
 }

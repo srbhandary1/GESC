@@ -4,10 +4,19 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
+import { SUPPORTED_LOCALES } from '@global-english/localization'
 import { AvatarSlot } from '../../ui/AvatarSlot'
+import { TapToPlay } from '../../ui/TapToPlay'
+import { OnboardingStepper } from '../../ui/OnboardingStepper'
+import {
+  GROVE_WELCOME_STORAGE_KEY,
+  persistFirstRunDismissed,
+  persistSpeakingComfort,
+  readFirstRunDismissed,
+} from '../../ui/firstRunPreference'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_FOCUS_AI_TOPICS,
@@ -30,6 +39,7 @@ export interface DemoPhase1ShellProps {
   readonly compact?: boolean
   readonly demoOrganization?: string
   readonly forcedModule?: Phase1Module
+  readonly onLocaleChange?: (locale: SupportedLocale) => void
 }
 
 const moduleTitleKeys: Readonly<Record<Phase1Module, MessageKey>> = {
@@ -153,6 +163,7 @@ export function DemoPhase1Shell({
   compact = false,
   demoOrganization,
   forcedModule,
+  onLocaleChange,
 }: DemoPhase1ShellProps) {
   const [hashModule, setHashModule] = useState<Phase1Module>(() =>
     moduleFromHash(globalThis.location?.hash ?? ''),
@@ -174,6 +185,10 @@ export function DemoPhase1Shell({
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [audioSpeaking, setAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
+  const [welcomeOpen, setWelcomeOpen] = useState(
+    () => !compact && !readFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY),
+  )
+  const welcomeTitleRef = useRef<HTMLHeadingElement | null>(null)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -272,6 +287,33 @@ export function DemoPhase1Shell({
 
   const currentLevelTitle = levelTitle(currentLevel)
 
+  if (welcomeOpen && !compact) {
+    return (
+      <div className="phase1-shell" data-demo-phase1="synthetic">
+        <h1 className="visually-hidden" id="destination-title" tabIndex={-1}>
+          <LocalizedMessage
+            resolution={message('demo.phase1.first_run.title')}
+          />
+        </h1>
+        <OnboardingStepper
+          locale={locale}
+          locales={SUPPORTED_LOCALES}
+          message={message}
+          onLocaleChange={onLocaleChange}
+          onSubmit={({ level }) => {
+            if (level !== null) {
+              persistSpeakingComfort(level)
+            }
+            persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
+            setWelcomeOpen(false)
+          }}
+          steps={['language', 'goal', 'level']}
+          titleRef={welcomeTitleRef}
+        />
+      </div>
+    )
+  }
+
   return (
     <div
       className={
@@ -284,9 +326,15 @@ export function DemoPhase1Shell({
           <div className="flex items-center gap-4">
             <AvatarSlot
               label={message('shell.avatar.teacher').text}
+              size="md"
               slot="home-teacher"
             />
             <div className="grid min-w-0 gap-1">
+              <p className="phase1-home__eyebrow">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.hero_label')}
+                />
+              </p>
               <h1
                 className="phase1-home__title"
                 id="destination-title"
@@ -304,6 +352,13 @@ export function DemoPhase1Shell({
                 />
               </p>
             </div>
+          </div>
+          <div
+            className="phase1-home__progress"
+            role="img"
+            aria-label={message('demo.phase1.dashboard.level_progress').text}
+          >
+            <span className="phase1-home__progress-bar" />
           </div>
           <button
             type="button"
@@ -325,6 +380,11 @@ export function DemoPhase1Shell({
               />
             </span>
           </button>
+          <a href="#practice" className="ge-button phase1-home__speak">
+            <LocalizedMessage
+              resolution={message('demo.phase1.home.speak')}
+            />
+          </a>
           <ul className="phase1-home__stats">
             <li>
               <LocalizedMessage
@@ -353,13 +413,6 @@ export function DemoPhase1Shell({
               />
             </p>
             <ul>
-              <li>
-                <a href="#practice" className="phase1-text-link">
-                  <LocalizedMessage
-                    resolution={message('demo.phase1.home.speak')}
-                  />
-                </a>
-              </li>
               <li>
                 <button
                   type="button"
@@ -490,6 +543,22 @@ export function DemoPhase1Shell({
               <LocalizedMessage
                 resolution={aiMessage(aiTopicReplyKeys[activeTopic.id])}
               />
+              <TapToPlay
+                idleLabel={
+                  <LocalizedMessage resolution={message('shell.listen')} />
+                }
+                onPlay={listenAiReply}
+                playingLabel={
+                  <LocalizedMessage
+                    resolution={message('shell.listen.playing')}
+                  />
+                }
+                unavailableLabel={
+                  <LocalizedMessage
+                    resolution={message('shell.listen.unavailable')}
+                  />
+                }
+              />
             </blockquote>
           </div>
           <div className="phase1-ai-topics">
@@ -507,16 +576,7 @@ export function DemoPhase1Shell({
             ))}
           </div>
           <div className="phase1-ai-toolbar">
-            <button
-              type="button"
-              className="ge-button ge-button--primary"
-              onClick={listenAiReply}
-              disabled={aiSpeaking}
-              aria-busy={aiSpeaking}
-            >
-              <LocalizedMessage resolution={message('demo.phase1.ai.listen')} />
-            </button>
-            <div
+            <div>
               className="phase1-ai-lang"
               role="group"
               aria-label={message('demo.phase1.ai.lang_group').text}

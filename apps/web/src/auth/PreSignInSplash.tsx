@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { AvatarSlot } from '../ui/AvatarSlot'
+import { GroveMark } from '../ui/avatars/GrovePortraits'
 
 export interface PreSignInSplashProps {
   readonly canStartAuthorization: boolean
@@ -29,7 +30,11 @@ export function PreSignInSplash({
       className="mx-auto grid w-full min-w-0 max-w-full justify-items-center gap-5 py-6 text-center"
       data-pre-sign-in={status}
     >
-      <AvatarSlot label={teacherLabel} slot="home-teacher" />
+      <GroveMark className="h-14 w-14" />
+      <AvatarSlot label={teacherLabel} size="lg" slot="home-teacher" />
+      <p className="text-sm font-bold tracking-[0.14em] text-action uppercase">
+        <LocalizedMessage resolution={message('shell.splash.brand')} />
+      </p>
       <h1
         className="w-full min-w-0 text-balance text-2xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] sm:text-3xl"
         id="splash-title"

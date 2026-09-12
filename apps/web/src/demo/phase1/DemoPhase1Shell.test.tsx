@@ -1,7 +1,11 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DemoPhase1Shell } from './DemoPhase1Shell'
+import {
+  GROVE_WELCOME_STORAGE_KEY,
+  persistFirstRunDismissed,
+} from '../../ui/firstRunPreference'
 
 vi.mock('../demoTts', () => ({
   speakDemoText: vi.fn().mockResolvedValue('azure'),
@@ -12,6 +16,11 @@ vi.mock('../demoTts', () => ({
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
+  window.localStorage.removeItem(GROVE_WELCOME_STORAGE_KEY)
+})
+
+beforeEach(() => {
+  persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
 })
 
 describe('DemoPhase1Shell', () => {
@@ -204,5 +213,38 @@ describe('DemoPhase1Shell', () => {
     expect(screen.getByRole('button', { name: 'हिन्दी' })).toHaveClass(
       'is-active',
     )
+  })
+
+  it('walks a one-question first-run before Home', async () => {
+    window.localStorage.removeItem(GROVE_WELCOME_STORAGE_KEY)
+    const user = userEvent.setup()
+    const onLocaleChange = vi.fn()
+
+    render(
+      <DemoPhase1Shell
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onLocaleChange={onLocaleChange}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Interface language' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Today' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(
+      screen.getByRole('radio', { name: 'Speak with confidence at work' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('radio', { name: /I am just starting/ }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Today' }),
+    ).toBeInTheDocument()
   })
 })

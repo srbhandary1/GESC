@@ -17,6 +17,9 @@ test('student click-through exercises every demo page and control', async ({
     }
   })
   await installWorkingMicrophone(page)
+  await page.addInitScript(() => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
+  })
 
   await page.goto('/')
   // Default UI locale is kn-IN; use the combobox role (not English name).
@@ -144,7 +147,7 @@ test('student click-through exercises every demo page and control', async ({
   ).toBeVisible()
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
-  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Speak' }).click()
   await expect(
     page.getByRole('dialog', { name: 'About this practice Friend' }),
   ).toBeVisible()

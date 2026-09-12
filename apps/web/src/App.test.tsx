@@ -73,7 +73,7 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: text('nav.practice') }),
+      screen.getByRole('link', { name: text('nav.speak') }),
     ).toHaveAttribute('href', '#practice')
     expect(
       screen.getByRole('link', { name: text('nav.learn') }),
@@ -145,7 +145,7 @@ describe('localized application shell', () => {
     )
 
     await user.click(
-      screen.getByRole('link', { name: text('nav.practice') }),
+      screen.getByRole('link', { name: text('nav.speak') }),
     )
 
     expect(
@@ -455,7 +455,7 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: text('learner.onboarding.title'),
+        name: text('learner.onboarding.adult_title'),
       }),
     ).toBeInTheDocument()
     expect(home).toHaveBeenCalledOnce()

@@ -318,7 +318,7 @@ function App({
     },
     practice: {
       href: '#practice',
-      label: <LocalizedMessage resolution={message('nav.practice')} />,
+      label: <LocalizedMessage resolution={message('nav.speak')} />,
     },
     progress: {
       href: '#progress',
@@ -586,6 +586,7 @@ function App({
             demoOrganization={demoOrganization}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onLocaleChange={setLocale}
           />
         ) : canLearn ? (
           <>

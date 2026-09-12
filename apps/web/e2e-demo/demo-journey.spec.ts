@@ -11,6 +11,9 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
     }
   })
 
+  await page.addInitScript(() => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
+  })
   await page.goto('/')
   await page.getByRole('combobox').selectOption('en-IN')
 
@@ -84,7 +87,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   // Primary shell destinations also available to a student in the demo.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Speak' }).click()
   await expect(
     page.getByRole('dialog', { name: 'About this practice Friend' }),
   ).toBeVisible()

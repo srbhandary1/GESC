@@ -30,3 +30,7 @@ Use the repository-root `make` commands for bootstrap, verification and builds.
   before Tailwind (+0.87 kB gzip).
 
 Do not introduce a second colour system or a runtime CSS-in-JS theme.
+
+Learner chrome follows the Grove language: brand green `#006B3F`, charcoal
+`#0F1F17` dark surfaces, mint tints, original tutor portraits, and a Speak
+wave action. Do not introduce electric purple as a brand primary.

@@ -63,6 +63,41 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+async function completeOnboarding(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.click(
+    await screen.findByRole('checkbox', {
+      name: t('learner.onboarding.adult_confirmation'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('radio', {
+      name: t('learner.onboarding.goal_workplace'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('radio', {
+      name: t('learner.onboarding.level_new'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+}
+
 describe('deterministic learner journey', () => {
   it('onboards, records locally, retries, submits and renders server authority', async () => {
     const user = userEvent.setup()
@@ -80,27 +115,13 @@ describe('deterministic learner journey', () => {
     )
 
     const onboardingTitle = await screen.findByRole('heading', {
-      name: t('learner.onboarding.title'),
+      name: t('learner.onboarding.adult_title'),
     })
     await waitFor(() => {
       expect(onboardingTitle).toHaveFocus()
     })
 
-    await user.click(
-      screen.getByRole('checkbox', {
-        name: t('learner.onboarding.adult_confirmation'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('button', {
-        name: t('learner.onboarding.continue'),
-      }),
-    )
+    await completeOnboarding(user)
 
     expect(api.updateOnboarding).toHaveBeenCalledWith(
       {
@@ -297,8 +318,23 @@ describe('deterministic learner journey', () => {
       }),
     )
     await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.continue'),
+      }),
+    )
+    await user.click(
       screen.getByRole('radio', {
         name: t('learner.onboarding.goal_workplace'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.continue'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('radio', {
+        name: t('learner.onboarding.level_new'),
       }),
     )
     const submit = screen.getByRole('button', {
@@ -309,14 +345,13 @@ describe('deterministic learner journey', () => {
     expect(
       await screen.findByText(t('learner.onboarding.error')),
     ).toBeVisible()
-    const travelGoal = screen.getByRole('radio', {
-      name: t('learner.onboarding.goal_travel'),
+    const someLevel = screen.getByRole('radio', {
+      name: t('learner.onboarding.level_some'),
     })
-    expect(travelGoal).toBeDisabled()
-    await user.click(travelGoal)
+    await user.click(someLevel)
     expect(
       screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
+        name: t('learner.onboarding.level_new'),
       }),
     ).toBeChecked()
 

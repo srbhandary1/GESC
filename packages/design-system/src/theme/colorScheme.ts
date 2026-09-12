@@ -8,12 +8,12 @@ function isColorScheme(value: string | null): value is ColorScheme {
 
 export function systemColorScheme(): ColorScheme {
   if (typeof globalThis.matchMedia !== 'function') {
-    return 'light'
+    return 'dark'
   }
 
-  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
+  return globalThis.matchMedia('(prefers-color-scheme: light)').matches
+    ? 'light'
+    : 'dark'
 }
 
 export function readStoredColorScheme(): ColorScheme | null {

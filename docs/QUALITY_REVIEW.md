@@ -2938,13 +2938,40 @@ bilingual guidance) is unchanged. Not production or Play evidence.
   content exists.
 - Friend first-run about-copy is persisted as `ge-ui-practice-about-dismissed`
   in localStorage (UI chrome only; not credentials or learner records).
-- Teacher avatar slots are empty composition hooks only; no face, Lottie,
-  video or third-party avatar SDK ships in this revision.
+- Teacher avatar slots now ship original static SVG portraits (Grove Teacher /
+  Friend / Coach). No Lottie, video or third-party avatar SDK.
 - The synthetic-demo notice is Profile-only; primary tabs have no banner.
 - Non-demo anonymous splash hides primary nav; web Sign in opens the
   Session disclosure rather than inventing an OTP form. Android PKCE
   still uses `beginAuthorization`. Offline unavailable resume still
   reaches Learn.
+- F0 DoD, production and Play remain unauthorized.
+
+---
+
+## Grove learner visual language (presentation)
+
+### Scope reviewed
+
+- brand-green / charcoal dark tokens (`#006B3F`, `#0F1F17`) and mint tints;
+- original AI Teacher / Friend / Coach SVG portraits in avatar slots;
+- one-question-per-screen onboarding with sticky Continue;
+- demo first-run stepper (language, goal, speaking comfort);
+- elevated Speak destination in primary navigation;
+- Listen chips wired to existing demo/browser TTS;
+- MD3 empty / error / success surfaces.
+
+### Review result
+
+Presentation-only. Authoritative onboarding still submits only
+`adult_confirmed` + `goal_key`. Speaking comfort is local chrome.
+Not production or Play evidence.
+
+### Known limitations
+
+- New Indic strings for the Grove pass are implementation drafts; some
+  longer kn-IN / hi-IN lines reuse English until independent review.
+- Speaking comfort is not an enrollment or mastery field.
 - F0 DoD, production and Play remain unauthorized.
 
 

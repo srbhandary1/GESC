@@ -36,6 +36,8 @@ import {
   persistFirstRunDismissed,
   readFirstRunDismissed,
 } from '../ui/firstRunPreference'
+import { AvatarSlot } from '../ui/AvatarSlot'
+import { TapToPlay } from '../ui/TapToPlay'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -410,6 +412,10 @@ export function ConversationJourney({
       data-confidence-stage={stage}
     >
       <div className="conversation-journey__heading">
+        <AvatarSlot
+          label={text('shell.avatar.friend')}
+          slot="ai-friend"
+        />
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message(
@@ -850,7 +856,29 @@ export function ConversationJourney({
                       resolution={message('conversation.friend_label')}
                     />
                   </dt>
-                  <dd lang="en-IN">{state.turn.assistant_reply}</dd>
+                  <dd lang="en-IN">
+                    {state.turn.assistant_reply}
+                    <TapToPlay
+                      idleLabel={
+                        <LocalizedMessage
+                          resolution={message('shell.listen')}
+                        />
+                      }
+                      onPlay={playReply}
+                      playingLabel={
+                        <LocalizedMessage
+                          resolution={message('shell.listen.playing')}
+                        />
+                      }
+                      unavailableLabel={
+                        <LocalizedMessage
+                          resolution={message(
+                            'shell.listen.unavailable',
+                          )}
+                        />
+                      }
+                    />
+                  </dd>
                 </div>
               </dl>
               {state.turn.priority_correction ? (

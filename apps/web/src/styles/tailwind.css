@@ -29,8 +29,10 @@
   --color-on-action: var(--ge-color-action-text);
   --color-focus: var(--ge-color-focus);
   --color-status: var(--ge-color-status);
+  --color-mint: var(--ge-color-mint);
   --color-glow: var(--ge-color-glow);
   --color-danger: var(--ge-color-danger);
+  --color-success: var(--ge-color-success);
   --font-sans: var(--ge-font-family-ui);
   --font-display: var(--ge-font-family-display);
   --radius-sm: var(--ge-radius-sm);

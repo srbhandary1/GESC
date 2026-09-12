@@ -12,19 +12,21 @@
   --ge-font-size-md: 1rem;
   --ge-font-size-lg: 1.25rem;
   --ge-line-height-ui: 1.55;
-  --ge-color-canvas: #eef6f2;
+  --ge-color-canvas: #e8f3ec;
   --ge-color-surface: #ffffff;
-  --ge-color-surface-high: #f4faf7;
+  --ge-color-surface-high: #f3faf5;
   --ge-color-text: #0a1a14;
   --ge-color-text-muted: #3d5348;
   --ge-color-border: #c5d4cc;
-  --ge-color-action: #046c4e;
-  --ge-color-action-hover: #03553d;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #005533;
   --ge-color-action-text: #ffffff;
   --ge-color-focus: #0f766e;
-  --ge-color-status: #d1fae5;
-  --ge-color-glow: rgb(4 120 87 / 28%);
+  --ge-color-status: #d7f5e4;
+  --ge-color-mint: #b8ecd0;
+  --ge-color-glow: rgb(0 107 63 / 26%);
   --ge-color-danger: #9f1239;
+  --ge-color-success: #006b3f;
   --ge-space-1: 0.25rem;
   --ge-space-2: 0.5rem;
   --ge-space-3: 0.75rem;
@@ -49,19 +51,21 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ge-color-canvas: #07110d;
-  --ge-color-surface: #12201a;
-  --ge-color-surface-high: #1a2c24;
+  --ge-color-canvas: #0f1f17;
+  --ge-color-surface: #15241c;
+  --ge-color-surface-high: #1c2e25;
   --ge-color-text: #e8f5ee;
   --ge-color-text-muted: #9bb5a8;
   --ge-color-border: #2a3f36;
-  --ge-color-action: #34d399;
+  --ge-color-action: #3ddc97;
   --ge-color-action-hover: #6ee7b7;
   --ge-color-action-text: #062117;
-  --ge-color-focus: #5eead4;
-  --ge-color-status: #14332a;
-  --ge-color-glow: rgb(52 211 153 / 28%);
+  --ge-color-focus: #7dd3b8;
+  --ge-color-status: #173528;
+  --ge-color-mint: #1f4a38;
+  --ge-color-glow: rgb(61 220 151 / 22%);
   --ge-color-danger: #fda4af;
+  --ge-color-success: #3ddc97;
   --ge-elevation-1:
     0 1px 2px rgb(0 0 0 / 35%), 0 10px 28px rgb(0 0 0 / 28%);
   --ge-elevation-2:
@@ -71,19 +75,21 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --ge-color-canvas: #07110d;
-    --ge-color-surface: #12201a;
-    --ge-color-surface-high: #1a2c24;
+    --ge-color-canvas: #0f1f17;
+    --ge-color-surface: #15241c;
+    --ge-color-surface-high: #1c2e25;
     --ge-color-text: #e8f5ee;
     --ge-color-text-muted: #9bb5a8;
     --ge-color-border: #2a3f36;
-    --ge-color-action: #34d399;
+    --ge-color-action: #3ddc97;
     --ge-color-action-hover: #6ee7b7;
     --ge-color-action-text: #062117;
-    --ge-color-focus: #5eead4;
-    --ge-color-status: #14332a;
-    --ge-color-glow: rgb(52 211 153 / 28%);
+    --ge-color-focus: #7dd3b8;
+    --ge-color-status: #173528;
+    --ge-color-mint: #1f4a38;
+    --ge-color-glow: rgb(61 220 151 / 22%);
     --ge-color-danger: #fda4af;
+    --ge-color-success: #3ddc97;
     --ge-elevation-1:
       0 1px 2px rgb(0 0 0 / 35%), 0 10px 28px rgb(0 0 0 / 28%);
     --ge-elevation-2:

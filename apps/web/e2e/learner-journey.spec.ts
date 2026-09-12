@@ -35,7 +35,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
 
   await expect(
     page.getByRole('heading', {
-      name: message('learner.onboarding.title'),
+      name: message('learner.onboarding.adult_title'),
     }),
   ).toBeFocused()
   await page
@@ -44,8 +44,23 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     })
     .check()
   await page
+    .getByRole('button', {
+      name: message('learner.onboarding.continue'),
+    })
+    .click()
+  await page
     .getByRole('radio', {
       name: message('learner.onboarding.goal_workplace'),
+    })
+    .check()
+  await page
+    .getByRole('button', {
+      name: message('learner.onboarding.continue'),
+    })
+    .click()
+  await page
+    .getByRole('radio', {
+      name: message('learner.onboarding.level_new'),
     })
     .check()
   await page
