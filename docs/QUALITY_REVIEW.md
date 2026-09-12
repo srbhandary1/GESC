@@ -3211,7 +3211,7 @@ the Mira / GESC-green system is re-applied on top.
 | Design-system tests | Pass | 16 passed |
 | Demo e2e first-run + Phase 1 axe | Pass | `demo-journey` first-run and LessonPractice specs |
 | Grove catalog excluded | Pass | Demo Learn remains Phase 1 My Levels |
-| Sideload APK | Pass | `5984482` bytes at `/downloads/global-english-demo.apk` |
+| Sideload APK | Pass | `5984575` bytes at `/downloads/global-english-demo.apk` after the D-0122 + landing-href rebuild |
 | Production / Play | Not authorized | D-0122 |
 
 ### Verification (this close)
