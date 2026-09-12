@@ -11,6 +11,7 @@ vi.mock('../demoTts', () => ({
   speakDemoText: vi.fn().mockResolvedValue('neural'),
   stopDemoSpeech: vi.fn(),
   demoAzureTtsConfigured: vi.fn().mockResolvedValue(true),
+  demoTtsUrl: (path: string) => path,
 }))
 
 afterEach(() => {
