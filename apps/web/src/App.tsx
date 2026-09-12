@@ -365,8 +365,7 @@ function App({
     (destination === 'home' || destination === 'learn')
   const showDemoPhase1 = demoMode && destination === 'home'
   const showDemoLearnHub = demoMode && canLearn
-  const hideDemoIntroduction =
-    showDemoPhase1 || (demoMode && destination === 'learn')
+  const hideDemoIntroduction = demoMode
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -510,9 +509,22 @@ function App({
           </aside>
         ) : null}
 
-        {hideDemoIntroduction && destination === 'learn' ? (
+        {hideDemoIntroduction &&
+        (destination === 'learn' || destination === 'home') ? (
           <h1
             className="visually-hidden"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : null}
+
+        {hideDemoIntroduction &&
+        (destination === 'practice' || destination === 'progress') ? (
+          <h1
+            className="shell-title shell-title--compact"
             id="destination-title"
             ref={destinationTitle}
             tabIndex={-1}

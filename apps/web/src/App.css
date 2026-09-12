@@ -192,6 +192,12 @@
   overflow-wrap: anywhere;
 }
 
+.shell-title--compact {
+  margin: 0 0 var(--ge-space-2);
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
 .shell-description {
   max-width: 42rem;
   margin: var(--ge-space-4) 0 0;
