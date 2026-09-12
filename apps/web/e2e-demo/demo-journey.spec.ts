@@ -13,6 +13,9 @@ test('walks Grove first-run one question at a time before Home', async ({
   await expect(
     page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toHaveCount(0)
+  await expect(
+    page.getByRole('link', { name: 'Download Android demo' }),
+  ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
   await page.getByRole('radio', { name: 'English' }).check()
   await page.getByRole('button', { name: 'Continue' }).click()
@@ -30,6 +33,9 @@ test('walks Grove first-run one question at a time before Home', async ({
   await expect(
     page.getByRole('button', { name: /Continue today’s lesson/ }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Download Android demo' }),
+  ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 })
 
 test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
@@ -58,6 +64,9 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(
     page.getByRole('button', { name: /Continue today’s lesson/ }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Download Android demo' }),
+  ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
   await page.getByRole('button', { name: 'Profile' }).click()
   await expect(

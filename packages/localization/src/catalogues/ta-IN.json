@@ -191,6 +191,8 @@
   "demo.phase1.dashboard.open": "தொகுதியைத் திறக்கவும்",
   "demo.phase1.eyebrow": "Phase 1 கற்பவர் ஷெல்",
   "demo.phase1.first_run.title": "A few questions to start",
+  "demo.phase1.home.android_download": "Download Android demo",
+  "demo.phase1.home.android_download_hint": "Same synthetic demo for phone testing. Sideload only — not Play Store.",
   "demo.phase1.home.greeting": "Good day",
   "demo.phase1.home.hero_label": "Today's lesson",
   "demo.phase1.home.level_line": "நீங்கள் {level} இல் இருக்கிறீர்கள்",

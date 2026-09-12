@@ -191,6 +191,8 @@
   "demo.phase1.dashboard.open": "Open module",
   "demo.phase1.eyebrow": "Phase 1 learner shell",
   "demo.phase1.first_run.title": "A few questions to start",
+  "demo.phase1.home.android_download": "Download Android demo",
+  "demo.phase1.home.android_download_hint": "Same synthetic demo for phone testing. Sideload only — not Play Store.",
   "demo.phase1.home.greeting": "Good day",
   "demo.phase1.home.hero_label": "Today's lesson",
   "demo.phase1.home.level_line": "You are on {level}",

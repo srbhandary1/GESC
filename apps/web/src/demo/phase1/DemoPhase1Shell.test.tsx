@@ -49,6 +49,14 @@ describe('DemoPhase1Shell', () => {
       '#practice',
     )
     expect(
+      screen.getByRole('link', { name: 'Download Android demo' }),
+    ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+    expect(
+      screen.getByText(
+        'Same synthetic demo for phone testing. Sideload only — not Play Store.',
+      ),
+    ).toBeVisible()
+    expect(
       screen.getByRole('button', { name: 'My Levels' }),
     ).toBeInTheDocument()
     expect(
@@ -234,6 +242,9 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.queryByRole('heading', { level: 1, name: 'Today' }),
     ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Download Android demo' }),
+    ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await user.click(

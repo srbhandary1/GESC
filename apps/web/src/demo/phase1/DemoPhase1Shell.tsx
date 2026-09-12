@@ -11,6 +11,7 @@ import { SUPPORTED_LOCALES } from '@global-english/localization'
 import { AvatarSlot } from '../../ui/AvatarSlot'
 import { TapToPlay } from '../../ui/TapToPlay'
 import { OnboardingStepper } from '../../ui/OnboardingStepper'
+import { AndroidDemoDownload } from '../AndroidDemoDownload'
 import {
   GROVE_WELCOME_STORAGE_KEY,
   persistFirstRunDismissed,
@@ -300,6 +301,14 @@ export function DemoPhase1Shell({
             resolution={message('demo.phase1.first_run.title')}
           />
         </h1>
+        <div className="phase1-first-run__download">
+          <p className="phase1-home__android-hint">
+            <LocalizedMessage
+              resolution={message('demo.phase1.home.android_download_hint')}
+            />
+          </p>
+          <AndroidDemoDownload message={message} variant="inline" />
+        </div>
         <OnboardingStepper
           locale={locale}
           locales={SUPPORTED_LOCALES}
@@ -418,6 +427,12 @@ export function DemoPhase1Shell({
                 />
               </span>
             </button>
+            <p className="phase1-home__android-hint">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.android_download_hint')}
+              />
+            </p>
+            <AndroidDemoDownload message={message} />
           </article>
           <aside className="phase1-home__tip">
             <span aria-hidden="true" className="phase1-home__tip-glyph">

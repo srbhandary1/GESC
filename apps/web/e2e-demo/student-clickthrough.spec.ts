@@ -47,6 +47,9 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('button', { name: /Continue today’s lesson/ }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Download Android demo' }),
+  ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 
   // Secondary student links from Home.
   for (const item of ['My Levels', 'AI Teacher', 'Profile']) {

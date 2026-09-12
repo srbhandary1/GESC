@@ -155,6 +155,39 @@
   font-size: 1rem;
 }
 
+.phase1-first-run__download {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1.15rem;
+  background: var(--ge-color-surface);
+}
+
+.phase1-home__android {
+  width: 100%;
+  min-block-size: 3.25rem;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.phase1-home__android--inline {
+  display: inline-flex;
+  min-block-size: var(--ge-target-minimum);
+  align-items: center;
+  justify-content: center;
+  color: var(--ge-color-action);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.phase1-home__android-hint {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.92rem;
+}
+
 .phase1-home__tip {
   display: flex;
   align-items: flex-start;
