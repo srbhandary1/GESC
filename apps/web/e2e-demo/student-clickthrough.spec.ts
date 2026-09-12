@@ -63,13 +63,11 @@ test('student click-through exercises every demo page and control', async ({
     page.getByRole('heading', { name: 'Greetings and introductions' }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Practise on Speak' }).click()
-  const about = page.getByRole('button', { name: 'Got it' })
-  if (await about.isVisible()) {
-    await about.click()
-  }
-  await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
-    .click()
+  await expect(
+    page.getByRole('dialog', { name: 'About this practice Friend' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Got it' }).click()
+  await page.getByRole('button', { name: 'Start speaking practice' }).click()
   await page.getByRole('button', { name: 'Continue to listen' }).click()
   await expect(
     page.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
@@ -185,10 +183,12 @@ test('student click-through exercises every demo page and control', async ({
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
   await page.getByRole('link', { name: 'Speak' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'About this practice Friend' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Got it' }).click()
+  const aboutDialog = page.getByRole('dialog', {
+    name: 'About this practice Friend',
+  })
+  if (await aboutDialog.isVisible()) {
+    await page.getByRole('button', { name: 'Got it' }).click()
+  }
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
