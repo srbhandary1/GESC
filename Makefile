@@ -102,6 +102,9 @@ demo-client-tunnel-stop:
 demo-android: demo-build
 	cd $(WEB_DIR) && env -u CAPACITOR_APP $(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android && ./gradlew assembleDebug
+	mkdir -p $(WEB_DIR)/dist-demo/downloads
+	cp $(WEB_DIR)/android/app/build/outputs/apk/debug/app-debug.apk \
+		$(WEB_DIR)/dist-demo/downloads/global-english-demo.apk
 
 # PR-014 production-path closed beta (com.globalenglish.app). Requires
 # VITE_MOBILE_API_ORIGIN. See docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md.

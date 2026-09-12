@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { configDefaults, defineConfig } from 'vitest/config'
+import { demoAndroidApkPlugin } from './vite-plugins/demoAndroidApk.ts'
 import { demoAzureTtsPlugin } from './vite-plugins/demoAzureTts.ts'
 import { demoOpenRouterChatPlugin } from './vite-plugins/demoOpenRouterChat.ts'
 
@@ -23,6 +24,7 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     demoAzureTtsPlugin(),
     demoOpenRouterChatPlugin(),
+    demoAndroidApkPlugin(),
   ],
   server: {
     host: '127.0.0.1',

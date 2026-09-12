@@ -13,6 +13,7 @@ node_modules/
 /apps/api/bootstrap/cache/*.php
 /apps/web/dist/
 /apps/web/dist-demo/
+*.apk
 /apps/web/coverage/
 /apps/web/playwright-report/
 /apps/web/test-results/

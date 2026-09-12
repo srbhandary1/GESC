@@ -69,7 +69,7 @@ Defaults:
 | Bind host | `0.0.0.0` |
 | Public port | `8080` (port `8000` is already used by another local demo) |
 | Bundle | `apps/web/dist-demo` (built automatically if missing) |
-| APK download | `/downloads/global-english-demo.apk` when the debug APK exists |
+| APK download | `/downloads/global-english-demo.apk` when the debug APK exists (`make demo`, `make demo-serve`, and `make demo-client`) |
 
 Useful commands:
 
