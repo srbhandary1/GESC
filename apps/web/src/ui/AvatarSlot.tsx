@@ -11,7 +11,7 @@ export function AvatarSlot({ label, slot }: AvatarSlotProps) {
   return (
     <div
       aria-label={label}
-      className="size-[4.5rem] shrink-0 rounded-full border border-line/70 bg-surface-high shadow-elevation-1 ring-2 ring-action/20 dark:bg-surface dark:ring-action/30"
+      className="size-[4.5rem] shrink-0 rounded-full bg-status shadow-elevation-1 ring-2 ring-action/25 dark:bg-surface-high dark:ring-action/40"
       data-avatar-slot={slot}
       role="img"
     />
