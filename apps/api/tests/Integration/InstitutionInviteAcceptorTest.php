@@ -8,10 +8,13 @@ use App\Models\InstitutionInvite;
 use App\Models\Membership;
 use App\Models\User;
 use App\Tenancy\Exceptions\FoundationConfigurationException;
+use App\Tenancy\Exceptions\IdempotencyKeyConflict;
 use App\Tenancy\Exceptions\InstitutionInviteUnavailable;
 use App\Tenancy\InstitutionInviteAcceptor;
 use App\Tenancy\InstitutionInviteCodeDigester;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class InstitutionInviteAcceptorTest extends TenancyIntegrationTestCase
 {
@@ -26,6 +29,16 @@ final class InstitutionInviteAcceptorTest extends TenancyIntegrationTestCase
             Membership::TYPE_ORGANIZATION_ADMIN,
         );
         $role = $this->createRole($issuerContext, 'institution-learner');
+        $now = now();
+        DB::table('role_permissions')->insert([
+            'organization_id' => $organization->getKey(),
+            'role_id' => $role->getKey(),
+            'permission_id' => DB::table('permissions')
+                ->where('key', 'learning.participate')
+                ->value('id'),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
         $cohort = $this->createCohort($issuerContext);
         $invite = $this->contexts()->run(
             $issuerContext,
@@ -125,6 +138,109 @@ final class InstitutionInviteAcceptorTest extends TenancyIntegrationTestCase
                 ->count());
             $this->assertSame(0, DB::table('audit_events')->count());
             $this->assertSame(0, DB::table('outbox_events')->count());
+        }
+    }
+
+    public function test_exact_authenticated_replay_survives_terminal_digest_cleanup(): void
+    {
+        $rawCode = 'GEI-DIGEST-CLEANUP-REPLAY';
+        $idempotencyKey = (string) Str::uuid();
+        $organization = $this->createOrganization('Digest Cleanup Institution');
+        $issuer = $this->createUser();
+        [, $context] = $this->createMembership(
+            $organization,
+            $issuer,
+            Membership::TYPE_ORGANIZATION_ADMIN,
+        );
+        $invite = $this->contexts()->run(
+            $context,
+            fn (): InstitutionInvite => InstitutionInvite::query()
+                ->forceCreate([
+                    'code_digest' => $this->app
+                        ->make(InstitutionInviteCodeDigester::class)
+                        ->digest($rawCode),
+                    'membership_type' => Membership::TYPE_TRAINER,
+                    'status' => InstitutionInvite::STATUS_PENDING,
+                    'expires_at' => now()->addDay(),
+                ]),
+        );
+        $candidate = $this->createUser();
+        $acceptor = $this->app->make(InstitutionInviteAcceptor::class);
+
+        $first = $acceptor->accept(
+            $rawCode,
+            $candidate,
+            idempotencyKey: $idempotencyKey,
+        );
+        $beforeCleanup = $acceptor->accept(
+            $rawCode,
+            $candidate,
+            idempotencyKey: $idempotencyKey,
+        );
+        $stored = DB::table('institution_invites')
+            ->where('id', $invite->getKey())
+            ->sole(['accepted_at', 'code_discard_after']);
+        $acceptedAt = CarbonImmutable::parse((string) $stored->accepted_at);
+        $discardAt = CarbonImmutable::parse(
+            (string) $stored->code_discard_after,
+        );
+
+        self::assertFalse($first->replayed);
+        self::assertTrue($beforeCleanup->replayed);
+        self::assertTrue($discardAt->equalTo($acceptedAt));
+
+        DB::table('institution_invites')
+            ->where('id', $invite->getKey())
+            ->update([
+                'code_digest' => null,
+                'updated_at' => now(),
+            ]);
+
+        $afterCleanup = $acceptor->accept(
+            $rawCode,
+            $candidate,
+            idempotencyKey: $idempotencyKey,
+        );
+
+        self::assertTrue($afterCleanup->replayed);
+        self::assertSame(
+            $first->membership->getKey(),
+            $afterCleanup->membership->getKey(),
+        );
+        self::assertSame(1, DB::table('audit_events')
+            ->where('subject_id', $invite->getKey())
+            ->count());
+        self::assertSame(1, DB::table('outbox_events')
+            ->where('aggregate_id', $invite->getKey())
+            ->count());
+
+        try {
+            $acceptor->accept(
+                'GEI-CHANGED-DIGEST-CLEANUP-REPLAY',
+                $candidate,
+                idempotencyKey: $idempotencyKey,
+            );
+            self::fail('Changed replay must conflict after digest cleanup.');
+        } catch (IdempotencyKeyConflict) {
+            $this->addToAssertionCount(1);
+        }
+
+        foreach ([
+            [$candidate, null],
+            [$this->createUser(), $idempotencyKey],
+        ] as [$replayUser, $replayKey]) {
+            try {
+                $acceptor->accept(
+                    $rawCode,
+                    $replayUser,
+                    idempotencyKey: $replayKey,
+                );
+                self::fail(
+                    'Digest-free replay requires the accepted user and exact binding.',
+                );
+            } catch (InstitutionInviteUnavailable) {
+                $this->addToAssertionCount(1);
+            }
         }
     }
 

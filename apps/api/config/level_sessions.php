@@ -33,14 +33,6 @@ return [
         16 => 'should_have',
         17 => 'used_to',
     ],
-    /**
-     * Pre-Level 1/2 were not in the APP-0065 archive. Authored in
-     * AuthoredPreLevels for the same listen-talk-correct loop.
-     */
-    'pre_level_concepts' => [
-        1 => 'be',
-        2 => 'this_that',
-    ],
     'conversation_bindings' => [
         'introduction' => [
             'prototype' => 'skill_focus',

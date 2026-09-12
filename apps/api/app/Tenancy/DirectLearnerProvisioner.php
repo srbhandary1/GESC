@@ -98,9 +98,32 @@ final readonly class DirectLearnerProvisioner
                 if ($membership instanceof Membership) {
                     if (
                         $membership->status !== Membership::STATUS_ACTIVE
-                        || $membership->membership_type !== Membership::TYPE_LEARNER
+                        || ! in_array(
+                            $membership->membership_type,
+                            [
+                                Membership::TYPE_LEARNER,
+                                Membership::TYPE_TRAINER,
+                                Membership::TYPE_ORGANIZATION_ADMIN,
+                            ],
+                            true,
+                        )
                     ) {
                         throw new IdentityUnavailable;
+                    }
+
+                    // Existing verified staff identities authenticate through
+                    // the ordinary OTP path without being converted to a
+                    // learner or receiving any additional role.
+                    if (
+                        $membership->membership_type
+                            !== Membership::TYPE_LEARNER
+                    ) {
+                        return new DirectLearnerProvisioningResult(
+                            user: $user,
+                            identity: $identity,
+                            membership: $membership,
+                            replayed: true,
+                        );
                     }
                 } else {
                     $membership = new Membership;

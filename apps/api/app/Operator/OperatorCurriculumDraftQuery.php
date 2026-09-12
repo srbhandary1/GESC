@@ -81,10 +81,6 @@ final readonly class OperatorCurriculumDraftQuery
         $items = [];
 
         foreach ($rows as $row) {
-            if (! $row instanceof stdClass) {
-                continue;
-            }
-
             $versionId = $this->string($row, 'curriculum_version_id');
             $headVersionId = $this->nullableString(
                 $row,

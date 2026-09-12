@@ -66,8 +66,9 @@ final readonly class InstitutionInviteAcceptor
                     $requestFingerprint,
                 ): InviteAcceptanceResult {
                     // Keep the invite+OTP lock order: identity key, user row,
-                    // then invite row. Authenticated acceptance starts here at
-                    // the user row and must not invert that order.
+                    // then organization mutex and invite. Candidate discovery
+                    // is read-only; the complete state is rechecked under the
+                    // organization and invite locks in acceptInContext().
                     $lockedUser = User::query()
                         ->whereKey($user->getKey())
                         ->lockForUpdate()
@@ -90,7 +91,6 @@ final readonly class InstitutionInviteAcceptor
                         ->where('institution_invites.code_digest', $codeDigest)
                         ->orderBy('institution_invites.id')
                         ->limit(2)
-                        ->lockForUpdate()
                         ->get([
                             'institution_invites.id',
                             'institution_invites.organization_id',
@@ -102,9 +102,18 @@ final readonly class InstitutionInviteAcceptor
 
                     if (
                         ! $candidate instanceof stdClass
-                        || ! is_string($candidate->id)
-                        || ! is_string($candidate->organization_id)
-                        || $candidate->organization_status !== Organization::STATUS_ACTIVE
+                        || ! $this->isAvailableCandidate($candidate)
+                    ) {
+                        $candidate = $this->acceptedReplayCandidate(
+                            (string) $lockedUser->getKey(),
+                            $idempotencyKey,
+                            $requestFingerprint,
+                        );
+                    }
+
+                    if (
+                        ! $candidate instanceof stdClass
+                        || ! $this->isAvailableCandidate($candidate)
                     ) {
                         throw new InstitutionInviteUnavailable;
                     }
@@ -159,13 +168,42 @@ final readonly class InstitutionInviteAcceptor
         ?string $idempotencyKey,
         ?string $requestFingerprint,
     ): InviteAcceptanceResult {
+        $organization = DB::table('organizations')
+            ->where('id', $this->contexts->current()->organizationId)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->lockForUpdate()
+            ->first(['id']);
+
+        if (! $organization instanceof stdClass) {
+            throw new InstitutionInviteUnavailable;
+        }
+
         $invite = InstitutionInvite::query()
             ->whereKey($inviteId)
-            ->where('code_digest', $codeDigest)
             ->lockForUpdate()
             ->first();
 
         if (! $invite instanceof InstitutionInvite) {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        $storedCodeDigest = $invite->getAttribute('code_digest');
+
+        if (
+            is_string($storedCodeDigest)
+            && ! hash_equals($storedCodeDigest, $codeDigest)
+        ) {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        if (! is_string($storedCodeDigest) && $storedCodeDigest !== null) {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        if (
+            $storedCodeDigest === null
+            && $invite->status !== InstitutionInvite::STATUS_ACCEPTED
+        ) {
             throw new InstitutionInviteUnavailable;
         }
 
@@ -187,6 +225,8 @@ final readonly class InstitutionInviteAcceptor
         ) {
             throw new InstitutionInviteUnavailable;
         }
+
+        $this->assertLearnerInviteRelationships($invite);
 
         $membership = Membership::query()
             ->where('user_id', $user->getKey())
@@ -213,13 +253,16 @@ final readonly class InstitutionInviteAcceptor
         $this->attachRole($invite, $membership);
         $enrollment = $this->attachCohort($invite, $membership);
 
+        $acceptedAt = now();
         $invite->forceFill([
             'status' => InstitutionInvite::STATUS_ACCEPTED,
             'accepted_membership_id' => $membership->getKey(),
             'accepted_by_user_id' => $user->getKey(),
             'accepted_idempotency_key' => $idempotencyKey,
             'accepted_request_fingerprint' => $requestFingerprint,
-            'accepted_at' => now(),
+            'accepted_at' => $acceptedAt,
+            'code_discard_after' => $acceptedAt,
+            'version' => $invite->version + 1,
         ])->save();
 
         $this->audit->recordTenant(
@@ -320,7 +363,6 @@ final readonly class InstitutionInviteAcceptor
         $bound = DB::table('institution_invites')
             ->where('accepted_by_user_id', $userId)
             ->where('accepted_idempotency_key', $idempotencyKey)
-            ->lockForUpdate()
             ->first(['id', 'accepted_request_fingerprint']);
 
         if (! $bound instanceof stdClass) {
@@ -338,6 +380,49 @@ final readonly class InstitutionInviteAcceptor
         ) {
             throw new IdempotencyKeyConflict;
         }
+    }
+
+    private function acceptedReplayCandidate(
+        string $userId,
+        ?string $idempotencyKey,
+        ?string $requestFingerprint,
+    ): ?stdClass {
+        if ($idempotencyKey === null || $requestFingerprint === null) {
+            return null;
+        }
+
+        $candidates = DB::table('institution_invites')
+            ->join(
+                'organizations',
+                'organizations.id',
+                '=',
+                'institution_invites.organization_id',
+            )
+            ->where('institution_invites.status', InstitutionInvite::STATUS_ACCEPTED)
+            ->whereNull('institution_invites.code_digest')
+            ->where('institution_invites.accepted_by_user_id', $userId)
+            ->where(
+                'institution_invites.accepted_idempotency_key',
+                $idempotencyKey,
+            )
+            ->orderBy('institution_invites.id')
+            ->limit(2)
+            ->get([
+                'institution_invites.id',
+                'institution_invites.organization_id',
+                'organizations.status as organization_status',
+            ]);
+
+        return $candidates->count() === 1
+            ? $candidates->first()
+            : null;
+    }
+
+    private function isAvailableCandidate(stdClass $candidate): bool
+    {
+        return is_string($candidate->id)
+            && is_string($candidate->organization_id)
+            && $candidate->organization_status === Organization::STATUS_ACTIVE;
     }
 
     private function assertMatchingIdempotencyBinding(
@@ -427,12 +512,27 @@ final readonly class InstitutionInviteAcceptor
 
         $enrollment = Enrollment::query()
             ->where('learner_membership_id', $membership->getKey())
-            ->where('cohort_id', $cohort->getKey())
+            ->whereIn('status', [
+                Enrollment::STATUS_PENDING_CURRICULUM,
+                Enrollment::STATUS_ACTIVE,
+            ])
+            ->orderBy('id')
             ->lockForUpdate()
             ->first();
 
         if ($enrollment instanceof Enrollment) {
-            return $enrollment;
+            if (
+                $enrollment->getAttribute('status')
+                    === Enrollment::STATUS_PENDING_CURRICULUM
+                && $enrollment->getAttribute('cohort_id')
+                    === $cohort->getKey()
+                && $enrollment->getAttribute('curriculum_publication_id')
+                    === null
+            ) {
+                return $enrollment;
+            }
+
+            throw new InstitutionInviteUnavailable;
         }
 
         $enrollment = new Enrollment;
@@ -440,10 +540,66 @@ final readonly class InstitutionInviteAcceptor
             'learner_membership_id' => $membership->getKey(),
             'cohort_id' => $cohort->getKey(),
             'status' => Enrollment::STATUS_PENDING_CURRICULUM,
+            'version' => 1,
             'enrolled_at' => now(),
         ])->save();
 
         return $enrollment;
+    }
+
+    private function assertLearnerInviteRelationships(
+        InstitutionInvite $invite,
+    ): void {
+        if ($invite->membership_type !== Membership::TYPE_LEARNER) {
+            return;
+        }
+
+        $roleId = $invite->role_id;
+
+        if (! is_string($roleId) || $roleId === '') {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        $role = DB::table('roles')
+            ->where('organization_id', $invite->organizationId())
+            ->where('id', $roleId)
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->first(['id']);
+
+        if (! $role instanceof stdClass) {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        $permissionKeys = DB::table('role_permissions')
+            ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
+            ->where('role_permissions.organization_id', $invite->organizationId())
+            ->where('role_permissions.role_id', $roleId)
+            ->orderBy('permissions.key')
+            ->lockForUpdate()
+            ->pluck('permissions.key')
+            ->filter(static fn (mixed $key): bool => is_string($key))
+            ->values()
+            ->all();
+
+        if ($permissionKeys !== ['learning.participate']) {
+            throw new InstitutionInviteUnavailable;
+        }
+
+        if ($invite->cohort_id === null) {
+            return;
+        }
+
+        $cohort = DB::table('cohorts')
+            ->where('organization_id', $invite->organizationId())
+            ->where('id', $invite->cohort_id)
+            ->where('status', Cohort::STATUS_ACTIVE)
+            ->lockForUpdate()
+            ->first(['id']);
+
+        if (! $cohort instanceof stdClass) {
+            throw new InstitutionInviteUnavailable;
+        }
     }
 
     private function organization(string $organizationId): Organization

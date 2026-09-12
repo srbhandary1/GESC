@@ -8,6 +8,7 @@ use App\Conversation\ConversationTurnStateMachine;
 use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
+use App\Http\Requests\Conversation\SynthesizeConversationSpeechRequest;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -123,6 +124,40 @@ final class ConversationRequestValidationTest extends TestCase
         $this->assertTrue($this->validator($audio)->fails());
     }
 
+    public function test_speech_request_accepts_only_bounded_purpose_and_text(): void
+    {
+        $valid = SynthesizeConversationSpeechRequest::create(
+            '/api/v1/conversation-sessions/example/speech',
+            'POST',
+            [
+                'purpose' => 'model_en',
+                'text' => 'I went to the market this morning.',
+            ],
+        );
+        $this->assertFalse($this->validator($valid)->fails());
+
+        $blank = SynthesizeConversationSpeechRequest::create(
+            '/api/v1/conversation-sessions/example/speech',
+            'POST',
+            [
+                'purpose' => 'model_en',
+                'text' => '   ',
+            ],
+        );
+        $this->assertTrue($this->validator($blank)->fails());
+
+        $audio = SynthesizeConversationSpeechRequest::create(
+            '/api/v1/conversation-sessions/example/speech',
+            'POST',
+            [
+                'purpose' => 'model_en',
+                'text' => 'Safe fixture.',
+                'raw_audio' => 'not-allowed',
+            ],
+        );
+        $this->assertTrue($this->validator($audio)->fails());
+    }
+
     public function test_turn_state_machine_rejects_skips_and_terminal_retries(): void
     {
         $machine = new ConversationTurnStateMachine;
@@ -156,7 +191,7 @@ final class ConversationRequestValidationTest extends TestCase
     }
 
     private function validator(
-        StartConversationSessionRequest|CreateConversationTurnRequest|AdvanceConversationSessionStageRequest $request,
+        StartConversationSessionRequest|CreateConversationTurnRequest|AdvanceConversationSessionStageRequest|SynthesizeConversationSpeechRequest $request,
     ): ValidatorContract {
         $request->headers->set(
             'Idempotency-Key',

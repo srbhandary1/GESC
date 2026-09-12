@@ -9,4 +9,6 @@ parameters:
         - database
         - routes
         - tests
-    tmpDir: storage/framework/cache/phpstan
+    # Keep analyzer cache outside container-mounted application storage so
+    # host and container users cannot strand one another with unwritable files.
+    tmpDir: /tmp/global-english-api-phpstan

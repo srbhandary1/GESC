@@ -50,7 +50,7 @@ not retained as a provider request history.
 
 Existing ignored local `.env` files should set `SESSION_ENCRYPT=true`, define
 the local-only `AUTH_IDENTITY_DIGEST_KEY` shown in `.env.example`, and add
-`localhost:5173,127.0.0.1:5173` to `SANCTUM_STATEFUL_DOMAINS`. The application
+`localhost:5174,127.0.0.1:5174` to `SANCTUM_STATEFUL_DOMAINS`. The application
 also merges those Vite origins in local mode for backward compatibility.
 Database and Redis session drivers are both revocable through Laravel's session
 handler; the authoritative public-session registry remains in PostgreSQL.

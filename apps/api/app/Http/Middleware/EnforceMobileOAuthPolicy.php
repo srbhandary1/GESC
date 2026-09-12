@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Authentication\Mobile\MobileOAuthClient;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Laravel\Passport\Client;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnforceMobileOAuthPolicy
@@ -105,29 +105,17 @@ final class EnforceMobileOAuthPolicy
             return false;
         }
 
-        /** @var Client|null $client */
-        $client = Client::query()
+        /** @var MobileOAuthClient|null $client */
+        $client = MobileOAuthClient::query()
             ->whereKey($clientId)
             ->where('revoked', false)
             ->first();
 
-        if (! $client instanceof Client) {
+        if (! $client instanceof MobileOAuthClient) {
             return false;
         }
 
-        $provider = $client->getAttribute('provider');
-        $effectiveProvider = is_string($provider) && $provider !== ''
-            ? $provider
-            : config('auth.guards.api.provider');
-
-        return ! $client->confidential()
-            && $client->firstParty()
-            && $client->getAttribute('owner_type') === null
-            && $client->getAttribute('owner_id') === null
-            && $effectiveProvider === 'users'
-            && $client->hasGrantType('authorization_code')
-            && $client->hasGrantType('refresh_token')
-            && $client->hasScope('mobile:api');
+        return $client->isApprovedNativeClient();
     }
 
     private function error(string $error, string $description): JsonResponse

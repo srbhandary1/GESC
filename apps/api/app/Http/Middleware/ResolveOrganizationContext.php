@@ -53,6 +53,20 @@ final readonly class ResolveOrganizationContext
             throw new AuthorizationException(previous: $exception);
         }
 
+        if ($selectedMembershipId === null) {
+            $resolvedMembershipId = $context->membershipId;
+
+            if ($resolvedMembershipId === null) {
+                throw new AuthorizationException;
+            }
+
+            $this->selections->select(
+                $request,
+                $principal,
+                $resolvedMembershipId,
+            );
+        }
+
         $this->contexts->activate($context);
 
         try {

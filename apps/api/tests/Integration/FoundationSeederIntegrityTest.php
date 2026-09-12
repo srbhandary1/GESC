@@ -7,6 +7,7 @@ namespace Tests\Integration;
 use App\Curriculum\CanonicalJson;
 use App\Models\Membership;
 use App\Models\Organization;
+use App\Tenancy\PermissionCatalogue;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -205,11 +206,27 @@ final class FoundationSeederIntegrityTest extends TestCase
         self::assertSame(0, $trainerAdministrativeGrantCount);
         $this->assertSame(1, DB::table('curriculum_missions')->count());
         $this->assertSame(0, DB::table('curriculum_publications')->count());
-        $this->assertSame(2, DB::table('ai_personas')->count());
-        $this->assertSame(2, DB::table('persona_versions')->count());
-        $this->assertSame(2, DB::table('roleplay_scenarios')->count());
-        $this->assertSame(2, DB::table('scenario_versions')->count());
-        $this->assertSame(2, DB::table('scenario_objectives')->count());
+        $this->assertSame(13, DB::table('ai_personas')->count());
+        $this->assertSame(13, DB::table('persona_versions')->count());
+        $this->assertSame(15, DB::table('roleplay_scenarios')->count());
+        $this->assertSame(15, DB::table('scenario_versions')->count());
+        $this->assertSame(24, DB::table('scenario_objectives')->count());
+        $this->assertDatabaseHas('roleplay_scenarios', [
+            'key' => 'past-tense-skill-focus-prototype',
+            'mode' => 'friend',
+        ]);
+        $this->assertDatabaseHas('roleplay_scenarios', [
+            'key' => 'carry-sentence-review-prototype',
+            'mode' => 'friend',
+        ]);
+        $this->assertDatabaseHas('roleplay_scenarios', [
+            'key' => 'job-interview-roleplay-scenario',
+            'mode' => 'roleplay',
+        ]);
+        $this->assertDatabaseHas('ai_personas', [
+            'key' => 'bus-train-ticket-roleplay-prototype',
+            'status' => 'development_only',
+        ]);
     }
 
     public function test_conflicting_synthetic_program_key_fails_closed_and_rolls_back(): void

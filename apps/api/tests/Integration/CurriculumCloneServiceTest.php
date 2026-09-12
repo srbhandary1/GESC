@@ -13,7 +13,6 @@ use App\Curriculum\Publication\CurriculumPublisher;
 use App\Curriculum\Sharing\CurriculumSharingService;
 use App\Models\Membership;
 use App\Models\Organization;
-use App\Models\Permission;
 use App\Models\User;
 use App\Tenancy\OrganizationContext;
 use Carbon\CarbonImmutable;
@@ -906,40 +905,12 @@ final class CurriculumCloneServiceTest extends TenancyIntegrationTestCase
         OrganizationContext $context,
         array $permissionKeys,
     ): void {
-        $role = $this->createRole(
+        $this->grantTestPermissions(
+            $membership,
             $context,
-            'clone-'.strtolower((string) Str::ulid()),
+            $permissionKeys,
+            'clone',
         );
-        $now = now();
-
-        DB::table('membership_roles')->insert([
-            'organization_id' => $membership->organizationId(),
-            'membership_id' => $membership->getKey(),
-            'role_id' => $role->getKey(),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        foreach ($permissionKeys as $permissionKey) {
-            $permission = Permission::query()
-                ->where('key', $permissionKey)
-                ->first();
-
-            if (! $permission instanceof Permission) {
-                throw new RuntimeException(sprintf(
-                    'Missing synthetic clone permission: %s.',
-                    $permissionKey,
-                ));
-            }
-
-            DB::table('role_permissions')->insert([
-                'organization_id' => $membership->organizationId(),
-                'role_id' => $role->getKey(),
-                'permission_id' => $permission->getKey(),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
     }
 
     /**

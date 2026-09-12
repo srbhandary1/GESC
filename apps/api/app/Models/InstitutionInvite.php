@@ -6,10 +6,18 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use App\Tenancy\OrganizationOwned;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string|null $issued_by_membership_id
+ * @property string|null $revoked_by_membership_id
+ * @property CarbonImmutable|null $revoked_at
+ * @property CarbonImmutable|null $code_discard_after
+ * @property int $version
+ */
 final class InstitutionInvite extends Model implements OrganizationOwned
 {
     use BelongsToOrganization, HasUlids;
@@ -30,6 +38,7 @@ final class InstitutionInvite extends Model implements OrganizationOwned
         'organization_id',
         'code_digest',
         'membership_type',
+        'issued_by_membership_id',
         'role_id',
         'cohort_id',
         'status',
@@ -39,6 +48,10 @@ final class InstitutionInvite extends Model implements OrganizationOwned
         'accepted_idempotency_key',
         'accepted_request_fingerprint',
         'accepted_at',
+        'revoked_by_membership_id',
+        'revoked_at',
+        'code_discard_after',
+        'version',
     ];
 
     /**
@@ -83,6 +96,22 @@ final class InstitutionInvite extends Model implements OrganizationOwned
     }
 
     /**
+     * @return BelongsTo<Membership, $this>
+     */
+    public function issuerMembership(): BelongsTo
+    {
+        return $this->belongsTo(Membership::class, 'issued_by_membership_id');
+    }
+
+    /**
+     * @return BelongsTo<Membership, $this>
+     */
+    public function revokerMembership(): BelongsTo
+    {
+        return $this->belongsTo(Membership::class, 'revoked_by_membership_id');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -90,6 +119,9 @@ final class InstitutionInvite extends Model implements OrganizationOwned
         return [
             'expires_at' => 'immutable_datetime',
             'accepted_at' => 'immutable_datetime',
+            'revoked_at' => 'immutable_datetime',
+            'code_discard_after' => 'immutable_datetime',
+            'version' => 'integer',
         ];
     }
 }

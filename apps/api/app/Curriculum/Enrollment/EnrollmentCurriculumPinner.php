@@ -85,6 +85,7 @@ final readonly class EnrollmentCurriculumPinner
                 ->lockForUpdate()
                 ->first([
                     'status',
+                    'version',
                     'curriculum_owner_organization_id',
                     'curriculum_version_id',
                     'curriculum_publication_id',
@@ -181,6 +182,7 @@ final readonly class EnrollmentCurriculumPinner
                     'curriculum_publication_id' => $publication->publicationId,
                     'curriculum_share_grant_id' => $effectiveShareGrantId,
                     'status' => 'active',
+                    'version' => DB::raw('version + 1'),
                     'activated_at' => $evaluatedAt,
                     'updated_at' => $evaluatedAt,
                 ]);
@@ -220,6 +222,149 @@ final readonly class EnrollmentCurriculumPinner
             if ($effectiveShareGrantId !== null) {
                 $payload['curriculum_share_grant_id']
                     = $effectiveShareGrantId;
+            }
+
+            $this->outbox->recordTenant(
+                'enrollment.curriculum.activated',
+                'enrollment',
+                $enrollmentId,
+                $payload,
+                $eventCorrelationId,
+            );
+
+            return $this->result($enrollmentId, false);
+        }, 3);
+    }
+
+    public function activateForAdministration(
+        User $actor,
+        string $enrollmentId,
+        string $publicationId,
+        ?string $shareGrantId,
+        int $expectedVersion,
+    ): EnrollmentPinResult {
+        if (
+            ! Str::isUlid($enrollmentId)
+            || ! Str::isUlid($publicationId)
+            || ($shareGrantId !== null && ! Str::isUlid($shareGrantId))
+            || $expectedVersion < 1
+            || ! $this->authorization->allows(
+                $actor,
+                'enrollments.curriculum.assign',
+            )
+        ) {
+            throw new CurriculumOperationRejected;
+        }
+
+        $context = $this->contexts->current();
+        $this->actorMembershipId($actor);
+
+        return DB::transaction(function () use (
+            $actor,
+            $enrollmentId,
+            $publicationId,
+            $shareGrantId,
+            $expectedVersion,
+            $context,
+        ): EnrollmentPinResult {
+            if (
+                ! $this->authorization->allows(
+                    $actor,
+                    'enrollments.curriculum.assign',
+                )
+            ) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $enrollment = DB::table('enrollments')
+                ->where('organization_id', $context->organizationId)
+                ->where('id', $enrollmentId)
+                ->lockForUpdate()
+                ->first([
+                    'status',
+                    'version',
+                    'curriculum_owner_organization_id',
+                    'curriculum_version_id',
+                    'curriculum_publication_id',
+                    'curriculum_share_grant_id',
+                ]);
+
+            if (
+                ! $enrollment instanceof stdClass
+                || $this->nullableString($enrollment, 'status') !== 'pending_curriculum'
+                || (int) ($enrollment->version ?? 0) !== $expectedVersion
+                || $this->nullableString($enrollment, 'curriculum_owner_organization_id') !== null
+                || $this->nullableString($enrollment, 'curriculum_version_id') !== null
+                || $this->nullableString($enrollment, 'curriculum_publication_id') !== null
+                || $this->nullableString($enrollment, 'curriculum_share_grant_id') !== null
+            ) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $resolution = $shareGrantId === null
+                ? $this->resolveOwnedPublication(
+                    $context->organizationId,
+                    $publicationId,
+                )
+                : $this->resolveSharedPublication(
+                    $shareGrantId,
+                    $publicationId,
+                );
+            $publication = $resolution['publication'];
+            $evaluatedAt = $resolution['evaluated_at'];
+            $effectiveShareGrantId = $publication->ownerOrganizationId
+                === $context->organizationId
+                    ? null
+                    : $shareGrantId;
+
+            if (
+                ($publication->ownerOrganizationId === $context->organizationId && $shareGrantId !== null)
+                || ($publication->ownerOrganizationId !== $context->organizationId && $effectiveShareGrantId === null)
+            ) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $updated = DB::table('enrollments')
+                ->where('organization_id', $context->organizationId)
+                ->where('id', $enrollmentId)
+                ->where('status', 'pending_curriculum')
+                ->where('version', $expectedVersion)
+                ->whereNull('curriculum_publication_id')
+                ->update([
+                    'curriculum_owner_organization_id' => $publication
+                        ->ownerOrganizationId,
+                    'curriculum_version_id' => $publication
+                        ->curriculumVersionId,
+                    'curriculum_publication_id' => $publication->publicationId,
+                    'curriculum_share_grant_id' => $effectiveShareGrantId,
+                    'status' => 'active',
+                    'version' => $expectedVersion + 1,
+                    'activated_at' => $evaluatedAt,
+                    'updated_at' => $evaluatedAt,
+                ]);
+
+            if ($updated !== 1) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $eventCorrelationId = $context->correlationId ?? (string) Str::uuid();
+            $this->audit->recordTenant(
+                'enrollment.curriculum.activated',
+                'enrollment',
+                $enrollmentId,
+                $eventCorrelationId,
+            );
+            $payload = [
+                'curriculum_owner_organization_id' => $publication
+                    ->ownerOrganizationId,
+                'curriculum_version_id' => $publication->curriculumVersionId,
+                'enrollment_id' => $enrollmentId,
+                'organization_id' => $context->organizationId,
+                'publication_id' => $publication->publicationId,
+            ];
+
+            if ($effectiveShareGrantId !== null) {
+                $payload['curriculum_share_grant_id'] = $effectiveShareGrantId;
             }
 
             $this->outbox->recordTenant(

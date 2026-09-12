@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Authentication\Mobile\MobileTokenFamilyService;
+use App\Models\Membership;
 use App\Models\MobileRefreshToken;
 use App\Models\MobileTokenFamily;
+use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -168,6 +171,97 @@ final class MobileTokenFamilyTest extends TestCase
         }
 
         $this->assertDatabaseCount('mobile_refresh_tokens', 0);
+    }
+
+    public function test_membership_selection_locks_membership_before_family_and_rechecks_afterward(): void
+    {
+        $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        $organization = Organization::query()->create([
+            'system_key' => null,
+            'name' => 'Mobile Selection Lock Order',
+            'kind' => Organization::KIND_INSTITUTION,
+            'status' => Organization::STATUS_ACTIVE,
+            'timezone' => 'Asia/Kolkata',
+        ]);
+        $membershipId = (string) Str::ulid();
+        DB::table('memberships')->insert([
+            'id' => $membershipId,
+            'organization_id' => $organization->getKey(),
+            'user_id' => $user->getKey(),
+            'membership_type' => Membership::TYPE_TRAINER,
+            'status' => Membership::STATUS_ACTIVE,
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $client = Client::query()->create([
+            'name' => 'Mobile selection lock-order client',
+            'secret' => null,
+            'provider' => 'users',
+            'redirect_uris' => ['com.globalenglish.app:/oauth/callback'],
+            'grant_types' => ['authorization_code', 'refresh_token'],
+            'revoked' => false,
+        ]);
+        $family = MobileTokenFamily::query()->forceCreate([
+            'user_id' => $user->getKey(),
+            'client_id' => $client->getKey(),
+            'installation_digest' => str_repeat('c', 64),
+            'last_used_at' => now(),
+            'absolute_expires_at' => now()->addDay(),
+        ]);
+        $queries = [];
+        DB::listen(static function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $selected = $this->app
+            ->make(MobileTokenFamilyService::class)
+            ->selectMembership(
+                (string) $family->getKey(),
+                (string) $user->getKey(),
+                $membershipId,
+            );
+
+        self::assertInstanceOf(MobileTokenFamily::class, $selected);
+        self::assertSame($membershipId, $selected->selected_membership_id);
+        $membershipLock = null;
+        $familyLock = null;
+        $postLockRecheck = null;
+
+        foreach ($queries as $index => $query) {
+            if (
+                $membershipLock === null
+                && str_contains($query, 'from "memberships"')
+                && str_contains($query, 'for update')
+            ) {
+                $membershipLock = $index;
+            }
+
+            if (
+                $familyLock === null
+                && str_contains($query, 'from "mobile_token_families"')
+                && str_contains($query, 'for update')
+            ) {
+                $familyLock = $index;
+            }
+
+            if (
+                $familyLock !== null
+                && $index > $familyLock
+                && str_contains($query, 'from "memberships"')
+                && str_contains($query, '"organizations"')
+            ) {
+                $postLockRecheck = $index;
+
+                break;
+            }
+        }
+
+        self::assertIsInt($membershipLock);
+        self::assertIsInt($familyLock);
+        self::assertIsInt($postLockRecheck);
+        self::assertLessThan($familyLock, $membershipLock);
+        self::assertGreaterThan($familyLock, $postLockRecheck);
     }
 
     public function test_refresh_validation_revokes_the_family_on_installation_mismatch(): void

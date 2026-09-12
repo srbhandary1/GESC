@@ -189,10 +189,6 @@ final readonly class RoleplayStageService
             ]);
 
         foreach ($objectives as $index => $objective) {
-            if (! $objective instanceof stdClass) {
-                continue;
-            }
-
             $objectiveKey = $this->string($objective, 'objective_key');
             DB::table('roleplay_feedback_evidence')->insert([
                 'id' => (string) Str::ulid(),

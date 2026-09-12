@@ -25,16 +25,18 @@
         <env name="AUTH_IDENTITY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtaWRlbnRpdHktdGVzdC1rZXk="/>
         <env name="AUTH_RECOVERY_DIGEST_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtcmVjb3ZlcnktbG9jYWwta2V5"/>
         <env name="OFFLINE_BUNDLE_SIGNING_KEY" value="base64:Z2xvYmFsLWVuZ2xpc2gtb2ZmbGluZS10ZXN0LWtleS12MQ=="/>
-        <env name="CONVERSATION_PROVIDER_DRIVER" value="fake"/>
+        <env name="CONVERSATION_PROVIDER_DRIVER" value="fake" force="true"/>
+        <env name="CONVERSATION_GUIDANCE_TTS_LIVE_REQUESTS_ENABLED" value="false" force="true"/>
+        <env name="CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED" value="false" force="true"/>
         <env name="VOICE_UPLOAD_ENABLED" value="true"/>
         <env name="VOICE_PROVIDER_DRIVER" value="deterministic-test"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
