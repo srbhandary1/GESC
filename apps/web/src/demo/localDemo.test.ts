@@ -72,12 +72,12 @@ describe('local demo boundary', () => {
     )
 
     expect(session.status).toBe('authenticated')
-    expect(home.next_mission?.title.text).toBe('Introduce yourself')
+    expect(home.next_mission?.title.text).toBe('Can')
     expect(mission.model_audio.stream_url).toMatch(
       /^demo-speech:en-IN:/u,
     )
     expect(mission.model_audio.stream_url).toContain(
-      encodeURIComponent('Hello, my name is Ravi.'),
+      encodeURIComponent('I can speak English. Can I help you?'),
     )
     expect(result).toMatchObject({
       check_state: 'correct',
@@ -195,13 +195,13 @@ describe('local demo boundary', () => {
     )
 
     expect(progress.objectives).toHaveLength(2)
-    expect(progress.objectives[0]!.label.text).toBe('Introduce myself')
+    expect(progress.objectives[0]!.label.text).toBe('Use can and cannot')
     expect(progress.objectives[1]).toMatchObject({
       knowledge_state: 'developing',
       spoken_state: 'unassessed',
     })
     expect(progress.objectives[1]!.label.text).toBe(
-      'Greet a colleague at work',
+      'Use should for advice',
     )
   })
 })

@@ -30,6 +30,7 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { PreSignInSplash } from './auth/PreSignInSplash'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
+import { curriculumByLevelId } from './demo/curriculum/levelCurriculum'
 import {
   foundationLessonById,
   lessonIdFromHash,
@@ -384,9 +385,19 @@ function App({
     authentication.transport === 'passport-pkce'
       ? (authentication as AndroidPkceAuthentication)
       : null
+  const practiceHashId = (globalThis.location?.hash ?? '')
+    .replace(/^#/u, '')
+    .replace(/^(?:learn|practice)\//u, '')
   const practiceLesson = foundationLessonById(
     lessonIdFromHash(globalThis.location?.hash),
   )
+  const practiceCurriculum = curriculumByLevelId(practiceHashId)
+  const practiceListenLines =
+    practiceCurriculum?.fallbackTurns.length
+      ? practiceCurriculum.fallbackTurns
+      : practiceLesson === null
+        ? undefined
+        : [practiceLesson.modelEn]
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -605,17 +616,18 @@ function App({
                 localizationPolicy={localizationPolicy}
                 onLocaleChange={setLocale}
               />
-            ) : null}
-            <LearnerJourney
-              api={learnerJourneyApi}
-              audioRecorder={audioRecorder}
-              createClientId={createClientId}
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              offlineBinding={offlineBinding}
-              offlineStore={offlineStore}
-              resumeBundle={offlineResume?.storedBundle}
-            />
+            ) : (
+              <LearnerJourney
+                api={learnerJourneyApi}
+                audioRecorder={audioRecorder}
+                createClientId={createClientId}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                offlineBinding={offlineBinding}
+                offlineStore={offlineStore}
+                resumeBundle={offlineResume?.storedBundle}
+              />
+            )}
           </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
@@ -648,11 +660,7 @@ function App({
                 api={conversationApi}
                 createClientId={createClientId}
                 demoMode={demoMode}
-                listenLines={
-                  practiceLesson === null
-                    ? undefined
-                    : [practiceLesson.modelEn]
-                }
+                listenLines={practiceListenLines}
                 locale={locale}
                 localizationPolicy={localizationPolicy}
               />

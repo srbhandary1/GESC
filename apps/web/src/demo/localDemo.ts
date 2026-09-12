@@ -175,7 +175,7 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
         {
           evidence: result.evidence,
           knowledge_state: result.knowledge_state,
-          label: content('en-IN', 'Introduce myself'),
+          label: content('en-IN', 'Use can and cannot'),
           local_capture_receipt_present:
             result.local_capture_receipt_present,
           objective_id: ids.objective,
@@ -193,7 +193,7 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
             latest_attempt_number: 1,
           },
           knowledge_state: 'developing',
-          label: content('en-IN', 'Greet a colleague at work'),
+          label: content('en-IN', 'Use should for advice'),
           local_capture_receipt_present: false,
           objective_id: ids.greetingObjective,
           review_due_at: '2026-08-02T09:00:00Z',
@@ -482,7 +482,7 @@ function demoHome(): LearnerHome {
     next_mission: {
       estimated_minutes: 5,
       id: ids.mission,
-      title: content('en-IN', 'Introduce yourself'),
+      title: content('en-IN', 'Can'),
     },
     onboarding: {
       adult_confirmed: true,
@@ -499,18 +499,18 @@ function demoMission(): LearnerMission {
       options: [
         {
           id: 'correct-option',
-          label: content('en-IN', 'Hello, my name is Ravi.'),
+          label: content('en-IN', 'I can speak English.'),
         },
         {
           id: 'incorrect-option',
           label: content('en-IN', 'Goodbye yesterday.'),
         },
       ],
-      prompt: content('en-IN', 'Choose the correct introduction.'),
+      prompt: content('en-IN', 'Choose the correct sentence.'),
     },
     enrollment_id: ids.enrollment,
     id: ids.mission,
-    kannada_guidance: content('kn-IN', 'ನಿಮ್ಮ ಹೆಸರನ್ನು ಹೇಳಿ.'),
+    kannada_guidance: content('kn-IN', 'ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.'),
     model_audio: {
       asset_id: ids.asset,
       duration_ms: 2_400,
@@ -519,14 +519,14 @@ function demoMission(): LearnerMission {
       mime_type: 'audio/wav',
       stream_url: encodeDemoSpeechUrl(
         'en-IN',
-        'Hello, my name is Ravi.',
+        'I can speak English. Can I help you?',
       ),
     },
-    model_text: content('en-IN', 'Hello, my name is Ravi.'),
+    model_text: content('en-IN', 'I can speak English. Can I help you?'),
     objective_id: ids.objective,
     publication_id: ids.publication,
-    title: content('en-IN', 'Introduce yourself'),
-    transcript: content('en-IN', 'Hello, my name is Ravi.'),
+    title: content('en-IN', 'Can'),
+    transcript: content('en-IN', 'I can speak English. Can I help you?'),
   }
 }
 
@@ -539,7 +539,7 @@ function demoResult(
 
   return {
     attempt_id: ids.attempt,
-    can_do: content('en-IN', 'I can introduce myself.'),
+    can_do: content('en-IN', 'I can use can and cannot.'),
     check_state: correct ? 'correct' : 'incorrect',
     evidence: {
       best_attempt_id: ids.best,

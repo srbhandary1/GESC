@@ -211,6 +211,17 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.queryByText('Reading and phrase notes for today'),
     ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Audio Lessons/i }))
+    expect(screen.getByRole('heading', { name: 'Can' })).toBeVisible()
+    expect(
+      screen.getByText('I can speak English. Can I help you?'),
+    ).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await user.click(screen.getByRole('button', { name: /^Level 2\b/i }))
+    await user.click(screen.getByRole('button', { name: /Audio Lessons/i }))
+    expect(screen.getByRole('heading', { name: 'Should' })).toBeVisible()
+    expect(screen.getByText('You should drink some water.')).toBeVisible()
   })
 
   it('renders Kannada UI chrome and AI replies under kn-IN', async () => {

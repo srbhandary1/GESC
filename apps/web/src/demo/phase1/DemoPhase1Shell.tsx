@@ -18,6 +18,8 @@ import {
   persistSpeakingComfort,
   readFirstRunDismissed,
 } from '../../ui/firstRunPreference'
+import { curriculumByLevelId } from '../curriculum/levelCurriculum'
+import { LevelSessionPanel } from '../curriculum/LevelSessionPanel'
 import { DemoTtsAdminSettings } from '../DemoTtsAdminSettings'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
@@ -192,6 +194,7 @@ export function DemoPhase1Shell({
       forcedModule === undefined &&
       !readFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY),
   )
+  const [activeRoom, setActiveRoom] = useState<Phase1RoomId | null>(null)
   const welcomeTitleRef = useRef<HTMLHeadingElement | null>(null)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
@@ -253,6 +256,14 @@ export function DemoPhase1Shell({
       })
       .catch(() => setUsedBrowserFallback(true))
       .finally(() => setAudioSpeaking(false))
+  }
+
+  const openPracticeForLevel = (levelId: string) => {
+    const url = new URL(globalThis.location.href)
+    url.hash = `practice/${levelId}`
+    globalThis.history.pushState(null, '', url)
+    globalThis.dispatchEvent(new Event('hashchange'))
+    globalThis.scrollTo(0, 0)
   }
 
   const go = (next: Phase1Module | 'practice' | 'learn') => {
@@ -825,21 +836,67 @@ export function DemoPhase1Shell({
       ) : null}
 
       {module === 'levels' ? (
+        activeRoom !== null &&
+        activeRoom !== 'assignment' &&
+        activeRoom !== 'assessment' &&
+        activeRoom !== 'unlock' ? (
+          activeRoom === 'conversation' ? null : (
+            <LevelSessionPanel
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              onBack={() => setActiveRoom(null)}
+              roomTitle={message(roomTitleKeys[activeRoom])}
+              session={
+                curriculumByLevelId(selectedLevelId) ?? {
+                  id: selectedLevelId,
+                  kind: selectedLevel.kind,
+                  number: selectedLevel.number,
+                  availability: 'missing',
+                  source: null,
+                  conceptKey: null,
+                  title: levelTitle(selectedLevel).text,
+                  objective: null,
+                  targetPatterns: [],
+                  modelLine: null,
+                  fallbackTurns: [],
+                  scenario: null,
+                  kannadaSummary: null,
+                  applyTask: null,
+                  questions: [],
+                }
+              }
+            />
+          )
+        ) : (
           <LevelsHub
-          compact={compact}
-          message={message}
-          onOpenRoom={(roomId) => {
-            if (compact) {
-              return
-            }
-            const next = roomDestination(roomId)
-            go(next)
-          }}
-          selectedLevel={selectedLevel}
-          selectedLevelId={selectedLevelId}
-          setSelectedLevelId={setSelectedLevelId}
-          levelTitle={levelTitle}
-        />
+            compact={compact}
+            message={message}
+            onOpenRoom={(roomId) => {
+              if (compact) {
+                return
+              }
+              if (roomId === 'conversation') {
+                openPracticeForLevel(selectedLevelId)
+                return
+              }
+              if (
+                roomId === 'audio' ||
+                roomId === 'content' ||
+                roomId === 'activity' ||
+                roomId === 'ai-teacher'
+              ) {
+                setActiveRoom(roomId)
+                return
+              }
+              const next = roomDestination(roomId)
+              go(next)
+            }}
+            selectedLevel={selectedLevel}
+            selectedLevelId={selectedLevelId}
+            setSelectedLevelId={setSelectedLevelId}
+            levelTitle={levelTitle}
+          />
+        )
       ) : null}
 
       {module === 'notices' ? (
@@ -992,7 +1049,6 @@ function LevelsHub({
                 className="phase1-level"
                 data-status={level.status}
                 aria-current={selectedLevelId === level.id ? 'true' : undefined}
-                disabled={level.status === 'locked'}
                 onClick={() => setSelectedLevelId(level.id)}
               >
                 <strong lang={title.resolvedLocale}>{title.text}</strong>

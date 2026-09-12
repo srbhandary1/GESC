@@ -131,9 +131,30 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('button', { name: /Pre-Level 2/i }).click()
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
   await expect(page.getByText('Conversation Room')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Level 17/i })).toBeEnabled()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Can' })).toBeVisible()
+  await expect(
+    page.getByText('I can speak English. Can I help you?'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: /^Level 2\b/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Should' })).toBeVisible()
+  await expect(page.getByText('You should drink some water.')).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: /Level 17/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Used to' })).toBeVisible()
+  await expect(page.getByText('I used to walk to school.')).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).first().click()
+  await page.getByRole('button', { name: /Pre-Level 1/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(
+    page.getByText(/No authored listen-learn session/i),
+  ).toBeVisible()
 
-  // Learn shows course levels; the synthetic mission remains below.
+  // Learn is My Levels only — no synthetic Introduce-yourself mission.
   await page.getByRole('link', { name: 'Learn' }).click()
   await expect(
     page.getByRole('heading', { name: 'My Levels' }),
@@ -143,37 +164,10 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('heading', { name: '16 speaking lessons' }),
   ).toHaveCount(0)
-  await page.getByRole('button', { name: 'Start mission' }).click()
-  await page.getByRole('button', { name: 'Play model audio' }).click()
-  await page
-    .getByRole('button', { name: 'Continue to speaking practice' })
-    .click()
-  await page.getByRole('button', { name: 'Start recording' }).click()
-  await page.waitForTimeout(300)
-  await page.getByRole('button', { name: 'Stop recording' }).click()
   await expect(
-    page.getByLabel('Your recording playback'),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Record again' }).click()
-  await page.getByRole('button', { name: 'Start recording' }).click()
-  await page.waitForTimeout(300)
-  await page.getByRole('button', { name: 'Stop recording' }).click()
-  await page
-    .getByRole('button', { name: 'Continue to the check' })
-    .click()
-  await page.getByRole('radio', { name: 'Hello, my name is Ravi.' }).check()
-  await page.getByRole('button', { name: 'Submit check' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Mission result' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Try the mission again' }).click()
-  // Retry restarts the mission at listen (not the home Start button).
-  await expect(
-    page.getByRole('button', { name: 'Play model audio' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('button', { name: 'Continue to speaking practice' }),
-  ).toBeVisible()
+    page.getByRole('button', { name: 'Start mission' }),
+  ).toHaveCount(0)
+  await expect(page.getByText('Introduce yourself')).toHaveCount(0)
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
   await page.getByRole('link', { name: 'Speak' }).click()
@@ -260,7 +254,7 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('heading', { name: 'Your progress' }),
   ).toBeVisible()
-  await expect(page.getByText('Introduce myself')).toBeVisible()
+  await expect(page.getByText('Use can and cannot')).toBeVisible()
 
   // Return home.
   await page.getByRole('link', { name: 'Home' }).click()

@@ -221,6 +221,10 @@ describe('localized application shell', () => {
     expect(
       screen.queryByRole('heading', { name: '16 speaking lessons' }),
     ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Start mission' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Introduce yourself')).not.toBeInTheDocument()
 
     window.history.replaceState(null, '', '/#practice')
     globalThis.dispatchEvent(new Event('hashchange'))

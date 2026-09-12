@@ -660,8 +660,11 @@ identity — not a purple Supernova clone.
   Activity, My Levels, Notice Board) from `8ebacba`, keeping Mira / GESC
   green polish. Learn opens **My Levels** (Pre-Level 1 … Level 17 and the
   eight rooms). Daily Activity first audio is the Level 1 **Can** lesson
-  from `9818fe2` / LPL-01. The Grove 16-card foundation catalog no longer
-  occupies Home or Learn.
+  from `9818fe2` / LPL-01. Levels 2–17 Audio / Content / Activity / AI
+  Teacher rooms use APP-0065 authored sessions from `c4c810f`. Pre-Level
+  1–2 are explicit gaps. Learn no longer mounts the Introduce-yourself
+  mission. The Grove 16-card foundation catalog no longer occupies Home
+  or Learn.
 - UI catalogues at revision `ui-*-2026-09-12.13`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
