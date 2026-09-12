@@ -1,6 +1,9 @@
 {
   "app.description": "இந்திய மொழிகளின் வழிகாட்டுதலுடன் பேசும் ஆங்கிலம் கற்கும் தளம்",
   "app.name": "குளோபல் இங்கிலீஷ் ஸ்பீக்கிங் கோர்ஸ்",
+  "app.short_name": "குளோபல் இங்கிலீஷ்",
+  "conversation.about_action": "பற்றி",
+  "conversation.about_continue": "சரி",
   "conversation.coaching_mode.fluency": "சரளம்",
   "conversation.coaching_mode.gentle": "மென்மையான",
   "conversation.coaching_mode.label": "பயிற்சி முறை",

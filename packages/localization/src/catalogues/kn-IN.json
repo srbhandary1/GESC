@@ -1,6 +1,9 @@
 {
   "app.description": "ಭಾರತೀಯ ಭಾಷೆಗಳ ಮಾರ್ಗದರ್ಶನದೊಂದಿಗೆ ಮಾತನಾಡುವ ಇಂಗ್ಲಿಷ್ ಕಲಿಕಾ ವೇದಿಕೆ",
   "app.name": "ಗ್ಲೋಬಲ್ ಇಂಗ್ಲಿಷ್ ಸ್ಪೀಕಿಂಗ್ ಕೋರ್ಸ್",
+  "app.short_name": "ಗ್ಲೋಬಲ್ ಇಂಗ್ಲಿಷ್",
+  "conversation.about_action": "ಬಗ್ಗೆ",
+  "conversation.about_continue": "ಸರಿ",
   "conversation.coaching_mode.fluency": "ಅನರ್ಗಳತೆ",
   "conversation.coaching_mode.gentle": "ಮೃದು",
   "conversation.coaching_mode.label": "ತರಬೇತಿ ವಿಧಾನ",

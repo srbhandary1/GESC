@@ -11,6 +11,7 @@ import type {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
 })
 
@@ -50,6 +51,15 @@ describe('deterministic Friend prototype', () => {
         'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
       ),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
+    expect(
+      screen.queryByRole('dialog', { name: 'About this AI prototype' }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'About' }))
+    expect(
+      screen.getByRole('dialog', { name: 'About this AI prototype' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
 
     await user.click(
       screen.getByRole('button', {

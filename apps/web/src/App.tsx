@@ -283,6 +283,11 @@ function App({
     'en-IN',
     localizationPolicy,
   )
+  const compactBrand = resolveInterfaceMessage(
+    'app.short_name',
+    'en-IN',
+    localizationPolicy,
+  )
   const navigationLabel = message('shell.navigation_label')
   const skipToContent = message('shell.skip_to_content')
   const fallbackLabel = message('localization.fallback_label')
@@ -388,6 +393,7 @@ function App({
     <ApplicationFrame
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
+      compactBrandLabel={compactBrand.text}
       currentDestination={destination}
       hidePrimaryNavigation={false}
       headerActions={

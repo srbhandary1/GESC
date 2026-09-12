@@ -4,7 +4,15 @@
   max-width: 48rem;
 }
 
-.conversation-journey__heading,
+.conversation-journey__heading {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.conversation-journey__about {
+  justify-self: start;
+}
+
 .conversation-journey__notice,
 .conversation-journey__result,
 .conversation-journey__correction,

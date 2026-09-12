@@ -1,6 +1,9 @@
 {
   "app.description": "భారతీయ భాషల మార్గదర్శకత్వంతో మాట్లాడే ఇంగ్లీష్ నేర్చుకునే వేదిక",
   "app.name": "గ్లోబల్ ఇంగ్లీష్ స్పీకింగ్ కోర్స్",
+  "app.short_name": "గ్లోబల్ ఇంగ్లీష్",
+  "conversation.about_action": "గురించి",
+  "conversation.about_continue": "సరే",
   "conversation.coaching_mode.fluency": "ప్రవాహం",
   "conversation.coaching_mode.gentle": "సున్నితం",
   "conversation.coaching_mode.label": "కోచింగ్ మోడ్",

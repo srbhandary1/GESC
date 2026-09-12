@@ -1,6 +1,9 @@
 {
   "app.description": "Indian-language-guided spoken-English platform",
   "app.name": "Global English Speaking Course",
+  "app.short_name": "Global English",
+  "conversation.about_action": "About",
+  "conversation.about_continue": "Got it",
   "conversation.coaching_mode.fluency": "Fluency",
   "conversation.coaching_mode.gentle": "Gentle",
   "conversation.coaching_mode.label": "Coaching mode",

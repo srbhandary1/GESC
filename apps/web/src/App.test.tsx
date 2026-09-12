@@ -20,6 +20,7 @@ import { createLocalDemoRuntime } from './demo/localDemo'
 beforeEach(() => {
   document.documentElement.removeAttribute('data-theme')
   window.localStorage.removeItem('ge-ui-color-scheme')
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
 })
 
 afterEach(() => {
@@ -28,6 +29,7 @@ afterEach(() => {
   document.documentElement.lang = DEFAULT_LOCALE
   document.documentElement.removeAttribute('data-theme')
   window.localStorage.removeItem('ge-ui-color-scheme')
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
 })
 

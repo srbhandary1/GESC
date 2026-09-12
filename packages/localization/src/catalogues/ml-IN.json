@@ -1,6 +1,9 @@
 {
   "app.description": "ഇന്ത്യൻ ഭാഷകളുടെ മാർഗനിർദേശത്തോടെ സംസാര ഇംഗ്ലീഷ് പഠിക്കാനുള്ള വേദി",
   "app.name": "ഗ്ലോബൽ ഇംഗ്ലീഷ് സ്പീക്കിംഗ് കോഴ്സ്",
+  "app.short_name": "ഗ്ലോബൽ ഇംഗ്ലീഷ്",
+  "conversation.about_action": "വിവരം",
+  "conversation.about_continue": "ശരി",
   "conversation.coaching_mode.fluency": "അനർഗളത",
   "conversation.coaching_mode.gentle": "സൗമ്യം",
   "conversation.coaching_mode.label": "കോച്ചിംഗ് മോഡ്",

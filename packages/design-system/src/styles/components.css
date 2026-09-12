@@ -59,14 +59,16 @@
 }
 
 .ge-application-frame__brand {
-  max-width: 14rem;
-  overflow: hidden;
+  min-width: 0;
   font-size: 1.05rem;
   font-weight: 750;
   letter-spacing: -0.03em;
   line-height: 1.25;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ge-application-frame__brand--responsive .ge-application-frame__brand-short {
+  display: none;
 }
 
 .ge-application-frame__header-actions {
@@ -144,8 +146,12 @@
     );
   }
 
-  .ge-application-frame__brand {
-    max-width: 9.5rem;
+  .ge-application-frame__brand--responsive .ge-application-frame__brand-full {
+    display: none;
+  }
+
+  .ge-application-frame__brand--responsive .ge-application-frame__brand-short {
+    display: inline;
   }
 
   .ge-primary-navigation {
@@ -330,6 +336,56 @@
 .ge-async-error__message,
 .ge-empty-state__message {
   margin: 0;
+  color: var(--ge-color-text-muted);
+}
+
+.ge-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  padding: var(--ge-space-3);
+  padding-block-end: calc(
+    var(--ge-target-minimum) + var(--ge-space-6) +
+      env(safe-area-inset-bottom, 0px)
+  );
+  background: rgb(10 26 20 / 42%);
+}
+
+.ge-sheet {
+  display: grid;
+  gap: var(--ge-space-3);
+  width: min(100%, 28rem);
+  max-height: min(70vh, 28rem);
+  overflow: auto;
+  padding: var(--ge-space-5);
+  border: 1px solid color-mix(in srgb, var(--ge-color-border) 70%, transparent);
+  border-radius: var(--ge-radius-xl);
+  background: var(--ge-color-surface);
+  box-shadow: var(--ge-elevation-2);
+  animation: ge-sheet-enter var(--ge-motion-med) var(--ge-ease);
+}
+
+@keyframes ge-sheet-enter {
+  from {
+    opacity: 0.4;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ge-sheet h3,
+.ge-sheet p {
+  margin: 0;
+}
+
+.ge-sheet p {
   color: var(--ge-color-text-muted);
 }
 

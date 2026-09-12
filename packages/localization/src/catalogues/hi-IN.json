@@ -1,6 +1,9 @@
 {
   "app.description": "भारतीय भाषाओं के मार्गदर्शन वाला स्पोकन इंग्लिश शिक्षण मंच",
   "app.name": "ग्लोबल इंग्लिश स्पीकिंग कोर्स",
+  "app.short_name": "ग्लोबल इंग्लिश",
+  "conversation.about_action": "जानकारी",
+  "conversation.about_continue": "समझ गया",
   "conversation.coaching_mode.fluency": "प्रवाह",
   "conversation.coaching_mode.gentle": "सौम्य",
   "conversation.coaching_mode.label": "कोचिंग मोड",

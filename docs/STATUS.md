@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-12.2`.
+  `ui-en-IN-2026-09-12.3`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revision `ui-*-2026-09-12.2`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.3`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -607,6 +607,8 @@ What moved:
   motivation. Course-structure copy lives on Profile.
 - Student chrome now uses design-system dark mode, 48px targets, and
   skeleton/error/retry on Learn, Progress and Practice async states.
+- Narrow viewports show the short wordmark **Global English**; Friend
+  about-copy sits in a first-run sheet (`ge-ui-practice-about-dismissed`).
   Presentation-only; not F0 or Play evidence.
 
 ## Local synthetic demo
