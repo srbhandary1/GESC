@@ -3180,6 +3180,17 @@ This-That are restored or newly authored. See the following section.
 Runbook: [DEMO_LESSON_PRACTICE.md](DEMO_LESSON_PRACTICE.md).
 Catalogue revision `ui-*-2026-09-12.14`.
 
+### Verification (this close)
+
+| Command or check | Result |
+|---|---|
+| `pnpm --filter @global-english/web test` | 160 passed |
+| `pnpm --filter @global-english/web typecheck` | passed |
+| `pnpm --filter @global-english/localization test` | 31 passed |
+| Demo Chromium e2e on `127.0.0.1:4180` (3 specs) | passed; rooms probe `/api/v1/me/levels` then fall back |
+| `make demo-android` | passed; sideload APK `5819193` bytes at `/downloads/global-english-demo.apk` |
+| `make verify` | Not run (Node 22 vs pin 24.18.1; PHP toolchain not on this VM) |
+
 
 
 

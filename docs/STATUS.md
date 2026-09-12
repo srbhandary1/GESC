@@ -668,6 +668,8 @@ identity — not a purple Supernova clone.
   mission. The Grove 16-card foundation catalog no longer occupies Home
   or Learn. Laravel LessonPractice / Indic STT / `/me/levels` are restored
   onto this branch (D-0121); demo TTS is fallback when the API is down.
+  Demo Chromium e2e (3 specs on `:4180`) passed after allowing those
+  product-path probes. Sideload APK refreshed (`5819193` bytes).
 - UI catalogues at revision `ui-*-2026-09-12.14`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.
