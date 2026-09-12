@@ -599,8 +599,8 @@ What moved:
 - **Home** shows one next-lesson CTA, a short level/streak summary, and
   secondary links (Speak, Levels, AI Teacher, Profile). The six-module
   dashboard dump and Phase 1 pill nav are gone.
-- **Learn** still runs the deterministic mission and now also shows a
-  compact current-level room list.
+- **Learn** still runs the deterministic mission first, then a compact
+  current-level room list.
 - **Profile / About** holds institute orientation, attendance reports and
   notices.
 - **AI Teacher** keeps today’s task, current-level reminder and next-step

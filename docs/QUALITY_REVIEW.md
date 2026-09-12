@@ -2913,6 +2913,7 @@ accept and Play public release remain unauthorized.
 ### Scope reviewed
 
 - demo Phase 1 Home / Learn / AI Teacher / Profile information architecture;
+- Learn leading with the mission, then a compact room list;
 - relocation of attendance, notices and institute-about copy off the primary
   student path;
 - UI catalogue additions at revision `ui-*-2026-09-12.1`;
