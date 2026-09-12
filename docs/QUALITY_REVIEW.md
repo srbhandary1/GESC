@@ -3084,11 +3084,29 @@ dashboard and the Level 1 **Can** listen/check content that existed on
 ### Known limitations
 
 - Laravel LessonPractice / `09e3345` Indic STT is not on this demo
-  branch. The PR-006 LearnerJourney mission remains the synthetic
-  “Introduce yourself” fixture.
+  branch. Demo Learn no longer mounts the PR-006 “Introduce yourself”
+  mission (D-0119).
+- Pre-Level 1 and Pre-Level 2 have no authored LessonPractice session
+  in git history; the UI states that gap instead of inventing fillers.
 - te-IN / ml-IN Can chrome lines reuse English pending independent
   review.
 - F0 DoD, production and Play remain unauthorized.
+
+---
+
+## PR #6 all-levels listen-learn (presentation)
+
+### Wired
+
+- **17 / 19** level entries have authored sessions: Level 1 Can
+  (`9818fe2` / LPL-01) and Levels 2–17 (`c4c810f` APP-0065).
+- Audio, Content, Activity and AI Teacher rooms open that session.
+- Conversation Room opens Speak with the level’s fallback turns.
+- Learn hub is My Levels only.
+
+### Still missing
+
+- Pre-Level 1 and Pre-Level 2: no historical LessonPractice copy.
 
 `make demo-android` after this restore refreshed
 `apps/web/dist-demo/downloads/global-english-demo.apk` and
