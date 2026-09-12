@@ -5,9 +5,18 @@
   overflow-wrap: anywhere;
 }
 
+.ge-application-frame__header-inner {
+  flex-wrap: wrap;
+}
+
 .ge-application-frame__header-actions {
   min-width: 0;
   max-width: 100%;
+}
+
+.ge-application-frame__brand {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ge-primary-navigation__list {
@@ -48,7 +57,7 @@
 
 .shell-header-tools {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--ge-space-2);
@@ -84,6 +93,7 @@
 
 .shell-locale-control {
   display: grid;
+  flex: 1 1 8rem;
   width: min(100%, 9.5rem);
   min-width: 0;
   max-width: 100%;
