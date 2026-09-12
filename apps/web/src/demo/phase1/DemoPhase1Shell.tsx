@@ -288,9 +288,12 @@ export function DemoPhase1Shell({
   if (welcomeOpen && !compact) {
     return (
       <div
+        aria-labelledby="onboarding-title"
+        aria-modal="true"
         className="phase1-shell phase1-first-run"
         data-demo-phase1="synthetic"
         data-grove-first-run="open"
+        role="dialog"
       >
         <h1 className="visually-hidden" id="destination-title" tabIndex={-1}>
           <LocalizedMessage
