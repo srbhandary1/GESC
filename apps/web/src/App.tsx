@@ -591,16 +591,6 @@ function App({
           />
         ) : canLearn ? (
           <>
-            <LearnerJourney
-              api={learnerJourneyApi}
-              audioRecorder={audioRecorder}
-              createClientId={createClientId}
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              offlineBinding={offlineBinding}
-              offlineStore={offlineStore}
-              resumeBundle={offlineResume?.storedBundle}
-            />
             {showDemoLearnHub ? (
               <FoundationLessonCatalog
                 locale={locale}
@@ -614,6 +604,16 @@ function App({
                 }}
               />
             ) : null}
+            <LearnerJourney
+              api={learnerJourneyApi}
+              audioRecorder={audioRecorder}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              offlineBinding={offlineBinding}
+              offlineStore={offlineStore}
+              resumeBundle={offlineResume?.storedBundle}
+            />
           </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
