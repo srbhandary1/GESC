@@ -19,16 +19,24 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   ).toContainText('does not use learner data')
   await expect(page.locator('.demo-experience')).toBeVisible()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /Continue today’s lesson/ }),
   ).toBeVisible()
 
-  await page.getByRole('link', { name: 'Attendance' }).click()
+  await page.getByRole('button', { name: 'Profile' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Profile' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Attendance report' }).click()
   await expect(
     page.getByRole('heading', { level: 1, name: 'Attendance' }),
   ).toBeVisible()
   await expect(page.getByText('75%')).toBeVisible()
 
-  await page.getByRole('link', { name: 'AI Teacher' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'AI Teacher' }).click()
   await expect(
     page.getByText(
       'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
@@ -38,19 +46,13 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(
     page.getByText('Welcome. You are on Level 1.', { exact: false }),
   ).toBeVisible()
-  for (const prompt of [
-    'Welcome me',
-    'Explain the course',
-    'Explain my level',
-    'Attendance status',
-    'Daily score',
-    'Motivate me',
-  ]) {
+  for (const prompt of ["Today’s task", 'My level', 'Next step']) {
     await page.getByRole('button', { name: prompt }).click()
   }
   await page.getByRole('button', { name: 'Listen' }).click()
 
-  await page.getByRole('link', { name: 'Daily Activity' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Continue today’s lesson/ }).click()
   await expect(page.getByText("Today's 5-mark check")).toBeVisible()
   await page.getByRole('button', { name: 'Play model audio (demo)' }).click()
   const radios = page.getByRole('radio')
@@ -61,12 +63,15 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(page.getByText("Today's score")).toBeVisible()
   await expect(page.getByText('5/5')).toBeVisible()
 
-  await page.getByRole('link', { name: 'My Levels' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'My Levels' }).click()
   await expect(page.getByText('Pre-Level 1')).toBeVisible()
   await expect(page.getByText('Level 17')).toBeVisible()
   await expect(page.getByText('Conversation Room')).toBeVisible()
 
-  await page.getByRole('link', { name: 'Notice Board' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Profile' }).click()
+  await page.getByRole('button', { name: 'Notices' }).click()
   await expect(
     page.getByText('Welcome to the Phase 1 demo pathway'),
   ).toBeVisible()
@@ -77,7 +82,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await page.getByRole('link', { name: 'Progress' }).click()
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])

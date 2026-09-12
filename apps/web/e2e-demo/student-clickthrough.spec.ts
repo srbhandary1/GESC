@@ -39,30 +39,36 @@ test('student click-through exercises every demo page and control', async ({
 
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /Continue today’s lesson/ }),
   ).toBeVisible()
 
-  // Dashboard module cards.
-  for (const card of [
-    'Attendance',
-    'AI Teacher',
-    'Daily Activity',
-    'My Levels',
-    'Notice Board',
-  ]) {
-    await page.getByRole('button', { name: new RegExp(card) }).click()
+  // Secondary student links from Home.
+  for (const item of ['My Levels', 'AI Teacher', 'Profile']) {
+    await page.getByRole('button', { name: item }).click()
     await expect(
-      page.getByRole('heading', { level: 1, name: card }),
+      page.getByRole('heading', { level: 1, name: item }),
     ).toBeVisible()
-    await page.getByRole('link', { name: 'Dashboard' }).click()
+    await page.getByRole('button', { name: 'Back' }).click()
   }
 
-  // Attendance (read-only).
-  await page.getByRole('link', { name: 'Attendance' }).click()
+  // Profile holds attendance and notices.
+  await page.getByRole('link', { name: 'Profile' }).click()
+  await expect(page.getByText('About this school')).toBeVisible()
+  await page.getByRole('button', { name: 'Attendance report' }).click()
   await expect(page.getByText('75%').or(page.getByText('75 %'))).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Profile' }).click()
+  await page.getByRole('button', { name: 'Notices' }).click()
+  await expect(
+    page.getByText('Welcome to the Phase 1 demo pathway'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
 
-  // AI Teacher — language toggles, every prompt, Listen.
-  await page.getByRole('link', { name: 'AI Teacher' }).click()
+  // AI Teacher — language toggles, focused prompts, Listen.
+  await page.getByRole('button', { name: 'AI Teacher' }).click()
   await expect(
     page.getByText(
       'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
@@ -73,20 +79,14 @@ test('student click-through exercises every demo page and control', async ({
   if ((await englishButtons.count()) > 1) {
     await englishButtons.nth(1).click()
   }
-  for (const prompt of [
-    'Welcome me',
-    'Explain the course',
-    'Explain my level',
-    'Attendance status',
-    'Daily score',
-    'Motivate me',
-  ]) {
+  for (const prompt of ["Today’s task", 'My level', 'Next step']) {
     await page.getByRole('button', { name: prompt }).click()
   }
   await page.getByRole('button', { name: 'Listen' }).click()
 
-  // Daily Activity — audio + full quiz.
-  await page.getByRole('link', { name: 'Daily Activity' }).click()
+  // Daily Activity — audio + full quiz from the Home CTA.
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Continue today’s lesson/ }).click()
   await page.getByRole('button', { name: 'Play model audio (demo)' }).click()
   const radios = page.getByRole('radio')
   for (let index = 0; index < 5; index += 1) {
@@ -97,18 +97,13 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('5/5')).toBeVisible()
 
   // My Levels — unlocked pickers.
-  await page.getByRole('link', { name: 'My Levels' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'My Levels' }).click()
   await page.getByRole('button', { name: /Pre-Level 1/i }).click()
   await page.getByRole('button', { name: /Pre-Level 2/i }).click()
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
   await expect(page.getByText('Conversation Room')).toBeVisible()
   await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
-
-  // Notice Board.
-  await page.getByRole('link', { name: 'Notice Board' }).click()
-  await expect(
-    page.getByText('Welcome to the Phase 1 demo pathway'),
-  ).toBeVisible()
 
   // Learn mission (demo skips onboarding).
   await page.getByRole('link', { name: 'Learn' }).click()
@@ -229,7 +224,7 @@ test('student click-through exercises every demo page and control', async ({
   // Return home.
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
 
   expect(apiRequests).toEqual([])

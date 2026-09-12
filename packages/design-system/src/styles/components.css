@@ -99,6 +99,29 @@
   background: var(--ge-color-status);
 }
 
+@media (max-width: 40rem) {
+  .ge-application-frame {
+    padding-block-end: calc(
+      var(--ge-target-minimum) + var(--ge-space-5) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .ge-primary-navigation {
+    position: fixed;
+    inset-block-end: 0;
+    inset-inline: 0;
+    z-index: 20;
+    border-block-end: 0;
+    border-block-start: 1px solid var(--ge-color-border);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .ge-primary-navigation__link[aria-current="page"] {
+    box-shadow: inset 0 0.25rem 0 var(--ge-color-action);
+  }
+}
+
 .ge-button {
   min-block-size: var(--ge-target-minimum);
   min-inline-size: var(--ge-target-minimum);

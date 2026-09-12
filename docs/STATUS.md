@@ -7,7 +7,7 @@
 | Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
 | Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 7 August 2026 |
+| Updated date | 12 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-08-06.8`.
+  `ui-en-IN-2026-09-12.1`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.8`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.1`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -587,6 +587,24 @@ review and do not waive pre-production specialist gates.
   persistent learner-audio path was added.
 - No real learner data, captured audio, unlicensed media, provider SDK or
   later-checkpoint authoritative record was added.
+
+## Student-facing IA (presentation)
+
+The disclosed demo learner shell was decluttered for day-to-day student use.
+This is a UI/UX refinement of the existing D-0081 Phase 1 presentation
+surface. It does not authorize production, Play, real providers or F0 DoD.
+
+What moved:
+
+- **Home** shows one next-lesson CTA, a short level/streak summary, and
+  secondary links (Speak, Levels, AI Teacher, Profile). The six-module
+  dashboard dump and Phase 1 pill nav are gone.
+- **Learn** still runs the deterministic mission and now also shows a
+  compact current-level room list.
+- **Profile / About** holds institute orientation, attendance reports and
+  notices.
+- **AI Teacher** keeps today’s task, current-level reminder and next-step
+  motivation. Course-structure copy lives on Profile.
 
 ## Local synthetic demo
 

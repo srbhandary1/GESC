@@ -5,6 +5,7 @@ export type Phase1Module =
   | 'daily-activity'
   | 'levels'
   | 'notices'
+  | 'profile'
 
 export const PHASE1_MODULES = [
   'dashboard',
@@ -13,7 +14,25 @@ export const PHASE1_MODULES = [
   'daily-activity',
   'levels',
   'notices',
+  'profile',
 ] as const satisfies readonly Phase1Module[]
+
+/** Surfaces that stay on the Home destination instead of primary nav. */
+export const PHASE1_SECONDARY_HASHES = [
+  'dashboard',
+  'attendance',
+  'ai-teacher',
+  'daily-activity',
+  'levels',
+  'notices',
+  'profile',
+] as const satisfies readonly Phase1Module[]
+
+export const PHASE1_FOCUS_AI_TOPICS = [
+  'welcome',
+  'level',
+  'motivate',
+] as const
 
 export interface Phase1AttendanceDay {
   readonly date: string
@@ -98,6 +117,7 @@ export const phase1Attendance = {
   presentDays: 3,
   workingDaysSoFar: 4,
   percentage: 75,
+  streakDays: 3,
   days: monthDays(),
 }
 
@@ -213,6 +233,9 @@ export const phase1AiTopics: readonly Phase1AiTopic[] = [
 
 export function moduleFromHash(hash: string): Phase1Module {
   const value = hash.replace(/^#/, '')
+  if (value === 'home' || value === '') {
+    return 'dashboard'
+  }
   if ((PHASE1_MODULES as readonly string[]).includes(value)) {
     return value as Phase1Module
   }

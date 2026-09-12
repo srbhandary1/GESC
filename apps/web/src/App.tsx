@@ -28,6 +28,7 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import { PHASE1_SECONDARY_HASHES } from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
@@ -265,7 +266,10 @@ function App({
 
   useEffect(() => {
     if (previousDestination.current !== destination) {
-      destinationTitle.current?.focus()
+      const titleNode =
+        destinationTitle.current ??
+        document.getElementById('destination-title')
+      titleNode?.focus()
       previousDestination.current = destination
     }
   }, [destination])
@@ -356,6 +360,9 @@ function App({
     isOperatorSession &&
     (destination === 'home' || destination === 'learn')
   const showDemoPhase1 = demoMode && destination === 'home'
+  const showDemoLearnHub = demoMode && canLearn
+  const hideDemoIntroduction =
+    showDemoPhase1 || (demoMode && destination === 'learn')
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -381,7 +388,13 @@ function App({
       currentDestination={destination}
       hidePrimaryNavigation={false}
       headerActions={
-        <div className="shell-locale-control">
+        <div className="shell-header-tools">
+          {demoMode ? (
+            <a className="shell-profile-link" href="#profile">
+              <LocalizedMessage resolution={message('shell.profile_label')} />
+            </a>
+          ) : null}
+          <div className="shell-locale-control">
           <label
             className="shell-locale-control__label"
             htmlFor="interface-locale"
@@ -425,6 +438,7 @@ function App({
               />
             )}
           </p>
+          </div>
         </div>
       }
       navigationLabel={navigationLabel.text}
@@ -485,7 +499,18 @@ function App({
           </aside>
         ) : null}
 
-        {showDemoPhase1 ? null : (
+        {hideDemoIntroduction && destination === 'learn' ? (
+          <h1
+            className="visually-hidden"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : null}
+
+        {hideDemoIntroduction ? null : (
           <section
             className="shell-introduction"
             aria-labelledby="destination-title"
@@ -513,16 +538,26 @@ function App({
             localizationPolicy={localizationPolicy}
           />
         ) : canLearn ? (
-          <LearnerJourney
-            api={learnerJourneyApi}
-            audioRecorder={audioRecorder}
-            createClientId={createClientId}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            offlineBinding={offlineBinding}
-            offlineStore={offlineStore}
-            resumeBundle={offlineResume?.storedBundle}
-          />
+          <>
+            {showDemoLearnHub ? (
+              <DemoPhase1Shell
+                compact
+                forcedModule="levels"
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+              />
+            ) : null}
+            <LearnerJourney
+              api={learnerJourneyApi}
+              audioRecorder={audioRecorder}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              offlineBinding={offlineBinding}
+              offlineStore={offlineStore}
+              resumeBundle={offlineResume?.storedBundle}
+            />
+          </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
             <RoleplayJourney
@@ -702,6 +737,13 @@ function destinationFromHash(
     candidate === 'progress'
   ) {
     return candidate
+  }
+
+  if (
+    candidate !== undefined &&
+    (PHASE1_SECONDARY_HASHES as readonly string[]).includes(candidate)
+  ) {
+    return 'home'
   }
 
   return null

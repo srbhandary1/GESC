@@ -44,12 +44,17 @@ describe('localized application shell', () => {
     ).toHaveAttribute('data-demo-mode', 'synthetic-local')
     expect(
       await screen.findByRole('heading', {
-        name: text('demo.phase1.nav.dashboard'),
+        name: text('demo.phase1.home.title'),
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('navigation', {
+      screen.queryByRole('navigation', {
         name: text('demo.phase1.nav_label'),
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(text('demo.phase1.home.next_action')),
       }),
     ).toBeInTheDocument()
     expect(

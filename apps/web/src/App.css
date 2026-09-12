@@ -19,6 +19,29 @@
   );
 }
 
+.shell-header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--ge-space-3);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.shell-profile-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--ge-target-minimum);
+  color: var(--ge-color-action);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.shell-profile-link:hover {
+  text-decoration: underline;
+}
+
 .shell-locale-control {
   display: grid;
   width: min(100%, 12rem);
@@ -112,8 +135,8 @@
 
 .shell-title {
   margin: 0;
-  font-size: clamp(2rem, 10vw, 4.5rem);
-  line-height: 1.15;
+  font-size: clamp(1.75rem, 7vw, 2.75rem);
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 

@@ -49,7 +49,8 @@
 
 .demo-experience .ge-primary-navigation {
   border-block-end: 0;
-  background: transparent;
+  background: color-mix(in srgb, var(--ge-color-surface) 92%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .demo-experience .ge-primary-navigation__list {
@@ -125,11 +126,11 @@
 }
 
 .demo-experience .shell-title {
-  max-width: 14ch;
-  font-size: clamp(2.4rem, 8vw, 4rem);
+  max-width: 18ch;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.15;
 }
 
 .demo-experience .shell-description {

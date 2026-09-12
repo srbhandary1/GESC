@@ -2906,6 +2906,31 @@ APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
 accept and Play public release remain unauthorized.
 
+---
+
+## Student-facing IA declutter (presentation)
+
+### Scope reviewed
+
+- demo Phase 1 Home / Learn / AI Teacher / Profile information architecture;
+- relocation of attendance, notices and institute-about copy off the primary
+  student path;
+- UI catalogue additions at revision `ui-*-2026-09-12.1`;
+- design-system mobile primary navigation as a bottom bar.
+
+### Review result
+
+Presentation-only. School model (levels, unlocks, deterministic marks,
+bilingual guidance) is unchanged. Not production or Play evidence.
+
+### Known limitations
+
+- Long About copy in `ml-IN` / `ta-IN` / `te-IN` still uses English for a
+  few new Profile strings; short chrome is localized.
+- Non-demo authenticated Home remains the checkpoint shell until published
+  content exists.
+- F0 DoD, production and Play remain unauthorized.
+
 
 
 
