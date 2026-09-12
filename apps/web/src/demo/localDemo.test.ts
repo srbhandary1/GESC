@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bindChapterPractice,
+  chapterFromCurriculum,
+} from './chapterPractice'
+import { curriculumByLevelId } from './curriculum/levelCurriculum'
+import {
   createLocalDemoRuntime,
   isLocalDemoEnabled,
 } from './localDemo'
@@ -203,5 +208,57 @@ describe('local demo boundary', () => {
     expect(progress.objectives[1]!.label.text).toBe(
       'Use should for advice',
     )
+  })
+
+  it('corrects in the session UI locale using the bound chapter model line', async () => {
+    const { conversationApi } = createLocalDemoRuntime()
+    const can = curriculumByLevelId('level-1')
+    bindChapterPractice(chapterFromCurriculum(can!)!)
+
+    const english = await conversationApi.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'en-IN',
+      },
+      'chapter-en',
+    )
+    const englishTurn = await conversationApi.createTurn(
+      english.id,
+      { prototype_utterance: 'I speaking English.' },
+      'chapter-en-turn',
+    )
+    expect(englishTurn.assistant_reply).toContain('Can')
+    expect(englishTurn.priority_correction).not.toBeNull()
+    expect(englishTurn.priority_correction!.explanation_locale).toBe('en-IN')
+    expect(englishTurn.priority_correction!.explanation_l1).toContain(
+      'I can speak English. Can I help you?',
+    )
+    expect(englishTurn.priority_correction!.explanation_l1).toMatch(
+      /Say it more clearly/i,
+    )
+
+    const kannada = await conversationApi.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'chapter-kn',
+    )
+    const kannadaTurn = await conversationApi.createTurn(
+      kannada.id,
+      { prototype_utterance: 'I speaking English.' },
+      'chapter-kn-turn',
+    )
+    expect(kannadaTurn.priority_correction).not.toBeNull()
+    expect(kannadaTurn.priority_correction!.explanation_locale).toBe('kn-IN')
+    expect(kannadaTurn.priority_correction!.explanation_l1).toContain(
+      'ಸ್ಪಷ್ಟವಾಗಿ',
+    )
+
+    bindChapterPractice(null)
   })
 })

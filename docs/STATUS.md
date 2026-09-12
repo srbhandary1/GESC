@@ -661,10 +661,12 @@ identity — not a purple Supernova clone.
   green polish. Learn opens **My Levels** (Pre-Level 1 … Level 17 and the
   eight rooms). Daily Activity first audio is the Level 1 **Can** lesson
   from `9818fe2` / LPL-01. Levels 2–17 Audio / Content / Activity / AI
-  Teacher rooms use APP-0065 authored sessions from `c4c810f`. Pre-Level
-  1–2 are explicit gaps. Learn no longer mounts the Introduce-yourself
-  mission. The Grove 16-card foundation catalog no longer occupies Home
-  or Learn.
+  Teacher rooms use APP-0065 authored sessions from `c4c810f` and now
+  auto-play `/demo/tts` plus an embedded chapter Friend (listen → talk →
+  locale-aware `explanation_l1`). Pre-Level 1–2 are explicit gaps. Learn
+  no longer mounts the Introduce-yourself mission. The Grove 16-card
+  foundation catalog no longer occupies Home or Learn. Laravel
+  LessonPractice / Indic STT remain on `codex/confidence-conversation`.
 - UI catalogues at revision `ui-*-2026-09-12.13`.
 - Superdesign drafts were unread (unauthenticated). Wonder is the
   implemented source. Presentation-only; not F0, production or Play evidence.

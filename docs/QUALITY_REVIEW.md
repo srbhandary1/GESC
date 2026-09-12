@@ -3113,6 +3113,34 @@ dashboard and the Level 1 **Can** listen/check content that existed on
 `/downloads/global-english-demo.apk` (5.6 MB, `com.globalenglish.demo`).
 The APK is not committed.
 
+---
+
+## PR #6 interactive listen + chapter tutor (presentation)
+
+### Restored from git (Vite demo path)
+
+- Listen playback: `speakDemoText` / `/demo/tts` (current-branch D-0117
+  Sarvam/ElevenLabs/Azure). Audio rooms auto-play the chapter model line.
+- Chapter tutor: `ConversationJourney` `embedded` / `openingLine` /
+  `autoStart` restored from `9818fe2` `LevelPathPanel` behaviour, mounted
+  inside Audio / Content / Activity / AI Teacher / Conversation rooms.
+- L1 correction: `priority_correction.explanation_l1` now follows
+  `ui_locale` (map from `5582c9a` `SyntheticL1Explanations.php`).
+- Chapter replies: OpenRouter `/demo/chat` with chapter system extra, or
+  `chapterFriendReply` when unconfigured.
+
+### Not copied onto this branch
+
+- Laravel `LessonPractice` / `LevelSessionDeliveryService` /
+  `LevelSessionAudioStreamer` (`c4c810f`) — stored MP3 needs API + seed.
+- `IndicHttpSpeechToTextProvider` (`fb0748c` / `09e3345`) — demo Talk
+  still uses browser `SpeechRecognition` in `en-IN`.
+- Grove `foundationLessons` catalog (`e07eba0`) — still excluded.
+
+### Still missing
+
+- Pre-Level 1 and Pre-Level 2: no historical LessonPractice copy.
+
 
 
 

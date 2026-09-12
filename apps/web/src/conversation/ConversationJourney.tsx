@@ -53,6 +53,11 @@ export interface ConversationJourneyProps {
    */
   readonly demoMode?: boolean
   readonly listenLines?: readonly string[]
+  /** Restored from 9818fe2: embed inside a level room without the Speak chrome. */
+  readonly embedded?: boolean
+  readonly openingLine?: string
+  readonly autoStart?: boolean
+  readonly speakOpening?: boolean
 }
 
 type ConfidenceStage = 'warmup' | 'listen' | 'talk' | 'reflect'
@@ -113,11 +118,17 @@ export function ConversationJourney({
   createClientId = createRandomClientId,
   demoMode = false,
   listenLines,
+  embedded = false,
+  openingLine,
+  autoStart = false,
+  speakOpening = true,
 }: ConversationJourneyProps) {
   const modelLines =
     listenLines !== undefined && listenLines.length > 0
       ? listenLines
-      : CONFIDENCE_LISTEN_LINES
+      : openingLine !== undefined && openingLine.trim() !== ''
+        ? [openingLine]
+        : CONFIDENCE_LISTEN_LINES
   const [state, setState] = useState<ConversationState>({ kind: 'idle' })
   const [utterance, setUtterance] = useState('')
   const [coachingMode, setCoachingMode] = useState<
@@ -130,8 +141,11 @@ export function ConversationJourney({
   const [showSilenceNudge, setShowSilenceNudge] = useState(false)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('type')
   const [aboutOpen, setAboutOpen] = useState(
-    () => !readFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY),
+    () =>
+      !embedded && !readFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY),
   )
+  const autoStarted = useRef(false)
+  const openingSpoken = useRef(false)
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
   const stopRecognition = useRef<(() => void) | null>(null)
@@ -187,6 +201,8 @@ export function ConversationJourney({
     setState({ kind: 'starting' })
     setShowHint(false)
     setUtterance('')
+    const initialStage: ConfidenceStage =
+      autoStart || embedded ? 'listen' : 'warmup'
     api
       .startSession(
         {
@@ -197,16 +213,35 @@ export function ConversationJourney({
         },
         sessionCommandId.current,
       )
-      .then((session) =>
+      .then((session) => {
         setState({
           kind: 'ready',
           session,
-          stage: 'warmup',
+          stage: initialStage,
           completedTurns: 0,
-        }),
-      )
+        })
+        const spoken = openingLine?.trim() || modelLines[0]
+        if (
+          speakOpening &&
+          !openingSpoken.current &&
+          spoken !== undefined &&
+          spoken.trim() !== '' &&
+          (autoStart || embedded)
+        ) {
+          openingSpoken.current = true
+          speakEnglish(spoken)
+        }
+      })
       .catch(() => setState({ kind: 'error' }))
   }
+
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) {
+      return
+    }
+    autoStarted.current = true
+    start()
+  })
 
   const send = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -412,10 +447,15 @@ export function ConversationJourney({
 
   return (
     <section
-      className="conversation-journey"
+      className={
+        embedded
+          ? 'conversation-journey conversation-journey--embedded'
+          : 'conversation-journey'
+      }
       aria-labelledby="conversation-title"
       data-demo-speech={demoMode ? 'browser' : undefined}
       data-confidence-stage={stage}
+      data-embedded={embedded ? 'true' : undefined}
     >
       <div className="conversation-journey__heading">
         <div className="conversation-journey__presence">
@@ -441,6 +481,7 @@ export function ConversationJourney({
             )}
           />
         </h2>
+        {embedded ? null : (
         <button
           className="ge-button ge-button--quiet conversation-journey__about"
           onClick={() => setAboutOpen(true)}
@@ -450,6 +491,7 @@ export function ConversationJourney({
             resolution={message('conversation.about_action')}
           />
         </button>
+        )}
       </div>
 
       {aboutOpen ? (
@@ -503,7 +545,7 @@ export function ConversationJourney({
         </div>
       ) : null}
 
-      {state.kind === 'idle' || state.kind === 'starting' ? (
+      {!embedded && (state.kind === 'idle' || state.kind === 'starting') ? (
         <div className="conversation-journey__start rounded-xl border border-line/70 bg-surface p-5 shadow-elevation-1">
           <label htmlFor="coaching-mode">
             <LocalizedMessage

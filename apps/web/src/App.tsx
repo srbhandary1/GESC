@@ -601,6 +601,8 @@ function App({
 
         {showPreSignInGate ? null : showDemoPhase1 ? (
           <DemoPhase1Shell
+            conversationApi={conversationApi}
+            demoMode={demoMode}
             demoOrganization={demoOrganization}
             locale={locale}
             localizationPolicy={localizationPolicy}
@@ -610,6 +612,8 @@ function App({
           <>
             {showDemoLearnHub ? (
               <DemoPhase1Shell
+                conversationApi={conversationApi}
+                demoMode={demoMode}
                 demoOrganization={demoOrganization}
                 forcedModule="levels"
                 locale={locale}

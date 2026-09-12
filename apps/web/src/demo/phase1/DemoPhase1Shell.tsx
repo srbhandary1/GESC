@@ -5,6 +5,7 @@ import type {
   SupportedLocale,
 } from '@global-english/localization'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ConversationJourneyApi } from '../../conversation/ConversationJourneyApi'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
 import { SUPPORTED_LOCALES } from '@global-english/localization'
@@ -44,6 +45,8 @@ export interface DemoPhase1ShellProps {
   readonly demoOrganization?: string
   readonly forcedModule?: Phase1Module
   readonly onLocaleChange?: (locale: SupportedLocale) => void
+  readonly conversationApi?: ConversationJourneyApi
+  readonly demoMode?: boolean
 }
 
 const moduleTitleKeys: Readonly<Record<Phase1Module, MessageKey>> = {
@@ -168,6 +171,8 @@ export function DemoPhase1Shell({
   demoOrganization,
   forcedModule,
   onLocaleChange,
+  conversationApi,
+  demoMode = false,
 }: DemoPhase1ShellProps) {
   const [hashModule, setHashModule] = useState<Phase1Module>(() =>
     moduleFromHash(globalThis.location?.hash ?? ''),
@@ -256,14 +261,6 @@ export function DemoPhase1Shell({
       })
       .catch(() => setUsedBrowserFallback(true))
       .finally(() => setAudioSpeaking(false))
-  }
-
-  const openPracticeForLevel = (levelId: string) => {
-    const url = new URL(globalThis.location.href)
-    url.hash = `practice/${levelId}`
-    globalThis.history.pushState(null, '', url)
-    globalThis.dispatchEvent(new Event('hashchange'))
-    globalThis.scrollTo(0, 0)
   }
 
   const go = (next: Phase1Module | 'practice' | 'learn') => {
@@ -846,10 +843,23 @@ export function DemoPhase1Shell({
         activeRoom !== 'assignment' &&
         activeRoom !== 'assessment' &&
         activeRoom !== 'unlock' ? (
-          activeRoom === 'conversation' ? null : (
+          (
             <LevelSessionPanel
+              conversationApi={conversationApi}
+              demoMode={demoMode}
               locale={locale}
               localizationPolicy={localizationPolicy}
+              mode={
+                activeRoom === 'ai-teacher'
+                  ? 'ai-teacher'
+                  : activeRoom === 'conversation'
+                    ? 'conversation'
+                    : activeRoom === 'activity'
+                      ? 'activity'
+                      : activeRoom === 'content'
+                        ? 'content'
+                        : 'audio'
+              }
               roomTitle={message(roomTitleKeys[activeRoom])}
               session={
                 curriculumByLevelId(selectedLevelId) ?? {
@@ -880,15 +890,12 @@ export function DemoPhase1Shell({
               if (compact) {
                 return
               }
-              if (roomId === 'conversation') {
-                openPracticeForLevel(selectedLevelId)
-                return
-              }
               if (
                 roomId === 'audio' ||
                 roomId === 'content' ||
                 roomId === 'activity' ||
-                roomId === 'ai-teacher'
+                roomId === 'ai-teacher' ||
+                roomId === 'conversation'
               ) {
                 setActiveRoom(roomId)
                 return

@@ -5,6 +5,13 @@
   margin-inline: auto;
 }
 
+.conversation-journey--embedded {
+  width: 100%;
+  margin-inline: 0;
+  padding-top: var(--ge-space-4);
+  border-top: 1px solid var(--ge-color-border);
+}
+
 .conversation-journey__heading {
   display: grid;
   justify-items: center;

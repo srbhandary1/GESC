@@ -1,18 +1,41 @@
-import type { MessageKey, MessageParameters, ResolutionPolicy, SupportedLocale } from '@global-english/localization'
-import { useState } from 'react'
+import type {
+  MessageKey,
+  MessageParameters,
+  ResolutionPolicy,
+  SupportedLocale,
+} from '@global-english/localization'
+import { useEffect, useMemo, useState } from 'react'
+import { ConversationJourney } from '../../conversation/ConversationJourney'
+import type { ConversationJourneyApi } from '../../conversation/ConversationJourneyApi'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
+import {
+  bindChapterPractice,
+  chapterFromCurriculum,
+  chapterListenLines,
+  chapterOpeningLine,
+} from '../chapterPractice'
 import { speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   MISSING_LEVEL_NOTICE,
   type LevelCurriculum,
 } from './levelCurriculum'
 
+export type LevelSessionMode =
+  | 'audio'
+  | 'content'
+  | 'activity'
+  | 'ai-teacher'
+  | 'conversation'
+
 export interface LevelSessionPanelProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
   readonly roomTitle: ReturnType<typeof resolveInterfaceMessage>
   readonly session: LevelCurriculum
+  readonly mode?: LevelSessionMode
+  readonly conversationApi?: ConversationJourneyApi
+  readonly demoMode?: boolean
 }
 
 export function LevelSessionPanel({
@@ -20,12 +43,24 @@ export function LevelSessionPanel({
   localizationPolicy,
   roomTitle,
   session,
+  mode = 'audio',
+  conversationApi,
+  demoMode = false,
 }: LevelSessionPanelProps) {
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const chapter = useMemo(() => chapterFromCurriculum(session), [session])
+
+  useEffect(() => {
+    bindChapterPractice(chapter)
+    return () => {
+      bindChapterPractice(null)
+      stopDemoSpeech()
+    }
+  }, [chapter])
 
   const playModel = () => {
     if (session.modelLine === null) {
@@ -38,6 +73,20 @@ export function LevelSessionPanel({
     })
   }
 
+  useEffect(() => {
+    if (
+      chapter === null ||
+      (mode !== 'audio' && mode !== 'content')
+    ) {
+      return
+    }
+    stopDemoSpeech()
+    setSpeaking(true)
+    void speakDemoText(chapter.modelLine, 'en-IN').finally(() => {
+      setSpeaking(false)
+    })
+  }, [chapter, mode])
+
   const score = submitted
     ? session.questions.reduce(
         (total, question) =>
@@ -45,6 +94,16 @@ export function LevelSessionPanel({
         0,
       )
     : null
+
+  const showQuiz = mode !== 'conversation' && session.questions.length > 0
+  const showTalk =
+    conversationApi !== undefined &&
+    chapter !== null &&
+    (mode === 'audio' ||
+      mode === 'ai-teacher' ||
+      mode === 'conversation' ||
+      mode === 'activity' ||
+      mode === 'content')
 
   return (
     <section className="phase1-panel phase1-daily" data-curriculum={session.id}>
@@ -81,7 +140,7 @@ export function LevelSessionPanel({
               resolution={message('demo.phase1.daily.audio_play')}
             />
           </button>
-          {session.questions.length === 0 ? null : (
+          {showQuiz ? (
             <article className="phase1-subpanel">
               <h3>
                 <LocalizedMessage
@@ -138,10 +197,23 @@ export function LevelSessionPanel({
                 </p>
               )}
             </article>
-          )}
+          ) : null}
           {session.applyTask === null ? null : (
             <p lang="en-IN">{session.applyTask}</p>
           )}
+          {showTalk && conversationApi !== undefined && chapter !== null ? (
+            <ConversationJourney
+              api={conversationApi}
+              autoStart
+              demoMode={demoMode}
+              embedded
+              listenLines={chapterListenLines(chapter)}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              openingLine={chapterOpeningLine(chapter)}
+              speakOpening={mode === 'ai-teacher' || mode === 'conversation'}
+            />
+          ) : null}
         </>
       )}
     </section>

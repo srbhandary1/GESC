@@ -270,6 +270,42 @@ describe('deterministic Friend prototype', () => {
     })
   })
 
+  it('auto-starts an embedded chapter listen session without the about sheet', async () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(async () => []),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        autoStart
+        createClientId={() => 'embed-command'}
+        demoMode
+        embedded
+        listenLines={['I can speak English. Can I help you?']}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Can I help you?"
+        speakOpening={false}
+      />,
+    )
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Listen' }),
+    ).toBeVisible()
+    expect(
+      screen.getByText('I can speak English. Can I help you?'),
+    ).toBeVisible()
+    expect(api.startSession).toHaveBeenCalled()
+    expect(
+      screen.queryByRole('button', { name: 'Start speaking practice' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows a visible error when the fake provider is disabled', async () => {
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => {

@@ -19,6 +19,12 @@ import type {
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
+import {
+  chapterFriendReply,
+  chapterUsesPattern,
+  currentChapterPractice,
+  explanationForLocale,
+} from './chapterPractice'
 import { requestDemoChatReply } from './demoChat'
 
 const ids = {
@@ -208,6 +214,9 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
   #roleplaySession: FriendSession | null = null
+  #uiLocale: FriendSession['ui_locale'] = 'en-IN'
+  #coachingMode: NonNullable<StartFriendSessionInput['coaching_mode']> =
+    'gentle'
 
   async startSession(
     input: StartFriendSessionInput,
@@ -215,6 +224,8 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     signal?: AbortSignal,
   ): Promise<FriendSession> {
     abortIfNeeded(signal)
+    this.#uiLocale = input.ui_locale
+    this.#coachingMode = input.coaching_mode ?? 'gentle'
 
     const isRoleplay =
       input.persona_key === 'clinic-reception-roleplay-prototype' ||
@@ -285,11 +296,40 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     abortIfNeeded(signal)
     this.#turnNumber += 1
 
-    const openRouter = await requestDemoChatReply(input.prototype_utterance)
+    const chapter = currentChapterPractice()
+    const openRouter = await requestDemoChatReply(input.prototype_utterance, {
+      locale: this.#uiLocale,
+      chapter:
+        chapter === null
+          ? undefined
+          : {
+              title: chapter.title,
+              modelLine: chapter.modelLine,
+              patterns: chapter.targetPatterns,
+              scenario: chapter.scenario,
+            },
+    })
     abortIfNeeded(signal)
     const assistantReply =
       openRouter?.reply ??
-      demoFriendReply(input.prototype_utterance, this.#turnNumber)
+      (chapter === null
+        ? demoFriendReply(input.prototype_utterance, this.#turnNumber)
+        : chapterFriendReply(
+            input.prototype_utterance,
+            chapter,
+            this.#turnNumber,
+          ))
+    const clearer =
+      chapter?.modelLine ?? 'I enjoy learning English after work.'
+    const needed =
+      chapter === null
+        ? true
+        : !chapterUsesPattern(input.prototype_utterance, chapter)
+    const explanation = explanationForLocale(
+      this.#uiLocale,
+      this.#coachingMode,
+      clearer,
+    )
 
     return {
       assistant_reply: assistantReply,
@@ -297,16 +337,13 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       events_url: `local-demo://turn/${this.#turnNumber}`,
       id: ids.turn,
       priority_correction: {
-        correction_en:
-          'A clearer sentence is: "I enjoy learning English after work."',
-        error_category: 'grammar.article',
-        explanation_l1:
-          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
-        explanation_locale: 'kn-IN',
-        explanation_kn:
-          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
-        needed: true,
-        retry_recommended: false,
+        correction_en: `A clearer sentence is: "${clearer}"`,
+        error_category: 'grammar.pattern',
+        explanation_l1: explanation,
+        explanation_locale: this.#uiLocale,
+        ...(this.#uiLocale === 'kn-IN' ? { explanation_kn: explanation } : {}),
+        needed,
+        retry_recommended: needed,
       },
       replayed: false,
       safety_state: 'ok',
