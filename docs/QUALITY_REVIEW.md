@@ -3255,6 +3255,12 @@ Theme-only; LessonPractice restore preserved.
 |---|---|---|
 | LessonPractice / curriculum files | Untouched | No `LessonPractice`, `LevelSession`, `AuthoredFoundation`, or `localDemo` session edits |
 | Theme surface | Pass | `themeTokens.css`, `index.html`, design-system onboarding/FAB, AvatarSlot, LearnerJourney slow-chip |
+| Web unit tests | Pass | `pnpm --filter @global-english/web test` — 336 passed |
+| Design-system tests | Pass | 16 passed |
+| Web typecheck | Pass | `pnpm --filter @global-english/web typecheck` |
+| Demo e2e first-run + LessonPractice | Pass | `demo-journey` 2 specs; API `:8000` down, rooms fall back |
+| Demo e2e student click-through | Fail (not curriculum) | Role-play **Perform** shows **Continue** before **Type instead**. Confidence Conversation listen / type / Mira / hint already passed in the same spec. Theme not reverted. |
+| Sideload APK | Pass | `make demo-android` bundled `https://localhost`; **6145419** bytes |
 | Production / Play | Not authorized | D-0123 |
 
 

@@ -668,8 +668,11 @@ identity — not a purple Supernova clone.
   mission. The Grove 16-card foundation catalog no longer occupies Home
   or Learn. Laravel LessonPractice / Indic STT / `/me/levels` are restored
   onto this branch (D-0121); demo TTS is fallback when the API is down.
-  Demo Chromium e2e (3 specs on `:4180`) passed after allowing those
-  product-path probes. Sideload APK refreshed (`5819193` bytes).
+  Demo Chromium e2e first-run + Phase 1/LessonPractice fallback passed
+  after theme remap. Student click-through reached Speak listen / type /
+  Mira / hint, then timed out on Role-play Perform (Continue vs Type
+  instead) — not a curriculum regression; theme not reverted. Sideload
+  APK refreshed (`6145419` bytes, bundled `https://localhost`).
 - UI catalogues at revision `ui-*-2026-09-12.17`.
 - Superdesign drafts at project `854f4826…` stayed unread (unauthenticated / 403).
   Wonder editor was disconnected this pass; leftover Futuristic token values
