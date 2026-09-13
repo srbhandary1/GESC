@@ -289,6 +289,7 @@ export function DemoPhase1Shell({
           onSkip={() => {
             persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
             setWelcomeOpen(false)
+            go('levels')
           }}
           onSubmit={({ level }) => {
             if (level !== null) {

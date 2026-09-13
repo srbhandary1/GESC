@@ -40,6 +40,25 @@ test('walks Grove first-run one question at a time before Home', async ({
   ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
 })
 
+test('skips first-run and opens My Levels', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('radio', { name: 'English' }).check()
+  await page.getByRole('button', { name: 'Skip and open My Levels' }).click()
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'My Levels' }),
+  ).toBeVisible()
+  await expect(page).toHaveURL(/#levels$/)
+  await expect(page.getByText('Pre-Level 1')).toBeVisible()
+  await expect(page.getByText('Audio Lessons')).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Today' }),
+  ).toHaveCount(0)
+})
+
 test('runs the disclosed Phase 1 dashboard demo with LessonPractice fallback', async ({
   page,
 }) => {

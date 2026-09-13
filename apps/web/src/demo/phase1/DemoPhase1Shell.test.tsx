@@ -318,7 +318,7 @@ describe('DemoPhase1Shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('skips first-run and opens the Phase 1 dashboard', async () => {
+  it('skips first-run and opens My Levels', async () => {
     window.localStorage.removeItem(GROVE_WELCOME_STORAGE_KEY)
     const user = userEvent.setup()
 
@@ -334,10 +334,20 @@ describe('DemoPhase1Shell', () => {
     )
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Today' }),
+      await screen.findByRole('heading', { level: 1, name: 'My Levels' }),
+    ).toBeVisible()
+    expect(window.location.hash).toBe('#levels')
+    expect(
+      screen.getByRole('button', { name: /Pre-Level 1/i }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'My Levels' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Attendance' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Notice Board' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Audio Lessons'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Today' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: '16 speaking lessons' }),
+    ).not.toBeInTheDocument()
   })
 })
