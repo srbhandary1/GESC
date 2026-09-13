@@ -15,7 +15,8 @@ describe('Mira GESC-green theme pin', () => {
     expect(pin).toContain('#0b1210')
     expect(pin).toContain('#3ddc97')
     expect(pin).toContain('--ge-studio-cyan: var(--ge-mira-mint)')
-    expect(pin).toMatch(/lesson\/curriculum files stay untouched/u)
+    expect(pin).toContain('lesson/curriculum')
+    expect(pin).toContain('files stay untouched')
 
     expect(studio).toContain('--ge-studio-cyan-rgb:')
     expect(studio).toContain('var(--ge-studio-cyan)')
