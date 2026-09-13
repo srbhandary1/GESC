@@ -1,5 +1,27 @@
 # Repository status
 
+## Mira GESC-green theme pin + Android mic — 13 September 2026
+
+- Theme-only pin of Superdesign Futuristic Learning Studio chrome to Mira
+  GESC-green (`#006B3F` / `#0B1210` / `#3DDC97`). The pin lives in
+  `apps/web/src/theme/miraGescGreenPin.css` and loads after
+  `studioExperience.css`. LessonPractice, LevelSessionAudioStreamer,
+  ConversationOrchestrator, listen-and-learn / Levels audio, and TTS wiring
+  are unchanged.
+- The ~`142d7a0` “Pin the Superdesign Futuristic Learning Studio theme
+  separately from lesson content” commit was **not** on
+  `origin/codex/confidence-conversation` (local-only on real-studioz). This
+  branch incorporates the same isolation idea cleanly.
+- Android demo and production wrappers now request `RECORD_AUDIO` at launch.
+  The bundled APK stays on `https://localhost` so Speak can use getUserMedia.
+  HTTP `http://117.254.108.143:8080` remains the Caddy web demo only — do not
+  live-load that origin in the WebView.
+- Existing learner UX PR #6 (`cursor/learner-ux-elevate-5f47`) already mixed
+  these fixes with curriculum cherry-picks. This branch is the theme-only +
+  mic slice on `codex/confidence-conversation`.
+- Production `globalspokenenglish.com` and marketing/Plesk cutover are
+  untouched.
+
 ## Sign-in restored — 3 September 2026
 
 - The generic “Sign-in could not be completed” error was an API outage: Laravel could not bind `:8000` (held by another local process) and the user systemd service was crash-looping.
@@ -25,10 +47,10 @@
 | Field | Value |
 |---|---|
 | Checkpoint | UX-01: Futuristic Learning Studio — complete (D-0283) |
-| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.14 |
-| Updated date | 6 September 2026 |
-| Git branch | `codex/confidence-conversation` |
+| Updated date | 13 September 2026 |
+| Git branch | `cursor/learner-mira-theme-mic-47a5` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
 | Next required action | UX-02 (first-use) is the next UI programme checkpoint when authorized. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |

@@ -19,6 +19,13 @@ const demoConfig: CapacitorConfig = {
   android: {
     path: 'android',
   },
+  // Bundled APK must stay on https://localhost so getUserMedia is a
+  // secure context. Do not live-load http://117.254.108.143:8080 in the
+  // WebView — that origin cannot record.
+  server: {
+    androidScheme: 'https',
+    hostname: 'localhost',
+  },
 }
 
 const productionConfig: CapacitorConfig = {

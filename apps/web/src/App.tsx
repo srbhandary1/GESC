@@ -49,6 +49,7 @@ import {
 } from './localization/interfaceLocalization'
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import './theme/studioExperience.css'
+import './theme/miraGescGreenPin.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'

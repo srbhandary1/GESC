@@ -53,8 +53,12 @@ apps/web/android/app/build/outputs/apk/debug/app-debug.apk
 
 ## Static-IP start (HTTP)
 
-Use this when router port-forward is ready and microphone capture is not
-required for the review.
+Use this when router port-forward is ready. The Caddy demo at
+`http://117.254.108.143:8080` can show the Mira GESC-green chrome after
+`make demo-build` and a Caddy reload. Microphone capture still needs a
+secure context: use the HTTPS tunnel or the bundled Capacitor APK
+(`https://localhost` + runtime `RECORD_AUDIO`). Do not point the Android
+WebView at the HTTP static IP.
 
 ```bash
 make demo-client

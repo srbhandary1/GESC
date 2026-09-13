@@ -1,5 +1,34 @@
 # Quality review
 
+## D-0284: Mira GESC-green theme pin and Android mic — 13 September 2026
+
+### Scope reviewed
+
+- Theme/CSS/tokens/chrome only: pin Superdesign Futuristic Learning Studio
+  to Mira GESC-green without rewriting lesson or audio paths.
+- Capacitor Android `RECORD_AUDIO` runtime request for Speak/recording.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Theme isolation | Pass | `miraGescGreenPin.css` imported after `studioExperience.css`; Studio layout now uses `--ge-studio-*-rgb` tokens |
+| Brand colours | Pass | `#006B3F` / `#0B1210` / `#3DDC97` in pin, `theme-color`, and interface theme |
+| Lesson/audio paths | Pass | No edits to LessonPractice, LevelSessionAudioStreamer, ConversationOrchestrator, ConversationJourney, BrowserAudioRecorder, or TTS adapters |
+| Android mic | Pass | Demo and production `MainActivity` request `RECORD_AUDIO`; manifests keep the permission and add optional microphone hardware |
+| Secure context | Pass | Demo Capacitor `server.androidScheme` is `https` / `localhost` |
+| Marketing / live host | Pass | No `apps/marketing` or production cutover files changed |
+
+### Verification and limitations
+
+- Focused web unit tests for the pin, interface theme-color, Capacitor config
+  and Android permission source contracts. Full `make verify` / `make e2e`
+  follow the commit.
+- Physical-device Speak/mic confirmation and `make demo-android` APK rebuild
+  remain operator steps on real-studioz. HTTP `:8080` cannot record in a
+  browser; sideload the bundled APK.
+- F0 / Play / production remain unauthorized.
+
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 
 ### Scope reviewed
