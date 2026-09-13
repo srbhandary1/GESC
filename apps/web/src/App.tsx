@@ -50,6 +50,7 @@ import {
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import './theme/studioExperience.css'
 import './theme/miraGescGreenPin.css'
+import './theme/miraLearnerChrome.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'
@@ -684,7 +685,7 @@ function App({
               isGuestSession
                 ? ' ge-application-frame--studio'
                 : isLearnerSession || demoMode
-                  ? ' ge-application-frame--studio ge-application-frame--studio-learner'
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
                   : ''
             }`
       }

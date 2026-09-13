@@ -1,0 +1,700 @@
+/* Mira / Wonder learner chrome layered on Studio + GESC-green pin.
+   Layout, nav FAB, home hero, next-lesson card, onboarding, Speak chrome.
+   LessonPractice / audio curriculum files stay untouched. */
+
+:root {
+  --ge-radius-pill: 999px;
+  --ge-radius-2xl: 1.25rem;
+  --ge-mira-chrome-target: max(3rem, 48px);
+  --ge-elevation-1: 0 14px 36px rgb(11 18 16 / 0.14);
+  --ge-color-success: var(--ge-mira-mint, #3ddc97);
+  --ge-color-glow: var(--ge-color-glow-emerald, rgb(0 107 63 / 0.4));
+}
+
+.ge-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ge-nav-glyph,
+.ge-speak-glyph {
+  display: none;
+}
+
+.ge-application-frame--mira-learner,
+.demo-experience .ge-application-frame--studio-learner {
+  --ge-target-minimum: var(--ge-mira-chrome-target);
+}
+
+.ge-application-frame--mira-learner .ge-button,
+.ge-application-frame--mira-learner .ge-primary-navigation__link,
+.demo-experience .ge-button {
+  min-block-size: var(--ge-mira-chrome-target);
+}
+
+/* —— Mobile Wonder-led green shell + center Speak FAB —— */
+@media (max-width: 40rem) {
+  .ge-application-frame--mira-learner,
+  .demo-experience .ge-application-frame--studio-learner {
+    padding-block-end: calc(
+      var(--ge-mira-chrome-target) + var(--ge-space-6) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .ge-application-frame--mira-learner .ge-application-frame__main,
+  .demo-experience .ge-application-frame--studio-learner .ge-application-frame__main {
+    padding-block-end: calc(
+      var(--ge-mira-chrome-target) + var(--ge-space-6) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation,
+  .demo-experience .ge-primary-navigation {
+    position: fixed;
+    z-index: 20;
+    inset-block-end: 0;
+    inset-inline: 0;
+    border: 0;
+    border-block-start: 1px solid #1c2822;
+    border-radius: 0;
+    background: #0e1612;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__list,
+  .demo-experience .ge-primary-navigation__list {
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 0.65rem 0.85rem;
+    gap: 0;
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__link,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation__link,
+  .demo-experience .ge-primary-navigation__link {
+    min-block-size: auto;
+    min-inline-size: 3.4rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.35rem 0 0;
+    border: 0;
+    background: transparent;
+    color: #6b7c74;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    box-shadow: none;
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__link:hover,
+  .ge-application-frame--mira-learner .ge-primary-navigation__link:focus-visible,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation__link:hover,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation__link:focus-visible,
+  .demo-experience .ge-primary-navigation__link:hover,
+  .demo-experience .ge-primary-navigation__link:focus-visible {
+    background: transparent;
+    color: #e3fff2;
+    border-color: transparent;
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__link[aria-current='page'],
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation__link[aria-current='page'],
+  .demo-experience .ge-primary-navigation__link[aria-current='page'] {
+    background: transparent;
+    color: #3ddc97;
+    box-shadow: none;
+    font-weight: 650;
+    border-color: transparent;
+  }
+
+  .ge-primary-navigation__item--speak {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 4.5rem;
+  }
+
+  .ge-primary-navigation__link--speak {
+    margin-block-start: -1.75rem;
+    min-block-size: auto;
+    min-inline-size: auto;
+    width: 4.5rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #b8c9c0;
+    box-shadow: none;
+    font-size: 0.6875rem;
+    font-weight: 650;
+  }
+
+  .ge-primary-navigation__link--speak[aria-current='page'] {
+    background: transparent;
+    color: #b8c9c0;
+    box-shadow: none;
+  }
+
+  .ge-application-frame--mira-learner .ge-nav-glyph,
+  .demo-experience .ge-nav-glyph {
+    display: grid;
+    width: 1.375rem;
+    height: 1.375rem;
+    place-items: center;
+  }
+
+  .ge-application-frame--mira-learner .ge-nav-glyph svg,
+  .demo-experience .ge-nav-glyph svg {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .ge-primary-navigation__link--speak .ge-nav-glyph {
+    display: grid;
+    width: 4rem;
+    height: 4rem;
+    place-items: center;
+    border-radius: 999px;
+    background: #006b3f;
+    color: #fff;
+    box-shadow:
+      0 0 0 4px #0b1210,
+      0 10px 28px rgb(0 107 63 / 45%),
+      0 0 24px rgb(61 220 151 / 22%);
+  }
+
+  .ge-primary-navigation__link--speak .ge-nav-glyph svg {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+
+/* —— Mira home hero (TutorHomeHero) —— */
+.tutor-home-hero.mira-home-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-2xl);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+  box-shadow: var(--ge-elevation-1);
+}
+
+.mira-home-hero__copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0;
+}
+
+.mira-home-hero__eyebrow {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  background: transparent;
+  padding: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.95rem;
+  font-weight: 550;
+}
+
+.mira-home-hero h2 {
+  margin: 0;
+  color: var(--ge-color-text);
+  font-size: clamp(1.65rem, 6vw, 2.35rem);
+  letter-spacing: -0.04em;
+}
+
+.mira-home-hero p {
+  color: var(--ge-color-text-muted);
+}
+
+.mira-home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.mira-home-hero__cta,
+.mira-home-hero__speak {
+  display: inline-flex;
+  min-block-size: var(--ge-mira-chrome-target);
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.15rem;
+  border-radius: 0.875rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.mira-home-hero__speak {
+  background: #006b3f;
+  color: #fff;
+  box-shadow: 0 10px 24px rgb(0 107 63 / 0.28);
+}
+
+.mira-home-hero__cta {
+  border: 1px solid var(--ge-color-border);
+  background: transparent;
+  color: var(--ge-color-text);
+  box-shadow: none;
+}
+
+.ge-application-frame--studio-learner .mira-home-hero {
+  border-color: rgb(61 220 151 / 0.18);
+  background: rgb(18 36 28 / 0.92);
+  color: #e3fff2;
+}
+
+.ge-application-frame--studio-learner .mira-home-hero h2,
+.ge-application-frame--studio-learner .mira-home-hero .tutor-home-hero__eyebrow {
+  color: #f7fbff;
+}
+
+/* —— Next-lesson card on product Home —— */
+.ge-application-frame--mira-learner .learner-home__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ge-application-frame--mira-learner .learner-home__title {
+  font-size: clamp(2rem, 7vw, 2.7rem);
+  letter-spacing: -0.045em;
+}
+
+.ge-application-frame--mira-learner .learner-home__action,
+.ge-application-frame--studio-learner.ge-application-frame--mira-learner .learner-home__action {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1.35rem;
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+  box-shadow: var(--ge-elevation-1);
+  animation: none;
+}
+
+.ge-application-frame--mira-learner .learner-home__action-title {
+  color: var(--ge-color-text);
+  font-size: 1.55rem;
+}
+
+.ge-application-frame--mira-learner .learner-home__guidance,
+.ge-application-frame--mira-learner .learner-home__meta {
+  color: var(--ge-color-text-muted);
+}
+
+.ge-application-frame--mira-learner .learner-home__continue,
+.ge-application-frame--mira-learner .learner-home__speak {
+  width: 100%;
+  min-block-size: var(--ge-mira-chrome-target);
+  justify-content: center;
+  justify-self: stretch;
+  border-radius: 0.875rem;
+  text-decoration: none;
+}
+
+.learner-home__speak {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--ge-mira-chrome-target);
+  padding-inline: 1.15rem;
+  border-radius: 0.875rem;
+  background: #006b3f;
+  color: #fff;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.learner-home__actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+/* —— Phase 1 / demo Mira home —— */
+.phase1-home {
+  display: grid;
+  gap: var(--ge-space-4);
+}
+
+.phase1-home__hello {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.phase1-home__hello-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.phase1-home__greeting {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.95rem;
+}
+
+.phase1-home__title,
+.phase1-screen-head__title {
+  margin: 0;
+  font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
+  font-size: clamp(2rem, 7vw, 2.7rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.phase1-home__streak {
+  display: inline-flex;
+  min-block-size: 2.25rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-success);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.phase1-home__lesson {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1.35rem;
+  background: var(--ge-color-surface);
+  box-shadow: var(--ge-elevation-1);
+}
+
+.phase1-home__lesson-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.phase1-home__eyebrow {
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--ge-radius-pill);
+  background: color-mix(in srgb, var(--ge-mira-mint, #3ddc97) 16%, transparent);
+  color: var(--ge-mira-mint, #3ddc97);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.phase1-home__duration,
+.phase1-home__level {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+}
+
+.phase1-home__lesson-title {
+  margin: 0;
+  color: var(--ge-color-text);
+  font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.phase1-home__progress {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-status);
+}
+
+.phase1-home__progress-bar {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: inherit;
+  background: #006b3f;
+}
+
+.phase1-home__speak,
+.phase1-home__cta {
+  display: inline-flex;
+  width: 100%;
+  min-block-size: var(--ge-mira-chrome-target);
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  text-decoration: none;
+}
+
+.phase1-home__tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-2xl);
+  background: var(--ge-color-surface);
+}
+
+.phase1-home__tip-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.phase1-home__tip-body {
+  margin: 0.2rem 0 0;
+  color: var(--ge-color-text-muted);
+}
+
+.phase1-card--action {
+  border-radius: var(--ge-radius-2xl);
+  min-block-size: var(--ge-mira-chrome-target);
+}
+
+/* —— Onboarding chrome —— */
+.ge-select-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ge-select-card {
+  display: grid;
+  min-block-size: 4.75rem;
+  min-width: 0;
+  align-items: center;
+  padding: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.875rem;
+  border: 2px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-2xl);
+  background: var(--ge-color-surface);
+  cursor: pointer;
+}
+
+.ge-select-card[data-selected='true'] {
+  border-color: #006b3f;
+  box-shadow: 0 0 0 4px rgb(0 107 63 / 18%);
+  background: color-mix(in srgb, #006b3f 10%, var(--ge-color-surface));
+}
+
+.ge-select-card:has(.ge-select-card__icon) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.ge-select-card input {
+  width: 1.375rem;
+  height: 1.375rem;
+  margin: 0;
+  accent-color: #006b3f;
+  justify-self: end;
+}
+
+.ge-select-card__icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, #006b3f 14%, transparent);
+  color: #006b3f;
+}
+
+.ge-select-card[data-selected='true'] .ge-select-card__icon {
+  background: #006b3f;
+  color: #fff;
+}
+
+.ge-select-card__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ge-select-card__hint {
+  display: block;
+  margin-block-start: 0.25rem;
+  color: var(--ge-color-text-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.phase1-first-run,
+.ge-onboarding-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: auto;
+  padding: var(--ge-space-5);
+  padding-block-end: calc(var(--ge-space-5) + env(safe-area-inset-bottom, 0px));
+  background: var(--ge-color-canvas, var(--ge-color-background, #0b1210));
+}
+
+.ge-onboarding-screen .learner-onboarding,
+.phase1-first-run .learner-onboarding {
+  max-width: 34rem;
+  margin-inline: auto;
+  border-color: color-mix(in srgb, #006b3f 32%, var(--ge-color-border));
+  box-shadow: 0 16px 48px rgb(0 0 0 / 42%);
+}
+
+.ge-onboarding__presence {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ge-onboarding__coach {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.ge-onboarding__coach-role,
+.ge-onboarding__coach-line {
+  margin: 0;
+}
+
+.ge-onboarding__coach-role {
+  color: var(--ge-color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.ge-onboarding__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ge-onboarding__dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: #2a3a32;
+}
+
+.ge-onboarding__dot[data-active='true'] {
+  width: 1.75rem;
+  background: #006b3f;
+}
+
+.ge-onboarding h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.025em;
+}
+
+.ge-onboarding__form {
+  display: grid;
+  gap: var(--ge-space-4);
+}
+
+.ge-onboarding__dock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+}
+
+.ge-onboarding__continue {
+  display: inline-flex;
+  flex: 1 1 12rem;
+  min-block-size: var(--ge-mira-chrome-target);
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+}
+
+.ge-onboarding__continue-arrow,
+.ge-onboarding__continue-arrow svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.ge-tap-to-play {
+  display: grid;
+  gap: var(--ge-space-1);
+}
+
+.ge-tap-to-play__button {
+  display: inline-flex;
+  min-block-size: var(--ge-mira-chrome-target);
+  min-inline-size: var(--ge-mira-chrome-target);
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid color-mix(in srgb, #006b3f 28%, transparent);
+  border-radius: var(--ge-radius-pill);
+  background: color-mix(in srgb, #006b3f 10%, transparent);
+  color: var(--ge-color-success);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ge-tap-to-play__status {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+}
+
+/* —— Speak room chrome (presentational only) —— */
+.ge-application-frame--mira-learner .speak-room,
+.demo-experience .speak-room {
+  display: grid;
+  gap: 1rem;
+}
+
+.ge-application-frame--mira-learner .speak-room__modes,
+.demo-experience .speak-room__modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.4rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-2xl);
+  background: var(--ge-color-surface);
+}
+
+.ge-application-frame--mira-learner .speak-room__modes button,
+.demo-experience .speak-room__modes button {
+  min-block-size: var(--ge-mira-chrome-target);
+  border-radius: 0.875rem;
+}
+
+.ge-application-frame--mira-learner .conversation-journey__heading,
+.demo-experience .conversation-journey__heading {
+  border-radius: var(--ge-radius-2xl);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ge-primary-navigation__link--speak .ge-nav-glyph,
+  .mira-home-hero,
+  .phase1-home__lesson,
+  .learner-home__action {
+    transition: none;
+    animation: none;
+  }
+}

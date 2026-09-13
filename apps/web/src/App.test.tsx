@@ -26,6 +26,7 @@ afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   document.documentElement.lang = DEFAULT_LOCALE
+  window.localStorage.removeItem('ge-ui-grove-welcome-dismissed')
   vi.restoreAllMocks()
 })
 
@@ -46,6 +47,7 @@ beforeAll(async () => {
 
 describe('localized application shell', () => {
   it('opens the explicit synthetic Phase 1 dashboard shell', async () => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
     const demo = createLocalDemoRuntime()
 
     render(
@@ -95,6 +97,7 @@ describe('localized application shell', () => {
   })
 
   it('opens the four-session level path from the demo Learn destination', async () => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
     const user = userEvent.setup()
     const demo = createLocalDemoRuntime()
 
@@ -132,6 +135,7 @@ describe('localized application shell', () => {
   })
 
   it('opens the Speak room from the demo primary navigation', async () => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
     const user = userEvent.setup()
     const demo = createLocalDemoRuntime()
 
@@ -161,6 +165,7 @@ describe('localized application shell', () => {
   })
 
   it('opens My Levels from the demo Phase 1 module hash', async () => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
     window.history.replaceState(null, '', '/#levels')
     const demo = createLocalDemoRuntime()
 

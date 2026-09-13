@@ -1,5 +1,48 @@
 # Quality review
 
+## D-0285: Mira / Wonder learner chrome on soft-launch — 13 September 2026
+
+### Scope reviewed
+
+- Learner chrome/layout/styling from PR #6 (`cursor/learner-ux-elevate-5f47`)
+  ported onto `codex/confidence-conversation`.
+- Home, onboarding, primary nav FAB, Speak room presentational chrome.
+- Explicitly out of scope: LessonPractice, LevelSessionAudioStreamer,
+  ConversationOrchestrator, listen-and-learn / Levels audio, TTS adapters,
+  Attendance / AI Teacher / Daily Activity / My Levels / Notice Board
+  product wiring (demo modules kept), marketing/Plesk.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Chrome isolation | Pass | New `miraLearnerChrome.css` after `miraGescGreenPin.css`; UI files under `apps/web/src/ui/` |
+| Five-destination nav | Pass | `PrimaryNavigation` still Home · Learn · Speak · Progress · 1:1; Speak is the FAB |
+| Soft-launch home route | Pass | Authenticated `#home` remains TutorHomeHero + LearnerJourney; demo `#home` remains DemoPhase1Shell |
+| Lesson/audio paths | Pass | No edits to LessonPractice, LevelSessionAudioStreamer, ConversationOrchestrator, ConversationJourney.tsx, SpeakRoom.tsx, or TTS adapters |
+| Brand | Pass | `#006B3F`, original `mira.jpg` portrait, not a Supernova clone |
+| Locales | Pass | `ui-*-2026-09-13.1` pending independent review |
+
+### Verification and limitations
+
+- Focused web Vitest (this agent, Node 22.14): 8 files / 42 tests passed
+  (`miraLearnerChrome`, `miraGescGreenPin`, AvatarSlot, OnboardingStepper,
+  TapToPlay, DemoPhase1Shell, LearnerJourney, App). Design-system: 12
+  passed. Localization: 35 passed. Web `tsc -b` passed. ESLint on changed
+  TS files passed with `--max-warnings=0`.
+- Full web Vitest also ran 352 tests: 348 passed; 4 failed. Three of those
+  are the pre-existing Node 22 / jsdom Android private-media fetch failures
+  recorded in D-0284 (`WebLearnerJourneyApi` / `WebLevelSessionsApi`). The
+  fourth was a chrome-test path typo and is fixed on this branch.
+- `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
+  24.18.1 are not available here. `node scripts/validate-locales.mjs`
+  cannot import `.ts` on Node 22; catalogue hashes were checked via the
+  localization Vitest suite.
+- Soft-launch is **not** deployed by this change. Operator rebuild:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  into `apps/web/dist`, or `make soft-launch-refresh-web`.
+- F0 / Play / production remain unauthorized.
+
 ## D-0284: Mira GESC-green theme pin and Android mic — 13 September 2026
 
 ### Scope reviewed

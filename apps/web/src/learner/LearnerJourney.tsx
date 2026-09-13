@@ -44,6 +44,7 @@ import {
 import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
+import { AvatarSlot } from '../ui/AvatarSlot'
 import { LevelVideosPanel } from './LevelVideosPanel'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
@@ -700,15 +701,20 @@ export function LearnerJourney({
       aria-labelledby="learner-home-title"
       className="learner-home learner-stack"
     >
-      <header className="learner-home__header">
-        <h2
-          className="learner-home__title"
-          id="learner-home-title"
-          ref={stateTitle}
-          tabIndex={-1}
-        >
-          <LocalizedMessage resolution={message('learner.home.title')} />
-        </h2>
+      <header className="learner-home__header mira-learner-home__hello">
+        <div className="mira-learner-home__hello-copy">
+          <p className="phase1-home__greeting">
+            <LocalizedMessage resolution={message('shell.mira.role')} />
+          </p>
+          <h2
+            className="learner-home__title"
+            id="learner-home-title"
+            ref={stateTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={message('learner.home.title')} />
+          </h2>
+        </div>
         <aside
           aria-label={message('learner.home.streak_label').text}
           className="learner-home__streak"
@@ -722,6 +728,11 @@ export function LearnerJourney({
             )}
           />
         </aside>
+        <AvatarSlot
+          label={message('shell.mira.name').text}
+          size="md"
+          slot="home-teacher"
+        />
       </header>
       {!hasDominantAction ? (
         <p className="learner-card learner-home__empty">
@@ -794,29 +805,36 @@ export function LearnerJourney({
                 />
               </p>
             ) : null}
-            <button
-              className="ge-button ge-button--primary learner-home__continue"
-              disabled={busy}
-              onClick={() =>
-                void beginMission(
-                  home,
-                  home.due_review === null
-                    ? home.next_mission!
-                    : {
-                        estimated_minutes: 0,
-                        id: home.due_review.mission_id,
-                        title: home.due_review.title,
-                      },
-                )
-              }
-              type="button"
-            >
-              <LocalizedMessage
-                resolution={message(
-                  busy ? 'learner.home.continuing' : 'learner.home.continue',
-                )}
-              />
-            </button>
+            <div className="learner-home__actions">
+              <a className="learner-home__speak" href="#speak">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.speak')}
+                />
+              </a>
+              <button
+                className="ge-button ge-button--primary learner-home__continue"
+                disabled={busy}
+                onClick={() =>
+                  void beginMission(
+                    home,
+                    home.due_review === null
+                      ? home.next_mission!
+                      : {
+                          estimated_minutes: 0,
+                          id: home.due_review.mission_id,
+                          title: home.due_review.title,
+                        },
+                  )
+                }
+                type="button"
+              >
+                <LocalizedMessage
+                  resolution={message(
+                    busy ? 'learner.home.continuing' : 'learner.home.continue',
+                  )}
+                />
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -963,8 +981,23 @@ function OnboardingForm({
   return (
     <section
       aria-labelledby="onboarding-title"
-      className="learner-card learner-onboarding"
+      className="learner-card learner-onboarding ge-onboarding"
     >
+      <div className="ge-onboarding__presence">
+        <AvatarSlot
+          label={message('shell.mira.name').text}
+          size="sm"
+          slot="home-teacher"
+        />
+        <div className="ge-onboarding__coach">
+          <p className="ge-onboarding__coach-role">
+            <LocalizedMessage resolution={message('shell.mira.role')} />
+          </p>
+          <p className="ge-onboarding__coach-line">
+            <LocalizedMessage resolution={message('shell.mira.intro')} />
+          </p>
+        </div>
+      </div>
       <h2
         id="onboarding-title"
         ref={titleRef}
