@@ -9,17 +9,17 @@ Codex is not an approver. Live cutover remains an operator action.
 
 ## Step 0 — Merge the marketing homepage (PR #5)
 
-As of 13 September 2026, GitHub PR #5
-([Add Superdesign marketing homepage in apps/marketing](https://github.com/srbhandary1/GESC/pull/5),
-branch `cursor/marketing-homepage-cd75`) is **open and not merged** into the
-default branch.
+**Complete (13 September 2026).** The operator requested merge. The Superdesign
+homepage from [PR #5](https://github.com/srbhandary1/GESC/pull/5)
+(`cursor/marketing-homepage-cd75`) and this runbook land on the default
+branch together. Continue from Preflight.
 
-- Do **not** force-merge PR #5 without an explicit operator request.
-- Do **not** upload `dist/` from an unmerged working tree to live.
-- After PR #5 lands on the default branch, rebase or merge this cutover
-  follow-up, then continue from Preflight.
+Build `dist/` from that default-branch tree. Do not upload an unmerged
+working copy to live.
 
-Until that merge, keep the live Bootstrap / PHP homepage in place.
+PR #5 / follow-up CI `verify` was red on a pre-existing `league/commonmark`
+Composer audit in `apps/api`, not on `apps/marketing`. That API audit is
+out of this marketing-only scope and was not changed.
 
 ## Hard guards — do not touch
 
@@ -93,7 +93,7 @@ Complete every row before a staging upload.
 
 | # | Check | Pass when |
 |---|---|---|
-| 0 | PR #5 merged (or you are staging from the accepted marketing branch only) | Default branch contains `apps/marketing` **or** operator explicitly stages the marketing branch |
+| 0 | Marketing homepage + this runbook are on the default branch | `apps/marketing/CUTOVER.md` exists on `main`; `make marketing-build` succeeds |
 | 1 | Working tree is marketing-only | `git diff` / PR diff has **zero** `apps/web`, Capacitor, audio, or curriculum files |
 | 2 | Marketing build | `make marketing-build` exits 0 and `apps/marketing/dist/index.html` exists |
 | 3 | Dist is static-only | `dist/` contains `index.html`, `assets/`, `favicon.svg`, `robots.txt` — no PHP, no learner bundles |

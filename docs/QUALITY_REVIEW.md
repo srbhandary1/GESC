@@ -2942,7 +2942,7 @@ accept and Play public release remain unauthorized.
 ### Scope reviewed
 
 - Operator runbook `apps/marketing/CUTOVER.md`;
-- PR #5 still unmerged on 13 September 2026 (documented as Step 0);
+- PR #5 merge requested by the operator on 13 September 2026 (Step 0);
 - marketing-only copy alignment to 17 institute levels;
 - `make marketing-dist` packs `apps/marketing/dist.tar.gz` from `dist/`;
 - hard guards exclude `apps/web`, Capacitor, audio, and PR #6.
@@ -2959,7 +2959,7 @@ accept and Play public release remain unauthorized.
 
 ### Known limitations
 
-- PR #5 must merge (or be explicitly staged) before a live upload.
+- Live Plesk upload still requires an operator; build `dist/` from default-branch `apps/marketing`.
 - 12 named theme cards are not a 17-row syllabus.
 - Learner audio baseline after cutover is an operator check, not a code change.
 
