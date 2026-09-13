@@ -10,6 +10,7 @@ import {
   type SupportedLocale,
 } from '@global-english/localization'
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -22,12 +23,19 @@ import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
+import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import { resolvePhase1AuthoredAudioLookup } from './demo/phase1/phase1LevelAudioAssets'
+import {
+  isPhase1ModuleHash,
+  PHASE1_TEACHER_NAME,
+} from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
@@ -115,7 +123,7 @@ const demoDestinationMessages: Readonly<
   },
   practice: {
     description: 'demo.page.practice.description',
-    title: 'demo.page.practice.title',
+    title: 'demo.nav.speak',
   },
   progress: {
     description: 'demo.page.progress.description',
@@ -158,6 +166,9 @@ function App({
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
     () => destinationFromHash(globalThis.location?.hash) ?? 'home',
+  )
+  const [locationHash, setLocationHash] = useState(
+    () => globalThis.location?.hash ?? '',
   )
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
@@ -249,7 +260,9 @@ function App({
 
   useEffect(() => {
     const updateDestination = () => {
-      const nextDestination = destinationFromHash(globalThis.location?.hash)
+      const hash = globalThis.location?.hash ?? ''
+      setLocationHash(hash)
+      const nextDestination = destinationFromHash(hash)
 
       if (nextDestination !== null) {
         setDestination(nextDestination)
@@ -281,9 +294,16 @@ function App({
   const fallbackNotice = message('localization.fallback_notice')
   const previewLabel = message('localization.preview_label')
   const previewNotice = message('localization.preview_notice')
-  const routeMessages = (
-    demoMode ? demoDestinationMessages : destinationMessages
-  )[destination]
+  const routeHash = locationHash.replace(/^#/u, '')
+  const showDemoMission = demoMode && routeHash === 'mission'
+  const routeMessages = demoMode
+    ? showDemoMission
+      ? {
+          description: 'demo.page.mission.description' as const,
+          title: 'demo.page.mission.title' as const,
+        }
+      : demoDestinationMessages[destination]
+    : destinationMessages[destination]
   const title = message(routeMessages.title)
   const description = message(routeMessages.description)
   const shellEyebrow = message(
@@ -303,8 +323,12 @@ function App({
       label: <LocalizedMessage resolution={message('nav.learn')} />,
     },
     practice: {
-      href: '#practice',
-      label: <LocalizedMessage resolution={message('nav.practice')} />,
+      href: demoMode ? '#speak' : '#practice',
+      label: (
+        <LocalizedMessage
+          resolution={message(demoMode ? 'demo.nav.speak' : 'nav.practice')}
+        />
+      ),
     },
     progress: {
       href: '#progress',
@@ -347,6 +371,8 @@ function App({
       false)
   const canLearn =
     destination === 'learn' &&
+    !showDemoMission &&
+    !demoMode &&
     (isLearnerSession || offlineResume !== null)
   const canPractice =
     destination === 'practice' && isLearnerSession
@@ -355,7 +381,43 @@ function App({
   const canShowOperatorConsole =
     isOperatorSession &&
     (destination === 'home' || destination === 'learn')
-  const showDemoPhase1 = demoMode && destination === 'home'
+  const showGuidedLesson =
+    routeHash === 'mission' && isLearnerSession
+  const showPhase1 =
+    (destination === 'home' || destination === 'learn') &&
+    !showGuidedLesson &&
+    !canShowOperatorConsole &&
+    (demoMode || isLearnerSession)
+  const showDemoPhase1 = showPhase1
+  const showDemoGuidedLesson = showGuidedLesson
+  const mediaFetch = useCallback(
+    (input: RequestInfo | URL, init?: RequestInit) => {
+      if (authentication.authorizedFetch !== undefined) {
+        return authentication.authorizedFetch(input, init)
+      }
+
+      return globalThis.fetch(input, { ...init, credentials: 'include' })
+    },
+    [authentication],
+  )
+  const resolveAuthoredLevelAudio = useCallback(
+    (levelId: string) =>
+      resolvePhase1AuthoredAudioLookup(levelId, mediaFetch),
+    [mediaFetch],
+  )
+  const requestPhase1SignIn = useCallback(() => {
+    if (authentication.transport === 'passport-pkce') {
+      const androidAuth = authentication as AndroidPkceAuthentication
+      void androidAuth.beginAuthorization().catch(() => {
+        setSession({ status: 'unavailable' })
+      })
+      return
+    }
+
+    const sessionTitle = document.getElementById('session-title')
+    sessionTitle?.scrollIntoView({ block: 'start' })
+    sessionTitle?.focus()
+  }, [authentication])
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -511,8 +573,10 @@ function App({
           <DemoPhase1Shell
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onRequestSignIn={requestPhase1SignIn}
+            resolveAuthoredLevelAudio={resolveAuthoredLevelAudio}
           />
-        ) : canLearn ? (
+        ) : canLearn || showDemoGuidedLesson ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
@@ -536,6 +600,18 @@ function App({
             />
           ) : (
             <>
+              {demoMode ? (
+                <p className="phase1-speak-context">
+                  <LocalizedMessage
+                    resolution={resolveInterfaceMessage(
+                      'demo.phase1.speak_context',
+                      locale,
+                      localizationPolicy,
+                      { teacher: PHASE1_TEACHER_NAME },
+                    )}
+                  />
+                </p>
+              ) : null}
               <div className="shell-practice-switch">
                 <button
                   onClick={() => {
@@ -615,11 +691,16 @@ function SessionSummary({
   const androidAuth = isAndroidPkce
     ? (authentication as AndroidPkceAuthentication)
     : null
+  const webAuth = isWebSessionAuthentication(authentication)
+    ? authentication
+    : null
+  const isAuthenticated = session.status === 'authenticated'
 
   return (
     <section
       className="shell-session"
       aria-labelledby="session-title"
+      id={isAuthenticated ? undefined : 'sign-in'}
     >
       <h2
         className="shell-session__title"
@@ -648,6 +729,13 @@ function SessionSummary({
           </span>
         )}
       </div>
+      {webAuth !== null && !isAuthenticated ? (
+        <WebPasswordSignInPanel
+          authentication={webAuth}
+          message={message}
+          onAuthenticated={onSessionChange}
+        />
+      ) : null}
       {androidAuth === null ? null : (
         <div className="shell-session__actions">
           {session.status === 'anonymous' || session.status === 'unavailable' ? (
@@ -680,7 +768,35 @@ function SessionSummary({
           ) : null}
         </div>
       )}
+      {webAuth !== null && isAuthenticated ? (
+        <div className="shell-session__actions">
+          <button
+            type="button"
+            onClick={() => {
+              void webAuth.logout().then(() => {
+                onSessionChange({ status: 'anonymous' })
+              })
+            }}
+          >
+            <LocalizedMessage
+              resolution={message('session.android_sign_out')}
+            />
+          </button>
+        </div>
+      ) : null}
     </section>
+  )
+}
+
+function isWebSessionAuthentication(
+  authentication: AuthenticationAdapter,
+): authentication is WebSessionAuthentication {
+  const candidate = authentication as Partial<WebSessionAuthentication>
+
+  return (
+    authentication.transport === 'sanctum-cookie' &&
+    typeof candidate.signIn === 'function' &&
+    typeof candidate.authenticationMode === 'function'
   )
 }
 
@@ -696,12 +812,24 @@ function destinationFromHash(
   const candidate = hash?.replace(/^#/u, '')
 
   if (
+    candidate === undefined ||
+    candidate === '' ||
     candidate === 'home' ||
-    candidate === 'learn' ||
-    candidate === 'practice' ||
-    candidate === 'progress'
+    isPhase1ModuleHash(`#${candidate}`)
   ) {
-    return candidate
+    return 'home'
+  }
+
+  if (candidate === 'learn' || candidate === 'mission') {
+    return 'learn'
+  }
+
+  if (candidate === 'practice' || candidate === 'speak') {
+    return 'practice'
+  }
+
+  if (candidate === 'progress') {
+    return 'progress'
   }
 
   return null

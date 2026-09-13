@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "kind": "phase1-level-audio-lessons",
+  "teacher": "Swathi",
+  "note": "Daily Activity is a separate one-audio/day path. Do not replace these files with that daily clip. Leave file null until a licensed master is dropped beside this manifest.",
+  "basePath": "/demo/phase1/audio/",
+  "acceptedExtensions": ["mp3", "wav", "m4a", "ogg", "webm"],
+  "acceptedMimeTypes": [
+    "audio/mpeg",
+    "audio/wav",
+    "audio/mp4",
+    "audio/ogg",
+    "audio/webm"
+  ],
+  "levels": [
+    { "id": "pre-1", "file": null },
+    { "id": "pre-2", "file": null },
+    { "id": "level-1", "file": null },
+    { "id": "level-2", "file": null },
+    { "id": "level-3", "file": null },
+    { "id": "level-4", "file": null },
+    { "id": "level-5", "file": null },
+    { "id": "level-6", "file": null },
+    { "id": "level-7", "file": null },
+    { "id": "level-8", "file": null },
+    { "id": "level-9", "file": null },
+    { "id": "level-10", "file": null },
+    { "id": "level-11", "file": null },
+    { "id": "level-12", "file": null },
+    { "id": "level-13", "file": null },
+    { "id": "level-14", "file": null },
+    { "id": "level-15", "file": null },
+    { "id": "level-16", "file": null },
+    { "id": "level-17", "file": null }
+  ]
+}

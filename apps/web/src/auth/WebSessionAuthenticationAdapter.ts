@@ -41,6 +41,70 @@ export class WebSessionAuthenticationAdapter
       (() => (typeof document === 'undefined' ? '' : document.cookie))
   }
 
+  authorizedFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> {
+    return this.#fetch(input, {
+      ...init,
+      credentials: 'include',
+    })
+  }
+
+  async signIn(username: string, password: string): Promise<void> {
+    await this.#credentialRequest('/auth/password/sign-ins', 'POST', {
+      username,
+      password,
+    })
+  }
+
+  async authenticationMode(): Promise<
+    import('./AuthenticationAdapter').PasswordAuthenticationStatus['mode']
+  > {
+    const response = await this.#fetch(this.#passwordApiUrl('/auth/password/mode'), {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const body = (await response.json()) as { mode?: unknown }
+
+    if (
+      body.mode !== 'legacy_otp' &&
+      body.mode !== 'credential_migration' &&
+      body.mode !== 'password_only'
+    ) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return body.mode
+  }
+
+  async requestPasswordRecovery(username: string): Promise<void> {
+    await this.#credentialRequest('/auth/password/recovery-requests', 'POST', {
+      username,
+    })
+  }
+
+  async enrollWithInvitation(
+    invitationCode: string,
+    username: string,
+    password: string,
+  ): Promise<void> {
+    await this.#credentialRequest(
+      '/auth/password/invitation-enrollments',
+      'POST',
+      {
+        invitation_code: invitationCode,
+        username,
+        password,
+      },
+    )
+  }
+
   async current(): Promise<AuthenticationSnapshot> {
     const result = await getCurrentUser({
       ...this.#commonOptions(),
@@ -164,6 +228,34 @@ export class WebSessionAuthenticationAdapter
       credentials: 'include' as const,
       fetch: this.#fetch,
     }
+  }
+
+  async #credentialRequest(
+    path: string,
+    method: 'POST' | 'PUT',
+    body: Readonly<Record<string, string>>,
+  ): Promise<void> {
+    const response = await this.#fetch(this.#passwordApiUrl(path), {
+      method,
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(await this.#csrfHeaders()),
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+  }
+
+  #passwordApiUrl(path: string): string {
+    const prefix = this.#baseUrl ?? '/api/v1'
+    const suffix = path.startsWith('/') ? path : `/${path}`
+
+    return `${prefix.replace(/\/$/u, '')}${suffix}`
   }
 
   async #csrfHeaders(): Promise<Record<string, string>> {

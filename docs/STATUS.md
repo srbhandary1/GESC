@@ -7,7 +7,7 @@
 | Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
 | Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 7 August 2026 |
+| Updated date | 13 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
@@ -504,9 +504,28 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-08-06.8`.
+  `ui-en-IN-2026-09-13.3`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.8`.
+  attributed Codex implementation drafts at revisions ending in `.3`
+  (`ui-*-2026-09-13.3`).
+- Demo teacher name in soft-launch chrome is **Swathi**. Longer new
+  dashboard strings may still fall back to English in some draft locales.
+- Per-level Audio Lessons for Levels 1–17 prefer the signed-in sessions
+  index `audio_stream_path` (introduction), fetched with the same
+  cookies/Bearer as other `/api/v1/me` calls, then a drop-in file at
+  `apps/web/public/demo/phase1/audio/{levelId}.{mp3|wav|m4a|ogg|webm}`
+  (D-0118). This checkout has **0/19** masters in git. Live Real-Studioz
+  (`http://117.254.108.143:8080`) streams `audio/mpeg` from SeaweedFS
+  `accepted/{ulid}/{sha256}` when the learner is signed in; 401 without
+  a session. Soft-launch web uses username/password (`password_only`)
+  from the shell Session panel (D-0119). If password sign-in returns
+  200 but `GET /api/v1/me` stays 401, that is a host SESSION/redis
+  cookie issue, not a missing SPA form — Android PKCE / mobile Bearer
+  already stream lesson audio. The room states “Model audio not yet
+  loaded”, “Sign in to hear authored audio”, or plays the blob; TTS is
+  an explicit stand-in only. Storage inventory (env disk chain,
+  `accepted/{ulid}/{sha256}` keys, studio SQL/tinker) is in
+  [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md#storage-inventory-operator-on-the-studio-box).
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.

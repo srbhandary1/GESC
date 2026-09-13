@@ -20,6 +20,55 @@ const identityResponse = {
 } as const
 
 describe('WebSessionAuthenticationAdapter', () => {
+  it('submits username/password only over CSRF-protected cookie transport', async () => {
+    const requests: Request[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      requests.push(request)
+
+      return request.url.endsWith('/sanctum/csrf-cookie')
+        ? new Response(null, { status: 204 })
+        : Response.json({ session: { id: '01J00000000000000000000001' } })
+    })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: fetcher as typeof fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await adapter.signIn('learner.one', 'Correct horse battery 2026!')
+
+    const request = requests.at(-1)
+    expect(request?.url).toBe(
+      'https://app.global-english.test/api/v1/auth/password/sign-ins',
+    )
+    expect(request?.credentials).toBe('include')
+    expect(request?.headers.get('X-XSRF-TOKEN')).toBe('csrf-token')
+    expect(request?.headers.get('Authorization')).toBeNull()
+    await expect(request?.json()).resolves.toEqual({
+      username: 'learner.one',
+      password: 'Correct horse battery 2026!',
+    })
+  })
+
+  it('reads password_only from the host authentication mode', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      expect(request.url).toBe(
+        'https://app.global-english.test/api/v1/auth/password/mode',
+      )
+      expect(request.credentials).toBe('include')
+
+      return Response.json({ mode: 'password_only' })
+    })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: fetcher as typeof fetch,
+    })
+
+    await expect(adapter.authenticationMode()).resolves.toBe('password_only')
+  })
+
   it('uses CSRF-protected cookie requests without browser credential storage', async () => {
     const requests: Request[] = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -163,6 +212,26 @@ describe('WebSessionAuthenticationAdapter', () => {
       '/sanctum/csrf-cookie',
       '/api/v1/auth/logout',
     ])
+  })
+
+  it('authorizedFetch sends cookies for same-origin private media', async () => {
+    const fetcher = vi.fn(async () => new Response(null, { status: 204 }))
+    const adapter = new WebSessionAuthenticationAdapter({
+      fetch: fetcher as typeof fetch,
+    })
+
+    await adapter.authorizedFetch('/api/v1/me/levels/1/sessions', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    })
+
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/v1/me/levels/1/sessions',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'GET',
+      }),
+    )
   })
 
   it('does not revoke the session when protected pending work blocks logout', async () => {

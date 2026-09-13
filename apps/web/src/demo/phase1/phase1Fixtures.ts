@@ -193,6 +193,85 @@ export const phase1LevelRooms: readonly Phase1LevelRoom[] = [
   { id: 'unlock', available: false },
 ]
 
+export const PHASE1_TEACHER_NAME = 'Swathi'
+
+export interface Phase1LevelAudio {
+  readonly title: string
+  readonly lines: string
+  readonly duration: string
+  /**
+   * Script metadata only. Playback prefers the signed-in private stream
+   * for Levels 1–17, then a drop-in file at
+   * `apps/web/public/demo/phase1/audio/{levelId}.{ext}`.
+   */
+  readonly source: 'scripted-tts'
+}
+
+const LEVEL_AUDIO_TITLES = [
+  'Introduce yourself clearly',
+  'Talk about your family',
+  'Ask for help politely',
+  'Describe your workday',
+  'Order food and drink',
+  'Give simple directions',
+  'Talk about health',
+  'Make a phone call',
+  'Handle a shop conversation',
+  'Talk about plans',
+  'Share an opinion politely',
+  'Join a meeting greeting',
+  'Describe a problem',
+  'Ask follow-up questions',
+  'Thank and close a talk',
+  'Tell a short story',
+  'Prepare for an interview',
+] as const
+
+export function phase1CurrentLevel(): Phase1Level {
+  return (
+    phase1Levels.find((level) => level.status === 'current') ?? phase1Levels[2]!
+  )
+}
+
+export function phase1LevelAudio(level: Phase1Level): Phase1LevelAudio {
+  if (level.id === 'pre-1') {
+    return {
+      title: 'Sounds and greetings',
+      lines: 'Hello. My name is Ravi. Nice to meet you.',
+      duration: '2 min',
+      source: 'scripted-tts',
+    }
+  }
+
+  if (level.id === 'pre-2') {
+    return {
+      title: 'Short everyday lines',
+      lines: 'How are you? I am fine, thank you. And you?',
+      duration: '2 min',
+      source: 'scripted-tts',
+    }
+  }
+
+  const title =
+    LEVEL_AUDIO_TITLES[level.number - 1] ?? `Level ${level.number} model lines`
+
+  return {
+    title,
+    lines: `Listen first. ${title}. Then speak the same idea with Swathi.`,
+    duration: '3 min',
+    source: 'scripted-tts',
+  }
+}
+
+export function phase1LevelPhrases(level: Phase1Level): readonly string[] {
+  const audio = phase1LevelAudio(level)
+  return [
+    audio.lines,
+    'Please say that again, slowly.',
+    'Thank you. I am learning English.',
+  ]
+}
+
 export const phase1Notices: readonly Phase1Notice[] = [
   { id: 'n1', category: 'announcement', postedOn: '2026-08-04' },
   { id: 'n2', category: 'trainer', postedOn: '2026-08-03' },
@@ -213,8 +292,16 @@ export const phase1AiTopics: readonly Phase1AiTopic[] = [
 
 export function moduleFromHash(hash: string): Phase1Module {
   const value = hash.replace(/^#/, '')
+  if (value === 'learn') {
+    return 'levels'
+  }
   if ((PHASE1_MODULES as readonly string[]).includes(value)) {
     return value as Phase1Module
   }
   return 'dashboard'
+}
+
+export function isPhase1ModuleHash(hash: string): boolean {
+  const value = hash.replace(/^#/, '')
+  return (PHASE1_MODULES as readonly string[]).includes(value)
 }

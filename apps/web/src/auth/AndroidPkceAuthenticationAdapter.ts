@@ -57,6 +57,22 @@ export class AndroidPkceAuthenticationAdapter
     this.#fetch = options.fetch ?? globalThis.fetch
   }
 
+  authorizedFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const headers = new Headers(init?.headers)
+    if (this.#accessToken !== null && this.#accessToken !== '') {
+      headers.set('Authorization', `Bearer ${this.#accessToken}`)
+    }
+
+    return this.#fetch(input, {
+      ...init,
+      credentials: 'include',
+      headers,
+    })
+  }
+
   async beginAuthorization(): Promise<void> {
     const verifier = randomBase64Url(64)
     const state = randomBase64Url(32)

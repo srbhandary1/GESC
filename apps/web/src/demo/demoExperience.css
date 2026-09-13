@@ -7,10 +7,10 @@
   --ge-color-text: #0c1f18;
   --ge-color-text-muted: #3d5248;
   --ge-color-border: #c5d2cb;
-  --ge-color-action: #0b6b4a;
-  --ge-color-action-hover: #085338;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #005533;
   --ge-color-action-text: #ffffff;
-  --ge-color-focus: #0b6b4a;
+  --ge-color-focus: #006b3f;
   --ge-color-status: #e5f3ec;
   --ge-radius-sm: 0.5rem;
   --ge-radius-md: 1rem;
@@ -77,6 +77,18 @@
 
 .demo-experience .ge-application-frame__main {
   padding-block: var(--ge-space-4) var(--ge-space-6);
+}
+
+.demo-experience .phase1-speak-context {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(0, 107, 63, 0.16);
+  border-radius: 0.9rem;
+  background: #eef7f2;
+  color: #0c1f18;
+  font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .demo-experience .shell-content {

@@ -13,6 +13,7 @@ import App from './App'
 import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { createLocalDemoRuntime } from './demo/localDemo'
@@ -58,8 +59,8 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: text('nav.practice') }),
-    ).toHaveAttribute('href', '#practice')
+      screen.getByRole('link', { name: text('demo.nav.speak') }),
+    ).toHaveAttribute('href', '#speak')
     expect(
       screen.getByRole('link', { name: text('nav.learn') }),
     ).toHaveAttribute('href', '#learn')
@@ -71,7 +72,7 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens Friend speaking practice from the demo primary navigation', async () => {
+  it('opens Speak with Swathi from the demo primary navigation', async () => {
     const user = userEvent.setup()
     const demo = createLocalDemoRuntime()
 
@@ -85,13 +86,13 @@ describe('localized application shell', () => {
     )
 
     await user.click(
-      screen.getByRole('link', { name: text('nav.practice') }),
+      screen.getByRole('link', { name: text('demo.nav.speak') }),
     )
 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.practice.title'),
+        name: text('demo.nav.speak'),
       }),
     ).toBeInTheDocument()
     expect(
@@ -131,6 +132,33 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(text('demo.phase1.rooms.content.title')),
+    ).toBeInTheDocument()
+  })
+
+  it('opens My Levels rooms from the demo Learn tab', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    await user.click(screen.getByRole('link', { name: text('nav.learn') }))
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.levels'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: text('demo.phase1.rooms.audio.title'),
+      }),
     ).toBeInTheDocument()
   })
 
@@ -377,8 +405,104 @@ describe('localized application shell', () => {
     )
   })
 
+  it('offers web password sign-in when the host is password_only', async () => {
+    const user = userEvent.setup()
+    const onAuthenticated = {
+      status: 'authenticated' as const,
+      identity: {
+        current_membership: {
+          id: '01J00000000000000000000002',
+          membership_type: 'learner' as const,
+          organization: {
+            id: '01J00000000000000000000003',
+            kind: 'institution' as const,
+            name: 'Hithaishi Learning Hub',
+          },
+          role_keys: ['learner'],
+          status: 'active' as const,
+        },
+        memberships: [],
+        user: { id: '01J00000000000000000000001' },
+      },
+    }
+    const current = vi.fn()
+    current
+      .mockResolvedValueOnce({ status: 'anonymous' as const })
+      .mockResolvedValue(onAuthenticated)
+    const signIn = vi.fn(async () => undefined)
+    const authentication = {
+      transport: 'sanctum-cookie' as const,
+      current,
+      logout: vi.fn(async () => undefined),
+      signIn,
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      enrollWithInvitation: vi.fn(async () => undefined),
+      requestOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      sessions: vi.fn(async () => []),
+      revokeSession: vi.fn(),
+      revokeAllSessions: vi.fn(),
+    } as WebSessionAuthentication
+
+    render(<App authentication={authentication} />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('auth.password.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Mobile number')).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(text('auth.password.username')), 'learner.one')
+    await user.type(
+      screen.getByLabelText(text('auth.password.password')),
+      'Correct horse battery 2026!',
+    )
+    await user.click(screen.getByRole('button', { name: text('auth.password.submit') }))
+
+    expect(signIn).toHaveBeenCalledWith(
+      'learner.one',
+      'Correct horse battery 2026!',
+    )
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.dashboard'),
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('opens Learn for a learner membership without inferring role keys', async () => {
     window.history.replaceState(null, '', '/#learn')
+    const home = vi.fn(async () => {
+      throw new Error('Daily mission API must not replace Audio Lessons.')
+    })
+
+    render(
+      <App
+        authentication={membershipAuthentication(
+          'learner',
+          ['institution-student'],
+        )}
+        learnerJourneyApi={learnerApi(home)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.levels'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: text('demo.phase1.rooms.audio.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(home).not.toHaveBeenCalled()
+  })
+
+  it('keeps the guided daily lesson on #mission for a signed-in learner', async () => {
+    window.history.replaceState(null, '', '/#mission')
     const home = vi.fn(async () => ({
       enrollment: null,
       next_mission: null,

@@ -1697,7 +1697,7 @@ PR-010 and production remain unauthorized.
 
 - demo-only Phase 1 module navigation and synthetic fixtures for Attendance,
   AI Teacher, Daily Activity, My Levels and Notice Board;
-- ordinary product shell unchanged when `demoMode` is false;
+- Phase 1 hub also mounts for signed-in learners (not only `demoMode`);
 - no cloud AI/speech calls; scripted AI Teacher replies only;
 - locale parity for new demo.phase1.* keys.
 
@@ -1708,8 +1708,38 @@ PR-010 and production remain unauthorized.
 | Five modules reachable from dashboard | Pass | DemoPhase1Shell unit + demo e2e |
 | Levels list Pre-1/Pre-2/1–17 with rooms | Pass | fixtures + UI |
 | Daily quiz 5×1 mark | Pass | in-memory scoring |
-| Non-demo shell unchanged | Pass | `hidePrimaryNavigation` only when demoMode |
-| No API/provider calls | Pass | demo e2e zero `/api/` |
+| Non-demo signed-in Home/Learn | Pass | Phase 1 hub; `#mission` keeps LearnerJourney |
+| No unexpected API/provider calls | Pass | demo e2e allowlists only `/me/levels/{n}/sessions` audio probes |
+
+## Soft-launch Phase 1 hub (D-0117)
+
+### Scope reviewed
+
+- Home remains the five-module Phase 1 dashboard, with an above-the-fold
+  Today strip for Daily Activity and the current-level listen CTA;
+- My Levels rooms are openable for Pre-1, Pre-2 and Levels 1–17; Audio
+  Lessons prefer the signed-in sessions index `audio_stream_path`
+  (authenticated `/me/levels/{n}/sessions/{part}/audio`, introduction
+  first), then a drop-in file; otherwise they state “Model audio not
+  yet loaded” or “Sign in to hear authored audio” and offer an explicit
+  TTS stand-in plus Train with Swathi;
+- demo Learn serves My Levels; Speak is labelled Speak (`#speak`, with
+  `#practice` still accepted) so it is not confused with a Practice session;
+- Daily Activity keeps the one-audio/day quiz and a secondary guided lesson
+  (`#mission`) without replacing per-level Audio Lessons;
+- Swathi naming on demo Speak chrome; action colour `#006B3F` on demo
+  surfaces already being edited.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Five modules still on Home | Pass | DemoPhase1Shell unit + dashboard Today strip |
+| Listen → Swathi train | Pass | room detail + `#speak` handoff |
+| Learn is My Levels, not a competing mission shell | Pass | App Learn tab test |
+| `#practice` still reaches Speak | Pass | `destinationFromHash` alias |
+| Licensed per-level audio files | Gap | 0/19 files in-repo; signed-in stream + drop-in fallback; studio streams MPEG when authenticated; see [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md) |
+| Web password sign-in (`password_only`) | Pass | `WebPasswordSignInPanel` + adapter `signIn`; OTP hidden |
 
 ---
 

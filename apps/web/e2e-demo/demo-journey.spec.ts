@@ -6,7 +6,13 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 }) => {
   const apiRequests: string[] = []
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname.startsWith('/api/')) {
+    const pathname = new URL(request.url()).pathname
+    if (
+      pathname.startsWith('/api/') &&
+      !/^\/api\/v1\/me\/levels\/(?:[1-9]|1[0-7])\/sessions(?:\/(?:introduction|practice|conversation|interaction)\/audio)?$/.test(
+        pathname,
+      )
+    ) {
       apiRequests.push(request.url())
     }
   })
@@ -36,7 +42,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   ).toBeVisible()
   await page.getByRole('button', { name: 'English' }).first().click()
   await expect(
-    page.getByText('Welcome. You are on Level 1.', { exact: false }),
+    page.getByText('You are on Level 1.', { exact: false }),
   ).toBeVisible()
   for (const prompt of [
     'Welcome me',
@@ -73,7 +79,19 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   // Primary shell destinations also available to a student in the demo.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await page.getByRole('link', { name: 'Practice' }).click()
+  await expect(page.getByText('Audio Lessons').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Audio Lessons/ }).click()
+  await expect(page.getByText('Model audio not yet loaded')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Hear scripted stand-in' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Train with Swathi' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Speak' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Speak with Swathi' }),
+  ).toBeVisible()
   await page.getByRole('link', { name: 'Progress' }).click()
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
