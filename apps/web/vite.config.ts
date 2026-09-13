@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => {
         '117.254.108.143',
         'real-studioz',
         '.ts.net',
+        '.trycloudflare.com',
       ],
       proxy: {
         '/api': {
