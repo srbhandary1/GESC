@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 /**
  * Full student click-through of the synthetic demo shell:
- * every Phase 1 module, Learn mission, Practice Friend + Role-play,
- * Progress, and primary shell destinations.
+ * every Phase 1 module, My Levels listen→Swathi train, guided lesson,
+ * Speak tab + Role-play, Progress, and primary shell destinations.
  */
 test('student click-through exercises every demo page and control', async ({
   page,
@@ -50,7 +50,9 @@ test('student click-through exercises every demo page and control', async ({
     'My Levels',
     'Notice Board',
   ]) {
-    await page.getByRole('button', { name: new RegExp(card) }).click()
+    await page
+      .getByRole('button', { name: new RegExp(`${card}[\\s\\S]*Open module`) })
+      .click()
     await expect(
       page.getByRole('heading', { level: 1, name: card }),
     ).toBeVisible()
@@ -102,7 +104,16 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('button', { name: /Pre-Level 2/i }).click()
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
   await expect(page.getByText('Conversation Room')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
+  await page.getByRole('button', { name: /Level 17/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(
+    page.getByRole('button', { name: 'Listen to this level' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Train with Swathi' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Speak with Swathi' }),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Home' }).click()
 
   // Notice Board.
   await page.getByRole('link', { name: 'Notice Board' }).click()
@@ -110,8 +121,15 @@ test('student click-through exercises every demo page and control', async ({
     page.getByText('Welcome to the Phase 1 demo pathway'),
   ).toBeVisible()
 
-  // Learn mission (demo skips onboarding).
+  // Learn serves My Levels rooms.
   await page.getByRole('link', { name: 'Learn' }).click()
+  await expect(page.getByText('Audio Lessons')).toBeVisible()
+
+  // Guided speaking lesson remains available from Daily Activity.
+  await page.getByRole('link', { name: 'Daily Activity' }).click()
+  await page
+    .getByRole('button', { name: "Open today's guided speaking lesson" })
+    .click()
   await page.getByRole('button', { name: 'Start mission' }).click()
   await page.getByRole('button', { name: 'Play model audio' }).click()
   await page
@@ -144,15 +162,15 @@ test('student click-through exercises every demo page and control', async ({
     page.getByRole('button', { name: 'Continue to speaking practice' }),
   ).toBeVisible()
 
-  // Practice — coaching modes, Confidence Conversation, talk controls.
-  await page.getByRole('link', { name: 'Practice' }).click()
+  // Speak — coaching modes, Confidence Conversation, talk controls.
+  await page.getByRole('link', { name: 'Speak' }).click()
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
     await coaching.selectOption({ label: 'Fluency' })
     await coaching.selectOption({ label: 'Gentle' })
   }
-  await page.getByRole('button', { name: 'Start speaking practice' }).click()
+  await page.getByRole('button', { name: 'Start speaking with Swathi' }).click()
   await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue to listen' }).click()
   await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
@@ -183,7 +201,7 @@ test('student click-through exercises every demo page and control', async ({
     }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Say that again' }).click()
-  const playReply = page.getByRole('button', { name: 'Play Friend reply' })
+  const playReply = page.getByRole('button', { name: 'Play Swathi reply' })
   if (await playReply.isVisible().catch(() => false)) {
     await playReply.click()
   }

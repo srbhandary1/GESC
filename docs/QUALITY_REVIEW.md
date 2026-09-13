@@ -1711,6 +1711,31 @@ PR-010 and production remain unauthorized.
 | Non-demo shell unchanged | Pass | `hidePrimaryNavigation` only when demoMode |
 | No API/provider calls | Pass | demo e2e zero `/api/` |
 
+## Soft-launch Phase 1 hub (D-0117)
+
+### Scope reviewed
+
+- Home remains the five-module Phase 1 dashboard, with an above-the-fold
+  Today strip for Daily Activity and the current-level listen CTA;
+- My Levels rooms are openable for Pre-1, Pre-2 and Levels 1–17; Audio
+  Lessons play scripted TTS then offer Train with Swathi;
+- demo Learn serves My Levels; Speak is labelled Speak (`#speak`, with
+  `#practice` still accepted) so it is not confused with a Practice session;
+- Daily Activity keeps the one-audio/day quiz and a secondary guided lesson
+  (`#mission`) without replacing per-level Audio Lessons;
+- Swathi naming on demo Speak chrome; action colour `#006B3F` on demo
+  surfaces already being edited.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Five modules still on Home | Pass | DemoPhase1Shell unit + dashboard Today strip |
+| Listen → Swathi train | Pass | room detail + `#speak` handoff |
+| Learn is My Levels, not a competing mission shell | Pass | App Learn tab test |
+| `#practice` still reaches Speak | Pass | `destinationFromHash` alias |
+| Licensed per-level audio files | Gap | Scripted TTS stand-ins only; document in PR |
+
 ---
 
 ## Professional client setup path (Phase A + Phase B scaffold)

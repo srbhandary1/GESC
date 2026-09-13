@@ -58,8 +58,8 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: text('nav.practice') }),
-    ).toHaveAttribute('href', '#practice')
+      screen.getByRole('link', { name: text('demo.nav.speak') }),
+    ).toHaveAttribute('href', '#speak')
     expect(
       screen.getByRole('link', { name: text('nav.learn') }),
     ).toHaveAttribute('href', '#learn')
@@ -71,7 +71,7 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens Friend speaking practice from the demo primary navigation', async () => {
+  it('opens Speak with Swathi from the demo primary navigation', async () => {
     const user = userEvent.setup()
     const demo = createLocalDemoRuntime()
 
@@ -85,7 +85,7 @@ describe('localized application shell', () => {
     )
 
     await user.click(
-      screen.getByRole('link', { name: text('nav.practice') }),
+      screen.getByRole('link', { name: text('demo.nav.speak') }),
     )
 
     expect(
@@ -131,6 +131,31 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(text('demo.phase1.rooms.content.title')),
+    ).toBeInTheDocument()
+  })
+
+  it('opens My Levels rooms from the demo Learn tab', async () => {
+    const user = userEvent.setup()
+    const demo = createLocalDemoRuntime()
+
+    render(
+      <App
+        authentication={demo.authentication}
+        conversationApi={demo.conversationApi}
+        demoMode
+        learnerJourneyApi={demo.learnerJourneyApi}
+      />,
+    )
+
+    await user.click(screen.getByRole('link', { name: text('nav.learn') }))
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.levels'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Audio Lessons/i }),
     ).toBeInTheDocument()
   })
 

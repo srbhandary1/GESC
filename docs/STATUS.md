@@ -7,7 +7,7 @@
 | Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
 | Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 7 August 2026 |
+| Updated date | 13 September 2026 |
 | Git branch | `codex/confidence-conversation` |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
@@ -504,9 +504,12 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-08-06.8`.
+  `ui-en-IN-2026-09-13.1`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.8`.
+  attributed Codex implementation drafts at revisions ending in `.1`
+  (`ui-*-2026-09-13.1`).
+- Demo teacher name in soft-launch chrome is **Swathi**. Longer new
+  dashboard strings may still fall back to English in some draft locales.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.

@@ -190,14 +190,14 @@ describe('deterministic Friend prototype', () => {
     )
 
     expect(
-      screen.getByRole('region', { name: 'Practice with your Friend' }),
+      screen.getByRole('region', { name: 'Speak with Swathi' }),
     ).toHaveAttribute('data-demo-speech', 'browser')
     expect(
       screen.queryByRole('button', { name: 'Set up optional voice practice' }),
     ).not.toBeInTheDocument()
 
     await user.click(
-      screen.getByRole('button', { name: 'Start speaking practice' }),
+      screen.getByRole('button', { name: 'Start speaking with Swathi' }),
     )
     await user.click(
       await screen.findByRole('button', { name: 'Continue to listen' }),
@@ -214,7 +214,7 @@ describe('deterministic Friend prototype', () => {
     await user.click(screen.getByRole('button', { name: 'Send turn' }))
 
     expect(
-      await screen.findByRole('button', { name: 'Play Friend reply' }),
+      await screen.findByRole('button', { name: 'Play Swathi reply' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Speak your turn' }),

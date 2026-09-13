@@ -28,6 +28,10 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import {
+  isPhase1ModuleHash,
+  PHASE1_TEACHER_NAME,
+} from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
@@ -159,6 +163,9 @@ function App({
   const [destination, setDestination] = useState<PrimaryDestination>(
     () => destinationFromHash(globalThis.location?.hash) ?? 'home',
   )
+  const [locationHash, setLocationHash] = useState(
+    () => globalThis.location?.hash ?? '',
+  )
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
   const message = (key: MessageKey) =>
@@ -249,7 +256,9 @@ function App({
 
   useEffect(() => {
     const updateDestination = () => {
-      const nextDestination = destinationFromHash(globalThis.location?.hash)
+      const hash = globalThis.location?.hash ?? ''
+      setLocationHash(hash)
+      const nextDestination = destinationFromHash(hash)
 
       if (nextDestination !== null) {
         setDestination(nextDestination)
@@ -281,9 +290,14 @@ function App({
   const fallbackNotice = message('localization.fallback_notice')
   const previewLabel = message('localization.preview_label')
   const previewNotice = message('localization.preview_notice')
-  const routeMessages = (
-    demoMode ? demoDestinationMessages : destinationMessages
-  )[destination]
+  const routeMessages = demoMode
+    ? showDemoMission
+      ? {
+          description: 'demo.page.mission.description' as const,
+          title: 'demo.page.mission.title' as const,
+        }
+      : demoDestinationMessages[destination]
+    : destinationMessages[destination]
   const title = message(routeMessages.title)
   const description = message(routeMessages.description)
   const shellEyebrow = message(
@@ -303,8 +317,12 @@ function App({
       label: <LocalizedMessage resolution={message('nav.learn')} />,
     },
     practice: {
-      href: '#practice',
-      label: <LocalizedMessage resolution={message('nav.practice')} />,
+      href: demoMode ? '#speak' : '#practice',
+      label: (
+        <LocalizedMessage
+          resolution={message(demoMode ? 'demo.nav.speak' : 'nav.practice')}
+        />
+      ),
     },
     progress: {
       href: '#progress',
@@ -345,8 +363,12 @@ function App({
       OPERATOR_ROLE_KEYS.has(roleKey),
     ) ??
       false)
+  const routeHash = locationHash.replace(/^#/u, '')
+  const showDemoMission = demoMode && routeHash === 'mission'
   const canLearn =
     destination === 'learn' &&
+    !showDemoMission &&
+    !demoMode &&
     (isLearnerSession || offlineResume !== null)
   const canPractice =
     destination === 'practice' && isLearnerSession
@@ -355,7 +377,11 @@ function App({
   const canShowOperatorConsole =
     isOperatorSession &&
     (destination === 'home' || destination === 'learn')
-  const showDemoPhase1 = demoMode && destination === 'home'
+  const showDemoPhase1 =
+    demoMode && (destination === 'home' || destination === 'learn') &&
+    !showDemoMission
+  const showDemoGuidedLesson =
+    demoMode && showDemoMission && isLearnerSession
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -512,7 +538,7 @@ function App({
             locale={locale}
             localizationPolicy={localizationPolicy}
           />
-        ) : canLearn ? (
+        ) : showDemoGuidedLesson ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
@@ -536,6 +562,18 @@ function App({
             />
           ) : (
             <>
+              {demoMode ? (
+                <p className="phase1-speak-context">
+                  <LocalizedMessage
+                    resolution={resolveInterfaceMessage(
+                      'demo.phase1.speak_context',
+                      locale,
+                      localizationPolicy,
+                      { teacher: PHASE1_TEACHER_NAME },
+                    )}
+                  />
+                </p>
+              ) : null}
               <div className="shell-practice-switch">
                 <button
                   onClick={() => {
@@ -696,12 +734,24 @@ function destinationFromHash(
   const candidate = hash?.replace(/^#/u, '')
 
   if (
+    candidate === undefined ||
+    candidate === '' ||
     candidate === 'home' ||
-    candidate === 'learn' ||
-    candidate === 'practice' ||
-    candidate === 'progress'
+    isPhase1ModuleHash(`#${candidate}`)
   ) {
-    return candidate
+    return 'home'
+  }
+
+  if (candidate === 'learn' || candidate === 'mission') {
+    return 'learn'
+  }
+
+  if (candidate === 'practice' || candidate === 'speak') {
+    return 'practice'
+  }
+
+  if (candidate === 'progress') {
+    return 'progress'
   }
 
   return null

@@ -10,10 +10,14 @@ import { resolveInterfaceMessage } from '../../localization/interfaceLocalizatio
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_MODULES,
+  PHASE1_TEACHER_NAME,
   moduleFromHash,
   phase1AiTopics,
   phase1Attendance,
+  phase1CurrentLevel,
   phase1DailyActivity,
+  phase1LevelAudio,
+  phase1LevelPhrases,
   phase1LevelRooms,
   phase1Levels,
   phase1Notices,
@@ -140,12 +144,19 @@ export function DemoPhase1Shell({
   )
   const [aiUsesEnglish, setAiUsesEnglish] = useState(false)
   const [activeTopicId, setActiveTopicId] = useState(phase1AiTopics[0]!.id)
-  const [selectedLevelId, setSelectedLevelId] = useState('level-1')
+  const [selectedLevelId, setSelectedLevelId] = useState(
+    phase1CurrentLevel().id,
+  )
+  const [selectedRoomId, setSelectedRoomId] = useState<Phase1RoomId | null>(
+    null,
+  )
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [audioPlayed, setAudioPlayed] = useState(false)
+  const [levelAudioPlayed, setLevelAudioPlayed] = useState(false)
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [audioSpeaking, setAudioSpeaking] = useState(false)
+  const [levelAudioSpeaking, setLevelAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
@@ -213,11 +224,25 @@ export function DemoPhase1Shell({
       .finally(() => setAudioSpeaking(false))
   }
 
-  const go = (next: Phase1Module) => {
+  const go = (next: Phase1Module, roomId: Phase1RoomId | null = null) => {
     const url = new URL(globalThis.location.href)
     url.hash = next
     globalThis.history.pushState(null, '', url)
     setModule(next)
+    if (next === 'levels') {
+      setSelectedRoomId(roomId)
+    }
+  }
+
+  const goPrimary = (hash: 'speak' | 'mission') => {
+    const url = new URL(globalThis.location.href)
+    url.hash = hash
+    globalThis.history.pushState(null, '', url)
+    const event =
+      typeof HashChangeEvent === 'function'
+        ? new HashChangeEvent('hashchange')
+        : new Event('hashchange')
+    globalThis.dispatchEvent(event)
   }
 
   const quizScore = useMemo(() => {
@@ -231,7 +256,30 @@ export function DemoPhase1Shell({
 
   const selectedLevel =
     phase1Levels.find((level) => level.id === selectedLevelId) ??
-    phase1Levels[2]!
+    phase1CurrentLevel()
+  const currentLevel = phase1CurrentLevel()
+  const selectedAudio = phase1LevelAudio(selectedLevel)
+  const selectedPhrases = phase1LevelPhrases(selectedLevel)
+  const selectedRoom =
+    phase1LevelRooms.find((room) => room.id === selectedRoomId) ?? null
+
+  const playLevelAudio = () => {
+    stopDemoSpeech()
+    setLevelAudioSpeaking(true)
+    void speakDemoText(`${selectedAudio.title}. ${selectedAudio.lines}`, locale)
+      .then((source) => {
+        setLevelAudioPlayed(true)
+        setUsedBrowserFallback(source === 'browser')
+      })
+      .catch(() => setUsedBrowserFallback(true))
+      .finally(() => setLevelAudioSpeaking(false))
+  }
+
+  const chooseLevel = (level: Phase1Level) => {
+    setSelectedLevelId(level.id)
+    setSelectedRoomId(null)
+    setLevelAudioPlayed(false)
+  }
 
   const levelTitle = (level: Phase1Level) =>
     message(
@@ -279,57 +327,101 @@ export function DemoPhase1Shell({
       </nav>
 
       {module === 'dashboard' ? (
-        <section
-          className="phase1-grid"
-          aria-label={message('demo.phase1.nav.dashboard').text}
-        >
-          {(
-            [
-              [
-                'attendance',
-                'demo.phase1.dashboard.attendance',
-                `${phase1Attendance.percentage}%`,
-              ],
-              [
-                'ai-teacher',
-                'demo.phase1.dashboard.ai_teacher',
-                message('demo.phase1.dashboard.level_current').text,
-              ],
-              [
-                'daily-activity',
-                'demo.phase1.dashboard.daily',
-                `${phase1DailyActivity.monthlyScore}/${phase1DailyActivity.monthlyMaximum}`,
-              ],
-              [
-                'levels',
-                'demo.phase1.dashboard.levels',
-                message('demo.phase1.dashboard.level_progress').text,
-              ],
-              [
-                'notices',
-                'demo.phase1.dashboard.notices',
-                String(phase1Notices.length),
-              ],
-            ] as const
-          ).map(([id, key, value]) => (
-            <button
-              key={id}
-              type="button"
-              className="phase1-card phase1-card--action"
-              onClick={() => go(id)}
-            >
-              <span className="phase1-card__label">
-                <LocalizedMessage resolution={message(key)} />
-              </span>
-              <strong className="phase1-card__value">{value}</strong>
-              <span className="phase1-card__hint">
+        <>
+          <section
+            className="phase1-today"
+            aria-labelledby="phase1-today-title"
+          >
+            <div className="phase1-today__copy">
+              <h2 id="phase1-today-title">
                 <LocalizedMessage
-                  resolution={message('demo.phase1.dashboard.open')}
+                  resolution={message('demo.phase1.dashboard.today_title')}
                 />
-              </span>
-            </button>
-          ))}
-        </section>
+              </h2>
+              <p>
+                <LocalizedMessage
+                  resolution={message('demo.phase1.dashboard.today_lead', {
+                    teacher: PHASE1_TEACHER_NAME,
+                  })}
+                />
+              </p>
+            </div>
+            <div className="phase1-today__actions">
+              <button
+                type="button"
+                className="ge-button ge-button--primary"
+                onClick={() => go('daily-activity')}
+              >
+                <LocalizedMessage
+                  resolution={message('demo.phase1.dashboard.today_daily_cta')}
+                />
+              </button>
+              <button
+                type="button"
+                className="ge-button ge-button--quiet"
+                onClick={() => {
+                  setSelectedLevelId(currentLevel.id)
+                  go('levels', 'audio')
+                }}
+              >
+                <LocalizedMessage
+                  resolution={message('demo.phase1.dashboard.today_level_cta')}
+                />
+              </button>
+            </div>
+          </section>
+          <section
+            className="phase1-grid"
+            aria-label={message('demo.phase1.nav.dashboard').text}
+          >
+            {(
+              [
+                [
+                  'attendance',
+                  'demo.phase1.dashboard.attendance',
+                  `${phase1Attendance.percentage}%`,
+                ],
+                [
+                  'ai-teacher',
+                  'demo.phase1.dashboard.ai_teacher',
+                  message('demo.phase1.dashboard.level_current').text,
+                ],
+                [
+                  'daily-activity',
+                  'demo.phase1.dashboard.daily',
+                  `${phase1DailyActivity.monthlyScore}/${phase1DailyActivity.monthlyMaximum}`,
+                ],
+                [
+                  'levels',
+                  'demo.phase1.dashboard.levels',
+                  message('demo.phase1.dashboard.level_progress').text,
+                ],
+                [
+                  'notices',
+                  'demo.phase1.dashboard.notices',
+                  String(phase1Notices.length),
+                ],
+              ] as const
+            ).map(([id, key, value]) => (
+              <button
+                key={id}
+                type="button"
+                className="phase1-card phase1-card--action"
+                onClick={() => go(id)}
+              >
+                <span className="phase1-card__label">
+                  <LocalizedMessage resolution={message(key)} />
+                </span>
+                <strong className="phase1-card__value">{value}</strong>
+                <span className="phase1-card__hint">
+                  <LocalizedMessage
+                    resolution={message('demo.phase1.dashboard.open')}
+                  />
+                </span>
+              </button>
+            ))}
+          </section>
+        </>
       ) : null}
 
       {module === 'attendance' ? (
@@ -510,6 +602,20 @@ export function DemoPhase1Shell({
                 )}
               />
             </button>
+            <p className="phase1-muted">
+              <LocalizedMessage
+                resolution={message('demo.phase1.daily.audio_complement')}
+              />
+            </p>
+            <button
+              type="button"
+              className="ge-button"
+              onClick={() => goPrimary('mission')}
+            >
+              <LocalizedMessage
+                resolution={message('demo.phase1.daily.guided_lesson')}
+              />
+            </button>
           </article>
 
           <article className="phase1-subpanel">
@@ -590,6 +696,13 @@ export function DemoPhase1Shell({
 
       {module === 'levels' ? (
         <section className="phase1-panel">
+          <p className="phase1-muted">
+            <LocalizedMessage
+              resolution={message('demo.phase1.levels.browse_lead', {
+                teacher: PHASE1_TEACHER_NAME,
+              })}
+            />
+          </p>
           <div className="phase1-levels">
             {phase1Levels.map((level) => {
               const title = levelTitle(level)
@@ -602,8 +715,7 @@ export function DemoPhase1Shell({
                   aria-current={
                     selectedLevelId === level.id ? 'true' : undefined
                   }
-                  disabled={level.status === 'locked'}
-                  onClick={() => setSelectedLevelId(level.id)}
+                  onClick={() => chooseLevel(level)}
                 >
                   <strong lang={title.resolvedLocale}>{title.text}</strong>
                   <span>
@@ -627,21 +739,155 @@ export function DemoPhase1Shell({
               />
             </h2>
             <ul>
-              {phase1LevelRooms.map((room) => (
-                <li key={room.id} data-available={room.available}>
-                  <strong>
+              {phase1LevelRooms.map((room) => {
+                const title = message(roomTitleKeys[room.id])
+                const selected = selectedRoomId === room.id
+                return (
+                  <li key={room.id} data-available={room.available}>
+                    <button
+                      type="button"
+                      className="phase1-room"
+                      aria-current={selected ? 'true' : undefined}
+                      aria-expanded={selected}
+                      data-available={room.available}
+                      onClick={() =>
+                        setSelectedRoomId(selected ? null : room.id)
+                      }
+                    >
+                      <strong lang={title.resolvedLocale}>{title.text}</strong>
+                      <p>
+                        <LocalizedMessage
+                          resolution={message(roomSummaryKeys[room.id])}
+                        />
+                      </p>
+                      <span className="phase1-room__open">
+                        <LocalizedMessage
+                          resolution={message(
+                            room.available
+                              ? 'demo.phase1.rooms.open'
+                              : 'demo.phase1.rooms.unavailable',
+                          )}
+                        />
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            {selectedRoom === null ? null : (
+              <article
+                className="phase1-subpanel phase1-room-detail"
+                data-room={selectedRoom.id}
+              >
+                <h3>
+                  <LocalizedMessage
+                    resolution={message(roomTitleKeys[selectedRoom.id])}
+                  />
+                </h3>
+                <p>
+                  <LocalizedMessage
+                    resolution={message(roomSummaryKeys[selectedRoom.id])}
+                  />
+                </p>
+                {selectedRoom.available ? null : (
+                  <p className="phase1-muted" role="status">
                     <LocalizedMessage
-                      resolution={message(roomTitleKeys[room.id])}
-                    />
-                  </strong>
-                  <p>
-                    <LocalizedMessage
-                      resolution={message(roomSummaryKeys[room.id])}
+                      resolution={message('demo.phase1.rooms.coming')}
                     />
                   </p>
-                </li>
-              ))}
-            </ul>
+                )}
+                {selectedRoom.id === 'audio' ? (
+                  <>
+                    <p>
+                      <strong>{selectedAudio.title}</strong>
+                      {' · '}
+                      {selectedAudio.duration}
+                    </p>
+                    <p className="phase1-muted" lang="en-IN">
+                      {selectedAudio.lines}
+                    </p>
+                    <p className="phase1-muted">
+                      <LocalizedMessage
+                        resolution={message(
+                          'demo.phase1.rooms.audio.complement',
+                        )}
+                      />
+                    </p>
+                    <div className="phase1-room-detail__actions">
+                      <button
+                        type="button"
+                        className="ge-button ge-button--primary"
+                        onClick={playLevelAudio}
+                        disabled={levelAudioSpeaking}
+                        aria-busy={levelAudioSpeaking}
+                      >
+                        <LocalizedMessage
+                          resolution={message(
+                            levelAudioPlayed
+                              ? 'demo.phase1.rooms.audio.listened'
+                              : 'demo.phase1.rooms.audio.listen',
+                          )}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        className="ge-button ge-button--quiet"
+                        onClick={() => goPrimary('speak')}
+                      >
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.train_cta',
+                            { teacher: PHASE1_TEACHER_NAME },
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+                {selectedRoom.id === 'content' ? (
+                  <ul className="phase1-phrases" lang="en-IN">
+                    {selectedPhrases.map((phrase) => (
+                      <li key={phrase}>{phrase}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {selectedRoom.id === 'ai-teacher' ? (
+                  <div className="phase1-room-detail__actions">
+                    <button
+                      type="button"
+                      className="ge-button ge-button--primary"
+                      onClick={() => go('ai-teacher')}
+                    >
+                      <LocalizedMessage
+                        resolution={message(
+                          'demo.phase1.rooms.ai_teacher.cta',
+                          { teacher: PHASE1_TEACHER_NAME },
+                        )}
+                      />
+                    </button>
+                  </div>
+                ) : null}
+                {selectedRoom.id === 'conversation' ||
+                selectedRoom.id === 'activity' ? (
+                  <div className="phase1-room-detail__actions">
+                    <button
+                      type="button"
+                      className="ge-button ge-button--primary"
+                      onClick={() => goPrimary('speak')}
+                    >
+                      <LocalizedMessage
+                        resolution={message(
+                          selectedRoom.id === 'activity'
+                            ? 'demo.phase1.rooms.activity.cta'
+                            : 'demo.phase1.rooms.conversation.cta',
+                          { teacher: PHASE1_TEACHER_NAME },
+                        )}
+                      />
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            )}
           </div>
         </section>
       ) : null}

@@ -36,13 +36,24 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('button', { name: /AI Teacher/i }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Daily Activity/i }),
+      screen.getByRole('button', { name: /Daily Activity.*Open module/i }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /My Levels/i }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /Notice Board/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Today' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Open today's Daily Activity/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Continue current level · listen/i,
+      }),
     ).toBeInTheDocument()
   })
 
@@ -82,6 +93,14 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('button', { name: /Pre-Level 1/i }),
     ).toBeInTheDocument()
     expect(screen.getByText('Content Room')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Level 17/i }))
+    await user.click(screen.getByRole('button', { name: /Audio Lessons/i }))
+    expect(
+      screen.getByRole('button', { name: 'Listen to this level' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Train with Swathi' }),
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Notice Board' }))
     expect(
