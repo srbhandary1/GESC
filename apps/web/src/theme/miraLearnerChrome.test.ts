@@ -10,7 +10,10 @@ describe('Mira learner chrome', () => {
     const chrome = readFileSync(resolve(themeDir, 'miraLearnerChrome.css'), 'utf8')
     const app = readFileSync(resolve(themeDir, '../App.tsx'), 'utf8')
     const nav = readFileSync(
-      resolve(themeDir, '../../../packages/design-system/src/navigation/PrimaryNavigation.tsx'),
+      resolve(
+        themeDir,
+        '../../../../packages/design-system/src/navigation/PrimaryNavigation.tsx',
+      ),
       'utf8',
     )
 

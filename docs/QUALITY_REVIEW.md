@@ -25,7 +25,19 @@
 
 ### Verification and limitations
 
-- Focused unit tests are recorded after the first CI/local run on this branch.
+- Focused web Vitest (this agent, Node 22.14): 8 files / 42 tests passed
+  (`miraLearnerChrome`, `miraGescGreenPin`, AvatarSlot, OnboardingStepper,
+  TapToPlay, DemoPhase1Shell, LearnerJourney, App). Design-system: 12
+  passed. Localization: 35 passed. Web `tsc -b` passed. ESLint on changed
+  TS files passed with `--max-warnings=0`.
+- Full web Vitest also ran 352 tests: 348 passed; 4 failed. Three of those
+  are the pre-existing Node 22 / jsdom Android private-media fetch failures
+  recorded in D-0284 (`WebLearnerJourneyApi` / `WebLevelSessionsApi`). The
+  fourth was a chrome-test path typo and is fixed on this branch.
+- `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
+  24.18.1 are not available here. `node scripts/validate-locales.mjs`
+  cannot import `.ts` on Node 22; catalogue hashes were checked via the
+  localization Vitest suite.
 - Soft-launch is **not** deployed by this change. Operator rebuild:
   `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
   into `apps/web/dist`, or `make soft-launch-refresh-web`.
