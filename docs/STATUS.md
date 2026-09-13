@@ -518,8 +518,9 @@ review and do not waive pre-production specialist gates.
   (`http://117.254.108.143:8080`) serves the SPA (200) but private media
   is **401** without a learner Sanctum session. The room states
   “Model audio not yet loaded”, “Sign in to hear authored audio”, or
-  plays the file; TTS is an explicit stand-in only. See
-  [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md).
+  plays the file; TTS is an explicit stand-in only. Storage inventory
+  (env disk chain, `accepted/{ulid}/{sha256}` keys, studio SQL/tinker)
+  is in [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md#storage-inventory-operator-on-the-studio-box).
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.

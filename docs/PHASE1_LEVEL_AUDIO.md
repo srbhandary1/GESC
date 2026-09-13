@@ -125,6 +125,245 @@ demo script only **advertises** `http://117.254.108.143:8080`; it does
 not write Laravel `APP_URL`. The live studio `APP_URL` is on that host’s
 `.env` (not in git).
 
+## Storage inventory (operator, on the studio box)
+
+Do this on Real-Studioz before chasing login UI. The disk name is **not**
+stored on `media_assets`; it comes from env. Object keys are **not**
+`level-1.mp3`.
+
+### Env vars and disks
+
+Resolution for **lesson_audio** (elevate / live studio
+`config/media.php` `accepted_disks.lesson_audio`):
+
+```text
+LEARNING_LESSON_AUDIO_DISK
+  else LEARNING_MODEL_AUDIO_DISK
+  else FILESYSTEM_DISK
+  else local
+```
+
+Resolution for **daily model_audio** (this branch
+`config/learning.php`):
+
+```text
+LEARNING_MODEL_AUDIO_DISK
+  else FILESYSTEM_DISK
+  else local
+```
+
+| Env / disk | This branch `.env.example` | Elevate `.env.example` | Meaning |
+|---|---|---|---|
+| `FILESYSTEM_DISK` | `s3` | `s3` | Laravel default disk name |
+| `LEARNING_MODEL_AUDIO_DISK` | `s3` | `s3` | Daily mission model audio |
+| `LEARNING_LESSON_AUDIO_DISK` | **absent** (not on this branch) | `s3` | Per-level `lesson_audio` |
+| `filesystems.disks.local.root` | `storage/app/private` | same | Used when the resolved name is `local` |
+| `filesystems.disks.s3` | `AWS_*` | `AWS_*` | Used when the resolved name is `s3` |
+| `MEDIA_QUARANTINE_DISK` | absent | `media_quarantine` | Upload staging only |
+| `LEARNING_LESSON_VIDEO_DISK` | absent | `lesson_videos` | **Not** lesson audio |
+
+S3 disk fields (`apps/api/config/filesystems.php`):
+
+| Env | Example only (not studio) |
+|---|---|
+| `AWS_BUCKET` | `global-english-local` |
+| `AWS_ENDPOINT` | `http://127.0.0.1:8333` (compose SeaweedFS) |
+| `AWS_DEFAULT_REGION` | `us-east-1` |
+| `AWS_USE_PATH_STYLE_ENDPOINT` | `true` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | local placeholders — **do not commit studio values** |
+
+Compose binds SeaweedFS to `127.0.0.1:${S3_PORT:-8333}` with volume
+`object-storage-data` → container `/data`. **No deploy doc, Makefile
+target, or `.env.example` names a Real-Studioz bucket, endpoint, or
+bind-mount.** Live `APP_URL` / `AWS_*` live only in that host’s `.env`.
+
+Print on the studio API root (redact secrets):
+
+```bash
+cd /path/to/apps/api   # studio checkout
+grep -E '^(APP_URL|FILESYSTEM_DISK|LEARNING_LESSON_AUDIO_DISK|LEARNING_MODEL_AUDIO_DISK|AWS_BUCKET|AWS_ENDPOINT|AWS_DEFAULT_REGION|AWS_USE_PATH_STYLE_ENDPOINT)=' .env \
+  | sed -E 's/(AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID)=.*/\1=[redacted]/'
+```
+
+### Object key pattern
+
+Accepted `lesson_audio` rows from the operator upload/promote path
+(`MediaUploadCommands` on elevate):
+
+| Field | Pattern |
+|---|---|
+| `media_assets.asset_kind` | `lesson_audio` |
+| `media_assets.key` | `managed-{assetUlid}` |
+| `media_assets.storage_object_key` | `accepted/{assetUlid}/{sha256Hex}` |
+| `media_assets.asset_hash` | 64-char SHA-256 of the bytes |
+| `media_assets.id` | same ULID as `{assetUlid}` in the key |
+
+There is **no** `level-N` segment in the object key. Level mapping is
+`level_sessions.level_concepts` (1=`can` … 17=`used_to`) →
+`lesson_practice_blueprints.concept_key` → `lesson_practice_media`
+(`part_id` = `introduction` for Audio Lessons). A level is streamable
+only when **four** parts are attached (`introduction`, `practice`,
+`conversation`, `interaction`).
+
+Upload intermediates (not streamed to learners):
+
+```text
+parts/{uploadUlid}/{partNumber}-{partHash}
+objects/{uploadUlid}/{wholeObjectHash}
+```
+
+Quarantine root when `MEDIA_QUARANTINE_DRIVER=local`:
+`storage/app/media-quarantine`.
+
+On disk `local`, the accepted file is:
+
+```text
+apps/api/storage/app/private/accepted/{assetUlid}/{sha256Hex}
+```
+
+On disk `s3`, the same key is at bucket root (no `lesson-audio/` prefix;
+that prefix exists only for `LEARNING_LESSON_VIDEO_DISK` /
+`AWS_LESSON_VIDEO_PREFIX`).
+
+APP-0062 ingest stages bytes at `/tmp/legacy-audio-bytes/{local_name}`
+then promotes them to `accepted/…`. That staging path is not a runtime
+bind-mount.
+
+This branch’s tests use synthetic keys such as `synthetic/*.mp3` for
+daily `model_audio` / `instruction_audio`, not `lesson_audio`.
+
+### Artisan / make (no unsigned list)
+
+This branch: `inspire`, `voice:purge-expired`, `speech:benchmark`,
+`ai:evaluate`. **No** media inventory command. Makefile has `migrate`,
+`seed`, `verify` — none list lesson audio.
+
+Elevate / studio extras (ingest and cleanup, **not** a coverage table):
+
+```text
+php artisan media:reconcile --limit=100
+php artisan media:ingest-app0062-lesson-audio   # APP-0062; needs operator password
+php artisan lesson-practice:commission-app0063-levels
+php artisan lesson-practice:publish-direct-pathway --approval=WAVE-7.1
+```
+
+Authenticated operator list (401 without a session):
+`GET /api/v1/operator/media/manifest` and
+`GET /api/v1/operator/media/assets`.
+
+Live probe 13 Sep 2026 without credentials: API
+`/api/v1/health/ready` → `ready`; operator media routes → **401**.
+Cannot see keys or buckets from outside.
+
+### SQL (studio / elevate schema)
+
+Disk is config, so select it as a literal after you read `.env`.
+
+```sql
+WITH levels(level_number, concept_key) AS (
+  VALUES
+    (1, 'can'), (2, 'should'), (3, 'do_does'), (4, 'is_are_ing'),
+    (5, 'did'), (6, 'was_were_ing'), (7, 'have_has'),
+    (8, 'have_been_has_been'), (9, 'had'), (10, 'will'),
+    (11, 'gonna_wanna'), (12, 'would'), (13, 'may'), (14, 'if'),
+    (15, 'must'), (16, 'should_have'), (17, 'used_to')
+)
+SELECT
+  l.level_number,
+  l.concept_key,
+  b.id AS blueprint_id,
+  b.state AS blueprint_state,
+  m.part_id,
+  a.id AS asset_id,
+  a.storage_object_key,
+  a.mime_type,
+  a.byte_size
+FROM levels l
+LEFT JOIN lesson_practice_blueprints b
+  ON b.concept_key = l.concept_key
+LEFT JOIN lesson_practice_media m
+  ON m.blueprint_id = b.id
+ AND m.part_id = 'introduction'
+LEFT JOIN media_assets a
+  ON a.id = m.media_asset_id
+ AND a.asset_kind = 'lesson_audio'
+ORDER BY l.level_number;
+```
+
+There is no `disk` column — print the resolved disk name from env next
+to the result. If several organizations exist, add
+`AND b.organization_id = '…'`.
+
+This-branch fallback (no `lesson_practice_*` tables):
+
+```sql
+SELECT id, key, asset_kind, storage_object_key, mime_type, byte_size
+FROM media_assets
+WHERE asset_kind IN ('lesson_audio', 'instruction_audio', 'audio')
+ORDER BY asset_kind, created_at;
+```
+
+### Eloquent / tinker one-liner (studio)
+
+Run from `apps/api` on the studio checkout (elevate stack):
+
+```php
+php artisan tinker --execute='
+$disk = config("media.accepted_disks.lesson_audio");
+$concepts = config("level_sessions.level_concepts");
+foreach (range(1, 17) as $n) {
+    $concept = $concepts[$n] ?? null;
+    $bp = is_string($concept)
+        ? \App\Models\LessonPracticeBlueprint::query()
+            ->where("concept_key", $concept)
+            ->whereIn("state", ["draft", "published"])
+            ->orderByDesc("revision_number")
+            ->first()
+        : null;
+    $media = $bp
+        ? \App\Models\LessonPracticeMedia::query()
+            ->where("blueprint_id", $bp->getKey())
+            ->where("part_id", "introduction")
+            ->first()
+        : null;
+    $asset = $media
+        ? \Illuminate\Support\Facades\DB::table("media_assets")
+            ->where("id", $media->media_asset_id)
+            ->where("asset_kind", "lesson_audio")
+            ->first()
+        : null;
+    $exists = $asset
+        ? \Illuminate\Support\Facades\Storage::disk($disk)
+            ->exists($asset->storage_object_key)
+        : false;
+    dump([
+        "level" => $n,
+        "concept" => $concept,
+        "asset_id" => $asset->id ?? null,
+        "storage_object_key" => $asset->storage_object_key ?? null,
+        "disk" => $disk,
+        "bytes_on_disk" => $exists,
+    ]);
+}
+'
+```
+
+### Filesystem / S3 checklist (on studio)
+
+After the query, for each non-null `storage_object_key`:
+
+```bash
+# If resolved disk is local:
+ls -l storage/app/private/accepted
+
+# If resolved disk is s3 (endpoint/bucket from .env; do not paste secrets):
+aws s3 ls "s3://${AWS_BUCKET}/accepted/" --endpoint-url "${AWS_ENDPOINT}"
+```
+
+A row with `asset_id` but `bytes_on_disk=false` is a missing bind-mount
+or missing S3 object. A row with no `asset_id` is commissioning /
+attachment, not a down SPA. Pre-1 / Pre-2 never appear in this table.
+
 ## Drop path (unsigned local / Pre-levels)
 
 ```text
