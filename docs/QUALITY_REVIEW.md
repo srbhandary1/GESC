@@ -20,8 +20,14 @@
 
 ### Verification and limitations
 
-- Focused tests recorded after the first run on this branch.
-- Soft-launch rebuild is an operator step; this agent does not deploy.
+- Focused web Vitest (this agent, Node 22.14): 4 files / 23 tests passed
+  (`GuestMiraHome`, `App`, `miraLearnerChrome`, `miraGescGreenPin`).
+  Web `tsc -b` passed. ESLint on changed TS/CSS passed.
+- `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
+  24.18.1 are not available here. Playwright is not installed in this agent.
+- Soft-launch is **not** deployed by this change. Operator rebuild:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  into `apps/web/dist`, or `make soft-launch-refresh-web`.
 - F0 / Play / production remain unauthorized.
 
 ## D-0285: Mira / Wonder learner chrome on soft-launch — 13 September 2026
