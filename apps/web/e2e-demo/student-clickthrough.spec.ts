@@ -96,13 +96,12 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText("Today's score")).toBeVisible()
   await expect(page.getByText('5/5')).toBeVisible()
 
-  // My Levels — unlocked pickers.
+  // My Levels opens the governed curriculum path.
   await page.getByRole('link', { name: 'My Levels' }).click()
-  await page.getByRole('button', { name: /Pre-Level 1/i }).click()
-  await page.getByRole('button', { name: /Pre-Level 2/i }).click()
-  await page.getByRole('button', { name: /^Level 1\b/i }).click()
-  await expect(page.getByText('Conversation')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
+  await expect(page.getByText('Can — ability and permission')).toBeVisible()
+  await page.getByRole('button', { name: /Can — ability and permission/i }).click()
+  await expect(page.getByRole('heading', { name: 'Introduction' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Play model audio' })).toBeVisible()
 
   // Notice Board.
   await page.getByRole('link', { name: 'Notice Board' }).click()

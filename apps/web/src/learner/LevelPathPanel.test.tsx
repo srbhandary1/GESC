@@ -195,7 +195,9 @@ describe('LevelPathPanel', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText('Commissioning pending')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Level 1/i }))
+    await user.click(
+      screen.getByRole('button', { name: /Can — ability and permission/i }),
+    )
     await waitFor(() => {
       expect(
         screen.getByRole('heading', { name: 'Introduction' }),
@@ -349,7 +351,7 @@ describe('LevelPathPanel', () => {
 
     render(<LevelPathPanel api={api} locale="en-IN" />)
 
-    expect(await screen.findByRole('button', { name: /Level 1/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Can — ability and permission/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Level 2/i })).not.toBeInTheDocument()
     expect(
       screen.getByText('Complete your current level first'),
@@ -483,7 +485,7 @@ describe('LevelPathPanel', () => {
     }
 
     render(<LevelPathPanel api={api} locale="en-IN" />)
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await screen.findByRole('heading', { name: 'Introduction' })
 
     const callsBeforeConversation = sessionDetail.mock.calls.length
@@ -581,7 +583,7 @@ describe('LevelPathPanel', () => {
         locale="en-IN"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await screen.findByRole('heading', { name: 'Introduction' })
     await user.click(screen.getByRole('button', { name: 'Interaction' }))
     expect(
@@ -723,7 +725,7 @@ describe('LevelPathPanel', () => {
         locale="en-IN"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: 'Conversation' }),
@@ -816,7 +818,7 @@ describe('LevelPathPanel', () => {
     }
 
     const { unmount } = render(<LevelPathPanel api={api} locale="en-IN" />)
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await waitFor(() => {
       expect(downloadAudio).toHaveBeenCalledWith(
         '/api/v1/me/levels/1/sessions/introduction/audio',
@@ -934,7 +936,7 @@ describe('LevelPathPanel', () => {
         locale="en-IN"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
     expect(api.startConversation).toHaveBeenCalled()
     expect(
@@ -1085,7 +1087,7 @@ describe('LevelPathPanel', () => {
         locale="en-IN"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Can — ability and permission/i }))
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
 
     expect(screen.getByText('I can + base verb.')).toBeInTheDocument()

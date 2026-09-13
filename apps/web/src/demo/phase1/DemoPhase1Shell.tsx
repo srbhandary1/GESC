@@ -4,9 +4,8 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import type { SessionPartId } from '../../learner/LevelSessionsApi'
 import { conceptLabel } from '../../learner/conceptLabels'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
 import { AvatarSlot } from '../../ui/AvatarSlot'
@@ -66,26 +65,6 @@ const attendanceStatusKeys = {
   (typeof phase1Attendance.days)[number]['status'],
   MessageKey
 >
-
-const levelStatusKeys = {
-  locked: 'demo.phase1.levels.status.locked',
-  current: 'demo.phase1.levels.status.current',
-  completed: 'demo.phase1.levels.status.completed',
-} as const satisfies Record<Phase1Level['status'], MessageKey>
-
-const SESSION_PART_KEYS = {
-  introduction: 'level.path.part.introduction',
-  practice: 'level.path.part.practice',
-  conversation: 'level.path.part.conversation',
-  interaction: 'level.path.part.interaction',
-} as const satisfies Record<SessionPartId, MessageKey>
-
-const SESSION_PARTS: readonly SessionPartId[] = [
-  'introduction',
-  'practice',
-  'conversation',
-  'interaction',
-]
 
 const noticeTitleKeys = {
   n1: 'demo.phase1.notices.n1.title',
@@ -180,6 +159,13 @@ export function DemoPhase1Shell({
   }, [])
 
   useEffect(() => {
+    if (module !== 'levels') {
+      return
+    }
+    globalThis.location.hash = '#learn'
+  }, [module])
+
+  useEffect(() => {
     return () => {
       stopDemoSpeech()
     }
@@ -268,7 +254,7 @@ export function DemoPhase1Shell({
           onSkip={() => {
             persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
             setWelcomeOpen(false)
-            go('levels')
+            globalThis.location.hash = '#learn'
           }}
           onSubmit={(selection) => {
             if (selection.level !== null) {
@@ -287,14 +273,9 @@ export function DemoPhase1Shell({
 
   const continueLevel =
     phase1Levels.find((level) => level.status === 'current') ?? selectedLevel
-  const preLevels = phase1Levels.filter((level) => level.kind === 'pre')
-  const curriculumLevels = phase1Levels.filter((level) => level.kind === 'level')
-  const heroLevel =
-    selectedLevel.kind === 'level' ? selectedLevel : continueLevel
-  const heroFixture = demoLevelFixture(heroLevel.number)
-  const heroConcept =
-    conceptLabel(heroFixture?.concept_key) ??
-    message('level.path.ready').text
+  const currentLessonConcept =
+    conceptLabel(demoLevelFixture(continueLevel.number)?.concept_key) ??
+    message('demo.phase1.home.next_action').text
 
   return (
     <div className="phase1-shell" data-demo-phase1="synthetic">
@@ -314,11 +295,15 @@ export function DemoPhase1Shell({
           {PHASE1_MODULES.map((item) => (
             <li key={item}>
               <a
-                href={`#${item}`}
+                href={item === 'levels' ? '#learn' : `#${item}`}
                 className="phase1-shell__nav-link"
                 aria-current={module === item ? 'page' : undefined}
                 onClick={(event) => {
                   event.preventDefault()
+                  if (item === 'levels') {
+                    globalThis.location.hash = '#learn'
+                    return
+                  }
                   go(item)
                 }}
               >
@@ -370,11 +355,7 @@ export function DemoPhase1Shell({
                 />
               </p>
             </div>
-            <p className="phase1-home__lesson-title">
-              <LocalizedMessage
-                resolution={message('demo.phase1.home.next_action')}
-              />
-            </p>
+            <p className="phase1-home__lesson-title">{currentLessonConcept}</p>
             <p className="phase1-home__level">
               <LocalizedMessage
                 resolution={message('demo.phase1.home.level_line', {
@@ -389,17 +370,14 @@ export function DemoPhase1Shell({
               <span className="phase1-home__progress-bar" />
             </div>
             <div className="ge-continue-hero__actions">
-            <button
+            <a
               className="ge-button ge-button--primary phase1-home__cta"
-              type="button"
-              onClick={() => go('levels')}
+              href="#learn"
             >
               <span className="phase1-home__cta-label">
-                <LocalizedMessage
-                  resolution={message('demo.phase1.home.next_action')}
-                />
+                <LocalizedMessage resolution={message('level.path.open')} />
               </span>
-            </button>
+            </a>
             <a href="#speak" className="ge-button ge-button--ghost phase1-home__speak">
               <LocalizedMessage
                 resolution={message('conversation.start')}
@@ -731,172 +709,6 @@ export function DemoPhase1Shell({
               {phase1DailyActivity.monthlyMaximum}
             </p>
           </article>
-        </section>
-      ) : null}
-
-      {module === 'levels' ? (
-        <section className="phase1-learn" aria-label={message('nav.learn').text}>
-          <article className="ge-continue-hero">
-            <p className="ge-continue-hero__eyebrow">
-              <LocalizedMessage
-                resolution={message('demo.phase1.home.hero_label')}
-              />
-            </p>
-            <h2 className="ge-continue-hero__title">{heroConcept}</h2>
-            <p className="ge-continue-hero__meta">
-              <span lang={levelTitle(heroLevel).resolvedLocale}>
-                {levelTitle(heroLevel).text}
-              </span>
-              {heroLevel.status === 'current' ? (
-                <span>{heroLevel.progressPercent}%</span>
-              ) : null}
-              <span>
-                <LocalizedMessage resolution={message('level.path.open')} />
-              </span>
-            </p>
-            {heroLevel.status === 'current' ? (
-              <div
-                className="ge-continue-hero__progress"
-                aria-hidden="true"
-              >
-                <span
-                  className="ge-continue-hero__progress-bar"
-                  style={
-                    {
-                      '--ge-continue-progress': `${heroLevel.progressPercent}%`,
-                    } as CSSProperties
-                  }
-                />
-              </div>
-            ) : null}
-            <div className="ge-continue-hero__actions">
-              {heroLevel.status === 'locked' ? (
-                <button
-                  className="ge-button ge-button--primary"
-                  type="button"
-                  disabled
-                >
-                  <LocalizedMessage resolution={message('level.path.open')} />
-                </button>
-              ) : (
-                <a className="ge-button ge-button--primary" href="#learn">
-                  <LocalizedMessage resolution={message('level.path.open')} />
-                </a>
-              )}
-              <a
-                className="ge-button ge-button--ghost"
-                href="#speak"
-              >
-                <LocalizedMessage
-                  resolution={message('conversation.start')}
-                />
-              </a>
-            </div>
-          </article>
-
-          {preLevels.length > 0 ? (
-            <section
-              className="ge-chip-section"
-              aria-label={message('demo.phase1.levels.pre_level_title', {
-                number: '1',
-              }).text}
-            >
-              <ul className="ge-chip-row">
-                {preLevels.map((level) => {
-                  const title = levelTitle(level)
-                  const current = selectedLevelId === level.id
-                  return (
-                    <li key={level.id}>
-                      <button
-                        type="button"
-                        className="ge-level-chip"
-                        data-status={level.status}
-                        aria-current={current ? 'true' : undefined}
-                        onClick={() => setSelectedLevelId(level.id)}
-                      >
-                        <span lang={title.resolvedLocale}>{title.text}</span>
-                        <span className="visually-hidden">
-                          <LocalizedMessage
-                            resolution={message(levelStatusKeys[level.status])}
-                          />
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          ) : null}
-
-          <section
-            className="ge-chip-section"
-            aria-label={message('level.path.title').text}
-          >
-            <h2 className="ge-chip-section__title">
-              <LocalizedMessage resolution={message('level.path.title')} />
-            </h2>
-            <ul className="ge-chip-row">
-              {curriculumLevels.map((level) => {
-                const title = levelTitle(level)
-                const fixture = demoLevelFixture(level.number)
-                const concept = conceptLabel(fixture?.concept_key)
-                const current = selectedLevelId === level.id
-                return (
-                  <li key={level.id}>
-                    <button
-                      type="button"
-                      className="ge-level-chip ge-level-chip--rich"
-                      data-status={level.status}
-                      aria-current={current ? 'true' : undefined}
-                      disabled={level.status === 'locked'}
-                      onClick={() => setSelectedLevelId(level.id)}
-                    >
-                      <span className="ge-level-chip__label" lang={title.resolvedLocale}>
-                        {title.text}
-                      </span>
-                      {concept ? (
-                        <span className="ge-level-chip__concept">{concept}</span>
-                      ) : null}
-                      {level.status === 'current' ? (
-                        <span>{level.progressPercent}%</span>
-                      ) : null}
-                      <span className="visually-hidden">
-                        <LocalizedMessage
-                          resolution={message(levelStatusKeys[level.status])}
-                        />
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-
-          <section
-            className="ge-chip-section"
-            aria-label={message('level.path.sessions_nav').text}
-          >
-            <h2 className="ge-chip-section__title">
-              <LocalizedMessage
-                resolution={message('level.path.sessions_nav')}
-              />
-            </h2>
-            <ul className="ge-chip-row">
-              {SESSION_PARTS.map((part) => (
-                <li key={part}>
-                  <a
-                    className="ge-room-chip"
-                    data-status={part === 'introduction' ? 'active' : 'available'}
-                    href="#learn"
-                  >
-                    <LocalizedMessage
-                      resolution={message(SESSION_PART_KEYS[part])}
-                    />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
         </section>
       ) : null}
 

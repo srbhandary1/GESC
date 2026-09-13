@@ -29,6 +29,8 @@ export const DEMO_LEVEL_FIXTURES: readonly DemoLevelFixture[] =
 export const DEMO_SESSION_PARTS: readonly SessionPartId[] = [
   'introduction',
   'practice',
+  'conversation',
+  'interaction',
 ]
 
 export function demoLevelFixture(

@@ -385,8 +385,11 @@ export function LevelPathPanel({
       {levels !== null && levels.length > 0 ? (
         <section
           className="ge-chip-section"
-          aria-label={message('level.path.ready_heading').text}
+          aria-label={message('level.path.all_levels').text}
         >
+          <h3 className="ge-chip-section__title">
+            <LocalizedMessage resolution={message('level.path.all_levels')} />
+          </h3>
           <ul className="ge-chip-row">
             {levels.map((level) => {
               const unlocked =
@@ -402,7 +405,7 @@ export function LevelPathPanel({
                     : unlocked
                       ? 'completed'
                       : 'locked'
-              const label = (
+              const levelNumberLabel = (
                 <LocalizedMessage
                   resolution={message('level.path.level_label', {
                     number: String(level.level_number),
@@ -410,6 +413,8 @@ export function LevelPathPanel({
                 />
               )
               const concept = conceptLabel(level.concept_key)
+              const chipLabel = concept ?? levelNumberLabel
+              const chipMeta = concept ? levelNumberLabel : null
               return (
                 <li key={level.level_number}>
                   {unlocked ? (
@@ -419,9 +424,9 @@ export function LevelPathPanel({
                       data-status={status}
                       onClick={() => setSelectedLevel(level.level_number)}
                     >
-                      <span className="ge-level-chip__label">{label}</span>
-                      {concept ? (
-                        <span className="ge-level-chip__concept">{concept}</span>
+                      <span className="ge-level-chip__label">{chipLabel}</span>
+                      {chipMeta ? (
+                        <span className="ge-level-chip__concept">{chipMeta}</span>
                       ) : null}
                     </button>
                   ) : (
@@ -429,9 +434,9 @@ export function LevelPathPanel({
                       className="ge-level-chip ge-level-chip--rich"
                       data-status="locked"
                     >
-                      <span className="ge-level-chip__label">{label}</span>
-                      {concept ? (
-                        <span className="ge-level-chip__concept">{concept}</span>
+                      <span className="ge-level-chip__label">{chipLabel}</span>
+                      {chipMeta ? (
+                        <span className="ge-level-chip__concept">{chipMeta}</span>
                       ) : null}
                     </span>
                   )}
