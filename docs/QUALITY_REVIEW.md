@@ -23,8 +23,14 @@
 - Focused web Vitest (this agent, Node 22.14): 4 files / 23 tests passed
   (`GuestMiraHome`, `App`, `miraLearnerChrome`, `miraGescGreenPin`).
   Web `tsc -b` passed. ESLint on changed TS/CSS passed.
+- Local Vite (`VITE_LOCAL_DEMO=false`, `VITE_UI_TRANSLATION_PREVIEW=true`)
+  guest session `unavailable`: `#home` rendered GuestMiraHome (`Today` /
+  Mira / Speak now; no `.marketing-landing`). `#sign-in` stayed the
+  dedicated form. `#about` and `#marketing` still rendered MarketingLanding
+  (`Let’s speak English fluently`).
 - `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
-  24.18.1 are not available here. Playwright is not installed in this agent.
+  24.18.1 are not available here. Repository Playwright browsers were not
+  installed; local screenshots used system Chrome via Playwright.
 - Soft-launch is **not** deployed by this change. Operator rebuild:
   `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
   into `apps/web/dist`, or `make soft-launch-refresh-web`.
