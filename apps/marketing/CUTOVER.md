@@ -80,6 +80,10 @@ tar -C apps/marketing -czf apps/marketing/dist.tar.gz dist
 Local preview of the built artifact: `pnpm --filter @global-english/marketing preview`
 (`http://127.0.0.1:4174`).
 
+**Pitfall:** Vite preview serves `index.html` for unknown paths, including
+`/login` (HTTP 200 marketing HTML). That is **not** proof that live institute
+login is preserved. On Plesk, `/login` must remain the PHP application.
+
 Vite `base` is `./`, so relative asset URLs work at `/` or in a staging
 subdirectory.
 
@@ -271,6 +275,8 @@ pass”.
 2. View Source: single viewport, no `maximum-scale`.
 3. **Try free demo** and **Log in** behave as specified.
 4. `/login` still returns the institute PHP login (not the marketing HTML).
+   Do not use `make marketing` / `vite preview` for this check — preview
+   falls back to `index.html` for `/login`.
 5. `/register`, `/about-us`, `/blog`, `/student-list`,
    `/terms-conditions-refund` still return their existing PHP pages.
 
