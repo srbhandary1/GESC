@@ -425,11 +425,16 @@ describe('localized application shell', () => {
         user: { id: '01J00000000000000000000001' },
       },
     }
+    const current = vi.fn()
+    current
+      .mockResolvedValueOnce({ status: 'anonymous' as const })
+      .mockResolvedValue(onAuthenticated)
+    const signIn = vi.fn(async () => undefined)
     const authentication = {
       transport: 'sanctum-cookie' as const,
-      current: vi.fn(async () => ({ status: 'anonymous' as const })),
+      current,
       logout: vi.fn(async () => undefined),
-      signIn: vi.fn(async () => undefined),
+      signIn,
       authenticationMode: vi.fn(async () => 'password_only' as const),
       requestPasswordRecovery: vi.fn(async () => undefined),
       enrollWithInvitation: vi.fn(async () => undefined),
@@ -438,11 +443,7 @@ describe('localized application shell', () => {
       sessions: vi.fn(async () => []),
       revokeSession: vi.fn(),
       revokeAllSessions: vi.fn(),
-    } satisfies Partial<WebSessionAuthentication> as WebSessionAuthentication
-
-    authentication.current
-      .mockResolvedValueOnce({ status: 'anonymous' })
-      .mockResolvedValue(onAuthenticated)
+    } as WebSessionAuthentication
 
     render(<App authentication={authentication} />)
 
@@ -460,7 +461,7 @@ describe('localized application shell', () => {
     )
     await user.click(screen.getByRole('button', { name: text('auth.password.submit') }))
 
-    expect(authentication.signIn).toHaveBeenCalledWith(
+    expect(signIn).toHaveBeenCalledWith(
       'learner.one',
       'Correct horse battery 2026!',
     )
