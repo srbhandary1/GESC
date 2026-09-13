@@ -11,8 +11,8 @@ export const DEFAULT_INTERFACE_THEME_PREFERENCE: InterfaceThemePreference =
   'light'
 
 const THEME_COLOR: Readonly<Record<InterfaceTheme, string>> = {
-  dark: '#040713',
-  light: '#040713',
+  dark: '#0B1210',
+  light: '#006B3F',
 }
 
 function canUseLocalStorage(): boolean {

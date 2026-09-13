@@ -17,8 +17,8 @@
 }
 
 .model-audio-player__slow[aria-pressed='true'] {
-  border-color: var(--ge-studio-cyan, #67e8f9);
-  background: color-mix(in srgb, #67e8f9 16%, transparent);
+  border-color: var(--ge-color-accent, #3ddc97);
+  background: color-mix(in srgb, var(--ge-color-accent, #3ddc97) 16%, transparent);
 }
 
 .learner-stack {

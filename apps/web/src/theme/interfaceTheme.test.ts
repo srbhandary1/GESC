@@ -39,16 +39,16 @@ describe('interfaceTheme', () => {
     expect(document.documentElement.style.colorScheme).toBe('light')
   })
 
-  it('sets the Studio ink browser chrome colour for light and dark', () => {
+  it('sets Mira GESC-green browser chrome colour for light and dark', () => {
     const themeColor = document.createElement('meta')
     themeColor.setAttribute('name', 'theme-color')
     document.head.append(themeColor)
 
     applyInterfaceTheme('light', false)
-    expect(themeColor.content).toBe('#040713')
+    expect(themeColor.content).toBe('#006B3F')
 
     applyInterfaceTheme('dark', true)
-    expect(themeColor.content).toBe('#040713')
+    expect(themeColor.content).toBe('#0B1210')
 
     themeColor.remove()
   })

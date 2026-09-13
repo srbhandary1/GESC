@@ -51,4 +51,7 @@
          existing consented API paths, not demo-local memory-only rules. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
 </manifest>
