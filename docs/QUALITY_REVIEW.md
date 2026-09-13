@@ -21,9 +21,17 @@
 
 ### Verification and limitations
 
-- Focused web unit tests for the pin, interface theme-color, Capacitor config
-  and Android permission source contracts. Full `make verify` / `make e2e`
-  follow the commit.
+- Focused web unit tests passed: `miraGescGreenPin`, `interfaceTheme`,
+  `InterfaceThemeControl`, `capacitorAndroidConfig`,
+  `androidMicrophonePermission` (9 tests). `App.test.tsx` plus those files:
+  28 passed. Design-system package: 12 passed.
+- Full web Vitest: 342 passed, 3 failed in untouched
+  `WebLearnerJourneyApi` / `WebLevelSessionsApi` Android private-media
+  fetch tests. Those files are not in this diff; the failures look like the
+  Node 22.14 / jsdom environment (toolchain pin is Node 24.18.1) rather than
+  the theme pin.
+- `make verify` / `make e2e` were not run: PHP/Composer and the pinned
+  Node 24.18.1 toolchain are not installed in this agent workspace.
 - Physical-device Speak/mic confirmation and `make demo-android` APK rebuild
   remain operator steps on real-studioz. HTTP `:8080` cannot record in a
   browser; sideload the bundled APK.
