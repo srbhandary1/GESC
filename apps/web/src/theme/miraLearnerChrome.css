@@ -1088,6 +1088,32 @@
   cursor: pointer;
 }
 
+.ge-level-chip--rich {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-inline-size: 7.5rem;
+  padding-block: 0.55rem;
+  white-space: normal;
+  text-align: start;
+}
+
+.ge-level-chip__label {
+  font-weight: 700;
+}
+
+.ge-level-chip__concept {
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ge-color-text-muted);
+}
+
+.ge-level-chip[data-status='current'] .ge-level-chip__concept,
+.ge-level-chip[aria-current='true'] .ge-level-chip__concept {
+  color: rgb(255 255 255 / 0.88);
+}
+
 .ge-level-chip[data-status='current'],
 .ge-level-chip[aria-current='true'],
 .ge-room-chip[data-status='active'] {

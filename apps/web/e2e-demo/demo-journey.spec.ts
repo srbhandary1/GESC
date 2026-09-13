@@ -64,7 +64,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await page.getByRole('link', { name: 'My Levels' }).click()
   await expect(page.getByText('Pre-Level 1')).toBeVisible()
   await expect(page.getByText('Level 17')).toBeVisible()
-  await expect(page.getByText('Conversation Room')).toBeVisible()
+  await expect(page.getByText('Conversation')).toBeVisible()
 
   await page.getByRole('link', { name: 'Notice Board' }).click()
   await expect(

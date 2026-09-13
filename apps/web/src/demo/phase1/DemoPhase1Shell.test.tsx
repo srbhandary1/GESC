@@ -109,10 +109,14 @@ describe('DemoPhase1Shell', () => {
     expect(
       screen.getByRole('button', { name: /Pre-Level 1/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Content Room')).toBeInTheDocument()
+    expect(screen.getByText('Introduction')).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Introduce yourself clearly' }),
+      screen.getByRole('heading', { name: 'Can — ability and permission' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Open level' }),
+    ).toHaveAttribute('href', '#learn')
+    expect(screen.getByText('Should — advice and suggestions')).toBeInTheDocument()
     expect(screen.queryByText('Phase 1 learner shell')).not.toBeInTheDocument()
     expect(
       screen.queryByText(/Synthetic dashboard for Attendance/),

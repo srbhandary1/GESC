@@ -35,6 +35,7 @@ import {
   type OfflineLearningStore,
   type OfflineProfileBinding,
 } from '../offline/OfflineLearningStore'
+import { conceptLabel } from './conceptLabels'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import './LevelSessionJourney.css'
 
@@ -114,26 +115,6 @@ function isPartUnlocked(
   return required === null || completions[required] === true
 }
 
-const CONCEPT_LABELS: Record<string, string> = {
-  can: 'Can — ability and permission',
-  should: 'Should — advice and suggestions',
-  do_does: 'Do / Does — present habits',
-  is_are_ing: 'Am / Is / Are + -ing — happening now',
-  did: 'Did — past actions',
-  was_were_ing: 'Was / Were + -ing — past continuous',
-  have_has: 'Have / Has — experience and results',
-  have_been_has_been: 'Have been / Has been + -ing — still continuing',
-  had: 'Had — earlier past',
-  will: 'Will — future plans',
-  gonna_wanna: 'Gonna / Wanna — informal speech',
-  would: 'Would — polite requests',
-  may: 'May — permission and possibility',
-  if: 'If — real conditions',
-  must: 'Must — rules and obligations',
-  should_have: 'Should have — past advice',
-  used_to: 'Used to — past habits',
-}
-
 function firstNonEmpty(
   values: readonly string[] | undefined,
 ): string | undefined {
@@ -183,14 +164,6 @@ function tutorOpeningLine(detail: LevelSessionDetail): string | undefined {
     firstNonEmpty(detail.target_patterns) ??
     firstNonEmpty(detail.talk?.elicitation_goals)
   )
-}
-
-function conceptLabel(conceptKey: string | null): string | null {
-  if (conceptKey === null || conceptKey === '') {
-    return null
-  }
-
-  return CONCEPT_LABELS[conceptKey] ?? conceptKey.replaceAll('_', ' ')
 }
 
 function isAbortError(error: unknown): boolean {
@@ -436,20 +409,30 @@ export function LevelPathPanel({
                   })}
                 />
               )
+              const concept = conceptLabel(level.concept_key)
               return (
                 <li key={level.level_number}>
                   {unlocked ? (
                     <button
                       type="button"
-                      className="ge-level-chip"
+                      className="ge-level-chip ge-level-chip--rich"
                       data-status={status}
                       onClick={() => setSelectedLevel(level.level_number)}
                     >
-                      {label}
+                      <span className="ge-level-chip__label">{label}</span>
+                      {concept ? (
+                        <span className="ge-level-chip__concept">{concept}</span>
+                      ) : null}
                     </button>
                   ) : (
-                    <span className="ge-level-chip" data-status="locked">
-                      {label}
+                    <span
+                      className="ge-level-chip ge-level-chip--rich"
+                      data-status="locked"
+                    >
+                      <span className="ge-level-chip__label">{label}</span>
+                      {concept ? (
+                        <span className="ge-level-chip__concept">{concept}</span>
+                      ) : null}
                     </span>
                   )}
                 </li>
@@ -466,11 +449,11 @@ export function LevelPathPanel({
       {currentLevel ? (
         <section
           className="ge-chip-section"
-          aria-label={message('demo.phase1.levels.rooms_title').text}
+          aria-label={message('level.path.sessions_nav').text}
         >
           <h3 className="ge-chip-section__title">
             <LocalizedMessage
-              resolution={message('demo.phase1.levels.rooms_title')}
+              resolution={message('level.path.sessions_nav')}
             />
           </h3>
           <ul className="ge-chip-row">

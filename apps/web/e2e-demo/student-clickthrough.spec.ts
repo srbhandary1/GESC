@@ -101,7 +101,7 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('button', { name: /Pre-Level 1/i }).click()
   await page.getByRole('button', { name: /Pre-Level 2/i }).click()
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
-  await expect(page.getByText('Conversation Room')).toBeVisible()
+  await expect(page.getByText('Conversation')).toBeVisible()
   await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
 
   // Notice Board.
