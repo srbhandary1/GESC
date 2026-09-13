@@ -15,7 +15,7 @@ test('student click-through exercises every demo page and control', async ({
     const pathname = new URL(request.url()).pathname
     if (
       pathname.startsWith('/api/') &&
-      !/^\/api\/v1\/me\/levels\/(?:[1-9]|1[0-7])\/sessions\/introduction\/audio$/.test(
+      !/^\/api\/v1\/me\/levels\/(?:[1-9]|1[0-7])\/sessions(?:\/(?:introduction|practice|conversation|interaction)\/audio)?$/.test(
         pathname,
       )
     ) {
