@@ -11,7 +11,7 @@
 | Git branch | `codex/confidence-conversation` |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
-| Public marketing | `apps/marketing` Superdesign homepage is in-repo; live `globalspokenenglish.com` DNS/hosting is still the existing Plesk PHP site |
+| Public marketing | `apps/marketing` Superdesign homepage is in-repo; Phase 1 cutover runbook is `apps/marketing/CUTOVER.md`. GitHub PR #5 was **not** merged as of 13 September 2026 — merge is Step 0. Live `globalspokenenglish.com` is still the existing Plesk PHP site. |
 | Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
 
 ## Checkpoint authorization

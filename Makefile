@@ -13,7 +13,7 @@ COMPOSER_VERSION := 2.10.2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run marketing marketing-build
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta services-up services-down verify test e2e demo-e2e demo-dist-e2e ai-eval openapi migrate seed build load-soak backup-restore-drill staged-deploy-dry-run marketing marketing-build marketing-dist
 
 help:
 	@printf '%s\n' \
@@ -38,6 +38,7 @@ help:
 		'make build         Build the API configuration, React production bundle and marketing site' \
 		'make marketing     Start the public marketing homepage on 127.0.0.1:5174' \
 		'make marketing-build  Build the static marketing homepage into apps/marketing/dist' \
+		'make marketing-dist   Rebuild apps/marketing/dist and pack apps/marketing/dist.tar.gz' \
 		'make load-soak     PH-06 health load/soak harness (requires reachable API)' \
 		'make backup-restore-drill  PH-07 non-production Postgres dump/restore drill' \
 		'make staged-deploy-dry-run PH-09 build + staged deploy dry-run evidence'
@@ -179,6 +180,11 @@ marketing:
 
 marketing-build:
 	$(PNPM) --filter $(MARKETING_FILTER) build
+
+# Operator upload artifact for Plesk staging. dist/ and dist.tar.gz are gitignored.
+# See apps/marketing/CUTOVER.md. Does not touch the learner app.
+marketing-dist: marketing-build
+	tar -C apps/marketing -czf apps/marketing/dist.tar.gz dist
 
 load-soak:
 	@chmod +x scripts/run-load-soak.sh
