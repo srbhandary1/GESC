@@ -29,6 +29,19 @@ if [[ "${current_branch}" != "${BRANCH}" ]]; then
   git pull --ff-only origin "${BRANCH}" || true
 fi
 
+# Theme checkout can include later conversation migrations (lesson-drill
+# cost ledger). Apply them before learners send turns.
+if [[ -x "${ROOT_DIR}/scripts/lib/soft-launch-environment.sh" ]]; then
+  # shellcheck disable=SC1091
+  . "${ROOT_DIR}/scripts/lib/soft-launch-environment.sh"
+  load_soft_launch_environment
+fi
+PHP_BIN="${GE_SOFT_LAUNCH_PHP:-${ROOT_DIR}/tmp/toolchain/php/php}"
+if [[ ! -x "${PHP_BIN}" ]]; then
+  PHP_BIN="$(command -v php)"
+fi
+(cd "${ROOT_DIR}/apps/api" && "${PHP_BIN}" artisan migrate --force --no-ansi)
+
 make soft-launch-refresh-web
 
 if make soft-launch-status 2>/dev/null | grep -q 'tunnel.*running'; then
