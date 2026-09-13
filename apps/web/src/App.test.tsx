@@ -11,7 +11,6 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { ANDROID_APK_HREF } from './marketing/androidDownload'
 import { INTERFACE_THEME_STORAGE_KEY } from './theme/interfaceTheme'
 import type {
   AndroidPkceAuthentication,
