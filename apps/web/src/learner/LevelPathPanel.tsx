@@ -414,7 +414,7 @@ export function LevelPathPanel({
           className="ge-chip-section"
           aria-label={message('level.path.ready_heading').text}
         >
-          <div className="ge-chip-row" role="list">
+          <ul className="ge-chip-row">
             {levels.map((level) => {
               const unlocked =
                 level.availability === 'available' &&
@@ -436,29 +436,26 @@ export function LevelPathPanel({
                   })}
                 />
               )
-              return unlocked ? (
-                <button
-                  key={level.level_number}
-                  type="button"
-                  role="listitem"
-                  className="ge-level-chip"
-                  data-status={status}
-                  onClick={() => setSelectedLevel(level.level_number)}
-                >
-                  {label}
-                </button>
-              ) : (
-                <span
-                  key={level.level_number}
-                  role="listitem"
-                  className="ge-level-chip"
-                  data-status="locked"
-                >
-                  {label}
-                </span>
+              return (
+                <li key={level.level_number}>
+                  {unlocked ? (
+                    <button
+                      type="button"
+                      className="ge-level-chip"
+                      data-status={status}
+                      onClick={() => setSelectedLevel(level.level_number)}
+                    >
+                      {label}
+                    </button>
+                  ) : (
+                    <span className="ge-level-chip" data-status="locked">
+                      {label}
+                    </span>
+                  )}
+                </li>
               )
             })}
-          </div>
+          </ul>
         </section>
       ) : levels !== null && error === null ? (
         <p className="level-path__empty">
@@ -584,20 +581,6 @@ export function LevelPathPanel({
               })}
             />
           </p>
-          <ul className="level-path__pending">
-            {progressLocked.map((level) => (
-              <li
-                key={level.level_number}
-                className="level-path__pending-item"
-              >
-                <LocalizedMessage
-                  resolution={message('level.path.level_label', {
-                    number: String(level.level_number),
-                  })}
-                />
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
 
@@ -608,20 +591,6 @@ export function LevelPathPanel({
               resolution={message('subscription.level_locked')}
             />
           </h3>
-          <ul className="level-path__pending">
-            {upgradeRequired.map((level) => (
-              <li
-                key={level.level_number}
-                className="level-path__pending-item"
-              >
-                <LocalizedMessage
-                  resolution={message('level.path.level_label', {
-                    number: String(level.level_number),
-                  })}
-                />
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
 
@@ -639,20 +608,6 @@ export function LevelPathPanel({
               resolution={message('level.path.coming_next_body')}
             />
           </p>
-          <ul className="level-path__pending">
-            {pending.map((level) => (
-              <li
-                key={level.level_number}
-                className="level-path__pending-item"
-              >
-                <LocalizedMessage
-                  resolution={message('level.path.level_label', {
-                    number: String(level.level_number),
-                  })}
-                />
-              </li>
-            ))}
-          </ul>
         </details>
       ) : null}
     </section>

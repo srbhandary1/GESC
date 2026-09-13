@@ -25,10 +25,16 @@
 
 ### Verification and limitations
 
-- Focused web Vitest and lint results are recorded after the test pass
-  on this branch.
-- `make verify` / `make e2e` may be environment-limited (PHP/Composer,
-  pinned Node). Do not treat an unrun command as passed.
+- Focused web Vitest (this agent, Node 22.14 / engine warning vs pinned
+  24.18.1): 4 files / 41 tests passed (`DemoPhase1Shell`,
+  `LevelPathPanel`, `miraLearnerChrome`, `App`).
+- `tsc -b` for `@global-english/web` passed. ESLint on changed TS/TSX
+  passed (`--max-warnings=0`).
+- Local Vite demo (`VITE_LOCAL_DEMO=true`, port 4174) screenshots:
+  `#levels` continue hero + chips; `#learn` Variant A path; skip-link
+  not painted; yellow fallback banner absent.
+- `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
+  24.18.1 are not available here; Playwright browsers were not installed.
 - Soft-launch is **not** deployed by this change.
 - F0 / Play / production remain unauthorized.
 

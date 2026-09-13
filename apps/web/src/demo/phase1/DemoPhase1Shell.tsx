@@ -438,11 +438,7 @@ export function DemoPhase1Shell({
             >
               <span className="phase1-home__progress-bar" />
             </div>
-            <a href="#speak" className="ge-button ge-button--primary phase1-home__speak">
-              <LocalizedMessage
-                resolution={message('demo.phase1.home.speak')}
-              />
-            </a>
+            <div className="ge-continue-hero__actions">
             <button
               className="ge-button ge-button--primary phase1-home__cta"
               type="button"
@@ -454,6 +450,12 @@ export function DemoPhase1Shell({
                 />
               </span>
             </button>
+            <a href="#speak" className="ge-button ge-button--ghost phase1-home__speak">
+              <LocalizedMessage
+                resolution={message('conversation.start')}
+              />
+            </a>
+            </div>
           </article>
           <aside className="phase1-home__tip">
             <div>
@@ -854,34 +856,34 @@ export function DemoPhase1Shell({
             <h2 className="ge-chip-section__title">
               <LocalizedMessage resolution={message('level.path.title')} />
             </h2>
-            <div className="ge-chip-row" role="list">
+            <ul className="ge-chip-row">
               {phase1Levels.map((level) => {
                 const title = levelTitle(level)
                 const current = selectedLevelId === level.id
                 return (
-                  <button
-                    key={level.id}
-                    type="button"
-                    role="listitem"
-                    className="ge-level-chip"
-                    data-status={level.status}
-                    aria-current={current ? 'true' : undefined}
-                    disabled={level.status === 'locked'}
-                    onClick={() => setSelectedLevelId(level.id)}
-                  >
-                    <span lang={title.resolvedLocale}>{title.text}</span>
-                    {level.status === 'current' ? (
-                      <span>{level.progressPercent}%</span>
-                    ) : null}
-                    <span className="visually-hidden">
-                      <LocalizedMessage
-                        resolution={message(levelStatusKeys[level.status])}
-                      />
-                    </span>
-                  </button>
+                  <li key={level.id}>
+                    <button
+                      type="button"
+                      className="ge-level-chip"
+                      data-status={level.status}
+                      aria-current={current ? 'true' : undefined}
+                      disabled={level.status === 'locked'}
+                      onClick={() => setSelectedLevelId(level.id)}
+                    >
+                      <span lang={title.resolvedLocale}>{title.text}</span>
+                      {level.status === 'current' ? (
+                        <span>{level.progressPercent}%</span>
+                      ) : null}
+                      <span className="visually-hidden">
+                        <LocalizedMessage
+                          resolution={message(levelStatusKeys[level.status])}
+                        />
+                      </span>
+                    </button>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
           </section>
 
           <section
