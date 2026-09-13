@@ -1,5 +1,20 @@
 # Repository status
 
+## Guest `#home` uses Mira chrome — 13 September 2026
+
+- Unsigned / guest `#home` no longer renders `MarketingLanding`. Soft-launch
+  guests (anonymous / checking / unavailable, not demoMode) see
+  `GuestMiraHome`: Mira portrait, Today hero, next-lesson card, Speak now
+  and Sign in → `#sign-in`.
+- Dedicated `#sign-in` is unchanged. `MarketingLanding` remains at
+  `#about` and `#marketing`.
+- LessonPractice, audio curriculum, ConversationOrchestrator, and TTS
+  adapters are untouched. `miraGescGreenPin.css` and
+  `miraLearnerChrome.css` stay.
+- Operator rebuild after merge:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  or `make soft-launch-refresh-web`. Do not deploy from this agent.
+
 ## Mira / Wonder learner chrome on soft-launch — 13 September 2026
 
 - Ports PR #6 learner chrome (Mira hero, next-lesson card, center Speak
@@ -69,10 +84,10 @@
 | Field | Value |
 |---|---|
 | Checkpoint | UX-01: Futuristic Learning Studio — complete (D-0283) |
-| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. D-0285 ports PR #6 Mira/Wonder learner chrome (hero, next-lesson card, Speak FAB, first-run) onto that pin without LessonPractice/audio changes. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. D-0285 ports PR #6 Mira/Wonder learner chrome onto that pin. D-0286 makes unsigned `#home` use GuestMiraHome instead of MarketingLanding (`#about` / `#marketing` keep the studio landing). UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.14 |
 | Updated date | 13 September 2026 |
-| Git branch | `cursor/mira-learner-chrome-e8fa` |
+| Git branch | `cursor/guest-mira-home-e8fa` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
 | Next required action | UX-02 (first-use) is the next UI programme checkpoint when authorized. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |

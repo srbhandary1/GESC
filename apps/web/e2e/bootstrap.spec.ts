@@ -99,33 +99,21 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('marketing.hero.title'),
+      name: message('demo.phase1.home.title'),
     }),
   ).toBeVisible()
+  await expect(page.getByRole('img', { name: message('shell.mira.name') })).toBeVisible()
   await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
   await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
-  await expect(
-    page.getByText(message('conversation.prototype_notice')),
-  ).toBeVisible()
+  await expect(page.locator('.marketing-landing')).toHaveCount(0)
   await expect(
     page.getByRole('link', {
       name: message('marketing.hero.cta_learn'),
     }),
-  ).toHaveAttribute('href', '#how-it-works')
-  for (const sectionHeading of [
-    'marketing.showcase.title',
-    'marketing.section.how',
-    'marketing.section.why',
-    'marketing.section.pedagogy',
-    'marketing.benefit.together.title',
-    'marketing.join.title',
-  ] as const) {
-    await expect(
-      page.getByRole('heading', { name: message(sectionHeading) }),
-    ).toBeVisible()
-  }
-  await expect(page.locator('.marketing-landing img')).toHaveCount(0)
-  await expect(page.locator('.marketing-split, .marketing-showcase, .marketing-why')).toHaveCount(0)
+  ).toHaveAttribute('href', '#about')
+  await expect(
+    page.getByRole('link', { name: message('demo.phase1.home.speak') }),
+  ).toHaveAttribute('href', '#sign-in')
   await expect(
     page.getByRole('navigation', {
       name: message('shell.navigation_label'),
@@ -147,6 +135,21 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
 
     expect(localeAccessibility.violations).toEqual([])
   }
+})
+
+test('keeps MarketingLanding on the explicit about hash', async ({
+  page,
+}) => {
+  await page.goto('/#about')
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: message('marketing.hero.title'),
+    }),
+  ).toBeVisible()
+  await expect(page.locator('.marketing-landing')).toHaveCount(1)
+  await expect(page.locator('[data-guest-mira-home]')).toHaveCount(0)
 })
 
 test('supports skip-link and sign-in from the keyboard', async ({
@@ -184,7 +187,7 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'Let’s speak English fluently',
+      name: 'Today',
     }),
   ).toBeVisible()
   await expect

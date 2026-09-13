@@ -40,6 +40,7 @@ beforeAll(async () => {
     import('./learner/ProgressDashboard'),
     import('./learner/TuitionRequestPanel'),
     import('./marketing/MarketingLanding'),
+    import('./learner/GuestMiraHome'),
     import('./operator/OperatorConsole'),
     import('./subscriptions/SubscriptionPanel'),
   ])
@@ -205,13 +206,15 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('marketing.hero.title'),
+        name: text('demo.phase1.home.title'),
       }),
     ).toBeInTheDocument()
 
-    expect(document.querySelector('.ge-application-frame--studio')).not.toBeNull()
+    expect(document.querySelector('.ge-application-frame--mira-learner')).not.toBeNull()
+    expect(document.querySelector('.marketing-landing')).toBeNull()
 
     expect(screen.getByText(text('app.name'))).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: text('shell.mira.name') })).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: text('session.label') }),
     ).toHaveAttribute('href', '#sign-in')
@@ -219,45 +222,18 @@ describe('localized application shell', () => {
       screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') })
         .length,
     ).toBeGreaterThan(0)
-    expect(document.querySelector('.marketing-hero__slide')).toBeNull()
     expect(
-      screen.getByText(text('conversation.prototype_notice')),
-    ).toBeInTheDocument()
+      screen.getByRole('link', { name: text('demo.phase1.home.speak') }),
+    ).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.getByRole('link', { name: text('marketing.hero.cta_learn') }),
+    ).toHaveAttribute('href', '#about')
+    expect(document.querySelector('.marketing-hero__slide')).toBeNull()
     expect(
       screen.queryByRole('navigation', {
         name: text('shell.navigation_label'),
       }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: text('marketing.section.how'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: text('marketing.path.1.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: text('marketing.section.pedagogy'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: text('marketing.outcome.work.title'),
-      }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: 'Premium',
-      }),
-    ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: text('legal.privacy') }),
     ).toHaveAttribute('href', '/privacy.html')
@@ -266,16 +242,10 @@ describe('localized application shell', () => {
     ).toHaveAttribute('href', '/account-deletion.html')
     expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
     expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: text('marketing.hero.title'),
-      }),
-    ).toHaveTextContent(text('marketing.hero.title'))
-    expect(
       screen
         .getByRole('heading', {
           level: 1,
-          name: text('marketing.hero.title'),
+          name: text('demo.phase1.home.title'),
         })
         .closest(`[lang="${DEFAULT_LOCALE}"]`),
     ).toBeInTheDocument()
@@ -286,7 +256,7 @@ describe('localized application shell', () => {
     expect(authentication.current).toHaveBeenCalledOnce()
   })
 
-  it('lets a guest close the dedicated sign-in page back to the marketing home', async () => {
+  it('lets a guest close the dedicated sign-in page back to Mira home', async () => {
     window.history.replaceState(null, '', '/#sign-in')
     const user = userEvent.setup()
     const authentication = guestWebAuthentication()
@@ -310,13 +280,30 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('marketing.hero.title'),
+        name: text('demo.phase1.home.title'),
       }),
     ).toBeInTheDocument()
+    expect(document.querySelector('.marketing-landing')).toBeNull()
     expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
     expect(
       screen.getByRole('link', { name: text('session.label') }),
     ).toHaveAttribute('href', '#sign-in')
+  })
+
+  it('keeps MarketingLanding on the explicit about hash', async () => {
+    window.history.replaceState(null, '', '/#about')
+    const authentication = guestWebAuthentication()
+
+    render(<App authentication={authentication} />)
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: text('marketing.hero.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(document.querySelector('.marketing-landing')).not.toBeNull()
+    expect(document.querySelector('[data-guest-mira-home]')).toBeNull()
   })
 
   it('shows the dedicated sign-in gate instead of marketing on operator workspace hashes', async () => {
@@ -378,7 +365,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('marketing.hero.title', 'en-IN'),
+        name: text('demo.phase1.home.title', 'en-IN'),
       }),
     ).toBeInTheDocument()
 
@@ -423,7 +410,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('marketing.hero.title', 'en-IN'),
+        name: text('demo.phase1.home.title', 'en-IN'),
       }),
     ).toBeInTheDocument()
 
@@ -432,7 +419,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('marketing.hero.title', DEFAULT_LOCALE),
+        name: text('demo.phase1.home.title', DEFAULT_LOCALE),
       }),
     ).toBeInTheDocument()
   })
@@ -452,7 +439,7 @@ describe('localized application shell', () => {
 
     const heroHeading = await screen.findByRole('heading', {
       level: 1,
-      name: text('marketing.hero.title', 'en-IN', 'approved-only'),
+      name: text('demo.phase1.home.title', 'en-IN', 'approved-only'),
     })
 
     expect(heroHeading.closest('[lang="en-IN"]')).not.toBeNull()
@@ -824,7 +811,7 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: text('marketing.hero.title'),
+        name: text('demo.phase1.home.title'),
       }),
     ).toBeInTheDocument()
     expect(

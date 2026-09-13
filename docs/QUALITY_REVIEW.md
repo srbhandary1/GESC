@@ -1,5 +1,41 @@
 # Quality review
 
+## D-0286: Guest `#home` Mira chrome — 13 September 2026
+
+### Scope reviewed
+
+- Default unsigned `#home` switched from `MarketingLanding` to
+  `GuestMiraHome` (Mira hero + next-lesson card + Sign in).
+- `#sign-in` dedicated page preserved. Marketing landing kept at
+  `#about` / `#marketing`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Guest default home | Pass | `showGuestMiraHome` for anonymous/checking/unavailable `#home` |
+| Sign-in page | Pass | `#sign-in` still `showDedicatedSignIn` |
+| Marketing retained | Pass | `#about` and `#marketing` still render `MarketingLanding` |
+| Lesson/audio paths | Pass | No LessonPractice / orchestrator / TTS / ConversationJourney edits |
+
+### Verification and limitations
+
+- Focused web Vitest (this agent, Node 22.14): 4 files / 23 tests passed
+  (`GuestMiraHome`, `App`, `miraLearnerChrome`, `miraGescGreenPin`).
+  Web `tsc -b` passed. ESLint on changed TS/CSS passed.
+- Local Vite (`VITE_LOCAL_DEMO=false`, `VITE_UI_TRANSLATION_PREVIEW=true`)
+  guest session `unavailable`: `#home` rendered GuestMiraHome (`Today` /
+  Mira / Speak now; no `.marketing-landing`). `#sign-in` stayed the
+  dedicated form. `#about` and `#marketing` still rendered MarketingLanding
+  (`Let’s speak English fluently`).
+- `make verify` / `make e2e` were not run: PHP/Composer and pinned Node
+  24.18.1 are not available here. Repository Playwright browsers were not
+  installed; local screenshots used system Chrome via Playwright.
+- Soft-launch is **not** deployed by this change. Operator rebuild:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  into `apps/web/dist`, or `make soft-launch-refresh-web`.
+- F0 / Play / production remain unauthorized.
+
 ## D-0285: Mira / Wonder learner chrome on soft-launch — 13 September 2026
 
 ### Scope reviewed
