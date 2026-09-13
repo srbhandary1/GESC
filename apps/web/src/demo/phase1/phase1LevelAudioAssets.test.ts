@@ -79,7 +79,10 @@ describe('phase1 level audio contract', () => {
     const fetchImpl = asFetch(async (input, init) => {
       const href = String(input)
       if (href.endsWith('level-1.mp3') && init?.method === 'HEAD') {
-        return new Response(null, { status: 200 })
+        return new Response(null, {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
       }
 
       return new Response(null, { status: 404 })
@@ -159,6 +162,19 @@ describe('phase1 level audio contract', () => {
     await expect(
       resolvePhase1AuthoredAudio('level-1', fetchImpl),
     ).resolves.toBeNull()
+  })
+
+  it('does not treat an HTML 200 for a drop-in filename as a master', async () => {
+    const fetchImpl = asFetch(async () => {
+      return new Response('<!doctype html><title>demo</title>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-1', fetchImpl),
+    ).resolves.toEqual({ status: 'missing' })
   })
 
   it('treats an HTML SPA fallback as missing, not authored audio', async () => {

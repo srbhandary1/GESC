@@ -79,7 +79,9 @@ OpenAPI and `LearnerLevelSessionController::audio` live on
 `origin/cursor/learner-ux-elevate-5f47` (and the Caddy+PHP host). The
 Phase 1 client calls the **introduction** path for Levels 1–17 when the
 drop-in file is absent so a signed-in studio session can play the same
-bytes the elevate Learn path uses.
+bytes the elevate Learn path uses. A 200 HTML SPA fallback (Vite / Caddy)
+is treated as missing, not as authored audio. Only `audio/*` bodies are
+played.
 
 `/me/levels/pre-1/...` is not a route. `/me/levels/0/...` is not a
 Pre-level alias.

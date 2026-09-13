@@ -159,16 +159,29 @@ export function phase1PrivateIntroductionAudioUrl(
   return phase1PrivateIntroductionAudioPath(levelNumber)
 }
 
+function audioMimeFrom(response: Response): string | null {
+  const mimeType =
+    response.headers.get('content-type')?.split(';')[0]?.trim() ?? ''
+  return mimeType.startsWith('audio/') ? mimeType : null
+}
+
 async function resourceExists(
   url: string,
   fetchImpl: typeof fetch,
 ): Promise<boolean> {
   try {
-    const head = await fetchImpl(url, { method: 'HEAD' })
-    if (head.ok) {
+    const head = await fetchImpl(url, {
+      method: 'HEAD',
+      headers: { Accept: 'audio/*' },
+    })
+    if (audioMimeFrom(head) !== null) {
       return true
     }
     if (head.status === 404) {
+      return false
+    }
+    const declared = head.headers.get('content-type')
+    if (head.ok && declared && !declared.trim().toLowerCase().startsWith('audio/')) {
       return false
     }
   } catch {
@@ -176,8 +189,11 @@ async function resourceExists(
   }
 
   try {
-    const get = await fetchImpl(url, { method: 'GET' })
-    return get.ok
+    const get = await fetchImpl(url, {
+      method: 'GET',
+      headers: { Accept: 'audio/*' },
+    })
+    return audioMimeFrom(get) !== null
   } catch {
     return false
   }
