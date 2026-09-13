@@ -12,10 +12,37 @@ vi.mock('../demoTts', () => ({
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
+  window.localStorage.removeItem('ge-ui-grove-welcome-dismissed')
 })
 
+function dismissFirstRun(): void {
+  window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
+}
+
 describe('DemoPhase1Shell', () => {
+  it('opens Grove first-run before the dashboard', () => {
+    render(
+      <DemoPhase1Shell
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'What do you want to speak English for?',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', { name: 'Mira' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Skip and open My Levels' }),
+    ).toBeInTheDocument()
+  })
+
   it('opens the dashboard with five module entries', () => {
+    dismissFirstRun()
     render(
       <DemoPhase1Shell
         locale="en-IN"
@@ -48,6 +75,7 @@ describe('DemoPhase1Shell', () => {
 
   it('navigates to attendance, AI teacher, daily quiz, levels and notices', async () => {
     const user = userEvent.setup()
+    dismissFirstRun()
 
     render(
       <DemoPhase1Shell
@@ -91,6 +119,7 @@ describe('DemoPhase1Shell', () => {
 
   it('renders Kannada UI chrome and AI replies under kn-IN', async () => {
     const user = userEvent.setup()
+    dismissFirstRun()
 
     render(
       <DemoPhase1Shell
@@ -136,6 +165,7 @@ describe('DemoPhase1Shell', () => {
 
   it('renders Hindi UI chrome when hi-IN is selected', async () => {
     const user = userEvent.setup()
+    dismissFirstRun()
 
     render(
       <DemoPhase1Shell
@@ -156,6 +186,7 @@ describe('DemoPhase1Shell', () => {
 
   it('resets the AI reply language when the interface locale changes', async () => {
     const user = userEvent.setup()
+    dismissFirstRun()
     const { rerender } = render(
       <DemoPhase1Shell
         locale="kn-IN"

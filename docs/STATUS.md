@@ -1,5 +1,27 @@
 # Repository status
 
+## Mira / Wonder learner chrome on soft-launch — 13 September 2026
+
+- Ports PR #6 learner chrome (Mira hero, next-lesson card, center Speak
+  FAB, Grove first-run overlay, Wonder-led green mobile shell) onto
+  `codex/confidence-conversation` without merging PR #6's LessonPractice
+  cherry-picks.
+- Soft-launch `#home` for authenticated learners is still
+  `TutorHomeHero` + `LearnerJourney` (not `DemoPhase1Shell`). Those
+  surfaces now use Mira portraits, Speak now, and the next-lesson card.
+  Demo `#home` keeps Phase 1 Attendance / AI Teacher / Daily Activity /
+  My Levels / Notice Board wiring and only restyles the dashboard chrome.
+- Five-destination nav (ADR-0026) is unchanged: Home · Learn · Speak ·
+  Progress · 1:1. Speak is the center FAB on narrow viewports.
+- `miraGescGreenPin.css` stays after Studio; `miraLearnerChrome.css`
+  loads after the pin. Brand green `#006B3F`.
+- LessonPractice, LevelSessionAudioStreamer, ConversationOrchestrator,
+  listen-and-learn / Levels audio, and TTS adapters are untouched.
+- UI catalogues are `ui-*-2026-09-13.1` (pending independent review).
+- Do **not** deploy from this branch. Operator rebuild after merge:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  or `make soft-launch-refresh-web`.
+
 ## Mira GESC-green theme pin + Android mic — 13 September 2026
 
 - Theme-only pin of Superdesign Futuristic Learning Studio chrome to Mira
@@ -47,10 +69,10 @@
 | Field | Value |
 |---|---|
 | Checkpoint | UX-01: Futuristic Learning Studio — complete (D-0283) |
-| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. D-0285 ports PR #6 Mira/Wonder learner chrome (hero, next-lesson card, Speak FAB, first-run) onto that pin without LessonPractice/audio changes. UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.14 |
 | Updated date | 13 September 2026 |
-| Git branch | `cursor/learner-mira-theme-mic-47a5` |
+| Git branch | `cursor/mira-learner-chrome-e8fa` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
 | Next required action | UX-02 (first-use) is the next UI programme checkpoint when authorized. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |

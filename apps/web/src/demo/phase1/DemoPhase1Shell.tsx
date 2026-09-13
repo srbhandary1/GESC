@@ -4,9 +4,17 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
+import { AvatarSlot } from '../../ui/AvatarSlot'
+import { OnboardingStepper } from '../../ui/OnboardingStepper'
+import {
+  GROVE_WELCOME_STORAGE_KEY,
+  persistFirstRunDismissed,
+  persistSpeakingComfort,
+  readFirstRunDismissed,
+} from '../../ui/firstRunPreference'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_MODULES,
@@ -150,6 +158,10 @@ export function DemoPhase1Shell({
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [audioSpeaking, setAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
+  const [welcomeOpen, setWelcomeOpen] = useState(
+    () => !readFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY),
+  )
+  const welcomeTitleRef = useRef<HTMLHeadingElement | null>(null)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -246,6 +258,40 @@ export function DemoPhase1Shell({
       { number: level.number },
     )
 
+  if (welcomeOpen) {
+    return (
+      <div
+        className="phase1-shell phase1-first-run"
+        data-demo-phase1="synthetic"
+      >
+        <h1 className="visually-hidden" id="destination-title" tabIndex={-1}>
+          <LocalizedMessage
+            resolution={message('demo.phase1.first_run.title')}
+          />
+        </h1>
+        <OnboardingStepper
+          locale={locale}
+          message={message}
+          onSkip={() => {
+            persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
+            setWelcomeOpen(false)
+            go('levels')
+          }}
+          onSubmit={(selection) => {
+            if (selection.level !== null) {
+              persistSpeakingComfort(selection.level)
+            }
+            persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
+            setWelcomeOpen(false)
+          }}
+          skipLabel={message('demo.phase1.first_run.skip')}
+          steps={['goal', 'level']}
+          titleRef={welcomeTitleRef}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="phase1-shell" data-demo-phase1="synthetic">
       <p className="phase1-shell__eyebrow">
@@ -282,6 +328,97 @@ export function DemoPhase1Shell({
           ))}
         </ul>
       </nav>
+
+      {module === 'dashboard' ? (
+        <header className="phase1-home">
+          <div className="phase1-home__hello">
+            <div className="phase1-home__hello-copy">
+              <p className="phase1-home__greeting">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.greeting')}
+                />
+              </p>
+              <p className="phase1-home__title">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.title')}
+                />
+              </p>
+            </div>
+            <p className="phase1-home__streak">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.streak', { count: 3 })}
+              />
+            </p>
+            <AvatarSlot
+              label={message('shell.mira.name').text}
+              size="lg"
+              slot="home-teacher"
+            />
+          </div>
+          <article className="phase1-home__lesson">
+            <div className="phase1-home__lesson-meta">
+              <p className="phase1-home__eyebrow">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.hero_label')}
+                />
+              </p>
+              <p className="phase1-home__duration">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.dashboard.level_current')}
+                />
+              </p>
+            </div>
+            <p className="phase1-home__lesson-title">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.next_action')}
+              />
+            </p>
+            <p className="phase1-home__level">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.level_line', {
+                  level: levelTitle(selectedLevel).text,
+                })}
+              />
+            </p>
+            <div
+              className="phase1-home__progress"
+              aria-hidden="true"
+            >
+              <span className="phase1-home__progress-bar" />
+            </div>
+            <a href="#speak" className="ge-button ge-button--primary phase1-home__speak">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.speak')}
+              />
+            </a>
+            <button
+              className="ge-button ge-button--primary phase1-home__cta"
+              type="button"
+              onClick={() => go('levels')}
+            >
+              <span className="phase1-home__cta-label">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.next_action')}
+                />
+              </span>
+            </button>
+          </article>
+          <aside className="phase1-home__tip">
+            <div>
+              <p className="phase1-home__tip-title">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.tip_title')}
+                />
+              </p>
+              <p className="phase1-home__tip-body">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.tip_body')}
+                />
+              </p>
+            </div>
+          </aside>
+        </header>
+      ) : null}
 
       {module === 'dashboard' ? (
         <section
