@@ -2937,6 +2937,32 @@ accept and Play public release remain unauthorized.
 - Paid checkout and the product demo are not wired.
 - DNS/hosting cutover is an operations step outside this repository.
 
+## Phase 1 marketing cutover prep
+
+### Scope reviewed
+
+- Operator runbook `apps/marketing/CUTOVER.md`;
+- PR #5 merge requested by the operator on 13 September 2026 (Step 0);
+- marketing-only copy alignment to 17 institute levels;
+- `make marketing-dist` packs `apps/marketing/dist.tar.gz` from `dist/`;
+- hard guards exclude `apps/web`, Capacitor, audio, and PR #6.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Learner / audio files unchanged | Pass | This follow-up touches marketing package, Makefile marketing targets, and marketing docs only |
+| Viewport | Pass | Single `width=device-width, initial-scale=1` meta; no `maximum-scale` |
+| Primary CTA / login | Pass | **Try free demo**; **Log in** → `/login` |
+| Level copy | Pass | Hero/benefits/pricing say 17; 12 theme cards documented as overview |
+| Live cutover executed | Not claimed | Operator runbook only |
+
+### Known limitations
+
+- Live Plesk upload still requires an operator; build `dist/` from default-branch `apps/marketing`.
+- 12 named theme cards are not a 17-row syllabus.
+- Learner audio baseline after cutover is an operator check, not a code change.
+
 
 
 
