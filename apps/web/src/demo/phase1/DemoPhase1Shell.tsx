@@ -174,7 +174,6 @@ export function DemoPhase1Shell({
     Readonly<Record<string, Phase1AuthoredAudioLookup>>
   >({})
   const lookupByLevelRef = useRef(lookupByLevel)
-  lookupByLevelRef.current = lookupByLevel
   const authoredAudioRef = useRef<HTMLAudioElement>(null)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
@@ -212,6 +211,10 @@ export function DemoPhase1Shell({
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    lookupByLevelRef.current = lookupByLevel
+  }, [lookupByLevel])
 
   useEffect(() => {
     return () => {
