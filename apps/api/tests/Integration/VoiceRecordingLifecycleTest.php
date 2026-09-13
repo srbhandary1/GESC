@@ -17,6 +17,9 @@ use App\Conversation\Voice\VoiceOperationRejected;
 use App\Conversation\Voice\VoiceRecordingService;
 use App\Conversation\Voice\VoiceRetentionService;
 use App\Conversation\Voice\VoiceSourceObjectStore;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\EntitlementAccess;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -660,6 +663,22 @@ final class VoiceRecordingLifecycleTest extends TenancyIntegrationTestCase
             'onboarding_completed_at' => $now,
             'created_at' => $now,
         ]);
+
+        if ($organization->system_key === Organization::DIRECT_SYSTEM_KEY) {
+            $this->contexts()->run($context, function () use ($user, $organization): void {
+                $this->app->make(EntitlementAccess::class)->snapshot($user);
+                $planId = DB::table('entitlement_plans')
+                    ->where('organization_id', $organization->getKey())
+                    ->where('code', DirectPlanDefaults::MONTHLY_MODULES)
+                    ->value('id');
+                $this->assertIsString($planId);
+                $this->app->make(LearnerSubscriptionService::class)->checkout(
+                    $user,
+                    $planId,
+                    (string) Str::ulid(),
+                );
+            });
+        }
 
         return [$user, $membership, $context];
     }

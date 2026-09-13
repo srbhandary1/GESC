@@ -337,6 +337,51 @@ describe('operator console', () => {
     expect(getPilotAnalytics).not.toHaveBeenCalled()
   })
 
+  it('renders Speech Economics only when the overview panel is authorized', async () => {
+    const getSpeechEconomics = vi.fn(async () => speechEconomics())
+    const exportSpeechEconomics = vi.fn(async () => undefined)
+    const getSpeechEconomicsCommercial = vi.fn(async () => null)
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-09-09T10:00:00+00:00',
+        navigation: ['overview', 'operations'] as const,
+        organization: organization(),
+        panels: ['speech_economics'] as const,
+        search_available: false,
+      })),
+      exportSpeechEconomics,
+      getSpeechEconomics,
+      getSpeechEconomicsCommercial,
+    })
+
+    renderConsole(api)
+    openOperatorSection('#operator-operations')
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Speech Economics' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('azure-speech')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Some rows are hidden because their sample is too small to display safely.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Allocated cost is not yet reconciled to a provider statement.',
+      ),
+    ).toBeInTheDocument()
+    expect(getSpeechEconomics).toHaveBeenCalledOnce()
+    expect(getSpeechEconomicsCommercial).toHaveBeenCalledOnce()
+    expect(
+      screen.queryByRole('heading', { name: 'Commercial terms' }),
+    ).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    expect(exportSpeechEconomics).toHaveBeenCalledOnce()
+  })
+
   it('keeps successful panels available while one panel fails and retries', async () => {
     const draft: OperatorContentDraft = {
       curriculum_version_id: '01J00000000000000000000002',
@@ -608,6 +653,9 @@ function operatorApi(
       generated_at: '2026-08-09T10:00:00+00:00',
       items: [],
     })),
+    getSpeechEconomics: vi.fn(async () => speechEconomics()),
+    exportSpeechEconomics: vi.fn(async () => undefined),
+    getSpeechEconomicsCommercial: vi.fn(async () => null),
     search: vi.fn(async () => ({
       generated_at: '2026-08-09T10:00:00+00:00',
       items: [],
@@ -625,12 +673,79 @@ function organization() {
   }
 }
 
+function speechEconomics() {
+  return {
+    empty: false,
+    generated_at: '2026-09-09T10:00:00+00:00',
+    organization_id: '01J00000000000000000000003',
+    partial: true,
+    presentation: 'allocated_usage' as const,
+    rows: [
+      {
+        aggregate_kind: 'provider_attempt',
+        allocated_inr_microunits: 12_000,
+        attempt_count: 12,
+        billable_unit_kind: 'unicode_characters',
+        billable_unit_quantity: 1200,
+        cancelled_count: 0,
+        completion_p95_ms: 1000,
+        conversation_mode: 'everyday',
+        cost_per_successful_turn_inr_microunits: 1000,
+        dispatch_count: 12,
+        dispatch_kind: 'provider_dispatch',
+        environment: 'soft-launch',
+        failure_count: 0,
+        fallback_count: 0,
+        first_audible_p95_ms: 1000,
+        first_result_p50_ms: 1000,
+        first_result_p95_ms: 1000,
+        locale: 'en-IN',
+        model_version: 'test-v1',
+        partial_count: 0,
+        provider_key: 'azure-speech',
+        provider_stage: 'tts',
+        reconciliation_status: 'unreconciled',
+        result_status: 'succeeded',
+        route_role: 'primary',
+        small_cell_suppressed: false,
+        success_count: 12,
+        usage_date: '2026-09-08',
+      },
+    ],
+    stale_rate: false,
+    suppressed_row_count: 1,
+    totals: {
+      allocated_inr_microunits: 12_000,
+      attempt_count: 12,
+      billable_unit_quantity: 1200,
+      cancelled_count: 0,
+      dispatch_count: 12,
+      failure_count: 0,
+      fallback_count: 0,
+      partial_count: 0,
+      success_count: 12,
+    },
+    unreconciled: true,
+    visible_row_count: 1,
+  }
+}
+
 function pilotAnalytics() {
   return {
     demonstrated_learning: {
       mastery_by_knowledge_state: { emerging: 3, mastered: 2 },
       mastery_state_count: 5,
       review_schedule_count: 1,
+    },
+    learning_metrics: {
+      ai_fallback_count: 0,
+      latency_sample_count: 0,
+      quiz_retry_count: 1,
+      review_return_completed_count: 2,
+      review_return_due_count: 0,
+      session_cost_microunits_total: 0,
+      speaking_turn_count: 6,
+      stage_completion_count: 4,
     },
     distinction_note: 'usage_counts_are_not_demonstrated_learning' as const,
     generated_at: '2026-08-09T10:00:00+00:00',

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A86B"/>
+      <stop offset="100%" stop-color="#006B3F"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#FFFFFF"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#E8F5E9" stroke-width="1"/>
+  <!-- simplified continents -->
+  <path d="M18,22 Q24,16 30,20 Q36,14 42,22 Q46,18 50,24 Q46,30 40,28 Q36,34 30,30 Q24,36 20,32 Q16,28 18,22" fill="url(#g)"/>
+  <path d="M20,36 Q26,32 32,38 Q38,34 44,40 Q40,46 34,44 Q28,48 24,44 Q18,40 20,36" fill="url(#g)" opacity="0.9"/>
+  <!-- e -->
+  <path d="M22,26 Q22,18 32,18 Q42,18 42,26 Q42,32 36,34 Q42,36 42,42 Q42,50 32,50 Q22,50 22,42" fill="none" stroke="#E31C23" stroke-width="5" stroke-linecap="round"/>
+  <path d="M22,34 L38,34" stroke="#E31C23" stroke-width="4.5" stroke-linecap="round"/>
+</svg>

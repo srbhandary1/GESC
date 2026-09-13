@@ -6,7 +6,11 @@ use App\Authentication\Mfa\ExpiredPrivilegedMfaEnrollmentPurger;
 use App\Authentication\Sessions\AuthenticationSessionCleanupWorker;
 use App\Conversation\Evaluation\AiEvaluationRunner;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\Observability\SpeechObservabilityRetentionService;
+use App\Conversation\Realtime\RealtimeSpeechBenchmarkRunner;
 use App\Conversation\RoleplayCatalogSeeder;
+use App\Conversation\Routing\Wave38EvidencePreflight;
+use App\Conversation\Routing\Wave38EvidenceRecorder;
 use App\Conversation\Support\RoleplayCatalog;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkReviewServer;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
@@ -24,6 +28,7 @@ use App\Curriculum\LessonPractice\App0063LevelsCommissioner;
 use App\Curriculum\LessonPractice\App0065AuthoredLevelsReplacer;
 use App\Curriculum\LessonPractice\App0066EnglishReviewReplacer;
 use App\Curriculum\LessonPractice\App0067KannadaReviewReplacer;
+use App\Curriculum\LessonPractice\DirectPathwayCommissioningAuditService;
 use App\Curriculum\LessonPractice\DirectPathwayPublicationService;
 use App\Identity\LocalOperatorIdentityBootstrapper;
 use App\Learning\LevelVideos\LegacyLevelVideoCommissioner;
@@ -390,6 +395,42 @@ Artisan::command(
 )->purpose('Wave 7.1 publish attached Direct lesson-practice Levels 1–17');
 
 Artisan::command(
+    'lesson-practice:audit-direct-pathway-commissioning',
+    function (): int {
+        $result = app(DirectPathwayCommissioningAuditService::class)
+            ->audit();
+
+        $this->info(json_encode([
+            'status' => ($result['all_complete'] ?? false) === true
+                ? 'completed'
+                : 'incomplete',
+            ...$result,
+        ], JSON_THROW_ON_ERROR));
+
+        return ($result['all_complete'] ?? false) === true ? 0 : 1;
+    },
+)->purpose('LPL-05 audit Direct lesson-practice commissioning completeness matrix');
+
+Artisan::command(
+    'lesson-practice:lpl-07-rollout-evidence',
+    function (): int {
+        $audit = app(DirectPathwayCommissioningAuditService::class)
+            ->audit();
+
+        $this->info(json_encode([
+            'status' => ($audit['all_complete'] ?? false) === true
+                ? 'completed'
+                : 'incomplete',
+            'checkpoint' => 'LPL-07',
+            'recorded_at' => now()->toIso8601String(),
+            'commissioning' => $audit,
+        ], JSON_THROW_ON_ERROR));
+
+        return ($audit['all_complete'] ?? false) === true ? 0 : 1;
+    },
+)->purpose('LPL-07 record Direct pathway commissioning evidence for rollout review');
+
+Artisan::command(
     'conversation:seed-roleplay-catalog {--organization= : Organization ULID; defaults to Direct}',
     function (): int {
         $organizationOption = $this->option('organization');
@@ -564,6 +605,93 @@ Artisan::command('voice:deletion-status', function (): int {
     return $health['status'] === 'healthy' ? 0 : 1;
 })->purpose('Report safe source-deletion outbox health and fail if unhealthy');
 
+Artisan::command(
+    'speech-wave38:record-receipt
+        {kind : rotation or deletion}
+        {--packet= : Absolute Wave 3.8 packet directory}
+        {--rotated-at= : UTC RFC 3339 rotation instant}
+        {--evidence-id= : Content-free deletion evidence id}
+        {--deleted-at= : UTC RFC 3339 deletion instant}',
+    function (): int {
+        $kind = $this->argument('kind');
+        $packet = $this->option('packet');
+        $recorder = app(Wave38EvidenceRecorder::class);
+        $packetDir = is_string($packet) ? $packet : '';
+        if ($kind === 'rotation') {
+            $rotatedAt = $this->option('rotated-at');
+            $result = $recorder->recordRotation(
+                $packetDir,
+                is_string($rotatedAt) ? $rotatedAt : '',
+            );
+        } elseif ($kind === 'deletion') {
+            $evidenceId = $this->option('evidence-id');
+            $deletedAt = $this->option('deleted-at');
+            $result = $recorder->recordDeletion(
+                $packetDir,
+                is_string($evidenceId) ? $evidenceId : '',
+                is_string($deletedAt) ? $deletedAt : '',
+            );
+        } else {
+            $result = [
+                'status' => 'blocked',
+                'safe_error_codes' => ['wave38_receipt_kind_invalid'],
+            ];
+        }
+        $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+        return $result['status'] === 'recorded' ? 0 : 2;
+    },
+)->purpose('Record Wave 3.8 rotation or deletion receipts without secrets or HTTP');
+
+Artisan::command(
+    'speech-wave38:hash-document
+        {slot : elevenlabs-dpa, elevenlabs-agreement, elevenlabs-subprocessor, or sarvam-dpa}
+        {--path= : Absolute outside-Git document}
+        {--packet= : Absolute Wave 3.8 packet directory}
+        {--executed : Write the hash into the executed-document slot}',
+    function (): int {
+        $slot = $this->argument('slot');
+        $path = $this->option('path');
+        $packet = $this->option('packet');
+        $result = app(Wave38EvidenceRecorder::class)->hashDocument(
+            is_string($packet) ? $packet : '',
+            is_string($slot) ? $slot : '',
+            is_string($path) ? $path : '',
+            (bool) $this->option('executed'),
+        );
+        $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+        return $result['status'] === 'recorded' ? 0 : 2;
+    },
+)->purpose('Hash an outside-Git Wave 3.8 document without storing its contents');
+
+Artisan::command('speech-wave38:preflight {--status-file=}', function (): int {
+    $override = $this->option('status-file');
+    $statusFile = is_string($override) && $override !== '' ? $override : null;
+    $result = app(Wave38EvidencePreflight::class)->evaluate($statusFile);
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return $result['status'] === 'ready' ? 0 : 2;
+})->purpose('Fail-closed Wave 3.8 evidence preflight without provider dispatch');
+
+Artisan::command('speech-observability:purge-expired {--limit=500}', function (): int {
+    $limit = $this->option('limit');
+    if (! is_string($limit) || ! ctype_digit($limit)) {
+        $this->error(json_encode([
+            'status' => 'blocked',
+            'safe_error_code' => 'speech_observability_cleanup_limit_invalid',
+        ], JSON_THROW_ON_ERROR));
+
+        return 2;
+    }
+
+    $result = app(SpeechObservabilityRetentionService::class)
+        ->purgeDue((int) $limit);
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return 0;
+})->purpose('Aggregate and delete expired provider-call and client latency evidence');
+
 Artisan::command('voice:deletion-requeue {event}', function (): int {
     $event = $this->argument('event');
 
@@ -628,6 +756,17 @@ Artisan::command('media:reconcile {--limit=100}', function (): int {
             ? 0
             : 1;
 })->purpose('Expire media candidates and reconcile quarantine deletion receipts');
+
+Artisan::command('speech:realtime-benchmark', function (): int {
+    $report = app(RealtimeSpeechBenchmarkRunner::class)->run();
+    $this->info(json_encode($report, JSON_THROW_ON_ERROR));
+
+    return ($report['status'] ?? null) === 'completed'
+        && ($report['http_sent'] ?? true) === false
+        && ($report['vendor_candidates_fail_closed'] ?? false) === true
+            ? 0
+            : 2;
+})->purpose('Compare fake realtime STT with recorded STT without vendor HTTP');
 
 Artisan::command(
     'speech:benchmark {--phase=preflight} {--run=} {--listener-slot=} {--expired}',
@@ -1111,6 +1250,10 @@ Artisan::command(
 
 Schedule::command('voice:purge-expired')
     ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('speech-observability:purge-expired')
+    ->hourly()
     ->withoutOverlapping();
 
 Schedule::command('auth:mfa-expire-pending')

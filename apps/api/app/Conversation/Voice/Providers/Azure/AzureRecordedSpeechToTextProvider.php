@@ -199,6 +199,19 @@ final readonly class AzureRecordedSpeechToTextProvider implements RecordedSpeech
                 inputUnits: $metadata->durationMs,
                 outputUnits: mb_strlen($transcript),
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'audio_milliseconds',
+                outputUnitKind: 'unicode_characters',
+                billableUnitKind: 'audio_milliseconds',
+                billableUnitQuantity: $metadata->durationMs,
+                apiVersion: $this->configuration->string(
+                    'speech.azure.stt.api_version',
+                ),
+                locale: $this->configuration->string(
+                    'speech.azure.stt.locale',
+                ),
+                region: $this->configuration->string('speech.azure.region'),
+                configurationSha256: $this->configuration
+                    ->configurationFingerprint(),
             ),
             responseMetadataSha256: $this->metadataHash(
                 $response->headers(),

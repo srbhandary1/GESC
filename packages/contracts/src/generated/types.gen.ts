@@ -487,6 +487,14 @@ export type AuthenticationModeResponse = {
     mode: 'legacy_otp' | 'credential_migration' | 'password_only';
 };
 
+export type MobileAuthenticationModeResponse = {
+    mode: 'legacy_otp' | 'credential_migration' | 'password_only';
+    /**
+     * Approved first-party Android OAuth client id when exactly one exists.
+     */
+    client_id?: string;
+};
+
 export type GlobalUsername = string;
 
 /**
@@ -727,6 +735,7 @@ export type LearnerHome = {
     enrollment: ActiveLearnerEnrollment | null;
     streak: MeaningfulSpeakingStreak;
     due_review: LearnerDueReview | null;
+    upcoming_reviews: Array<LearnerDueReview>;
     next_mission: LearnerMissionSummary | null;
 };
 
@@ -753,7 +762,16 @@ export type LearnerProgressDashboard = {
     speaking_activity: ProgressSpeakingActivity;
     attempt_improvement: ProgressAttemptImprovement;
     delayed_review: ProgressDelayedReviewPerformance;
+    actionable_due_review: ProgressActionableDueReview | null;
     recurring_errors: ProgressRecurringErrors;
+};
+
+export type ProgressActionableDueReview = {
+    id: Ulid;
+    enrollment_id: Ulid;
+    mission_id: Ulid;
+    objective_id: Ulid;
+    due_at: string;
 };
 
 export type LearnerEntitlement = {
@@ -764,6 +782,8 @@ export type LearnerEntitlement = {
     status: string;
     source: string | null;
     allows_roleplay: boolean;
+    allows_free_speech: boolean;
+    allowed_session_parts: Array<'introduction' | 'practice' | 'conversation' | 'interaction'>;
     max_level_number: number | null;
     is_demo: boolean;
     starts_at: string | null;
@@ -1108,6 +1128,46 @@ export type RecordLearnerAttemptResponseRequest = {
 
 export type KnowledgeState = 'developing' | 'mastered';
 
+export type LearnerLevelCheckpointDetail = {
+    level_number: number;
+    concept_key: string;
+    blueprint_id: Ulid;
+    blueprint_content_hash: Sha256;
+    rule_key: string;
+    rule_hash: Sha256;
+    pass_threshold: number;
+    max_attempts: number;
+    attempts_remaining: number | null;
+    items: Array<{
+        id: string;
+        weight: number;
+        prompt: string;
+        options: Array<string>;
+    }>;
+};
+
+export type OfflineLevelBundle = {
+    /**
+     * Signed offline level bundle manifest without answer keys.
+     */
+    manifest: {
+        [key: string]: unknown;
+    };
+    /**
+     * Purpose-specific signed lease; it is not an API credential.
+     */
+    lease: string;
+};
+
+export type LevelSpokenEvidence = {
+    evidence_state: 'not_recorded' | 'recorded_unassessed' | 'awaiting_review' | 'reviewed';
+    spoken_state: SpokenState;
+    /**
+     * Level checkpoint knowledge pass never awards spoken progress.
+     */
+    spoken_progress_claim: false;
+};
+
 /**
  * PR-006 has no eligible spoken evidence, so a local-capture receipt
  * never changes this authoritative state.
@@ -1241,23 +1301,119 @@ export type SynthesizeConversationSpeechRequest = {
     text: string;
 };
 
+export type RealtimeSpeechTicket = {
+    ticket_id: string;
+    conversation_session_id: string;
+    transport: 'recorded_recovery' | 'first_party_websocket';
+    websocket_path: string;
+    provider_dispatch: 'denied';
+    denial_reasons: Array<string>;
+    recovery_route: 'recorded_upload';
+    capture_mode: 'push_to_talk';
+    always_on: false;
+    full_duplex: false;
+    preconnect_allowed: boolean;
+    expires_at: string;
+};
+
+export type RealtimeSpeechSocketDenial = {
+    status: 'recorded_recovery';
+    provider_dispatch: 'denied';
+    recovery_route: 'recorded_upload';
+    always_on: false;
+    full_duplex: false;
+};
+
 export type ConversationSpeechResult = {
     playback_available: boolean;
     rendering_mode: 'deterministic-fake-text-only' | 'client-text-to-speech-fallback' | 'azure-soft-launch-guidance-wav' | 'azure-private-wav';
     /**
-     * Optional base64 WAV for the English model line when soft-launch
-     * guidance TTS is authorized. Null when playback falls back to text.
+     * Optional base64 WAV for session /speech lines only. Turn replies
+     * use model_audio_stream_path instead and keep this null.
      *
      */
     model_audio_base64?: string | null;
     model_audio_mime_type?: 'audio/wav' | null;
     /**
-     * Optional base64 WAV for L1 guidance/correction when soft-launch
-     * guidance TTS is authorized.
+     * Optional base64 WAV for session /speech guidance lines only.
      *
      */
     guidance_audio_base64?: string | null;
     guidance_audio_mime_type?: 'audio/wav' | null;
+    /**
+     * Authenticated private stream for the English reply.
+     */
+    model_audio_stream_path?: string | null;
+    /**
+     * Authenticated private stream for deferred L1 guidance.
+     */
+    guidance_audio_stream_path?: string | null;
+    guidance_speech_status?: 'ready' | 'deferred' | 'unavailable';
+    /**
+     * Optional viseme timeline aligned to model audio for Swathi lip sync.
+     *
+     */
+    model_avatar_viseme_timeline?: AvatarVisemeTimeline | null;
+    /**
+     * Optional viseme timeline aligned to guidance audio for Swathi lip sync.
+     *
+     */
+    guidance_avatar_viseme_timeline?: AvatarVisemeTimeline | null;
+};
+
+export type SpeechLatencySampleRequest = {
+    client_runtime: 'web' | 'android';
+    /**
+     * Coarse client-provided class; no carrier, SSID or address.
+     */
+    network_class: 'unknown' | 'wifi' | 'cellular' | 'ethernet';
+    playback_outcome: 'started' | 'unavailable' | 'failed' | 'cancelled';
+    /**
+     * Monotonic client-clock duration from explicit learner release or
+     * recording stop to receipt of an API acknowledgement. Null means
+     * this client path did not expose a distinct acknowledgement.
+     *
+     */
+    release_to_ack_ms?: number | null;
+    /**
+     * Monotonic client-clock duration from explicit learner release or
+     * recording stop to the first substantive response signal. A local
+     * listening/processing animation is not a substantive signal.
+     *
+     */
+    release_to_first_signal_ms?: number | null;
+    /**
+     * Monotonic client-clock duration from explicit learner release or
+     * recording stop until the main reply actually begins playback.
+     * Required by runtime validation when playback_outcome is started.
+     *
+     */
+    release_to_first_audio_ms?: number | null;
+    /**
+     * Monotonic client-clock duration from receipt of the validated turn
+     * JSON until the main reply actually begins playback.
+     *
+     */
+    turn_json_to_first_audio_ms?: number | null;
+};
+
+export type SpeechLatencySampleResult = {
+    accepted: boolean;
+    sampled: boolean;
+    replayed?: boolean;
+    sample_policy_version: string;
+    retention_days: 30;
+};
+
+export type AvatarVisemeFrame = {
+    offset_ms: number;
+    viseme_id: number;
+};
+
+export type AvatarVisemeTimeline = {
+    source: 'text-duration-estimator-v1' | 'azure-speech-sdk-v2';
+    duration_ms: number;
+    frames: Array<AvatarVisemeFrame>;
 };
 
 export type ConversationUsageSummary = {
@@ -1527,7 +1683,7 @@ export type OperatorOverview = {
     generated_at: string;
     organization: OperatorOverviewOrganization;
     navigation: Array<'overview' | 'learning' | 'learners' | 'entitlements' | 'people' | 'operations' | 'safety'>;
-    panels: Array<'pilot_analytics' | 'content_studio' | 'media_library' | 'review_queue' | 'publish_status' | 'support_diagnostics' | 'audit' | 'organization_settings' | 'branches' | 'cohorts' | 'staff_memberships' | 'institution_invites' | 'roles' | 'trainer_profiles' | 'authority_appointments' | 'membership_sessions' | 'learner_directory' | 'learner_enrollments' | 'learner_invitations' | 'entitlement_plans' | 'entitlement_directory'>;
+    panels: Array<'pilot_analytics' | 'content_studio' | 'media_library' | 'review_queue' | 'publish_status' | 'support_diagnostics' | 'speech_economics' | 'audit' | 'organization_settings' | 'branches' | 'cohorts' | 'staff_memberships' | 'institution_invites' | 'roles' | 'trainer_profiles' | 'authority_appointments' | 'membership_sessions' | 'learner_directory' | 'learner_enrollments' | 'learner_invitations' | 'entitlement_plans' | 'entitlement_directory'>;
     /**
      * Whether at least one existing safe global-search source is authorized.
      */
@@ -2627,6 +2783,103 @@ export type OperatorPilotAnalyticsSummary = {
     distinction_note: 'usage_counts_are_not_demonstrated_learning';
 };
 
+export type OperatorSpeechEconomicsSummary = {
+    generated_at: string;
+    organization_id: Ulid;
+    presentation: 'allocated_usage';
+    empty: boolean;
+    partial: boolean;
+    stale_rate: boolean;
+    unreconciled: boolean;
+    suppressed_row_count: number;
+    visible_row_count: number;
+    totals: OperatorSpeechEconomicsTotals;
+    rows: Array<OperatorSpeechEconomicsRow>;
+};
+
+export type OperatorSpeechEconomicsTotals = {
+    attempt_count: number;
+    dispatch_count: number;
+    success_count: number;
+    failure_count: number;
+    cancelled_count: number;
+    partial_count: number;
+    fallback_count: number;
+    billable_unit_quantity: number;
+    allocated_inr_microunits: number;
+};
+
+export type OperatorSpeechEconomicsRow = {
+    usage_date: string;
+    environment: string;
+    aggregate_kind: string;
+    provider_stage: string;
+    provider_key: string;
+    model_version: string;
+    route_role: string;
+    locale: string;
+    conversation_mode: string;
+    result_status: string;
+    dispatch_kind: string;
+    billable_unit_kind: string;
+    reconciliation_status: string;
+    small_cell_suppressed: boolean;
+    attempt_count: OperatorSpeechEconomicsNullableCount;
+    dispatch_count: OperatorSpeechEconomicsNullableCount;
+    success_count: OperatorSpeechEconomicsNullableCount;
+    failure_count: OperatorSpeechEconomicsNullableCount;
+    cancelled_count: OperatorSpeechEconomicsNullableCount;
+    partial_count: OperatorSpeechEconomicsNullableCount;
+    fallback_count: OperatorSpeechEconomicsNullableCount;
+    billable_unit_quantity: OperatorSpeechEconomicsNullableCount;
+    allocated_inr_microunits: OperatorSpeechEconomicsNullableCount;
+    first_result_p50_ms: OperatorSpeechEconomicsNullableCount;
+    first_result_p95_ms: OperatorSpeechEconomicsNullableCount;
+    completion_p95_ms: OperatorSpeechEconomicsNullableCount;
+    first_audible_p95_ms: OperatorSpeechEconomicsNullableCount;
+    cost_per_successful_turn_inr_microunits: OperatorSpeechEconomicsNullableCount;
+};
+
+export type OperatorSpeechEconomicsNullableCount = number | null;
+
+export type OperatorSpeechEconomicsCommercial = {
+    generated_at: string;
+    presentation: 'commercial_terms';
+    empty: boolean;
+    rate_cards: Array<OperatorSpeechEconomicsRateCard>;
+    statements: Array<OperatorSpeechEconomicsStatement>;
+};
+
+export type OperatorSpeechEconomicsRateCard = {
+    id: Ulid;
+    provider_key: string;
+    provider_stage: string;
+    model_version: string;
+    rate_version: string;
+    billable_unit_kind: string;
+    billing_currency: string;
+    gross_price_microunits: number;
+    tax_basis_points: number;
+    discount_basis_points: number;
+    credit_microunits_per_basis: number;
+    inr_per_native_unit_microunits: number;
+    conversion_source: string;
+    approval_evidence: string;
+    effective_from: string;
+    effective_until: string | null;
+};
+
+export type OperatorSpeechEconomicsStatement = {
+    id: Ulid;
+    provider_key: string;
+    period_start: string;
+    period_end: string;
+    billing_currency: string;
+    net_cost_microunits: number;
+    net_cost_inr_microunits: number;
+    approval_evidence: string;
+};
+
 export type OperatorSupportDiagnostics = {
     generated_at: string;
     items: Array<OperatorSupportDiagnosticItem>;
@@ -2813,6 +3066,32 @@ export type OperatorPageLimit = number;
  * Encrypted continuation bound to tenant, purpose and filters.
  */
 export type OperatorCursor2 = OperatorCursor;
+
+/**
+ * Inclusive usage-date lower bound in the active organization timezone calendar day.
+ */
+export type SpeechEconomicsFrom = string;
+
+/**
+ * Inclusive usage-date upper bound. Rejected when earlier than from.
+ */
+export type SpeechEconomicsTo = string;
+
+export type SpeechEconomicsEnvironment = string;
+
+export type SpeechEconomicsProviderStage = 'stt' | 'model' | 'tts' | 'end_to_end';
+
+export type SpeechEconomicsProviderKey = string;
+
+export type SpeechEconomicsLocale = string;
+
+export type SpeechEconomicsConversationMode = string;
+
+export type SpeechEconomicsResultStatus = 'succeeded' | 'failed' | 'cancelled' | 'partial' | 'started' | 'unavailable';
+
+export type SpeechEconomicsDispatchKind = 'provider_dispatch' | 'cache' | 'replay' | 'local_execution' | 'unknown' | 'client_sample';
+
+export type SpeechEconomicsRouteRole = 'primary' | 'fallback' | 'benchmark' | 'client';
 
 /**
  * Organization-owned curriculum-version ULID.
@@ -3257,9 +3536,9 @@ export type GetMobileAuthenticationModeError = GetMobileAuthenticationModeErrors
 
 export type GetMobileAuthenticationModeResponses = {
     /**
-     * The current global authentication mode.
+     * The current global authentication mode and approved native OAuth client when available.
      */
-    200: AuthenticationModeResponse;
+    200: MobileAuthenticationModeResponse;
 };
 
 export type GetMobileAuthenticationModeResponse = GetMobileAuthenticationModeResponses[keyof GetMobileAuthenticationModeResponses];
@@ -5568,6 +5847,163 @@ export type SynthesizeConversationSpeechResponses = {
 
 export type SynthesizeConversationSpeechResponse = SynthesizeConversationSpeechResponses[keyof SynthesizeConversationSpeechResponses];
 
+export type IssueConversationRealtimeSpeechTicketData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/realtime-stt-tickets';
+};
+
+export type IssueConversationRealtimeSpeechTicketErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    503: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type IssueConversationRealtimeSpeechTicketError = IssueConversationRealtimeSpeechTicketErrors[keyof IssueConversationRealtimeSpeechTicketErrors];
+
+export type IssueConversationRealtimeSpeechTicketResponses = {
+    /**
+     * Realtime ticket issued; live dispatch remains denied.
+     */
+    201: RealtimeSpeechTicket;
+};
+
+export type IssueConversationRealtimeSpeechTicketResponse = IssueConversationRealtimeSpeechTicketResponses[keyof IssueConversationRealtimeSpeechTicketResponses];
+
+export type InspectConversationRealtimeSpeechSocketData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query: {
+        ticket: string;
+    };
+    url: '/conversation-sessions/{conversation_session_id}/realtime-stt';
+};
+
+export type InspectConversationRealtimeSpeechSocketErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * Dispatch denied; use recorded upload recovery.
+     */
+    503: RealtimeSpeechSocketDenial;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type InspectConversationRealtimeSpeechSocketError = InspectConversationRealtimeSpeechSocketErrors[keyof InspectConversationRealtimeSpeechSocketErrors];
+
+export type InspectConversationRealtimeSpeechSocketResponses = {
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type InspectConversationRealtimeSpeechSocketResponse = InspectConversationRealtimeSpeechSocketResponses[keyof InspectConversationRealtimeSpeechSocketResponses];
+
+export type StreamConversationTurnSpeechData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-turn ULID.
+         */
+        conversation_turn_id: Ulid;
+        kind: 'model_en' | 'guidance_l1';
+    };
+    query?: never;
+    url: '/conversation-turns/{conversation_turn_id}/speech/{kind}';
+};
+
+export type StreamConversationTurnSpeechErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type StreamConversationTurnSpeechError = StreamConversationTurnSpeechErrors[keyof StreamConversationTurnSpeechErrors];
+
+export type StreamConversationTurnSpeechResponses = {
+    /**
+     * Private conversation speech bytes.
+     */
+    200: Blob | File;
+};
+
+export type StreamConversationTurnSpeechResponse = StreamConversationTurnSpeechResponses[keyof StreamConversationTurnSpeechResponses];
+
 export type StreamConversationTurnEventsData = {
     body?: never;
     headers?: {
@@ -5617,6 +6053,68 @@ export type StreamConversationTurnEventsResponses = {
 };
 
 export type StreamConversationTurnEventsResponse = StreamConversationTurnEventsResponses[keyof StreamConversationTurnEventsResponses];
+
+export type RecordConversationSpeechLatencyData = {
+    body: SpeechLatencySampleRequest;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-turn ULID.
+         */
+        conversation_turn_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-turns/{conversation_turn_id}/speech-latency-samples';
+};
+
+export type RecordConversationSpeechLatencyErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type RecordConversationSpeechLatencyError = RecordConversationSpeechLatencyErrors[keyof RecordConversationSpeechLatencyErrors];
+
+export type RecordConversationSpeechLatencyResponses = {
+    /**
+     * The server accepted or deterministically declined the sample.
+     */
+    202: SpeechLatencySampleResult;
+};
+
+export type RecordConversationSpeechLatencyResponse = RecordConversationSpeechLatencyResponses[keyof RecordConversationSpeechLatencyResponses];
 
 export type ListLearnerAiMemoryData = {
     body?: never;
@@ -6499,6 +6997,12 @@ export type ListLearnerLevelsResponses = {
             concept_key?: string | null;
             availability: 'available' | 'commissioning_pending';
             entitlement_access: 'allowed' | 'upgrade_required';
+            progress_access: 'allowed' | 'locked' | 'not_applicable';
+            unlock_after_level_number?: number | null;
+            checkpoint_status?: 'not_applicable' | 'not_ready' | 'ready' | 'passed' | 'attempts_exhausted' | 'review_due_blocked';
+            checkpoint_attempts_remaining?: number | null;
+            review_due_blocking?: boolean;
+            spoken_evidence?: LevelSpokenEvidence | null;
             blueprint_id?: string | null;
             session_part_ids: Array<'introduction' | 'practice' | 'conversation' | 'interaction'>;
         }>;
@@ -6506,6 +7010,197 @@ export type ListLearnerLevelsResponses = {
 };
 
 export type ListLearnerLevelsResponse = ListLearnerLevelsResponses[keyof ListLearnerLevelsResponses];
+
+export type ShowLearnerLevelCheckpointData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/checkpoint';
+};
+
+export type ShowLearnerLevelCheckpointErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ShowLearnerLevelCheckpointError = ShowLearnerLevelCheckpointErrors[keyof ShowLearnerLevelCheckpointErrors];
+
+export type ShowLearnerLevelCheckpointResponses = {
+    /**
+     * Checkpoint definition without answer keys.
+     */
+    200: LearnerLevelCheckpointDetail;
+};
+
+export type ShowLearnerLevelCheckpointResponse = ShowLearnerLevelCheckpointResponses[keyof ShowLearnerLevelCheckpointResponses];
+
+export type GetLearnerOfflineLevelBundleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/offline-bundle';
+};
+
+export type GetLearnerOfflineLevelBundleErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetLearnerOfflineLevelBundleError = GetLearnerOfflineLevelBundleErrors[keyof GetLearnerOfflineLevelBundleErrors];
+
+export type GetLearnerOfflineLevelBundleResponses = {
+    /**
+     * Exact offline level manifest and signed authorization lease.
+     */
+    200: OfflineLevelBundle;
+};
+
+export type GetLearnerOfflineLevelBundleResponse = GetLearnerOfflineLevelBundleResponses[keyof GetLearnerOfflineLevelBundleResponses];
+
+export type SubmitOfflineLearnerLevelCheckpointData = {
+    body: {
+        idempotency_key: string;
+        bundle_id: string;
+        lease: string;
+        level_number: number;
+        answers: {
+            [key: string]: number;
+        };
+    };
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/offline-level-checkpoint-submissions';
+};
+
+export type SubmitOfflineLearnerLevelCheckpointErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SubmitOfflineLearnerLevelCheckpointError = SubmitOfflineLearnerLevelCheckpointErrors[keyof SubmitOfflineLearnerLevelCheckpointErrors];
+
+export type SubmitOfflineLearnerLevelCheckpointResponses = {
+    /**
+     * Idempotent replay of the same offline checkpoint submission.
+     */
+    200: {
+        [key: string]: unknown;
+    };
+    /**
+     * Offline checkpoint attempt recorded.
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type SubmitOfflineLearnerLevelCheckpointResponse = SubmitOfflineLearnerLevelCheckpointResponses[keyof SubmitOfflineLearnerLevelCheckpointResponses];
+
+export type SubmitLearnerLevelCheckpointData = {
+    body: {
+        idempotency_key: string;
+        answers: {
+            [key: string]: number;
+        };
+    };
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/checkpoint-submissions';
+};
+
+export type SubmitLearnerLevelCheckpointErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SubmitLearnerLevelCheckpointError = SubmitLearnerLevelCheckpointErrors[keyof SubmitLearnerLevelCheckpointErrors];
+
+export type SubmitLearnerLevelCheckpointResponses = {
+    /**
+     * Idempotent replay of the same checkpoint submission.
+     */
+    200: {
+        [key: string]: unknown;
+    };
+    /**
+     * Checkpoint attempt recorded.
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type SubmitLearnerLevelCheckpointResponse = SubmitLearnerLevelCheckpointResponses[keyof SubmitLearnerLevelCheckpointResponses];
 
 export type ShowLearnerLevelSessionData = {
     body?: never;
@@ -13058,6 +13753,183 @@ export type GetOperatorPilotAnalyticsResponses = {
 };
 
 export type GetOperatorPilotAnalyticsResponse = GetOperatorPilotAnalyticsResponses[keyof GetOperatorPilotAnalyticsResponses];
+
+export type GetOperatorSpeechEconomicsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Inclusive usage-date lower bound in the active organization timezone calendar day.
+         */
+        from?: string;
+        /**
+         * Inclusive usage-date upper bound. Rejected when earlier than from.
+         */
+        to?: string;
+        environment?: string;
+        provider_stage?: 'stt' | 'model' | 'tts' | 'end_to_end';
+        provider_key?: string;
+        locale?: string;
+        conversation_mode?: string;
+        result_status?: 'succeeded' | 'failed' | 'cancelled' | 'partial' | 'started' | 'unavailable';
+        dispatch_kind?: 'provider_dispatch' | 'cache' | 'replay' | 'local_execution' | 'unknown' | 'client_sample';
+        route_role?: 'primary' | 'fallback' | 'benchmark' | 'client';
+    };
+    url: '/operator/speech-economics';
+};
+
+export type GetOperatorSpeechEconomicsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorSpeechEconomicsError = GetOperatorSpeechEconomicsErrors[keyof GetOperatorSpeechEconomicsErrors];
+
+export type GetOperatorSpeechEconomicsResponses = {
+    /**
+     * Allocated Speech Economics usage for the active organization.
+     */
+    200: OperatorSpeechEconomicsSummary;
+};
+
+export type GetOperatorSpeechEconomicsResponse = GetOperatorSpeechEconomicsResponses[keyof GetOperatorSpeechEconomicsResponses];
+
+export type ExportOperatorSpeechEconomicsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Inclusive usage-date lower bound in the active organization timezone calendar day.
+         */
+        from?: string;
+        /**
+         * Inclusive usage-date upper bound. Rejected when earlier than from.
+         */
+        to?: string;
+        environment?: string;
+        provider_stage?: 'stt' | 'model' | 'tts' | 'end_to_end';
+        provider_key?: string;
+        locale?: string;
+        conversation_mode?: string;
+        result_status?: 'succeeded' | 'failed' | 'cancelled' | 'partial' | 'started' | 'unavailable';
+        dispatch_kind?: 'provider_dispatch' | 'cache' | 'replay' | 'local_execution' | 'unknown' | 'client_sample';
+        route_role?: 'primary' | 'fallback' | 'benchmark' | 'client';
+    };
+    url: '/operator/speech-economics/export';
+};
+
+export type ExportOperatorSpeechEconomicsErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ExportOperatorSpeechEconomicsError = ExportOperatorSpeechEconomicsErrors[keyof ExportOperatorSpeechEconomicsErrors];
+
+export type ExportOperatorSpeechEconomicsResponses = {
+    /**
+     * Content-free allocated usage CSV.
+     */
+    200: string;
+};
+
+export type ExportOperatorSpeechEconomicsResponse = ExportOperatorSpeechEconomicsResponses[keyof ExportOperatorSpeechEconomicsResponses];
+
+export type GetOperatorSpeechEconomicsCommercialData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/operator/speech-economics/commercial';
+};
+
+export type GetOperatorSpeechEconomicsCommercialErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type GetOperatorSpeechEconomicsCommercialError = GetOperatorSpeechEconomicsCommercialErrors[keyof GetOperatorSpeechEconomicsCommercialErrors];
+
+export type GetOperatorSpeechEconomicsCommercialResponses = {
+    /**
+     * Platform commercial rate cards and statements.
+     */
+    200: OperatorSpeechEconomicsCommercial;
+};
+
+export type GetOperatorSpeechEconomicsCommercialResponse = GetOperatorSpeechEconomicsCommercialResponses[keyof GetOperatorSpeechEconomicsCommercialResponses];
 
 export type ListOperatorSupportDiagnosticsData = {
     body?: never;

@@ -2,6 +2,50 @@ import { describe, expect, it, vi } from 'vitest'
 import { WebConversationJourneyApi } from './WebConversationJourneyApi'
 
 describe('web deterministic conversation API', () => {
+  it('submits content-free speech latency with an idempotency key', async () => {
+    const result = {
+      accepted: true,
+      replayed: false,
+      retention_days: 30,
+      sample_policy_version: 'speech-first-audible-v1',
+      sampled: true,
+    }
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json(result, { status: 202 }))
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await expect(
+      api.recordSpeechLatency(
+        '01J00000000000000000000006',
+        {
+          client_runtime: 'web',
+          network_class: 'unknown',
+          playback_outcome: 'started',
+          release_to_ack_ms: null,
+          release_to_first_signal_ms: 1800,
+          release_to_first_audio_ms: 2400,
+          turn_json_to_first_audio_ms: 600,
+        },
+        '018f6f12-6a09-7d8a-8f28-a5910041319e',
+      ),
+    ).resolves.toEqual(result)
+
+    const request = fetch.mock.calls[1]
+    expect(request?.[0]).toBe(
+      '/api/v1/conversation-turns/01J00000000000000000000006/speech-latency-samples',
+    )
+    expect(request?.[1]?.headers).toMatchObject({
+      'Idempotency-Key': '018f6f12-6a09-7d8a-8f28-a5910041319e',
+      'X-XSRF-TOKEN': 'csrf-token',
+    })
+    expect(String(request?.[1]?.body)).not.toContain('transcript')
+  })
+
   it('uses CSRF mutations and parses safe SSE events', async () => {
     const session = {
       coaching_mode: 'gentle',

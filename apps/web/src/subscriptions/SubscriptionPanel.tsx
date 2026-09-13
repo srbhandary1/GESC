@@ -122,12 +122,12 @@ export function SubscriptionPanel({
           <LocalizedMessage resolution={message('subscription.error')} />
         </p>
       ) : null}
-      {entitlement?.is_demo ? (
+      {entitlement?.is_demo && entitlement.expires_at !== null ? (
         <p>
           <LocalizedMessage
-            resolution={message('subscription.demo_remaining')}
+            resolution={message('subscription.demo_active_until')}
           />{' '}
-          {String(entitlement.live_ai_seconds_remaining ?? 0)}s
+          {new Date(entitlement.expires_at).toLocaleDateString(locale)}
         </p>
       ) : null}
       {entitlement !== null &&

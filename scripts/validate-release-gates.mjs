@@ -7,6 +7,11 @@ const makefilePath = new URL('../Makefile', import.meta.url)
 const workflow = yaml.load(readFileSync(workflowPath, 'utf8'))
 const makefile = readFileSync(makefilePath, 'utf8')
 
+const makeRecipe = (target) =>
+  makefile.match(
+    new RegExp(`^${target}:[^\\n]*\\n((?:\\t[^\\n]*\\n?)+)`, 'mu'),
+  )?.[1] ?? ''
+
 const fail = (message) => {
   process.stderr.write(`release gate contract failed: ${message}\n`)
   process.exitCode = 1
@@ -59,6 +64,17 @@ if (!jobs || typeof jobs !== 'object') {
   }
   if (!makefile.includes('./gradlew --no-daemon testDebugUnitTest assembleDebug')) {
     fail('Android target does not require both native unit tests and APK assembly')
+  }
+  const closedBetaRecipe = makeRecipe('android-closed-beta')
+  const releaseBundleRecipe = makeRecipe('android-release-bundle')
+  if (!closedBetaRecipe.includes('VITE_UI_TRANSLATION_PREVIEW=true')) {
+    fail('Android closed-beta target does not explicitly enable translation preview')
+  }
+  if (
+    !releaseBundleRecipe.includes('VITE_UI_TRANSLATION_PREVIEW=false') ||
+    releaseBundleRecipe.includes('VITE_UI_TRANSLATION_PREVIEW=true')
+  ) {
+    fail('Android release bundle does not explicitly disable translation preview')
   }
   for (const releaseBundleContract of [
     'android-release-bundle:',

@@ -47,6 +47,22 @@
   min-width: 0;
 }
 
+.progress-dashboard__due-review {
+  padding: var(--ge-space-4);
+  border: 1px solid color-mix(in srgb, var(--ge-color-accent) 45%, var(--ge-color-border));
+  border-radius: var(--ge-radius-md);
+  background: color-mix(in srgb, var(--ge-color-accent) 8%, var(--ge-color-surface-elevated));
+}
+
+.progress-dashboard__due-review-message {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+}
+
+.progress-dashboard__due-review-action {
+  align-self: start;
+}
+
 .progress-dashboard__section-title {
   font-size: var(--ge-font-size-lg);
   font-weight: 650;

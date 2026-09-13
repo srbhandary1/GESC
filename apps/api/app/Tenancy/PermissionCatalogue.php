@@ -51,6 +51,7 @@ final class PermissionCatalogue
         'learning.participate' => 'Use assigned learner missions and record self-owned learning evidence.',
         'audit.read' => 'List organization-scoped audit digests for privileged operator actions.',
         'support.diagnostics.read' => 'List organization-scoped support diagnostics digests without learner content bodies.',
+        'speech.economics.usage' => 'View current-organization Speech Economics usage and allocated cost aggregates.',
         'privacy.export.request' => 'Request organization-scoped learner identifier exports without audio or transcripts.',
         'privacy.erasure.request' => 'Request organization-scoped learner account-erasure and retention workflows.',
         'entitlement_plans.read' => 'View the current-organization subscription plan catalogue and GST settings.',

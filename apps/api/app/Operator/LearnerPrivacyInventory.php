@@ -14,12 +14,14 @@ use stdClass;
  * Versioned, tenant-bound inventory for learner privacy operations.
  *
  * Secret-bearing values, raw audio, transcripts, and cryptographic digests are
- * deliberately excluded. Every group is still reported when it has no rows so
- * an export is a complete statement of the classes inspected.
+ * deliberately excluded. Organization-anonymous speech usage daily aggregates
+ * are not learner-linked and are therefore omitted. Every group is still
+ * reported when it has no rows so an export is a complete statement of the
+ * classes inspected.
  */
 final class LearnerPrivacyInventory
 {
-    public const string VERSION = 'learner-privacy-v8';
+    public const string VERSION = 'learner-privacy-v12';
 
     /**
      * Membership-linked governance records are not creatable by an authorized
@@ -671,6 +673,88 @@ final class LearnerPrivacyInventory
                 'Attempts are immutable/versioned evidence for deterministic marks and progression.',
             ),
             $this->directGroup(
+                'level_session_completions',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'level_number',
+                    'part_id',
+                    'blueprint_id',
+                    'blueprint_content_hash',
+                    'completion_kind',
+                    'idempotency_key',
+                    'created_at',
+                ],
+                'retain_immutable_learning_evidence',
+                'Level session completions are authoritative progression evidence.',
+                'id',
+                'membership_id',
+            ),
+            $this->directGroup(
+                'level_session_check_submissions',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'level_number',
+                    'part_id',
+                    'blueprint_id',
+                    'blueprint_content_hash',
+                    'score',
+                    'pass_threshold',
+                    'passed',
+                    'idempotency_key',
+                    'created_at',
+                ],
+                'retain_immutable_learning_evidence',
+                'Level check submissions are immutable scored evidence without answer keys.',
+                'id',
+                'membership_id',
+            ),
+            $this->directGroup(
+                'level_checkpoint_attempts',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'level_number',
+                    'blueprint_id',
+                    'blueprint_content_hash',
+                    'rule_key',
+                    'rule_hash',
+                    'attempt_number',
+                    'score',
+                    'pass_threshold',
+                    'passed',
+                    'idempotency_key',
+                    'created_at',
+                ],
+                'retain_immutable_learning_evidence',
+                'Checkpoint attempts are immutable unlock evidence without item rationales.',
+                'id',
+                'membership_id',
+            ),
+            $this->directGroup(
+                'level_unlock_decisions',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'level_number',
+                    'prerequisite_level_number',
+                    'rule_key',
+                    'rule_hash',
+                    'reason_code',
+                    'idempotency_key',
+                    'created_at',
+                ],
+                'retain_immutable_learning_evidence',
+                'Unlock decisions are authoritative progression records.',
+                'id',
+                'membership_id',
+            ),
+            $this->directGroup(
                 'item_responses',
                 $organizationId,
                 $membershipId,
@@ -836,6 +920,22 @@ final class LearnerPrivacyInventory
                 'Turn state is immutable; utterance, transcript, and reply digests are excluded.',
             ),
             $this->directGroup(
+                'conversation_turn_speech_artifacts',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'conversation_turn_id',
+                    'kind',
+                    'mime_type',
+                    'byte_size',
+                    'expires_at',
+                    'created_at',
+                ],
+                'delete_generated_assistant_speech',
+                'Generated assistant TTS bytes are excluded; only content-free metadata is inventoried.',
+            ),
+            $this->directGroup(
                 'conversation_turn_events',
                 $organizationId,
                 $membershipId,
@@ -874,6 +974,36 @@ final class LearnerPrivacyInventory
                 ],
                 'retain_usage_authority',
                 'Usage records contain safe metadata only and support cost/accountability controls.',
+            ),
+            $this->speechProviderUsageGroup($organizationId, $membershipId),
+            $this->speechProviderChargeUsageGroup(
+                $organizationId,
+                $membershipId,
+            ),
+            $this->directGroup(
+                'speech_client_latency_samples',
+                $organizationId,
+                $membershipId,
+                [
+                    'id',
+                    'conversation_turn_id',
+                    'conversation_session_id',
+                    'sample_policy_version',
+                    'sample_rate_bps',
+                    'environment',
+                    'conversation_mode',
+                    'client_runtime',
+                    'network_class',
+                    'playback_outcome',
+                    'release_to_ack_ms',
+                    'release_to_first_signal_ms',
+                    'release_to_first_audio_ms',
+                    'turn_json_to_first_audio_ms',
+                    'recorded_at',
+                    'expires_at',
+                ],
+                'aggregate_anonymously_then_delete_within_30_days',
+                'Sampled client timing metadata is content-free and loses learner and turn linkage after aggregation.',
             ),
             $this->actorCommandGroup(
                 'conversation_commands',
@@ -1305,6 +1435,120 @@ final class LearnerPrivacyInventory
                 $columns,
                 $idColumn,
             ),
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function speechProviderUsageGroup(
+        string $organizationId,
+        string $membershipId,
+    ): array {
+        $columns = [
+            'source_id',
+            'source_ledger',
+            'conversation_turn_id',
+            'voice_recording_id',
+            'conversation_session_id',
+            'provider_stage',
+            'semantic_operation',
+            'route_role',
+            'dispatch_kind',
+            'provider_key',
+            'model_version',
+            'provider_attempt',
+            'api_version',
+            'voice_key',
+            'locale',
+            'region',
+            'result_status',
+            'safe_failure_code',
+            'input_unit_kind',
+            'input_unit_quantity',
+            'output_unit_kind',
+            'output_unit_quantity',
+            'billable_unit_kind',
+            'billable_unit_quantity',
+            'first_result_latency_ms',
+            'completion_latency_ms',
+            'reconciliation_status',
+            'recorded_at',
+            'expires_at',
+        ];
+        $records = $this->normalizeRows(
+            array_values(
+                DB::table('speech_provider_usage_read_model')
+                    ->where('organization_id', $organizationId)
+                    ->where('learner_membership_id', $membershipId)
+                    ->orderBy('source_id')
+                    ->get($columns)
+                    ->all(),
+            ),
+            'source_id',
+        );
+
+        return $this->group(
+            'speech_provider_usage_read_model',
+            'organization_membership',
+            'included_safe_fields',
+            'aggregate_anonymously_then_delete_within_30_days',
+            'The unified provider-usage projection is content-free and loses learner, turn, recording and pseudonymous linkage after aggregation.',
+            $records,
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function speechProviderChargeUsageGroup(
+        string $organizationId,
+        string $membershipId,
+    ): array {
+        $columns = [
+            'charge_id',
+            'source_id',
+            'source_ledger',
+            'conversation_turn_id',
+            'voice_recording_id',
+            'conversation_session_id',
+            'provider_stage',
+            'semantic_operation',
+            'route_role',
+            'dispatch_kind',
+            'provider_key',
+            'model_version',
+            'provider_attempt',
+            'api_version',
+            'voice_key',
+            'locale',
+            'region',
+            'result_status',
+            'component_key',
+            'billable_unit_kind',
+            'billable_unit_quantity',
+            'native_currency',
+            'estimated_native_cost_microunits',
+            'estimated_inr_cost_microunits',
+            'reconciliation_status',
+            'recorded_at',
+            'expires_at',
+        ];
+        $records = $this->normalizeRows(
+            array_values(
+                DB::table('speech_provider_charge_usage_read_model')
+                    ->where('organization_id', $organizationId)
+                    ->where('learner_membership_id', $membershipId)
+                    ->orderBy('charge_id')
+                    ->get($columns)
+                    ->all(),
+            ),
+            'charge_id',
+        );
+
+        return $this->group(
+            'speech_provider_charge_usage_read_model',
+            'organization_membership',
+            'included_safe_fields',
+            'aggregate_anonymously_then_delete_within_30_days',
+            'Per-component billable usage is content-free and loses learner, turn, recording and pseudonymous linkage after aggregation.',
+            $records,
         );
     }
 

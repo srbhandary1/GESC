@@ -28,6 +28,10 @@ final readonly class ConversationProviderUsagePolicy
             throw new ConversationOperationRejected;
         }
 
+        if ($this->isAllowedLessonDrillStage($stage, $usage)) {
+            return;
+        }
+
         $driver = (string) config('conversation.provider_driver');
 
         if (
@@ -54,6 +58,17 @@ final readonly class ConversationProviderUsagePolicy
         }
 
         throw new ConversationOperationRejected;
+    }
+
+    private function isAllowedLessonDrillStage(
+        string $stage,
+        ProviderUsage $usage,
+    ): bool {
+        return $stage === 'model'
+            && $usage->providerKey === 'project-lesson-drill'
+            && $usage->modelVersion === 'strict-pattern-gate-v1'
+            && $usage->estimatedCostMicrounits === 0
+            && $usage->dispatchKind === 'local_execution';
     }
 
     private function isAllowedAzureStage(

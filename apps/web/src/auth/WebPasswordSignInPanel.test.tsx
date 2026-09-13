@@ -246,6 +246,27 @@ describe('web password sign-in panel', () => {
       'Use the HTTPS link to sign in. This page is plain HTTP, so the browser cannot keep a sign-in cookie.',
     )
   })
+
+  it('allows password sign-in on trusted private HTTP hosts', () => {
+    vi.stubGlobal('location', {
+      hostname: '100.89.51.18',
+      protocol: 'http:',
+    })
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={webAuthentication()}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.queryByText(
+        'Use the HTTPS link to sign in. This page is plain HTTP, so the browser cannot keep a sign-in cookie.',
+      ),
+    ).toBeNull()
+  })
 })
 
 const message = (key: Parameters<typeof resolveInterfaceMessage>[0]) =>

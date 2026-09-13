@@ -1,9 +1,9 @@
 ---
 title: "Global English — UI/UX Product Architecture and Execution Plan"
-status: "Accepted implementation companion; UX-00 and UX-01 complete"
+status: "Accepted implementation companion; UX-00 and UX-01 complete; UX-05 in progress"
 prepared: "5 September 2026"
 canonical_baseline: "ENTERPRISE_PRODUCT_MASTER_PLAN.md version 3.14"
-current_product_checkpoint: "UX-01 complete — D-0283; UX-02 next when authorized"
+current_product_checkpoint: "D-0302 Android Home refinement complete; UX-05 remains in progress"
 ---
 
 # Global English — UI/UX Product Architecture and Execution Plan
@@ -564,8 +564,11 @@ recolored legacy education template and not a noisy cyberpunk game.
   unmistakably adult. Warmth comes from language and coaching, while the visual
   system communicates capable technology and calm progress.
 - **Default guest atmosphere:** a deep ink/navy canvas with controlled aurora
-  depth, subtle grid/orbit geometry and luminous cyan/teal/violet accents. An
-  equivalent high-contrast light theme must retain the same identity.
+  depth, subtle grid/orbit geometry and luminous **brand-green** (`#00A86B` /
+  `#006B3F`) and violet accents, with brand red (`#E31C23`) for identity
+  emphasis. Header, favicon and Android launcher use the Global Spoken English
+  App brand kit (D-0285). An equivalent high-contrast light theme must retain
+  the same identity.
 - **Surfaces:** layered solid/translucent panels with clear boundaries and an
   opaque fallback. Glass effects are progressive enhancement; text never
   depends on backdrop blur for contrast.
@@ -576,7 +579,9 @@ recolored legacy education template and not a noisy cyberpunk game.
   never as an undisclosed human or a conflicting Maya identity.
 - **Imagery:** original product UI, abstract AI/voice forms and licensed adult
   real-life context where it materially improves understanding. The old
-  five-image Academy carousel is removed rather than restyled.
+  five-image Academy carousel stays removed. A **static** Global Spoken
+  English App brand banner (name + tagline, no autoplay slides) is required
+  on the guest first screen (D-0286).
 - **Motion:** slow ambient depth plus purposeful voice/status transitions. No
   autoplay content carousel, parallax trap, flashing neon or motion required to
   understand state. Reduced-motion produces an equally complete static design.
@@ -795,7 +800,7 @@ UX-02 and later remain unauthorized until separately accepted.
 | UX-02 | Acquisition, sign-in and first spoken success | Proposed | An adult reaches a safe useful turn within minutes | First-use usability gate; permission/consent/auth recovery tests |
 | UX-03 | Daily Home and return loop | Proposed | One clear next action with due review, sync and secondary streak | Home comprehension test; deterministic API contract and E2E |
 | UX-04 | Four-session Learn journey | Proposed | Learner always understands current session, lock reason and next action | Introduction→Interaction vertical-slice E2E; offline/no-AI path intact |
-| UX-05 | Speak and correction loop | Proposed | Fast, calm conversation with explicit state and a useful retry | Voice failure matrix, latency evidence, AI evaluation where changed |
+| UX-05 | Speak and correction loop | **In progress — UX-05A implemented (D-0297)** | Fast, calm conversation with explicit state and a useful retry | Automated flow passes; physical Android ergonomics, real-provider latency and TalkBack remain |
 | UX-06 | Role-play Studio | Proposed | Observe, rehearse, perform and reflect in a real-life situation | Scenario usability, version pin, safety and completion E2E |
 | UX-07 | Progress and delayed review | Proposed | Learner sees capability, improvement and the right review—not vanity stats | Progress comprehension; deterministic/cross-tenant tests |
 | UX-08 | Plans, 1:1, account, privacy and offline controls | Proposed | Commercial and trust choices are accurate and recoverable | Authoritative catalogue, failure/payment safety, privacy/offline E2E |
@@ -917,8 +922,10 @@ vertical increment, focused tests and evidence before the next begins.
 **UX-01C–G implementation result — 6 September 2026 (D-0283)**
 
 - The remaining guest page follows the hierarchy below. Plan SKU names stay
-  English (`Two-day demo` / `Modules` / `Premium`); prices stay ₹0 / ₹350 /
-  ₹500 GST exclusive.
+  English (`5-day start` / `Premium features` / `Premium with Role-play`);
+  advertised prices are ₹3 / ₹300 / ₹500 GST exclusive (D-0286). The live
+  entitlement engine may still return the previous snapshot until that slice
+  ships.
 - Dedicated sign-in and the authenticated learner Home/nav use the same Studio
   tokens. Guest, learner and operator families are `React.lazy` route chunks.
 - Initial JS is 78.58 kB gzip (`index-DSDJ_Aqr.js`). Guest first visit plus
@@ -935,15 +942,18 @@ vertical increment, focused tests and evidence before the next begins.
 
 **Content hierarchy for the new guest page**
 
-1. Futuristic hero: useful English outcome, Kannada-guided reassurance and one
-   clear start/sign-in action.
+1. Futuristic hero with a static brand banner, useful English outcome,
+   Kannada-guided reassurance and one clear start/sign-in action. The header
+   has one Sign in. Plan cards do not repeat Sign in. Android APK download
+   appears once, in the Android section.
 2. Compact interactive product preview: Listen → Speak → Understand → Improve,
    with a non-recording alternative.
 3. Real-life capability cards: work, customer conversations, education,
    interviews and everyday confidence.
 4. Swathi/AI boundary: what AI can help with, what remains deterministic and
    what happens to voice data.
-5. Plans: Demo, Modules and Premium using only the authoritative catalogue and
+5. Plans: 5-day start, Premium features and Premium with Role-play using only
+   the authoritative catalogue and
    explicit live-AI-minute/Role-play distinctions.
 6. Trust and readiness: adult-only scope, Kannada guidance, low-bandwidth/offline
    path and access to human help.
@@ -1049,6 +1059,13 @@ may change.
 
 | Date | Update | Evidence/status |
 |---|---|---|
+| 2026-09-08 | D-0302 repairs Kannada selection and refines the closed-beta Android Home | Debug-only reviewed-preview lane with visible warning; release remains fail-closed; one mission card now includes Swathi; compact type/chrome/actions retain 44px targets; 360px axe/reflow and full web/learner journeys pass; physical Android/TalkBack remain open. |
+| 2026-09-07 | D-0300 repairs the rotated-host Android download/sign-in path | Rebuilt debug APK embeds the current live HTTPS tunnel; homepage link is cache-busted; external artifact and password-mode checks pass. UX-10 stable named origin remains open. |
+| 2026-09-07 | D-0297 starts UX-05 with the mobile conversation cockpit | Compact stable recorder; explicit processing; D-0215 confident transcript auto-submit restored; everyday/Role-play bubbles grow below the recorder with inline correction; new remote APK published; human Android/TalkBack/latency exit remains. |
+| 2026-09-07 | D-0296 corrects oversized typography on laptops, external monitors, and very large displays | Removed whole-page 137.5% magnification; browser-default root and 14/16/18px-equivalent shared scale; measured stable computed sizes at 1280, 1536, 1920, and 2560 CSS pixels. |
+| 2026-09-07 | D-0295 refreshes the remote Android closed-beta package and website download | Temporary HTTPS endpoint and byte-identical APK are externally reachable; native packaging excludes recursive APK and unlicensed avatar assets; physical device/TalkBack and stable-host gates remain open. |
+| 2026-09-07 | D-0294 repairs avatar audio-state wiring and audits imported model capabilities/licenses | Role-play and opening speech now drive mood/viseme clocks; Mixamo body gestures expanded; current models fail closed because none has a facial rig and the central license remains an unfilled template. UX-02 remains proposed. |
+| 2026-09-06 | D-0284 restyles native Android chrome and rebuilds the closed-beta APK for `http://117.254.108.143:8080` | Studio status/splash/launcher tokens; debug-signed `com.globalenglish.app`; TalkBack/UX-10 remain open |
 | 2026-09-06 | D-0283 completes UX-01C–G and closes UX-01 | Studio landing, sign-in, learner frame, lazy routes and UI-only holes; `make verify` / `make e2e` 21/21 / `make build`; bilingual 320/1280 evidence in `docs/evidence/ux01g/`; UX-02+ remain proposed |
 | 2026-09-06 | D-0282 records UX-01B implementation and opens accountable visual review | Academy carousel/top fold replaced by the Futuristic Learning Studio first screen; automated gates pass; English/Kannada-preview 320/1280 review is pending before UX-01C |
 | 2026-09-06 | D-0281 completes UX-01A served-build freshness | Source-derived release fingerprints now control soft-launch rebuilds and public-shell cache versions; a source mutation changed both fingerprint and entry asset, focused tests pass, and UX-01B is next |

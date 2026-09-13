@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Authentication\Mobile\ApprovedNativeOAuthClientResolver;
 use App\Authentication\Mobile\MobileOAuthClient;
 use App\Authentication\Mobile\MobilePasswordSignInGrant;
 use App\Authentication\Mobile\MobilePasswordTokenIssuer;
@@ -22,7 +23,25 @@ final class MobilePasswordAuthenticationController extends Controller
         private readonly PasswordCredentialService $passwords,
         private readonly MobilePasswordTokenIssuer $issuer,
         private readonly MobileTokenFamilyService $families,
+        private readonly ApprovedNativeOAuthClientResolver $nativeClients,
     ) {}
+
+    public function mode(): JsonResponse
+    {
+        $mode = $this->passwords->mode();
+        $payload = ['mode' => $mode];
+
+        if ($mode !== 'legacy_otp') {
+            $clientId = $this->nativeClients->resolveClientId();
+
+            if ($clientId !== null) {
+                $payload['client_id'] = $clientId;
+            }
+        }
+
+        return response()->json($payload)
+            ->header('Cache-Control', 'private, no-store');
+    }
 
     public function signIn(Request $request): JsonResponse
     {

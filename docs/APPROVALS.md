@@ -3249,6 +3249,310 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0083"></a>
+
+## APP-0083 — SPEECH-RT-01 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for SPEECH-RT-01 realtime STT relay and synthetic benchmark only |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human authorization statement in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0315](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+I eeexplicitly authorise SPEECH-RT-01.
+```
+
+### Accepted scope
+
+- Implement an authenticated first-party realtime STT relay and benchmark
+  Sarvam Saaras realtime and ElevenLabs Scribe v2 Realtime against the
+  current recorded path, as authorized by ADR-0038 / master plan §14.2.
+- Keep explicit learner turn submission. Do not add always-on capture or
+  full duplex. Preconnect only after voice consent. Retain recorded
+  upload as the reviewed recovery route.
+
+### Conditions and limitations
+
+- This does not authorize SPEECH-BAKEOFF-01, vendor HTTP, secret binding,
+  spend, live learner-audio dispatch or production.
+- Clients never receive a provider credential or connect directly to a
+  provider.
+- Codex/Cursor is the recorder only and is not an approver.
+
+<a id="app-0082"></a>
+
+## APP-0082 — SPEECH-LAT-01 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for SPEECH-LAT-01 waterfall work only |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human authorization statement in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0314](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Authorize SPEECH-LAT-01
+```
+
+### Accepted scope
+
+- Persist the turn waterfall and distinguish acknowledgement, first
+  substantive response signal and first audible audio.
+- Return the validated main reply without waiting for optional Kannada
+  correction TTS; stream main-reply audio instead of embedding a full WAV
+  in the turn JSON.
+- Keep safety/schema validation before speech. Do not treat a spinner as
+  the answer.
+
+### Conditions and limitations
+
+- This does not authorize SPEECH-RT-01, bake-off dispatch, ElevenLabs or
+  Sarvam HTTP, secret binding, spend or production.
+- Speaking from an incomplete model token stream remains outside this
+  checkpoint and still requires a later ADR.
+- Codex/Cursor is the recorder only and is not an approver.
+
+<a id="app-0081"></a>
+
+## APP-0081 — Defer ElevenLabs key rotation until live deployment
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for development-phase Wave 3.8 close only |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human statement in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0312](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+elevenlabs_key will be rotated only before live deployment. I wont do it during development phase.
+```
+
+### Accepted scope
+
+- Close Wave 3.8 for the development-phase packet.
+- Defer rotation of the disclosed D-0305 key, and the paired deletion test,
+  until before live deployment.
+- Keep challenger dispatch fail-closed.
+
+### Conditions and limitations
+
+- No rotation or deletion receipt may be invented.
+- Secret binding, vendor HTTP, HTTP enablement and production remain
+  unauthorized.
+- The disclosed key stays treated as compromised until it is rotated.
+- Cursor is the recorder only and is not an approver.
+
+<a id="app-0080"></a>
+
+## APP-0080 — Wave 3.8 public-document residual risk
+
+| Field | Evidence |
+|---|---|
+| Status | Recorded; Wave 3.8 remains open |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human answers in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0311](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statements
+
+```text
+Still using the disclosed key; do not record a rotation receipt.
+```
+
+```text
+Treat the public ElevenLabs DPA page and Sarvam Trust Center as executed contracts for Wave 3.8 (I accept that residual risk).
+```
+
+### Accepted scope
+
+- Hash public `elevenlabs.io/dpa`, Terms of Use, `compliance.elevenlabs.io` and
+  the Sarvam Trust Center into the Wave 3.8 executed-document slots.
+- Record that residual risk. Do not invent a signed Enterprise counterpart.
+
+### Conditions and limitations
+
+- The disclosed D-0305 key stays in use; no rotation receipt was written.
+- No deletion test was run or recorded.
+- `compliance.elevenlabs.io` hashed as a Vanta portal shell, not a named
+  subprocessor table.
+- Wave 3.8, secret binding, vendor HTTP and production remain unauthorized.
+- Cursor is the recorder only and is not an approver.
+
+<a id="app-0079"></a>
+
+## APP-0079 — Wave 3.8 account assertions and spend caps
+
+| Field | Evidence |
+|---|---|
+| Status | Recorded; Wave 3.8 remains open |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human answers in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0309](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statements
+
+```text
+Enterprise with India residency AND Zero Retention already enabled for API (v3 Conversational + Scribe)
+```
+
+```text
+Not yet — will rotate before any live test
+```
+
+```text
+ElevenLabs benchmark ₹500; Sarvam monthly ₹500; alerts stay on Azure/Sarvam email (no SMS)
+```
+
+### Accepted scope
+
+- Record the assertions and spend caps in the outside-Git Wave 3.8 packet.
+- Add a fail-closed preflight that never reads secret values or sends HTTP.
+- Pin the only allowed ElevenLabs host to `api.in.residency.elevenlabs.io`.
+
+### Conditions and limitations
+
+- These statements are Accountable Product Owner assertions, not independent
+  console or DPA evidence.
+- Wave 3.8 stays open until the key is rotated, a deletion-test receipt exists,
+  executed ElevenLabs and Sarvam DPA hashes are supplied, and Azure Speech
+  vendor evidence is current.
+- Content dispatch, secret binding and vendor HTTP remain unauthorized.
+- Cursor is the recorder only and is not an approver.
+
+<a id="app-0078"></a>
+
+## APP-0078 — SPEECH-PROVIDER-01 fail-closed authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for fail-closed adapter work only |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner |
+| Evidence source | Exact human authorization statement in the active Cursor conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0308](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+I authorize SPEECH-PROVIDER-01
+```
+
+### Accepted scope
+
+- Implement ElevenLabs and Sarvam challenger adapters behind existing
+  project-owned STT/TTS ports, plus a versioned two-dispatch router.
+- Keep every new vendor fail-closed: no HTTP client, no secret bind, no
+  learner-content dispatch, no spend and no live route change.
+
+### Conditions and limitations
+
+- Wave 3.8 exact-product DPA, India/Zero Retention, no-training, deletion,
+  least-privilege and capped-spend evidence remains required before any
+  content dispatch.
+- The D-0305 ElevenLabs test key stays outside Git, unbound, and treated as
+  compromised pending rotation.
+- SPEECH-PROVIDER-01 is not complete. Production remains unauthorized.
+- Codex/Cursor is the recorder only and is not an approver.
+
+<a id="app-0077"></a>
+
+## APP-0077 — ADR-0038 multi-provider speech governance approval
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-09 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner; Security Reviewer; Privacy Reviewer; Tenancy Reviewer |
+| Evidence source | Exact human approval statement in the active Codex conversation |
+| Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
+| Related decision | [D-0306](DECISIONS.md) |
+| Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | Yes — version 3.15, §§1.1, 4.1, 5.1, 5.3, 14.1–14.8, 18.1, 18.3, 20.1, 20.4, 21.2–21.3, 22 and 32, via ADR-0038 |
+
+### Exact human statement
+
+```text
+Approve ADR-0038 and its master-plan v3.15 amendments as proposed, exercising the Accountable Product Owner, Technical Decision Owner, Security Reviewer, Privacy Reviewer and Tenancy Reviewer roles for development. Authorize only SPEECH-OBS-01 next; this does not authorize provider calls, credentials, spend, learner-content processing or production.
+```
+
+### Accepted scope
+
+- Accept ADR-0038's exact Kannada Help, transcript/reply contract, provider
+  routing, realtime transport, retention/economics and first-audible rules.
+- Amend the canonical master plan from version 3.14 to 3.15 in the same change.
+- Close SPEECH-GOV-01 after documentation verification and authorize only the
+  bounded SPEECH-OBS-01 implementation.
+
+### Conditions and limitations
+
+- No provider credential activation, provider call, provider spend,
+  evaluation or learner-content processing is authorized.
+- No production, public/paid learner release or Play production/public listing
+  is authorized.
+- Independent security, privacy/legal, tenancy, bilingual-content and
+  accessibility reviews remain mandatory before production. The roles above
+  are consolidated development roles and are not evidence of independence.
+- Codex is the recorder only and is not an approver.
+
 ## APP-0074 — DR-0047 Option A: Paid live-AI caps and talk packs
 
 | Field | Evidence |

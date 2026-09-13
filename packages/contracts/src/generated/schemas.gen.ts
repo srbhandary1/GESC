@@ -2381,6 +2381,29 @@ export const AuthenticationModeResponseSchema = {
     }
 } as const;
 
+export const MobileAuthenticationModeResponseSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'mode'
+    ],
+    properties: {
+        mode: {
+            type: 'string',
+            enum: [
+                'legacy_otp',
+                'credential_migration',
+                'password_only'
+            ]
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid',
+            description: 'Approved first-party Android OAuth client id when exactly one exists.'
+        }
+    }
+} as const;
+
 export const GlobalUsernameSchema = {
     type: 'string',
     minLength: 4,
@@ -3304,6 +3327,7 @@ export const LearnerHomeSchema = {
         'enrollment',
         'streak',
         'due_review',
+        'upcoming_reviews',
         'next_mission'
     ],
     properties: {
@@ -3332,6 +3356,12 @@ export const LearnerHomeSchema = {
                     type: 'null'
                 }
             ]
+        },
+        upcoming_reviews: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/LearnerDueReview'
+            }
         },
         next_mission: {
             oneOf: [
@@ -3425,6 +3455,7 @@ export const LearnerProgressDashboardSchema = {
         'speaking_activity',
         'attempt_improvement',
         'delayed_review',
+        'actionable_due_review',
         'recurring_errors'
     ],
     properties: {
@@ -3453,8 +3484,48 @@ export const LearnerProgressDashboardSchema = {
         delayed_review: {
             $ref: '#/components/schemas/ProgressDelayedReviewPerformance'
         },
+        actionable_due_review: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ProgressActionableDueReview'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
         recurring_errors: {
             $ref: '#/components/schemas/ProgressRecurringErrors'
+        }
+    }
+} as const;
+
+export const ProgressActionableDueReviewSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'enrollment_id',
+        'mission_id',
+        'objective_id',
+        'due_at'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        enrollment_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        mission_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        objective_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        due_at: {
+            type: 'string',
+            format: 'date-time'
         }
     }
 } as const;
@@ -3470,6 +3541,8 @@ export const LearnerEntitlementSchema = {
         'status',
         'source',
         'allows_roleplay',
+        'allows_free_speech',
+        'allowed_session_parts',
         'max_level_number',
         'is_demo',
         'starts_at',
@@ -3513,6 +3586,21 @@ export const LearnerEntitlementSchema = {
         },
         allows_roleplay: {
             type: 'boolean'
+        },
+        allows_free_speech: {
+            type: 'boolean'
+        },
+        allowed_session_parts: {
+            type: 'array',
+            items: {
+                type: 'string',
+                enum: [
+                    'introduction',
+                    'practice',
+                    'conversation',
+                    'interaction'
+                ]
+            }
         },
         max_level_number: {
             type: [
@@ -4980,6 +5068,144 @@ export const KnowledgeStateSchema = {
     ]
 } as const;
 
+export const LearnerLevelCheckpointDetailSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'level_number',
+        'concept_key',
+        'blueprint_id',
+        'blueprint_content_hash',
+        'rule_key',
+        'rule_hash',
+        'pass_threshold',
+        'max_attempts',
+        'attempts_remaining',
+        'items'
+    ],
+    properties: {
+        level_number: {
+            type: 'integer',
+            minimum: 1
+        },
+        concept_key: {
+            type: 'string'
+        },
+        blueprint_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        blueprint_content_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        rule_key: {
+            type: 'string'
+        },
+        rule_hash: {
+            $ref: '#/components/schemas/Sha256'
+        },
+        pass_threshold: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 100
+        },
+        max_attempts: {
+            type: 'integer',
+            minimum: 1
+        },
+        attempts_remaining: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0
+        },
+        items: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: [
+                    'id',
+                    'weight',
+                    'prompt',
+                    'options'
+                ],
+                properties: {
+                    id: {
+                        type: 'string'
+                    },
+                    weight: {
+                        type: 'integer',
+                        minimum: 1
+                    },
+                    prompt: {
+                        type: 'string'
+                    },
+                    options: {
+                        type: 'array',
+                        items: {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
+        }
+    }
+} as const;
+
+export const OfflineLevelBundleSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'manifest',
+        'lease'
+    ],
+    properties: {
+        manifest: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Signed offline level bundle manifest without answer keys.'
+        },
+        lease: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 8192,
+            description: 'Purpose-specific signed lease; it is not an API credential.'
+        }
+    }
+} as const;
+
+export const LevelSpokenEvidenceSchema = {
+    type: 'object',
+    required: [
+        'evidence_state',
+        'spoken_state',
+        'spoken_progress_claim'
+    ],
+    additionalProperties: false,
+    properties: {
+        evidence_state: {
+            type: 'string',
+            enum: [
+                'not_recorded',
+                'recorded_unassessed',
+                'awaiting_review',
+                'reviewed'
+            ]
+        },
+        spoken_state: {
+            $ref: '#/components/schemas/SpokenState'
+        },
+        spoken_progress_claim: {
+            type: 'boolean',
+            enum: [
+                false
+            ],
+            description: 'Level checkpoint knowledge pass never awards spoken progress.'
+        }
+    }
+} as const;
+
 export const SpokenStateSchema = {
     type: 'string',
     const: 'unassessed',
@@ -5492,6 +5718,130 @@ export const SynthesizeConversationSpeechRequestSchema = {
     }
 } as const;
 
+export const RealtimeSpeechTicketSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'ticket_id',
+        'conversation_session_id',
+        'transport',
+        'websocket_path',
+        'provider_dispatch',
+        'denial_reasons',
+        'recovery_route',
+        'capture_mode',
+        'always_on',
+        'full_duplex',
+        'preconnect_allowed',
+        'expires_at'
+    ],
+    properties: {
+        ticket_id: {
+            type: 'string'
+        },
+        conversation_session_id: {
+            type: 'string'
+        },
+        transport: {
+            type: 'string',
+            enum: [
+                'recorded_recovery',
+                'first_party_websocket'
+            ]
+        },
+        websocket_path: {
+            type: 'string'
+        },
+        provider_dispatch: {
+            type: 'string',
+            enum: [
+                'denied'
+            ]
+        },
+        denial_reasons: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        recovery_route: {
+            type: 'string',
+            enum: [
+                'recorded_upload'
+            ]
+        },
+        capture_mode: {
+            type: 'string',
+            enum: [
+                'push_to_talk'
+            ]
+        },
+        always_on: {
+            type: 'boolean',
+            enum: [
+                false
+            ]
+        },
+        full_duplex: {
+            type: 'boolean',
+            enum: [
+                false
+            ]
+        },
+        preconnect_allowed: {
+            type: 'boolean'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const RealtimeSpeechSocketDenialSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'status',
+        'provider_dispatch',
+        'recovery_route',
+        'always_on',
+        'full_duplex'
+    ],
+    properties: {
+        status: {
+            type: 'string',
+            enum: [
+                'recorded_recovery'
+            ]
+        },
+        provider_dispatch: {
+            type: 'string',
+            enum: [
+                'denied'
+            ]
+        },
+        recovery_route: {
+            type: 'string',
+            enum: [
+                'recorded_upload'
+            ]
+        },
+        always_on: {
+            type: 'boolean',
+            enum: [
+                false
+            ]
+        },
+        full_duplex: {
+            type: 'boolean',
+            enum: [
+                false
+            ]
+        }
+    }
+} as const;
+
 export const ConversationSpeechResultSchema = {
     type: 'object',
     additionalProperties: false,
@@ -5517,7 +5867,7 @@ export const ConversationSpeechResultSchema = {
                 'string',
                 'null'
             ],
-            description: 'Optional base64 WAV for the English model line when soft-launch\nguidance TTS is authorized. Null when playback falls back to text.\n'
+            description: 'Optional base64 WAV for session /speech lines only. Turn replies\nuse model_audio_stream_path instead and keep this null.\n'
         },
         model_audio_mime_type: {
             type: [
@@ -5534,7 +5884,7 @@ export const ConversationSpeechResultSchema = {
                 'string',
                 'null'
             ],
-            description: 'Optional base64 WAV for L1 guidance/correction when soft-launch\nguidance TTS is authorized.\n'
+            description: 'Optional base64 WAV for session /speech guidance lines only.\n'
         },
         guidance_audio_mime_type: {
             type: [
@@ -5545,6 +5895,206 @@ export const ConversationSpeechResultSchema = {
                 'audio/wav',
                 null
             ]
+        },
+        model_audio_stream_path: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Authenticated private stream for the English reply.'
+        },
+        guidance_audio_stream_path: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Authenticated private stream for deferred L1 guidance.'
+        },
+        guidance_speech_status: {
+            type: 'string',
+            enum: [
+                'ready',
+                'deferred',
+                'unavailable'
+            ]
+        },
+        model_avatar_viseme_timeline: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/AvatarVisemeTimeline'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Optional viseme timeline aligned to model audio for Swathi lip sync.\n'
+        },
+        guidance_avatar_viseme_timeline: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/AvatarVisemeTimeline'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Optional viseme timeline aligned to guidance audio for Swathi lip sync.\n'
+        }
+    }
+} as const;
+
+export const SpeechLatencySampleRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'client_runtime',
+        'network_class',
+        'playback_outcome'
+    ],
+    properties: {
+        client_runtime: {
+            type: 'string',
+            enum: [
+                'web',
+                'android'
+            ]
+        },
+        network_class: {
+            type: 'string',
+            enum: [
+                'unknown',
+                'wifi',
+                'cellular',
+                'ethernet'
+            ],
+            description: 'Coarse client-provided class; no carrier, SSID or address.'
+        },
+        playback_outcome: {
+            type: 'string',
+            enum: [
+                'started',
+                'unavailable',
+                'failed',
+                'cancelled'
+            ]
+        },
+        release_to_ack_ms: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0,
+            maximum: 120000,
+            description: 'Monotonic client-clock duration from explicit learner release or\nrecording stop to receipt of an API acknowledgement. Null means\nthis client path did not expose a distinct acknowledgement.\n'
+        },
+        release_to_first_signal_ms: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0,
+            maximum: 120000,
+            description: 'Monotonic client-clock duration from explicit learner release or\nrecording stop to the first substantive response signal. A local\nlistening/processing animation is not a substantive signal.\n'
+        },
+        release_to_first_audio_ms: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0,
+            maximum: 120000,
+            description: 'Monotonic client-clock duration from explicit learner release or\nrecording stop until the main reply actually begins playback.\nRequired by runtime validation when playback_outcome is started.\n'
+        },
+        turn_json_to_first_audio_ms: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0,
+            maximum: 120000,
+            description: 'Monotonic client-clock duration from receipt of the validated turn\nJSON until the main reply actually begins playback.\n'
+        }
+    }
+} as const;
+
+export const SpeechLatencySampleResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'accepted',
+        'sampled',
+        'sample_policy_version',
+        'retention_days'
+    ],
+    properties: {
+        accepted: {
+            type: 'boolean'
+        },
+        sampled: {
+            type: 'boolean'
+        },
+        replayed: {
+            type: 'boolean'
+        },
+        sample_policy_version: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64
+        },
+        retention_days: {
+            type: 'integer',
+            const: 30
+        }
+    }
+} as const;
+
+export const AvatarVisemeFrameSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'offset_ms',
+        'viseme_id'
+    ],
+    properties: {
+        offset_ms: {
+            type: 'integer',
+            minimum: 0
+        },
+        viseme_id: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 21
+        }
+    }
+} as const;
+
+export const AvatarVisemeTimelineSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'source',
+        'duration_ms',
+        'frames'
+    ],
+    properties: {
+        source: {
+            type: 'string',
+            enum: [
+                'text-duration-estimator-v1',
+                'azure-speech-sdk-v2'
+            ]
+        },
+        duration_ms: {
+            type: 'integer',
+            minimum: 1
+        },
+        frames: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 500,
+            items: {
+                $ref: '#/components/schemas/AvatarVisemeFrame'
+            }
         }
     }
 } as const;
@@ -6672,7 +7222,7 @@ export const OperatorOverviewSchema = {
         panels: {
             type: 'array',
             minItems: 1,
-            maxItems: 21,
+            maxItems: 22,
             uniqueItems: true,
             items: {
                 type: 'string',
@@ -6683,6 +7233,7 @@ export const OperatorOverviewSchema = {
                     'review_queue',
                     'publish_status',
                     'support_diagnostics',
+                    'speech_economics',
                     'audit',
                     'organization_settings',
                     'branches',
@@ -12039,6 +12590,415 @@ export const OperatorPilotAnalyticsSummarySchema = {
         distinction_note: {
             type: 'string',
             const: 'usage_counts_are_not_demonstrated_learning'
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsSummarySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'organization_id',
+        'presentation',
+        'empty',
+        'partial',
+        'stale_rate',
+        'unreconciled',
+        'suppressed_row_count',
+        'visible_row_count',
+        'totals',
+        'rows'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        organization_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        presentation: {
+            type: 'string',
+            const: 'allocated_usage'
+        },
+        empty: {
+            type: 'boolean'
+        },
+        partial: {
+            type: 'boolean'
+        },
+        stale_rate: {
+            type: 'boolean'
+        },
+        unreconciled: {
+            type: 'boolean'
+        },
+        suppressed_row_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        visible_row_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        totals: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsTotals'
+        },
+        rows: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorSpeechEconomicsRow'
+            }
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsTotalsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'attempt_count',
+        'dispatch_count',
+        'success_count',
+        'failure_count',
+        'cancelled_count',
+        'partial_count',
+        'fallback_count',
+        'billable_unit_quantity',
+        'allocated_inr_microunits'
+    ],
+    properties: {
+        attempt_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        dispatch_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        success_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        failure_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        cancelled_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        partial_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        fallback_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        billable_unit_quantity: {
+            type: 'integer',
+            minimum: 0
+        },
+        allocated_inr_microunits: {
+            type: 'integer',
+            minimum: 0
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsRowSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'usage_date',
+        'environment',
+        'aggregate_kind',
+        'provider_stage',
+        'provider_key',
+        'model_version',
+        'route_role',
+        'locale',
+        'conversation_mode',
+        'result_status',
+        'dispatch_kind',
+        'billable_unit_kind',
+        'reconciliation_status',
+        'small_cell_suppressed',
+        'attempt_count',
+        'dispatch_count',
+        'success_count',
+        'failure_count',
+        'cancelled_count',
+        'partial_count',
+        'fallback_count',
+        'billable_unit_quantity',
+        'allocated_inr_microunits',
+        'first_result_p50_ms',
+        'first_result_p95_ms',
+        'completion_p95_ms',
+        'first_audible_p95_ms',
+        'cost_per_successful_turn_inr_microunits'
+    ],
+    properties: {
+        usage_date: {
+            type: 'string',
+            format: 'date'
+        },
+        environment: {
+            type: 'string'
+        },
+        aggregate_kind: {
+            type: 'string'
+        },
+        provider_stage: {
+            type: 'string'
+        },
+        provider_key: {
+            type: 'string'
+        },
+        model_version: {
+            type: 'string'
+        },
+        route_role: {
+            type: 'string'
+        },
+        locale: {
+            type: 'string'
+        },
+        conversation_mode: {
+            type: 'string'
+        },
+        result_status: {
+            type: 'string'
+        },
+        dispatch_kind: {
+            type: 'string'
+        },
+        billable_unit_kind: {
+            type: 'string'
+        },
+        reconciliation_status: {
+            type: 'string'
+        },
+        small_cell_suppressed: {
+            type: 'boolean'
+        },
+        attempt_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        dispatch_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        success_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        failure_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        cancelled_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        partial_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        fallback_count: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        billable_unit_quantity: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        allocated_inr_microunits: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        first_result_p50_ms: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        first_result_p95_ms: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        completion_p95_ms: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        first_audible_p95_ms: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        },
+        cost_per_successful_turn_inr_microunits: {
+            $ref: '#/components/schemas/OperatorSpeechEconomicsNullableCount'
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsNullableCountSchema = {
+    type: [
+        'integer',
+        'null'
+    ],
+    minimum: 0
+} as const;
+
+export const OperatorSpeechEconomicsCommercialSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'generated_at',
+        'presentation',
+        'empty',
+        'rate_cards',
+        'statements'
+    ],
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        presentation: {
+            type: 'string',
+            const: 'commercial_terms'
+        },
+        empty: {
+            type: 'boolean'
+        },
+        rate_cards: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorSpeechEconomicsRateCard'
+            }
+        },
+        statements: {
+            type: 'array',
+            items: {
+                $ref: '#/components/schemas/OperatorSpeechEconomicsStatement'
+            }
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsRateCardSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'provider_key',
+        'provider_stage',
+        'model_version',
+        'rate_version',
+        'billable_unit_kind',
+        'billing_currency',
+        'gross_price_microunits',
+        'tax_basis_points',
+        'discount_basis_points',
+        'credit_microunits_per_basis',
+        'inr_per_native_unit_microunits',
+        'conversion_source',
+        'approval_evidence',
+        'effective_from',
+        'effective_until'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        provider_key: {
+            type: 'string'
+        },
+        provider_stage: {
+            type: 'string'
+        },
+        model_version: {
+            type: 'string'
+        },
+        rate_version: {
+            type: 'string'
+        },
+        billable_unit_kind: {
+            type: 'string'
+        },
+        billing_currency: {
+            type: 'string'
+        },
+        gross_price_microunits: {
+            type: 'integer',
+            minimum: 0
+        },
+        tax_basis_points: {
+            type: 'integer',
+            minimum: 0
+        },
+        discount_basis_points: {
+            type: 'integer',
+            minimum: 0
+        },
+        credit_microunits_per_basis: {
+            type: 'integer',
+            minimum: 0
+        },
+        inr_per_native_unit_microunits: {
+            type: 'integer',
+            minimum: 0
+        },
+        conversion_source: {
+            type: 'string'
+        },
+        approval_evidence: {
+            type: 'string'
+        },
+        effective_from: {
+            type: 'string',
+            format: 'date-time'
+        },
+        effective_until: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const OperatorSpeechEconomicsStatementSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'id',
+        'provider_key',
+        'period_start',
+        'period_end',
+        'billing_currency',
+        'net_cost_microunits',
+        'net_cost_inr_microunits',
+        'approval_evidence'
+    ],
+    properties: {
+        id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        provider_key: {
+            type: 'string'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date'
+        },
+        period_end: {
+            type: 'string',
+            format: 'date'
+        },
+        billing_currency: {
+            type: 'string'
+        },
+        net_cost_microunits: {
+            type: 'integer',
+            minimum: 0
+        },
+        net_cost_inr_microunits: {
+            type: 'integer',
+            minimum: 0
+        },
+        approval_evidence: {
+            type: 'string'
         }
     }
 } as const;

@@ -87,7 +87,7 @@ final class FoundationSeederIntegrityTest extends TestCase
             $before['graph_hash'],
             DB::table('curriculum_graph_revisions')->value('graph_hash'),
         );
-        $this->assertSame(46, DB::table('permissions')->count());
+        $this->assertSame(47, DB::table('permissions')->count());
         self::assertEqualsCanonicalizing(
             PermissionCatalogue::keys(),
             DB::table('permissions')->pluck('key')->all(),
@@ -168,6 +168,7 @@ final class FoundationSeederIntegrityTest extends TestCase
             'membership_sessions.revoke',
             'entitlement_plans.read',
             'entitlements.grant',
+            'speech.economics.usage',
         ] as $permissionKey) {
             self::assertContains(
                 $permissionKey,

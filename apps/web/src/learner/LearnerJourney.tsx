@@ -44,6 +44,7 @@ import {
 import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
+import { TutorPresence } from '../tutor/TutorPresence'
 import { LevelVideosPanel } from './LevelVideosPanel'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
@@ -794,32 +795,93 @@ export function LearnerJourney({
                 />
               </p>
             ) : null}
-            <button
-              className="ge-button ge-button--primary learner-home__continue"
-              disabled={busy}
-              onClick={() =>
-                void beginMission(
-                  home,
-                  home.due_review === null
-                    ? home.next_mission!
-                    : {
-                        estimated_minutes: 0,
-                        id: home.due_review.mission_id,
-                        title: home.due_review.title,
-                      },
-                )
-              }
-              type="button"
-            >
-              <LocalizedMessage
-                resolution={message(
-                  busy ? 'learner.home.continuing' : 'learner.home.continue',
-                )}
-              />
-            </button>
+            <div className="learner-home__action-footer">
+              <button
+                className="ge-button ge-button--primary learner-home__continue"
+                disabled={busy}
+                onClick={() =>
+                  void beginMission(
+                    home,
+                    home.due_review === null
+                      ? home.next_mission!
+                      : {
+                          estimated_minutes: 0,
+                          id: home.due_review.mission_id,
+                          title: home.due_review.title,
+                        },
+                  )
+                }
+                type="button"
+              >
+                <span>
+                  <LocalizedMessage
+                    resolution={message(
+                      busy
+                        ? 'learner.home.continuing'
+                        : 'learner.home.continue',
+                    )}
+                  />
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="learner-home__continue-arrow"
+                >
+                  →
+                </span>
+              </button>
+              <div className="learner-home__coach">
+                <TutorPresence
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  mood="idle"
+                  size="sm"
+                />
+              </div>
+            </div>
           </div>
         </section>
       )}
+      {home.upcoming_reviews.length > 0 ? (
+        <section
+          aria-labelledby="upcoming-reviews-title"
+          className="learner-card learner-home__upcoming-reviews"
+        >
+          <h3
+            className="learner-card__title"
+            id="upcoming-reviews-title"
+          >
+            <LocalizedMessage
+              resolution={message('learner.home.upcoming_reviews.title')}
+            />
+          </h3>
+          <ul className="learner-home__upcoming-list">
+            {home.upcoming_reviews.map((review) => (
+              <li
+                className="learner-home__upcoming-item"
+                key={review.id}
+              >
+                <GovernedText content={review.title} />
+                <span className="learner-home__upcoming-due">
+                  <LocalizedMessage
+                    resolution={resolveInterfaceMessage(
+                      'learner.home.upcoming_reviews.due',
+                      locale,
+                      localizationPolicy,
+                      {
+                        date: formatReviewDate(
+                          review.due_at,
+                          locale,
+                          review.timezone,
+                        ),
+                      },
+                    )}
+                  />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {!hasDominantAction ? null : (
         <section
           aria-labelledby="offline-access-title"

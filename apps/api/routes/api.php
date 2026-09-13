@@ -34,6 +34,7 @@ use App\Http\Controllers\OperatorMediaTranscriptionController;
 use App\Http\Controllers\OperatorOrganizationAdministrationController;
 use App\Http\Controllers\OperatorPrivacyController;
 use App\Http\Controllers\OperatorShellController;
+use App\Http\Controllers\OperatorSpeechEconomicsController;
 use App\Http\Controllers\OperatorTuitionRequestController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\PasswordAuthenticationController;
@@ -72,7 +73,7 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/mobile/password/invitation-enrollments', [PasswordAuthenticationController::class, 'enrollWithInvitation'])
         ->middleware('throttle:password-recoveries')
         ->name('api.v1.auth.mobile.password.invitation-enrollments.store');
-    Route::get('/auth/mobile/password/mode', [PasswordAuthenticationController::class, 'mode'])
+    Route::get('/auth/mobile/password/mode', [MobilePasswordAuthenticationController::class, 'mode'])
         ->name('api.v1.auth.mobile.password.mode');
     Route::post('/auth/mobile/password/recovery-requests', [PasswordAuthenticationController::class, 'requestRecovery'])
         ->middleware('throttle:password-recovery-requests')
@@ -271,6 +272,15 @@ Route::prefix('v1')->group(function (): void {
             '/offline-completions',
             [LearnerOfflineController::class, 'complete'],
         )->name('api.v1.offline-completions.store');
+        Route::get(
+            '/me/levels/{levelNumber}/offline-bundle',
+            [LearnerOfflineController::class, 'levelBundle'],
+        )->whereNumber('levelNumber')
+            ->name('api.v1.me.levels.offline-bundle.show');
+        Route::post(
+            '/offline-level-checkpoint-submissions',
+            [LearnerOfflineController::class, 'completeLevelCheckpoint'],
+        )->name('api.v1.offline-level-checkpoint-submissions.store');
         Route::post(
             '/missions/{mission}/attempts',
             [LearnerAttemptController::class, 'start'],
@@ -303,6 +313,16 @@ Route::prefix('v1')->group(function (): void {
             '/me/levels',
             [LearnerLevelSessionController::class, 'index'],
         )->name('api.v1.me.levels.index');
+        Route::get(
+            '/me/levels/{levelNumber}/checkpoint',
+            [LearnerLevelSessionController::class, 'checkpoint'],
+        )->whereNumber('levelNumber')
+            ->name('api.v1.me.levels.checkpoint.show');
+        Route::post(
+            '/me/levels/{levelNumber}/checkpoint-submissions',
+            [LearnerLevelSessionController::class, 'submitCheckpoint'],
+        )->whereNumber('levelNumber')
+            ->name('api.v1.me.levels.checkpoint-submissions.store');
         Route::get(
             '/me/levels/{levelNumber}/sessions',
             [LearnerLevelSessionController::class, 'sessions'],
@@ -367,11 +387,34 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('session')
             ->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.speech.store');
+        Route::post(
+            '/conversation-sessions/{session}/realtime-stt-tickets',
+            [ConversationController::class, 'issueRealtimeTicket'],
+        )->whereUlid('session')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-sessions.realtime-stt-tickets.store');
+        Route::get(
+            '/conversation-sessions/{session}/realtime-stt',
+            [ConversationController::class, 'realtimeSocket'],
+        )->whereUlid('session')
+            ->name('api.v1.conversation-sessions.realtime-stt.show');
         Route::get(
             '/conversation-turns/{turn}/events',
             [ConversationController::class, 'events'],
         )->whereUlid('turn')
             ->name('api.v1.conversation-turns.events.index');
+        Route::get(
+            '/conversation-turns/{turn}/speech/{kind}',
+            [ConversationController::class, 'speechAudio'],
+        )->whereUlid('turn')
+            ->whereIn('kind', ['model_en', 'guidance_l1'])
+            ->name('api.v1.conversation-turns.speech.show');
+        Route::post(
+            '/conversation-turns/{turn}/speech-latency-samples',
+            [ConversationController::class, 'recordLatency'],
+        )->whereUlid('turn')
+            ->middleware('throttle:conversation-prototype')
+            ->name('api.v1.conversation-turns.speech-latency-samples.store');
         Route::get('/voice-consents', [VoiceController::class, 'consents'])
             ->name('api.v1.voice-consents.index');
         Route::post('/voice-consents', [VoiceController::class, 'grant'])
@@ -962,6 +1005,26 @@ Route::prefix('v1')->group(function (): void {
             '/operator/pilot-analytics',
             [OperatorContentController::class, 'pilotAnalytics'],
         )->name('api.v1.operator.pilot-analytics.show');
+        Route::get(
+            '/operator/speech-economics',
+            [OperatorSpeechEconomicsController::class, 'show'],
+        )->name('api.v1.operator.speech-economics.show');
+        Route::get(
+            '/operator/speech-economics/export',
+            [OperatorSpeechEconomicsController::class, 'export'],
+        )->name('api.v1.operator.speech-economics.export');
+        Route::get(
+            '/operator/speech-economics/commercial',
+            [OperatorSpeechEconomicsController::class, 'commercial'],
+        )->name('api.v1.operator.speech-economics.commercial.show');
+        Route::post(
+            '/operator/speech-economics/commercial/rate-cards',
+            [OperatorSpeechEconomicsController::class, 'recordRateCard'],
+        )->name('api.v1.operator.speech-economics.commercial.rate-cards.store');
+        Route::post(
+            '/operator/speech-economics/commercial/statements',
+            [OperatorSpeechEconomicsController::class, 'recordStatement'],
+        )->name('api.v1.operator.speech-economics.commercial.statements.store');
         Route::get(
             '/operator/support/diagnostics',
             [OperatorPrivacyController::class, 'diagnostics'],

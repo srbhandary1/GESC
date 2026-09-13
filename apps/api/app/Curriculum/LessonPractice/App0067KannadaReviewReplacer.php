@@ -138,7 +138,7 @@ final class App0067KannadaReviewReplacer
             self::CURRICULUM_VERSION_ID,
             $conceptKey,
             $canonical,
-            'app0067-create-'.$conceptKey,
+            'lpl04-checkpoint-app0067-create-'.$conceptKey,
         );
         $blueprint = $created['blueprint'];
         $hash = (string) $blueprint->content_hash;
@@ -149,7 +149,7 @@ final class App0067KannadaReviewReplacer
             'english_academic',
             'approved',
             $hash,
-            'app0067-en-'.$conceptKey,
+            'lpl04-checkpoint-app0067-en-'.$conceptKey,
         );
         $kannada = $this->attachment->recordReview(
             $this->contexts->current(),
@@ -157,14 +157,14 @@ final class App0067KannadaReviewReplacer
             'kannada',
             'approved',
             $hash,
-            'app0067-kn-'.$conceptKey,
+            'lpl04-checkpoint-app0067-kn-'.$conceptKey,
         );
         $attached = $this->attachment->attachParts(
             $this->contexts->current(),
             (string) $blueprint->getKey(),
             $hash,
             $attachParts,
-            'app0067-attach-'.$conceptKey,
+            'lpl04-checkpoint-app0067-attach-'.$conceptKey,
         );
 
         return [

@@ -545,6 +545,7 @@ test('permission-aware operator shell keeps safe tasks available independently',
     }),
   ).toBeVisible()
   const search = page.locator('.operator-search')
+  await expect(search).toBeVisible()
   await search
     .getByRole('searchbox', {
       name: message('operator.search.label'),
@@ -1930,6 +1931,16 @@ async function mockOperatorApi(page: Page): Promise<MockOperatorState> {
     supportRequests: 0,
   }
 
+  await page.context().addCookies([
+    {
+      name: 'XSRF-TOKEN',
+      url: 'http://127.0.0.1:4173',
+      value: 'operator-e2e-csrf-token',
+    },
+  ])
+  await page.route('**/sanctum/csrf-cookie', async (route) => {
+    await route.fulfill({ status: 204 })
+  })
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
 
@@ -1985,6 +1996,16 @@ async function mockOperatorApi(page: Page): Promise<MockOperatorState> {
           mastery_by_knowledge_state: { emerging: 1, mastered: 1 },
           mastery_state_count: 2,
           review_schedule_count: 1,
+        },
+        learning_metrics: {
+          ai_fallback_count: 0,
+          latency_sample_count: 0,
+          quiz_retry_count: 0,
+          review_return_completed_count: 0,
+          review_return_due_count: 0,
+          session_cost_microunits_total: 0,
+          speaking_turn_count: 0,
+          stage_completion_count: 0,
         },
         distinction_note: 'usage_counts_are_not_demonstrated_learning',
         generated_at: '2026-08-09T10:00:00+00:00',

@@ -96,7 +96,7 @@ async function callOpenRouter(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'http://127.0.0.1:5174/',
-      'X-Title': 'Global spoken English Course Demo',
+      'X-Title': 'Global Spoken English App Demo',
     },
     body: JSON.stringify({
       model,

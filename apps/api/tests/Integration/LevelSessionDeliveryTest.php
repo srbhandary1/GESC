@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use App\Conversation\LessonDrillContext;
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\LessonPractice\LessonPracticeAttachmentService;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\Exceptions\EntitlementDenied;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LevelSessions\LevelSessionDeliveryService;
+use App\Models\LessonPracticeBlueprint;
 use App\Models\Membership;
 use App\Models\Organization;
+use App\Models\User;
+use App\Tenancy\OrganizationContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -21,6 +28,8 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
     {
         self::assertTrue(Schema::hasTable('level_session_completions'));
         self::assertTrue(Schema::hasTable('level_session_check_submissions'));
+        self::assertTrue(Schema::hasTable('level_unlock_decisions'));
+        self::assertTrue(Schema::hasTable('level_checkpoint_attempts'));
     }
 
     public function test_attached_level_one_is_available_and_check_scores_deterministically(): void
@@ -52,6 +61,7 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
             ['learning.participate'],
             'lesson-practice-learner',
         );
+        $this->grantDemoEntitlement($learner, $learnerContext);
 
         $canonical = $this->canonicalBlueprint();
         $hash = CanonicalJson::sha256($canonical);
@@ -152,7 +162,9 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
         );
         self::assertSame('available', $levels[0]['availability']);
         self::assertSame('can', $levels[0]['concept_key']);
+        self::assertSame('allowed', $levels[0]['progress_access']);
         self::assertSame('commissioning_pending', $levels[1]['availability']);
+        self::assertSame('not_applicable', $levels[1]['progress_access']);
 
         $detail = $this->contexts()->run(
             $learnerContext,
@@ -169,6 +181,21 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
             $detail['audio_stream_path'],
         );
         self::assertArrayNotHasKey('correct_option', $detail['check']['items'][0]);
+
+        $publishedBlueprint = LessonPracticeBlueprint::query()
+            ->findOrFail($blueprintId);
+        $canonical = $publishedBlueprint->canonical_json;
+        $introductionDrill = LessonDrillContext::fromCanonical(
+            1,
+            'introduction',
+            'can',
+            $canonical,
+        );
+        self::assertNotNull($introductionDrill);
+        self::assertSame(['I can + base verb.'], $introductionDrill->targetPatterns);
+        self::assertNull(
+            LessonDrillContext::fromCanonical(1, 'conversation', 'can', $canonical),
+        );
 
         try {
             $this->contexts()->run(
@@ -233,6 +260,21 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
         );
         self::assertTrue($check['passed']);
         self::assertSame(100, $check['score']);
+
+        try {
+            $this->contexts()->run(
+                $learnerContext,
+                fn (): array => $delivery->sessionDetail(
+                    $learnerContext,
+                    $learner,
+                    1,
+                    'conversation',
+                ),
+            );
+            self::fail('conversation detail allowed on demo plan');
+        } catch (EntitlementDenied $exception) {
+            self::assertSame(EntitlementDenied::SESSION_LOCKED, $exception->messageKey);
+        }
     }
 
     public function test_other_organization_does_not_see_attached_level(): void
@@ -246,6 +288,25 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
             fn (): array => $delivery->listLevels($context, $learner),
         );
         self::assertSame('commissioning_pending', $levels[0]['availability']);
+    }
+
+    private function grantDemoEntitlement(
+        User $learner,
+        OrganizationContext $context,
+    ): void {
+        $planId = DB::table('entitlement_plans')
+            ->where('organization_id', $context->organizationId)
+            ->where('code', DirectPlanDefaults::DEMO)
+            ->value('id');
+        self::assertIsString($planId);
+        $this->contexts()->run(
+            $context,
+            fn (): array => app(LearnerSubscriptionService::class)->checkout(
+                $learner,
+                $planId,
+                (string) Str::ulid(),
+            ),
+        );
     }
 
     /**

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#0F7A3A</color>
-    <color name="colorPrimaryDark">#071018</color>
+    <!-- Global Spoken English App brand kit (D-0285). -->
+    <color name="colorPrimary">#006B3F</color>
+    <color name="colorPrimaryDark">#1A1A2E</color>
     <color name="colorAccent">#E31C23</color>
 </resources>

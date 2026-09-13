@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Conversation;
 
+use App\Conversation\Avatar\ConversationSpeechPayloadBuilder;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
-use App\Conversation\Providers\TextToSpeechResult;
 use App\Conversation\Support\GuidanceTtsPolicy;
+use App\Conversation\Support\SpokenGrammarNotation;
 use App\Entitlements\EntitlementAccess;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use stdClass;
 
@@ -25,6 +27,7 @@ final readonly class GuidanceSpeechService
         private ConversationProviderUsagePolicy $usagePolicy,
         private TextToSpeechProvider $textToSpeech,
         private EntitlementAccess $entitlements,
+        private ConversationSpeechPayloadBuilder $speechPayloadBuilder,
     ) {}
 
     /**
@@ -71,6 +74,15 @@ final readonly class GuidanceSpeechService
             membershipId: $membershipId,
             sessionId: $sessionId,
         );
+        $utterance = SpokenGrammarNotation::forSpeech(
+            $utterance,
+            $purpose === GuidanceTtsPolicy::PURPOSE_MODEL_EN
+                && $this->sessionUsesGrammarDrill(
+                    organizationId: $context->organizationId,
+                    membershipId: $membershipId,
+                    sessionId: $sessionId,
+                ),
+        );
         $this->entitlements->consumeLiveAi(
             $learner,
             hash('sha256', $sessionId."\0".$purpose."\0".$utterance),
@@ -88,42 +100,11 @@ final readonly class GuidanceSpeechService
         ));
         $this->usagePolicy->assertAllowed('tts', $result->usage());
 
-        return $this->payload($result, $purpose);
-    }
-
-    /**
-     * @return array{
-     *   playback_available: bool,
-     *   rendering_mode: string,
-     *   model_audio_base64: ?string,
-     *   model_audio_mime_type: ?string,
-     *   guidance_audio_base64: ?string,
-     *   guidance_audio_mime_type: ?string
-     * }
-     */
-    private function payload(TextToSpeechResult $result, string $purpose): array
-    {
-        $audio = $result->audioBytes;
-        $hasAudio = is_string($audio) && $audio !== '';
-        $encoded = $hasAudio ? base64_encode($audio) : null;
-        $mime = $hasAudio ? ($result->mimeType ?? 'audio/wav') : null;
-
-        return [
-            'playback_available' => $result->playbackAvailable,
-            'rendering_mode' => $result->renderingMode,
-            'model_audio_base64' => $purpose === GuidanceTtsPolicy::PURPOSE_MODEL_EN
-                ? $encoded
-                : null,
-            'model_audio_mime_type' => $purpose === GuidanceTtsPolicy::PURPOSE_MODEL_EN
-                ? $mime
-                : null,
-            'guidance_audio_base64' => $purpose === GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1
-                ? $encoded
-                : null,
-            'guidance_audio_mime_type' => $purpose === GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1
-                ? $mime
-                : null,
-        ];
+        return $this->speechPayloadBuilder->buildForPurpose(
+            result: $result,
+            text: $utterance,
+            purpose: $purpose,
+        );
     }
 
     private function session(
@@ -143,6 +124,22 @@ final readonly class GuidanceSpeechService
         }
 
         return $session;
+    }
+
+    private function sessionUsesGrammarDrill(
+        string $organizationId,
+        string $membershipId,
+        string $sessionId,
+    ): bool {
+        if (! Schema::hasTable('conversation_lesson_drills')) {
+            return false;
+        }
+
+        return DB::table('conversation_lesson_drills')
+            ->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)
+            ->where('conversation_session_id', $sessionId)
+            ->exists();
     }
 
     private function string(stdClass $row, string $field): string

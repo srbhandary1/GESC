@@ -9,6 +9,7 @@ use App\Learning\Home\MeaningfulSpeakingDayPredicate;
 use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
 use App\Learning\Progress\LearnerProgressDashboardService;
+use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -239,6 +240,7 @@ final class LearnerProgressDashboardTest extends TestCase
             new MeaningfulSpeakingDayProjector(
                 new MeaningfulSpeakingDayPredicate,
             ),
+            app(ReviewDueBlockingService::class),
         );
     }
 }

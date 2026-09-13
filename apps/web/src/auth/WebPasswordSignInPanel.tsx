@@ -11,6 +11,7 @@ import type {
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { WebOtpSignInPanel } from './WebOtpSignInPanel'
+import { isPasswordSignInSecureContext } from './passwordSignInSecureContext'
 
 interface WebPasswordSignInPanelProps {
   readonly authentication: AuthenticationAdapter & PasswordFormAuthentication
@@ -52,16 +53,7 @@ export function WebPasswordSignInPanel({
     google: false,
     facebook: false,
   })
-  const [secureContext] = useState(() => {
-    if (typeof window === 'undefined') {
-      return true
-    }
-
-    const host = window.location.hostname
-    const loopback = host === '127.0.0.1' || host === 'localhost' || host === '::1'
-
-    return window.location.protocol === 'https:' || loopback
-  })
+  const [secureContext] = useState(() => isPasswordSignInSecureContext())
 
   useEffect(() => {
     let active = true

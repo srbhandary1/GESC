@@ -43,6 +43,9 @@ final class TextFirstTextToSpeechProvider implements TextToSpeechProvider
                 inputUnits: mb_strlen($request->text),
                 outputUnits: 0,
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'unicode_characters',
+                outputUnitKind: 'none',
+                dispatchKind: 'local_execution',
             ),
         );
     }

@@ -67,10 +67,19 @@ export function RecordingControls({
   const canStart =
     state === 'idle' ||
     state === 'ready' ||
-    (captureMode === 'hold' && state === 'error')
+    (captureMode === 'hold' && (state === 'error' || state === 'blocked'))
   const isRecording = state === 'recording'
   const isPaused = state === 'paused'
   const holdActive = useRef(false)
+  const tapLatched = useRef(false)
+  const pointerStartedAt = useRef<number | null>(null)
+  const pointerStartedWhileRecording = useRef(false)
+
+  // A quick tap is a deliberate mobile fallback: it starts recording and a
+  // second tap sends. A sustained press keeps the original hold-to-talk
+  // behaviour. This avoids Android touch releases creating unusably short
+  // clips while preserving the faster press-and-release gesture.
+  const TAP_TO_TOGGLE_THRESHOLD_MS = 500
 
   const endHold = () => {
     if (!holdActive.current) {
@@ -82,7 +91,17 @@ export function RecordingControls({
   }
 
   const beginHold = () => {
-    if (state === 'processing' || state === 'blocked') {
+    if (state === 'processing') {
+      return
+    }
+
+    if (
+      tapLatched.current &&
+      (isRecording || state === 'requesting-permission')
+    ) {
+      tapLatched.current = false
+      holdActive.current = false
+      onRequestStop()
       return
     }
 
@@ -97,6 +116,26 @@ export function RecordingControls({
 
     holdActive.current = true
     onRequestStart()
+  }
+
+  const endPointerHold = () => {
+    const startedAt = pointerStartedAt.current
+    const startedWhileRecording = pointerStartedWhileRecording.current
+    pointerStartedAt.current = null
+    pointerStartedWhileRecording.current = false
+
+    const elapsed =
+      startedAt === null
+        ? Number.POSITIVE_INFINITY
+        : performance.now() - startedAt
+    if (!startedWhileRecording && elapsed < TAP_TO_TOGGLE_THRESHOLD_MS) {
+      holdActive.current = false
+      tapLatched.current = true
+      return
+    }
+
+    tapLatched.current = false
+    endHold()
   }
 
   if (captureMode === 'hold') {
@@ -121,7 +160,7 @@ export function RecordingControls({
         >
           {statusLabel}
         </p>
-        {state === 'blocked' ? null : (
+        {state === 'blocked' && captureMode !== 'hold' ? null : (
           <div className="ge-media-controls__actions">
             <button
               aria-pressed={holdPressed}
@@ -152,7 +191,12 @@ export function RecordingControls({
                 endHold()
               }}
               onLostPointerCapture={endHold}
-              onPointerCancel={endHold}
+              onPointerCancel={() => {
+                pointerStartedAt.current = null
+                pointerStartedWhileRecording.current = false
+                tapLatched.current = false
+                endHold()
+              }}
               onPointerDown={(event) => {
                 if (event.button !== 0) {
                   return
@@ -166,14 +210,20 @@ export function RecordingControls({
                     // jsdom and some WebViews omit pointer capture.
                   }
                 }
+                pointerStartedAt.current = performance.now()
+                pointerStartedWhileRecording.current =
+                  isRecording || state === 'requesting-permission'
                 beginHold()
               }}
-              onPointerUp={endHold}
+              onPointerUp={endPointerHold}
               type="button"
             >
-              {holdLabel}
+              <span aria-hidden="true" className="ge-button__record-dot" />
+              <span>{holdLabel}</span>
             </button>
-            {isRecording || state === 'processing' ? (
+            {isRecording ||
+            state === 'processing' ||
+            state === 'requesting-permission' ? (
               <button
                 className="ge-button ge-button--quiet"
                 onClick={onRequestCancel}

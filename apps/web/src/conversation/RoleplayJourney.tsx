@@ -4,11 +4,14 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
-import { speakSessionSpeech } from './speakSessionSpeech'
+import {
+  playConversationSpeechResult,
+  speakSessionSpeech,
+} from './speakSessionSpeech'
 import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
 import type {
   ConversationJourneyApi,
@@ -21,7 +24,15 @@ import { VoicePracticePanel } from './VoicePracticePanel'
 import { TutorPresence } from '../tutor/TutorPresence'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
 import { conversationErrorMessageKey } from './conversationErrorMessage'
-import { playBase64Audio } from './playBase64Audio'
+import { speechLatencySample } from './speechLatencyTelemetry'
+import {
+  beginSpeakLoop,
+  completeSpeakLoop,
+  markSpeakLoop,
+  peekSpeakLoop,
+} from './speakLoopTimings'
+import type { SpeakLoopSnapshot } from './speakLoopTimings'
+import type { AvatarPlaybackState } from '../tutor/avatar/types'
 import './ConversationJourney.css'
 
 function defaultRoleplayEntry(): RoleplayCatalogEntry {
@@ -125,6 +136,10 @@ export function RoleplayJourney({
   const [performed, setPerformed] = useState(false)
   const [lastTurn, setLastTurn] = useState<FriendTurn | null>(null)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('speak')
+  const [speakingReply, setSpeakingReply] = useState(false)
+  const [holdResetEpoch, setHoldResetEpoch] = useState(0)
+  const [avatarPlayback, setAvatarPlayback] =
+    useState<AvatarPlaybackState | null>(null)
   const message = (
     key: MessageKey,
     parameters: MessageParameters = {},
@@ -132,14 +147,27 @@ export function RoleplayJourney({
   const text = (key: MessageKey, parameters: MessageParameters = {}) =>
     message(key, parameters).text
 
+  useEffect(() => {
+    return () => {
+      stopSpeechPlayback()
+    }
+  }, [])
+
   const playEnglish = (sessionId: string, lines: readonly string[]) => {
+    setSpeakingReply(true)
     void speakSessionSpeech({
       api,
       locale: 'en-IN',
+      onPlaybackChange: setAvatarPlayback,
       purpose: 'model_en',
       sessionId,
       text: lines.join(' '),
-    }).catch(() => undefined)
+    })
+      .catch(() => undefined)
+      .finally(() => {
+        setAvatarPlayback(null)
+        setSpeakingReply(false)
+      })
   }
 
   const start = async () => {
@@ -227,6 +255,10 @@ export function RoleplayJourney({
     }
 
     setState({ kind: 'advancing', session, catalogId })
+    if (peekSpeakLoop() === null) {
+      beginSpeakLoop()
+    }
+    markSpeakLoop('ack')
 
     try {
       const turn = await api.createTurn(
@@ -234,12 +266,31 @@ export function RoleplayJourney({
         { prototype_utterance: prototypeUtterance },
         createClientId(),
       )
+      markSpeakLoop('turn_json_ready')
       setLastTurn(turn)
       setPerformed(turn.status === 'completed')
       setUtterance('')
       setState({ kind: 'ready', session, catalogId })
       onLiveAiUsageChanged?.()
-      void playRoleplayTurn(turn).catch(() => undefined)
+      setSpeakingReply(true)
+      void playRoleplayTurn(turn, setAvatarPlayback, (snapshot, outcome) => {
+        if (api.recordSpeechLatency === undefined) {
+          return
+        }
+        void api
+          .recordSpeechLatency(
+            turn.id,
+            speechLatencySample(snapshot, outcome),
+            createClientId(),
+          )
+          .catch(() => undefined)
+      })
+        .catch(() => undefined)
+        .finally(() => {
+          setAvatarPlayback(null)
+          setSpeakingReply(false)
+          setHoldResetEpoch((epoch) => epoch + 1)
+        })
     } catch (error: unknown) {
       setState({
         kind: 'error',
@@ -284,8 +335,11 @@ export function RoleplayJourney({
         <TutorPresence
           locale={locale}
           localizationPolicy={localizationPolicy}
-          mood="idle"
-          size="md"
+          mood={speakingReply ? 'speaking' : 'idle'}
+          size="lg"
+          showName={false}
+          enableAvatar3d
+          avatarPlayback={avatarPlayback}
         />
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
@@ -579,6 +633,7 @@ export function RoleplayJourney({
                   setUtterance(transcript)
                   void sendPerformTurn(session, resolvedCatalogId, transcript)
                 }}
+                resetEpoch={holdResetEpoch}
                 sessionId={session.id}
                 text={text}
               />
@@ -597,39 +652,56 @@ export function RoleplayJourney({
           {stage === 'perform' && lastTurn !== null ? (
             <article
               aria-labelledby="roleplay-perform-result"
-              className="conversation-journey__result"
+              className="conversation-journey__chat conversation-journey__roleplay-chat"
             >
-              <h3 id="roleplay-perform-result">
+              <h3 className="visually-hidden" id="roleplay-perform-result">
                 <LocalizedMessage
                   resolution={message('conversation.reply_title')}
                 />
               </h3>
               {lastTurn.transcript !== null ? (
-                <p lang="en-IN">
-                  <strong>
+                <div className="conversation-journey__bubble conversation-journey__bubble--you">
+                  <p className="conversation-journey__bubble-speaker">
                     <LocalizedMessage
                       resolution={message('conversation.chat.you')}
                     />
-                    {': '}
-                  </strong>
+                  </p>
+                  <p className="conversation-journey__bubble-message" lang="en-IN">
                   {lastTurn.transcript}
-                </p>
+                  </p>
+                </div>
               ) : null}
               {lastTurn.assistant_reply !== null ? (
-                <p lang="en-IN">
-                  <strong>
+                <div className="conversation-journey__bubble conversation-journey__bubble--teacher">
+                  <p className="conversation-journey__bubble-speaker">
                     <LocalizedMessage
                       resolution={message('conversation.chat.teacher')}
                     />
-                    {': '}
-                  </strong>
+                  </p>
+                  <p className="conversation-journey__bubble-message" lang="en-IN">
                   {lastTurn.assistant_reply}
-                </p>
-              ) : null}
-              {lastTurn.priority_correction?.explanation_l1 ? (
-                <p lang={lastTurn.priority_correction.explanation_locale}>
-                  {lastTurn.priority_correction.explanation_l1}
-                </p>
+                  </p>
+                  {lastTurn.priority_correction?.explanation_l1 ? (
+                    <div className="conversation-journey__roleplay-correction">
+                      {lastTurn.priority_correction.needed ? (
+                        <p lang="en-IN">
+                          <strong>
+                            <LocalizedMessage
+                              resolution={message(
+                                'conversation.correction.suggestion_label',
+                              )}
+                            />
+                            {': '}
+                          </strong>
+                          {lastTurn.priority_correction.correction_en}
+                        </p>
+                      ) : null}
+                      <p lang={lastTurn.priority_correction.explanation_locale}>
+                        {lastTurn.priority_correction.explanation_l1}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
             </article>
           ) : null}
@@ -759,16 +831,52 @@ export function RoleplayJourney({
   )
 }
 
-async function playRoleplayTurn(turn: FriendTurn): Promise<void> {
+async function playRoleplayTurn(
+  turn: FriendTurn,
+  onPlaybackChange: (playback: AvatarPlaybackState | null) => void,
+  onLatency?: (
+    snapshot: SpeakLoopSnapshot,
+    outcome: 'started' | 'unavailable' | 'failed' | 'cancelled',
+  ) => void,
+): Promise<void> {
   const speech = turn.speech
-  const clips = [
-    [speech?.model_audio_base64, speech?.model_audio_mime_type],
-    [speech?.guidance_audio_base64, speech?.guidance_audio_mime_type],
-  ] as const
+  if (speech == null) {
+    const snapshot = completeSpeakLoop()
+    if (snapshot !== null) {
+      onLatency?.(snapshot, 'unavailable')
+    }
+    return
+  }
 
-  for (const [audio, mimeType] of clips) {
-    if (typeof audio === 'string' && audio !== '') {
-      await playBase64Audio(audio, mimeType ?? 'audio/wav')
+  try {
+    await playConversationSpeechResult({
+      onPlaybackChange,
+      onPlaybackStarted: () => {
+        const snapshot = markSpeakLoop('first_audio')
+        if (snapshot !== null) {
+          onLatency?.(snapshot, 'started')
+        }
+      },
+      purpose: 'model_en',
+      speech,
+      text: turn.assistant_reply,
+    })
+    if (peekSpeakLoop() !== null) {
+      const snapshot = completeSpeakLoop()
+      if (snapshot !== null) {
+        onLatency?.(snapshot, 'unavailable')
+      }
+    }
+    await playConversationSpeechResult({
+      onPlaybackChange,
+      purpose: 'guidance_l1',
+      speech,
+      text: turn.priority_correction?.explanation_l1,
+    })
+  } catch {
+    const snapshot = completeSpeakLoop()
+    if (snapshot !== null) {
+      onLatency?.(snapshot, 'failed')
     }
   }
 }

@@ -60,7 +60,11 @@ import { useInterfaceTheme } from './theme/useInterfaceTheme'
 import type { LearnerEntitlement } from './subscriptions/LearnerSubscriptionApi'
 import { useLearnerEntitlement } from './subscriptions/useLearnerEntitlement'
 import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
-import type { LevelSessionsApi } from './learner/LevelSessionsApi'
+import type {
+  LevelSessionsApi,
+  SessionPartId,
+} from './learner/LevelSessionsApi'
+import { DEMO_SESSION_PARTS } from './demo/demoLevelFixtures'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import {
@@ -285,6 +289,25 @@ function App({
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
   const documentLanguage = message('app.description').resolvedLocale
+  const learnAllowedSessionParts = useMemo(():
+    | readonly SessionPartId[]
+    | undefined => {
+    if (demoMode) {
+      return DEMO_SESSION_PARTS
+    }
+    if (directEntitlementScope === null) {
+      return undefined
+    }
+    if (entitlementStatus === 'loading' || entitlement === null) {
+      return DEMO_SESSION_PARTS
+    }
+    return entitlement.allowed_session_parts as SessionPartId[]
+  }, [
+    demoMode,
+    directEntitlementScope,
+    entitlement,
+    entitlementStatus,
+  ])
 
   useEffect(() => {
     let active = true
@@ -326,6 +349,9 @@ function App({
       if (!cancelled) {
         setOfflineResume(null)
         setSession({ status: 'anonymous' })
+        globalThis.location.hash = '#home'
+        setDestination('home')
+        setLocationHash('#home')
       }
     })
 
@@ -800,6 +826,9 @@ function App({
                       .then(() => {
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
+                        globalThis.location.hash = '#home'
+                        setDestination('home')
+                        setLocationHash('#home')
                       })
                       .catch(() => setSession({ status: 'unavailable' }))
                   }}
@@ -902,6 +931,9 @@ function App({
                       .then(() => {
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
+                        globalThis.location.hash = '#home'
+                        setDestination('home')
+                        setLocationHash('#home')
                       })
                       .catch(() => {
                         setAccountSecurityOpen(false)
@@ -1194,12 +1226,15 @@ function App({
           </div>
         ) : canLearnPath ? (
           <LevelPathPanel
+              allowedSessionParts={learnAllowedSessionParts}
               api={levelSessionsApi}
               conversationApi={conversationApi}
               createClientId={createClientId}
               demoMode={demoMode}
               locale={locale}
               localizationPolicy={localizationPolicy}
+              offlineBinding={offlineBinding}
+              offlineStore={offlineStore}
               onOpenRoleplay={() => {
                 setBoundConversation(null)
                 setSpeakMode('situation')
@@ -1286,6 +1321,9 @@ function App({
             onCredentialsRevoked={() => {
               setOfflineResume(null)
               setSession({ status: 'anonymous' })
+              globalThis.location.hash = '#home'
+              setDestination('home')
+              setLocationHash('#home')
             }}
             organizationApi={operatorOrganizationApi}
           />

@@ -2,9 +2,17 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.40.0
+  version: 0.46.0
   description: |
-    Canonical API contract for the Global English platform. ADR-0037 adds
+    Canonical API contract for the Global English platform. SPEECH-RT-01
+    adds a consent-gated first-party realtime STT ticket that fail-closes
+    to recorded upload. SPEECH-LAT-01
+    streams conversation reply audio from a private no-store path instead of
+    embedding a WAV in the turn JSON. SPEECH-ADMIN-01
+    adds the permission-gated Speech Economics usage, export and
+    platform-only commercial endpoints. ADR-0038 adds
+    authenticated, content-free, sampled first-audible telemetry with a
+    fixed 30-day call-level retention boundary. ADR-0037 adds
     monthly live-AI caps on Direct paid plans and prepaid talk-time packs.
     ADR-0036 adds
     the Premium flagship Direct plan and one complimentary Premium month for
@@ -499,11 +507,11 @@ paths:
       security: []
       responses:
         "200":
-          description: The current global authentication mode.
+          description: The current global authentication mode and approved native OAuth client when available.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthenticationModeResponse"
+                $ref: "#/components/schemas/MobileAuthenticationModeResponse"
         "429":
           $ref: "#/components/responses/Problem"
         default:
@@ -1683,8 +1691,9 @@ paths:
       operationId: getLearnerEntitlement
       summary: Get the authenticated learner's current Direct entitlement
       description: |
-        Direct learners receive an auto-demo on first read. Institutional
-        organizations return `applies=false` and are not paywalled.
+        Direct learners return the current entitlement snapshot. The 5-day
+        start is sold through checkout; there is no auto-grant on first read.
+        Institutional organizations return `applies=false` and are not paywalled.
       tags:
         - Learning
       security:
@@ -2347,6 +2356,137 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/realtime-stt-tickets:
+    post:
+      operationId: issueConversationRealtimeSpeechTicket
+      summary: Issue a consent-gated first-party realtime STT ticket
+      description: |
+        After voice upload and provider consents, the learner may request a
+        short-lived first-party realtime STT ticket. Provider dispatch stays
+        denied until a later HTTP-enablement approval. The ticket names the
+        recorded upload recovery route and never exposes a provider
+        credential. Capture remains push-to-talk. Always-on and full duplex
+        are excluded.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationSessionId"
+      responses:
+        "201":
+          description: Realtime ticket issued; live dispatch remains denied.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeSpeechTicket"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-sessions/{conversation_session_id}/realtime-stt:
+    get:
+      operationId: inspectConversationRealtimeSpeechSocket
+      summary: Inspect the first-party realtime STT socket without upgrading
+      description: |
+        Authenticated inspection of the first-party realtime path. Live
+        provider WebSocket upgrades are not granted. A valid ticket returns
+        recorded-recovery metadata with no-store. Missing or foreign tickets
+        are a content-free 404.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/ConversationSessionId"
+        - name: ticket
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "503":
+          description: Dispatch denied; use recorded upload recovery.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeSpeechSocketDenial"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-turns/{conversation_turn_id}/speech/{kind}:
+    get:
+      operationId: streamConversationTurnSpeech
+      summary: Stream private no-store TTS audio for one owned turn
+      description: |
+        Returns the stored English or deferred guidance WAV for the
+        authenticated learner's turn. The object is hash-verified and never
+        exposed as a reusable public URL. Missing, expired or foreign-tenant
+        artifacts are a content-free 404.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/ConversationTurnId"
+        - name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - model_en
+              - guidance_l1
+      responses:
+        "200":
+          description: Private conversation speech bytes.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /conversation-turns/{conversation_turn_id}/events:
     get:
       operationId: streamConversationTurnEvents
@@ -2381,6 +2521,56 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /conversation-turns/{conversation_turn_id}/speech-latency-samples:
+    post:
+      operationId: recordConversationSpeechLatency
+      summary: Submit one sampled content-free first-audible timing record
+      description: |
+        The authenticated learner may submit durations for their own turn.
+        The server owns deterministic sampling and the policy version. The
+        record contains no audio, transcript, reply, prompt, user-agent,
+        network address or provider payload and expires within 30 days after
+        retention-safe aggregation. Replays are idempotent.
+      tags:
+        - Conversation
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/ConversationTurnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeechLatencySampleRequest"
+      responses:
+        "202":
+          description: The server accepted or deterministically declined the sample.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechLatencySampleResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -3083,6 +3273,7 @@ paths:
                         - availability
                         - session_part_ids
                         - entitlement_access
+                        - progress_access
                       additionalProperties: false
                       properties:
                         level_number:
@@ -3096,6 +3287,31 @@ paths:
                         entitlement_access:
                           type: string
                           enum: [allowed, upgrade_required]
+                        progress_access:
+                          type: string
+                          enum: [allowed, locked, not_applicable]
+                        unlock_after_level_number:
+                          type: [integer, "null"]
+                          minimum: 1
+                          maximum: 16
+                        checkpoint_status:
+                          type: string
+                          enum:
+                            - not_applicable
+                            - not_ready
+                            - ready
+                            - passed
+                            - attempts_exhausted
+                            - review_due_blocked
+                        checkpoint_attempts_remaining:
+                          type: [integer, "null"]
+                          minimum: 0
+                        review_due_blocking:
+                          type: boolean
+                        spoken_evidence:
+                          oneOf:
+                            - $ref: "#/components/schemas/LevelSpokenEvidence"
+                            - type: "null"
                         blueprint_id:
                           type: [string, "null"]
                         session_part_ids:
@@ -3108,6 +3324,206 @@ paths:
                               - conversation
                               - interaction
         "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/checkpoint:
+    get:
+      operationId: showLearnerLevelCheckpoint
+      summary: Show the level checkpoint when all four sessions are complete
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+      responses:
+        "200":
+          description: Checkpoint definition without answer keys.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerLevelCheckpointDetail"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/offline-bundle:
+    get:
+      operationId: getLearnerOfflineLevelBundle
+      summary: Issue one protected deterministic offline level bundle
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+      responses:
+        "200":
+          description: Exact offline level manifest and signed authorization lease.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineLevelBundle"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /offline-level-checkpoint-submissions:
+    post:
+      operationId: submitOfflineLearnerLevelCheckpoint
+      summary: Submit one offline level checkpoint through a signed bundle lease
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idempotency_key
+                - bundle_id
+                - lease
+                - level_number
+                - answers
+              additionalProperties: false
+              properties:
+                idempotency_key:
+                  type: string
+                  maxLength: 120
+                bundle_id:
+                  type: string
+                lease:
+                  type: string
+                  maxLength: 8192
+                level_number:
+                  type: integer
+                  minimum: 1
+                  maximum: 17
+                answers:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                    minimum: 0
+                    maximum: 20
+      responses:
+        "201":
+          description: Offline checkpoint attempt recorded.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "200":
+          description: Idempotent replay of the same offline checkpoint submission.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/levels/{levelNumber}/checkpoint-submissions:
+    post:
+      operationId: submitLearnerLevelCheckpoint
+      summary: Submit one bounded level checkpoint attempt
+      tags:
+        - Learning
+      security:
+        - sanctumSession: []
+        - passportOAuth:
+            - mobile:api
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: levelNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 17
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotency_key, answers]
+              additionalProperties: false
+              properties:
+                idempotency_key:
+                  type: string
+                  maxLength: 120
+                answers:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                    minimum: 0
+                    maximum: 20
+      responses:
+        "201":
+          description: Checkpoint attempt recorded.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "200":
+          description: Idempotent replay of the same checkpoint submission.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -8135,6 +8551,142 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /operator/speech-economics:
+    get:
+      operationId: getOperatorSpeechEconomics
+      summary: Current-organization Speech Economics usage aggregates
+      description: |
+        Returns allocated usage and cost rollups from
+        speech_usage_daily_aggregates for the active organization only.
+        Small-cell rows keep dimension labels and null measures. Never
+        returns transcripts, audio, learner identifiers, negotiated
+        commercial terms or foreign-organization rows. Requires
+        speech.economics.usage. Missing permission is a content-free 404.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/SpeechEconomicsFrom"
+        - $ref: "#/components/parameters/SpeechEconomicsTo"
+        - $ref: "#/components/parameters/SpeechEconomicsEnvironment"
+        - $ref: "#/components/parameters/SpeechEconomicsProviderStage"
+        - $ref: "#/components/parameters/SpeechEconomicsProviderKey"
+        - $ref: "#/components/parameters/SpeechEconomicsLocale"
+        - $ref: "#/components/parameters/SpeechEconomicsConversationMode"
+        - $ref: "#/components/parameters/SpeechEconomicsResultStatus"
+        - $ref: "#/components/parameters/SpeechEconomicsDispatchKind"
+        - $ref: "#/components/parameters/SpeechEconomicsRouteRole"
+      responses:
+        "200":
+          description: Allocated Speech Economics usage for the active organization.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorSpeechEconomicsSummary"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/speech-economics/export:
+    get:
+      operationId: exportOperatorSpeechEconomics
+      summary: Audited CSV of current-organization Speech Economics aggregates
+      description: |
+        Streams the same content-free allocated aggregates as
+        getOperatorSpeechEconomics. Records one tenant audit event.
+        Requires speech.economics.usage. Missing permission is a
+        content-free 404.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/SpeechEconomicsFrom"
+        - $ref: "#/components/parameters/SpeechEconomicsTo"
+        - $ref: "#/components/parameters/SpeechEconomicsEnvironment"
+        - $ref: "#/components/parameters/SpeechEconomicsProviderStage"
+        - $ref: "#/components/parameters/SpeechEconomicsProviderKey"
+        - $ref: "#/components/parameters/SpeechEconomicsLocale"
+        - $ref: "#/components/parameters/SpeechEconomicsConversationMode"
+        - $ref: "#/components/parameters/SpeechEconomicsResultStatus"
+        - $ref: "#/components/parameters/SpeechEconomicsDispatchKind"
+        - $ref: "#/components/parameters/SpeechEconomicsRouteRole"
+      responses:
+        "200":
+          description: Content-free allocated usage CSV.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            X-Export-Id:
+              description: ULID of the audited export subject.
+              schema:
+                $ref: "#/components/schemas/Ulid"
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /operator/speech-economics/commercial:
+    get:
+      operationId: getOperatorSpeechEconomicsCommercial
+      summary: Platform-only Speech Economics rate cards and statements
+      description: |
+        Returns published rate-card and provider-statement rows without
+        secrets. Allowed only for named platform commercial actor user
+        identifiers. Organization membership never grants this path.
+        Unauthorized callers receive a content-free 404. Every successful
+        read is audited.
+      tags:
+        - Operator
+      security:
+        - sanctumSession: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Platform commercial rate cards and statements.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorSpeechEconomicsCommercial"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /operator/support/diagnostics:
     get:
       operationId: listOperatorSupportDiagnostics
@@ -8500,6 +9052,98 @@ components:
       description: Encrypted continuation bound to tenant, purpose and filters.
       schema:
         $ref: "#/components/schemas/OperatorCursor"
+    SpeechEconomicsFrom:
+      name: from
+      in: query
+      required: false
+      description: Inclusive usage-date lower bound in the active organization timezone calendar day.
+      schema:
+        type: string
+        format: date
+    SpeechEconomicsTo:
+      name: to
+      in: query
+      required: false
+      description: Inclusive usage-date upper bound. Rejected when earlier than from.
+      schema:
+        type: string
+        format: date
+    SpeechEconomicsEnvironment:
+      name: environment
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 32
+    SpeechEconomicsProviderStage:
+      name: provider_stage
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - stt
+          - model
+          - tts
+          - end_to_end
+    SpeechEconomicsProviderKey:
+      name: provider_key
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 64
+    SpeechEconomicsLocale:
+      name: locale
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 16
+    SpeechEconomicsConversationMode:
+      name: conversation_mode
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 24
+    SpeechEconomicsResultStatus:
+      name: result_status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - succeeded
+          - failed
+          - cancelled
+          - partial
+          - started
+          - unavailable
+    SpeechEconomicsDispatchKind:
+      name: dispatch_kind
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - provider_dispatch
+          - cache
+          - replay
+          - local_execution
+          - unknown
+          - client_sample
+    SpeechEconomicsRouteRole:
+      name: route_role
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - primary
+          - fallback
+          - benchmark
+          - client
     CurriculumVersionPath:
       name: curriculumVersion
       in: path
@@ -10497,6 +11141,18 @@ components:
         mode:
           type: string
           enum: [legacy_otp, credential_migration, password_only]
+    MobileAuthenticationModeResponse:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [legacy_otp, credential_migration, password_only]
+        client_id:
+          type: string
+          format: uuid
+          description: Approved first-party Android OAuth client id when exactly one exists.
     GlobalUsername:
       type: string
       minLength: 4
@@ -11136,6 +11792,7 @@ components:
         - enrollment
         - streak
         - due_review
+        - upcoming_reviews
         - next_mission
       properties:
         onboarding:
@@ -11150,6 +11807,10 @@ components:
           oneOf:
             - $ref: "#/components/schemas/LearnerDueReview"
             - type: "null"
+        upcoming_reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnerDueReview"
         next_mission:
           oneOf:
             - $ref: "#/components/schemas/LearnerMissionSummary"
@@ -11214,6 +11875,7 @@ components:
         - speaking_activity
         - attempt_improvement
         - delayed_review
+        - actionable_due_review
         - recurring_errors
       properties:
         enrollment:
@@ -11230,8 +11892,33 @@ components:
           $ref: "#/components/schemas/ProgressAttemptImprovement"
         delayed_review:
           $ref: "#/components/schemas/ProgressDelayedReviewPerformance"
+        actionable_due_review:
+          oneOf:
+            - $ref: "#/components/schemas/ProgressActionableDueReview"
+            - type: "null"
         recurring_errors:
           $ref: "#/components/schemas/ProgressRecurringErrors"
+    ProgressActionableDueReview:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - enrollment_id
+        - mission_id
+        - objective_id
+        - due_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        enrollment_id:
+          $ref: "#/components/schemas/Ulid"
+        mission_id:
+          $ref: "#/components/schemas/Ulid"
+        objective_id:
+          $ref: "#/components/schemas/Ulid"
+        due_at:
+          type: string
+          format: date-time
     LearnerEntitlement:
       type: object
       additionalProperties: false
@@ -11243,6 +11930,8 @@ components:
         - status
         - source
         - allows_roleplay
+        - allows_free_speech
+        - allowed_session_parts
         - max_level_number
         - is_demo
         - starts_at
@@ -11267,6 +11956,17 @@ components:
           type: [string, "null"]
         allows_roleplay:
           type: boolean
+        allows_free_speech:
+          type: boolean
+        allowed_session_parts:
+          type: array
+          items:
+            type: string
+            enum:
+              - introduction
+              - practice
+              - conversation
+              - interaction
         max_level_number:
           type: [integer, "null"]
         is_demo:
@@ -12267,6 +12967,103 @@ components:
       enum:
         - developing
         - mastered
+    LearnerLevelCheckpointDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - level_number
+        - concept_key
+        - blueprint_id
+        - blueprint_content_hash
+        - rule_key
+        - rule_hash
+        - pass_threshold
+        - max_attempts
+        - attempts_remaining
+        - items
+      properties:
+        level_number:
+          type: integer
+          minimum: 1
+        concept_key:
+          type: string
+        blueprint_id:
+          $ref: "#/components/schemas/Ulid"
+        blueprint_content_hash:
+          $ref: "#/components/schemas/Sha256"
+        rule_key:
+          type: string
+        rule_hash:
+          $ref: "#/components/schemas/Sha256"
+        pass_threshold:
+          type: integer
+          minimum: 1
+          maximum: 100
+        max_attempts:
+          type: integer
+          minimum: 1
+        attempts_remaining:
+          type: [integer, "null"]
+          minimum: 0
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - weight
+              - prompt
+              - options
+            properties:
+              id:
+                type: string
+              weight:
+                type: integer
+                minimum: 1
+              prompt:
+                type: string
+              options:
+                type: array
+                items:
+                  type: string
+    OfflineLevelBundle:
+      type: object
+      additionalProperties: false
+      required:
+        - manifest
+        - lease
+      properties:
+        manifest:
+          type: object
+          additionalProperties: true
+          description: Signed offline level bundle manifest without answer keys.
+        lease:
+          type: string
+          minLength: 1
+          maxLength: 8192
+          description: Purpose-specific signed lease; it is not an API credential.
+    LevelSpokenEvidence:
+      type: object
+      required:
+        - evidence_state
+        - spoken_state
+        - spoken_progress_claim
+      additionalProperties: false
+      properties:
+        evidence_state:
+          type: string
+          enum:
+            - not_recorded
+            - recorded_unassessed
+            - awaiting_review
+            - reviewed
+        spoken_state:
+          $ref: "#/components/schemas/SpokenState"
+        spoken_progress_claim:
+          type: boolean
+          enum: [false]
+          description: Level checkpoint knowledge pass never awards spoken progress.
     SpokenState:
       type: string
       const: unassessed
@@ -12640,6 +13437,93 @@ components:
           description: |
             One short model or guidance line. The server does not persist this
             text. Soft-launch Azure neural TTS may return a WAV for playback.
+    RealtimeSpeechTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - ticket_id
+        - conversation_session_id
+        - transport
+        - websocket_path
+        - provider_dispatch
+        - denial_reasons
+        - recovery_route
+        - capture_mode
+        - always_on
+        - full_duplex
+        - preconnect_allowed
+        - expires_at
+      properties:
+        ticket_id:
+          type: string
+        conversation_session_id:
+          type: string
+        transport:
+          type: string
+          enum:
+            - recorded_recovery
+            - first_party_websocket
+        websocket_path:
+          type: string
+        provider_dispatch:
+          type: string
+          enum:
+            - denied
+        denial_reasons:
+          type: array
+          items:
+            type: string
+        recovery_route:
+          type: string
+          enum:
+            - recorded_upload
+        capture_mode:
+          type: string
+          enum:
+            - push_to_talk
+        always_on:
+          type: boolean
+          enum:
+            - false
+        full_duplex:
+          type: boolean
+          enum:
+            - false
+        preconnect_allowed:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+    RealtimeSpeechSocketDenial:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - provider_dispatch
+        - recovery_route
+        - always_on
+        - full_duplex
+      properties:
+        status:
+          type: string
+          enum:
+            - recorded_recovery
+        provider_dispatch:
+          type: string
+          enum:
+            - denied
+        recovery_route:
+          type: string
+          enum:
+            - recorded_upload
+        always_on:
+          type: boolean
+          enum:
+            - false
+        full_duplex:
+          type: boolean
+          enum:
+            - false
     ConversationSpeechResult:
       type: object
       additionalProperties: false
@@ -12661,8 +13545,8 @@ components:
             - string
             - 'null'
           description: |
-            Optional base64 WAV for the English model line when soft-launch
-            guidance TTS is authorized. Null when playback falls back to text.
+            Optional base64 WAV for session /speech lines only. Turn replies
+            use model_audio_stream_path instead and keep this null.
         model_audio_mime_type:
           type:
             - string
@@ -12675,8 +13559,7 @@ components:
             - string
             - 'null'
           description: |
-            Optional base64 WAV for L1 guidance/correction when soft-launch
-            guidance TTS is authorized.
+            Optional base64 WAV for session /speech guidance lines only.
         guidance_audio_mime_type:
           type:
             - string
@@ -12684,6 +13567,159 @@ components:
           enum:
             - audio/wav
             - null
+        model_audio_stream_path:
+          type:
+            - string
+            - 'null'
+          description: Authenticated private stream for the English reply.
+        guidance_audio_stream_path:
+          type:
+            - string
+            - 'null'
+          description: Authenticated private stream for deferred L1 guidance.
+        guidance_speech_status:
+          type: string
+          enum:
+            - ready
+            - deferred
+            - unavailable
+        model_avatar_viseme_timeline:
+          oneOf:
+            - $ref: "#/components/schemas/AvatarVisemeTimeline"
+            - type: "null"
+          description: |
+            Optional viseme timeline aligned to model audio for Swathi lip sync.
+        guidance_avatar_viseme_timeline:
+          oneOf:
+            - $ref: "#/components/schemas/AvatarVisemeTimeline"
+            - type: "null"
+          description: |
+            Optional viseme timeline aligned to guidance audio for Swathi lip sync.
+    SpeechLatencySampleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - client_runtime
+        - network_class
+        - playback_outcome
+      properties:
+        client_runtime:
+          type: string
+          enum:
+            - web
+            - android
+        network_class:
+          type: string
+          enum:
+            - unknown
+            - wifi
+            - cellular
+            - ethernet
+          description: Coarse client-provided class; no carrier, SSID or address.
+        playback_outcome:
+          type: string
+          enum:
+            - started
+            - unavailable
+            - failed
+            - cancelled
+        release_to_ack_ms:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 120000
+          description: |
+            Monotonic client-clock duration from explicit learner release or
+            recording stop to receipt of an API acknowledgement. Null means
+            this client path did not expose a distinct acknowledgement.
+        release_to_first_signal_ms:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 120000
+          description: |
+            Monotonic client-clock duration from explicit learner release or
+            recording stop to the first substantive response signal. A local
+            listening/processing animation is not a substantive signal.
+        release_to_first_audio_ms:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 120000
+          description: |
+            Monotonic client-clock duration from explicit learner release or
+            recording stop until the main reply actually begins playback.
+            Required by runtime validation when playback_outcome is started.
+        turn_json_to_first_audio_ms:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 120000
+          description: |
+            Monotonic client-clock duration from receipt of the validated turn
+            JSON until the main reply actually begins playback.
+    SpeechLatencySampleResult:
+      type: object
+      additionalProperties: false
+      required:
+        - accepted
+        - sampled
+        - sample_policy_version
+        - retention_days
+      properties:
+        accepted:
+          type: boolean
+        sampled:
+          type: boolean
+        replayed:
+          type: boolean
+        sample_policy_version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        retention_days:
+          type: integer
+          const: 30
+    AvatarVisemeFrame:
+      type: object
+      additionalProperties: false
+      required:
+        - offset_ms
+        - viseme_id
+      properties:
+        offset_ms:
+          type: integer
+          minimum: 0
+        viseme_id:
+          type: integer
+          minimum: 0
+          maximum: 21
+    AvatarVisemeTimeline:
+      type: object
+      additionalProperties: false
+      required:
+        - source
+        - duration_ms
+        - frames
+      properties:
+        source:
+          type: string
+          enum:
+            - text-duration-estimator-v1
+            - azure-speech-sdk-v2
+        duration_ms:
+          type: integer
+          minimum: 1
+        frames:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            $ref: "#/components/schemas/AvatarVisemeFrame"
     ConversationUsageSummary:
       type: object
       additionalProperties: false
@@ -13506,7 +14542,7 @@ components:
         panels:
           type: array
           minItems: 1
-          maxItems: 21
+          maxItems: 22
           uniqueItems: true
           items:
             type: string
@@ -13517,6 +14553,7 @@ components:
               - review_queue
               - publish_status
               - support_diagnostics
+              - speech_economics
               - audit
               - organization_settings
               - branches
@@ -17074,6 +18111,307 @@ components:
         distinction_note:
           type: string
           const: usage_counts_are_not_demonstrated_learning
+    OperatorSpeechEconomicsSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - organization_id
+        - presentation
+        - empty
+        - partial
+        - stale_rate
+        - unreconciled
+        - suppressed_row_count
+        - visible_row_count
+        - totals
+        - rows
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        organization_id:
+          $ref: "#/components/schemas/Ulid"
+        presentation:
+          type: string
+          const: allocated_usage
+        empty:
+          type: boolean
+        partial:
+          type: boolean
+        stale_rate:
+          type: boolean
+        unreconciled:
+          type: boolean
+        suppressed_row_count:
+          type: integer
+          minimum: 0
+        visible_row_count:
+          type: integer
+          minimum: 0
+        totals:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsTotals"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorSpeechEconomicsRow"
+    OperatorSpeechEconomicsTotals:
+      type: object
+      additionalProperties: false
+      required:
+        - attempt_count
+        - dispatch_count
+        - success_count
+        - failure_count
+        - cancelled_count
+        - partial_count
+        - fallback_count
+        - billable_unit_quantity
+        - allocated_inr_microunits
+      properties:
+        attempt_count:
+          type: integer
+          minimum: 0
+        dispatch_count:
+          type: integer
+          minimum: 0
+        success_count:
+          type: integer
+          minimum: 0
+        failure_count:
+          type: integer
+          minimum: 0
+        cancelled_count:
+          type: integer
+          minimum: 0
+        partial_count:
+          type: integer
+          minimum: 0
+        fallback_count:
+          type: integer
+          minimum: 0
+        billable_unit_quantity:
+          type: integer
+          minimum: 0
+        allocated_inr_microunits:
+          type: integer
+          minimum: 0
+    OperatorSpeechEconomicsRow:
+      type: object
+      additionalProperties: false
+      required:
+        - usage_date
+        - environment
+        - aggregate_kind
+        - provider_stage
+        - provider_key
+        - model_version
+        - route_role
+        - locale
+        - conversation_mode
+        - result_status
+        - dispatch_kind
+        - billable_unit_kind
+        - reconciliation_status
+        - small_cell_suppressed
+        - attempt_count
+        - dispatch_count
+        - success_count
+        - failure_count
+        - cancelled_count
+        - partial_count
+        - fallback_count
+        - billable_unit_quantity
+        - allocated_inr_microunits
+        - first_result_p50_ms
+        - first_result_p95_ms
+        - completion_p95_ms
+        - first_audible_p95_ms
+        - cost_per_successful_turn_inr_microunits
+      properties:
+        usage_date:
+          type: string
+          format: date
+        environment:
+          type: string
+        aggregate_kind:
+          type: string
+        provider_stage:
+          type: string
+        provider_key:
+          type: string
+        model_version:
+          type: string
+        route_role:
+          type: string
+        locale:
+          type: string
+        conversation_mode:
+          type: string
+        result_status:
+          type: string
+        dispatch_kind:
+          type: string
+        billable_unit_kind:
+          type: string
+        reconciliation_status:
+          type: string
+        small_cell_suppressed:
+          type: boolean
+        attempt_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        dispatch_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        success_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        failure_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        cancelled_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        partial_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        fallback_count:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        billable_unit_quantity:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        allocated_inr_microunits:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        first_result_p50_ms:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        first_result_p95_ms:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        completion_p95_ms:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        first_audible_p95_ms:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+        cost_per_successful_turn_inr_microunits:
+          $ref: "#/components/schemas/OperatorSpeechEconomicsNullableCount"
+    OperatorSpeechEconomicsNullableCount:
+      type:
+        - integer
+        - "null"
+      minimum: 0
+    OperatorSpeechEconomicsCommercial:
+      type: object
+      additionalProperties: false
+      required:
+        - generated_at
+        - presentation
+        - empty
+        - rate_cards
+        - statements
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        presentation:
+          type: string
+          const: commercial_terms
+        empty:
+          type: boolean
+        rate_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorSpeechEconomicsRateCard"
+        statements:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorSpeechEconomicsStatement"
+    OperatorSpeechEconomicsRateCard:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - provider_key
+        - provider_stage
+        - model_version
+        - rate_version
+        - billable_unit_kind
+        - billing_currency
+        - gross_price_microunits
+        - tax_basis_points
+        - discount_basis_points
+        - credit_microunits_per_basis
+        - inr_per_native_unit_microunits
+        - conversion_source
+        - approval_evidence
+        - effective_from
+        - effective_until
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        provider_key:
+          type: string
+        provider_stage:
+          type: string
+        model_version:
+          type: string
+        rate_version:
+          type: string
+        billable_unit_kind:
+          type: string
+        billing_currency:
+          type: string
+        gross_price_microunits:
+          type: integer
+          minimum: 0
+        tax_basis_points:
+          type: integer
+          minimum: 0
+        discount_basis_points:
+          type: integer
+          minimum: 0
+        credit_microunits_per_basis:
+          type: integer
+          minimum: 0
+        inr_per_native_unit_microunits:
+          type: integer
+          minimum: 0
+        conversion_source:
+          type: string
+        approval_evidence:
+          type: string
+        effective_from:
+          type: string
+          format: date-time
+        effective_until:
+          type:
+            - string
+            - "null"
+          format: date-time
+    OperatorSpeechEconomicsStatement:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - provider_key
+        - period_start
+        - period_end
+        - billing_currency
+        - net_cost_microunits
+        - net_cost_inr_microunits
+        - approval_evidence
+      properties:
+        id:
+          $ref: "#/components/schemas/Ulid"
+        provider_key:
+          type: string
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        billing_currency:
+          type: string
+        net_cost_microunits:
+          type: integer
+          minimum: 0
+        net_cost_inr_microunits:
+          type: integer
+          minimum: 0
+        approval_evidence:
+          type: string
     OperatorSupportDiagnostics:
       type: object
       additionalProperties: false

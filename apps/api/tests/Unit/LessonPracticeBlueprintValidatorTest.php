@@ -55,6 +55,12 @@ final class LessonPracticeBlueprintValidatorTest extends TestCase
                 $assets,
             );
             self::assertSame([], $validator->validate($blueprint), $concept);
+            self::assertArrayHasKey('level_checkpoint', $blueprint);
+            self::assertCount(3, $blueprint['level_checkpoint']['items']);
+            self::assertSame(
+                $concept.'-cp-01',
+                $blueprint['level_checkpoint']['items'][0]['id'],
+            );
             $encoded = json_encode($blueprint, JSON_THROW_ON_ERROR);
             self::assertStringNotContainsString('Provisional APP-0063', $encoded);
             self::assertStringNotContainsString('provisional_template_content', $encoded);

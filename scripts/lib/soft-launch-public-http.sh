@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Generates the static-IP edge without weakening authenticated sessions.
+# Generates the static-IP edge without weakening browser sessions.
+# When a temporary HTTPS origin is live, HTML still 307-redirects there.
+# /api and /oauth reverse-proxy so the closed-beta Android HTTP origin on
+# port 8080 can reach Passport without depending on the tunnel hostname.
 
 write_soft_launch_public_http_config() {
   local target_file="$1"
@@ -46,6 +49,12 @@ EOF
     return
   fi
 
+  # Staff Tailscale/LAN testing: serve the SPA and API on :8080 instead of
+  # 307-redirecting browsers to the rotating HTTPS tunnel.
+  if [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+    public_origin=""
+  fi
+
   if [[ "${public_origin}" =~ ^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?$ ]]; then
     cat >"${target_file}" <<EOF
 {
@@ -53,7 +62,16 @@ EOF
 	auto_https off
 }
 :${public_port} {
-	redir * ${public_origin}{uri} 307
+	encode gzip
+	handle /api/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /oauth/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle {
+		redir * ${public_origin}{uri} 307
+	}
 }
 EOF
     return
@@ -70,6 +88,9 @@ EOF
 		reverse_proxy 127.0.0.1:${api_port}
 	}
 	handle /sanctum/* {
+		reverse_proxy 127.0.0.1:${api_port}
+	}
+	handle /oauth/* {
 		reverse_proxy 127.0.0.1:${api_port}
 	}
 	handle {

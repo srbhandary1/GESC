@@ -8,9 +8,8 @@ use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LearnerAuthority;
 use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\User;
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -20,6 +19,7 @@ final readonly class LearnerHomeService
         private LearnerAuthority $authority,
         private DailyMissionReader $missions,
         private MeaningfulSpeakingStreakReader $streaks,
+        private ReviewDueBlockingService $reviewDue,
     ) {}
 
     /**
@@ -70,7 +70,8 @@ final readonly class LearnerHomeService
             ->orderBy('id')
             ->first(['id', 'status']);
         $mission = null;
-        $dueReview = null;
+        $dueReviewPayload = null;
+        $upcomingReviews = [];
 
         if ($enrollment instanceof stdClass) {
             try {
@@ -86,25 +87,66 @@ final readonly class LearnerHomeService
                 // suspended or its current rights predicate fails.
                 $mission = null;
             }
+        }
 
-            if ($mission !== null) {
-                $dueReview = DB::table('delayed_review_occurrences')
-                    ->where('organization_id', $context->organizationId)
-                    ->where('learner_membership_id', $membershipId)
-                    ->where('enrollment_id', $this->string($enrollment, 'id'))
-                    ->where('curriculum_mission_id', $mission->missionId)
-                    ->whereNull('completed_at')
-                    ->where('due_at', '<=', Date::now())
-                    ->orderBy('due_at')
-                    ->orderBy('sequence')
-                    ->first([
-                        'id',
-                        'learning_objective_id',
-                        'curriculum_mission_id',
-                        'interval_days',
-                        'due_at',
-                        'timezone',
-                    ]);
+        $dueSummary = $this->reviewDue->firstDueIncompleteReview($context);
+        if ($dueSummary !== null) {
+            try {
+                $reviewMission = $this->missions->resolve(
+                    $learner,
+                    $dueSummary['enrollment_id'],
+                    $dueSummary['curriculum_mission_id'],
+                );
+                $dueReviewPayload = [
+                    'id' => $dueSummary['id'],
+                    'enrollment_id' => $dueSummary['enrollment_id'],
+                    'mission_id' => $dueSummary['curriculum_mission_id'],
+                    'objective_id' => $dueSummary['learning_objective_id'],
+                    'interval_days' => $dueSummary['interval_days'],
+                    'due_at' => $dueSummary['due_at'],
+                    'timezone' => $dueSummary['timezone'],
+                    'title' => [
+                        'locale' => 'en-IN',
+                        'text' => $reviewMission->title,
+                        'revision_id' => $reviewMission->sourceRevisionId,
+                        'content_hash' => $reviewMission->sourceContentHash,
+                    ],
+                ];
+            } catch (
+                CurriculumOperationRejected
+                |LearningOperationRejected
+            ) {
+                $dueReviewPayload = null;
+            }
+        }
+
+        foreach ($this->reviewDue->upcomingIncompleteReviews($context) as $upcoming) {
+            try {
+                $upcomingMission = $this->missions->resolve(
+                    $learner,
+                    $upcoming['enrollment_id'],
+                    $upcoming['curriculum_mission_id'],
+                );
+                $upcomingReviews[] = [
+                    'id' => $upcoming['id'],
+                    'enrollment_id' => $upcoming['enrollment_id'],
+                    'mission_id' => $upcoming['curriculum_mission_id'],
+                    'objective_id' => $upcoming['learning_objective_id'],
+                    'interval_days' => $upcoming['interval_days'],
+                    'due_at' => $upcoming['due_at'],
+                    'timezone' => $upcoming['timezone'],
+                    'title' => [
+                        'locale' => 'en-IN',
+                        'text' => $upcomingMission->title,
+                        'revision_id' => $upcomingMission->sourceRevisionId,
+                        'content_hash' => $upcomingMission->sourceContentHash,
+                    ],
+                ];
+            } catch (
+                CurriculumOperationRejected
+                |LearningOperationRejected
+            ) {
+                continue;
             }
         }
 
@@ -131,27 +173,8 @@ final readonly class LearnerHomeService
                 ]
                 : null,
             'streak' => $streak,
-            'due_review' => $dueReview instanceof stdClass
-                && $enrollment instanceof stdClass
-                && $mission !== null
-                ? [
-                    'id' => $this->string($dueReview, 'id'),
-                    'enrollment_id' => $this->string($enrollment, 'id'),
-                    'mission_id' => $this->string($dueReview, 'curriculum_mission_id'),
-                    'objective_id' => $this->string($dueReview, 'learning_objective_id'),
-                    'interval_days' => (int) $dueReview->interval_days,
-                    'due_at' => CarbonImmutable::parse(
-                        $this->string($dueReview, 'due_at'),
-                    )->utc()->toIso8601String(),
-                    'timezone' => $this->string($dueReview, 'timezone'),
-                    'title' => [
-                        'locale' => 'en-IN',
-                        'text' => $mission->title,
-                        'revision_id' => $mission->sourceRevisionId,
-                        'content_hash' => $mission->sourceContentHash,
-                    ],
-                ]
-                : null,
+            'due_review' => $dueReviewPayload,
+            'upcoming_reviews' => $upcomingReviews,
             'next_mission' => $mission === null
                 ? null
                 : [

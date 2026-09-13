@@ -234,6 +234,8 @@
 }
 
 .ge-button--hold-to-talk {
+  display: inline-flex;
+  gap: var(--ge-space-2);
   inline-size: min(100%, 9.5rem);
   min-block-size: 9.5rem;
   min-inline-size: 9.5rem;
@@ -247,8 +249,42 @@
   -webkit-touch-callout: none;
 }
 
+.ge-button__record-dot {
+  flex: 0 0 auto;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0.22rem color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.ge-button--hold-to-talk[data-hold-state='recording'] .ge-button__record-dot {
+  background: transparent;
+  animation: ge-record-dot 900ms ease-in-out infinite alternate;
+}
+
+.ge-button--hold-to-talk[data-hold-state='processing'] .ge-button__record-dot {
+  border-inline-end-color: transparent;
+  background: transparent;
+  animation: ge-record-processing 700ms linear infinite;
+}
+
 .ge-button--hold-to-talk[aria-pressed='true'] {
   transform: scale(0.96);
+}
+
+@keyframes ge-record-dot {
+  to {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 0.4rem color-mix(in srgb, currentColor 8%, transparent);
+  }
+}
+
+@keyframes ge-record-processing {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 30rem) {
@@ -265,5 +301,9 @@
   .ge-primary-navigation__link {
     transition: none;
     transform: none;
+  }
+
+  .ge-button__record-dot {
+    animation: none !important;
   }
 }

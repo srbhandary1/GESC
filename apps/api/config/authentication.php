@@ -106,4 +106,8 @@ return [
             'redirect_uri' => env('FACEBOOK_OAUTH_REDIRECT_URI'),
         ],
     ],
+
+    'mobile' => [
+        'native_oauth_client_id' => env('AUTH_MOBILE_NATIVE_OAUTH_CLIENT_ID'),
+    ],
 ];

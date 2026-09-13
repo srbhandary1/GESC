@@ -9,6 +9,26 @@ return [
     ),
     'maximum_provider_attempts' => 2,
     'maximum_utterance_characters' => 500,
+    'session' => [
+        'max_learner_turns' => (int) env('CONVERSATION_SESSION_MAX_LEARNER_TURNS', 8),
+        'max_tokens' => (int) env('CONVERSATION_SESSION_MAX_TOKENS', 12000),
+    ],
+    'budget_alert' => [
+        'approved_spend_cap_inr' => (int) env('CONVERSATION_APPROVED_SPEND_CAP_INR', 500),
+        'warning_threshold_percent' => (int) env(
+            'CONVERSATION_BUDGET_WARNING_THRESHOLD_PERCENT',
+            80,
+        ),
+    ],
+    'speech_artifact_disk' => env('CONVERSATION_SPEECH_ARTIFACT_DISK', 'local'),
+    'speech_artifact_maximum_bytes' => (int) env(
+        'CONVERSATION_SPEECH_ARTIFACT_MAXIMUM_BYTES',
+        2_000_000,
+    ),
+    'speech_artifact_retention_days' => (int) env(
+        'CONVERSATION_SPEECH_ARTIFACT_RETENTION_DAYS',
+        30,
+    ),
     'coaching_modes' => ['gentle', 'tutor', 'fluency'],
     'ui_locales' => [
         'kn-IN',
@@ -419,6 +439,10 @@ return [
         'connection_timeout_seconds' => 3,
         'request_timeout_seconds' => 30,
         'maximum_json_response_bytes' => 256 * 1024,
+        'stream_responses' => env(
+            'CONVERSATION_AZURE_OPENAI_STREAM_RESPONSES',
+            false,
+        ),
         'maximum_spend_inr' => 10000.0,
         'approved_spend_cap_inr' => env(
             'CONVERSATION_AZURE_OPENAI_APPROVED_SPEND_CAP_INR',

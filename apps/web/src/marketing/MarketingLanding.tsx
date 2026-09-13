@@ -131,14 +131,19 @@ export function MarketingLanding({
     <div className="marketing-landing" lang={locale}>
       <section aria-labelledby="marketing-hero-title" className="marketing-hero">
         <div aria-hidden="true" className="marketing-hero__grid" />
+        <div className="marketing-hero__banner">
+          <p className="marketing-hero__banner-name">
+            <LocalizedMessage resolution={message('app.name')} />
+          </p>
+          <h1 className="marketing-hero__title" id="marketing-hero-title" tabIndex={-1}>
+            <LocalizedMessage resolution={message('marketing.hero.title')} />
+          </h1>
+        </div>
         <div className="marketing-hero__copy">
           <p className="marketing-hero__badge">
             <span aria-hidden="true" className="marketing-hero__badge-signal" />
             <LocalizedMessage resolution={message('marketing.hero.badge')} />
           </p>
-          <h1 className="marketing-hero__title" id="marketing-hero-title" tabIndex={-1}>
-            <LocalizedMessage resolution={message('marketing.hero.title')} />
-          </h1>
           <p className="marketing-hero__lede">
             <LocalizedMessage resolution={message('marketing.hero.lede')} />
           </p>
@@ -323,7 +328,6 @@ export function MarketingLanding({
               <strong><LocalizedMessage resolution={message(plan.price)} /></strong>
               <p><LocalizedMessage resolution={message(plan.lead)} /></p>
               <small><LocalizedMessage resolution={message(plan.extra)} /></small>
-              <a className="marketing-button marketing-button--primary" href="#sign-in"><LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} /></a>
             </li>
           ))}
         </ul>

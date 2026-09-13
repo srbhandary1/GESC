@@ -38,6 +38,9 @@ final class DeterministicFakeSpeechToTextProvider implements SpeechToTextProvide
                 inputUnits: strlen($request->prototypeUtterance),
                 outputUnits: strlen($transcript),
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'utf8_bytes',
+                outputUnitKind: 'utf8_bytes',
+                dispatchKind: 'local_execution',
             ),
         );
     }

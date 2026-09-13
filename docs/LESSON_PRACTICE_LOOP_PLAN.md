@@ -757,9 +757,9 @@ LPL-07; later evolution checkpoints cannot be pulled forward opportunistically.
 | **LPL-02** | Deliver one Level 1 `can` vertical slice end to end | pending |
 | **LPL-03** | Add governed operator authoring/review/publication for practice loops | pending |
 | **LPL-04** | Deliver a complete four-lesson level journey and level checkpoint | pending |
-| **LPL-05** | AI-assist, review and publish blueprints for every configured level | pending |
-| **LPL-06** | Add offline fallback, delayed review, analytics and cost controls | pending |
-| **LPL-07** | Roll out in reviewed waves and close release evidence | pending |
+| **LPL-05** | AI-assist, review and publish blueprints for every configured level | complete — 17/17 matrix green on 2026-09-13 |
+| **LPL-06** | Add offline fallback, delayed review, analytics and cost controls | complete |
+| **LPL-07** | Roll out in reviewed waves and close release evidence | in progress |
 
 ### LPL-00 — prerequisites and policy freeze
 

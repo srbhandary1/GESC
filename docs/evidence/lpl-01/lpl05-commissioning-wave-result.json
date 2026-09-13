@@ -1,0 +1,213 @@
+{
+  "status": "completed",
+  "checkpoint": "LPL-05",
+  "approval_reference": "WAVE-7.1",
+  "organization_id": "01KYS97G7MX374P303XJHDXT72",
+  "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+  "levels_configured": 17,
+  "levels_commissioned": 17,
+  "levels_complete": 17,
+  "all_complete": true,
+  "waves": {
+    "wave_1_level_1": {
+      "levels": 1,
+      "complete": 1,
+      "all_complete": true
+    },
+    "wave_2_levels_2_3": {
+      "levels": 2,
+      "complete": 2,
+      "all_complete": true
+    },
+    "wave_3_levels_4_17": {
+      "levels": 14,
+      "complete": 14,
+      "all_complete": true
+    }
+  },
+  "matrix_totals": {
+    "media": 17,
+    "transcript": 17,
+    "objective": 17,
+    "blueprint": 17,
+    "english_review": 17,
+    "kannada_review": 17,
+    "quiz_rationale": 17,
+    "apply_task": 17,
+    "rights": 17,
+    "publication": 17,
+    "level_checkpoint": 17
+  },
+  "levels": [
+    {
+      "level_number": 1,
+      "concept_key": "can",
+      "wave": "wave_1_level_1",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1BC5DY0BXS538GBFGS5",
+      "revision_number": 3,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 2,
+      "concept_key": "should",
+      "wave": "wave_2_levels_2_3",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1BSXNJDHD2M206G96X6",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 3,
+      "concept_key": "do_does",
+      "wave": "wave_2_levels_2_3",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1C4TB6XSD6CCRDRXWJY",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 4,
+      "concept_key": "is_are_ing",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1CHGFABHCES6ED84P9T",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 5,
+      "concept_key": "did",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1CTH5CT0QSKHTJ8EWZH",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 6,
+      "concept_key": "was_were_ing",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1D30NXHV6TZ3D3RPZYQ",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 7,
+      "concept_key": "have_has",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1DHK9AAVJNTPCSB3P35",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 8,
+      "concept_key": "have_been_has_been",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1ECJCPM21XM9KSR0BGD",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 9,
+      "concept_key": "had",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1F6697752MQC717P3V5",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 10,
+      "concept_key": "will",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1FTRF0A0R76ZN5CZFYM",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 11,
+      "concept_key": "gonna_wanna",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1G576XX00R17A21812S",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 12,
+      "concept_key": "would",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1GGJGHSB3T8NCDYQ9DK",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 13,
+      "concept_key": "may",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1GX8D7EDCJEPT9E0DP8",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 14,
+      "concept_key": "if",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1H8QTX236HE3462BJSF",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 15,
+      "concept_key": "must",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1HJE7FGJ90S219XNM5E",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 16,
+      "concept_key": "should_have",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1HX0P2W0XRZ1MPHQ8FX",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    },
+    {
+      "level_number": 17,
+      "concept_key": "used_to",
+      "wave": "wave_3_levels_4_17",
+      "availability": "available",
+      "blueprint_id": "01M2D8W1J8ZNHHYSH6TWCFZZEV",
+      "revision_number": 9,
+      "complete": true,
+      "blockers": []
+    }
+  ]
+}

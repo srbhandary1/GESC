@@ -28,6 +28,7 @@ describe('speak-loop timings', () => {
     const payload = debug.mock.calls[0]?.[1] as Record<string, unknown>
     expect(debug.mock.calls[0]?.[0]).toBe('[speak-loop]')
     expect(Object.keys(payload).sort()).toEqual([
+      'record_stop_to_ack_ms',
       'record_stop_to_wav_ready_ms',
       'release_to_first_audio_ms',
       'transcript_ready_to_turn_json_ready_ms',

@@ -12,12 +12,21 @@
   overflow-wrap: anywhere;
 }
 
+.ge-application-frame__brand:has(.shell-brand-lockup),
 .ge-application-frame__brand:has(.shell-brand-logo) {
   gap: var(--ge-space-2);
 }
 
+.ge-application-frame__brand:has(.shell-brand-lockup) .ge-application-frame__brand-mark,
 .ge-application-frame__brand:has(.shell-brand-logo) .ge-application-frame__brand-mark {
   display: none;
+}
+
+.shell-brand-lockup {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
 }
 
 .shell-brand-logo {
@@ -29,9 +38,26 @@
   object-position: left center;
 }
 
-.shell-brand-logo--android {
+.shell-brand-logo--icon {
+  display: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  max-width: 2.6rem;
+}
+
+.shell-brand-lockup--android .shell-brand-logo--full {
   height: clamp(2.1rem, 4.5vw, 2.75rem);
   max-width: min(100%, 11.5rem);
+}
+
+@media (max-width: 30rem) {
+  .shell-brand-logo--full {
+    display: none;
+  }
+
+  .shell-brand-logo--icon {
+    display: block;
+  }
 }
 
 .ge-application-frame--native-android .ge-application-frame__header {
@@ -320,6 +346,7 @@
   background: var(--ge-panel-background);
   box-shadow: var(--ge-shadow-panel);
   color: var(--ge-color-text);
+  text-align: center;
 }
 
 .shell-sign-in-page__close {
@@ -381,28 +408,34 @@
 .shell-sign-in-page__header h1 {
   margin: 0;
   font-family: var(--ge-font-family-display);
-  font-size: clamp(1.15rem, 2.8vw, 1.45rem);
+  font-size: clamp(1.5rem, 3.2vw, 2.2rem);
   font-weight: 650;
   color: var(--ge-color-ink);
 }
 
 .shell-sign-in-page__lede {
+  max-width: 46ch;
   margin: 0;
+  margin-inline: auto;
   color: var(--ge-color-text-muted);
-  font-size: var(--ge-font-size-sm);
+  font-size: var(--ge-font-size-md);
   line-height: var(--ge-line-height-ui);
+  text-align: center;
 }
 
 .shell-sign-in-page .web-password-sign-in,
 .shell-sign-in-page .web-password-sign-in--embedded,
 .shell-sign-in-page .shell-session,
 .shell-sign-in-page .shell-session--embedded {
+  display: grid;
   width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .shell-sign-in-page .web-password-sign-in__visual {
@@ -410,7 +443,88 @@
 }
 
 .shell-sign-in-page .web-password-sign-in__card {
+  display: grid;
+  gap: var(--ge-space-3);
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  text-align: center;
+}
+
+.shell-sign-in-page .shell-session--embedded {
+  display: grid;
+  gap: var(--ge-space-3);
+  width: 100%;
+  text-align: center;
+}
+
+.shell-sign-in-page .web-password-sign-in__card > .web-otp-sign-in__error,
+.shell-sign-in-page .web-otp-sign-in__form > .web-otp-sign-in__error {
+  margin: 0;
+  border-inline-start: 0;
+  border: 1px solid color-mix(in srgb, var(--ge-color-brass) 35%, var(--ge-color-border));
+  border-radius: var(--ge-radius-md);
+  text-align: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form {
+  display: grid;
+  gap: var(--ge-space-3);
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
+  text-align: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form label:not(:has(input[type='checkbox'])) {
+  font-weight: 650;
+  text-align: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form input:not([type='checkbox']) {
+  width: 100%;
+  text-align: start;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form label:has(input[type='checkbox']) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: auto;
+  color: var(--ge-color-text-muted);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form button {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form button[type='submit'] {
+  border-color: transparent;
+}
+
+.shell-sign-in-page .web-password-sign-in__social {
+  justify-items: stretch;
+  text-align: center;
+}
+
+.shell-sign-in-page .web-password-sign-in__social > p {
+  margin: 0;
+}
+
+.shell-sign-in-page .web-password-sign-in__social button {
+  width: 100%;
+  justify-content: center;
+}
+
+.shell-sign-in-page .web-password-sign-in__card > p[role='status'] {
+  margin: 0;
+  text-align: center;
+  color: var(--ge-color-text-muted);
 }
 
 @media (max-height: 52rem) {
@@ -824,6 +938,11 @@
 
   .web-password-sign-in__visual {
     display: grid;
+  }
+
+  .shell-sign-in-page .web-password-sign-in,
+  .shell-sign-in-page .web-password-sign-in--embedded {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1799,6 +1918,59 @@
 .operator-metrics__detail {
   grid-column: 1 / -1;
   overflow-wrap: anywhere;
+}
+
+.operator-economics,
+.operator-economics-commercial {
+  display: grid;
+  min-width: 0;
+  gap: var(--ge-space-3);
+}
+
+.operator-economics-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-3);
+  align-items: end;
+}
+
+.operator-economics-filters label {
+  display: grid;
+  gap: var(--ge-space-1);
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 700;
+}
+
+.operator-economics-banner {
+  margin: 0;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+}
+
+.operator-economics-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.operator-economics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.operator-economics-table caption {
+  caption-side: top;
+  text-align: start;
+  font-weight: 700;
+  margin-bottom: var(--ge-space-2);
+}
+
+.operator-economics-table th,
+.operator-economics-table td {
+  padding: var(--ge-space-2);
+  border-bottom: 1px solid var(--ge-color-border);
+  text-align: start;
 }
 
 .operator-audit {

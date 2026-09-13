@@ -68,6 +68,25 @@ final readonly class EntitlementAccess
         }
     }
 
+    public function assertFreeSpeech(User $learner): void
+    {
+        $snapshot = $this->snapshot($learner);
+
+        if ($snapshot['allows_free_speech'] !== true) {
+            throw new EntitlementDenied(EntitlementDenied::FREE_SPEECH_LOCKED);
+        }
+    }
+
+    public function assertSessionPart(User $learner, string $partId): void
+    {
+        $snapshot = $this->snapshot($learner);
+        $allowed = $snapshot['allowed_session_parts'] ?? [];
+
+        if (! is_array($allowed) || ! in_array($partId, $allowed, true)) {
+            throw new EntitlementDenied(EntitlementDenied::SESSION_LOCKED);
+        }
+    }
+
     public function consumeLiveAi(User $learner, string $chargeKey, int $seconds): void
     {
         $context = $this->authority->require($learner);
@@ -85,7 +104,10 @@ final readonly class EntitlementAccess
                     (string) $context->membershipId,
                 );
 
-                if ($this->string($entitlement, 'status') !== 'active') {
+                if (
+                    ! $entitlement instanceof stdClass
+                    || $this->string($entitlement, 'status') !== 'active'
+                ) {
                     throw new EntitlementDenied(EntitlementDenied::EXPIRED);
                 }
 
@@ -164,7 +186,7 @@ final readonly class EntitlementAccess
         return 'allowed';
     }
 
-    private function resolve(string $organizationId, string $membershipId): stdClass
+    private function resolve(string $organizationId, string $membershipId): ?stdClass
     {
         $row = DB::table('learner_entitlements')
             ->where('organization_id', $organizationId)
@@ -179,7 +201,7 @@ final readonly class EntitlementAccess
             ->first();
 
         if (! $row instanceof stdClass) {
-            return $this->grantAutoDemo($organizationId, $membershipId);
+            return null;
         }
 
         if ($this->string($row, 'status') === 'active') {
@@ -192,50 +214,6 @@ final readonly class EntitlementAccess
             if ($fresh instanceof stdClass) {
                 return $fresh;
             }
-        }
-
-        return $row;
-    }
-
-    private function grantAutoDemo(string $organizationId, string $membershipId): stdClass
-    {
-        $plan = DB::table('entitlement_plans')
-            ->where('organization_id', $organizationId)
-            ->where('code', DirectPlanDefaults::DEMO)
-            ->where('status', 'active')
-            ->first();
-
-        if (! $plan instanceof stdClass) {
-            throw new EntitlementDenied(EntitlementDenied::EXPIRED);
-        }
-
-        $now = CarbonImmutable::now('Asia/Kolkata');
-        $id = (string) Str::ulid();
-        $snapshot = $this->planSnapshot($plan);
-        $expires = $now->addHours((int) $plan->duration_value);
-        DB::table('learner_entitlements')->insert([
-            'id' => $id,
-            'organization_id' => $organizationId,
-            'learner_membership_id' => $membershipId,
-            'plan_id' => $this->string($plan, 'id'),
-            'plan_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
-            'status' => 'active',
-            'source' => 'auto_demo',
-            'starts_at' => $now,
-            'first_sign_in_at' => $now,
-            'expires_at' => $expires,
-            'live_ai_seconds_used' => 0,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $this->event($organizationId, $id, 'granted', null, [
-            'source' => 'auto_demo',
-            'plan_code' => DirectPlanDefaults::DEMO,
-        ]);
-        $row = DB::table('learner_entitlements')->where('id', $id)->first();
-
-        if (! $row instanceof stdClass) {
-            throw new EntitlementDenied(EntitlementDenied::EXPIRED);
         }
 
         return $row;
@@ -301,8 +279,12 @@ final readonly class EntitlementAccess
     /**
      * @return array<string, mixed>
      */
-    private function present(string $organizationId, stdClass $row): array
+    private function present(string $organizationId, ?stdClass $row): array
     {
+        if (! $row instanceof stdClass) {
+            return $this->absentDirectSnapshot($organizationId);
+        }
+
         $snapshot = $this->decodedSnapshot($row);
         $cap = $this->effectiveLiveAiCap($row, $snapshot);
         $used = (int) $row->live_ai_seconds_used;
@@ -311,6 +293,14 @@ final readonly class EntitlementAccess
             ->where('organization_id', $organizationId)
             ->first();
         $allowsRoleplay = $active && (bool) ($snapshot['allows_roleplay'] ?? false);
+        $allowsFreeSpeech = $active && (
+            array_key_exists('allows_free_speech', $snapshot)
+                ? (bool) $snapshot['allows_free_speech']
+                : ! (($snapshot['is_demo'] ?? false) === true)
+        );
+        $allowedSessionParts = $active
+            ? $this->allowedSessionParts($snapshot)
+            : [];
         $maxLevel = isset($snapshot['max_level_number']) && is_int($snapshot['max_level_number'])
             ? $snapshot['max_level_number']
             : null;
@@ -327,6 +317,8 @@ final readonly class EntitlementAccess
             'status' => $this->string($row, 'status'),
             'source' => $this->string($row, 'source'),
             'allows_roleplay' => $allowsRoleplay,
+            'allows_free_speech' => $allowsFreeSpeech,
+            'allowed_session_parts' => $allowedSessionParts,
             'max_level_number' => $maxLevel,
             'is_demo' => (bool) ($snapshot['is_demo'] ?? false),
             'starts_at' => CarbonImmutable::parse($this->string($row, 'starts_at'))->utc()->toIso8601String(),
@@ -348,6 +340,37 @@ final readonly class EntitlementAccess
     /**
      * @return array<string, mixed>
      */
+    private function absentDirectSnapshot(string $organizationId): array
+    {
+        $tax = DB::table('organization_tax_settings')
+            ->where('organization_id', $organizationId)
+            ->first();
+
+        return [
+            'applies' => true,
+            'entitlement_id' => null,
+            'plan_code' => null,
+            'plan_name' => null,
+            'status' => 'expired',
+            'source' => null,
+            'allows_roleplay' => false,
+            'allows_free_speech' => false,
+            'allowed_session_parts' => [],
+            'max_level_number' => DirectPlanDefaults::DEMO_MAX_LEVEL,
+            'is_demo' => false,
+            'starts_at' => null,
+            'first_sign_in_at' => null,
+            'expires_at' => null,
+            'live_ai_seconds_used' => 0,
+            'live_ai_cap_seconds' => null,
+            'live_ai_seconds_remaining' => 0,
+            'gstin_is_placeholder' => $tax instanceof stdClass && (bool) $tax->gstin_is_placeholder,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function unmeteredSnapshot(): array
     {
         return [
@@ -358,6 +381,8 @@ final readonly class EntitlementAccess
             'status' => 'not_applicable',
             'source' => null,
             'allows_roleplay' => true,
+            'allows_free_speech' => true,
+            'allowed_session_parts' => DirectPlanDefaults::PAID_SESSION_PARTS,
             'max_level_number' => null,
             'is_demo' => false,
             'starts_at' => null,
@@ -400,8 +425,8 @@ final readonly class EntitlementAccess
             'status' => 'active',
             'source' => $source,
             'starts_at' => $starts,
-            'first_sign_in_at' => (bool) $plan->is_demo ? null : $starts,
-            'expires_at' => (bool) $plan->is_demo ? null : $expires,
+            'first_sign_in_at' => $starts,
+            'expires_at' => $expires,
             'live_ai_seconds_used' => 0,
             'created_at' => $starts,
             'updated_at' => $starts,
@@ -491,6 +516,8 @@ final readonly class EntitlementAccess
             'billing_period' => $this->string($plan, 'billing_period'),
             'duration_value' => (int) $plan->duration_value,
             'allows_roleplay' => (bool) $plan->allows_roleplay,
+            'allows_free_speech' => DirectPlanDefaults::allowsFreeSpeechFor($plan),
+            'allowed_session_parts' => DirectPlanDefaults::allowedSessionPartsFor($plan),
             'max_level_number' => $this->nullableInt($plan, 'max_level_number'),
             'live_ai_cap_seconds' => $this->nullableInt($plan, 'live_ai_cap_seconds'),
             'is_demo' => (bool) $plan->is_demo,
@@ -596,6 +623,28 @@ final readonly class EntitlementAccess
         }
 
         return $planCap + $this->activeTalkPackSeconds($this->string($entitlement, 'id'));
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return list<string>
+     */
+    private function allowedSessionParts(array $snapshot): array
+    {
+        $parts = $snapshot['allowed_session_parts'] ?? null;
+
+        if (is_array($parts)) {
+            return array_values(array_filter(
+                $parts,
+                static fn ($part): bool => is_string($part) && $part !== '',
+            ));
+        }
+
+        if (($snapshot['is_demo'] ?? false) === true) {
+            return DirectPlanDefaults::DEMO_SESSION_PARTS;
+        }
+
+        return DirectPlanDefaults::PAID_SESSION_PARTS;
     }
 
     /**

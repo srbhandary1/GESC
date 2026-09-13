@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Global spoken English Course</string>
-    <string name="title_activity_main">Global spoken English Course</string>
+    <string name="app_name">Global Spoken English App</string>
+    <string name="title_activity_main">Global Spoken English App</string>
     <string name="package_name">com.globalenglish.demo</string>
     <string name="custom_url_scheme">com.globalenglish.demo</string>
 </resources>

@@ -68,6 +68,33 @@
   overflow-wrap: anywhere;
 }
 
+.learner-home__upcoming-reviews {
+  display: grid;
+  gap: var(--ge-space-3);
+}
+
+.learner-home__upcoming-list {
+  display: grid;
+  gap: var(--ge-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learner-home__upcoming-item {
+  display: grid;
+  gap: var(--ge-space-1);
+  padding: var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface-elevated);
+}
+
+.learner-home__upcoming-due {
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+}
+
 .learner-home__action {
   position: relative;
   overflow: hidden;

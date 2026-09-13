@@ -2,6 +2,7 @@ import type { MessageKey } from '@global-english/localization'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import { ANDROID_APK_HREF } from './androidDownload'
 import { MarketingLanding } from './MarketingLanding'
 
 const message = (key: MessageKey) =>
@@ -42,13 +43,23 @@ describe('MarketingLanding studio hero', () => {
     expect(
       screen.getByText(message('conversation.prototype_notice').text),
     ).toBeInTheDocument()
-    expect(
-      document.querySelector('[aria-roledescription="carousel"]'),
-    ).toBeNull()
+    expect(document.querySelector('[aria-roledescription="carousel"]')).toBeNull()
     expect(document.querySelector('.marketing-hero__slide')).toBeNull()
+    expect(document.querySelector('.marketing-hero__banner')).not.toBeNull()
     expect(
       firstScreen.getByRole('list', { name: 'Session path' }),
     ).toHaveTextContent(/Introduction.*Practice.*Conversation.*Interaction/)
+    expect(
+      screen.getAllByRole('link', {
+        name: message('marketing.hero.cta_sign_in').text,
+      }),
+    ).toHaveLength(2)
+    const androidLinks = screen.getAllByRole('link', {
+      name: message('marketing.android.download').text,
+    })
+
+    expect(androidLinks).toHaveLength(1)
+    expect(androidLinks[0]).toHaveAttribute('href', ANDROID_APK_HREF)
   })
 
   it('presents one coherent guest journey without legacy marketing imagery', () => {
@@ -67,9 +78,9 @@ describe('MarketingLanding studio hero', () => {
       ).toBeInTheDocument()
     }
 
-    expect(screen.getByRole('heading', { name: 'Two-day demo' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Modules' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Premium' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '5-day start' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Premium features' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Premium with Role-play' })).toBeInTheDocument()
     expect(
       screen.getByRole('group', {
         name: message('marketing.preview.controls').text,

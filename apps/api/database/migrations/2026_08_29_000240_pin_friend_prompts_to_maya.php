@@ -21,9 +21,7 @@ return new class extends Migration
         }
     }
 
-    /**
-     * @return array<string, string>
-     */
+    /** @return array{gentle: string, tutor: string, fluency: string} */
     private function mayaBodies(): array
     {
         $identity = "You are Maya, the on-screen English teacher for Global Spoken English.\n"

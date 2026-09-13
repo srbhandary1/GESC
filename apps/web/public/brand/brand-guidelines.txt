@@ -1,0 +1,52 @@
+GLOBAL SPOKEN ENGLISH APP - Brand Guidelines (v1.0)
+====================================================
+
+COLOR PALETTE
+-------------
+Primary Green:     #006B3F
+Accent Green:      #00A86B
+Vibrant Red:       #E31C23
+Dark Navy/Text:    #1A1A2E
+White:             #FFFFFF
+Light BG:          #F8FFFE / #F0FDF4
+
+TYPOGRAPHY
+----------
+Headings: Arial Black / Helvetica Bold / system-ui bold
+Body:     Arial / Helvetica / system-ui
+"APP" pill: Bold, letter-spacing +2px, white on red
+
+LOGO USAGE
+----------
+- Always keep clear space equal to the height of the "e" around the logo.
+- Prefer the primary horizontal version for headers and websites.
+- Use stacked version for square formats and app screens.
+- Icon-only for favicons, app icons, and small UI elements.
+- White version for dark backgrounds / photos.
+- Dark version for light backgrounds when more contrast is needed.
+- Never stretch, rotate, or change the proportions of the mark.
+- Minimum size: 24px height for icon, 120px width for horizontal logo.
+
+TAGLINE
+-------
+Primary: "Speak English Fluently"
+Alternative AI-focused: "Master Spoken English with AI"
+
+RECOMMENDED BANNER COPY
+-----------------------
+- Speak English Fluently
+- Learn. Practice. Speak with Confidence
+- Your AI English Speaking Partner
+- Global Spoken English — Powered by AI
+
+FILE FORMATS INCLUDED
+---------------------
+SVG: Fully scalable vector logos & icons (preferred for web & print)
+Use online converters or design tools to export PNG/JPG at any size needed:
+  - Favicon: 16, 32, 48, 180, 192, 512
+  - App Icon: 1024×1024
+  - Social: 1500×500, 1200×630
+  - Web banner: 1920×600 or 1920×400
+  - Splash: 1080×1920 / 1242×2688
+
+Created for modern AI language learning app.

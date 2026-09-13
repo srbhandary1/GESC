@@ -1,0 +1,14 @@
+Licensed 3D tutor character for Global Spoken English App
+=========================================================
+
+Fill this file after purchase. Commit it next to swathi.glb.
+Do not commit swathi.glb until this grant is complete.
+
+Vendor / store:
+Product name / SKU:
+Order ID:
+Purchase date:
+License type (commercial app / redistribution / modification):
+Morph set (ARKit / Azure visemes / other names):
+Licensed to: Global Spoken English App (this repository)
+Notes:

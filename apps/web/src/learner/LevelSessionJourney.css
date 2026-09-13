@@ -94,11 +94,88 @@
   font-size: clamp(1.35rem, 2.2vw, 1.75rem);
 }
 
-.level-session__hero p {
+.level-session__hero .level-session__objective {
+  margin: var(--ge-space-2) 0 0;
+  max-width: 36rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ge-accent-panel-text) 88%, transparent);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.level-session__hero .level-session__lead {
   margin: var(--ge-space-2) 0 0;
   max-width: 36rem;
   line-height: 1.55;
   color: var(--ge-accent-panel-muted);
+  font-size: var(--ge-font-size-sm);
+}
+
+.level-session__hero--introduction {
+  border-inline-start: 4px solid #3b82f6;
+}
+
+.level-session__hero--practice {
+  border-inline-start: 4px solid #059669;
+}
+
+.level-session__hero--conversation {
+  border-inline-start: 4px solid #d97706;
+}
+
+.level-session__hero--interaction {
+  border-inline-start: 4px solid #7c3aed;
+}
+
+.level-session__content {
+  display: grid;
+  gap: var(--ge-space-5);
+}
+
+.level-session--introduction .level-session__audio {
+  order: 1;
+}
+
+.level-session--introduction .level-session__part-focus {
+  order: 2;
+}
+
+.level-session--introduction .level-session__panel--activities {
+  order: 3;
+}
+
+.level-session--introduction .level-session__teacher-stage {
+  order: 4;
+}
+
+.level-session--practice .level-session__panel--check {
+  order: 1;
+}
+
+.level-session--practice .level-session__part-focus {
+  order: 2;
+}
+
+.level-session--practice .level-session__audio {
+  order: 3;
+}
+
+.level-session--practice .level-session__panel--activities {
+  order: 4;
+}
+
+.level-session--practice .level-session__teacher-stage {
+  order: 5;
+}
+
+.level-session--conversation .level-session__part-focus,
+.level-session--interaction .level-session__part-focus {
+  order: 1;
+}
+
+.level-session--conversation .level-session__teacher-stage,
+.level-session--interaction .level-session__teacher-stage {
+  order: 2;
 }
 
 .level-path__eyebrow,
@@ -252,6 +329,10 @@
 }
 
 .level-session__tab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ge-space-2);
   min-block-size: var(--ge-target-minimum);
   padding: var(--ge-space-2) var(--ge-space-3);
   border: 1px solid var(--ge-color-border);
@@ -259,8 +340,39 @@
   background: var(--ge-color-surface);
   color: var(--ge-color-text);
   font: inherit;
-  font-weight: 700;
+  text-align: start;
   cursor: pointer;
+}
+
+.level-session__tab-step {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ge-color-brass) 18%, var(--ge-color-surface));
+  color: var(--ge-color-ink);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.level-session__tab-copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.level-session__tab-label {
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.level-session__tab-hint {
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .level-session__tab--locked {
@@ -273,6 +385,31 @@
   border-color: var(--ge-inverse-surface-border);
   color: var(--ge-inverse-surface-text);
   box-shadow: inset 0 -0.18rem 0 var(--ge-color-brass);
+}
+
+.level-session__tab--active .level-session__tab-hint {
+  color: color-mix(in srgb, var(--ge-inverse-surface-text) 72%, transparent);
+}
+
+.level-session__tab--active .level-session__tab-step {
+  background: color-mix(in srgb, var(--ge-color-brass) 55%, white);
+  color: var(--ge-color-ink);
+}
+
+.level-session__tab--introduction.level-session__tab--active {
+  box-shadow: inset 0 -0.18rem 0 #3b82f6;
+}
+
+.level-session__tab--practice.level-session__tab--active {
+  box-shadow: inset 0 -0.18rem 0 #059669;
+}
+
+.level-session__tab--conversation.level-session__tab--active {
+  box-shadow: inset 0 -0.18rem 0 #d97706;
+}
+
+.level-session__tab--interaction.level-session__tab--active {
+  box-shadow: inset 0 -0.18rem 0 #7c3aed;
 }
 
 .level-session__tab--done:not(.level-session__tab--active) {
@@ -299,8 +436,121 @@
   font-size: 1.05rem;
 }
 
+.level-session__part-focus {
+  display: grid;
+  gap: var(--ge-space-3);
+}
+
+.level-session__part-focus-header {
+  display: grid;
+  gap: var(--ge-space-1);
+}
+
+.level-session__part-focus-step {
+  margin: 0;
+  color: var(--ge-color-brass);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.level-session__focus-label {
+  margin: 0 0 var(--ge-space-1);
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.level-session__part-focus--introduction {
+  border-inline-start: 4px solid #3b82f6;
+}
+
+.level-session__part-focus--practice {
+  border-inline-start: 4px solid #059669;
+}
+
+.level-session__part-focus--conversation {
+  border-inline-start: 4px solid #d97706;
+}
+
+.level-session__part-focus--interaction {
+  border-inline-start: 4px solid #7c3aed;
+}
+
+.level-session__scenario,
+.level-session__task,
+.level-session__goals {
+  margin: 0;
+  padding: var(--ge-space-3) var(--ge-space-4);
+  border-radius: var(--ge-radius-md);
+  background: color-mix(in srgb, var(--ge-color-action) 8%, var(--ge-color-surface));
+}
+
+.level-session__part-focus--conversation .level-session__scenario {
+  background: color-mix(in srgb, #d97706 12%, var(--ge-color-surface));
+  border: 1px solid color-mix(in srgb, #d97706 28%, var(--ge-color-border));
+}
+
+.level-session__part-focus--interaction .level-session__task {
+  background: color-mix(in srgb, #7c3aed 12%, var(--ge-color-surface));
+  border: 1px solid color-mix(in srgb, #7c3aed 28%, var(--ge-color-border));
+}
+
+.level-session__goal-list {
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  display: grid;
+  gap: var(--ge-space-1);
+  line-height: 1.5;
+}
+
+.level-session__scenario p:last-child,
+.level-session__task p:last-child {
+  margin: 0;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.level-session__panel--check {
+  border: 1px solid color-mix(in srgb, #059669 35%, var(--ge-color-border));
+  background: color-mix(in srgb, #059669 6%, var(--ge-panel-background));
+}
+
+.level-session__check-lead {
+  margin: 0 0 var(--ge-space-3);
+  color: var(--ge-color-text-muted);
+}
+
+.level-session__teacher-stage-label {
+  margin: 0 0 var(--ge-space-3);
+  color: var(--ge-color-brass);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.level-session__teacher-stage--introduction {
+  border-top: 3px solid #3b82f6;
+}
+
+.level-session__teacher-stage--practice {
+  border-top: 3px solid #059669;
+}
+
+.level-session__teacher-stage--conversation {
+  border-top: 3px solid #d97706;
+}
+
+.level-session__teacher-stage--interaction {
+  border-top: 3px solid #7c3aed;
+}
+
 .level-session__patterns {
-  margin: var(--ge-space-2) 0 0;
+  margin: 0;
   padding-inline-start: 1.2rem;
   display: grid;
   gap: var(--ge-space-1);
@@ -324,6 +574,21 @@
 .level-session__audio {
   display: grid;
   gap: var(--ge-space-2);
+  border: 1px solid color-mix(in srgb, #3b82f6 30%, var(--ge-color-border));
+  background: color-mix(in srgb, #3b82f6 6%, var(--ge-panel-background));
+}
+
+.level-session--practice .level-session__audio {
+  border-color: color-mix(in srgb, #059669 30%, var(--ge-color-border));
+  background: color-mix(in srgb, #059669 6%, var(--ge-panel-background));
+}
+
+.level-session__panel--activities-introduction {
+  border: 1px dashed color-mix(in srgb, #3b82f6 35%, var(--ge-color-border));
+}
+
+.level-session__panel--activities-practice {
+  border: 1px dashed color-mix(in srgb, #059669 35%, var(--ge-color-border));
 }
 
 .level-session__audio audio {

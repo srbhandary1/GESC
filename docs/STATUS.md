@@ -1,5 +1,123 @@
 # Repository status
 
+## LPL-05 all-level commissioning wave — 13 September 2026
+
+- **Completeness matrix:** `DirectPathwayCommissioningAuditService` audits all
+  17 configured Direct levels against media, transcript metadata, objective,
+  validated blueprint, English/Kannada review, quiz rationales, Apply task,
+  rights, publication eligibility and `level_checkpoint`.
+- **Wave grouping:** Level 1 (wave 1), Levels 2–3 (wave 2), Levels 4–17
+  (wave 3) — all derived from config, not hard-coded lesson counts.
+- **Operator command:** `php artisan lesson-practice:audit-direct-pathway-commissioning`
+  (exit 0 when every enabled level is complete).
+- **Live audit (13 September 2026):** `global_english` reports 17/17 complete
+  across all three waves (`matrix_totals` green for every field). Evidence:
+  `docs/evidence/lpl-01/lpl05-commissioning-wave-result.json`.
+- **Publication chain:** APP-0065 authored Levels 2–17 → APP-0066 English review
+  → APP-0067 Kannada review → WAVE-7.1 publish → LPL-04 checkpoint republish.
+- **Known quality debt (unchanged):** Kannada reviews are authored summaries,
+  not independent specialist sign-off; Level 15 practice reuses a combined asset.
+- **Still out of scope:** LPL-07 production release acceptance and independent
+  Kannada re-review campaign.
+
+## LPL-07 rollout gate + level-path offline E2E — 13 September 2026
+
+- **Playwright:** `apps/web/e2e/level-path-offline.spec.ts` covers personal-device
+  enablement, signed level-bundle prefetch, offline checkpoint queue with
+  pending-authority copy, and reconnect sync through
+  `POST /api/v1/offline-level-checkpoint-submissions` (no online checkpoint POST).
+- **Rollout gate:** `make lpl-07-rollout-gate` runs production commissioning
+  evidence check (`lpl05-commissioning-wave-result.json`), focused PostgreSQL
+  LPL tests, the level-path offline Playwright journey, and writes
+  `docs/evidence/lpl-01/lpl07-rollout-gate-result.json`.
+- **Operator evidence command:** `php artisan lesson-practice:lpl-07-rollout-evidence`
+  emits commissioning JSON for live rollout review (separate from repository gate).
+- **Still out of scope:** production/public release acceptance, Android device
+  UAT matrix, migration/backup-restore closure in this slice, and independent
+  Kannada re-review campaign.
+
+## LPL-04 level checkpoint + sequential unlock — 13 September 2026
+
+- Level *N* (> 1) stays progress-locked until Level *N − 1* has all four
+  sessions complete **and** a passing level checkpoint. Level 1 is always
+  allowed when commissioned.
+- Backend: `LevelCheckpointService` serves bounded checkpoint attempts (3 max,
+  80% pass); `LevelSessionProgressService` unlock rule is now `level_unlock_v1`;
+  append-only `level_checkpoint_attempts` and `level_unlock_decisions` record
+  evidence; unlock fires on checkpoint pass, not on the last session completion.
+- Learner API: `GET /api/v1/me/levels` adds `checkpoint_status` and
+  `checkpoint_attempts_remaining`; `GET/POST .../checkpoint(-submissions)` for
+  the novel end-of-level quiz (derived from blueprint `check` items when no
+  dedicated `level_checkpoint` block exists).
+- Web: after all four sessions, `LevelPathPanel` shows the level checkpoint
+  form; demo API mirrors checkpoint + progression (session routes stay open for
+  content exploration).
+- OpenAPI updated for checkpoint routes and level list fields.
+- Tests: `LevelSessionProgressServiceTest`, `LevelSessionLevelsHttpTest`
+  (includes failed-then-pass checkpoint HTTP), `LevelPathPanel.test.tsx`,
+  `localDemo.test.ts`.
+- Authored Levels 2–17 blueprints include a dedicated `level_checkpoint`
+  block (novel “Level review:” prompts, `{concept}-cp-0N` item ids). Level 1
+  receives `level_checkpoint` at publish time from its existing `check` block.
+- UI adds checkpoint-ready and attempts-exhausted sections on the level path;
+  generated contract types include checkpoint fields/routes.
+- **Live republish (13 September 2026):** APP-0065/0066/0067 replace + review
+  on `global_english`, then `lesson-practice:publish-direct-pathway
+  --approval=WAVE-7.1` published 17/17 with `level_checkpoint` (3 items each).
+  Evidence: `docs/evidence/lpl-01/lpl04-checkpoint-republish-result.json`.
+  Replay is hash-idempotent (`lpl04-checkpoint-*` keys).
+- **Review-due blocking (13 September 2026):** `ReviewDueBlockingService`
+  blocks level checkpoint and unlock while an incomplete delayed review is
+  due (`checkpoint_status=review_due_blocked`). Later-due reviews do not
+  revoke an issued unlock. Web level path surfaces the block with Home-first
+  guidance.
+- **Spoken-evidence checkpoint claims (13 September 2026):**
+  `LevelSpeakingEvidenceService` projects `spoken_evidence` on level list and
+  checkpoint submissions (`evidence_state`, `spoken_state=unassessed`,
+  `spoken_progress_claim=false`). Unlock evidence stores the same snapshot;
+  checkpoint attempts persist `spoken_evidence_json`. Knowledge pass never
+  awards spoken mastery.
+- **Offline checkpoint equivalence (13 September 2026):** personal-device
+  offline store caches checkpoint detail (hash-bound), queues encrypted
+  checkpoint submissions while disconnected, and syncs through the existing
+  idempotent `POST .../checkpoint-submissions` route on reconnect. UI shows
+  pending-authority copy until the server returns score/unlock; no local pass
+  or unlock is shown before authoritative scoring.
+- **LPL-04 verification closure (13 September 2026):**
+  - Checkpoint idempotency replay returns the original attempt and unlock
+    (`LevelSessionLevelsHttpTest`); pre-pass idempotency lookup fixes offline
+    reconnect after a passing submit.
+  - Unlock recording uses row lock + idempotent replay (`LevelSessionProgressService`).
+  - Variable session-part counts come from config, not a hard-coded four
+    (`LevelCheckpointVariablePartsTest`).
+- **LPL-06a shared due-review inventory (13 September 2026):**
+  `ReviewDueBlockingService` is the single earliest-due query for checkpoint
+  blocking, Home (`due_review`, `upcoming_reviews`) and Progress
+  (`actionable_due_review`). Home resolves review titles from the blocked
+  mission, not only today's mission; Progress and Home surface continue CTAs
+  when reviews block level unlock.
+- **LPL-06b signed level offline bundles (13 September 2026):**
+  `GET /api/v1/me/levels/{n}/offline-bundle` issues
+  `global-english.offline-level-bundle.v1` leases (checkpoint + practice check
+  + introduction metadata, no answer keys). Offline checkpoint queue requires a
+  stored signed bundle; sync uses `POST /api/v1/offline-level-checkpoint-submissions`.
+- **LPL-06c content-free learning metrics (13 September 2026):**
+  `OperatorLearningMetricsQuery` adds seven org-scoped signals to pilot
+  analytics (stage completions, speaking turns, quiz retries, review return,
+  AI fallback, latency samples, session cost).
+- **LPL-06d session limits and budget alerts (13 September 2026):**
+  `ConversationSessionBudget` enforces configurable per-session learner-turn and
+  token ceilings before live dispatch. Speech economics summary exposes a
+  content-free `budget_alert` when estimated spend crosses the configured INR
+  warning threshold.
+- **LPL-06e privacy inventory and LPL drill coverage (13 September 2026):**
+  `LearnerPrivacyInventory` v12 inventories level session/checkpoint/unlock
+  tables with retain-immutable outcomes; `OperatorPrivacySupportTest` asserts
+  the new record classes.
+- **Still out of scope:** full LPL-00 §7 multi-lesson publication rules,
+  learner self-service privacy export UI, and operator privacy export/erasure
+  console panel.
+
 ## Mira GESC-green theme pin + Android mic — 13 September 2026
 
 - Theme-only pin of Superdesign Futuristic Learning Studio chrome to Mira

@@ -6,6 +6,8 @@ import {
 } from './AndroidPkceAuthenticationAdapter'
 import { AuthenticationUnavailableError } from './AuthenticationAdapter'
 
+const APPROVED_ANDROID_CLIENT_ID = '019fdd3f-4bba-720b-9e4e-a771ecccdd7f'
+
 class InMemoryReviewedSecureStore implements NativeSecureCredentialStore {
   readonly installationId = '01J00000000000000000000010'
   pending: { state: string; verifier: string } | null = null
@@ -118,6 +120,55 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     )
   })
 
+  it('discovers the approved OAuth client id from the mobile mode endpoint when the build default is invalid', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const systemBrowser: SystemAuthorizationBrowser = {
+      open: vi.fn(async () => undefined),
+    }
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+
+      if (request.url.endsWith('/auth/mobile/password/mode')) {
+        return Response.json({
+          client_id: APPROVED_ANDROID_CLIENT_ID,
+          mode: 'password_only',
+        })
+      }
+
+      if (request.url.endsWith('/auth/mobile/password/sign-ins')) {
+        const body = (await request.json()) as Record<string, unknown>
+        expect(body.client_id).toBe(APPROVED_ANDROID_CLIENT_ID)
+
+        return Response.json({
+          access_token: 'memory-only-access-token',
+          expires_in: 900,
+          refresh_token: 'secure-refresh-token',
+          token_type: 'Bearer',
+        })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = new AndroidPkceAuthenticationAdapter({
+      apiBaseUrl: 'https://api.global-english.test/api/v1',
+      authorizationEndpoint:
+        'https://api.global-english.test/oauth/authorize',
+      clientId: 'public-android-client',
+      fetch: fetcher,
+      redirectUri: 'com.globalenglish.app:/oauth/callback',
+      secureStore,
+      systemBrowser,
+      tokenEndpoint: 'https://api.global-english.test/oauth/token',
+    })
+
+    await adapter.signIn('learner.one', 'Correct horse battery 2026!')
+
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/mobile/password/mode'),
+      expect.anything(),
+    )
+  })
+
   it('signs in with username and password without opening Custom Tabs', async () => {
     const secureStore = new InMemoryReviewedSecureStore()
     const systemBrowser: SystemAuthorizationBrowser = {
@@ -131,7 +182,7 @@ describe('AndroidPkceAuthenticationAdapter', () => {
         expect(request.headers.get('Content-Type')).toBe('application/json')
         const body = (await request.json()) as Record<string, unknown>
         expect(body).toEqual({
-          client_id: 'public-android-client',
+          client_id: APPROVED_ANDROID_CLIENT_ID,
           installation_id: secureStore.installationId,
           password: 'Correct horse battery 2026!',
           username: 'learner.one',
@@ -173,7 +224,7 @@ describe('AndroidPkceAuthenticationAdapter', () => {
       if (request.url.endsWith('/auth/mobile/social/sign-ins')) {
         expect(request.headers.get('Authorization')).toBeNull()
         expect(JSON.parse(await request.text())).toEqual({
-          client_id: 'public-android-client',
+          client_id: APPROVED_ANDROID_CLIENT_ID,
           installation_id: secureStore.installationId,
           ticket: 'federated-ticket-value-xxxxxxxx',
         })
@@ -224,7 +275,7 @@ describe('AndroidPkceAuthenticationAdapter', () => {
       if (request.url.includes('/auth/mobile/social/google/authorization')) {
         return Response.json({
           authorization_url:
-            'https://api.global-english.test/oauth/social/google/authorize?client_id=public-android-client',
+            `https://api.global-english.test/oauth/social/google/authorize?client_id=${APPROVED_ANDROID_CLIENT_ID}`,
         })
       }
 
@@ -235,7 +286,7 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     await adapter.beginFederatedSignIn('google')
 
     expect(openedUrls).toEqual([
-      'https://api.global-english.test/oauth/social/google/authorize?client_id=public-android-client',
+      `https://api.global-english.test/oauth/social/google/authorize?client_id=${APPROVED_ANDROID_CLIENT_ID}`,
     ])
     expect(secureStore.pending).toBeNull()
   })
@@ -914,7 +965,7 @@ function createAdapter(
     apiBaseUrl: 'https://api.global-english.test/api/v1',
     authorizationEndpoint:
       'https://api.global-english.test/oauth/authorize',
-    clientId: 'public-android-client',
+    clientId: APPROVED_ANDROID_CLIENT_ID,
     beforeLogout,
     fetch: fetcher,
     redirectUri: 'com.globalenglish.app:/oauth/callback',

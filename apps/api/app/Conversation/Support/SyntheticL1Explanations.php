@@ -58,6 +58,36 @@ final class SyntheticL1Explanations
     /**
      * @return array<string, string>
      */
+    public static function drillPatternAccepted(): array
+    {
+        return [
+            'en-IN' => 'Good. That matches the model sentence.',
+            'kn-IN' => 'ಚೆನ್ನಾಗಿದೆ. ಅದು ಮಾದರಿ ವಾಕ್ಯಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತದೆ.',
+            'hi-IN' => 'अच्छा। यह मॉडल वाक्य से मेल खाता है।',
+            'ml-IN' => 'നന്നായി. അത് മാതൃകാ വാക്യവുമായി പൊരുത്തപ്പെടുന്നു.',
+            'ta-IN' => 'நன்று. அது மாதிரி வாக்கியத்துடன் பொருந்துகிறது.',
+            'te-IN' => 'బాగుంది. అది మాదిరి వాక్యంతో సరిపోతుంది.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function drillRepeatModel(string $model): array
+    {
+        return [
+            'en-IN' => 'Say the model sentence: "'.$model.'"',
+            'kn-IN' => 'ಮಾದರಿ ವಾಕ್ಯ ಹೇಳಿ: "'.$model.'"',
+            'hi-IN' => 'मॉडल वाक्य बोलें: "'.$model.'"',
+            'ml-IN' => 'മാതൃകാ വാക്യം പറയുക: "'.$model.'"',
+            'ta-IN' => 'மாதிரி வாக்கியத்தைச் சொல்லுங்கள்: "'.$model.'"',
+            'te-IN' => 'మాదిరి వాక్యం చెప్పండి: "'.$model.'"',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
     public static function safetyFallback(): array
     {
         return [

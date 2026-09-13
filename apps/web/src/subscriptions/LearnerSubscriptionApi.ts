@@ -2,6 +2,7 @@ import {
   defaultAuthenticationRuntime,
   type ApiCsrfProtection,
 } from '../auth/defaultAuthentication'
+import type { SessionPartId } from '../learner/LevelSessionsApi'
 
 export interface LearnerEntitlement {
   readonly applies: boolean
@@ -10,6 +11,8 @@ export interface LearnerEntitlement {
   readonly plan_name: string | null
   readonly status: string
   readonly allows_roleplay: boolean
+  readonly allows_free_speech: boolean
+  readonly allowed_session_parts: readonly SessionPartId[]
   readonly max_level_number: number | null
   readonly is_demo: boolean
   readonly expires_at: string | null

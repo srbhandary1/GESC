@@ -84,7 +84,7 @@ final readonly class LearnerSubscriptionService
                 'live_ai_cap_seconds' => $this->nullableInt($plan, 'live_ai_cap_seconds'),
                 'is_demo' => (bool) $plan->is_demo,
                 'is_talk_pack' => $isTalkPack,
-                'checkout_required' => ! (bool) $plan->is_demo && (int) $plan->amount_ex_gst_paise > 0,
+                'checkout_required' => (int) $plan->amount_ex_gst_paise > 0,
                 'recommended' => $code === DirectPlanDefaults::MONTHLY_ROLEPLAY,
             ];
         }
@@ -136,7 +136,7 @@ final readonly class LearnerSubscriptionService
                 ->where('status', 'active')
                 ->first();
 
-            if (! $plan instanceof stdClass || (bool) $plan->is_demo || (int) $plan->amount_ex_gst_paise <= 0) {
+            if (! $plan instanceof stdClass || (int) $plan->amount_ex_gst_paise <= 0) {
                 throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
             }
 

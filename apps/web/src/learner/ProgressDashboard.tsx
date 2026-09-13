@@ -126,6 +126,30 @@ export function ProgressDashboard({
         </h1>
       </header>
 
+      {data.actionable_due_review !== null && data.delayed_review.due_count > 0 ? (
+        <section
+          aria-labelledby="progress-due-review-title"
+          className="progress-dashboard__section progress-dashboard__due-review"
+        >
+          <h2
+            className="progress-dashboard__section-title"
+            id="progress-due-review-title"
+          >
+            <LocalizedMessage resolution={msg('learner.progress.due_review.title')} />
+          </h2>
+          <p className="progress-dashboard__due-review-message">
+            <LocalizedMessage resolution={msg('learner.progress.due_review.message')} />
+          </p>
+          <button
+            className="button button--primary progress-dashboard__due-review-action"
+            onClick={onMissionRequested}
+            type="button"
+          >
+            <LocalizedMessage resolution={msg('learner.progress.due_review.action')} />
+          </button>
+        </section>
+      ) : null}
+
       <section className="progress-dashboard__section progress-dashboard__summary" aria-label={msg('learner.progress.summary').text}>
         <div className="progress-dashboard__stat">
           <span className="progress-dashboard__stat-value">{data.speaking_activity.meaningful_speaking_days_count}</span>

@@ -43,10 +43,10 @@ final class CourtesyPremiumGrantTest extends TestCase
             $premium = collect($catalogue['plans'])->firstWhere('code', DirectPlanDefaults::MONTHLY_ROLEPLAY);
             $modules = collect($catalogue['plans'])->firstWhere('code', DirectPlanDefaults::MONTHLY_MODULES);
             self::assertIsArray($premium);
-            self::assertSame('Premium', $premium['name']);
+            self::assertSame('Premium with Role-play', $premium['name']);
             self::assertTrue($premium['recommended']);
             self::assertIsArray($modules);
-            self::assertSame('Modules', $modules['name']);
+            self::assertSame('Premium features', $modules['name']);
             self::assertFalse($modules['recommended']);
             self::assertSame(DirectPlanDefaults::MONTHLY_ROLEPLAY, $catalogue['plans'][0]['code']);
             $talk = collect($catalogue['plans'])->firstWhere('code', DirectPlanDefaults::TALK_PACK_30);
@@ -81,7 +81,7 @@ final class CourtesyPremiumGrantTest extends TestCase
             self::assertSame(DirectPlanDefaults::MONTHLY_ROLEPLAY, $snapshot['plan_code']);
             self::assertTrue($snapshot['allows_roleplay']);
             self::assertNull($snapshot['max_level_number']);
-            self::assertSame(DirectPlanDefaults::PREMIUM_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
+            self::assertSame(DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
             self::assertSame(2, $service->grantedMembershipCount($organizationId));
             self::assertSame(1, DB::table('learner_entitlements')
                 ->where('learner_membership_id', $firstContext->membershipId)

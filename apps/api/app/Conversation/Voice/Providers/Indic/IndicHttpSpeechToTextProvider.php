@@ -160,6 +160,11 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
                 inputUnits: $metadata->durationMs,
                 outputUnits: mb_strlen($transcript),
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'audio_milliseconds',
+                outputUnitKind: 'unicode_characters',
+                billableUnitKind: 'audio_milliseconds',
+                billableUnitQuantity: $metadata->durationMs,
+                locale: $this->configuration->languageCode(),
             ),
         );
     }

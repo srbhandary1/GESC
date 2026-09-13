@@ -38,6 +38,9 @@ final class ConfirmedTextSpeechToTextProvider implements SpeechToTextProvider
                 inputUnits: mb_strlen($request->prototypeUtterance),
                 outputUnits: mb_strlen($transcript),
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'unicode_characters',
+                outputUnitKind: 'unicode_characters',
+                dispatchKind: 'local_execution',
             ),
         );
     }

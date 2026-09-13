@@ -21,6 +21,9 @@ final class DeterministicTestingSpeechToTextProvider implements RecordedSpeechTo
                 inputUnits: strlen($request->audioBytes),
                 outputUnits: 31,
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'audio_bytes',
+                outputUnitKind: 'unicode_characters',
+                dispatchKind: 'local_execution',
             ),
         );
     }

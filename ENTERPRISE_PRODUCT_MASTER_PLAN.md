@@ -1,6 +1,6 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.14"
+version: "3.15"
 status: "Canonical implementation baseline"
 prepared: "14 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
@@ -91,6 +91,7 @@ The product promise is:
 | Primary experience | Structured Tutor + AI Friend + Role-play Studio |
 | Learning language | English |
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
+| Kannada Help | **Kannada Help — Ask Swathi** is an explicit Free-Speech-entitled advisory support path: concise Kannada answer plus an actionable English bridge; it is not an authoritative learning or assessment mode |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
 | Authentication | One platform-global username/password credential for enrollment and privileged freshness; Google and Facebook may sign in already-enrolled users and issue the same web session or Android Passport family; roles and permission groups authorize work after sign-in; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with Passport refresh_token thereafter; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
@@ -285,6 +286,23 @@ Role-play stages:
 3. **Perform:** complete an open-ended exchange.
 4. **Reflect:** review task completion, priority corrections, stronger vocabulary and a retry task.
 
+#### Kannada Help — Ask Swathi support path
+
+Kannada Help is not a fourth authoritative learning or assessment mode. It is
+an explicit, authenticated support path under the same server-side Free Speech
+entitlement as Friend/free-speech sessions. A learner may ask a genuine
+question in Kannada, English or expected Kannada-English code mix. Swathi gives
+a concise Kannada answer and an actionable English bridge that invites or
+models the next English utterance.
+
+Tutor, Friend and Role-play remain English-practice modes. They may provide one
+short Kannada repair or explanation when needed, then return to English. Input
+language detection alone cannot switch a session into Kannada Help. The server
+derives mode and reply locale from the authorized session, learner intent,
+supported locale policy and safety state. Kannada Help is advisory and cannot
+write marks, mastery, progression, review schedules, certificates,
+entitlements or curriculum records.
+
 ### 4.2 All-levels four-session path
 
 Every configured level uses the same learner-facing sessions, accepted under
@@ -445,6 +463,11 @@ The system should support, within measured limits:
 - Kannada script and mixed-script text where supported;
 - learner correction of an inaccurate transcript.
 
+The canonical learner utterance preserves the original native or code-mixed
+transcript. An English translation or semantic intent may be derived only as a
+separate field; it never replaces the original and is not grammar,
+pronunciation or correction evidence.
+
 ### 5.2 Dialect strategy
 
 Do not attempt to identify or label the learner’s dialect in Phase 1. Build an evaluation set containing consented, anonymized samples representing:
@@ -478,6 +501,10 @@ The learner can:
 - report repeated recognition failure.
 
 A transcript correction must remain linked to the original recognition result for evaluation, while the edited text becomes the learner-approved input for the next step.
+
+Realtime partial transcripts are advisory and ephemeral. Only the final
+explicitly submitted, reviewable transcript becomes learner evidence under the
+approved consent and retention policy.
 
 ### 5.4 Localization governance
 
@@ -1103,6 +1130,7 @@ Use low-latency, turn-based voice interaction:
 2. voice activity or an explicit stop action closes the turn;
 3. the client uploads the audio with an idempotency key;
 4. speech-to-text produces a transcript and language metadata;
+   realtime partials, when enabled, remain ephemeral and non-authoritative;
 5. the learner can correct an uncertain transcript when policy requires;
 6. the conversation orchestrator builds allowlisted context;
 7. the model produces schema-validated reply and learning feedback;
@@ -1124,7 +1152,15 @@ The initial implementation uses:
 - bounded polling as a fallback;
 - local playback and retry before submission.
 
-A WebSocket transport may be introduced only through an ADR after the benchmark proves it materially improves latency or interaction quality.
+ADR-0038 authorizes an authenticated first-party WebSocket relay for realtime
+STT implementation and benchmarking. The server holds provider credentials;
+clients never receive a provider credential or connect directly to a provider.
+Consent, active-organization authorization, entitlement and rate/spend checks
+occur before dispatch. Explicit turn submission remains authoritative,
+recorded upload remains an accessible recovery path, and full-duplex or
+always-on capture remains excluded. Reply status continues through
+authenticated SSE/polling and private no-store or short-lived signed media
+unless a later accepted ADR changes it.
 
 ### 14.3 Audio handling
 
@@ -1159,6 +1195,20 @@ Each adapter reports:
 - safety and validation result;
 - correlation and interaction identifiers.
 
+Enabled speech routes are server-owned, environment-specific and versioned.
+They freeze provider, product/model, API version, voice, locale/profile,
+region/deployment class and a non-secret normalized configuration hash. An
+ordinary operation uses one primary and at most one reviewed fallback, for a
+hard maximum of two billable dispatches per stage and logical operation.
+Clients cannot select or shadow providers. Unselected candidates remain
+disabled or benchmark-only, and ordinary learner audio is never sent to three
+providers for comparison.
+
+The project-owned STT result preserves `transcript_original`, normalized
+`transcript_locale`, optional normalized confidence with provenance and an
+optional separate `english_intent_text`. The derived English field never
+replaces the original or becomes grammar evidence.
+
 ### 14.5 Conversation and correction output
 
 Conversation and learning feedback are logically separate, even when produced in one model call for latency.
@@ -1168,7 +1218,11 @@ Illustrative contract:
 ```json
 {
   "understood_intent": "The learner met a customer yesterday",
-  "assistant_reply": "That sounds productive. What did you discuss?",
+  "assistant_reply": {
+    "text": "That sounds productive. What did you discuss?",
+    "locale": "en-IN"
+  },
+  "english_bridge_en": null,
   "priority_correction": {
     "learner_sentence": "Yesterday I go to office and meet one customer",
     "corrected_sentence": "Yesterday I went to the office and met a customer",
@@ -1185,6 +1239,14 @@ Illustrative contract:
 ```
 
 Validate schema, locale/script expectations, length, unsafe content and forbidden authority claims before showing output.
+
+`assistant_reply.locale` is mandatory and allowlisted; it determines the TTS
+locale. During additive client migration, `assistant_reply_en` may exist only
+when the reply locale is `en-IN`, must be an exact copy, and must then be
+retired. Kannada text must never be placed in a field named `_en`. The complete
+bounded reply is validated before TTS begins; speaking unvalidated incomplete
+model tokens requires a later accepted ADR. Optional guidance audio must not
+block the first main-reply audio.
 
 ### 14.6 Context policy
 
@@ -1215,6 +1277,10 @@ When a dependency fails:
 - never fabricate a score or pretend that voice analysis succeeded;
 - keep downloaded lessons usable.
 
+Provider fallback is server-owned and limited to the one reviewed fallback
+within the two-dispatch cap. A fallback never consumes a second learner
+entitlement, but every provider dispatch is recorded as platform cost.
+
 ### 14.8 Model-selection process
 
 Do not choose a model only from marketing claims or download availability.
@@ -1238,6 +1304,10 @@ Sequence:
 2. production routing and cost optimization;
 3. open-weight benchmark using the same locked evaluation suite;
 4. on-prem packaging only after quality and concurrency thresholds pass.
+
+Routine multi-provider learner-audio shadowing is prohibited. Comparative
+evaluation uses synthetic, licensed or separately consented material in a
+governed benchmark lane with frozen configurations and a predeclared rubric.
 
 ---
 
@@ -1421,6 +1491,13 @@ The product must be designed for India’s Digital Personal Data Protection Act,
 - vendor/sub-processor register and data-processing review;
 - tested export, correction, closure and erasure workflows;
 - privacy-safe analytics and logs.
+- provider-product-specific DPA, subprocessor, processing/storage location,
+  no-training/human-review, retention, deletion and incident evidence before
+  learner-content dispatch;
+- provider-call evidence linked to learner/turn for no more than 30 days,
+  followed by reviewed anonymous aggregation and deletion under ADR-0007;
+- cancellation and consent withdrawal stop queued dispatch and retry while
+  deletion reconciliation continues.
 
 ### 18.2 Application security baseline
 
@@ -1457,6 +1534,10 @@ Minimum controls:
 - rate and spend caps by learner and organization;
 - model/prompt/provider versioning;
 - staged rollout and emergency disablement;
+- independent provider dispatch kill switches, quota/spend caps and deletion
+  paths; disabling new calls must not disable deletion work;
+- content-free telemetry only: no audio, transcript/reply text, prompt,
+  personal learner data, secret or raw provider payload in labels or exports;
 - human report and support route;
 - locked safety evaluation before model changes;
 - no automated high-stakes employment, academic or eligibility decisions.
@@ -1504,6 +1585,7 @@ Dark mode is lower priority than readability, low-bandwidth use, audio guidance 
 | Normal non-AI API latency | p95 ≤ 500 ms under forecast pilot load |
 | Operator dashboard API | p95 ≤ 800 ms before network transfer |
 | End of learner turn to first response signal | median ≤ 4 s target; p95 ≤ 8 s target after benchmark |
+| End of explicit learner turn to first audible main reply | production gate median ≤ 4 s and p95 ≤ 8 s on the approved profile; launch objective median ≤ 1.8 s and p95 ≤ 4 s |
 | Known AI dependency failure fallback | visible fallback within 2 s after failure is known |
 | Submission integrity | no acknowledged attempt, turn or offline event may be lost |
 | Recovery point objective | ≤ 15 minutes |
@@ -1511,6 +1593,12 @@ Dark mode is lower priority than readability, low-bandwidth use, audio guidance 
 | Capacity validation | load test at 2× forecast pilot peak |
 
 Voice latency targets are planning gates, not guarantees until candidate providers are benchmarked on target networks.
+
+Acknowledgement has a separate 100 ms objective and never counts as a
+substantive response or first audible audio. Server connection, first STT
+partial/final, model first token/completion, first TTS byte/completion and
+sampled client first-audible milestones use documented clock origins and sample
+policies. Missing, partial and cancelled samples remain visible in denominators.
 
 ### 20.2 Reference capacity
 
@@ -1548,6 +1636,20 @@ Meter:
 - retries, failures and fallbacks;
 - cost per completed session;
 - cost per active learner and organization.
+
+Every potentially billable provider dispatch is metered, including failure,
+cancellation, partial stream, retry and fallback, even when the institutional
+learner entitlement is unmetered. One logical accepted learner turn consumes
+entitlement only once.
+
+Usage records carry explicit billable unit kinds/quantities, route role,
+dispatch/cache state, exact provider fingerprint, immutable rate-card version,
+native currency and gross/tax/discount/credit values, INR conversion
+provenance, estimated cost and invoice-reconciliation status. Rate changes
+create new immutable versions and never rewrite retained provider-call
+evidence. Negotiated terms and invoices require an audited platform-only
+permission; organization operators require a separate permission and see only
+active-organization aggregates and approved allocated cost.
 
 Controls:
 
@@ -1598,6 +1700,9 @@ Maintain a versioned locked evaluation suite covering:
 - fabricated scores or requirements;
 - provider timeout and malformed output;
 - cost and latency regression.
+- first-result, completion and first-audible latency with explicit missing,
+  partial and cancelled samples;
+- provider routing, billable dispatch identity, rate-card and invoice variance.
 
 AI tests must not depend on exact wording. Evaluate:
 
@@ -1612,6 +1717,14 @@ AI tests must not depend on exact wording. Evaluate:
 - latency and cost.
 
 Use deterministic provider fakes for routine CI. Run paid/live provider evaluations in controlled CI or scheduled environments with budgets and stored results.
+
+Before production speech selection, run a frozen controlled bake-off with at
+least 200 STT items and 20–50 TTS scripts, Kannada/English/code-mix and
+supported dialect/noise/device/network subgroups, blind bilingual review,
+accessibility review, failure/deletion drills, 50 concurrent voice turns and
+the approved 2× burst profile. Select on cost per successful usable turn,
+quality, first-audible latency, reliability, privacy/residency/retention and
+recovery—not vendor claims alone.
 
 ### 21.3 Human review
 
@@ -1665,6 +1778,8 @@ Proceed to full production only when:
 - no reviewed dialect/device/noise subgroup has an unexplained material failure gap;
 - response latency is acceptable on target devices and networks;
 - projected unit economics fit the intended commercial model;
+- the speech first-audible production gate, governed provider bake-off,
+  invoice reconciliation and provider privacy/deletion evidence pass;
 - learners demonstrate repeat use rather than one-time novelty.
 
 Exact sample sizes and statistical confidence are approved during Step 0 research.
@@ -2411,6 +2526,8 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
 | Voice | Online, turn-based, user-visible state; no full-duplex or offline AI |
+| Speech routing | ADR-0038 server-owned versioned primary plus one reviewed fallback; two-dispatch cap; no routine learner-audio shadowing; production provider choice requires the governed bake-off |
+| Kannada Help | Explicit Free-Speech-entitled Ask Swathi support path with Kannada reply and English bridge; English remains the learning language; advisory only |
 | AI | Grounded, structured, provider-adapted, evaluated and non-authoritative |
 | Memory | Explicit, purpose-bound, user-visible and deletable |
 | Offline | Downloaded deterministic mission and idempotent outbox |
@@ -2434,6 +2551,12 @@ The following can remain adapter/configuration choices during scaffolding:
 - final module scripts and voice talent.
 
 They must be resolved before the relevant production checkpoint.
+
+ADR-0038 controls multi-provider speech routing, Kannada Help, native/code-mix
+transcript preservation, authenticated realtime STT and the separate
+first-audible gate. Its acceptance authorizes SPEECH-OBS-01 only. Credentials,
+provider calls, spend, evaluation or learner-content processing and production
+remain subject to their later explicit gates.
 
 ---
 

@@ -493,6 +493,7 @@
 .shell-sign-in-page .web-otp-sign-in__form label {
   color: var(--ge-color-ink);
   font-weight: 650;
+  text-align: center;
 }
 
 .shell-sign-in-page .web-otp-sign-in__form input:not([type='checkbox']) {
@@ -508,10 +509,16 @@
 }
 
 .shell-sign-in-page .web-otp-sign-in__form label:has(input[type='checkbox']) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: auto;
   color: var(--ge-color-text-muted);
 }
 
 .shell-sign-in-page .web-otp-sign-in__form button {
+  display: inline-flex;
   width: 100%;
   justify-content: center;
 }
@@ -525,7 +532,8 @@
 .shell-sign-in-page .web-otp-sign-in__error {
   color: var(--ge-color-ink);
   background: var(--ge-error-bg);
-  border-inline-start-color: var(--ge-error-border);
+  border-inline-start: 0;
+  text-align: center;
 }
 
 .progress-dashboard__section {
@@ -554,10 +562,6 @@
 .ge-application-frame--home::before,
 .ge-application-frame--home::after {
   animation: none;
-}
-
-.tutor-home-hero__art {
-  display: none;
 }
 
 .learner-home__action-orbit {

@@ -23,6 +23,7 @@ final readonly class OperatorShellAuthorization
      *     media: bool,
      *     audit: bool,
      *     support: bool,
+     *     speech_economics: bool,
      *     people_panels: list<string>,
      *     learner_panels: list<string>,
      *     entitlement_panels: list<string>,
@@ -64,6 +65,10 @@ final readonly class OperatorShellAuthorization
         $support = $this->authorization->allows(
             $actor,
             OperatorPrivacyAuthorization::SUPPORT_DIAGNOSTICS_READ,
+        );
+        $speechEconomics = $this->authorization->allows(
+            $actor,
+            SpeechEconomicsAuthorization::USAGE_READ,
         );
         $peoplePanels = [];
         $panelPermissions = [
@@ -157,6 +162,7 @@ final readonly class OperatorShellAuthorization
             && ! $media
             && ! $audit
             && ! $support
+            && ! $speechEconomics
             && $peoplePanels === []
             && $learnerPanels === []
             && $entitlementPanels === []
@@ -169,6 +175,7 @@ final readonly class OperatorShellAuthorization
             'media' => $media,
             'audit' => $audit,
             'support' => $support,
+            'speech_economics' => $speechEconomics,
             'people_panels' => $peoplePanels,
             'learner_panels' => $learnerPanels,
             'entitlement_panels' => $entitlementPanels,

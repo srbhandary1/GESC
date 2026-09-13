@@ -3,7 +3,7 @@ import {
   resolveMessage,
   type MessageKey,
 } from '@global-english/localization'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -79,11 +79,10 @@ describe('deterministic learner journey', () => {
       />,
     )
 
-    expect(
-      await screen.findByRole('heading', {
-        name: t('learner.onboarding.title'),
-      }),
-    ).toHaveFocus()
+    const onboardingTitle = await screen.findByRole('heading', {
+      name: t('learner.onboarding.title'),
+    })
+    await waitFor(() => expect(onboardingTitle).toHaveFocus())
 
     await user.click(
       screen.getByRole('checkbox', {
@@ -721,7 +720,8 @@ describe('deterministic learner journey', () => {
       level: 3,
       name: longKnTitle,
     })
-    expect(dominantTitle.closest('.learner-home__action')).not.toBeNull()
+    const dominantAction = dominantTitle.closest('.learner-home__action')
+    expect(dominantAction).not.toBeNull()
     expect(screen.getByText(longKnTitle)).toHaveAttribute('lang', 'kn-IN')
     expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
     expect(
@@ -745,10 +745,60 @@ describe('deterministic learner journey', () => {
         }).text,
       ),
     ).toBeVisible()
+    const coach = dominantAction?.querySelector('.learner-home__coach')
+    expect(coach).not.toBeNull()
+    expect(
+      within(coach as HTMLElement).getByText(t('tutor.name')),
+    ).toBeVisible()
+    expect(
+      within(coach as HTMLElement).getByText(t('tutor.ready')),
+    ).toBeVisible()
+    expect(
+      coach?.querySelector('.tutor-presence__face'),
+    ).toHaveAttribute('src', '/tutor/tutor-maya.png')
+    expect(
+      dominantAction?.querySelectorAll('.ge-button--primary'),
+    ).toHaveLength(1)
     await user.click(
       screen.getByRole('button', { name: t('learner.home.continue') }),
     )
     expect(api.mission).toHaveBeenCalledWith(ids.mission, ids.enrollment)
+  })
+
+  it('lists upcoming reviews beneath the dominant action', async () => {
+    const home = {
+      ...completeHome(),
+      upcoming_reviews: [
+        {
+          due_at: '2026-09-01T03:30:00Z',
+          enrollment_id: ids.enrollment,
+          id: '01J00000000000000000000062',
+          interval_days: 7,
+          mission_id: '01J00000000000000000000063',
+          objective_id: ids.objective,
+          timezone: 'Asia/Kolkata',
+          title: content('en-IN', 'Workplace introductions review'),
+        },
+      ],
+    } satisfies LearnerHome
+    const api = fakeApi(home)
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 3,
+        name: t('learner.home.upcoming_reviews.title'),
+      }),
+    ).toBeVisible()
+    expect(screen.getByText('Workplace introductions review')).toBeVisible()
+    expect(screen.getByText(/Due /)).toBeVisible()
   })
 
   it('shows neutral streak copy when the learner has not spoken yet', async () => {
@@ -833,6 +883,7 @@ function fakeRecorder(): AudioRecorder {
 function incompleteHome(): LearnerHome {
   return {
     due_review: null,
+    upcoming_reviews: [],
     enrollment: null,
     next_mission: null,
     onboarding: {
@@ -851,6 +902,7 @@ function incompleteHome(): LearnerHome {
 function completeHome(): LearnerHome {
   return {
     due_review: null,
+    upcoming_reviews: [],
     enrollment: { id: ids.enrollment, status: 'active' },
     next_mission: {
       estimated_minutes: 5,
