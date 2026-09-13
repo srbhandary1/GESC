@@ -33,6 +33,7 @@ import type {
   SessionPartId,
 } from '../learner/LevelSessionsApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
+import { demoLevelSessionSpokenLine } from './demoLevelSessionAudio'
 import { requestDemoChatReply } from './demoChat'
 import {
   DEMO_LEVEL_FIXTURES,
@@ -428,10 +429,7 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
     const order = (
       ['introduction', 'practice', 'conversation', 'interaction'] as const
     ).indexOf(partId)
-    const spokenLine =
-      fixture.talk.fallback_turns[0] ??
-      fixture.target_patterns[0] ??
-      fixture.objective
+    const spokenLine = demoLevelSessionSpokenLine(fixture, partId)
     return {
       level_number: levelNumber,
       part_id: partId,
