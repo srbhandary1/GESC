@@ -759,6 +759,7 @@ export function DemoPhase1Shell({
                     <button
                       type="button"
                       className="phase1-room"
+                      aria-label={title.text}
                       aria-current={selected ? 'true' : undefined}
                       aria-expanded={selected}
                       data-available={room.available}

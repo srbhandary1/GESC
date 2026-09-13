@@ -76,7 +76,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await expect(page.getByText('Audio Lessons').first()).toBeVisible()
   await page.getByRole('button', { name: /^Audio Lessons/ }).click()
   await expect(
-    page.getByRole('button', { name: 'Listen to this level' }),
+    page.getByRole('button', { name: 'Listen to this level', exact: true }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Train with Swathi' }).click()
   await expect(

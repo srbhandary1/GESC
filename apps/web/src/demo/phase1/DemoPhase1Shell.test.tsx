@@ -94,7 +94,7 @@ describe('DemoPhase1Shell', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Content Room')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Level 17/i }))
-    await user.click(screen.getByRole('button', { name: /^Audio Lessons/ }))
+    await user.click(screen.getByRole('button', { name: 'Audio Lessons' }))
     expect(
       screen.getByRole('button', { name: 'Listen to this level' }),
     ).toBeInTheDocument()
