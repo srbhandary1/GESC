@@ -42,7 +42,7 @@ describe('marketing homepage source', () => {
     expect(html).toContain('₹1,499')
     expect(html).toContain('₹3,999')
     expect(html).toContain('Can you introduce yourself?')
-    expect(html).toContain('Listen to a short model introduction, then say what you can do.')
+    expect(html).toContain('Listen to a short model introduction, then practise the same lines.')
     expect(html).toContain('Today’s lesson product card: Level 1, Can you introduce yourself?')
     expect(html).not.toMatch(/coffee|café|cafe/i)
     expect(html).toContain('Place your level')
