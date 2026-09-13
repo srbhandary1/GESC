@@ -165,7 +165,7 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens the curriculum path when the demo Phase 1 levels hash is used', async () => {
+  it('opens My Levels from the demo Phase 1 module hash', async () => {
     window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
     window.history.replaceState(null, '', '/#levels')
     const demo = createLocalDemoRuntime()
@@ -176,17 +176,25 @@ describe('localized application shell', () => {
         conversationApi={demo.conversationApi}
         demoMode
         learnerJourneyApi={demo.learnerJourneyApi}
-        levelSessionsApi={demo.levelSessionsApi}
       />,
     )
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Can — ability and permission',
-      }, { timeout: 8_000 }),
+        name: text('demo.phase1.nav.levels'),
+      }),
     ).toBeInTheDocument()
     expect(
-      await screen.findByText('Should — advice and suggestions'),
+      screen.getByText(
+        resolveMessage('demo.phase1.levels.pre_level_title', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { number: 1 },
+        }).text,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(text('demo.phase1.rooms.content.title')),
     ).toBeInTheDocument()
   })
 

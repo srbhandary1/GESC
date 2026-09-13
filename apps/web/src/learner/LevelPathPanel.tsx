@@ -35,7 +35,6 @@ import {
   type OfflineLearningStore,
   type OfflineProfileBinding,
 } from '../offline/OfflineLearningStore'
-import { conceptLabel } from './conceptLabels'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import './LevelSessionJourney.css'
 
@@ -115,6 +114,26 @@ function isPartUnlocked(
   return required === null || completions[required] === true
 }
 
+const CONCEPT_LABELS: Record<string, string> = {
+  can: 'Can — ability and permission',
+  should: 'Should — advice and suggestions',
+  do_does: 'Do / Does — present habits',
+  is_are_ing: 'Am / Is / Are + -ing — happening now',
+  did: 'Did — past actions',
+  was_were_ing: 'Was / Were + -ing — past continuous',
+  have_has: 'Have / Has — experience and results',
+  have_been_has_been: 'Have been / Has been + -ing — still continuing',
+  had: 'Had — earlier past',
+  will: 'Will — future plans',
+  gonna_wanna: 'Gonna / Wanna — informal speech',
+  would: 'Would — polite requests',
+  may: 'May — permission and possibility',
+  if: 'If — real conditions',
+  must: 'Must — rules and obligations',
+  should_have: 'Should have — past advice',
+  used_to: 'Used to — past habits',
+}
+
 function firstNonEmpty(
   values: readonly string[] | undefined,
 ): string | undefined {
@@ -164,6 +183,14 @@ function tutorOpeningLine(detail: LevelSessionDetail): string | undefined {
     firstNonEmpty(detail.target_patterns) ??
     firstNonEmpty(detail.talk?.elicitation_goals)
   )
+}
+
+function conceptLabel(conceptKey: string | null): string | null {
+  if (conceptKey === null || conceptKey === '') {
+    return null
+  }
+
+  return CONCEPT_LABELS[conceptKey] ?? conceptKey.replaceAll('_', ' ')
 }
 
 function isAbortError(error: unknown): boolean {
@@ -316,13 +343,6 @@ export function LevelPathPanel({
     (level) => level.availability !== 'available',
   )
 
-  const currentLevel = ready[0] ?? checkpointReady[0] ?? null
-  const currentConcept =
-    currentLevel === null
-      ? null
-      : conceptLabel(currentLevel.concept_key) ??
-        message('level.path.ready').text
-
   return (
     <section
       className="level-path level-path--variant-a"
@@ -335,40 +355,16 @@ export function LevelPathPanel({
             <LocalizedMessage resolution={message('level.path.back')} />
           </button>
         ) : null}
+        <p className="level-path__eyebrow">
+          <LocalizedMessage resolution={message('level.path.eyebrow')} />
+        </p>
         <h2 id="level-path-title">
           <LocalizedMessage resolution={message('level.path.title')} />
         </h2>
+        <p>
+          <LocalizedMessage resolution={message('level.path.lead')} />
+        </p>
       </header>
-
-      {currentLevel ? (
-        <article className="ge-continue-hero">
-          <p className="ge-continue-hero__eyebrow">
-            <LocalizedMessage
-              resolution={message('demo.phase1.home.hero_label')}
-            />
-          </p>
-          <h3 className="ge-continue-hero__title">{currentConcept}</h3>
-          {currentLevel.checkpoint_status === 'ready' ? (
-            <p className="ge-continue-hero__meta">
-              <LocalizedMessage
-                resolution={message('level.path.checkpoint_ready_heading')}
-              />
-            </p>
-          ) : null}
-          <div className="ge-continue-hero__actions">
-            <button
-              className="ge-button ge-button--primary"
-              type="button"
-              onClick={() => setSelectedLevel(currentLevel.level_number)}
-            >
-              <LocalizedMessage resolution={message('level.path.open')} />
-            </button>
-            <a className="ge-button ge-button--ghost" href="#speak">
-              <LocalizedMessage resolution={message('conversation.start')} />
-            </a>
-          </div>
-        </article>
-      ) : null}
 
       {error ? (
         <p className="level-path__status" role="alert">
@@ -382,106 +378,51 @@ export function LevelPathPanel({
         </p>
       ) : null}
 
-      {levels !== null && levels.length > 0 ? (
-        <section
-          className="ge-chip-section"
-          aria-label={message('level.path.all_levels').text}
-        >
-          <h3 className="ge-chip-section__title">
-            <LocalizedMessage resolution={message('level.path.all_levels')} />
+      {ready.length > 0 ? (
+        <div className="level-path__ready">
+          <h3>
+            <LocalizedMessage resolution={message('level.path.ready_heading')} />
           </h3>
-          <ul className="ge-chip-row">
-            {levels.map((level) => {
-              const unlocked =
-                level.availability === 'available' &&
-                level.entitlement_access !== 'upgrade_required' &&
-                (level.progress_access === undefined ||
-                  level.progress_access === 'allowed')
-              const status =
-                level.checkpoint_status === 'passed'
-                  ? 'completed'
-                  : currentLevel?.level_number === level.level_number
-                    ? 'current'
-                    : unlocked
-                      ? 'completed'
-                      : 'locked'
-              const levelNumberLabel = (
-                <LocalizedMessage
-                  resolution={message('level.path.level_label', {
-                    number: String(level.level_number),
-                  })}
-                />
-              )
-              const concept = conceptLabel(level.concept_key)
-              const chipLabel = concept ?? levelNumberLabel
-              const chipMeta = concept ? levelNumberLabel : null
+          <ol className="level-path__list">
+            {ready.map((level) => {
+              const concept =
+                conceptLabel(level.concept_key) ??
+                message('level.path.ready').text
               return (
                 <li key={level.level_number}>
-                  {unlocked ? (
-                    <button
-                      type="button"
-                      className="ge-level-chip ge-level-chip--rich"
-                      data-status={status}
-                      onClick={() => setSelectedLevel(level.level_number)}
-                    >
-                      <span className="ge-level-chip__label">{chipLabel}</span>
-                      {chipMeta ? (
-                        <span className="ge-level-chip__concept">{chipMeta}</span>
-                      ) : null}
-                    </button>
-                  ) : (
-                    <span
-                      className="ge-level-chip ge-level-chip--rich"
-                      data-status="locked"
-                    >
-                      <span className="ge-level-chip__label">{chipLabel}</span>
-                      {chipMeta ? (
-                        <span className="ge-level-chip__concept">{chipMeta}</span>
-                      ) : null}
+                  <button
+                    type="button"
+                    className="level-path__item"
+                    onClick={() => setSelectedLevel(level.level_number)}
+                  >
+                    <span className="level-path__item-index" aria-hidden="true">
+                      {level.level_number}
                     </span>
-                  )}
+                    <span className="level-path__item-copy">
+                      <strong>
+                        <LocalizedMessage
+                          resolution={message('level.path.level_label', {
+                            number: String(level.level_number),
+                          })}
+                        />
+                      </strong>
+                      <span>{concept}</span>
+                    </span>
+                    <span className="level-path__item-action">
+                      <LocalizedMessage
+                        resolution={message('level.path.open_short')}
+                      />
+                    </span>
+                  </button>
                 </li>
               )
             })}
-          </ul>
-        </section>
+          </ol>
+        </div>
       ) : levels !== null && error === null ? (
         <p className="level-path__empty">
           <LocalizedMessage resolution={message('level.path.empty')} />
         </p>
-      ) : null}
-
-      {currentLevel ? (
-        <section
-          className="ge-chip-section"
-          aria-label={message('level.path.sessions_nav').text}
-        >
-          <h3 className="ge-chip-section__title">
-            <LocalizedMessage
-              resolution={message('level.path.sessions_nav')}
-            />
-          </h3>
-          <ul className="ge-chip-row">
-            {PARTS.filter(
-              (part) =>
-                allowedSessionParts === undefined ||
-                allowedSessionParts.includes(part),
-            ).map((part) => (
-              <li key={part}>
-                <button
-                  type="button"
-                  className="ge-room-chip"
-                  data-status={part === 'introduction' ? 'active' : 'available'}
-                  onClick={() => setSelectedLevel(currentLevel.level_number)}
-                >
-                  <LocalizedMessage
-                    resolution={message(PART_MESSAGE_KEYS[part])}
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
       ) : null}
 
       {reviewDueBlocked.length > 0 ? (
@@ -569,6 +510,20 @@ export function LevelPathPanel({
               })}
             />
           </p>
+          <ul className="level-path__pending">
+            {progressLocked.map((level) => (
+              <li
+                key={level.level_number}
+                className="level-path__pending-item"
+              >
+                <LocalizedMessage
+                  resolution={message('level.path.level_label', {
+                    number: String(level.level_number),
+                  })}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
@@ -579,6 +534,20 @@ export function LevelPathPanel({
               resolution={message('subscription.level_locked')}
             />
           </h3>
+          <ul className="level-path__pending">
+            {upgradeRequired.map((level) => (
+              <li
+                key={level.level_number}
+                className="level-path__pending-item"
+              >
+                <LocalizedMessage
+                  resolution={message('level.path.level_label', {
+                    number: String(level.level_number),
+                  })}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
@@ -596,6 +565,20 @@ export function LevelPathPanel({
               resolution={message('level.path.coming_next_body')}
             />
           </p>
+          <ul className="level-path__pending">
+            {pending.map((level) => (
+              <li
+                key={level.level_number}
+                className="level-path__pending-item"
+              >
+                <LocalizedMessage
+                  resolution={message('level.path.level_label', {
+                    number: String(level.level_number),
+                  })}
+                />
+              </li>
+            ))}
+          </ul>
         </details>
       ) : null}
     </section>

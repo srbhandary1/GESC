@@ -105,24 +105,11 @@ describe('DemoPhase1Shell', () => {
     expect(screen.getByText("Today's 5-mark check")).toBeInTheDocument()
     expect(screen.getAllByRole('radio').length).toBe(15)
 
+    await user.click(screen.getByRole('link', { name: 'My Levels' }))
     expect(
-      screen.getByRole('link', { name: 'My Levels' }),
-    ).toHaveAttribute('href', '#learn')
-
-    await user.click(screen.getByRole('link', { name: 'Dashboard' }))
-    expect(
-      screen.getByRole('link', { name: 'Open level' }),
-    ).toHaveAttribute('href', '#learn')
-    expect(
-      screen.getByText('Can — ability and permission'),
+      screen.getByRole('button', { name: /Pre-Level 1/i }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('Phase 1 learner shell')).not.toBeInTheDocument()
-    expect(
-      screen.queryByText(/Synthetic dashboard for Attendance/),
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByText('Reading and phrase notes for today\'s outcomes.'),
-    ).not.toBeInTheDocument()
+    expect(screen.getByText('Content Room')).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Notice Board' }))
     expect(

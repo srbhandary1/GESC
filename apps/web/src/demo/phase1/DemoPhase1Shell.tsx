@@ -4,7 +4,6 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { conceptLabel } from '../../learner/conceptLabels'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
@@ -23,12 +22,13 @@ import {
   phase1AiTopics,
   phase1Attendance,
   phase1DailyActivity,
+  phase1LevelRooms,
   phase1Levels,
   phase1Notices,
   type Phase1Level,
   type Phase1Module,
+  type Phase1RoomId,
 } from './phase1Fixtures'
-import { demoLevelFixture } from '../demoLevelFixtures'
 import './DemoPhase1Shell.css'
 
 export interface DemoPhase1ShellProps {
@@ -65,6 +65,34 @@ const attendanceStatusKeys = {
   (typeof phase1Attendance.days)[number]['status'],
   MessageKey
 >
+
+const levelStatusKeys = {
+  locked: 'demo.phase1.levels.status.locked',
+  current: 'demo.phase1.levels.status.current',
+  completed: 'demo.phase1.levels.status.completed',
+} as const satisfies Record<Phase1Level['status'], MessageKey>
+
+const roomTitleKeys = {
+  'ai-teacher': 'demo.phase1.rooms.ai_teacher.title',
+  audio: 'demo.phase1.rooms.audio.title',
+  content: 'demo.phase1.rooms.content.title',
+  conversation: 'demo.phase1.rooms.conversation.title',
+  activity: 'demo.phase1.rooms.activity.title',
+  assignment: 'demo.phase1.rooms.assignment.title',
+  assessment: 'demo.phase1.rooms.assessment.title',
+  unlock: 'demo.phase1.rooms.unlock.title',
+} as const satisfies Record<Phase1RoomId, MessageKey>
+
+const roomSummaryKeys = {
+  'ai-teacher': 'demo.phase1.rooms.ai_teacher.summary',
+  audio: 'demo.phase1.rooms.audio.summary',
+  content: 'demo.phase1.rooms.content.summary',
+  conversation: 'demo.phase1.rooms.conversation.summary',
+  activity: 'demo.phase1.rooms.activity.summary',
+  assignment: 'demo.phase1.rooms.assignment.summary',
+  assessment: 'demo.phase1.rooms.assessment.summary',
+  unlock: 'demo.phase1.rooms.unlock.summary',
+} as const satisfies Record<Phase1RoomId, MessageKey>
 
 const noticeTitleKeys = {
   n1: 'demo.phase1.notices.n1.title',
@@ -159,13 +187,6 @@ export function DemoPhase1Shell({
   }, [])
 
   useEffect(() => {
-    if (module !== 'levels') {
-      return
-    }
-    globalThis.location.hash = '#learn'
-  }, [module])
-
-  useEffect(() => {
     return () => {
       stopDemoSpeech()
     }
@@ -254,7 +275,7 @@ export function DemoPhase1Shell({
           onSkip={() => {
             persistFirstRunDismissed(GROVE_WELCOME_STORAGE_KEY)
             setWelcomeOpen(false)
-            globalThis.location.hash = '#learn'
+            go('levels')
           }}
           onSubmit={(selection) => {
             if (selection.level !== null) {
@@ -271,21 +292,17 @@ export function DemoPhase1Shell({
     )
   }
 
-  const continueLevel =
-    phase1Levels.find((level) => level.status === 'current') ?? selectedLevel
-  const currentLessonConcept =
-    conceptLabel(demoLevelFixture(continueLevel.number)?.concept_key) ??
-    message('demo.phase1.home.next_action').text
-
   return (
     <div className="phase1-shell" data-demo-phase1="synthetic">
-      <h1
-        className={module === 'levels' ? 'visually-hidden' : 'phase1-shell__title'}
-        id="destination-title"
-        tabIndex={-1}
-      >
+      <p className="phase1-shell__eyebrow">
+        <LocalizedMessage resolution={message('demo.phase1.eyebrow')} />
+      </p>
+      <h1 className="phase1-shell__title" id="destination-title" tabIndex={-1}>
         <LocalizedMessage resolution={message(moduleTitleKeys[module])} />
       </h1>
+      <p className="phase1-shell__lead">
+        <LocalizedMessage resolution={message('demo.phase1.lead')} />
+      </p>
 
       <nav
         className="phase1-shell__nav"
@@ -295,15 +312,11 @@ export function DemoPhase1Shell({
           {PHASE1_MODULES.map((item) => (
             <li key={item}>
               <a
-                href={item === 'levels' ? '#learn' : `#${item}`}
+                href={`#${item}`}
                 className="phase1-shell__nav-link"
                 aria-current={module === item ? 'page' : undefined}
                 onClick={(event) => {
                   event.preventDefault()
-                  if (item === 'levels') {
-                    globalThis.location.hash = '#learn'
-                    return
-                  }
                   go(item)
                 }}
               >
@@ -355,7 +368,11 @@ export function DemoPhase1Shell({
                 />
               </p>
             </div>
-            <p className="phase1-home__lesson-title">{currentLessonConcept}</p>
+            <p className="phase1-home__lesson-title">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.next_action')}
+              />
+            </p>
             <p className="phase1-home__level">
               <LocalizedMessage
                 resolution={message('demo.phase1.home.level_line', {
@@ -369,21 +386,22 @@ export function DemoPhase1Shell({
             >
               <span className="phase1-home__progress-bar" />
             </div>
-            <div className="ge-continue-hero__actions">
-            <a
-              className="ge-button ge-button--primary phase1-home__cta"
-              href="#learn"
-            >
-              <span className="phase1-home__cta-label">
-                <LocalizedMessage resolution={message('level.path.open')} />
-              </span>
-            </a>
-            <a href="#speak" className="ge-button ge-button--ghost phase1-home__speak">
+            <a href="#speak" className="ge-button ge-button--primary phase1-home__speak">
               <LocalizedMessage
-                resolution={message('conversation.start')}
+                resolution={message('demo.phase1.home.speak')}
               />
             </a>
-            </div>
+            <button
+              className="ge-button ge-button--primary phase1-home__cta"
+              type="button"
+              onClick={() => go('levels')}
+            >
+              <span className="phase1-home__cta-label">
+                <LocalizedMessage
+                  resolution={message('demo.phase1.home.next_action')}
+                />
+              </span>
+            </button>
           </article>
           <aside className="phase1-home__tip">
             <div>
@@ -709,6 +727,64 @@ export function DemoPhase1Shell({
               {phase1DailyActivity.monthlyMaximum}
             </p>
           </article>
+        </section>
+      ) : null}
+
+      {module === 'levels' ? (
+        <section className="phase1-panel">
+          <div className="phase1-levels">
+            {phase1Levels.map((level) => {
+              const title = levelTitle(level)
+              return (
+                <button
+                  key={level.id}
+                  type="button"
+                  className="phase1-level"
+                  data-status={level.status}
+                  aria-current={
+                    selectedLevelId === level.id ? 'true' : undefined
+                  }
+                  disabled={level.status === 'locked'}
+                  onClick={() => setSelectedLevelId(level.id)}
+                >
+                  <strong lang={title.resolvedLocale}>{title.text}</strong>
+                  <span>
+                    <LocalizedMessage
+                      resolution={message(levelStatusKeys[level.status])}
+                    />
+                  </span>
+                  <span>{level.progressPercent}%</span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="phase1-rooms">
+            <h2>
+              <span lang={levelTitle(selectedLevel).resolvedLocale}>
+                {levelTitle(selectedLevel).text}
+              </span>
+              :{' '}
+              <LocalizedMessage
+                resolution={message('demo.phase1.levels.rooms_title')}
+              />
+            </h2>
+            <ul>
+              {phase1LevelRooms.map((room) => (
+                <li key={room.id} data-available={room.available}>
+                  <strong>
+                    <LocalizedMessage
+                      resolution={message(roomTitleKeys[room.id])}
+                    />
+                  </strong>
+                  <p>
+                    <LocalizedMessage
+                      resolution={message(roomSummaryKeys[room.id])}
+                    />
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       ) : null}
 

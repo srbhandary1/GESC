@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { decodeDemoSpeechUrl } from './browserSpeech'
 import {
   createLocalDemoRuntime,
   isLocalDemoEnabled,
@@ -172,15 +171,6 @@ describe('local demo boundary', () => {
         part_id: 'introduction',
         objective: expect.stringContaining('if clause'),
       })
-  })
-
-  it('uses introduction lesson copy for demo audio, not conversation drill lines', async () => {
-    const { levelSessionsApi } = createLocalDemoRuntime()
-    const detail = await levelSessionsApi.sessionDetail(1, 'introduction')
-    const utterance = decodeDemoSpeechUrl(detail.audio_stream_path)
-
-    expect(utterance?.text).toContain('Listen. Say:')
-    expect(utterance?.text).not.toContain('Can I use your pen?')
   })
 
   it('keeps Ask AI Tutor on the can grammar patterns instead of free speech', async () => {
