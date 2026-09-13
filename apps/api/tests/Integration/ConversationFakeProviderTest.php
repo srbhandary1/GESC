@@ -842,10 +842,28 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
 
         $this->assertSame('completed', $firstTurn['status']);
 
-        DB::table('ai_cost_ledger')
+        $ttsRow = DB::table('ai_cost_ledger')
             ->where('conversation_turn_id', $firstTurn['id'])
             ->where('provider_stage', 'tts')
-            ->update(['output_units' => 200_000]);
+            ->first();
+        self::assertNotNull($ttsRow);
+        DB::table('ai_cost_ledger')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $ttsRow->organization_id,
+            'conversation_turn_id' => $firstTurn['id'],
+            'conversation_session_id' => $ttsRow->conversation_session_id,
+            'learner_membership_id' => $ttsRow->learner_membership_id,
+            'provider_stage' => 'tts',
+            'provider_key' => 'deterministic-fake',
+            'model_version' => 'fake-tts-v1',
+            'provider_attempt' => 2,
+            'latency_ms' => 0,
+            'input_units' => 0,
+            'output_units' => 200_000,
+            'estimated_cost_microunits' => 0,
+            'result_status' => 'succeeded',
+            'recorded_at' => now(),
+        ]);
 
         $secondTurn = $this->contexts()->run(
             $context,
