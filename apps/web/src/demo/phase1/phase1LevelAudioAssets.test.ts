@@ -161,6 +161,24 @@ describe('phase1 level audio contract', () => {
     ).resolves.toBeNull()
   })
 
+  it('treats an HTML SPA fallback as missing, not authored audio', async () => {
+    const fetchImpl = asFetch(async (input) => {
+      const href = String(input)
+      if (href.includes('/me/levels/17/sessions/introduction/audio')) {
+        return new Response('<!doctype html><title>demo</title>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        })
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-17', fetchImpl),
+    ).resolves.toEqual({ status: 'missing' })
+  })
+
   it('plays verified private bytes when the introduction stream is 200', async () => {
     const createObjectURL = vi
       .spyOn(URL, 'createObjectURL')

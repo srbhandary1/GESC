@@ -272,10 +272,8 @@ export async function fetchPrivateLevelIntroductionAudio(
     }
 
     const contentType = response.headers.get('content-type') ?? ''
-    if (
-      contentType.includes('application/json') ||
-      contentType.includes('problem+json')
-    ) {
+    const mimeType = contentType.split(';')[0]?.trim() ?? ''
+    if (!mimeType.startsWith('audio/')) {
       return { status: 'missing' }
     }
 
@@ -289,7 +287,7 @@ export async function fetchPrivateLevelIntroductionAudio(
       audio: {
         levelId,
         url: URL.createObjectURL(blob),
-        mimeType: contentType.split(';')[0]?.trim() || 'audio/mpeg',
+        mimeType,
         file: path,
         source: 'private-api',
       },
