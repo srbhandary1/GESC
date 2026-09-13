@@ -183,6 +183,73 @@
   overflow-wrap: anywhere;
 }
 
+.web-password-sign-in {
+  display: grid;
+  min-width: 0;
+  margin-block-start: var(--ge-space-4);
+}
+
+.web-password-sign-in__card {
+  display: grid;
+  min-width: 0;
+  gap: var(--ge-space-3);
+}
+
+.web-password-sign-in__card > h3,
+.web-password-sign-in__card > p {
+  margin: 0;
+}
+
+.web-password-sign-in__form {
+  display: grid;
+  min-width: 0;
+  gap: var(--ge-space-3);
+}
+
+.web-password-sign-in__form label {
+  font-weight: 700;
+}
+
+.web-password-sign-in__form input:not([type='checkbox']) {
+  width: 100%;
+  min-block-size: var(--ge-target-minimum);
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+  font: inherit;
+}
+
+.web-password-sign-in__form label:has(input[type='checkbox']) {
+  display: flex;
+  align-items: center;
+  gap: var(--ge-space-2);
+  font-weight: 600;
+}
+
+.web-password-sign-in__form button {
+  min-block-size: var(--ge-target-minimum);
+  padding-inline: var(--ge-space-4);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.web-password-sign-in__form button[type='submit'] {
+  border-color: var(--ge-color-action, #006b3f);
+  background: var(--ge-color-action, #006b3f);
+  color: #fff;
+}
+
+.web-password-sign-in__error {
+  margin: 0;
+  color: var(--ge-color-text);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

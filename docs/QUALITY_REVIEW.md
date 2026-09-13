@@ -1739,6 +1739,7 @@ PR-010 and production remain unauthorized.
 | Learn is My Levels, not a competing mission shell | Pass | App Learn tab test |
 | `#practice` still reaches Speak | Pass | `destinationFromHash` alias |
 | Licensed per-level audio files | Gap | 0/19 files in-repo; signed-in stream + drop-in fallback; studio streams MPEG when authenticated; see [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md) |
+| Web password sign-in (`password_only`) | Pass | `WebPasswordSignInPanel` + adapter `signIn`; OTP hidden |
 
 ---
 

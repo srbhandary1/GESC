@@ -23,7 +23,9 @@ import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
+import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
@@ -689,11 +691,16 @@ function SessionSummary({
   const androidAuth = isAndroidPkce
     ? (authentication as AndroidPkceAuthentication)
     : null
+  const webAuth = isWebSessionAuthentication(authentication)
+    ? authentication
+    : null
+  const isAuthenticated = session.status === 'authenticated'
 
   return (
     <section
       className="shell-session"
       aria-labelledby="session-title"
+      id={isAuthenticated ? undefined : 'sign-in'}
     >
       <h2
         className="shell-session__title"
@@ -722,6 +729,13 @@ function SessionSummary({
           </span>
         )}
       </div>
+      {webAuth !== null && !isAuthenticated ? (
+        <WebPasswordSignInPanel
+          authentication={webAuth}
+          message={message}
+          onAuthenticated={onSessionChange}
+        />
+      ) : null}
       {androidAuth === null ? null : (
         <div className="shell-session__actions">
           {session.status === 'anonymous' || session.status === 'unavailable' ? (
@@ -754,7 +768,35 @@ function SessionSummary({
           ) : null}
         </div>
       )}
+      {webAuth !== null && isAuthenticated ? (
+        <div className="shell-session__actions">
+          <button
+            type="button"
+            onClick={() => {
+              void webAuth.logout().then(() => {
+                onSessionChange({ status: 'anonymous' })
+              })
+            }}
+          >
+            <LocalizedMessage
+              resolution={message('session.android_sign_out')}
+            />
+          </button>
+        </div>
+      ) : null}
     </section>
+  )
+}
+
+function isWebSessionAuthentication(
+  authentication: AuthenticationAdapter,
+): authentication is WebSessionAuthentication {
+  const candidate = authentication as Partial<WebSessionAuthentication>
+
+  return (
+    authentication.transport === 'sanctum-cookie' &&
+    typeof candidate.signIn === 'function' &&
+    typeof candidate.authenticationMode === 'function'
   )
 }
 

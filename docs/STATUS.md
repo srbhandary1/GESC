@@ -504,10 +504,10 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-13.2`.
+  `ui-en-IN-2026-09-13.3`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.2`
-  (`ui-*-2026-09-13.2`).
+  attributed Codex implementation drafts at revisions ending in `.3`
+  (`ui-*-2026-09-13.3`).
 - Demo teacher name in soft-launch chrome is **Swathi**. Longer new
   dashboard strings may still fall back to English in some draft locales.
 - Per-level Audio Lessons for Levels 1–17 prefer the signed-in sessions
@@ -517,10 +517,14 @@ review and do not waive pre-production specialist gates.
   (D-0118). This checkout has **0/19** masters in git. Live Real-Studioz
   (`http://117.254.108.143:8080`) streams `audio/mpeg` from SeaweedFS
   `accepted/{ulid}/{sha256}` when the learner is signed in; 401 without
-  a session. The room states “Model audio not yet loaded”, “Sign in to
-  hear authored audio”, or plays the blob; TTS is an explicit stand-in
-  only. Storage inventory (env disk chain, `accepted/{ulid}/{sha256}`
-  keys, studio SQL/tinker) is in
+  a session. Soft-launch web uses username/password (`password_only`)
+  from the shell Session panel (D-0119). If password sign-in returns
+  200 but `GET /api/v1/me` stays 401, that is a host SESSION/redis
+  cookie issue, not a missing SPA form — Android PKCE / mobile Bearer
+  already stream lesson audio. The room states “Model audio not yet
+  loaded”, “Sign in to hear authored audio”, or plays the blob; TTS is
+  an explicit stand-in only. Storage inventory (env disk chain,
+  `accepted/{ulid}/{sha256}` keys, studio SQL/tinker) is in
   [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md#storage-inventory-operator-on-the-studio-box).
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,

@@ -27,8 +27,27 @@ export interface AuthenticationAdapter {
   authorizedFetch?(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 }
 
+export interface PasswordAuthenticationStatus {
+  readonly username: string | null
+  readonly credential_ready: boolean
+  readonly mode: 'legacy_otp' | 'credential_migration' | 'password_only'
+  readonly password_confirmed_at: string | null
+}
+
 export interface WebSessionAuthentication extends AuthenticationAdapter {
   readonly transport: 'sanctum-cookie'
+
+  signIn(username: string, password: string): Promise<void>
+
+  authenticationMode(): Promise<PasswordAuthenticationStatus['mode']>
+
+  requestPasswordRecovery(username: string): Promise<void>
+
+  enrollWithInvitation(
+    invitationCode: string,
+    username: string,
+    password: string,
+  ): Promise<void>
 
   requestOtp(mobileNumber: string): Promise<OtpChallenge>
 

@@ -13,6 +13,7 @@ import App from './App'
 import type {
   AuthenticationAdapter,
   AuthenticationSnapshot,
+  WebSessionAuthentication,
 } from './auth/AuthenticationAdapter'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { createLocalDemoRuntime } from './demo/localDemo'
@@ -402,6 +403,72 @@ describe('localized application shell', () => {
       'lang',
       DEFAULT_LOCALE,
     )
+  })
+
+  it('offers web password sign-in when the host is password_only', async () => {
+    const user = userEvent.setup()
+    const onAuthenticated = {
+      status: 'authenticated' as const,
+      identity: {
+        current_membership: {
+          id: '01J00000000000000000000002',
+          membership_type: 'learner' as const,
+          organization: {
+            id: '01J00000000000000000000003',
+            kind: 'institution' as const,
+            name: 'Hithaishi Learning Hub',
+          },
+          role_keys: ['learner'],
+          status: 'active' as const,
+        },
+        memberships: [],
+        user: { id: '01J00000000000000000000001' },
+      },
+    }
+    const authentication = {
+      transport: 'sanctum-cookie' as const,
+      current: vi.fn(async () => ({ status: 'anonymous' as const })),
+      logout: vi.fn(async () => undefined),
+      signIn: vi.fn(async () => undefined),
+      authenticationMode: vi.fn(async () => 'password_only' as const),
+      requestPasswordRecovery: vi.fn(async () => undefined),
+      enrollWithInvitation: vi.fn(async () => undefined),
+      requestOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      sessions: vi.fn(async () => []),
+      revokeSession: vi.fn(),
+      revokeAllSessions: vi.fn(),
+    } satisfies Partial<WebSessionAuthentication> as WebSessionAuthentication
+
+    authentication.current
+      .mockResolvedValueOnce({ status: 'anonymous' })
+      .mockResolvedValue(onAuthenticated)
+
+    render(<App authentication={authentication} />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('auth.password.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Mobile number')).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(text('auth.password.username')), 'learner.one')
+    await user.type(
+      screen.getByLabelText(text('auth.password.password')),
+      'Correct horse battery 2026!',
+    )
+    await user.click(screen.getByRole('button', { name: text('auth.password.submit') }))
+
+    expect(authentication.signIn).toHaveBeenCalledWith(
+      'learner.one',
+      'Correct horse battery 2026!',
+    )
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.dashboard'),
+      }),
+    ).toBeInTheDocument()
   })
 
   it('opens Learn for a learner membership without inferring role keys', async () => {

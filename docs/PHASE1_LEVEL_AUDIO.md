@@ -54,6 +54,17 @@ What is needed now: a **learner Sanctum cookie session** on that origin
 configured disk. If the disk has no bytes, that is a missing bind-mount /
 S3 object / operator upload — not a SPA outage.
 
+Soft-launch web (`password_only`) signs in from the shell Session
+panel: `GET /api/v1/auth/password/mode` then CSRF
+`POST /api/v1/auth/password/sign-ins`. After a 200, the SPA calls
+`GET /api/v1/me` with the same cookies. If that `/me` call is still
+401, the host SESSION/redis cookie is not sticking — confirm
+`SESSION_DRIVER`, cookie `domain`/`secure`/`same-site` on the Caddy
+`:8080` origin, and that `/sanctum/csrf-cookie` and `/api/*` share
+that origin. Android PKCE / mobile Bearer already work for
+`auth.first-party` and lesson audio; do not treat a web `/me` 401 as
+a missing password form.
+
 ## Authenticated download routes
 
 ### This branch (main lineage / PR-006 daily model audio)
