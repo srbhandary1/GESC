@@ -211,6 +211,8 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
 
     expect(document.querySelector('.ge-application-frame--mira-learner')).not.toBeNull()
+    expect(document.querySelector('.ge-application-frame--jezweb')).not.toBeNull()
+    expect(document.querySelector('[data-ge-ux="variant-c-jezweb"]')).not.toBeNull()
     expect(document.querySelector('.marketing-landing')).toBeNull()
 
     expect(screen.getAllByText(text('app.name')).length).toBeGreaterThan(0)
@@ -955,6 +957,8 @@ describe('localized application shell', () => {
     await user.selectOptions(localeSelect, DEFAULT_LOCALE)
 
     expect(document.querySelector('.ge-application-frame--native-android')).not.toBeNull()
+    expect(document.querySelector('.ge-application-frame--jezweb')).not.toBeNull()
+    expect(document.querySelector('[data-ge-ux="variant-c-jezweb"]')).not.toBeNull()
     expect(localeSelect).toHaveValue(DEFAULT_LOCALE)
     expect(document.documentElement).toHaveAttribute('lang', DEFAULT_LOCALE)
     expect(document.documentElement).toHaveAttribute(

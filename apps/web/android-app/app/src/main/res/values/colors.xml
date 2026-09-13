@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Global Spoken English App brand kit (D-0285). -->
+    <!-- Variant C jezweb-ux native bars: GESC green on a light canvas. -->
     <color name="colorPrimary">#006B3F</color>
-    <color name="colorPrimaryDark">#1A1A2E</color>
-    <color name="colorAccent">#E31C23</color>
+    <color name="colorPrimaryDark">#005533</color>
+    <color name="colorAccent">#006B3F</color>
+    <color name="colorCanvas">#FAFBFA</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorInk">#1A1A1A</color>
 </resources>

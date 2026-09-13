@@ -51,6 +51,7 @@ import { LocalizedMessage } from './localization/LocalizedMessage'
 import './theme/studioExperience.css'
 import './theme/miraGescGreenPin.css'
 import './theme/miraLearnerChrome.css'
+import './theme/jezwebLearnerChrome.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'
@@ -721,6 +722,11 @@ function App({
     <div
       className={demoMode ? 'demo-experience' : undefined}
       data-demo-mode={demoMode ? 'synthetic-local' : undefined}
+      data-ge-ux={
+        isOperatorSession
+          ? undefined
+          : 'variant-c-jezweb'
+      }
     >
     <ApplicationFrame
       className={
@@ -731,10 +737,10 @@ function App({
             }${isNativeAndroid ? ' ge-application-frame--native-android' : ''}${
               isGuestSession
                 ? showGuestMiraHome
-                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner ge-application-frame--jezweb'
                   : ' ge-application-frame--studio'
                 : isLearnerSession || demoMode
-                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner ge-application-frame--jezweb'
                   : ''
             }`
       }

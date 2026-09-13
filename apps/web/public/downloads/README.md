@@ -1,6 +1,12 @@
 # Android APK downloads
 
-The web app links to `global-spoken-english-android.apk` in this folder.
+The web app links to `global-spoken-english-android.apk` in this folder
+(`?v=jezweb-c` on the homepage).
+
+Staff LAN:
+
+`http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c`
+
 
 For soft launch, copy the latest closed-beta artifact here before building
 `apps/web/dist`, for example:

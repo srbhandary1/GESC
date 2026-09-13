@@ -33,9 +33,12 @@ describe('Mira learner chrome', () => {
 
     const pinImport = app.indexOf("import './theme/miraGescGreenPin.css'")
     const chromeImport = app.indexOf("import './theme/miraLearnerChrome.css'")
+    const jezwebImport = app.indexOf("import './theme/jezwebLearnerChrome.css'")
     expect(pinImport).toBeGreaterThan(-1)
     expect(chromeImport).toBeGreaterThan(pinImport)
+    expect(jezwebImport).toBeGreaterThan(chromeImport)
     expect(app).toContain('ge-application-frame--mira-learner')
+    expect(app).toContain('ge-application-frame--jezweb')
     expect(app).toContain('shell-locale-note')
     expect(app).not.toContain('className="shell-preview"')
 

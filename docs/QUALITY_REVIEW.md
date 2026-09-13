@@ -1,5 +1,43 @@
 # Quality review
 
+## D-0288: Variant C jezweb-ux Android chrome — 13 September 2026
+
+### Scope reviewed
+
+- Learner frame gains `ge-application-frame--jezweb` and
+  `data-ge-ux="variant-c-jezweb"`. CSS layer `jezwebLearnerChrome.css`
+  loads after Variant A chrome.
+- Native Android status/navigation/splash bars use light canvas
+  `#FAFBFA` and brand green `#006B3F`.
+- Homepage APK href cache-buster `?v=jezweb-c`.
+- No LessonPractice, audio curriculum, ConversationOrchestrator, or TTS
+  edits.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Jezweb learner class | Pass | `App.tsx` learner/guest Mira frames include `--jezweb` |
+| Bottom tabs / no FAB | Pass | Narrow jezweb nav is a 5-column icon tab bar |
+| Continue/chips flow | Pass | Variant A Learn structure retained; jezweb only restyles chrome |
+| Native bars | Pass | `colors.xml` / `styles.xml` / `studio_launch.xml` |
+| APK download href | Pass | `androidDownload.ts` `?v=jezweb-c` |
+| Lesson/audio paths | Pass | No LessonPractice / orchestrator / TTS edits |
+| LAN cleartext | Pass | `117.254.108.143` already in network security config |
+
+### Verification and limitations
+
+- Focused web Vitest (this agent): 6 files / 29 tests passed
+  (`jezwebLearnerChrome`, `miraLearnerChrome`, `miraGescGreenPin`,
+  `androidNativeStudioThemeContract`, `MarketingLanding`, `App`).
+- ESLint on changed TS/TSX passed (`--max-warnings=0`).
+- MagicPath was over quota and Superdesign CLI was unauthenticated, so the
+  named `03-variant-c-jezweb-ux` canvas file was not imported pixel-for-pixel.
+  The implemented chrome follows jezweb design-review (professional light
+  product UI, semantic tokens, equal tabs) on the locked learner flow.
+- `make verify` / `make e2e` were not run in this pass.
+- Play / production remain unauthorized.
+
 ## D-0287: Variant A learner chrome — 13 September 2026
 
 ### Scope reviewed

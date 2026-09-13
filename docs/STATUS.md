@@ -1,5 +1,22 @@
 # Repository status
 
+## Variant C jezweb-ux Android learner chrome — 13 September 2026
+
+- Learner chrome on web and the production Capacitor APK
+  (`com.globalenglish.app`) uses design-audit Variant C jezweb-ux:
+  professional light product shell, Continue Learning flow, and an
+  Android-first bottom tab bar (Home · Learn · Speak · Progress · 1:1).
+  Speak is an equal tab, not a raised FAB.
+- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c`.
+  Staff LAN download:
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c`.
+- Closed-beta APK must be rebuilt with
+  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080` so the WebView stays
+  on `https://localhost` (mic) while API calls use the LAN origin.
+- Routes, APIs, room types, auth, LessonPractice, audio curriculum,
+  ConversationOrchestrator and TTS adapters are unchanged.
+- This does not authorize Play, production, or marketing cutover.
+
 ## Variant A learner chrome (design-audit) — 13 September 2026
 
 - Learner Learn / demo My Levels now uses the locked Variant A pattern:
