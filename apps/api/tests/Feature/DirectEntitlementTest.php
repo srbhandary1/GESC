@@ -167,15 +167,26 @@ final class DirectEntitlementTest extends TestCase
                     ->value('concept_key'),
             );
 
-            $turn = $this->app->make(ConversationTurnService::class)->create(
+            $turns = $this->app->make(ConversationTurnService::class);
+            $retry = $turns->create(
                 learner: $learner,
                 sessionId: (string) $session['id'],
                 prototypeUtterance: 'Tell me about your weekend.',
                 idempotencyKey: (string) Str::uuid(),
             );
-            self::assertSame('completed', $turn['status']);
-            self::assertStringContainsString('Can I drink water', $turn['assistant_reply']);
-            self::assertStringNotContainsString('Do not start a free conversation', $turn['assistant_reply']);
+            self::assertSame('completed', $retry['status']);
+            self::assertStringContainsString('I can drink water', $retry['assistant_reply']);
+            self::assertStringNotContainsString('Do not start a free conversation', $retry['assistant_reply']);
+
+            $accepted = $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'I can drink water.',
+                idempotencyKey: (string) Str::uuid(),
+            );
+            self::assertSame('completed', $accepted['status']);
+            self::assertStringContainsString('Can I drink water', $accepted['assistant_reply']);
+            self::assertStringNotContainsString('Do not start a free conversation', $accepted['assistant_reply']);
 
             try {
                 $sessions->start(
