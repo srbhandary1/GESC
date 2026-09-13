@@ -4,10 +4,17 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
 import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
+import {
+  asPhase1AuthoredAudioLookup,
+  type Phase1AuthoredAudio,
+  type Phase1AuthoredAudioLookup,
+  phase1LevelAudioRepoPath,
+  resolvePhase1AuthoredAudioLookup,
+} from './phase1LevelAudioAssets'
 import {
   PHASE1_MODULES,
   PHASE1_TEACHER_NAME,
@@ -30,6 +37,9 @@ import './DemoPhase1Shell.css'
 export interface DemoPhase1ShellProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
+  readonly resolveAuthoredLevelAudio?: (
+    levelId: string,
+  ) => Promise<Phase1AuthoredAudioLookup | Phase1AuthoredAudio | null>
 }
 
 const moduleTitleKeys: Readonly<Record<Phase1Module, MessageKey>> = {
@@ -138,6 +148,7 @@ const localeEndonymKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
 export function DemoPhase1Shell({
   locale,
   localizationPolicy,
+  resolveAuthoredLevelAudio = resolvePhase1AuthoredAudioLookup,
 }: DemoPhase1ShellProps) {
   const [module, setModule] = useState<Phase1Module>(() =>
     moduleFromHash(globalThis.location?.hash ?? ''),
@@ -159,6 +170,12 @@ export function DemoPhase1Shell({
   const [audioSpeaking, setAudioSpeaking] = useState(false)
   const [levelAudioSpeaking, setLevelAudioSpeaking] = useState(false)
   const [usedBrowserFallback, setUsedBrowserFallback] = useState(false)
+  const [lookupByLevel, setLookupByLevel] = useState<
+    Readonly<Record<string, Phase1AuthoredAudioLookup>>
+  >({})
+  const lookupByLevelRef = useRef(lookupByLevel)
+  lookupByLevelRef.current = lookupByLevel
+  const authoredAudioRef = useRef<HTMLAudioElement>(null)
 
   const message = (key: MessageKey, parameters: MessageParameters = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -195,6 +212,55 @@ export function DemoPhase1Shell({
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    return () => {
+      for (const lookup of Object.values(lookupByLevelRef.current)) {
+        if (
+          lookup.status === 'ready' &&
+          lookup.audio.source === 'private-api'
+        ) {
+          URL.revokeObjectURL(lookup.audio.url)
+        }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedRoomId !== 'audio' || selectedLevelId in lookupByLevel) {
+      return
+    }
+
+    let cancelled = false
+    void Promise.resolve(resolveAuthoredLevelAudio(selectedLevelId)).then(
+      (found) => {
+        const lookup = asPhase1AuthoredAudioLookup(found)
+        if (cancelled) {
+          if (
+            lookup.status === 'ready' &&
+            lookup.audio.source === 'private-api'
+          ) {
+            URL.revokeObjectURL(lookup.audio.url)
+          }
+          return
+        }
+
+        setLookupByLevel((current) => ({
+          ...current,
+          [selectedLevelId]: lookup,
+        }))
+      },
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    lookupByLevel,
+    resolveAuthoredLevelAudio,
+    selectedLevelId,
+    selectedRoomId,
+  ])
 
   const listenAiReply = () => {
     const reply = aiMessage(aiTopicReplyKeys[activeTopic.id]).text
@@ -260,9 +326,34 @@ export function DemoPhase1Shell({
   const selectedPhrases = phase1LevelPhrases(selectedLevel)
   const selectedRoom =
     phase1LevelRooms.find((room) => room.id === selectedRoomId) ?? null
+  const authoredLookup =
+    selectedLevelId in lookupByLevel ? lookupByLevel[selectedLevelId] : undefined
+  const authoredAudio =
+    authoredLookup?.status === 'ready' ? authoredLookup.audio : undefined
+  const authoredMissing = authoredLookup?.status === 'missing'
+  const authoredUnauthenticated = authoredLookup?.status === 'unauthenticated'
 
-  const playLevelAudio = () => {
+  const playAuthoredLevelAudio = () => {
+    const element = authoredAudioRef.current
+    if (element === null) {
+      return
+    }
+
     stopDemoSpeech()
+    setLevelAudioSpeaking(true)
+    void element
+      .play()
+      .then(() => {
+        setLevelAudioPlayed(true)
+      })
+      .catch(() => {
+        setLevelAudioSpeaking(false)
+      })
+  }
+
+  const playStandinLevelAudio = () => {
+    stopDemoSpeech()
+    authoredAudioRef.current?.pause()
     setLevelAudioSpeaking(true)
     void speakDemoText(`${selectedAudio.title}. ${selectedAudio.lines}`, locale)
       .then((source) => {
@@ -826,25 +917,113 @@ export function DemoPhase1Shell({
                         )}
                       />
                     </p>
-                    <div className="phase1-room-detail__actions">
-                      <button
-                        type="button"
-                        className="ge-button ge-button--primary"
-                        onClick={playLevelAudio}
-                        disabled={levelAudioSpeaking}
-                        aria-busy={levelAudioSpeaking}
-                      >
+                    <p className="phase1-muted" role="status">
+                      {authoredLookup === undefined ? (
                         <LocalizedMessage
                           resolution={message(
-                            levelAudioPlayed
-                              ? 'demo.phase1.rooms.audio.listened'
-                              : 'demo.phase1.rooms.audio.listen',
+                            'demo.phase1.rooms.audio.checking',
                           )}
                         />
-                      </button>
+                      ) : authoredMissing ? (
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.missing',
+                          )}
+                        />
+                      ) : authoredUnauthenticated ? (
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.unauthenticated',
+                          )}
+                        />
+                      ) : (
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.authored',
+                          )}
+                        />
+                      )}
+                    </p>
+                    {authoredMissing ? (
+                      <p className="phase1-muted">
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.missing_hint',
+                            {
+                              path: phase1LevelAudioRepoPath(
+                                selectedLevel.id,
+                              ),
+                            },
+                          )}
+                        />
+                      </p>
+                    ) : null}
+                    {authoredUnauthenticated ? (
+                      <p className="phase1-muted">
+                        <LocalizedMessage
+                          resolution={message(
+                            'demo.phase1.rooms.audio.unauthenticated_hint',
+                          )}
+                        />
+                      </p>
+                    ) : null}
+                    {authoredAudio === undefined ? null : (
+                      <audio
+                        ref={authoredAudioRef}
+                        data-testid="phase1-level-audio"
+                        preload="metadata"
+                        src={authoredAudio.url}
+                        onEnded={() => setLevelAudioSpeaking(false)}
+                        onPause={() => setLevelAudioSpeaking(false)}
+                      >
+                        <source
+                          src={authoredAudio.url}
+                          type={authoredAudio.mimeType}
+                        />
+                      </audio>
+                    )}
+                    <div className="phase1-room-detail__actions">
+                      {authoredAudio === undefined ? null : (
+                        <button
+                          type="button"
+                          className="ge-button ge-button--primary"
+                          onClick={playAuthoredLevelAudio}
+                          disabled={levelAudioSpeaking}
+                          aria-busy={levelAudioSpeaking}
+                        >
+                          <LocalizedMessage
+                            resolution={message(
+                              levelAudioPlayed
+                                ? 'demo.phase1.rooms.audio.listened'
+                                : 'demo.phase1.rooms.audio.listen',
+                            )}
+                          />
+                        </button>
+                      )}
+                      {authoredMissing || authoredUnauthenticated ? (
+                        <button
+                          type="button"
+                          className="ge-button ge-button--quiet"
+                          onClick={playStandinLevelAudio}
+                          disabled={levelAudioSpeaking}
+                          aria-busy={levelAudioSpeaking}
+                        >
+                          <LocalizedMessage
+                            resolution={message(
+                              levelAudioPlayed
+                                ? 'demo.phase1.rooms.audio.standin_played'
+                                : 'demo.phase1.rooms.audio.standin',
+                            )}
+                          />
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        className="ge-button ge-button--quiet"
+                        className={
+                          authoredAudio === undefined
+                            ? 'ge-button ge-button--primary'
+                            : 'ge-button ge-button--quiet'
+                        }
                         onClick={() => goPrimary('speak')}
                       >
                         <LocalizedMessage

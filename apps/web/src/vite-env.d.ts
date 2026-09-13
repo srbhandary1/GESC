@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_LOCAL_DEMO?: string
+  readonly VITE_API_BASE_URL?: string
   readonly VITE_UI_TRANSLATION_PREVIEW?: string
   readonly VITE_MOBILE_API_ORIGIN?: string
   readonly VITE_MOBILE_OAUTH_AUTHORIZE_URL?: string

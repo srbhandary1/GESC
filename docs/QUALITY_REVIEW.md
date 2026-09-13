@@ -1718,7 +1718,11 @@ PR-010 and production remain unauthorized.
 - Home remains the five-module Phase 1 dashboard, with an above-the-fold
   Today strip for Daily Activity and the current-level listen CTA;
 - My Levels rooms are openable for Pre-1, Pre-2 and Levels 1–17; Audio
-  Lessons play scripted TTS then offer Train with Swathi;
+  Lessons prefer authored files from the drop-in contract, then the
+  authenticated `/me/levels/{n}/sessions/introduction/audio` stream;
+  otherwise they state “Model audio not yet loaded” or “Sign in to hear
+  authored audio” and offer an explicit TTS stand-in plus Train with
+  Swathi;
 - demo Learn serves My Levels; Speak is labelled Speak (`#speak`, with
   `#practice` still accepted) so it is not confused with a Practice session;
 - Daily Activity keeps the one-audio/day quiz and a secondary guided lesson
@@ -1734,7 +1738,7 @@ PR-010 and production remain unauthorized.
 | Listen → Swathi train | Pass | room detail + `#speak` handoff |
 | Learn is My Levels, not a competing mission shell | Pass | App Learn tab test |
 | `#practice` still reaches Speak | Pass | `destinationFromHash` alias |
-| Licensed per-level audio files | Gap | Scripted TTS stand-ins only; document in PR |
+| Licensed per-level audio files | Gap | 0/19 files in-repo; drop-in + private introduction GET; studio SPA up / media 401; see [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md) |
 
 ---
 

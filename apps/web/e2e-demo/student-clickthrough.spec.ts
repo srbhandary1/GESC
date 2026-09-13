@@ -12,7 +12,13 @@ test('student click-through exercises every demo page and control', async ({
   test.setTimeout(180_000)
   const apiRequests: string[] = []
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname.startsWith('/api/')) {
+    const pathname = new URL(request.url()).pathname
+    if (
+      pathname.startsWith('/api/') &&
+      !/^\/api\/v1\/me\/levels\/(?:[1-9]|1[0-7])\/sessions\/introduction\/audio$/.test(
+        pathname,
+      )
+    ) {
       apiRequests.push(request.url())
     }
   })
@@ -106,8 +112,9 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('Conversation Room')).toBeVisible()
   await page.getByRole('button', { name: /Level 17/i }).click()
   await page.getByRole('button', { name: /^Audio Lessons/ }).click()
+  await expect(page.getByText('Model audio not yet loaded')).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Listen to this level', exact: true }),
+    page.getByRole('button', { name: 'Hear scripted stand-in' }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Train with Swathi' }).click()
   await expect(

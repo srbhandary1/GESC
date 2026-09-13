@@ -504,12 +504,22 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-09-13.1`.
+  `ui-en-IN-2026-09-13.2`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.1`
-  (`ui-*-2026-09-13.1`).
+  attributed Codex implementation drafts at revisions ending in `.2`
+  (`ui-*-2026-09-13.2`).
 - Demo teacher name in soft-launch chrome is **Swathi**. Longer new
   dashboard strings may still fall back to English in some draft locales.
+- Per-level Audio Lessons prefer authored files at
+  `apps/web/public/demo/phase1/audio/{levelId}.{mp3|wav|m4a|ogg|webm}`,
+  then the authenticated introduction stream
+  `GET /api/v1/me/levels/{1-17}/sessions/introduction/audio` (D-0118).
+  This checkout has **0/19** masters in git. Live Real-Studioz
+  (`http://117.254.108.143:8080`) serves the SPA (200) but private media
+  is **401** without a learner Sanctum session. The room states
+  “Model audio not yet loaded”, “Sign in to hear authored audio”, or
+  plays the file; TTS is an explicit stand-in only. See
+  [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md).
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.

@@ -9,6 +9,8 @@ vi.mock('../demoTts', () => ({
   demoAzureTtsConfigured: vi.fn().mockResolvedValue(true),
 }))
 
+const missingAuthoredAudio = async () => null
+
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
@@ -20,6 +22,7 @@ describe('DemoPhase1Shell', () => {
       <DemoPhase1Shell
         locale="en-IN"
         localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={missingAuthoredAudio}
       />,
     )
 
@@ -64,6 +67,7 @@ describe('DemoPhase1Shell', () => {
       <DemoPhase1Shell
         locale="en-IN"
         localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={missingAuthoredAudio}
       />,
     )
 
@@ -96,8 +100,14 @@ describe('DemoPhase1Shell', () => {
     await user.click(screen.getByRole('button', { name: /Level 17/i }))
     await user.click(screen.getByRole('button', { name: 'Audio Lessons' }))
     expect(
-      screen.getByRole('button', { name: 'Listen to this level' }),
+      await screen.findByText('Model audio not yet loaded'),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Hear scripted stand-in' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Listen to this level' }),
+    ).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Train with Swathi' }),
     ).toBeInTheDocument()
@@ -115,6 +125,7 @@ describe('DemoPhase1Shell', () => {
       <DemoPhase1Shell
         locale="kn-IN"
         localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={missingAuthoredAudio}
       />,
     )
 
@@ -160,6 +171,7 @@ describe('DemoPhase1Shell', () => {
       <DemoPhase1Shell
         locale="hi-IN"
         localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={missingAuthoredAudio}
       />,
     )
 
@@ -171,5 +183,76 @@ describe('DemoPhase1Shell', () => {
     expect(screen.getByRole('button', { name: 'हिन्दी' })).toHaveClass(
       'is-active',
     )
+  })
+
+  it('asks for a learner session when private media returns unauthenticated', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <DemoPhase1Shell
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={async () => ({
+          status: 'unauthenticated',
+        })}
+      />,
+    )
+
+    await user.click(screen.getByRole('link', { name: 'My Levels' }))
+    await user.click(screen.getByRole('button', { name: 'Audio Lessons' }))
+    expect(
+      await screen.findByText('Sign in to hear authored audio'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'This host is up. Private lesson audio needs a learner session. Scripted stand-in is not the authored file.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Hear scripted stand-in' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Listen to this level' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Train with Swathi' }),
+    ).toBeInTheDocument()
+  })
+
+  it('plays an authored file when the drop-in contract resolves one', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <DemoPhase1Shell
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        resolveAuthoredLevelAudio={async () => ({
+          levelId: 'level-1',
+          url: 'https://example.test/level-1.mp3',
+          mimeType: 'audio/mpeg',
+          file: 'level-1.mp3',
+          source: 'manifest',
+        })}
+      />,
+    )
+
+    await user.click(screen.getByRole('link', { name: 'My Levels' }))
+    await user.click(screen.getByRole('button', { name: 'Audio Lessons' }))
+    expect(
+      await screen.findByText('Authored model audio'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Listen to this level' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Hear scripted stand-in' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByTestId('phase1-level-audio')).toHaveAttribute(
+      'src',
+      'https://example.test/level-1.mp3',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Train with Swathi' }),
+    ).toBeInTheDocument()
   })
 })

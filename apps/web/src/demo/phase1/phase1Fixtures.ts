@@ -199,7 +199,11 @@ export interface Phase1LevelAudio {
   readonly title: string
   readonly lines: string
   readonly duration: string
-  /** Synthetic TTS stand-in is wired; licensed curriculum files are not in-repo. */
+  /**
+   * Script metadata only. Playback prefers an authored file at
+   * `apps/web/public/demo/phase1/audio/{levelId}.{ext}`, then the
+   * authenticated introduction stream for Levels 1–17.
+   */
   readonly source: 'scripted-tts'
 }
 
