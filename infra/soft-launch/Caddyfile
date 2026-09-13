@@ -68,6 +68,15 @@ http://:9080 {
 		file_server
 	}
 
+	@androidApk path /downloads/*.apk
+	handle @androidApk {
+		header Cache-Control "public, max-age=300"
+		header Content-Type "application/vnd.android.package-archive"
+		header Content-Disposition "attachment"
+		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
+		file_server
+	}
+
 	handle {
 		root * {$GE_SOFT_LAUNCH_WEB_ROOT}
 		try_files {path} /index.html

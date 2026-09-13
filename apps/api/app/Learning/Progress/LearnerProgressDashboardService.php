@@ -7,6 +7,7 @@ namespace App\Learning\Progress;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
+use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -18,6 +19,7 @@ final readonly class LearnerProgressDashboardService
     public function __construct(
         private LearnerAuthority $authority,
         private MeaningfulSpeakingDayProjector $speakingDayProjector,
+        private ReviewDueBlockingService $reviewDue,
     ) {}
 
     /**
@@ -29,6 +31,7 @@ final readonly class LearnerProgressDashboardService
         $organizationId = $context->organizationId;
         $membershipId = (string) $context->membershipId;
         $enrollment = $this->activeEnrollment($organizationId, $membershipId);
+        $actionableDueReview = $this->reviewDue->firstDueIncompleteReview($context);
 
         return [
             'enrollment' => $enrollment instanceof stdClass
@@ -62,6 +65,15 @@ final readonly class LearnerProgressDashboardService
                     $membershipId,
                 )
                 : $this->emptyDelayedReview(),
+            'actionable_due_review' => $actionableDueReview === null
+                ? null
+                : [
+                    'id' => $actionableDueReview['id'],
+                    'enrollment_id' => $actionableDueReview['enrollment_id'],
+                    'mission_id' => $actionableDueReview['curriculum_mission_id'],
+                    'objective_id' => $actionableDueReview['learning_objective_id'],
+                    'due_at' => $actionableDueReview['due_at'],
+                ],
             'recurring_errors' => [
                 'patterns' => $this->recurringErrorPatterns(
                     $organizationId,

@@ -61,6 +61,7 @@ export class AndroidPkceAuthenticationAdapter
   #invalidationNotified = false
   readonly #invalidationListeners = new Set<() => void>()
   #refreshInFlight: Promise<void> | null = null
+  #discoveredClientId: string | null = null
 
   readonly authenticatedFetch: typeof fetch = async (input, init) =>
     this.#authenticatedApiFetch(input, await this.#withNativeMultipart(init))
@@ -74,13 +75,14 @@ export class AndroidPkceAuthenticationAdapter
     const credentialGeneration = this.#credentialGeneration
     const installationId =
       await this.#options.secureStore.getOrCreateInstallationId()
+    const clientId = await this.#ensureClientId()
 
     try {
       const response = await this.#fetch(
         `${this.#options.apiBaseUrl}/auth/mobile/password/sign-ins`,
         {
           body: JSON.stringify({
-            client_id: this.#options.clientId,
+            client_id: clientId,
             installation_id: installationId,
             password,
             username,
@@ -158,6 +160,8 @@ export class AndroidPkceAuthenticationAdapter
       throw new AuthenticationUnavailableError()
     }
 
+    this.#captureDiscoveredClientId(body)
+
     return mode
   }
 
@@ -221,6 +225,7 @@ export class AndroidPkceAuthenticationAdapter
   async beginFederatedLink(provider: FederatedProvider): Promise<void> {
     const installationId =
       await this.#options.secureStore.getOrCreateInstallationId()
+    const clientId = await this.#ensureClientId()
     let response: Response
 
     try {
@@ -228,7 +233,7 @@ export class AndroidPkceAuthenticationAdapter
         `${this.#options.apiBaseUrl}/auth/mobile/social/${provider}/link-starts`,
         {
           body: JSON.stringify({
-            client_id: this.#options.clientId,
+            client_id: clientId,
             installation_id: installationId,
           }),
           credentials: 'omit',
@@ -296,12 +301,13 @@ export class AndroidPkceAuthenticationAdapter
     installationId: string,
   ): Promise<string> {
     let response: Response
+    const clientId = await this.#ensureClientId()
 
     try {
       const url = new URL(
         `${this.#options.apiBaseUrl}/auth/mobile/social/${provider}/authorization`,
       )
-      url.searchParams.set('client_id', this.#options.clientId)
+      url.searchParams.set('client_id', clientId)
       url.searchParams.set('installation_id', installationId)
       response = await this.#fetch(url, {
         credentials: 'omit',
@@ -384,6 +390,7 @@ export class AndroidPkceAuthenticationAdapter
   async beginAuthorization(): Promise<void> {
     const verifier = randomBase64Url(64)
     const state = randomBase64Url(32)
+    const clientId = await this.#ensureClientId()
     await this.#options.secureStore.getOrCreateInstallationId()
 
     await this.#options.secureStore.writePendingAuthorization({
@@ -392,7 +399,7 @@ export class AndroidPkceAuthenticationAdapter
     })
 
     const url = new URL(this.#options.authorizationEndpoint)
-    url.searchParams.set('client_id', this.#options.clientId)
+    url.searchParams.set('client_id', clientId)
     url.searchParams.set('code_challenge', await sha256Base64Url(verifier))
     url.searchParams.set('code_challenge_method', 'S256')
     url.searchParams.set('redirect_uri', this.#options.redirectUri)
@@ -484,10 +491,11 @@ export class AndroidPkceAuthenticationAdapter
 
     const installationId =
       await this.#options.secureStore.getOrCreateInstallationId()
+    const clientId = await this.#ensureClientId()
 
     try {
       const tokens = await this.#exchangeToken({
-        client_id: this.#options.clientId,
+        client_id: clientId,
         code,
         code_verifier: pending.verifier,
         grant_type: 'authorization_code',
@@ -513,13 +521,14 @@ export class AndroidPkceAuthenticationAdapter
   ): Promise<AuthenticationSnapshot> {
     const installationId =
       await this.#options.secureStore.getOrCreateInstallationId()
+    const clientId = await this.#ensureClientId()
 
     try {
       const response = await this.#fetch(
         `${this.#options.apiBaseUrl}/auth/mobile/social/sign-ins`,
         {
           body: JSON.stringify({
-            client_id: this.#options.clientId,
+            client_id: clientId,
             installation_id: installationId,
             ticket,
           }),
@@ -827,6 +836,54 @@ export class AndroidPkceAuthenticationAdapter
     return rewritten
   }
 
+  async #ensureClientId(): Promise<string> {
+    const resolved = this.#resolvedClientId()
+
+    if (resolved !== null) {
+      return resolved
+    }
+
+    await this.authenticationMode()
+
+    const afterMode = this.#resolvedClientId()
+
+    if (afterMode !== null) {
+      return afterMode
+    }
+
+    throw new AuthenticationUnavailableError()
+  }
+
+  #resolvedClientId(): string | null {
+    if (
+      this.#discoveredClientId !== null &&
+      isOAuthClientUuid(this.#discoveredClientId)
+    ) {
+      return this.#discoveredClientId
+    }
+
+    if (isOAuthClientUuid(this.#options.clientId)) {
+      return this.#options.clientId
+    }
+
+    return null
+  }
+
+  #captureDiscoveredClientId(body: unknown): void {
+    const clientId =
+      body !== null &&
+      typeof body === 'object' &&
+      'client_id' in body &&
+      typeof body.client_id === 'string' &&
+      isOAuthClientUuid(body.client_id)
+        ? body.client_id
+        : null
+
+    if (clientId !== null) {
+      this.#discoveredClientId = clientId
+    }
+  }
+
   #authorizedHeaders(
     request: Request,
     accessToken: string | null,
@@ -864,8 +921,9 @@ export class AndroidPkceAuthenticationAdapter
     try {
       const installationId =
         await this.#options.secureStore.getOrCreateInstallationId()
+      const clientId = await this.#ensureClientId()
       const tokens = await this.#exchangeToken({
-        client_id: this.#options.clientId,
+        client_id: clientId,
         grant_type: 'refresh_token',
         installation_id: installationId,
         refresh_token: refreshToken,
@@ -1128,4 +1186,10 @@ function constantTimeEqual(left: string, right: string): boolean {
   }
 
   return difference === 0
+}
+
+function isOAuthClientUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+    value,
+  )
 }

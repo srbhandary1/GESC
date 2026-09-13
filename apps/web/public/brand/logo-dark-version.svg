@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" width="800" height="220">
+  <defs>
+    <linearGradient id="globeGradD" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A86B"/>
+      <stop offset="100%" stop-color="#006B3F"/>
+    </linearGradient>
+    <filter id="softShadowD" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Dark background optional, but transparent for flexibility -->
+  <g transform="translate(20, 20)" filter="url(#softShadowD)">
+    <circle cx="90" cy="90" r="85" fill="#1A1A2E" stroke="#2A2A3E" stroke-width="2"/>
+    <path d="M40,50 Q55,35 75,45 Q95,30 110,50 Q125,40 140,55 Q130,70 115,65 Q100,80 85,70 Q70,85 55,75 Q45,65 40,50" fill="url(#globeGradD)" opacity="0.95"/>
+    <path d="M50,95 Q65,85 80,100 Q95,90 110,105 Q100,120 85,115 Q70,125 55,115 Q45,105 50,95" fill="url(#globeGradD)" opacity="0.9"/>
+    <path d="M120,70 Q140,65 150,85 Q145,100 130,95 Q125,80 120,70" fill="url(#globeGradD)" opacity="0.85"/>
+    <ellipse cx="90" cy="90" rx="85" ry="30" fill="none" stroke="#00A86B" stroke-width="1" opacity="0.3"/>
+    <ellipse cx="90" cy="90" rx="85" ry="55" fill="none" stroke="#00A86B" stroke-width="1" opacity="0.2"/>
+    <line x1="5" y1="90" x2="175" y2="90" stroke="#00A86B" stroke-width="1" opacity="0.3"/>
+    
+    <path d="M55,70 Q55,50 80,50 Q105,50 105,70 Q105,85 90,90 Q105,95 105,110 Q105,130 80,130 Q55,130 55,110" 
+          fill="none" stroke="#E31C23" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M55,90 L95,90" stroke="#E31C23" stroke-width="12" stroke-linecap="round"/>
+    
+    <path d="M15,130 Q40,150 70,145 Q100,155 140,135" fill="none" stroke="#E31C23" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+    <path d="M20,145 Q50,165 90,160 Q130,170 160,145" fill="none" stroke="#00A86B" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  
+  <line x1="230" y1="40" x2="230" y2="180" stroke="#00A86B" stroke-width="3" opacity="0.8"/>
+  
+  <text x="260" y="85" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="800" fill="#00A86B" letter-spacing="-1">GLOBAL</text>
+  <text x="260" y="125" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="600" fill="#E5E7EB" letter-spacing="1">SPOKEN ENGLISH</text>
+  
+  <rect x="260" y="145" width="90" height="32" rx="16" fill="#E31C23"/>
+  <text x="305" y="167" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">APP</text>
+  
+  <line x1="360" y1="161" x2="480" y2="161" stroke="#E31C23" stroke-width="2"/>
+  <line x1="260" y1="161" x2="250" y2="161" stroke="#00A86B" stroke-width="2"/>
+</svg>

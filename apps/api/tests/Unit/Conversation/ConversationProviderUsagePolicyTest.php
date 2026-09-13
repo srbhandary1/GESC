@@ -110,6 +110,21 @@ final class ConversationProviderUsagePolicyTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    public function test_lesson_drill_gate_is_allowed_in_every_environment(): void
+    {
+        foreach (['testing', 'soft-launch'] as $environment) {
+            $this->app->detectEnvironment(static fn (): string => $environment);
+            config()->set('conversation.provider_driver', 'azure-openai-dev');
+
+            $this->app->make(ConversationProviderUsagePolicy::class)->assertAllowed(
+                'model',
+                $this->lessonDrillUsage(),
+            );
+        }
+
+        $this->addToAssertionCount(2);
+    }
+
     private function usage(
         string $provider,
         string $model,
@@ -122,6 +137,21 @@ final class ConversationProviderUsagePolicyTest extends TestCase
             inputUnits: 2,
             outputUnits: 3,
             estimatedCostMicrounits: $cost,
+        );
+    }
+
+    private function lessonDrillUsage(): ProviderUsage
+    {
+        return new ProviderUsage(
+            providerKey: 'project-lesson-drill',
+            modelVersion: 'strict-pattern-gate-v1',
+            latencyMilliseconds: 0,
+            inputUnits: 0,
+            outputUnits: 0,
+            estimatedCostMicrounits: 0,
+            inputUnitKind: 'unicode_characters',
+            outputUnitKind: 'unicode_characters',
+            dispatchKind: 'local_execution',
         );
     }
 }

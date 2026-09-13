@@ -6,6 +6,7 @@ import {
 export interface PlayBase64AudioOptions {
   readonly signal?: AbortSignal
   readonly onStarted?: () => void
+  readonly onTimeUpdate?: (currentTimeMs: number) => void
 }
 
 export async function playBase64Audio(
@@ -47,6 +48,9 @@ export async function playBase64Audio(
       audio.onended = () => resolve()
       audio.onerror = () => reject(new Error('audio_playback_failed'))
       audio.onplaying = notifyStarted
+      audio.ontimeupdate = () => {
+        options.onTimeUpdate?.(Math.round(audio.currentTime * 1000))
+      }
 
       void audio
         .play()

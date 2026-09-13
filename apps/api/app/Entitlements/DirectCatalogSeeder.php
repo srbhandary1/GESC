@@ -40,23 +40,23 @@ final class DirectCatalogSeeder
             if ($existing instanceof stdClass) {
                 $updates = [];
 
-                if ((int) $existing->version === 1 && $this->string($existing, 'name') !== $plan['name']) {
+                if ((int) $existing->version < DirectPlanDefaults::CATALOG_VERSION) {
+                    $updates = [
+                        'name' => $plan['name'],
+                        'amount_ex_gst_paise' => $plan['amount_ex_gst_paise'],
+                        'duration_value' => $plan['duration_value'],
+                        'allows_roleplay' => $plan['allows_roleplay'],
+                        'live_ai_cap_seconds' => $plan['live_ai_cap_seconds'],
+                        'max_level_number' => $plan['max_level_number'],
+                        'version' => DirectPlanDefaults::CATALOG_VERSION,
+                        'updated_at' => $now,
+                    ];
+                } elseif ($this->string($existing, 'name') !== $plan['name']) {
                     $updates['name'] = $plan['name'];
-                }
-
-                if (
-                    $existing->live_ai_cap_seconds === null
-                    && $plan['live_ai_cap_seconds'] !== null
-                    && in_array($plan['code'], [
-                        DirectPlanDefaults::MONTHLY_MODULES,
-                        DirectPlanDefaults::MONTHLY_ROLEPLAY,
-                    ], true)
-                ) {
-                    $updates['live_ai_cap_seconds'] = $plan['live_ai_cap_seconds'];
+                    $updates['updated_at'] = $now;
                 }
 
                 if ($updates !== []) {
-                    $updates['updated_at'] = $now;
                     DB::table('entitlement_plans')
                         ->where('id', $this->string($existing, 'id'))
                         ->update($updates);
@@ -78,7 +78,7 @@ final class DirectCatalogSeeder
                 'live_ai_cap_seconds' => $plan['live_ai_cap_seconds'],
                 'is_demo' => $plan['is_demo'],
                 'status' => 'active',
-                'version' => 1,
+                'version' => DirectPlanDefaults::CATALOG_VERSION,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

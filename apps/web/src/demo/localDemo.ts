@@ -7,6 +7,12 @@ import type {
   FriendTurnEvent,
   StartFriendSessionInput,
 } from '../conversation/ConversationJourneyApi'
+import {
+  lessonDrillCurrentModel,
+  lessonDrillReply,
+  lessonDrillRetryReply,
+  lessonDrillUtteranceMatchesModel,
+} from '../conversation/lessonDrillStepper'
 import type {
   AttemptResponseInput,
   GovernedContent,
@@ -28,6 +34,11 @@ import type {
 } from '../learner/LevelSessionsApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
 import { requestDemoChatReply } from './demoChat'
+import {
+  DEMO_LEVEL_FIXTURES,
+  demoLevelFixture,
+  type DemoLevelFixture,
+} from './demoLevelFixtures'
 
 const ids = {
   asset: '01J30000000000000000000001',
@@ -70,12 +81,26 @@ export function isLocalDemoEnabled(
   )
 }
 
+type DemoTalkState = {
+  drillPatterns: readonly string[] | null
+  drillFallbackTurns: readonly string[] | null
+  drillPart: 'introduction' | 'practice' | null
+  acceptedPatternCount: number
+}
+
 export function createLocalDemoRuntime() {
+  const talk: DemoTalkState = {
+    drillPatterns: null,
+    drillFallbackTurns: null,
+    drillPart: null,
+    acceptedPatternCount: 0,
+  }
+
   return {
     authentication: demoAuthentication,
-    conversationApi: new LocalDemoConversationApi(),
+    conversationApi: new LocalDemoConversationApi(talk),
     learnerJourneyApi: new LocalDemoLearnerApi(),
-    levelSessionsApi: new LocalDemoLevelSessionsApi(),
+    levelSessionsApi: new LocalDemoLevelSessionsApi(talk),
   } as const
 }
 
@@ -138,6 +163,7 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
         completed_on_time_count: 0,
         completed_late_count: 0,
       },
+      actionable_due_review: null,
       recurring_errors: { patterns: [] },
     }
   }
@@ -253,40 +279,116 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
 }
 
 class LocalDemoLevelSessionsApi implements LevelSessionsApi {
-  #completions = new Set<SessionPartId>()
+  readonly #completions = new Map<number, Set<SessionPartId>>()
+  readonly #checkpointPassed = new Set<number>()
+  readonly #checkpointAttempts = new Map<number, number>()
+  readonly #reviewDueBlocking: boolean
+  readonly #talk: DemoTalkState
+
+  constructor(talk: DemoTalkState, reviewDueBlocking = false) {
+    this.#talk = talk
+    this.#reviewDueBlocking = reviewDueBlocking
+  }
+
+  #fixture(levelNumber: number): DemoLevelFixture {
+    const fixture = demoLevelFixture(levelNumber)
+    if (fixture === undefined) {
+      throw new Error('level_unavailable')
+    }
+    return fixture
+  }
+
+  #completionSet(levelNumber: number): Set<SessionPartId> {
+    const existing = this.#completions.get(levelNumber)
+    if (existing !== undefined) {
+      return existing
+    }
+    const created = new Set<SessionPartId>()
+    this.#completions.set(levelNumber, created)
+    return created
+  }
+
+  #isLevelFullyComplete(levelNumber: number): boolean {
+    const completions = this.#completionSet(levelNumber)
+    return (
+      completions.has('introduction') &&
+      completions.has('practice') &&
+      completions.has('conversation') &&
+      completions.has('interaction')
+    )
+  }
+
+  #isLevelUnlockReady(levelNumber: number): boolean {
+    return (
+      this.#isLevelFullyComplete(levelNumber) &&
+      this.#checkpointPassed.has(levelNumber)
+    )
+  }
+
+  #checkpointStatus(levelNumber: number) {
+    if (this.#checkpointPassed.has(levelNumber)) {
+      return 'passed' as const
+    }
+    if (!this.#isLevelFullyComplete(levelNumber)) {
+      return 'not_ready' as const
+    }
+    if ((this.#checkpointAttempts.get(levelNumber) ?? 0) >= 3) {
+      return 'attempts_exhausted' as const
+    }
+    if (this.#reviewDueBlocking) {
+      return 'review_due_blocked' as const
+    }
+    return 'ready' as const
+  }
+
+  #checkpointAttemptsRemaining(levelNumber: number): number | null {
+    const status = this.#checkpointStatus(levelNumber)
+    if (status === 'ready' || status === 'review_due_blocked') {
+      return 3 - (this.#checkpointAttempts.get(levelNumber) ?? 0)
+    }
+    return null
+  }
 
   async listLevels(signal?: AbortSignal) {
     abortIfNeeded(signal)
-    const levels = Array.from({ length: 17 }, (_, index) => {
-      const levelNumber = index + 1
-      if (levelNumber === 1) {
+    return {
+      levels: DEMO_LEVEL_FIXTURES.map((fixture) => {
+        const priorLevel = fixture.level_number - 1
+        const progressUnlocked =
+          fixture.level_number === 1 ||
+          this.#isLevelUnlockReady(priorLevel)
+
         return {
-          level_number: 1,
-          concept_key: 'can',
+          level_number: fixture.level_number,
+          concept_key: fixture.concept_key,
           availability: 'available' as const,
-          blueprint_id: '01J30000000000000000000030',
+          blueprint_id: `01J300000000000000000000${String(fixture.level_number).padStart(2, '0')}`,
           session_part_ids: [
             'introduction',
             'practice',
             'conversation',
             'interaction',
           ],
+          entitlement_access: 'allowed' as const,
+          progress_access: progressUnlocked
+            ? ('allowed' as const)
+            : ('locked' as const),
+          unlock_after_level_number: progressUnlocked ? null : priorLevel,
+          checkpoint_status: this.#checkpointStatus(fixture.level_number),
+          checkpoint_attempts_remaining: this.#checkpointAttemptsRemaining(
+            fixture.level_number,
+          ),
+          review_due_blocking:
+            this.#checkpointStatus(fixture.level_number) ===
+            'review_due_blocked',
+          spoken_evidence: {
+            evidence_state: 'not_recorded' as const,
+            spoken_state: 'unassessed' as const,
+            spoken_progress_claim: false as const,
+          },
         }
-      }
-      return {
-        level_number: levelNumber,
-        concept_key: null,
-        availability: 'commissioning_pending' as const,
-        blueprint_id: null,
-        session_part_ids: [
-          'introduction',
-          'practice',
-          'conversation',
-          'interaction',
-        ],
-      }
-    })
-    return { levels }
+      }),
+    }
   }
 
   async listSessions(
@@ -294,25 +396,24 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
     signal?: AbortSignal,
   ): Promise<LevelSessionsList> {
     abortIfNeeded(signal)
-    if (levelNumber !== 1) {
-      throw new Error('level_unavailable')
-    }
+    const fixture = this.#fixture(levelNumber)
     const parts: SessionPartId[] = [
       'introduction',
       'practice',
       'conversation',
       'interaction',
     ]
+    const completions = this.#completionSet(levelNumber)
     return {
-      level_number: 1,
-      concept_key: 'can',
-      blueprint_id: '01J30000000000000000000030',
+      level_number: levelNumber,
+      concept_key: fixture.concept_key,
+      blueprint_id: `01J300000000000000000000${String(levelNumber).padStart(2, '0')}`,
       blueprint_content_hash: 'd'.repeat(64),
       sessions: parts.map((partId, index) => ({
         part_id: partId,
         part_order: index + 1,
         media_asset_id: ids.asset,
-        completed: this.#completions.has(partId),
+        completed: completions.has(partId),
       })),
     }
   }
@@ -323,39 +424,37 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
     signal?: AbortSignal,
   ): Promise<LevelSessionDetail> {
     abortIfNeeded(signal)
-    if (levelNumber !== 1) {
-      throw new Error('level_unavailable')
-    }
+    const fixture = this.#fixture(levelNumber)
     const order = (
       ['introduction', 'practice', 'conversation', 'interaction'] as const
     ).indexOf(partId)
+    const spokenLine =
+      fixture.talk.fallback_turns[0] ??
+      fixture.target_patterns[0] ??
+      fixture.objective
     return {
-      level_number: 1,
+      level_number: levelNumber,
       part_id: partId,
       part_order: order + 1,
-      completed: this.#completions.has(partId),
+      completed: this.#completionSet(levelNumber).has(partId),
       media_asset_id: ids.asset,
-      audio_stream_path: encodeDemoSpeechUrl(
-        'en-IN',
-        'I can speak English. Can I help you?',
-      ),
-      objective:
-        'By the end of this lesson, the learner can use can and cannot.',
-      target_patterns: ['I can + base verb.', 'Can I + base verb?'],
+      audio_stream_path: encodeDemoSpeechUrl('en-IN', spokenLine),
+      objective: fixture.objective,
+      target_patterns: [...fixture.target_patterns],
       kannada_guidance: {
-        summary: 'ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.',
+        summary: fixture.kannada_summary,
       },
       talk: {
-        scenario: 'Ask for permission at a community centre.',
-        elicitation_goals: ['Ask one Can I...? question.'],
-        fallback_turns: ['Can I use your pen?'],
+        scenario: fixture.talk.scenario,
+        elicitation_goals: [],
+        fallback_turns: [...fixture.talk.fallback_turns],
         free_speech: partId === 'conversation' || partId === 'interaction',
       },
       apply:
         partId === 'interaction'
           ? {
-              task: 'State one ability and ask permission.',
-              rubric: ['Uses one accurate I can statement'],
+              task: fixture.apply.task,
+              rubric: ['Uses the level pattern accurately'],
               free_speech: true,
             }
           : null,
@@ -363,38 +462,12 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
         partId === 'practice'
           ? {
               pass_threshold: 80,
-              items: [
-                {
-                  id: 'can-01',
-                  weight: 35,
-                  prompt: 'Choose the correct sentence.',
-                  options: [
-                    'I can speak English.',
-                    'I can speaking English.',
-                    'I can to speak English.',
-                  ],
-                },
-                {
-                  id: 'can-02',
-                  weight: 30,
-                  prompt: 'Choose the permission question.',
-                  options: [
-                    'Can I use your pen?',
-                    'I can use your pen?',
-                    'Can I using your pen?',
-                  ],
-                },
-                {
-                  id: 'can-03',
-                  weight: 35,
-                  prompt: 'Choose the answer.',
-                  options: [
-                    'Yes, you can.',
-                    'Yes, you can to.',
-                    'Yes, you can sitting.',
-                  ],
-                },
-              ],
+              items: fixture.check.map((item) => ({
+                id: item.id,
+                weight: item.weight,
+                prompt: item.prompt,
+                options: [...item.options],
+              })),
             }
           : null,
       activities: [
@@ -409,20 +482,23 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
       ],
       conversation_binding: {
         prototype:
-          partId === 'introduction' ? 'skill_focus' : 'confidence_friend',
-        coaching_mode: partId === 'introduction' ? 'tutor' : 'friend',
+          partId === 'introduction' || partId === 'practice'
+            ? 'skill_focus'
+            : 'confidence_friend',
+        coaching_mode:
+          partId === 'introduction' || partId === 'practice' ? 'tutor' : 'gentle',
       },
     }
   }
 
   async completeSession(
-    _levelNumber: number,
+    levelNumber: number,
     partId: SessionPartId,
     _idempotencyKey: string,
     signal?: AbortSignal,
   ) {
     abortIfNeeded(signal)
-    this.#completions.add(partId)
+    this.#completionSet(levelNumber).add(partId)
     return {
       replayed: false,
       completion_id: '01J30000000000000000000031',
@@ -431,21 +507,21 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
   }
 
   async submitCheck(
-    _levelNumber: number,
+    levelNumber: number,
     _partId: SessionPartId,
     answers: Record<string, number>,
     _idempotencyKey: string,
     signal?: AbortSignal,
   ): Promise<CheckSubmissionResult> {
     abortIfNeeded(signal)
-    const keys = ['can-01', 'can-02', 'can-03'] as const
-    const itemResults = keys.map((id) => {
-      const selected = answers[id] ?? -1
+    const fixture = this.#fixture(levelNumber)
+    const itemResults = fixture.check.map((item) => {
+      const selected = answers[item.id] ?? -1
       return {
-        id,
+        id: item.id,
         selected_option: selected,
-        correct: selected === 0,
-        rationale: selected === 0 ? 'Correct.' : 'Try the base-verb form.',
+        correct: selected === item.correct_option,
+        rationale: selected === item.correct_option ? 'Correct.' : 'Try again.',
       }
     })
     const score = Math.round(
@@ -462,20 +538,121 @@ class LocalDemoLevelSessionsApi implements LevelSessionsApi {
   }
 
   async startConversation(
-    _levelNumber: number,
-    _partId: SessionPartId,
+    levelNumber: number,
+    partId: SessionPartId,
     uiLocale: string,
     _idempotencyKey: string,
     signal?: AbortSignal,
   ) {
     abortIfNeeded(signal)
-    return demoFriendSession(uiLocale)
+    const fixture = this.#fixture(levelNumber)
+    if (partId === 'introduction' || partId === 'practice') {
+      this.#talk.drillPatterns = fixture.target_patterns
+      this.#talk.drillFallbackTurns = fixture.talk.fallback_turns
+      this.#talk.drillPart = partId
+      this.#talk.acceptedPatternCount = 0
+      return demoFriendSession(uiLocale, 'tutor')
+    }
+
+    this.#talk.drillPatterns = null
+    this.#talk.drillFallbackTurns = null
+    this.#talk.drillPart = null
+    this.#talk.acceptedPatternCount = 0
+    return demoFriendSession(uiLocale, 'gentle')
+  }
+
+  async checkpointDetail(levelNumber: number, signal?: AbortSignal) {
+    abortIfNeeded(signal)
+    const status = this.#checkpointStatus(levelNumber)
+    if (status === 'review_due_blocked') {
+      throw new Error('review_due_blocking')
+    }
+    if (status !== 'ready') {
+      throw new Error('checkpoint_not_ready')
+    }
+    const fixture = this.#fixture(levelNumber)
+    return {
+      level_number: levelNumber,
+      concept_key: fixture.concept_key,
+      blueprint_id: `01J300000000000000000000${String(levelNumber).padStart(2, '0')}`,
+      blueprint_content_hash: 'd'.repeat(64),
+      rule_key: 'level_checkpoint_v1',
+      rule_hash: 'e'.repeat(64),
+      pass_threshold: 80,
+      max_attempts: 3,
+      attempts_remaining: 3,
+      items: fixture.check.map((item) => ({
+        id: `checkpoint-${item.id}`,
+        weight: item.weight,
+        prompt: item.prompt,
+        options: item.options,
+      })),
+    }
+  }
+
+  async submitCheckpoint(
+    levelNumber: number,
+    answers: Record<string, number>,
+    _idempotencyKey: string,
+    signal?: AbortSignal,
+  ) {
+    abortIfNeeded(signal)
+    const fixture = this.#fixture(levelNumber)
+    const itemResults = fixture.check.map((item) => {
+      const selected = answers[`checkpoint-${item.id}`] ?? -1
+      return {
+        id: `checkpoint-${item.id}`,
+        selected_option: selected,
+        correct: selected === item.correct_option,
+        rationale: selected === item.correct_option ? 'Correct.' : 'Try again.',
+      }
+    })
+    const score = Math.round(
+      (itemResults.filter((item) => item.correct).length / itemResults.length) *
+        100,
+    )
+    const passed = score >= 80
+    const attemptNumber = (this.#checkpointAttempts.get(levelNumber) ?? 0) + 1
+    this.#checkpointAttempts.set(levelNumber, attemptNumber)
+    if (passed) {
+      this.#checkpointPassed.add(levelNumber)
+    }
+    const remaining = passed
+      ? null
+      : Math.max(0, 3 - attemptNumber)
+    return {
+      replayed: false,
+      attempt_id: '01J30000000000000000000041',
+      attempt_number: attemptNumber,
+      score,
+      pass_threshold: 80,
+      passed,
+      attempts_remaining: remaining,
+      item_results: itemResults,
+      spoken_evidence: {
+        evidence_state: 'not_recorded' as const,
+        spoken_state: 'unassessed' as const,
+        spoken_progress_claim: false as const,
+      },
+      level_unlock: passed
+        ? {
+            replayed: false,
+            unlock_decision_id: '01J30000000000000000000042',
+            level_number: levelNumber + 1,
+          }
+        : null,
+    }
   }
 }
 
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
   #roleplaySession: FriendSession | null = null
+  readonly #talk: DemoTalkState
+
+  constructor(talk: DemoTalkState) {
+    this.#talk = talk
+  }
 
   async startSession(
     input: StartFriendSessionInput,
@@ -488,6 +665,10 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       input.persona_key === 'clinic-reception-roleplay-prototype' ||
       input.scenario_key === 'clinic-reception-roleplay-scenario'
 
+    this.#talk.drillPatterns = null
+    this.#talk.drillFallbackTurns = null
+    this.#talk.drillPart = null
+    this.#talk.acceptedPatternCount = 0
     if (isRoleplay) {
       this.#roleplaySession = demoRoleplaySession('observe', input.ui_locale)
       return this.#roleplaySession
@@ -525,20 +706,82 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     abortIfNeeded(signal)
     this.#turnNumber += 1
 
-    const openRouter = await requestDemoChatReply(input.prototype_utterance)
-    abortIfNeeded(signal)
-    const assistantReply =
-      openRouter?.reply ??
-      demoFriendReply(input.prototype_utterance, this.#turnNumber)
-
-    return {
-      assistant_reply: assistantReply,
-      conversation_session_id: ids.session,
-      events_url: `local-demo://turn/${this.#turnNumber}`,
-      id: ids.turn,
-      priority_correction: {
-        correction_en:
-          'A clearer sentence is: "I enjoy learning English after work."',
+    const drillPatterns = this.#talk.drillPatterns
+    let assistantReply: string
+    let priorityCorrection: FriendTurn['priority_correction']
+    let understoodIntent = 'prototype_utterance_received'
+    let openRouter: Awaited<ReturnType<typeof requestDemoChatReply>> = null
+    if (drillPatterns !== null && drillPatterns.length > 0) {
+      const partId = this.#talk.drillPart ?? 'introduction'
+      const fallbacks = this.#talk.drillFallbackTurns ?? undefined
+      const currentModel = lessonDrillCurrentModel(
+        drillPatterns,
+        this.#talk.acceptedPatternCount,
+        fallbacks,
+      )
+      if (
+        currentModel !== undefined
+        && lessonDrillUtteranceMatchesModel(
+          input.prototype_utterance,
+          currentModel,
+        )
+      ) {
+        assistantReply = lessonDrillReply(
+          partId,
+          drillPatterns,
+          this.#talk.acceptedPatternCount,
+          fallbacks,
+        )
+        this.#talk.acceptedPatternCount += 1
+        understoodIntent = 'lesson_drill_pattern_accepted'
+        priorityCorrection = {
+          correction_en: 'none',
+          error_category: 'none',
+          explanation_kn: 'ಚೆನ್ನಾಗಿದೆ. ಅದು ಮಾದರಿ ವಾಕ್ಯಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತದೆ.',
+          explanation_l1:
+            'ಚೆನ್ನಾಗಿದೆ. ಅದು ಮಾದರಿ ವಾಕ್ಯಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತದೆ.',
+          explanation_locale: 'kn-IN',
+          needed: false,
+          retry_recommended: false,
+        }
+      } else if (currentModel !== undefined) {
+        assistantReply = lessonDrillRetryReply(partId, currentModel)
+        understoodIntent = 'lesson_drill_pattern_retry'
+        priorityCorrection = {
+          correction_en: currentModel,
+          error_category: 'lesson.pattern_mismatch',
+          explanation_kn: `ಮಾದರಿ ವಾಕ್ಯ ಹೇಳಿ: "${currentModel}"`,
+          explanation_l1: `ಮಾದರಿ ವಾಕ್ಯ ಹೇಳಿ: "${currentModel}"`,
+          explanation_locale: 'kn-IN',
+          needed: true,
+          retry_recommended: true,
+        }
+      } else {
+        assistantReply = lessonDrillReply(
+          partId,
+          drillPatterns,
+          Math.max(0, this.#talk.acceptedPatternCount - 1),
+          fallbacks,
+        )
+        understoodIntent = 'lesson_drill_complete'
+        priorityCorrection = {
+          correction_en: 'none',
+          error_category: 'none',
+          explanation_kn: 'none',
+          explanation_l1: 'none',
+          explanation_locale: 'kn-IN',
+          needed: false,
+          retry_recommended: false,
+        }
+      }
+    } else {
+      openRouter = await requestDemoChatReply(input.prototype_utterance)
+      abortIfNeeded(signal)
+      assistantReply =
+        openRouter?.reply ??
+        demoFriendReply(input.prototype_utterance, this.#turnNumber)
+      priorityCorrection = {
+        correction_en: 'A clearer sentence is: "I enjoy learning English after work."',
         error_category: 'grammar.article',
         explanation_l1:
           'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
@@ -547,7 +790,15 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
           'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
         needed: true,
         retry_recommended: false,
-      },
+      }
+    }
+
+    return {
+      assistant_reply: assistantReply,
+      conversation_session_id: ids.session,
+      events_url: `local-demo://turn/${this.#turnNumber}`,
+      id: ids.turn,
+      priority_correction: priorityCorrection,
       replayed: false,
       safety_state: 'ok',
       speech: {
@@ -557,7 +808,7 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       status: 'completed',
       transcript: input.prototype_utterance,
       turn_number: this.#turnNumber,
-      understood_intent: 'prototype_utterance_received',
+      understood_intent: understoodIntent,
       usage: {
         estimated_cost_microunits: 0,
         provider_attempts: openRouter === null ? 3 : 1,
@@ -754,6 +1005,7 @@ function demoFriendReply(
 function demoHome(): LearnerHome {
   return {
     due_review: null,
+    upcoming_reviews: [],
     enrollment: { id: ids.enrollment, status: 'active' },
     next_mission: {
       estimated_minutes: 5,

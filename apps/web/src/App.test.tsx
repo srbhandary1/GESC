@@ -7,10 +7,11 @@ import {
   type SupportedLocale,
 } from '@global-english/localization'
 import { Capacitor } from '@capacitor/core'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { ANDROID_APK_HREF } from './marketing/androidDownload'
 import { INTERFACE_THEME_STORAGE_KEY } from './theme/interfaceTheme'
 import type {
   AndroidPkceAuthentication,
@@ -213,10 +214,14 @@ describe('localized application shell', () => {
     expect(document.querySelector('.ge-application-frame--mira-learner')).not.toBeNull()
     expect(document.querySelector('.marketing-landing')).toBeNull()
 
-    expect(screen.getByText(text('app.name'))).toBeInTheDocument()
+    expect(screen.getAllByText(text('app.name')).length).toBeGreaterThan(0)
     expect(screen.getByRole('img', { name: text('shell.mira.name') })).toBeInTheDocument()
+    const header = document.querySelector('header')
+    expect(header).not.toBeNull()
     expect(
-      screen.getByRole('link', { name: text('session.label') }),
+      within(header as HTMLElement).getByRole('link', {
+        name: text('session.label'),
+      }),
     ).toHaveAttribute('href', '#sign-in')
     expect(
       screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') })
@@ -304,6 +309,57 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
     expect(document.querySelector('.marketing-landing')).not.toBeNull()
     expect(document.querySelector('[data-guest-mira-home]')).toBeNull()
+  })
+
+  it('shows the theme picker with every option for an authenticated operator shell', async () => {
+    window.localStorage.removeItem(INTERFACE_THEME_STORAGE_KEY)
+    const authentication = webMembershipAuthentication()
+    const user = userEvent.setup()
+
+    render(
+      <App
+        authentication={authentication}
+        operatorConsoleApi={operatorApi(
+          vi.fn(async () => ({
+            generated_at: '2026-08-11T10:00:00+00:00',
+            navigation: ['overview'] as const,
+            organization: {
+              id: '01J00000000000000000000003',
+              name: 'Hithaishi Learning Hub',
+              timezone: 'Asia/Kolkata',
+            },
+            panels: [] as const,
+            search_available: false,
+          })),
+        )}
+      />,
+    )
+
+    await screen.findByRole('heading', {
+      name: text('operator.shell.title'),
+    })
+
+    const theme = screen.getByLabelText(text('shell.theme_label'))
+    expect(theme).toBeInTheDocument()
+    expect(
+      Array.from((theme as HTMLSelectElement).options).map(
+        (option) => option.value,
+      ),
+    ).toEqual(['system', 'light', 'dark'])
+
+    await user.selectOptions(theme, 'light')
+    expect(document.documentElement).toHaveAttribute('data-ge-theme', 'light')
+    expect(document.documentElement).toHaveAttribute(
+      'data-ge-theme-preference',
+      'light',
+    )
+    expect(document.querySelector('.shell-brand-logo')).toHaveAttribute(
+      'src',
+      '/marketing/brand/logo-academy.png',
+    )
+
+    await user.selectOptions(theme, 'dark')
+    expect(document.documentElement).toHaveAttribute('data-ge-theme', 'dark')
   })
 
   it('shows the dedicated sign-in gate instead of marketing on operator workspace hashes', async () => {
@@ -552,6 +608,7 @@ describe('localized application shell', () => {
     window.history.replaceState(null, '', '/#home')
     const home = vi.fn(async () => ({
       due_review: null,
+      upcoming_reviews: [] as [],
       enrollment: null,
       next_mission: null,
       onboarding: {
@@ -564,7 +621,7 @@ describe('localized application shell', () => {
         count: 0,
         timezone: 'Asia/Kolkata',
       },
-    }) as const)
+    }))
 
     render(
       <App
@@ -668,10 +725,58 @@ describe('localized application shell', () => {
       screen.getByRole('button', { name: text('session.android_sign_out') }),
     )
     expect(authentication.logout).toHaveBeenCalledOnce()
+    expect(globalThis.location.hash).toBe('#home')
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.home.title'),
+      }),
+    ).toBeInTheDocument()
     expect(
       await screen.findByRole('link', { name: text('session.label') }),
     ).toHaveAttribute('href', '#sign-in')
     expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+  })
+
+  it('returns to guest Mira home after sign out from another destination', async () => {
+    window.history.replaceState(null, '', '/#operator-workspace-overview')
+    const user = userEvent.setup()
+    const authentication = webMembershipAuthentication()
+    const getOverview = vi.fn(async () => ({
+      generated_at: '2026-08-11T10:00:00+00:00',
+      navigation: ['overview'] as const,
+      organization: {
+        id: '01J00000000000000000000003',
+        name: 'Hithaishi Learning Hub',
+        timezone: 'Asia/Kolkata',
+      },
+      panels: [] as const,
+      search_available: false,
+    }))
+
+    render(
+      <App
+        authentication={authentication}
+        operatorConsoleApi={operatorApi(getOverview)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('operator.shell.title'),
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: text('session.android_sign_out') }),
+    )
+
+    expect(authentication.logout).toHaveBeenCalledOnce()
+    expect(globalThis.location.hash).toBe('#home')
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.home.title'),
+      }),
+    ).toBeInTheDocument()
   })
 
   it('localizes a privacy-safe authentication failure', async () => {
@@ -740,6 +845,12 @@ describe('localized application shell', () => {
 
     act(() => invalidate())
 
+    expect(globalThis.location.hash).toBe('#home')
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.home.title'),
+      }),
+    ).toBeInTheDocument()
     expect(
       await screen.findByRole('link', {
         name: text('session.label'),
@@ -824,6 +935,40 @@ describe('localized application shell', () => {
         name: text('marketing.android.download'),
       }),
     ).not.toBeInTheDocument()
+  })
+
+  it('switches the native Android preview from English to Kannada immediately', async () => {
+    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
+    vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
+    const user = userEvent.setup()
+
+    render(
+      <App
+        authentication={androidPkceAuthentication()}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    const localeSelect = await screen.findByRole('combobox', {
+      name: text('shell.locale_label'),
+    })
+    await user.selectOptions(localeSelect, 'en-IN')
+    await user.selectOptions(localeSelect, DEFAULT_LOCALE)
+
+    expect(document.querySelector('.ge-application-frame--native-android')).not.toBeNull()
+    expect(localeSelect).toHaveValue(DEFAULT_LOCALE)
+    expect(document.documentElement).toHaveAttribute('lang', DEFAULT_LOCALE)
+    expect(document.documentElement).toHaveAttribute(
+      'data-requested-locale',
+      DEFAULT_LOCALE,
+    )
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: text('demo.phase1.home.title', DEFAULT_LOCALE),
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(text('localization.preview_notice'))).toBeInTheDocument()
   })
 
   it('shows account menu for signed-in Android learners', async () => {
@@ -1032,6 +1177,16 @@ function operatorApi(
         mastery_state_count: 0,
         review_schedule_count: 0,
       },
+      learning_metrics: {
+        ai_fallback_count: 0,
+        latency_sample_count: 0,
+        quiz_retry_count: 0,
+        review_return_completed_count: 0,
+        review_return_due_count: 0,
+        session_cost_microunits_total: 0,
+        speaking_turn_count: 0,
+        stage_completion_count: 0,
+      },
       distinction_note:
         'usage_counts_are_not_demonstrated_learning' as const,
       generated_at: '2026-08-09T10:00:00+00:00',
@@ -1053,6 +1208,31 @@ function operatorApi(
       generated_at: '2026-08-09T10:00:00+00:00',
       items: [],
     })),
+    getSpeechEconomics: vi.fn(async () => ({
+      empty: true,
+      generated_at: '2026-09-09T10:00:00+00:00',
+      organization_id: '01J00000000000000000000003',
+      partial: false,
+      presentation: 'allocated_usage' as const,
+      rows: [],
+      stale_rate: false,
+      suppressed_row_count: 0,
+      totals: {
+        allocated_inr_microunits: 0,
+        attempt_count: 0,
+        billable_unit_quantity: 0,
+        cancelled_count: 0,
+        dispatch_count: 0,
+        failure_count: 0,
+        fallback_count: 0,
+        partial_count: 0,
+        success_count: 0,
+      },
+      unreconciled: false,
+      visible_row_count: 0,
+    })),
+    exportSpeechEconomics: vi.fn(async () => undefined),
+    getSpeechEconomicsCommercial: vi.fn(async () => null),
     search: vi.fn(async () => ({
       generated_at: '2026-08-09T10:00:00+00:00',
       items: [],

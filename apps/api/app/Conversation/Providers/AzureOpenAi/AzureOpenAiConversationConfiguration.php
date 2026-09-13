@@ -200,6 +200,13 @@ final readonly class AzureOpenAiConversationConfiguration
         return is_int($value) ? $value : (int) $value;
     }
 
+    public function streamResponses(): bool
+    {
+        return $this->boolean(
+            'conversation.azure_openai.stream_responses',
+        );
+    }
+
     public function failure(
         string $safeCode,
         int $latencyMilliseconds = 0,

@@ -1,0 +1,24 @@
+{
+  "license_path": "/tutor/LICENSE-tutor-avatars.txt",
+  "avatars": [
+    {
+      "id": "swathi-1",
+      "label": "0926037",
+      "path": "/tutor/avatars/swathi-1.glb",
+      "facing_y": 1.5707963267948966,
+      "rig_type": "static"
+    },
+    {
+      "id": "swathi-2",
+      "label": "Beautiful Young Woman Wearing A Floral Dress",
+      "path": "/tutor/avatars/swathi-2/scene.gltf",
+      "rig_type": "skinned"
+    },
+    {
+      "id": "swathi-3",
+      "label": "Little Black Dress",
+      "path": "/tutor/avatars/swathi-3.glb",
+      "rig_type": "static"
+    }
+  ]
+}

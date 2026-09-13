@@ -7,6 +7,7 @@ namespace App\Learning\LevelSessions;
 use App\Conversation\ConversationSessionService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\LessonDrillContext;
 use App\Entitlements\EntitlementAccess;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Models\LessonPracticeBlueprint;
@@ -21,6 +22,9 @@ final class LevelSessionDeliveryService
     public function __construct(
         private readonly ConversationSessionService $conversations,
         private readonly EntitlementAccess $entitlements,
+        private readonly LevelSessionProgressService $progress,
+        private readonly LevelCheckpointService $checkpoints,
+        private readonly LevelSpeakingEvidenceService $speakingEvidence,
     ) {}
 
     /**
@@ -43,6 +47,21 @@ final class LevelSessionDeliveryService
                 ? 'commissioning_pending'
                 : 'available';
 
+            $userId = (string) $actor->getKey();
+            $progress = $this->progress->projection(
+                $context,
+                $userId,
+                $number,
+                $availability,
+                $snapshot,
+            );
+            $checkpoint = $this->checkpoints->projection(
+                $context,
+                $userId,
+                $number,
+                $availability,
+                $snapshot,
+            );
             $levels[] = [
                 'level_number' => $number,
                 'concept_key' => $concept,
@@ -50,6 +69,14 @@ final class LevelSessionDeliveryService
                 'blueprint_id' => $blueprint?->getKey(),
                 'session_part_ids' => $parts,
                 'entitlement_access' => $this->entitlements->levelAccess($snapshot, $number),
+                'progress_access' => $progress['progress_access'],
+                'unlock_after_level_number' => $progress['unlock_after_level_number'],
+                'checkpoint_status' => $checkpoint['checkpoint_status'],
+                'checkpoint_attempts_remaining' => $checkpoint['checkpoint_attempts_remaining'],
+                'review_due_blocking' => $checkpoint['review_due_blocking'],
+                'spoken_evidence' => $availability === 'available'
+                    ? $this->speakingEvidence->projection($context, $number)
+                    : null,
             ];
         }
 
@@ -108,6 +135,7 @@ final class LevelSessionDeliveryService
     ): array {
         $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $this->assertPartId($partId);
+        $this->entitlements->assertSessionPart($learner, $partId);
         $media = LessonPracticeMedia::query()
             ->where('organization_id', $context->organizationId)
             ->where('blueprint_id', $blueprint->getKey())
@@ -147,6 +175,10 @@ final class LevelSessionDeliveryService
             ->where('level_number', $levelNumber)
             ->where('part_id', $partId)
             ->exists();
+        $entitlement = $this->entitlementSnapshot($learner);
+        $sessionPartAllowed = is_array($entitlement['allowed_session_parts'] ?? null)
+            && in_array($partId, $entitlement['allowed_session_parts'], true);
+        $openTalkAllowed = ($entitlement['allows_free_speech'] ?? false) === true;
 
         return [
             'level_number' => $levelNumber,
@@ -167,14 +199,16 @@ final class LevelSessionDeliveryService
                     'scenario' => $talk['scenario'] ?? null,
                     'elicitation_goals' => $talk['elicitation_goals'] ?? [],
                     'fallback_turns' => $talk['fallback_turns'] ?? [],
-                    'free_speech' => true,
+                    'free_speech' => $partId === 'conversation'
+                        && $openTalkAllowed
+                        && $sessionPartAllowed,
                 ]
                 : null,
             'apply' => $partId === 'interaction'
                 ? [
                     'task' => $apply['task'] ?? null,
                     'rubric' => $apply['rubric'] ?? [],
-                    'free_speech' => true,
+                    'free_speech' => $openTalkAllowed && $sessionPartAllowed,
                 ]
                 : null,
             'check' => $partId === 'practice'
@@ -206,6 +240,7 @@ final class LevelSessionDeliveryService
             throw new LearningOperationRejected('check_not_applicable');
         }
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
+        $this->entitlements->assertSessionPart($learner, $partId);
 
         $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $canonical = $blueprint->canonical_json;
@@ -314,6 +349,7 @@ final class LevelSessionDeliveryService
     ): array {
         $this->assertPartId($partId);
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
+        $this->entitlements->assertSessionPart($learner, $partId);
         $this->assertPracticeCheckPassed($context, $learner, $levelNumber, $partId);
         $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $media = LessonPracticeMedia::query()
@@ -375,6 +411,49 @@ final class LevelSessionDeliveryService
     /**
      * @return array<string, mixed>
      */
+    public function checkpointDetail(
+        OrganizationContext $context,
+        User $learner,
+        int $levelNumber,
+    ): array {
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
+
+        return $this->checkpoints->checkpointDetail(
+            $context,
+            $learner,
+            $levelNumber,
+            $blueprint,
+            $this->entitlementSnapshot($learner),
+        );
+    }
+
+    /**
+     * @param  array<string, int>  $answers
+     * @return array<string, mixed>
+     */
+    public function submitCheckpoint(
+        OrganizationContext $context,
+        User $learner,
+        int $levelNumber,
+        array $answers,
+        string $idempotencyKey,
+    ): array {
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
+
+        return $this->checkpoints->submitCheckpoint(
+            $context,
+            $learner,
+            $levelNumber,
+            $blueprint,
+            $answers,
+            $idempotencyKey,
+            $this->entitlementSnapshot($learner),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function startBoundConversation(
         OrganizationContext $context,
         User $learner,
@@ -385,7 +464,8 @@ final class LevelSessionDeliveryService
     ): array {
         $this->assertPartId($partId);
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
-        $this->requireAvailableBlueprint($context, $learner, $levelNumber);
+        $this->entitlements->assertSessionPart($learner, $partId);
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $binding = config('level_sessions.conversation_bindings.'.$partId);
         if (! is_array($binding)) {
             throw new LearningOperationRejected('conversation_unbound');
@@ -395,6 +475,14 @@ final class LevelSessionDeliveryService
         if (! is_array($prototype)) {
             throw new LearningOperationRejected('prototype_missing');
         }
+        $lessonDrill = ($binding['lesson_drill'] ?? false) === true
+            ? LessonDrillContext::fromCanonical(
+                $levelNumber,
+                $partId,
+                (string) $blueprint->concept_key,
+                $blueprint->canonical_json,
+            )
+            : null;
 
         try {
             return $this->conversations->start(
@@ -404,6 +492,7 @@ final class LevelSessionDeliveryService
                 coachingMode: (string) ($binding['coaching_mode'] ?? 'gentle'),
                 uiLocale: $uiLocale,
                 idempotencyKey: $idempotencyKey,
+                lessonDrill: $lessonDrill,
             );
         } catch (ConversationIdempotencyConflict $exception) {
             throw $exception;
@@ -417,6 +506,13 @@ final class LevelSessionDeliveryService
         User $learner,
         int $levelNumber,
     ): LessonPracticeBlueprint {
+        $snapshot = $this->entitlementSnapshot($learner);
+        $this->progress->assertUnlocked(
+            $context,
+            (string) $learner->getKey(),
+            $levelNumber,
+            $snapshot,
+        );
         $this->entitlements->assertLevel($learner, $levelNumber);
         $concepts = config('level_sessions.level_concepts', []);
         $concept = $concepts[$levelNumber] ?? null;
@@ -442,6 +538,7 @@ final class LevelSessionDeliveryService
             ->where('organization_id', $organizationId)
             ->where('concept_key', $conceptKey)
             ->whereIn('state', ['draft', 'published'])
+            ->orderByRaw("CASE WHEN state = 'published' THEN 0 ELSE 1 END")
             ->orderByDesc('revision_number')
             ->first();
         if ($blueprint === null) {

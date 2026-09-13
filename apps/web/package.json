@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:demo": "tsc -b && VITE_LOCAL_DEMO=true VITE_UI_TRANSLATION_PREVIEW=true vite build --mode demo",
+    "build": "tsc -b && vite build && node ../../scripts/enforce-tutor-avatar-license.mjs dist",
+    "build:demo": "tsc -b && VITE_LOCAL_DEMO=true VITE_UI_TRANSLATION_PREVIEW=true vite build --mode demo && node ../../scripts/enforce-tutor-avatar-license.mjs dist-demo",
     "e2e": "playwright test",
     "e2e:demo": "playwright test --config=playwright.demo.config.ts",
     "e2e:demo-dist": "pnpm build:demo && playwright test --config=playwright.demo-dist.config.ts",
@@ -22,8 +22,11 @@
     "@global-english/contracts": "workspace:*",
     "@global-english/design-system": "workspace:*",
     "@global-english/localization": "workspace:*",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
@@ -36,6 +39,7 @@
     "@types/node": "24.13.2",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "6.0.4",
     "jsdom": "30.0.1",
     "typescript": "6.0.2",

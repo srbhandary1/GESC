@@ -27,6 +27,7 @@ export interface RecordingTurnLabels {
   readonly continueWithout: string
   readonly continueWithoutExplanation: string
   readonly holdRemaining?: string
+  readonly tooShort?: string
 }
 
 export type HoldPhase = 'idle' | 'listening' | 'processing'
@@ -44,6 +45,7 @@ interface RecordingTurnProps {
   readonly onHoldPhaseChange?: (phase: HoldPhase) => void
   readonly recorder: AudioRecorder
   readonly skipReviewPlayback?: boolean
+  readonly minimumDurationMs?: number
 }
 
 interface LocalCapture {
@@ -63,6 +65,7 @@ export function RecordingTurn({
   onHoldPhaseChange,
   recorder,
   skipReviewPlayback = false,
+  minimumDurationMs = 250,
 }: RecordingTurnProps) {
   const [state, setState] = useState<RecordingControlState>(
     recorder.isSupported() ? 'ready' : 'blocked',
@@ -78,6 +81,7 @@ export function RecordingTurn({
   const holdIntent = useRef(false)
   const stopRef = useRef<() => Promise<void>>(async () => undefined)
   const [holdElapsedMs, setHoldElapsedMs] = useState(0)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
     active.current = true
@@ -121,6 +125,7 @@ export function RecordingTurn({
 
     holdIntent.current = true
     clearCapture()
+    setValidationError(null)
     setState('requesting-permission')
     const generation = requestGeneration.current + 1
     requestGeneration.current = generation
@@ -137,6 +142,7 @@ export function RecordingTurn({
         setLiveSession(null)
         if (active.current && requestGeneration.current === generation) {
           setState(recorder.isSupported() ? 'ready' : 'blocked')
+          onHoldPhaseChange?.('idle')
         }
         return
       }
@@ -158,6 +164,7 @@ export function RecordingTurn({
           ? 'blocked'
           : 'error',
       )
+      onHoldPhaseChange?.('idle')
     }
   }
 
@@ -167,6 +174,7 @@ export function RecordingTurn({
     if (session === null) {
       requestGeneration.current += 1
       setState(recorder.isSupported() ? 'ready' : 'blocked')
+      onHoldPhaseChange?.('idle')
       return
     }
 
@@ -184,14 +192,23 @@ export function RecordingTurn({
         return
       }
 
+      if (audio.durationMs < minimumDurationMs) {
+        setValidationError(labels.tooShort ?? null)
+        setState('error')
+        onHoldPhaseChange?.('idle')
+        return
+      }
+
       if (!isValidLocalCapture(audio)) {
         setState('error')
+        onHoldPhaseChange?.('idle')
         return
       }
 
       const mimeType = canonicalCaptureMimeType(audio.mimeType)
       if (mimeType === null) {
         setState('error')
+        onHoldPhaseChange?.('idle')
         return
       }
 
@@ -229,6 +246,7 @@ export function RecordingTurn({
       }
 
       setState('error')
+      onHoldPhaseChange?.('idle')
     }
   }
 
@@ -249,6 +267,7 @@ export function RecordingTurn({
 
   const retry = () => {
     clearCapture()
+    setValidationError(null)
     setState('ready')
   }
 
@@ -277,7 +296,7 @@ export function RecordingTurn({
   return (
     <section
       aria-labelledby="recording-turn-title"
-      className="learner-card learner-recording"
+      className={`learner-card learner-recording${captureMode === 'hold' ? ' learner-recording--hold' : ''}`}
     >
       <h3
         className="learner-card__title"
@@ -303,6 +322,11 @@ export function RecordingTurn({
         onRequestStop={() => void stop()}
         state={state}
       />
+      {validationError === null ? null : (
+        <p className="learner-recording__validation" role="alert">
+          {validationError}
+        </p>
+      )}
       {state === 'recording' ? (
         <LiveLevelMeter session={liveSession} />
       ) : null}
@@ -335,7 +359,8 @@ export function RecordingTurn({
 
       {state === 'blocked' || state === 'error' ? (
         <div className="learner-recording__alternative">
-          {state === 'error' && captureMode !== 'hold' ? (
+          {(state === 'blocked' && captureMode === 'hold') ||
+          (state === 'error' && captureMode !== 'hold') ? (
             <button
               className="ge-button"
               onClick={retry}

@@ -250,6 +250,13 @@ async function mockConversationApi(
         plan_name: 'Premium',
         status: 'active',
         allows_roleplay: true,
+        allows_free_speech: true,
+        allowed_session_parts: [
+          'introduction',
+          'practice',
+          'conversation',
+          'interaction',
+        ],
         max_level_number: null,
         is_demo: false,
         expires_at: '2026-10-05T00:00:00+00:00',

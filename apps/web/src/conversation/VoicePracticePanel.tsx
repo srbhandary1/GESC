@@ -24,6 +24,7 @@ import {
 import { isAbortError } from '../shared/isAbortError'
 import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
 import { conversationErrorMessageKey } from './conversationErrorMessage'
+import { preconnectRealtimeSpeechAfterConsent } from './preconnectRealtimeSpeech'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
@@ -61,6 +62,8 @@ const REQUIRED_PURPOSES = [
   'voice_upload_and_transcription',
   'conversation_provider_processing',
 ] as const
+
+const AUTO_ACCEPT_MIN_CONFIDENCE = 0.6
 
 export function VoicePracticePanel({
   api,
@@ -184,11 +187,16 @@ export function VoicePracticePanel({
         createClientId(),
       )
       const refreshed = await api.voiceConsents!(locale)
-      setState(
-        requiredPurposesGranted(refreshed)
-          ? { kind: 'recording', listing: refreshed }
-          : { kind: 'consent', listing: refreshed },
-      )
+      if (requiredPurposesGranted(refreshed)) {
+        void preconnectRealtimeSpeechAfterConsent({
+          api,
+          commandId: createClientId(),
+          sessionId,
+        })
+        setState({ kind: 'recording', listing: refreshed })
+      } else {
+        setState({ kind: 'consent', listing: refreshed })
+      }
     } catch {
       setState({ kind: 'error', listing })
     }
@@ -211,11 +219,16 @@ export function VoicePracticePanel({
         }
       }
       const refreshed = await api.voiceConsents!(locale)
-      setState(
-        requiredPurposesGranted(refreshed)
-          ? { kind: 'recording', listing: refreshed }
-          : { kind: 'consent', listing: refreshed },
-      )
+      if (requiredPurposesGranted(refreshed)) {
+        void preconnectRealtimeSpeechAfterConsent({
+          api,
+          commandId: createClientId(),
+          sessionId,
+        })
+        setState({ kind: 'recording', listing: refreshed })
+      } else {
+        setState({ kind: 'consent', listing: refreshed })
+      }
     } catch {
       setState({ kind: 'error', listing })
     }
@@ -254,6 +267,12 @@ export function VoicePracticePanel({
         setUploadError('conversation.voice.error')
         setState({ kind: 'recording', listing })
         releaseHold()
+        return
+      }
+
+      const confidence = recording.transcript_confidence
+      if (confidence !== null && confidence >= AUTO_ACCEPT_MIN_CONFIDENCE) {
+        await acceptTranscript(listing, recording, 'accept', controller.signal)
         return
       }
 
@@ -418,12 +437,17 @@ export function VoicePracticePanel({
     <section
       aria-labelledby="secure-voice-title"
       className="conversation-journey__voice"
+      data-voice-panel-state={state.kind}
     >
-      <h3 id="secure-voice-title">
+      <h3 className="conversation-journey__voice-title" id="secure-voice-title">
         {text('conversation.voice.title')}
       </h3>
-      <p>{text('conversation.voice.optional')}</p>
-      <p>{text('conversation.voice.hold_help')}</p>
+      <p className="conversation-journey__voice-intro">
+        {text('conversation.voice.optional')}
+      </p>
+      <p className="conversation-journey__voice-intro">
+        {text('conversation.voice.hold_help')}
+      </p>
 
       {state.kind === 'idle' ? (
         <button onClick={() => void loadConsent()} type="button">
@@ -482,7 +506,10 @@ export function VoicePracticePanel({
             createClientId={createClientId}
             labels={{
               controls: {
-                blocked: text('learner.recording.blocked'),
+                blocked:
+                  typeof window !== 'undefined' && !window.isSecureContext
+                    ? text('conversation.voice.error')
+                    : text('learner.recording.blocked'),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
                 hold: text('learner.recording.hold'),
@@ -515,7 +542,9 @@ export function VoicePracticePanel({
               holdRemaining: text('conversation.voice.hold_remaining', {
                 seconds: '{seconds}',
               }),
+              tooShort: text('conversation.voice.too_short'),
             }}
+            minimumDurationMs={1_000}
             onAudioCaptureChange={(capture) => {
               if (capture === null) {
                 return

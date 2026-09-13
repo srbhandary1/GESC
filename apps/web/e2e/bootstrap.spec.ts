@@ -375,13 +375,43 @@ async function mockAnonymousSession(page: Page): Promise<void> {
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   await expect
     .poll(() =>
-      page.evaluate(
-        () =>
-          document.documentElement.scrollWidth <=
-          document.documentElement.clientWidth,
-      ),
+      page.evaluate(() => {
+        const viewportWidth = document.documentElement.clientWidth
+        if (document.documentElement.scrollWidth <= viewportWidth) {
+          return []
+        }
+
+        return Array.from(document.querySelectorAll<HTMLElement>('body *'))
+          .filter((element) => {
+            const bounds = element.getBoundingClientRect()
+
+            return bounds.left < 0 || bounds.right > viewportWidth
+          })
+          .slice(0, 12)
+          .map((element) => {
+            const ancestry: string[] = []
+            let ancestor: HTMLElement | null = element
+            while (ancestor !== null && ancestry.length < 5) {
+              const bounds = ancestor.getBoundingClientRect()
+              ancestry.push(
+                `${ancestor.tagName}.${ancestor.className || '-'}[${Math.round(bounds.left)},${Math.round(bounds.right)}]`,
+              )
+              ancestor = ancestor.parentElement
+            }
+
+            return {
+              ancestry,
+              className: element.className,
+              documentWidth: document.documentElement.scrollWidth,
+              left: Math.round(element.getBoundingClientRect().left),
+              right: Math.round(element.getBoundingClientRect().right),
+              tagName: element.tagName,
+              text: element.textContent?.trim().slice(0, 80) ?? '',
+            }
+          })
+      }),
     )
-    .toBe(true)
+    .toEqual([])
 }
 
 function message(

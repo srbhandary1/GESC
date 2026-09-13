@@ -47,6 +47,10 @@ use App\Conversation\Providers\SoftLaunch\SoftLaunchRecordedAzureSpeechToTextPro
 use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
+use App\Conversation\Realtime\ElevenLabsScribeRealtimeSpeechToTextProvider;
+use App\Conversation\Realtime\PrimaryFallbackRealtimeSpeechToTextProvider;
+use App\Conversation\Realtime\RealtimeSpeechToTextProvider;
+use App\Conversation\Realtime\SarvamSaarasRealtimeSpeechToTextProvider;
 use App\Conversation\Voice\LaravelVoiceSourceObjectStore;
 use App\Conversation\Voice\Providers\DeterministicTestingSpeechToTextProvider;
 use App\Conversation\Voice\Providers\DisabledRecordedSpeechToTextProvider;
@@ -292,6 +296,19 @@ class AppServiceProvider extends ServiceProvider
 
                 return $this->app->make(
                     DisabledRecordedSpeechToTextProvider::class,
+                );
+            },
+        );
+        $this->app->bind(
+            RealtimeSpeechToTextProvider::class,
+            function (): RealtimeSpeechToTextProvider {
+                return new PrimaryFallbackRealtimeSpeechToTextProvider(
+                    $this->app->make(
+                        SarvamSaarasRealtimeSpeechToTextProvider::class,
+                    ),
+                    $this->app->make(
+                        ElevenLabsScribeRealtimeSpeechToTextProvider::class,
+                    ),
                 );
             },
         );

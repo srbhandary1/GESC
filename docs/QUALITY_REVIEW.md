@@ -8570,3 +8570,23 @@ yet been changed under that checkpoint.
 - Levels 2–17 still commissioning_pending for learner delivery.
 - Rate-limit redis can make password sign-in look stuck after repeated failures;
   flush local redis if needed during operator testing.
+
+## LPL-04 level checkpoint + sequential unlock — 13 September 2026
+
+### Scope
+
+Bounded level checkpoint (3 attempts, 80% pass), four-session prerequisite,
+append-only unlock decisions on checkpoint pass. Checkpoint items derive from
+blueprint `check` when no `level_checkpoint` block is authored.
+
+### Verification result
+
+| Check | Result | Notes |
+|---|---|---|
+| `LevelSessionProgressServiceTest` | Pass | unlock requires checkpoint pass |
+| `LevelSessionDeliveryTest` | Pass | `level_checkpoint_attempts` table |
+| `LevelSessionLevelsHttpTest` | Pass | failed attempt + checkpoint pass unlocks level 2 |
+| `LevelPathPanel.test.tsx` | Pass | progress-locked copy + journey tests |
+| `localDemo.test.ts` | Pass | seventeen levels + demo checkpoint API |
+
+Postgres filter `LevelSession|LevelCheckpoint`: 4 tests, 100 assertions.

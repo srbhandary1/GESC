@@ -25,6 +25,7 @@ $forced = [
     'VOICE_UPLOAD_ENABLED' => 'true',
     'VOICE_ALLOWED_ORGANIZATION_IDS' => '',
     'VOICE_PROVIDER_DRIVER' => 'deterministic-test',
+    'QUEUE_CONNECTION' => 'sync',
 ];
 
 foreach ($forced as $name => $value) {

@@ -1,0 +1,988 @@
+[
+    {
+        "level_number": 1,
+        "concept_key": "can",
+        "objective": "By the end of this lesson, the learner can use can and cannot to state one ability and ask for or give permission in a short everyday exchange.",
+        "target_patterns": [
+            "I can + base verb.",
+            "I cannot + base verb.",
+            "Can I + base verb?",
+            "Yes, you can. \/ No, you cannot."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You are at a community centre. Ask a partner for permission to use an item and answer one permission question.",
+            "fallback_turns": [
+                "Can I use your pen?",
+                "Yes, you can.",
+                "I can help you."
+            ]
+        },
+        "check": [
+            {
+                "id": "can-01",
+                "weight": 35,
+                "prompt": "Choose the correct sentence.",
+                "options": [
+                    "I can speak English.",
+                    "I can speaking English.",
+                    "I can to speak English."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "can-02",
+                "weight": 30,
+                "prompt": "Choose the polite permission question.",
+                "options": [
+                    "Can I use your pen?",
+                    "I can use your pen?",
+                    "Can I using your pen?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "can-03",
+                "weight": 35,
+                "prompt": "Choose the suitable answer to Can I sit here?",
+                "options": [
+                    "Yes, you can.",
+                    "Yes, you can to.",
+                    "Yes, you can sitting."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: state one ability, ask permission to do one everyday action, and answer one permission question."
+        }
+    },
+    {
+        "level_number": 2,
+        "concept_key": "should",
+        "objective": "By the end of this lesson, the learner can use should and should not to give one everyday suggestion and ask for simple advice.",
+        "target_patterns": [
+            "I should + base verb.",
+            "You should not + base verb.",
+            "Should I + base verb?",
+            "Yes, you should. \/ No, you should not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ should ಮತ್ತು should not ಬಳಸಿ ಸರಳ ಸಲಹೆ ಕೊಡುವುದು ಮತ್ತು Should I…? ಎಂದು ಕೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. should ನಂತರ ಮೂಲ ಕ್ರಿಯಾಪದ ಬರುತ್ತದೆ.",
+        "talk": {
+            "scenario": "A colleague looks tired after work. Suggest one healthy action and ask one Should I…? question.",
+            "fallback_turns": [
+                "You should drink some water.",
+                "Should I rest now?",
+                "Yes, you should."
+            ]
+        },
+        "check": [
+            {
+                "id": "should-01",
+                "weight": 35,
+                "prompt": "Choose the correct suggestion.",
+                "options": [
+                    "You should rest tonight.",
+                    "You should to rest tonight.",
+                    "You should resting tonight."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "should-02",
+                "weight": 30,
+                "prompt": "Choose the advice question.",
+                "options": [
+                    "Should I call her now?",
+                    "I should call her now?",
+                    "Should I calling her now?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "should-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Should I wait?",
+                "options": [
+                    "No, you should not.",
+                    "No, you should not to.",
+                    "No, you should not waiting."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: give one should suggestion, ask one Should I…? question, and answer it."
+        }
+    },
+    {
+        "level_number": 3,
+        "concept_key": "do_does",
+        "objective": "By the end of this lesson, the learner can use do and does to ask and answer simple present questions about everyday habits.",
+        "target_patterns": [
+            "Do you + base verb?",
+            "Does he\/she + base verb?",
+            "Yes, I do. \/ No, I do not.",
+            "Yes, she does. \/ No, he does not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ do ಮತ್ತು does ಬಳಸಿ ದಿನನಿತ್ಯದ ಅಭ್ಯಾಸಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ ಉತ್ತರಿಸುವುದನ್ನು ಕಲಿಯಿರಿ. you ಜೊತೆ Do; he\/she ಜೊತೆ Does.",
+        "talk": {
+            "scenario": "You meet a neighbour. Ask about one daily habit and answer one Do you…? question.",
+            "fallback_turns": [
+                "Do you drink tea in the morning?",
+                "Yes, I do.",
+                "Does she work nearby?"
+            ]
+        },
+        "check": [
+            {
+                "id": "do_does-01",
+                "weight": 35,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "Do you live here?",
+                    "Does you live here?",
+                    "Do you lives here?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "do_does-02",
+                "weight": 30,
+                "prompt": "Choose the correct question about a colleague.",
+                "options": [
+                    "Does she start at nine?",
+                    "Do she start at nine?",
+                    "Does she starts at nine?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "do_does-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Do you cook at home?",
+                "options": [
+                    "Yes, I do.",
+                    "Yes, I does.",
+                    "Yes, I do cooks."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: ask one Do you…? question, one Does he\/she…? question, and give one short do\/does answer."
+        }
+    },
+    {
+        "level_number": 4,
+        "concept_key": "is_are_ing",
+        "objective": "By the end of this lesson, the learner can use am\/is\/are + -ing to say what someone is doing now and ask one present-continuous question.",
+        "target_patterns": [
+            "I am + -ing.",
+            "She\/He is + -ing.",
+            "They are + -ing.",
+            "Are you + -ing?"
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಈಗ ನಡೆಯುತ್ತಿರುವ ಕೆಲಸವನ್ನು am\/is\/are + -ing ರೂಪದಲ್ಲಿ ಹೇಳುವುದು ಮತ್ತು Are you…? ಎಂದು ಕೇಳುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You are in a busy office. Say what you are doing now and ask a colleague what they are doing.",
+            "fallback_turns": [
+                "I am waiting for a call.",
+                "Are you writing the report?",
+                "Yes, I am."
+            ]
+        },
+        "check": [
+            {
+                "id": "is_are_ing-01",
+                "weight": 35,
+                "prompt": "Choose the sentence about now.",
+                "options": [
+                    "She is talking to a customer.",
+                    "She talks to a customer nowing.",
+                    "She is talk to a customer."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "is_are_ing-02",
+                "weight": 30,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "Are you waiting here?",
+                    "Do you waiting here?",
+                    "Is you waiting here?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "is_are_ing-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Are you leaving?",
+                "options": [
+                    "No, I am not.",
+                    "No, I are not.",
+                    "No, I not leaving am."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say what you are doing now, ask one Are you…-ing? question, and answer it."
+        }
+    },
+    {
+        "level_number": 5,
+        "concept_key": "did",
+        "objective": "By the end of this lesson, the learner can use did to ask and answer simple past questions about yesterday’s actions.",
+        "target_patterns": [
+            "Did you + base verb?",
+            "I + past verb yesterday.",
+            "Yes, I did. \/ No, I did not.",
+            "What did you + base verb?"
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ನಿನ್ನೆಯ ಕೆಲಸದ ಬಗ್ಗೆ Did you…? ಎಂದು ಕೇಳಿ, did \/ did not ಎಂದು ಉತ್ತರಿಸಿ, ಒಂದು ಭೂತಕಾಲದ ವಾಕ್ಯ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. did ನಂತರ ಮೂಲ ಕ್ರಿಯಾಪದ.",
+        "talk": {
+            "scenario": "A friend asks about yesterday. Talk about one past action and ask one Did you…? question.",
+            "fallback_turns": [
+                "Did you go to the market?",
+                "Yes, I did.",
+                "I cooked dinner."
+            ]
+        },
+        "check": [
+            {
+                "id": "did-01",
+                "weight": 35,
+                "prompt": "Choose the correct past question.",
+                "options": [
+                    "Did you finish the work?",
+                    "Did you finished the work?",
+                    "Do you finished the work?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "did-02",
+                "weight": 30,
+                "prompt": "Choose the correct statement about yesterday.",
+                "options": [
+                    "I called my sister yesterday.",
+                    "I did called my sister yesterday.",
+                    "I call my sister yesterday."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "did-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Did you rest?",
+                "options": [
+                    "No, I did not.",
+                    "No, I did not rested.",
+                    "No, I not did."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: ask one Did you…? question, give a short did answer, and state one past action."
+        }
+    },
+    {
+        "level_number": 6,
+        "concept_key": "was_were_ing",
+        "objective": "By the end of this lesson, the learner can use was\/were + -ing to say what was happening at a time in the past.",
+        "target_patterns": [
+            "I was + -ing.",
+            "They were + -ing.",
+            "Were you + -ing?",
+            "I was not + -ing."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಹಿಂದಿನ ಒಂದು ಸಮಯದಲ್ಲಿ ನಡೆಯುತ್ತಿದ್ದ ಕೆಲಸವನ್ನು was\/were + -ing ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. I\/he\/she ಜೊತೆ was; you\/we\/they ಜೊತೆ were.",
+        "talk": {
+            "scenario": "A power cut happened at 8 p.m. Say what you were doing then and ask a partner what they were doing.",
+            "fallback_turns": [
+                "I was cooking at eight.",
+                "Were you watching TV?",
+                "No, I was not."
+            ]
+        },
+        "check": [
+            {
+                "id": "was_were_ing-01",
+                "weight": 35,
+                "prompt": "Choose the sentence about a past moment.",
+                "options": [
+                    "She was waiting at the bus stop.",
+                    "She were waiting at the bus stop.",
+                    "She was wait at the bus stop."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "was_were_ing-02",
+                "weight": 30,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "Were you working then?",
+                    "Was you working then?",
+                    "Were you work then?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "was_were_ing-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Were you sleeping?",
+                "options": [
+                    "Yes, I was.",
+                    "Yes, I were.",
+                    "Yes, I was sleepinging."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say what you were doing at a past time, ask one Were you…-ing? question, and answer it."
+        }
+    },
+    {
+        "level_number": 7,
+        "concept_key": "have_has",
+        "objective": "By the end of this lesson, the learner can use have\/has + past participle to talk about life experience and recent finished actions with a present result.",
+        "target_patterns": [
+            "I have + past participle.",
+            "She has + past participle.",
+            "Have you + past participle?",
+            "Yes, I have. \/ No, I have not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಅನುಭವ ಅಥವಾ ಈಗಲೂ ಸಂಬಂಧವಿರುವ ಕೆಲಸವನ್ನು have\/has + past participle ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. I\/you\/we\/they ಜೊತೆ have; he\/she ಜೊತೆ has.",
+        "talk": {
+            "scenario": "You are talking about travel and work experience. Share one experience and ask Have you ever…?",
+            "fallback_turns": [
+                "I have visited Mysuru.",
+                "Have you tried this tea?",
+                "Yes, I have."
+            ]
+        },
+        "check": [
+            {
+                "id": "have_has-01",
+                "weight": 35,
+                "prompt": "Choose the experience sentence.",
+                "options": [
+                    "I have finished the form.",
+                    "I have finish the form.",
+                    "I has finished the form."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "have_has-02",
+                "weight": 30,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "Have you seen this message?",
+                    "Has you seen this message?",
+                    "Have you saw this message?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "have_has-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Have you eaten?",
+                "options": [
+                    "No, I have not.",
+                    "No, I has not.",
+                    "No, I have not ate."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: state one I have… experience, ask Have you…?, and give a short have\/have not answer."
+        }
+    },
+    {
+        "level_number": 8,
+        "concept_key": "have_been_has_been",
+        "objective": "By the end of this lesson, the learner can use have been \/ has been + -ing to say an action started in the past and is still continuing.",
+        "target_patterns": [
+            "I have been + -ing.",
+            "She has been + -ing.",
+            "Have you been + -ing?",
+            "How long have you been + -ing?"
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಹಿಂದೆ ಶುರುವಾಗಿ ಈಗಲೂ ನಡೆಯುತ್ತಿರುವ ಕೆಲಸವನ್ನು have been \/ has been + -ing ರೂಪದಲ್ಲಿ ಹೇಳಿ, How long…? ಎಂದು ಕೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. for = ಅವಧಿ; since = ಆರಂಭದ ಸಮಯ.",
+        "talk": {
+            "scenario": "A trainer asks how long you have been practising English. Answer with have been + -ing and ask one How long…? question.",
+            "fallback_turns": [
+                "I have been practising for two weeks.",
+                "How long have you been waiting?",
+                "She has been working since morning."
+            ]
+        },
+        "check": [
+            {
+                "id": "have_been_has_been-01",
+                "weight": 35,
+                "prompt": "Choose the continuing-action sentence.",
+                "options": [
+                    "I have been studying all morning.",
+                    "I have studying all morning.",
+                    "I has been studying all morning."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "have_been_has_been-02",
+                "weight": 30,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "How long have you been living here?",
+                    "How long you have been live here?",
+                    "How long has you been living here?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "have_been_has_been-03",
+                "weight": 35,
+                "prompt": "Choose the clearer time phrase.",
+                "options": [
+                    "I have been waiting since 9 a.m.",
+                    "I have been waiting since two hours.",
+                    "I have been waiting from I arrived only."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say how long you have been doing one activity, ask How long have you been…?, and answer."
+        }
+    },
+    {
+        "level_number": 9,
+        "concept_key": "had",
+        "objective": "By the end of this lesson, the learner can use had + past participle to say one action was already finished before another past time.",
+        "target_patterns": [
+            "I had + past participle before…",
+            "She had already + past participle.",
+            "Had you + past participle?",
+            "Yes, I had. \/ No, I had not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಇನ್ನೊಂದು ಹಿಂದಿನ ಸಮಯಕ್ಕಿಂತ ಮೊದಲೇ ಮುಗಿದ ಕೆಲಸವನ್ನು had + past participle ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You arrived at a meeting late. Explain what you had already done before you arrived.",
+            "fallback_turns": [
+                "I had sent the file before lunch.",
+                "Had you called them?",
+                "Yes, I had."
+            ]
+        },
+        "check": [
+            {
+                "id": "had-01",
+                "weight": 35,
+                "prompt": "Choose the sentence about an earlier past action.",
+                "options": [
+                    "She had left before I arrived.",
+                    "She had leave before I arrived.",
+                    "She has left before I arrived yesterday only."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "had-02",
+                "weight": 30,
+                "prompt": "Choose the correct question.",
+                "options": [
+                    "Had you finished before 6?",
+                    "Had you finish before 6?",
+                    "Did you had finished before 6?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "had-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Had you eaten?",
+                "options": [
+                    "No, I had not.",
+                    "No, I had not ate.",
+                    "No, I have not had."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say one thing you had already done before another past time, ask Had you…?, and answer."
+        }
+    },
+    {
+        "level_number": 10,
+        "concept_key": "will",
+        "objective": "By the end of this lesson, the learner can use will to make one future plan or promise and ask a simple Will you…? request.",
+        "target_patterns": [
+            "I will + base verb.",
+            "I will not + base verb.",
+            "Will you + base verb?",
+            "Yes, I will. \/ No, I will not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ನಾಳೆಯ ಯೋಜನೆ ಅಥವಾ ವಾಗ್ದಾನವನ್ನು I will + ಮೂಲ ಕ್ರಿಯಾಪದ ರೂಪದಲ್ಲಿ ಹೇಳಿ, Will you…? ಎಂದು ವಿನಂತಿಸುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You are planning tomorrow with a classmate. Make one promise with will and ask one Will you…? request.",
+            "fallback_turns": [
+                "I will join the class tomorrow.",
+                "Will you send the notes?",
+                "Yes, I will."
+            ]
+        },
+        "check": [
+            {
+                "id": "will-01",
+                "weight": 35,
+                "prompt": "Choose the future sentence.",
+                "options": [
+                    "I will call you tonight.",
+                    "I will to call you tonight.",
+                    "I will calling you tonight."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "will-02",
+                "weight": 30,
+                "prompt": "Choose the polite request.",
+                "options": [
+                    "Will you wait a minute?",
+                    "Will you waiting a minute?",
+                    "You will wait a minute?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "will-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Will you help?",
+                "options": [
+                    "Yes, I will.",
+                    "Yes, I will to.",
+                    "Yes, I will helping."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: make one I will… plan, ask Will you…?, and answer it."
+        }
+    },
+    {
+        "level_number": 11,
+        "concept_key": "gonna_wanna",
+        "objective": "By the end of this lesson, the learner can recognise gonna and wanna in informal speech and reply with a clear going to or want to sentence.",
+        "target_patterns": [
+            "I am going to + base verb.",
+            "I want to + base verb.",
+            "What are you going to + base verb?",
+            "I do not want to + base verb."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಮಾತಿನ gonna\/wanna ಅನ್ನು ಗುರುತಿಸಿ, ತರಗತಿಯಲ್ಲಿ going to ಮತ್ತು want to ಎಂದು ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "A friend uses informal speech: I’m gonna rest. Reply in clear English with going to or want to.",
+            "fallback_turns": [
+                "I am going to practise tonight.",
+                "I want to drink water.",
+                "What are you going to do now?"
+            ]
+        },
+        "check": [
+            {
+                "id": "gonna_wanna-01",
+                "weight": 35,
+                "prompt": "Choose the clearer classroom sentence.",
+                "options": [
+                    "I am going to start now.",
+                    "I gonna start now in this class.",
+                    "I going start now."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "gonna_wanna-02",
+                "weight": 30,
+                "prompt": "Choose the correct want sentence.",
+                "options": [
+                    "I want to sit here.",
+                    "I wanna to sit here.",
+                    "I want sitting here."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "gonna_wanna-03",
+                "weight": 35,
+                "prompt": "Choose the question about a plan.",
+                "options": [
+                    "What are you going to cook?",
+                    "What you gonna cooking?",
+                    "What are you going cook?"
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say one going-to plan, one want-to wish, and ask What are you going to…?"
+        }
+    },
+    {
+        "level_number": 12,
+        "concept_key": "would",
+        "objective": "By the end of this lesson, the learner can use would like and Would you…? to make polite offers, requests and preferences.",
+        "target_patterns": [
+            "I would like + noun \/ to + base verb.",
+            "Would you like…?",
+            "Would you + base verb, please?",
+            "I would not like…"
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ವಿನಯದಿಂದ ಇಷ್ಟ, ಕೊಡುಗೆ ಮತ್ತು ವಿನಂತಿಯನ್ನು I would like ಮತ್ತು Would you…? ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You are ordering tea with a colleague. Make one polite preference and one Would you like…? offer.",
+            "fallback_turns": [
+                "I would like black tea.",
+                "Would you like some water?",
+                "Would you pass the sugar, please?"
+            ]
+        },
+        "check": [
+            {
+                "id": "would-01",
+                "weight": 35,
+                "prompt": "Choose the polite preference.",
+                "options": [
+                    "I would like a window seat.",
+                    "I would liking a window seat.",
+                    "I would like to a window seat."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "would-02",
+                "weight": 30,
+                "prompt": "Choose the polite offer.",
+                "options": [
+                    "Would you like some help?",
+                    "Would you liking some help?",
+                    "You would like some help?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "would-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Would you like tea?",
+                "options": [
+                    "Yes, I would.",
+                    "Yes, I would to.",
+                    "Yes, I would likeing."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say I would like…, offer Would you like…?, and make one Would you…, please? request."
+        }
+    },
+    {
+        "level_number": 13,
+        "concept_key": "may",
+        "objective": "By the end of this lesson, the learner can use may for polite permission and for a careful possibility.",
+        "target_patterns": [
+            "May I + base verb?",
+            "Yes, you may. \/ No, you may not.",
+            "It may + base verb.",
+            "I may not + base verb."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ವಿನಯದ ಅನುಮತಿಗೆ May I…? ಮತ್ತು ಸಾಧ್ಯತೆಗೆ may + ಮೂಲ ಕ್ರಿಯಾಪದ ಬಳಸುವುದನ್ನು ಕಲಿಯಿರಿ.",
+        "talk": {
+            "scenario": "You are in a quiet office. Ask polite permission with May I…? and say one possible plan with It may…",
+            "fallback_turns": [
+                "May I sit here?",
+                "Yes, you may.",
+                "It may rain later."
+            ]
+        },
+        "check": [
+            {
+                "id": "may-01",
+                "weight": 35,
+                "prompt": "Choose the polite permission question.",
+                "options": [
+                    "May I open the window?",
+                    "May I opening the window?",
+                    "May I to open the window?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "may-02",
+                "weight": 30,
+                "prompt": "Choose the possibility sentence.",
+                "options": [
+                    "She may come after lunch.",
+                    "She may comes after lunch.",
+                    "She may to come after lunch."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "may-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to May I start?",
+                "options": [
+                    "Yes, you may.",
+                    "Yes, you may to.",
+                    "Yes, you may starting."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: ask May I…?, answer it, and state one It may… possibility."
+        }
+    },
+    {
+        "level_number": 14,
+        "concept_key": "if",
+        "objective": "By the end of this lesson, the learner can use a simple if clause to talk about a real everyday condition and its result.",
+        "target_patterns": [
+            "If + present, will + base verb.",
+            "If I + present, I will + base verb.",
+            "What will you do if…?",
+            "If it rains, we will + base verb."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ನಿಜವಾದ ಷರತ್ತು ಮತ್ತು ಫಲಿತಾಂಶವನ್ನು If + ವರ್ತಮಾನ, will + ಮೂಲ ಕ್ರಿಯಾಪದ ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. if ವಾಕ್ಯದಲ್ಲಿ will ಬೇಡ.",
+        "talk": {
+            "scenario": "You are planning a weekend outing. Use one if sentence about weather or time and ask What will you do if…?",
+            "fallback_turns": [
+                "If it rains, we will stay inside.",
+                "If I finish early, I will call you.",
+                "What will you do if the bus is late?"
+            ]
+        },
+        "check": [
+            {
+                "id": "if-01",
+                "weight": 35,
+                "prompt": "Choose the correct real-condition sentence.",
+                "options": [
+                    "If I have time, I will join.",
+                    "If I will have time, I will join.",
+                    "If I have time, I joining."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "if-02",
+                "weight": 30,
+                "prompt": "Choose the question.",
+                "options": [
+                    "What will you do if she is busy?",
+                    "What will you do if she will be busy?",
+                    "What you do if she is busy?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "if-03",
+                "weight": 35,
+                "prompt": "Choose the clearer result clause.",
+                "options": [
+                    "If the shop is closed, we will wait.",
+                    "If the shop is closed, we wait will.",
+                    "If the shop closed, we will waiting."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say one If…, I will… sentence and ask What will you do if…?"
+        }
+    },
+    {
+        "level_number": 15,
+        "concept_key": "must",
+        "objective": "By the end of this lesson, the learner can use must and must not for strong everyday rules and obligations.",
+        "target_patterns": [
+            "I must + base verb.",
+            "You must not + base verb.",
+            "Must I + base verb?",
+            "Yes, you must. \/ No, you must not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಕಡ್ಡಾಯ ನಿಯಮಕ್ಕೆ must ಮತ್ತು ನಿಷೇಧಕ್ಕೆ must not ಬಳಸುವುದನ್ನು ಕಲಿಯಿರಿ. must ನಂತರ ಮೂಲ ಕ್ರಿಯಾಪದ.",
+        "talk": {
+            "scenario": "You are explaining a workplace or classroom rule. State one must obligation and one must not prohibition.",
+            "fallback_turns": [
+                "You must wear your badge.",
+                "You must not shout here.",
+                "Must I sign this form?"
+            ]
+        },
+        "check": [
+            {
+                "id": "must-01",
+                "weight": 35,
+                "prompt": "Choose the obligation sentence.",
+                "options": [
+                    "You must show your ticket.",
+                    "You must to show your ticket.",
+                    "You must showing your ticket."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "must-02",
+                "weight": 30,
+                "prompt": "Choose the prohibition.",
+                "options": [
+                    "You must not park here.",
+                    "You must not to park here.",
+                    "You must not parking here."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "must-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Must I wait?",
+                "options": [
+                    "Yes, you must.",
+                    "Yes, you must to.",
+                    "Yes, you must waiting."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: give one must rule, one must not rule, and ask Must I…?"
+        }
+    },
+    {
+        "level_number": 16,
+        "concept_key": "should_have",
+        "objective": "By the end of this lesson, the learner can use should have + past participle to talk about a better past choice without blaming harshly.",
+        "target_patterns": [
+            "I should have + past participle.",
+            "You should not have + past participle.",
+            "Should I have + past participle?",
+            "Yes, you should have. \/ No, you should not have."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಹಿಂದಿನ ಉತ್ತಮ ಆಯ್ಕೆಯನ್ನು should have + past participle ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. ದೂಷಣೆಯಿಲ್ಲದೆ ನಿಧಾನ ಸಲಹೆ.",
+        "talk": {
+            "scenario": "A meeting started without the notes. Talk about one better past action with should have.",
+            "fallback_turns": [
+                "I should have left earlier.",
+                "You should have told me.",
+                "Should I have called first?"
+            ]
+        },
+        "check": [
+            {
+                "id": "should_have-01",
+                "weight": 35,
+                "prompt": "Choose the past-advice sentence.",
+                "options": [
+                    "I should have checked the time.",
+                    "I should have check the time.",
+                    "I should had checked the time."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "should_have-02",
+                "weight": 30,
+                "prompt": "Choose the gentler correction.",
+                "options": [
+                    "You should not have waited so long.",
+                    "You should not have wait so long.",
+                    "You should not had waited so long."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "should_have-03",
+                "weight": 35,
+                "prompt": "Choose a suitable short reply to Should I have asked?",
+                "options": [
+                    "Yes, you should have.",
+                    "Yes, you should have to.",
+                    "Yes, you should had."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say I should have…, give one You should have…, and ask Should I have…?"
+        }
+    },
+    {
+        "level_number": 17,
+        "concept_key": "used_to",
+        "objective": "By the end of this lesson, the learner can use used to + base verb to talk about a past habit that is not true now.",
+        "target_patterns": [
+            "I used to + base verb.",
+            "I did not use to + base verb.",
+            "Did you use to + base verb?",
+            "Yes, I did. \/ No, I did not."
+        ],
+        "kannada_summary": "ಈ ಪಾಠದಲ್ಲಿ ಹಿಂದೆ ಇದ್ದ ಆದರೆ ಈಗ ಇಲ್ಲದ ಅಭ್ಯಾಸವನ್ನು used to + ಮೂಲ ಕ್ರಿಯಾಪದ ರೂಪದಲ್ಲಿ ಹೇಳುವುದನ್ನು ಕಲಿಯಿರಿ. ಪ್ರಶ್ನೆ: Did you use to…?",
+        "talk": {
+            "scenario": "You are talking about school days versus now. Share one old habit with used to and ask Did you use to…?",
+            "fallback_turns": [
+                "I used to walk to school.",
+                "Did you use to play cricket?",
+                "I do not walk now. I take the bus."
+            ]
+        },
+        "check": [
+            {
+                "id": "used_to-01",
+                "weight": 35,
+                "prompt": "Choose the past-habit sentence.",
+                "options": [
+                    "I used to drink more tea.",
+                    "I used to drinking more tea.",
+                    "I use to drink more tea then."
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "used_to-02",
+                "weight": 30,
+                "prompt": "Choose the question.",
+                "options": [
+                    "Did you use to live here?",
+                    "Did you used to live here?",
+                    "Did you use to lived here?"
+                ],
+                "correct_option": 0
+            },
+            {
+                "id": "used_to-03",
+                "weight": 35,
+                "prompt": "Choose the clearer contrast with now.",
+                "options": [
+                    "I used to cook every day. Now I cook on Sundays.",
+                    "I used to cook every day and I still used to.",
+                    "I used cook every day now."
+                ],
+                "correct_option": 0
+            }
+        ],
+        "apply": {
+            "task": "Record a 20–30 second exchange: say one I used to… habit, ask Did you use to…?, and contrast with now."
+        }
+    }
+]

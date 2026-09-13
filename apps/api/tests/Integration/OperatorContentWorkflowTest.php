@@ -383,6 +383,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
                 'privacy.erasure.request',
                 'privacy.export.request',
                 'roles.manage',
+                'speech.economics.usage',
                 'support.diagnostics.read',
                 'trainer_profiles.manage',
                 'trainer_profiles.read',

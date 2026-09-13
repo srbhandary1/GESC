@@ -1,8 +1,12 @@
 packages:
   - apps/web
+  - apps/marketing
   - packages/*
 overrides:
-  js-yaml: 4.3.1
+  # Security floors: GHSA-2883-xcg3-v3hh and the 0.9.10/0.9.11 xmldom
+  # advisory family reported by the locked audit gate.
+  js-yaml: 4.3.2
+  '@xmldom/xmldom': 0.9.12
   # Patches the moderate uuid advisory in the dev-only Capacitor CLI
   # dependency path (xcode>uuid); xcode uses the stable root uuid API.
   'uuid@<11.1.1': 11.1.1
@@ -12,5 +16,6 @@ overrides:
 minimumReleaseAgeExclude:
   - jsdom@30.0.1
   - '@redocly/cli@2.41.2'
-  - js-yaml@4.3.1
+  - js-yaml@4.3.2
+  - '@xmldom/xmldom@0.9.12'
   - nanoid@3.3.17

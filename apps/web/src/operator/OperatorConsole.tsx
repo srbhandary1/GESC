@@ -58,6 +58,7 @@ import {
   defaultOperatorMediaLibraryApi,
   type OperatorMediaLibraryApi,
 } from './OperatorMediaLibraryApi'
+import { OperatorSpeechEconomics } from './OperatorSpeechEconomics'
 
 export interface OperatorConsoleProps {
   api: OperatorConsoleApi
@@ -553,6 +554,13 @@ export function OperatorConsole({
                   ) ? (
                     <SupportDiagnosticsPanel api={api} message={message} />
                   ) : null}
+                  {overview.state.value.panels.includes('speech_economics') ? (
+                    <OperatorSpeechEconomics
+                      api={api}
+                      locale={locale}
+                      localizationPolicy={localizationPolicy}
+                    />
+                  ) : null}
                 </section>
               ) : null}
 
@@ -705,6 +713,40 @@ function PilotAnalytics({
           analytics.demonstrated_learning.mastery_by_knowledge_state,
         )}
       </p>
+      <dl className="operator-metrics__detail">
+        <div>
+          <dt>Stage completions</dt>
+          <dd>{analytics.learning_metrics.stage_completion_count}</dd>
+        </div>
+        <div>
+          <dt>Speaking turns</dt>
+          <dd>{analytics.learning_metrics.speaking_turn_count}</dd>
+        </div>
+        <div>
+          <dt>Quiz retries</dt>
+          <dd>{analytics.learning_metrics.quiz_retry_count}</dd>
+        </div>
+        <div>
+          <dt>Reviews due</dt>
+          <dd>{analytics.learning_metrics.review_return_due_count}</dd>
+        </div>
+        <div>
+          <dt>Reviews completed</dt>
+          <dd>{analytics.learning_metrics.review_return_completed_count}</dd>
+        </div>
+        <div>
+          <dt>AI fallbacks</dt>
+          <dd>{analytics.learning_metrics.ai_fallback_count}</dd>
+        </div>
+        <div>
+          <dt>Latency samples</dt>
+          <dd>{analytics.learning_metrics.latency_sample_count}</dd>
+        </div>
+        <div>
+          <dt>Session cost (µINR)</dt>
+          <dd>{analytics.learning_metrics.session_cost_microunits_total}</dd>
+        </div>
+      </dl>
     </div>
   )
 }

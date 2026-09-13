@@ -89,8 +89,11 @@ bash -c '
     "https://soft-launch.example.test"
 ' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$redirect_config"
 grep -Fq 'redir * https://soft-launch.example.test{uri} 307' "$redirect_config"
-if grep -Fq 'reverse_proxy' "$redirect_config"; then
-  printf '%s\n' 'HTTPS static-IP entry must not serve authenticated HTTP directly' >&2
+grep -Fq 'handle /api/*' "$redirect_config"
+grep -Fq 'handle /oauth/*' "$redirect_config"
+grep -Fq 'reverse_proxy 127.0.0.1:8000' "$redirect_config"
+if grep -Fq 'root * /srv/web' "$redirect_config"; then
+  printf '%s\n' 'HTTPS static-IP entry must not serve the web shell over HTTP' >&2
   exit 1
 fi
 
@@ -101,6 +104,20 @@ bash -c '
 ' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$direct_config"
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$direct_config"
 grep -Fq 'root * /srv/web' "$direct_config"
+grep -Fq 'handle /oauth/*' "$direct_config"
+
+serve_http_config="$test_root/Caddyfile.serve-http"
+GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true bash -c '
+  source "$1"
+  write_soft_launch_public_http_config "$2" 8080 8000 "/srv/web" \
+    "https://soft-launch.example.test"
+' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$serve_http_config"
+grep -Fq 'root * /srv/web' "$serve_http_config"
+grep -Fq 'reverse_proxy 127.0.0.1:8000' "$serve_http_config"
+if grep -Fq 'redir * https://soft-launch.example.test{uri} 307' "$serve_http_config"; then
+  printf '%s\n' 'GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP must serve the SPA instead of redirecting' >&2
+  exit 1
+fi
 
 bash -c '
   source "$1"
@@ -141,9 +158,12 @@ grep -Fq 'nohup "${PHP_BIN}" -S "127.0.0.1:${api_port}" "${API_ROUTER}"' \
   "$soft_launch_runner"
 grep -Fq 'ensure_api_listen_port' "$soft_launch_runner"
 grep -Fq 'web_build_fingerprint' "$soft_launch_runner"
-grep -Fq '.soft-launch-web-build' "$soft_launch_runner"
+grep -Fq 'VITE_UI_TRANSLATION_PREVIEW=true' "$soft_launch_runner"
+grep -Fq '.soft-launch-ui-preview' "$soft_launch_runner"
 grep -Fq 'Web inputs changed during the build' "$soft_launch_runner"
 grep -Fq 'refresh-web)' "$soft_launch_runner"
+grep -Fq 'reload-public-http)' "$soft_launch_runner"
+grep -Fq 'reload-api)' "$soft_launch_runner"
 if grep -Fq 'artisan serve' "$soft_launch_runner"; then
   printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
   exit 1

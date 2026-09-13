@@ -17,6 +17,7 @@ final readonly class OperatorPilotAnalyticsQuery
     public function __construct(
         private OrganizationContextManager $contexts,
         private OperatorContentAuthorization $authorization,
+        private OperatorLearningMetricsQuery $learningMetrics,
     ) {}
 
     /**
@@ -82,6 +83,9 @@ final readonly class OperatorPilotAnalyticsQuery
                     $organizationId,
                 ),
             ],
+            'learning_metrics' => $this->learningMetrics->summarize(
+                $organizationId,
+            ),
             'distinction_note' => 'usage_counts_are_not_demonstrated_learning',
         ];
     }

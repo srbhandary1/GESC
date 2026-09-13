@@ -18,6 +18,7 @@ final class LessonPracticeBlueprintValidator
         $lesson = $blueprint['lesson'] ?? [];
         $parts = $blueprint['ordered_parts'] ?? [];
         $check = $blueprint['check'] ?? [];
+        $levelCheckpoint = $blueprint['level_checkpoint'] ?? null;
 
         if (($blueprint['schema'] ?? null) !== 'global-english.lesson-practice-loop.v1') {
             $errors[] = 'schema';
@@ -41,6 +42,28 @@ final class LessonPracticeBlueprintValidator
             if (! is_array($item) || ! isset($item['options'][$item['correct_option'] ?? -1])) {
                 $errors[] = 'check_answer_index';
                 break;
+            }
+        }
+        if (is_array($levelCheckpoint)) {
+            $checkpointItems = $levelCheckpoint['items'] ?? [];
+            $checkpointWeights = 0;
+            foreach ($checkpointItems as $checkpointItem) {
+                if (is_array($checkpointItem)) {
+                    $checkpointWeights += (int) ($checkpointItem['weight'] ?? 0);
+                }
+            }
+            if (
+                count($checkpointItems) < 3
+                || count($checkpointItems) > 7
+                || $checkpointWeights !== 100
+            ) {
+                $errors[] = 'level_checkpoint_weights';
+            }
+            foreach ($checkpointItems as $item) {
+                if (! is_array($item) || ! isset($item['options'][$item['correct_option'] ?? -1])) {
+                    $errors[] = 'level_checkpoint_answer_index';
+                    break;
+                }
             }
         }
         if (($blueprint['apply']['evidence_state'] ?? null) !== 'not_recorded') {

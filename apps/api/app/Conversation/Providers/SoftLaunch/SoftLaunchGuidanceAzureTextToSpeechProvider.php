@@ -204,6 +204,12 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
                 outputUnits: strlen($audio),
                 estimatedCostMicrounits: $this->configuration
                     ->estimatedCostMicrounits($characters),
+                inputUnitKind: 'unicode_characters',
+                outputUnitKind: 'audio_bytes',
+                billableUnitKind: 'unicode_characters',
+                billableUnitQuantity: $characters,
+                voiceKey: $request->voice,
+                locale: $this->configuration->localeForVoice($request->voice),
             ),
             audioBytes: $audio,
             mimeType: 'audio/wav',

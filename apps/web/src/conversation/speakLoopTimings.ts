@@ -10,6 +10,7 @@ export const SPEAK_LOOP_STAGES = [
   'wav_ready',
   'upload_done',
   'transcript_ready',
+  'ack',
   'turn_json_ready',
   'first_audio',
 ] as const
@@ -17,6 +18,7 @@ export const SPEAK_LOOP_STAGES = [
 export type SpeakLoopStage = (typeof SPEAK_LOOP_STAGES)[number]
 
 export interface SpeakLoopDurationsMs {
+  readonly record_stop_to_ack_ms: number | null
   readonly record_stop_to_wav_ready_ms: number | null
   readonly wav_ready_to_upload_done_ms: number | null
   readonly upload_done_to_transcript_ready_ms: number | null
@@ -40,20 +42,22 @@ export function beginSpeakLoop(): void {
   activeMarks = { record_stop: performance.now() }
 }
 
-export function markSpeakLoop(stage: SpeakLoopStage): void {
+export function markSpeakLoop(stage: SpeakLoopStage): SpeakLoopSnapshot | null {
   if (activeMarks === null) {
-    return
+    return null
   }
 
   if (activeMarks[stage] !== undefined) {
-    return
+    return null
   }
 
   activeMarks[stage] = performance.now()
 
   if (stage === 'first_audio') {
-    completeSpeakLoop()
+    return completeSpeakLoop()
   }
+
+  return null
 }
 
 export function abandonSpeakLoop(): void {
@@ -125,6 +129,7 @@ function snapshotFromMarks(
 
   return {
     durationsMs: {
+      record_stop_to_ack_ms: delta('record_stop', 'ack'),
       record_stop_to_wav_ready_ms: delta('record_stop', 'wav_ready'),
       wav_ready_to_upload_done_ms: delta('wav_ready', 'upload_done'),
       upload_done_to_transcript_ready_ms: delta(

@@ -153,6 +153,51 @@ final class LearnerLevelSessionController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
+    public function checkpoint(Request $request, int $levelNumber): JsonResponse
+    {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+        $context = $this->contexts->current();
+
+        try {
+            $payload = $this->sessions->checkpointDetail(
+                $context,
+                $principal->user,
+                $levelNumber,
+            );
+        } catch (LearningOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json($payload)
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function submitCheckpoint(Request $request, int $levelNumber): JsonResponse
+    {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+        $context = $this->contexts->current();
+        $validated = $request->validate([
+            'idempotency_key' => ['required', 'string', 'max:120'],
+            'answers' => ['required', 'array'],
+            'answers.*' => ['integer', 'min:0', 'max:20'],
+        ]);
+
+        try {
+            $result = $this->sessions->submitCheckpoint(
+                $context,
+                $principal->user,
+                $levelNumber,
+                $validated['answers'],
+                (string) $validated['idempotency_key'],
+            );
+        } catch (LearningOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json($result, $result['replayed'] ? 200 : 201)
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function startConversation(
         Request $request,
         int $levelNumber,

@@ -84,6 +84,7 @@ final class AuthoredFoundationLessons
             'ordered_parts' => $parts,
             'talk' => $lesson['talk'],
             'check' => $lesson['check'],
+            'level_checkpoint' => self::levelCheckpoint($conceptKey, $lesson['check']),
             'apply' => $lesson['apply'],
             'kannada_guidance' => [
                 'summary' => $lesson['kannada_summary'],
@@ -1076,6 +1077,39 @@ final class AuthoredFoundationLessons
         return [
             'pass_threshold' => 80,
             'items' => $encoded,
+        ];
+    }
+
+    /**
+     * @param  array{pass_threshold?: int, items: list<array<string, mixed>>}  $check
+     * @return array{pass_threshold: int, items: list<array<string, mixed>>}
+     */
+    public static function checkpointFromCheck(string $conceptKey, array $check): array
+    {
+        return self::levelCheckpoint($conceptKey, $check);
+    }
+
+    /**
+     * @param  array{pass_threshold?: int, items: list<array<string, mixed>>}  $check
+     * @return array{pass_threshold: int, items: list<array<string, mixed>>}
+     */
+    private static function levelCheckpoint(string $conceptKey, array $check): array
+    {
+        $items = [];
+        foreach ($check['items'] as $index => $item) {
+            $items[] = [
+                'id' => $conceptKey.'-cp-0'.($index + 1),
+                'weight' => (int) ($item['weight'] ?? 0),
+                'prompt' => 'Level review: '.(string) ($item['prompt'] ?? ''),
+                'options' => is_array($item['options'] ?? null) ? $item['options'] : [],
+                'correct_option' => (int) ($item['correct_option'] ?? 0),
+                'rationale' => (string) ($item['rationale'] ?? ''),
+            ];
+        }
+
+        return [
+            'pass_threshold' => (int) ($check['pass_threshold'] ?? 80),
+            'items' => $items,
         ];
     }
 

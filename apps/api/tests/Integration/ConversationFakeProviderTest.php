@@ -20,6 +20,12 @@ use App\Conversation\Providers\SpeechToTextProvider;
 use App\Conversation\Providers\SpeechToTextRequest;
 use App\Conversation\Providers\SpeechToTextResult;
 use App\Conversation\Providers\TextToSpeechProvider;
+use App\Conversation\Providers\TextToSpeechResult;
+use App\Conversation\Speech\ConversationSpeechArtifactStore;
+use App\Conversation\Speech\ConversationSpeechStreamer;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\EntitlementAccess;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -29,6 +35,7 @@ use App\Tenancy\OrganizationContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
 {
@@ -265,7 +272,10 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
             'deterministic-fake-text-only',
             $turn['speech']['rendering_mode'],
         );
-        $this->assertSame(4, $turn['usage']['provider_attempts']);
+        $this->assertSame(3, $turn['usage']['provider_attempts']);
+        $this->assertSame('deferred', $turn['speech']['guidance_speech_status']);
+        $this->assertNull($turn['speech']['model_audio_base64']);
+        $this->assertNull($turn['speech']['guidance_audio_base64']);
         $this->assertSame(0, $turn['usage']['estimated_cost_microunits']);
         $this->assertTrue($turnReplay['replayed']);
         $this->assertSame($turn['id'], $turnReplay['id']);
@@ -333,7 +343,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         $this->assertSame(1, DB::table('conversation_sessions')->count());
         $this->assertSame(1, DB::table('conversation_turns')->count());
         $this->assertSame(5, DB::table('conversation_turn_events')->count());
-        $this->assertSame(4, DB::table('ai_cost_ledger')->count());
+        $this->assertSame(3, DB::table('ai_cost_ledger')->count());
         $this->assertSame(2, DB::table('conversation_commands')->count());
         $this->assertSame(1, DB::table('correction_suggestions')->count());
         $this->assertSame(1, DB::table('learner_error_patterns')->count());
@@ -445,7 +455,7 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         );
 
         $this->assertSame('completed', $turn['status']);
-        $this->assertSame(5, $turn['usage']['provider_attempts']);
+        $this->assertSame(4, $turn['usage']['provider_attempts']);
         $this->assertSame(
             [
                 'turn.accepted',
@@ -625,6 +635,126 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         }
     }
 
+    public function test_private_speech_stream_is_owner_only_and_no_store(): void
+    {
+        [$learner, $membership, $context] = $this->learner();
+        $sessions = $this->app->make(ConversationSessionService::class);
+        $turns = $this->app->make(ConversationTurnService::class);
+        $store = $this->app->make(ConversationSpeechArtifactStore::class);
+        $streamer = $this->app->make(ConversationSpeechStreamer::class);
+
+        $session = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'everyday-friend-prototype',
+                coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+        $turn = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'I practise English after work.',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $wav = self::minimalWav();
+        $store->persist(
+            $context->organizationId,
+            (string) $membership->getKey(),
+            (string) $turn['id'],
+            ConversationSpeechArtifactStore::KIND_MODEL,
+            new TextToSpeechResult(
+                playbackAvailable: true,
+                renderingMode: 'azure-soft-launch-guidance-wav',
+                providerUsage: new ProviderUsage(
+                    providerKey: 'test-speech',
+                    modelVersion: 'test',
+                    latencyMilliseconds: 1,
+                    inputUnits: 1,
+                    outputUnits: 1,
+                    estimatedCostMicrounits: 0,
+                ),
+                audioBytes: $wav,
+                mimeType: 'audio/wav',
+            ),
+        );
+
+        $response = $this->contexts()->run(
+            $context,
+            fn (): StreamedResponse => $streamer->stream(
+                $learner,
+                (string) $turn['id'],
+                ConversationSpeechArtifactStore::KIND_MODEL,
+            ),
+        );
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('audio/wav', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString(
+            'no-store',
+            (string) $response->headers->get('Cache-Control'),
+        );
+        $this->assertStringContainsString(
+            'private',
+            (string) $response->headers->get('Cache-Control'),
+        );
+
+        [$sameOrgOther, , $sameOrgOtherContext] = $this->learner(
+            organization: Organization::query()->findOrFail(
+                $membership->organizationId(),
+            ),
+        );
+        try {
+            $this->contexts()->run(
+                $sameOrgOtherContext,
+                fn (): StreamedResponse => $streamer->stream(
+                    $sameOrgOther,
+                    (string) $turn['id'],
+                    ConversationSpeechArtifactStore::KIND_MODEL,
+                ),
+            );
+            self::fail('Expected same-tenant other-learner speech stream to fail.');
+        } catch (ConversationOperationRejected) {
+            $this->addToAssertionCount(1);
+        }
+
+        $otherOrganization = $this->createOrganization('Speech stream foreign tenant');
+        [$otherLearner, , $otherContext] = $this->learner(
+            organization: $otherOrganization,
+        );
+        try {
+            $this->contexts()->run(
+                $otherContext,
+                fn (): StreamedResponse => $streamer->stream(
+                    $otherLearner,
+                    (string) $turn['id'],
+                    ConversationSpeechArtifactStore::KIND_MODEL,
+                ),
+            );
+            self::fail('Expected cross-tenant speech stream to fail.');
+        } catch (ConversationOperationRejected) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    private static function minimalWav(): string
+    {
+        $sampleRate = 16_000;
+        $dataSize = 320;
+        $format = 'fmt '
+            .pack('VvvVVvv', 16, 1, 1, $sampleRate, $sampleRate * 2, 2, 16);
+        $data = 'data'.pack('V', $dataSize).str_repeat("\0", $dataSize);
+        $body = 'WAVE'.$format.$data;
+
+        return 'RIFF'.pack('V', strlen($body)).$body;
+    }
+
     /**
      * @return array{User, Membership, OrganizationContext}
      */
@@ -663,7 +793,71 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
             'updated_at' => $now,
         ]);
 
+        if ($organization->system_key === Organization::DIRECT_SYSTEM_KEY) {
+            $this->contexts()->run($context, function () use ($user, $organization): void {
+                $this->app->make(EntitlementAccess::class)->snapshot($user);
+                $planId = DB::table('entitlement_plans')
+                    ->where('organization_id', $organization->getKey())
+                    ->where('code', DirectPlanDefaults::MONTHLY_ROLEPLAY)
+                    ->value('id');
+                $this->assertIsString($planId);
+                $this->app->make(LearnerSubscriptionService::class)->checkout(
+                    $user,
+                    $planId,
+                    (string) Str::ulid(),
+                );
+            });
+        }
+
         return [$user, $membership, $context];
+    }
+
+    public function test_session_token_budget_ignores_tts_audio_units(): void
+    {
+        [$learner, $membership, $context] = $this->learner();
+        $sessions = $this->app->make(ConversationSessionService::class);
+        $turns = $this->app->make(ConversationTurnService::class);
+
+        $session = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'everyday-friend-prototype',
+                coachingMode: 'gentle',
+                uiLocale: 'kn-IN',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $firstTurn = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'I can drink water.',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('completed', $firstTurn['status']);
+
+        DB::table('ai_cost_ledger')
+            ->where('conversation_turn_id', $firstTurn['id'])
+            ->where('provider_stage', 'tts')
+            ->update(['output_units' => 200_000]);
+
+        $secondTurn = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'We cannot drink water.',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('completed', $secondTurn['status']);
     }
 
     /**

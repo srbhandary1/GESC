@@ -9,8 +9,10 @@ use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ConversationProviderException;
+use App\Conversation\Providers\ProviderBillableUsage;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\LessonDrillStepper;
 use Illuminate\Http\Client\ConnectionException;
 use JsonException;
 
@@ -37,6 +39,7 @@ TEXT;
     public function __construct(
         private AzureOpenAiConversationHttpBoundary $http,
         private AzureOpenAiConversationConfiguration $configuration,
+        private AzureOpenAiConversationStreamDecoder $streamDecoder,
     ) {}
 
     public function respond(
@@ -49,6 +52,22 @@ TEXT;
             'conversation.azure_openai.maximum_json_response_bytes',
         );
 
+        if ($this->configuration->streamResponses()) {
+            return $this->respondStreamed(
+                $request,
+                $started,
+                $maximumBytes,
+            );
+        }
+
+        return $this->respondBuffered($request, $started, $maximumBytes);
+    }
+
+    private function respondBuffered(
+        ConversationModelRequest $request,
+        int $started,
+        int $maximumBytes,
+    ): ConversationModelResult {
         try {
             $response = $this->http
                 ->request($maximumBytes)
@@ -102,6 +121,93 @@ TEXT;
         return $this->mapResult($decoded, $request, $latency);
     }
 
+    private function respondStreamed(
+        ConversationModelRequest $request,
+        int $started,
+        int $maximumBytes,
+    ): ConversationModelResult {
+        try {
+            $response = $this->http
+                ->request($maximumBytes)
+                ->withOptions(['stream' => true])
+                ->accept('text/event-stream')
+                ->asJson()
+                ->post(
+                    $this->configuration->chatCompletionsUrl(),
+                    $this->requestPayload($request, true),
+                );
+        } catch (ConnectionException $exception) {
+            throw $this->http->fromConnectionFailure(
+                $exception,
+                $this->elapsedMilliseconds($started),
+            );
+        } catch (ConversationProviderException $exception) {
+            throw $exception;
+        } catch (\RuntimeException $exception) {
+            if (str_contains(
+                $exception->getMessage(),
+                'exceeded its byte limit',
+            )) {
+                throw $this->configuration->failure(
+                    'provider_response_too_large',
+                    $this->elapsedMilliseconds($started),
+                );
+            }
+
+            throw $this->configuration->failure(
+                'provider_policy_failure',
+                $this->elapsedMilliseconds($started),
+            );
+        }
+
+        $connectionLatency = $this->elapsedMilliseconds($started);
+        if ($response->status() !== 200) {
+            throw $this->http->fromHttpStatus(
+                $response->status(),
+                $connectionLatency,
+            );
+        }
+
+        try {
+            $stream = $this->streamDecoder->decode(
+                $response->toPsrResponse()->getBody(),
+                $maximumBytes,
+                $started,
+                $connectionLatency,
+            );
+        } catch (AzureOpenAiConversationStreamException $exception) {
+            throw $this->configuration->failure(
+                $exception->safeCode,
+                $this->elapsedMilliseconds($started),
+                $exception->retryable,
+            );
+        }
+
+        /** @var array<string, mixed> $decoded */
+        $decoded = [
+            'choices' => [[
+                'message' => ['content' => $stream->content],
+            ]],
+        ];
+        if (
+            $stream->promptTokens !== null
+            && $stream->completionTokens !== null
+        ) {
+            $decoded['usage'] = [
+                'prompt_tokens' => $stream->promptTokens,
+                'completion_tokens' => $stream->completionTokens,
+            ];
+        }
+
+        return $this->mapResult(
+            $decoded,
+            $request,
+            $stream->completionLatencyMilliseconds,
+            $stream->connectionLatencyMilliseconds,
+            $stream->firstResultLatencyMilliseconds,
+        );
+    }
+
     private function assertRequestContract(ConversationModelRequest $request): void
     {
         if (
@@ -125,8 +231,10 @@ TEXT;
     /**
      * @return array<string, mixed>
      */
-    private function requestPayload(ConversationModelRequest $request): array
-    {
+    private function requestPayload(
+        ConversationModelRequest $request,
+        bool $stream = false,
+    ): array {
         $memory = $request->memoryFacts === []
             ? 'none'
             : implode("\n- ", $request->memoryFacts);
@@ -141,9 +249,43 @@ TEXT;
             'prompt_version_id' => $request->promptVersionId,
             'prompt_body_sha256' => $request->promptBodySha256,
             'memory_facts' => $request->memoryFacts,
+            'lesson_drill' => $request->lessonDrill,
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
-        return [
+        $drillInstruction = '';
+        if ($request->lessonDrill !== []) {
+            $patterns = $request->lessonDrill['target_patterns'] ?? [];
+            $listed = is_array($patterns)
+                ? array_values(array_map('strval', $patterns))
+                : [];
+            $partId = is_string($request->lessonDrill['part_id'] ?? null)
+                ? (string) $request->lessonDrill['part_id']
+                : 'introduction';
+            if ($partId !== 'practice') {
+                $partId = 'introduction';
+            }
+            $completedTurns = $request->lessonDrill['completed_turns'] ?? 0;
+            $completedTurns = is_int($completedTurns)
+                ? $completedTurns
+                : (int) $completedTurns;
+            $models = LessonDrillStepper::models($listed);
+            $nextIndex = max(0, $completedTurns) + 1;
+            $nextModel = $models[$nextIndex] ?? '';
+            $currentModel = $models[$completedTurns] ?? ($models[0] ?? '');
+            $style = $partId === 'practice'
+                ? 'Practice transform drill: ask for the next form, then send them to the Check items. Do not open free conversation.'
+                : 'Introduction one-pattern drill: one model sentence, one learner try, then the next pattern. Never list every formula. Never say Do not start a free conversation.';
+            $drillInstruction = "This is a lesson grammar drill, not free conversation.\n"
+                ."part_id={$partId}\n"
+                ."{$style}\n"
+                ."Current model sentence: {$currentModel}\n"
+                ."Next model sentence to elicit: {$nextModel}\n"
+                ."When you speak a pattern, say 'and' for '+' and 'Or' for '/'. Never say plus or slash.\n"
+                ."Reply with one short Good and only the next model sentence (or a complete-the-session close if there is no next sentence).\n"
+                ."Do not read the written formula list aloud.\n";
+        }
+
+        $payload = [
             'temperature' => 0.2,
             'response_format' => ['type' => 'json_object'],
             'messages' => [
@@ -153,13 +295,21 @@ TEXT;
                 ],
                 [
                     'role' => 'user',
-                    'content' => "Session ui_locale={$request->uiLocale}\n"
+                    'content' => $drillInstruction
+                        ."Session ui_locale={$request->uiLocale}\n"
                         ."coaching_mode={$request->coachingMode}\n"
                         ."memory_facts:\n- {$memory}\n\n"
                         ."Turn payload JSON:\n{$user}",
                 ],
             ],
         ];
+
+        if ($stream) {
+            $payload['stream'] = true;
+            $payload['stream_options'] = ['include_usage' => true];
+        }
+
+        return $payload;
     }
 
     /**
@@ -169,6 +319,8 @@ TEXT;
         array $decoded,
         ConversationModelRequest $request,
         int $latencyMilliseconds,
+        ?int $connectionLatencyMilliseconds = null,
+        ?int $firstResultLatencyMilliseconds = null,
     ): ConversationModelResult {
         $content = $decoded['choices'][0]['message']['content'] ?? null;
         if (! is_string($content) || trim($content) === '') {
@@ -199,12 +351,21 @@ TEXT;
         }
 
         $usage = $decoded['usage'] ?? [];
-        $inputUnits = is_array($usage) && is_int($usage['prompt_tokens'] ?? null)
+        $providerInputUnits = is_array($usage)
+            && is_int($usage['prompt_tokens'] ?? null)
+            && $usage['prompt_tokens'] >= 0
             ? $usage['prompt_tokens']
-            : str_word_count($request->transcript);
-        $outputUnits = is_array($usage) && is_int($usage['completion_tokens'] ?? null)
+            : null;
+        $providerOutputUnits = is_array($usage)
+            && is_int($usage['completion_tokens'] ?? null)
+            && $usage['completion_tokens'] >= 0
             ? $usage['completion_tokens']
-            : str_word_count($reply);
+            : null;
+        $usageIsProviderReported = $providerInputUnits !== null
+            && $providerOutputUnits !== null;
+        $inputUnits = $providerInputUnits
+            ?? str_word_count($request->transcript);
+        $outputUnits = $providerOutputUnits ?? str_word_count($reply);
 
         $correction = $this->mapCorrection(
             $payload['priority_correction'] ?? null,
@@ -221,10 +382,34 @@ TEXT;
                 latencyMilliseconds: $latencyMilliseconds,
                 inputUnits: $inputUnits,
                 outputUnits: $outputUnits,
-                estimatedCostMicrounits: $this->estimateCostMicrounits(
-                    $inputUnits,
-                    $outputUnits,
-                ),
+                estimatedCostMicrounits: $usageIsProviderReported
+                    ? $this->estimateCostMicrounits(
+                        $inputUnits,
+                        $outputUnits,
+                    )
+                    : 0,
+                inputUnitKind: $usageIsProviderReported
+                    ? 'provider_input_tokens'
+                    : 'estimated_words',
+                outputUnitKind: $usageIsProviderReported
+                    ? 'provider_output_tokens'
+                    : 'estimated_words',
+                connectionLatencyMilliseconds: $connectionLatencyMilliseconds,
+                firstResultLatencyMilliseconds: $firstResultLatencyMilliseconds,
+                billableComponents: $usageIsProviderReported
+                    ? [
+                        new ProviderBillableUsage(
+                            componentKey: 'input',
+                            unitKind: 'provider_input_tokens',
+                            quantity: $inputUnits,
+                        ),
+                        new ProviderBillableUsage(
+                            componentKey: 'output',
+                            unitKind: 'provider_output_tokens',
+                            quantity: $outputUnits,
+                        ),
+                    ]
+                    : [],
             ),
             priorityCorrection: $correction,
             safetyState: $safety,

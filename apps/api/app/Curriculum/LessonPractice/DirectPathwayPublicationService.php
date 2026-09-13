@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Curriculum\LessonPractice;
 
+use App\Curriculum\CanonicalJson;
 use App\Models\LessonPracticeBlueprint;
 use App\Models\LessonPracticeMedia;
 use App\Models\User;
@@ -107,17 +108,6 @@ final class DirectPathwayPublicationService
             throw new RuntimeException('blueprint_missing:'.$conceptKey);
         }
 
-        if ($this->isPublishedEligible($current)) {
-            return [
-                'level_number' => $levelNumber,
-                'concept_key' => $conceptKey,
-                'blueprint_id' => (string) $current->getKey(),
-                'revision_number' => (int) $current->revision_number,
-                'state' => 'published',
-                'skipped' => true,
-            ];
-        }
-
         $media = LessonPracticeMedia::query()
             ->where('organization_id', self::ORG_ID)
             ->where('blueprint_id', $current->getKey())
@@ -148,13 +138,28 @@ final class DirectPathwayPublicationService
         }
 
         $canonical = $this->publishedCanonical($levelNumber, $conceptKey, $assets, $current);
+        $targetHash = CanonicalJson::sha256($canonical);
+        if (
+            $this->isPublishedEligible($current)
+            && $current->content_hash === $targetHash
+        ) {
+            return [
+                'level_number' => $levelNumber,
+                'concept_key' => $conceptKey,
+                'blueprint_id' => (string) $current->getKey(),
+                'revision_number' => (int) $current->revision_number,
+                'state' => 'published',
+                'skipped' => true,
+            ];
+        }
+
         $created = $this->attachment->createBlueprint(
             $this->contexts->current(),
             self::PROGRAM_ID,
             self::CURRICULUM_VERSION_ID,
             $conceptKey,
             $canonical,
-            'wave71-create-'.$conceptKey,
+            'lpl04-checkpoint-create-'.$conceptKey,
         );
         $blueprint = $created['blueprint'];
         $hash = (string) $blueprint->content_hash;
@@ -178,7 +183,7 @@ final class DirectPathwayPublicationService
             'english_academic',
             'approved',
             $hash,
-            'wave71-en-'.$conceptKey,
+            'lpl04-checkpoint-en-'.$conceptKey,
         );
         $kannada = $this->attachment->recordReview(
             $this->contexts->current(),
@@ -186,20 +191,20 @@ final class DirectPathwayPublicationService
             'kannada',
             'approved',
             $hash,
-            'wave71-kn-'.$conceptKey,
+            'lpl04-checkpoint-kn-'.$conceptKey,
         );
         $attached = $this->attachment->attachParts(
             $this->contexts->current(),
             (string) $blueprint->getKey(),
             $hash,
             $attachParts,
-            'wave71-attach-'.$conceptKey,
+            'lpl04-checkpoint-attach-'.$conceptKey,
         );
         $published = $this->attachment->publishBlueprint(
             $this->contexts->current(),
             (string) $blueprint->getKey(),
             $hash,
-            'wave71-publish-'.$conceptKey,
+            'lpl04-checkpoint-publish-'.$conceptKey,
         );
 
         return [
@@ -256,6 +261,16 @@ final class DirectPathwayPublicationService
         }
 
         $canonical = $current->canonical_json;
+        $check = is_array($canonical['check'] ?? null) ? $canonical['check'] : null;
+        if ($check !== null && is_array($check['items'] ?? null)) {
+            $canonical['level_checkpoint'] = AuthoredFoundationLessons::checkpointFromCheck(
+                $conceptKey,
+                [
+                    'pass_threshold' => (int) ($check['pass_threshold'] ?? 80),
+                    'items' => array_values($check['items']),
+                ],
+            );
+        }
         $canonical['state'] = 'published_direct_entitled_v1';
         $canonical['publication'] = [
             'eligible' => true,

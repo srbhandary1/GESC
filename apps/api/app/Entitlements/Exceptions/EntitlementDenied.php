@@ -22,6 +22,10 @@ final class EntitlementDenied extends HttpException
 
     public const string CHECKOUT_UNAVAILABLE = 'entitlement.checkout_unavailable';
 
+    public const string FREE_SPEECH_LOCKED = 'entitlement.free_speech_locked';
+
+    public const string SESSION_LOCKED = 'entitlement.session_locked';
+
     public function __construct(
         public readonly string $messageKey,
         int $status = 409,

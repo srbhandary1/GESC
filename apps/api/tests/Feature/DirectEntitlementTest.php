@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Conversation\ConversationSessionService;
+use App\Conversation\ConversationTurnService;
+use App\Conversation\LessonDrillContext;
 use App\Entitlements\DirectPlanDefaults;
 use App\Entitlements\EntitlementAccess;
 use App\Entitlements\Exceptions\EntitlementDenied;
@@ -38,7 +41,7 @@ final class DirectEntitlementTest extends TestCase
         $this->getJson('/api/v1/me/entitlement')->assertUnauthorized();
     }
 
-    public function test_direct_learner_receives_auto_demo_with_level_and_ai_caps(): void
+    public function test_direct_learner_has_no_entitlement_until_checkout(): void
     {
         [$learner, $context] = $this->learner();
         $access = $this->access();
@@ -47,35 +50,148 @@ final class DirectEntitlementTest extends TestCase
         try {
             $snapshot = $access->snapshot($learner);
             self::assertTrue($snapshot['applies']);
-            self::assertSame(DirectPlanDefaults::DEMO, $snapshot['plan_code']);
+            self::assertSame('expired', $snapshot['status']);
+            self::assertNull($snapshot['plan_code']);
+            self::assertFalse($snapshot['allows_roleplay']);
+            self::assertFalse($snapshot['allows_free_speech']);
+            self::assertSame([], $snapshot['allowed_session_parts']);
             self::assertSame(2, $snapshot['max_level_number']);
-            self::assertTrue($snapshot['allows_roleplay']);
-            self::assertSame(300, $snapshot['live_ai_cap_seconds']);
-            self::assertSame(300, $snapshot['live_ai_seconds_remaining']);
-            $access->assertLevel($learner, 2);
-            $access->assertRoleplay($learner);
 
             try {
-                $access->assertLevel($learner, 3);
-                self::fail('Level 3 should be locked on demo.');
+                $access->assertFreeSpeech($learner);
+                self::fail('Free speech should be locked without a grant.');
             } catch (EntitlementDenied $denied) {
-                self::assertSame(EntitlementDenied::LEVEL_LOCKED, $denied->messageKey);
-            }
-
-            $chargeKey = (string) Str::ulid();
-            $access->consumeLiveAi($learner, $chargeKey, 300);
-            $access->consumeLiveAi($learner, $chargeKey, 300);
-            $after = $access->snapshot($learner);
-            self::assertSame(0, $after['live_ai_seconds_remaining']);
-
-            try {
-                $access->consumeLiveAi($learner, (string) Str::ulid(), 1);
-                self::fail('Exhausted demo AI should deny.');
-            } catch (EntitlementDenied $denied) {
-                self::assertSame(EntitlementDenied::DEMO_AI_EXHAUSTED, $denied->messageKey);
+                self::assertSame(EntitlementDenied::FREE_SPEECH_LOCKED, $denied->messageKey);
             }
         } finally {
             $this->app->make(OrganizationContextManager::class)->clear();
+        }
+    }
+
+    public function test_demo_checkout_grants_five_day_start_without_free_speech(): void
+    {
+        [$learner, $context] = $this->learner();
+        $manager = $this->app->make(OrganizationContextManager::class);
+        $manager->activate($context);
+
+        try {
+            $planId = DB::table('entitlement_plans')
+                ->where('organization_id', $context->organizationId)
+                ->where('code', DirectPlanDefaults::DEMO)
+                ->value('id');
+            self::assertIsString($planId);
+            $checkout = $this->app->make(LearnerSubscriptionService::class)->checkout(
+                $learner,
+                $planId,
+                (string) Str::ulid(),
+            );
+            self::assertSame('completed', $checkout['status']);
+            self::assertSame(300, $checkout['amount_ex_gst_paise']);
+            self::assertSame(54, $checkout['gst_paise']);
+            self::assertSame(354, $checkout['total_paise']);
+
+            $access = $this->app->make(EntitlementAccess::class);
+            $snapshot = $access->snapshot($learner);
+            self::assertSame(DirectPlanDefaults::DEMO, $snapshot['plan_code']);
+            self::assertSame('5-day start', $snapshot['plan_name']);
+            self::assertTrue($snapshot['is_demo']);
+            self::assertFalse($snapshot['allows_roleplay']);
+            self::assertFalse($snapshot['allows_free_speech']);
+            self::assertSame(DirectPlanDefaults::DEMO_SESSION_PARTS, $snapshot['allowed_session_parts']);
+            self::assertNull($snapshot['live_ai_cap_seconds']);
+            self::assertNull($snapshot['live_ai_seconds_remaining']);
+            $access->assertLevel($learner, 2);
+            $access->assertSessionPart($learner, 'introduction');
+            $access->assertSessionPart($learner, 'practice');
+
+            try {
+                $access->assertSessionPart($learner, 'conversation');
+                self::fail('Conversation should be locked on the 5-day start.');
+            } catch (EntitlementDenied $denied) {
+                self::assertSame(EntitlementDenied::SESSION_LOCKED, $denied->messageKey);
+            }
+
+            try {
+                $access->assertRoleplay($learner);
+                self::fail('Role-play should be locked on the 5-day start.');
+            } catch (EntitlementDenied $denied) {
+                self::assertSame(EntitlementDenied::ROLEPLAY_LOCKED, $denied->messageKey);
+            }
+        } finally {
+            $manager->clear();
+        }
+    }
+
+    public function test_demo_ask_ai_tutor_drill_does_not_require_free_speech(): void
+    {
+        [$learner, $context] = $this->learner();
+        $manager = $this->app->make(OrganizationContextManager::class);
+        $manager->activate($context);
+
+        try {
+            $planId = DB::table('entitlement_plans')
+                ->where('organization_id', $context->organizationId)
+                ->where('code', DirectPlanDefaults::DEMO)
+                ->value('id');
+            self::assertIsString($planId);
+            $this->app->make(LearnerSubscriptionService::class)->checkout(
+                $learner,
+                $planId,
+                (string) Str::ulid(),
+            );
+
+            $sessions = $this->app->make(ConversationSessionService::class);
+            $drill = new LessonDrillContext(
+                levelNumber: 1,
+                partId: 'introduction',
+                conceptKey: 'can',
+                communicationFunction: 'ability_and_permission',
+                talkScenario: 'Ask for permission.',
+                targetPatterns: ['I can + base verb.', 'Can I + base verb?'],
+                elicitationGoals: ['Ask one Can I…? question.'],
+            );
+            $session = $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'past-tense-skill-focus-prototype',
+                coachingMode: 'tutor',
+                uiLocale: 'kn-IN',
+                idempotencyKey: (string) Str::uuid(),
+                lessonDrill: $drill,
+            );
+            self::assertSame('tutor', $session['coaching_mode']);
+            self::assertSame(
+                'can',
+                DB::table('conversation_lesson_drills')
+                    ->where('conversation_session_id', $session['id'])
+                    ->value('concept_key'),
+            );
+
+            $turn = $this->app->make(ConversationTurnService::class)->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'Tell me about your weekend.',
+                idempotencyKey: (string) Str::uuid(),
+            );
+            self::assertSame('completed', $turn['status']);
+            self::assertStringContainsString('Can I drink water', $turn['assistant_reply']);
+            self::assertStringNotContainsString('Do not start a free conversation', $turn['assistant_reply']);
+
+            try {
+                $sessions->start(
+                    learner: $learner,
+                    personaKey: 'patient-friend-prototype',
+                    scenarioKey: 'everyday-friend-prototype',
+                    coachingMode: 'gentle',
+                    uiLocale: 'kn-IN',
+                    idempotencyKey: (string) Str::uuid(),
+                );
+                self::fail('Everyday free speech should stay locked on the 5-day start.');
+            } catch (EntitlementDenied $denied) {
+                self::assertSame(EntitlementDenied::FREE_SPEECH_LOCKED, $denied->messageKey);
+            }
+        } finally {
+            $manager->clear();
         }
     }
 
@@ -86,7 +202,6 @@ final class DirectEntitlementTest extends TestCase
         $manager->activate($context);
 
         try {
-            $this->app->make(EntitlementAccess::class)->snapshot($learner);
             $planId = DB::table('entitlement_plans')
                 ->where('organization_id', $context->organizationId)
                 ->where('code', DirectPlanDefaults::MONTHLY_MODULES)
@@ -98,20 +213,21 @@ final class DirectEntitlementTest extends TestCase
                 (string) Str::ulid(),
             );
             self::assertSame('completed', $checkout['status']);
-            self::assertSame(35000, $checkout['amount_ex_gst_paise']);
-            self::assertSame(6300, $checkout['gst_paise']);
-            self::assertSame(41300, $checkout['total_paise']);
+            self::assertSame(30000, $checkout['amount_ex_gst_paise']);
+            self::assertSame(5400, $checkout['gst_paise']);
+            self::assertSame(35400, $checkout['total_paise']);
             $snapshot = $this->app->make(EntitlementAccess::class)->snapshot($learner);
             self::assertSame(DirectPlanDefaults::MONTHLY_MODULES, $snapshot['plan_code']);
-            self::assertSame(DirectPlanDefaults::MODULES_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
-            self::assertSame(DirectPlanDefaults::MODULES_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_seconds_remaining']);
+            self::assertSame(DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
+            self::assertSame(DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_seconds_remaining']);
             self::assertNull($snapshot['max_level_number']);
             self::assertFalse($snapshot['allows_roleplay']);
+            self::assertTrue($snapshot['allows_free_speech']);
             $this->app->make(EntitlementAccess::class)->assertLevel($learner, 17);
 
             try {
                 $this->app->make(EntitlementAccess::class)->assertRoleplay($learner);
-                self::fail('Role-play should be locked on ₹350.');
+                self::fail('Role-play should be locked on Premium features.');
             } catch (EntitlementDenied $denied) {
                 self::assertSame(EntitlementDenied::ROLEPLAY_LOCKED, $denied->messageKey);
             }
@@ -140,7 +256,7 @@ final class DirectEntitlementTest extends TestCase
             $this->app->make(EntitlementAccess::class)->assertRoleplay($learner);
             $this->app->make(EntitlementAccess::class)->assertLevel($learner, 17);
             $snapshot = $this->app->make(EntitlementAccess::class)->snapshot($learner);
-            self::assertSame(DirectPlanDefaults::PREMIUM_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
+            self::assertSame(DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS, $snapshot['live_ai_cap_seconds']);
         } finally {
             $manager->clear();
         }
@@ -189,7 +305,7 @@ final class DirectEntitlementTest extends TestCase
             self::assertIsString($modulesId);
             self::assertIsString($talkId);
             $subscriptions->checkout($learner, $modulesId, (string) Str::ulid());
-            $access->consumeLiveAi($learner, (string) Str::ulid(), DirectPlanDefaults::MODULES_LIVE_AI_CAP_SECONDS);
+            $access->consumeLiveAi($learner, (string) Str::ulid(), DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS);
             self::assertSame(0, $access->snapshot($learner)['live_ai_seconds_remaining']);
 
             try {
@@ -207,7 +323,7 @@ final class DirectEntitlementTest extends TestCase
             self::assertSame(DirectPlanDefaults::MONTHLY_MODULES, $afterPack['plan_code']);
             self::assertFalse($afterPack['allows_roleplay']);
             self::assertSame(
-                DirectPlanDefaults::MODULES_LIVE_AI_CAP_SECONDS + DirectPlanDefaults::TALK_PACK_30_SECONDS,
+                DirectPlanDefaults::PAID_LIVE_AI_CAP_SECONDS + DirectPlanDefaults::TALK_PACK_30_SECONDS,
                 $afterPack['live_ai_cap_seconds'],
             );
             self::assertSame(DirectPlanDefaults::TALK_PACK_30_SECONDS, $afterPack['live_ai_seconds_remaining']);
@@ -225,7 +341,6 @@ final class DirectEntitlementTest extends TestCase
         $manager->activate($context);
 
         try {
-            $this->app->make(EntitlementAccess::class)->snapshot($learner);
             $talkId = DB::table('entitlement_plans')
                 ->where('organization_id', $context->organizationId)
                 ->where('code', DirectPlanDefaults::TALK_PACK_60)
@@ -238,7 +353,7 @@ final class DirectEntitlementTest extends TestCase
                     $talkId,
                     (string) Str::ulid(),
                 );
-                self::fail('Demo must not buy talk packs.');
+                self::fail('Talk packs require an active paid month.');
             } catch (EntitlementDenied $denied) {
                 self::assertSame(EntitlementDenied::TALK_PACK_REQUIRES_PAID, $denied->messageKey);
             }
@@ -254,7 +369,6 @@ final class DirectEntitlementTest extends TestCase
         $manager->activate($context);
 
         try {
-            $this->access()->snapshot($learner);
             $plan = DB::table('entitlement_plans')
                 ->where('organization_id', $context->organizationId)
                 ->where('code', DirectPlanDefaults::TALK_PACK_30)

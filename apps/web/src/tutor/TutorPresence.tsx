@@ -21,6 +21,9 @@ export interface TutorPresenceProps {
   readonly mood?: TutorMood
   readonly size?: 'sm' | 'md' | 'lg' | 'hero'
   readonly showName?: boolean
+  /** Accepted for local soft-launch callers; ignored by this chrome build. */
+  readonly enableAvatar3d?: boolean
+  readonly avatarPlayback?: unknown
 }
 
 export function TutorPresence({

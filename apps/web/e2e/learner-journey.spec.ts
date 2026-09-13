@@ -26,6 +26,86 @@ const ids = {
   user: '01J10000000000000000000012',
 } as const
 
+test('keeps the Kannada Android Home compact, coach-led and accessible', async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 800, width: 360 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockLearnerApi(page, true)
+
+  await page.goto('/#home')
+
+  const locale = page.locator('#interface-locale')
+  await locale.selectOption('en-IN')
+  await locale.selectOption(DEFAULT_LOCALE)
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+
+  const home = page.locator('.learner-home')
+  const action = home.locator('.learner-home__action')
+  const continueButton = action.getByRole('button', {
+    name: message('learner.home.continue'),
+  })
+
+  await expect(
+    home.getByRole('heading', {
+      name: message('learner.home.title'),
+    }),
+  ).toBeVisible()
+  await expect(locale).toHaveValue(DEFAULT_LOCALE)
+  await expect(page.locator('html')).toHaveAttribute('lang', DEFAULT_LOCALE)
+  await expect(action.locator('.tutor-presence__face')).toBeVisible()
+  await expect(action.getByText(message('tutor.name'))).toBeVisible()
+  await expect(home.locator('.ge-button--primary')).toHaveCount(1)
+  await expect(page.locator('.tutor-home-hero')).toHaveCount(1)
+
+  const metrics = await page.evaluate(() => {
+    const button = document.querySelector<HTMLElement>(
+      '.learner-home__continue',
+    )
+    const title = document.querySelector<HTMLElement>(
+      '.learner-home__action-title',
+    )
+    const portrait = document.querySelector<HTMLElement>(
+      '.learner-home__coach .tutor-presence__face',
+    )
+    const navigationLinks = [
+      ...document.querySelectorAll<HTMLElement>(
+        '.ge-primary-navigation__link',
+      ),
+    ]
+
+    return {
+      buttonHeight: button?.getBoundingClientRect().height ?? 0,
+      hasHorizontalOverflow:
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+      navigationTargetHeights: navigationLinks.map(
+        (link) => link.getBoundingClientRect().height,
+      ),
+      portraitWidth: portrait?.getBoundingClientRect().width ?? 0,
+      titleFontSize: Number.parseFloat(
+        title === null ? '0' : getComputedStyle(title).fontSize,
+      ),
+    }
+  })
+
+  expect(metrics.hasHorizontalOverflow).toBe(false)
+  expect(metrics.buttonHeight).toBeGreaterThanOrEqual(44)
+  expect(metrics.buttonHeight).toBeLessThanOrEqual(56)
+  expect(metrics.titleFontSize).toBeLessThanOrEqual(28)
+  expect(metrics.portraitWidth).toBeGreaterThanOrEqual(56)
+  expect(metrics.portraitWidth).toBeLessThanOrEqual(80)
+  expect(
+    metrics.navigationTargetHeights.every((height) => height >= 44),
+  ).toBe(true)
+  await expect(continueButton).toBeEnabled()
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
 test('completes the contract-stubbed online no-AI learner journey', async ({
   page,
 }) => {
@@ -773,6 +853,7 @@ async function installDeniedMicrophone(page: Page): Promise<void> {
 function home(onboarded: boolean) {
   return {
     due_review: null,
+    upcoming_reviews: [],
     enrollment: onboarded
       ? { id: ids.enrollment, status: 'active' }
       : null,

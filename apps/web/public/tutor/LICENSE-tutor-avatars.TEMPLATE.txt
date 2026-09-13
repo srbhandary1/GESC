@@ -1,0 +1,15 @@
+Licensed 3D tutor characters for Global Spoken English App
+==========================================================
+
+Fill this file after purchase. Keep it next to the avatar GLB files.
+Do not commit the GLB binaries to git.
+This is a public grant record. Do not include order IDs, invoices, email
+addresses, payment details, or other account information.
+
+Vendor / store:
+Product names / SKUs:
+Purchase date:
+License type (commercial app / redistribution / modification):
+Morph set (ARKit / Azure visemes / other names):
+Licensed to: Global Spoken English App (this repository)
+Notes:

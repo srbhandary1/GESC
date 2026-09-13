@@ -108,10 +108,21 @@ ensure_services() {
   (cd "${ROOT_DIR}" && docker compose up -d --wait postgres redis object-storage mail otp-stub)
 }
 
+stage_android_download() {
+  local apk="${ROOT_DIR}/apps/web/public/downloads/global-spoken-english-android.apk"
+  local staged="${WEB_DIST}/downloads/global-spoken-english-android.apk"
+
+  if [[ ! -f "${apk}" ]]; then
+    return 0
+  fi
+
+  mkdir -p "${WEB_DIST}/downloads"
+  install -m 0644 "${apk}" "${staged}"
+}
+
 ensure_web_dist() {
-  # Invite-only soft-launch uses the ordinary approved-only web build. Rebuild
-  # whenever a served source/config/catalogue input changes; an old dist stamp
-  # must never hide a newer interface implementation.
+  # Invite-only soft-launch uses an explicit translation-preview build so draft
+  # Kannada and other pending catalogues render with the visible preview notice.
   local stamp="${WEB_DIST}/.soft-launch-web-build"
   local current_fingerprint
   local stamped_fingerprint=""
@@ -123,19 +134,33 @@ ensure_web_dist() {
     require_php
     if [[ -x "${PNPM_BIN}" ]]; then
       (cd "${ROOT_DIR}" && PATH="$(dirname "${NODE_BIN}"):${PATH}" \
+        env -u VITE_MOBILE_API_ORIGIN \
+        -u VITE_MOBILE_OAUTH_CLIENT_ID \
+        -u VITE_MOBILE_OAUTH_REDIRECT_URI \
+        -u VITE_MOBILE_OAUTH_AUTHORIZE_URL \
+        -u VITE_MOBILE_OAUTH_TOKEN_URL \
+        -u GE_ANDROID_WEB_BUNDLE \
+        VITE_UI_TRANSLATION_PREVIEW=true \
         "${PNPM_BIN}" --filter @global-english/web build)
     else
-      (cd "${ROOT_DIR}" && pnpm --filter @global-english/web build)
+      (cd "${ROOT_DIR}" && env -u VITE_MOBILE_API_ORIGIN \
+        -u VITE_MOBILE_OAUTH_CLIENT_ID \
+        -u VITE_MOBILE_OAUTH_REDIRECT_URI \
+        -u VITE_MOBILE_OAUTH_AUTHORIZE_URL \
+        -u VITE_MOBILE_OAUTH_TOKEN_URL \
+        -u GE_ANDROID_WEB_BUNDLE \
+        VITE_UI_TRANSLATION_PREVIEW=true \
+        pnpm --filter @global-english/web build)
     fi
     local built_fingerprint
     built_fingerprint="$(web_build_fingerprint)"
     [[ "${built_fingerprint}" == "${current_fingerprint}" ]] \
       || die "Web inputs changed during the build; restart to produce one coherent release."
     printf '%s\n' "${built_fingerprint}" >"${stamp}"
-    rm -f \
-      "${WEB_DIST}/.soft-launch-ui-approved-only" \
-      "${WEB_DIST}/.soft-launch-ui-preview"
+    printf 'soft-launch-ui-preview\n' >"${WEB_DIST}/.soft-launch-ui-preview"
+    rm -f "${WEB_DIST}/.soft-launch-ui-approved-only"
   fi
+  stage_android_download
   [[ -f "${WEB_DIST}/index.html" ]] || die "Web dist missing at ${WEB_DIST}"
 }
 
@@ -291,9 +316,9 @@ start_proxy() {
 }
 
 start_public_http() {
-  # The static-IP edge either terminates stable public TLS or redirects HTTP to
-  # the current temporary HTTPS origin. It never serves authenticated HTTP
-  # once a public HTTPS origin exists.
+  # Staff Tailscale/LAN testing: GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true serves the
+  # SPA on :8080. Otherwise HTML 307-redirects to the live HTTPS origin while
+  # /api and /oauth reverse-proxy for the Android HTTP origin.
   require_caddy
   stop_pidfile public-http
   ensure_web_dist
@@ -310,7 +335,7 @@ start_public_http() {
   write_soft_launch_public_http_config \
     "${RUNTIME_DIR}/env/Caddyfile.public" \
     "${PUBLIC_HTTP_PORT}" \
-    "${API_PORT}" \
+    "${GE_SOFT_LAUNCH_API_PORT:-${API_PORT}}" \
     "${WEB_DIST}" \
     "${APP_URL:-}" \
     "${stable_host}" \
@@ -392,7 +417,7 @@ overrides = {
     "SESSION_SECURE_COOKIE": "false",
     "SESSION_COOKIE": "global_english_session",
     "SESSION_SAME_SITE": "lax",
-    "SANCTUM_STATEFUL_DOMAINS": f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174",
+    "SANCTUM_STATEFUL_DOMAINS": f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174,100.89.51.18:{public_http_port},real-studioz.taila69adf.ts.net:{public_http_port},real-studioz.taila69adf.ts.net",
 }
 if stable_host:
     overrides["SESSION_SECURE_COOKIE"] = "true"
@@ -545,7 +570,7 @@ case "${MODE}" in
         "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
     else
       printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
-      printf 'Static-IP entry: http://127.0.0.1:%s (redirects to HTTPS when configured)\n' \
+      printf 'Static-IP entry: http://127.0.0.1:%s (HTML redirects to HTTPS; /api and /oauth reverse-proxy)\n' \
         "${PUBLIC_HTTP_PORT}"
     fi
     ;;
@@ -584,6 +609,19 @@ case "${MODE}" in
   status)
     status
     ;;
+  reload-public-http)
+    source_soft_launch_env
+    ensure_api_listen_port
+    start_public_http
+    printf 'public HTTP listener reloaded on :%s\n' "${PUBLIC_HTTP_PORT}"
+    ;;
+  reload-api)
+    source_soft_launch_env
+    ensure_api_listen_port
+    stop_pidfile api
+    start_api
+    wait_health
+    ;;
   refresh-web)
     ensure_web_dist
     printf 'web build: %s\n' "$(web_build_fingerprint)"
@@ -602,6 +640,6 @@ case "${MODE}" in
     supervise
     ;;
   *)
-    die "Usage: $0 {start|stop|restart|status|refresh-web|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
+    die "Usage: $0 {start|stop|restart|status|refresh-web|reload-public-http|reload-api|tunnel|tunnel-stop|configure-stable-host|health|backup|supervise}"
     ;;
 esac

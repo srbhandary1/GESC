@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Conversation\Voice;
 
 use App\Conversation\ConversationCommandIdempotency;
+use App\Conversation\Observability\ProviderAttemptObservationRecorder;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
@@ -32,6 +33,7 @@ final readonly class VoiceRecordingService
         private RecordedSpeechToTextProvider $speechToText,
         private VoiceDeletionService $deletions,
         private EntitlementAccess $entitlements,
+        private ProviderAttemptObservationRecorder $observations,
     ) {}
 
     /**
@@ -570,8 +572,10 @@ final readonly class VoiceRecordingService
         ?string $failureCode,
         ProviderUsage $usage,
     ): void {
+        $runId = (string) Str::ulid();
+        $recordedAt = Date::now()->toImmutable();
         DB::table('voice_provider_runs')->insert([
-            'id' => (string) Str::ulid(),
+            'id' => $runId,
             'organization_id' => $row->organization_id,
             'voice_recording_id' => $row->id,
             'conversation_session_id' => $row->conversation_session_id,
@@ -589,8 +593,21 @@ final readonly class VoiceRecordingService
                 0,
                 $usage->estimatedCostMicrounits,
             ),
-            'recorded_at' => Date::now(),
+            'recorded_at' => $recordedAt,
         ]);
+
+        $this->observations->recordVoiceRun(
+            organizationId: (string) $row->organization_id,
+            runId: $runId,
+            sessionId: (string) $row->conversation_session_id,
+            stage: 'stt',
+            semanticOperation: 'voice_recording.transcribe',
+            routeRole: 'primary',
+            resultStatus: $status,
+            safeFailureCode: $failureCode,
+            usage: $usage,
+            recordedAt: $recordedAt,
+        );
     }
 
     private function historyActive(

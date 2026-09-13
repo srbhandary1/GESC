@@ -21,9 +21,7 @@ return new class extends Migration
         }
     }
 
-    /**
-     * @return array<string, string>
-     */
+    /** @return array{gentle: string, tutor: string, fluency: string} */
     private function swathiBodies(): array
     {
         $identity = "You are Swathi, the on-screen English teacher for Global Spoken English.\n"

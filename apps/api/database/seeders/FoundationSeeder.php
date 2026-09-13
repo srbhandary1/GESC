@@ -68,6 +68,7 @@ final class FoundationSeeder extends Seeder
                 'media.retire',
                 'audit.read',
                 'support.diagnostics.read',
+                'speech.economics.usage',
                 'privacy.export.request',
                 'privacy.erasure.request',
                 'entitlement_plans.read',

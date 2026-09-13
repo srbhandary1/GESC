@@ -22,17 +22,16 @@ final class DirectPlanDefaults
 
     public const string BILLING_TALK_PACK = 'talk_pack';
 
+    public const int CATALOG_VERSION = 2;
+
     public const string PLACEHOLDER_GSTIN = '29AAAAA0000A1Z5';
 
     public const int PLACEHOLDER_GST_RATE_BPS = 1800;
 
-    public const int DEMO_DURATION_HOURS = 48;
+    /** Five days expressed as hours for the existing `hours` billing period. */
+    public const int DEMO_DURATION_HOURS = 120;
 
-    public const int DEMO_LIVE_AI_CAP_SECONDS = 300;
-
-    public const int MODULES_LIVE_AI_CAP_SECONDS = 2400;
-
-    public const int PREMIUM_LIVE_AI_CAP_SECONDS = 5400;
+    public const int PAID_LIVE_AI_CAP_SECONDS = 7200;
 
     public const int TALK_PACK_30_SECONDS = 1800;
 
@@ -43,6 +42,17 @@ final class DirectPlanDefaults
     public const int TALK_PACK_MAX_DAYS = 30;
 
     public const int DEMO_MAX_LEVEL = 2;
+
+    /** @var list<string> */
+    public const array DEMO_SESSION_PARTS = ['introduction', 'practice'];
+
+    /** @var list<string> */
+    public const array PAID_SESSION_PARTS = [
+        'introduction',
+        'practice',
+        'conversation',
+        'interaction',
+    ];
 
     /**
      * @return list<array{
@@ -62,35 +72,35 @@ final class DirectPlanDefaults
         return [
             [
                 'code' => self::DEMO,
-                'name' => 'Two-day demo',
-                'amount_ex_gst_paise' => 0,
+                'name' => '5-day start',
+                'amount_ex_gst_paise' => 300,
                 'billing_period' => 'hours',
                 'duration_value' => self::DEMO_DURATION_HOURS,
-                'allows_roleplay' => true,
+                'allows_roleplay' => false,
                 'max_level_number' => self::DEMO_MAX_LEVEL,
-                'live_ai_cap_seconds' => self::DEMO_LIVE_AI_CAP_SECONDS,
+                'live_ai_cap_seconds' => null,
                 'is_demo' => true,
             ],
             [
                 'code' => self::MONTHLY_MODULES,
-                'name' => 'Modules',
-                'amount_ex_gst_paise' => 35000,
+                'name' => 'Premium features',
+                'amount_ex_gst_paise' => 30000,
                 'billing_period' => 'calendar_month',
                 'duration_value' => 1,
                 'allows_roleplay' => false,
                 'max_level_number' => null,
-                'live_ai_cap_seconds' => self::MODULES_LIVE_AI_CAP_SECONDS,
+                'live_ai_cap_seconds' => self::PAID_LIVE_AI_CAP_SECONDS,
                 'is_demo' => false,
             ],
             [
                 'code' => self::MONTHLY_ROLEPLAY,
-                'name' => 'Premium',
+                'name' => 'Premium with Role-play',
                 'amount_ex_gst_paise' => 50000,
                 'billing_period' => 'calendar_month',
                 'duration_value' => 1,
                 'allows_roleplay' => true,
                 'max_level_number' => null,
-                'live_ai_cap_seconds' => self::PREMIUM_LIVE_AI_CAP_SECONDS,
+                'live_ai_cap_seconds' => self::PAID_LIVE_AI_CAP_SECONDS,
                 'is_demo' => false,
             ],
             [
@@ -139,11 +149,24 @@ final class DirectPlanDefaults
     public static function membershipLiveAiCap(string $code): ?int
     {
         return match ($code) {
-            self::DEMO => self::DEMO_LIVE_AI_CAP_SECONDS,
-            self::MONTHLY_MODULES => self::MODULES_LIVE_AI_CAP_SECONDS,
-            self::MONTHLY_ROLEPLAY => self::PREMIUM_LIVE_AI_CAP_SECONDS,
+            self::MONTHLY_MODULES, self::MONTHLY_ROLEPLAY => self::PAID_LIVE_AI_CAP_SECONDS,
             default => null,
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function allowedSessionPartsFor(stdClass $plan): array
+    {
+        return (bool) $plan->is_demo
+            ? self::DEMO_SESSION_PARTS
+            : self::PAID_SESSION_PARTS;
+    }
+
+    public static function allowsFreeSpeechFor(stdClass $plan): bool
+    {
+        return ! (bool) $plan->is_demo;
     }
 
     private function __construct() {}

@@ -63,7 +63,7 @@ final readonly class OperatorOverviewQuery
             $navigation[] = 'learning';
         }
 
-        if ($access['support']) {
+        if ($access['support'] || $access['speech_economics']) {
             $navigation[] = 'operations';
         }
 
@@ -87,6 +87,10 @@ final readonly class OperatorOverviewQuery
 
         if ($access['support']) {
             $panels[] = 'support_diagnostics';
+        }
+
+        if ($access['speech_economics']) {
+            $panels[] = 'speech_economics';
         }
 
         if ($access['audit']) {

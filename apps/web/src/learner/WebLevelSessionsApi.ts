@@ -5,6 +5,8 @@ import {
 import type { FriendSession } from '../conversation/ConversationJourneyApi'
 import type {
   CheckSubmissionResult,
+  LevelCheckpointDetail,
+  LevelCheckpointSubmissionResult,
   LevelSessionsApi,
   LevelSessionsList,
   LevelSessionDetail,
@@ -119,6 +121,63 @@ export class WebLevelSessionsApi implements LevelSessionsApi {
         body: JSON.stringify({
           idempotency_key: idempotencyKey,
           ui_locale: uiLocale,
+        }),
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
+  checkpointDetail(levelNumber: number, signal?: AbortSignal) {
+    return this.#json<LevelCheckpointDetail>(
+      `/me/levels/${levelNumber}/checkpoint`,
+      { signal },
+    )
+  }
+
+  offlineLevelBundle(levelNumber: number, signal?: AbortSignal) {
+    return this.#json<import('../offline/OfflineLearningStore').OfflineLevelBundle>(
+      `/me/levels/${levelNumber}/offline-bundle`,
+      { signal },
+    )
+  }
+
+  submitOfflineLevelCheckpoint(
+    bundleId: string,
+    lease: string,
+    levelNumber: number,
+    answers: Record<string, number>,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ) {
+    return this.#mutation<LevelCheckpointSubmissionResult>(
+      '/offline-level-checkpoint-submissions',
+      {
+        body: JSON.stringify({
+          answers,
+          bundle_id: bundleId,
+          idempotency_key: idempotencyKey,
+          lease,
+          level_number: levelNumber,
+        }),
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
+  submitCheckpoint(
+    levelNumber: number,
+    answers: Record<string, number>,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ) {
+    return this.#mutation<LevelCheckpointSubmissionResult>(
+      `/me/levels/${levelNumber}/checkpoint-submissions`,
+      {
+        body: JSON.stringify({
+          answers,
+          idempotency_key: idempotencyKey,
         }),
         method: 'POST',
         signal,

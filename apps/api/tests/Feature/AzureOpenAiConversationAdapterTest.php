@@ -179,6 +179,20 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         $this->assertSame('confidence-gpt-dev', $result->usage()->modelVersion);
         $this->assertSame(120, $result->usage()->inputUnits);
         $this->assertSame(80, $result->usage()->outputUnits);
+        $this->assertSame(
+            [
+                ['input', 'provider_input_tokens', 120],
+                ['output', 'provider_output_tokens', 80],
+            ],
+            array_map(
+                static fn ($component): array => [
+                    $component->componentKey,
+                    $component->unitKind,
+                    $component->quantity,
+                ],
+                $result->usage()->normalizedBillableComponents(),
+            ),
+        );
 
         Http::assertSent(function (Request $request): bool {
             $payload = $request->data();
@@ -191,6 +205,182 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
                 && str_contains((string) ($payload['messages'][0]['content'] ?? ''), 'Speak only as Swathi')
                 && ! str_contains($request->body(), 'not-a-real-provider-key');
         });
+    }
+
+    public function test_streaming_chat_records_first_content_and_completion_separately(): void
+    {
+        $this->configureAuthorizedBoundary();
+        config()->set('conversation.azure_openai.stream_responses', true);
+        Http::preventStrayRequests();
+
+        $modelJson = json_encode([
+            'understood_intent' => 'share_about_work',
+            'assistant_reply_en' => 'Thank you. What happened next?',
+            'safety_state' => 'ok',
+            'priority_correction' => null,
+        ], JSON_THROW_ON_ERROR);
+        $splitAt = intdiv(strlen($modelJson), 2);
+        $stream = $this->sse([
+            ['choices' => [[
+                'index' => 0,
+                'delta' => ['role' => 'assistant'],
+            ]]],
+            ['choices' => [[
+                'index' => 0,
+                'delta' => ['content' => substr($modelJson, 0, $splitAt)],
+            ]]],
+            ['choices' => [[
+                'index' => 0,
+                'delta' => ['content' => substr($modelJson, $splitAt)],
+                'finish_reason' => 'stop',
+            ]]],
+            [
+                'choices' => [],
+                'usage' => [
+                    'prompt_tokens' => 120,
+                    'completion_tokens' => 80,
+                ],
+            ],
+        ]);
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                $stream,
+                200,
+                ['Content-Type' => 'text/event-stream'],
+            ),
+        ]);
+
+        $result = $this->app->make(AzureOpenAiConversationModelProvider::class)
+            ->respond($this->sampleRequest());
+
+        $this->assertSame('share_about_work', $result->understoodIntent);
+        $this->assertSame(
+            'Thank you. What happened next?',
+            $result->assistantReply,
+        );
+        $this->assertNotNull($result->usage()->connectionLatencyMilliseconds);
+        $this->assertNotNull($result->usage()->firstResultLatencyMilliseconds);
+        $this->assertLessThanOrEqual(
+            $result->usage()->latencyMilliseconds,
+            $result->usage()->firstResultLatencyMilliseconds,
+        );
+        $this->assertSame(120, $result->usage()->inputUnits);
+        $this->assertSame(80, $result->usage()->outputUnits);
+        $this->assertCount(
+            2,
+            $result->usage()->normalizedBillableComponents(),
+        );
+
+        Http::assertSent(static function (Request $request): bool {
+            $payload = $request->data();
+
+            return ($payload['stream'] ?? null) === true
+                && ($payload['stream_options']['include_usage'] ?? null) === true
+                && $request->hasHeader('Accept', 'text/event-stream');
+        });
+    }
+
+    public function test_stream_without_provider_usage_is_not_priced_as_tokens(): void
+    {
+        $this->configureAuthorizedBoundary();
+        config()->set('conversation.azure_openai.stream_responses', true);
+        Http::preventStrayRequests();
+
+        $modelJson = json_encode([
+            'understood_intent' => 'share_about_work',
+            'assistant_reply_en' => 'Thank you. Please continue.',
+            'safety_state' => 'ok',
+            'priority_correction' => null,
+        ], JSON_THROW_ON_ERROR);
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                $this->sse([[
+                    'choices' => [[
+                        'index' => 0,
+                        'delta' => ['content' => $modelJson],
+                        'finish_reason' => 'stop',
+                    ]],
+                ]]),
+                200,
+                ['Content-Type' => 'text/event-stream'],
+            ),
+        ]);
+
+        $result = $this->app->make(AzureOpenAiConversationModelProvider::class)
+            ->respond($this->sampleRequest());
+
+        $this->assertSame('estimated_words', $result->usage()->inputUnitKind);
+        $this->assertSame('estimated_words', $result->usage()->outputUnitKind);
+        $this->assertSame(0, $result->usage()->estimatedCostMicrounits);
+        $this->assertSame(
+            [],
+            $result->usage()->normalizedBillableComponents(),
+        );
+    }
+
+    public function test_incomplete_stream_fails_closed_without_leaking_content(): void
+    {
+        $this->configureAuthorizedBoundary();
+        config()->set('conversation.azure_openai.stream_responses', true);
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                'data: {"choices":[{"index":0,"delta":{"content":"private partial"}}]}'
+                    ."\n\n",
+                200,
+                ['Content-Type' => 'text/event-stream'],
+            ),
+        ]);
+
+        try {
+            $this->app->make(AzureOpenAiConversationModelProvider::class)
+                ->respond($this->sampleRequest());
+            self::fail('Expected the incomplete stream to fail closed.');
+        } catch (ConversationProviderException $exception) {
+            $this->assertSame('provider_stream_incomplete', $exception->safeCode);
+            $this->assertTrue($exception->retryable);
+            $this->assertStringNotContainsString(
+                'private partial',
+                $exception->getMessage(),
+            );
+        }
+    }
+
+    public function test_stream_byte_limit_fails_closed_without_leaking_content(): void
+    {
+        $this->configureAuthorizedBoundary();
+        config()->set([
+            'conversation.azure_openai.stream_responses' => true,
+            'conversation.azure_openai.maximum_json_response_bytes' => 64,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                $this->sse([[
+                    'choices' => [[
+                        'index' => 0,
+                        'delta' => [
+                            'content' => 'private content that must never appear in an exception',
+                        ],
+                    ]],
+                ]]),
+                200,
+                ['Content-Type' => 'text/event-stream'],
+            ),
+        ]);
+
+        try {
+            $this->app->make(AzureOpenAiConversationModelProvider::class)
+                ->respond($this->sampleRequest());
+            self::fail('Expected the bounded stream to fail closed.');
+        } catch (ConversationProviderException $exception) {
+            $this->assertSame('provider_response_too_large', $exception->safeCode);
+            $this->assertFalse($exception->retryable);
+            $this->assertStringNotContainsString(
+                'private content',
+                $exception->getMessage(),
+            );
+        }
     }
 
     public function test_chat_completions_maps_unneeded_correction_to_null(): void
@@ -231,6 +421,71 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
             ->respond($this->sampleRequest());
 
         $this->assertNull($result->priorityCorrection);
+        $this->assertSame('estimated_words', $result->usage()->inputUnitKind);
+        $this->assertSame('estimated_words', $result->usage()->outputUnitKind);
+        $this->assertSame(0, $result->usage()->estimatedCostMicrounits);
+        $this->assertSame([], $result->usage()->normalizedBillableComponents());
+    }
+
+    public function test_lesson_drill_payload_is_sent_to_azure(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        $modelJson = json_encode([
+            'understood_intent' => 'lesson_drill_can',
+            'assistant_reply_en' => 'Say: I can speak English. Now you try.',
+            'safety_state' => 'ok',
+            'priority_correction' => [
+                'needed' => false,
+                'error_category' => 'none',
+                'correction_en' => 'none',
+                'explanation_l1' => 'none',
+                'explanation_locale' => 'kn-IN',
+                'retry_recommended' => false,
+            ],
+        ], JSON_THROW_ON_ERROR);
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                [
+                    'choices' => [[
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => $modelJson,
+                        ],
+                    ]],
+                ],
+                200,
+                ['Content-Type' => 'application/json'],
+            ),
+        ]);
+
+        $body = "You are a patient Friend coach.\nReturn structured JSON.";
+        $this->app->make(AzureOpenAiConversationModelProvider::class)
+            ->respond(new ConversationModelRequest(
+                interactionId: 'opaque-turn-id',
+                transcript: 'Tell me about your weekend.',
+                personaStyleCode: 'patient-friend-v1',
+                scenarioResponseCode: 'friend.skill-focus.past-simple.v1',
+                coachingMode: 'tutor',
+                uiLocale: 'kn-IN',
+                promptVersionId: (string) Str::ulid(),
+                promptBodySha256: hash('sha256', $body),
+                promptBody: $body,
+                lessonDrill: [
+                    'concept_key' => 'can',
+                    'target_patterns' => ['I can + base verb.', 'Can I + base verb?'],
+                ],
+            ));
+
+        Http::assertSent(function (Request $request): bool {
+            $payload = $request->data();
+            $user = (string) ($payload['messages'][1]['content'] ?? '');
+
+            return str_contains($user, 'grammar drill, not free conversation')
+                && str_contains($user, 'I can + base verb.')
+                && str_contains($user, '"concept_key":"can"')
+                && str_contains($user, 'one-pattern drill');
+        });
     }
 
     public function test_malformed_model_json_fails_closed_without_leaking_body(): void
@@ -354,6 +609,22 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         $this->temporaryFiles[] = $path;
 
         return $path;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $events
+     */
+    private function sse(array $events): string
+    {
+        $body = '';
+        foreach ($events as $event) {
+            $body .= 'data: '.json_encode(
+                $event,
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE,
+            )."\n\n";
+        }
+
+        return $body."data: [DONE]\n\n";
     }
 
     /**

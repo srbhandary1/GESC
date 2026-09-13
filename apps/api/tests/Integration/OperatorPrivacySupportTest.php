@@ -15,6 +15,9 @@ use App\Conversation\Voice\VoiceConsentService;
 use App\Conversation\Voice\VoiceDeletionService;
 use App\Conversation\Voice\VoiceRecordingService;
 use App\Conversation\Voice\VoiceSourceObjectStore;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\EntitlementAccess;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Models\AuthenticationSession;
 use App\Models\Membership;
 use App\Models\Organization;
@@ -114,7 +117,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             )
             ->assertJsonPath(
                 'summary.inventory_version',
-                'learner-privacy-v8',
+                'learner-privacy-v12',
             )
             ->assertJsonPath(
                 'summary.scope.membership_id',
@@ -147,6 +150,10 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
         self::assertContains('organization_administration_events', $recordClasses);
         self::assertContains('voice_source_objects', $recordClasses);
         self::assertContains('client_offline_records', $recordClasses);
+        self::assertContains('level_session_completions', $recordClasses);
+        self::assertContains('level_session_check_submissions', $recordClasses);
+        self::assertContains('level_checkpoint_attempts', $recordClasses);
+        self::assertContains('level_unlock_decisions', $recordClasses);
 
         $this->withHeaders([
             'Origin' => 'https://localhost',
@@ -186,7 +193,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             ->assertJsonPath('status', 'completed')
             ->assertJsonPath(
                 'outcome.inventory_version',
-                'learner-privacy-v8',
+                'learner-privacy-v12',
             )
             ->assertJsonPath('voice_recording_count', 0);
         $this->assertNoStore($erasure);
@@ -285,6 +292,19 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             $learnerContext,
             ['learning.participate'],
         );
+        $this->contexts()->run($learnerContext, function () use ($learner, $organization): void {
+            $this->app->make(EntitlementAccess::class)->snapshot($learner);
+            $planId = DB::table('entitlement_plans')
+                ->where('organization_id', $organization->getKey())
+                ->where('code', DirectPlanDefaults::MONTHLY_ROLEPLAY)
+                ->value('id');
+            self::assertIsString($planId);
+            $this->app->make(LearnerSubscriptionService::class)->checkout(
+                $learner,
+                $planId,
+                (string) Str::ulid(),
+            );
+        });
         $otherOrganization = $this->createOrganization(
             'Privacy Shared Identity Tenant',
         );

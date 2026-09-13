@@ -156,6 +156,94 @@ describe('local demo boundary', () => {
     ])
   })
 
+  it('lists all seventeen authored levels as available in demo', async () => {
+    const { levelSessionsApi } = createLocalDemoRuntime()
+    const { levels } = await levelSessionsApi.listLevels()
+
+    expect(levels).toHaveLength(17)
+    expect(levels.every((level) => level.availability === 'available')).toBe(
+      true,
+    )
+    expect(levels[16]?.concept_key).toBe('used_to')
+    await expect(levelSessionsApi.sessionDetail(14, 'introduction')).resolves
+      .toMatchObject({
+        level_number: 14,
+        part_id: 'introduction',
+        objective: expect.stringContaining('if clause'),
+      })
+  })
+
+  it('keeps Ask AI Tutor on the can grammar patterns instead of free speech', async () => {
+    const { conversationApi, levelSessionsApi } = createLocalDemoRuntime()
+    const detail = await levelSessionsApi.sessionDetail(1, 'introduction')
+    expect(detail.target_patterns).toEqual([
+      'I can + base verb.',
+      'I cannot + base verb.',
+      'Can I + base verb?',
+      'Yes, you can. / No, you cannot.',
+    ])
+
+    await levelSessionsApi.startConversation(
+      1,
+      'introduction',
+      'en-IN',
+      'demo-lesson-tutor',
+    )
+    const offTopic = await conversationApi.createTurn(
+      '01J30000000000000000000020',
+      { prototype_utterance: 'Tell me about your weekend.' },
+      'demo-lesson-turn',
+    )
+
+    expect(offTopic.understood_intent).toBe('lesson_drill_pattern_retry')
+    expect(offTopic.assistant_reply).toContain('I can drink water')
+    expect(offTopic.assistant_reply).toContain('Good try')
+    expect(offTopic.priority_correction?.retry_recommended).toBe(true)
+    expect(offTopic.assistant_reply).not.toContain('What happened next?')
+
+    const accepted = await conversationApi.createTurn(
+      '01J30000000000000000000020',
+      { prototype_utterance: 'I can drink water.' },
+      'demo-lesson-turn-2',
+    )
+    expect(accepted.understood_intent).toBe('lesson_drill_pattern_accepted')
+    expect(accepted.assistant_reply).toContain('I cannot drink water')
+    expect(accepted.assistant_reply).toContain('Your turn')
+
+    const second = await conversationApi.createTurn(
+      '01J30000000000000000000020',
+      { prototype_utterance: 'I cannot drink water.' },
+      'demo-lesson-turn-3',
+    )
+    expect(second.assistant_reply).toContain('Can I drink water')
+    expect(second.assistant_reply).not.toBe(accepted.assistant_reply)
+  })
+
+  it('keeps Conversation as free speech after an Introduction drill', async () => {
+    const { conversationApi, levelSessionsApi } = createLocalDemoRuntime()
+    await levelSessionsApi.startConversation(
+      1,
+      'introduction',
+      'en-IN',
+      'demo-lesson-tutor',
+    )
+    await levelSessionsApi.startConversation(
+      1,
+      'conversation',
+      'en-IN',
+      'demo-lesson-talk',
+    )
+    const turn = await conversationApi.createTurn(
+      '01J30000000000000000000020',
+      { prototype_utterance: 'Tell me about your weekend.' },
+      'demo-conversation-turn',
+    )
+
+    expect(turn.assistant_reply).toContain('What happened next')
+    expect(turn.assistant_reply).not.toContain('I cannot drink water')
+    expect(turn.assistant_reply).not.toContain('Now you try')
+  })
+
   it('answers curated beginner patterns with one gentle deterministic tip', async () => {
     const { conversationApi } = createLocalDemoRuntime()
     const session = await conversationApi.startSession(

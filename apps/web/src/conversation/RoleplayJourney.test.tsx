@@ -11,7 +11,12 @@ import type {
   VoiceConsents,
 } from './ConversationJourneyApi'
 import { RoleplayJourney } from './RoleplayJourney'
+import { playBase64Audio } from './playBase64Audio'
 import * as audioToPcmWav from './audioToPcmWav'
+
+vi.mock('./playBase64Audio', () => ({
+  playBase64Audio: vi.fn(async () => undefined),
+}))
 
 afterEach(() => {
   cleanup()
@@ -19,6 +24,143 @@ afterEach(() => {
 })
 
 describe('synthetic Role-play journey', () => {
+  it('keeps the tutor speaking and advances visemes during model audio', async () => {
+    const observe = fakeSession('observe')
+    let finishPlayback: (() => void) | undefined
+    vi.mocked(playBase64Audio).mockImplementationOnce(
+      async (_audio, _mimeType, options) =>
+        new Promise<void>((resolve) => {
+          options?.onStarted?.()
+          options?.onTimeUpdate?.(180)
+          finishPlayback = resolve
+        }),
+    )
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => observe),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+      synthesizeSpeech: vi.fn(async () => ({
+        model_audio_base64: 'QQ==',
+        model_audio_mime_type: 'audio/wav' as const,
+        model_avatar_viseme_timeline: {
+          source: 'text-duration-estimator-v1' as const,
+          duration_ms: 600,
+          frames: [
+            { offset_ms: 0, viseme_id: 6 },
+            { offset_ms: 180, viseme_id: 2 },
+            { offset_ms: 599, viseme_id: 0 },
+          ],
+        },
+        playback_available: true,
+        rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+      })),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <RoleplayJourney
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Start this situation' }),
+    )
+    await screen.findByRole('heading', { name: /^Observe$/ })
+
+    await waitFor(() => {
+      expect(document.querySelector('.tutor-presence')).toHaveAttribute(
+        'data-mood',
+        'speaking',
+      )
+    })
+    expect(playBase64Audio).toHaveBeenCalledWith(
+      'QQ==',
+      'audio/wav',
+      expect.objectContaining({
+        onTimeUpdate: expect.any(Function),
+      }),
+    )
+
+    finishPlayback?.()
+    await waitFor(() => {
+      expect(document.querySelector('.tutor-presence')).toHaveAttribute(
+        'data-mood',
+        'idle',
+      )
+    })
+  })
+
+  it('records first-audible telemetry after a completed Perform turn', async () => {
+    vi.mocked(playBase64Audio).mockImplementation(async (_audio, _mime, options) => {
+      options?.onStarted?.()
+    })
+    const observe = fakeSession('observe')
+    const rehearse = fakeSession('rehearse')
+    const perform = fakeSession('perform')
+    const recordSpeechLatency = vi.fn(async () => ({
+      accepted: true,
+      replayed: false,
+      retention_days: 30 as const,
+      sample_policy_version: 'speech-first-audible-v1',
+      sampled: true,
+    }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => observe),
+      advanceStage: vi
+        .fn()
+        .mockResolvedValueOnce(rehearse)
+        .mockResolvedValueOnce(perform),
+      createTurn: vi.fn(async () => ({
+        ...fakeTurn(perform.id),
+        speech: {
+          playback_available: true,
+          rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+          model_audio_base64: 'QQ==',
+          model_audio_mime_type: 'audio/wav' as const,
+        },
+      })),
+      recordSpeechLatency,
+      events: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <RoleplayJourney
+        api={api}
+        createClientId={() => 'roleplay-command'}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Start this situation' }),
+    )
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    await user.click(
+      await screen.findByRole('button', { name: 'Type instead' }),
+    )
+    await user.type(
+      screen.getByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+      'Hello, I have an appointment.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+
+    await waitFor(() => {
+      expect(recordSpeechLatency).toHaveBeenCalledWith(
+        '01J00000000000000000000020',
+        expect.objectContaining({ playback_outcome: 'started' }),
+        'roleplay-command',
+      )
+    })
+  })
+
   it('discloses synthetic_unreviewed and advances Observe→Reflect', async () => {
     const observe = fakeSession('observe')
     const rehearse = fakeSession('rehearse')
@@ -151,7 +293,7 @@ describe('synthetic Role-play journey', () => {
         blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
           type: 'audio/wav',
         }),
-        durationMs: 250,
+        durationMs: 1_250,
         mimeType: 'audio/webm',
       })),
     }))
@@ -213,10 +355,11 @@ describe('synthetic Role-play journey', () => {
         name: 'ಬಿಟ್ಟರೆ ಕಳುಹಿಸಿ',
       })
       await user.pointer({ keys: '[/MouseLeft]', target: hold })
-
-      await user.click(
-        await screen.findByRole('button', { name: 'ಈ ಇಂಗ್ಲಿಷ್ ಬಳಸಿ' }),
-      )
+      const send = screen.getByRole('button', {
+        name: 'ಬಿಟ್ಟರೆ ಕಳುಹಿಸಿ',
+      })
+      await user.pointer({ keys: '[MouseLeft>]', target: send })
+      await user.pointer({ keys: '[/MouseLeft]', target: send })
 
       await waitFor(() => {
         expect(api.createTurn).toHaveBeenCalledTimes(expectedTurn)

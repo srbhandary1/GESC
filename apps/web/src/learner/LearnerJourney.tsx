@@ -45,6 +45,7 @@ import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
 import { AvatarSlot } from '../ui/AvatarSlot'
+import { TutorPresence } from '../tutor/TutorPresence'
 import { LevelVideosPanel } from './LevelVideosPanel'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
@@ -805,7 +806,7 @@ export function LearnerJourney({
                 />
               </p>
             ) : null}
-            <div className="learner-home__actions">
+            <div className="learner-home__action-footer">
               <a className="learner-home__speak" href="#speak">
                 <LocalizedMessage
                   resolution={message('demo.phase1.home.speak')}
@@ -828,16 +829,75 @@ export function LearnerJourney({
                 }
                 type="button"
               >
-                <LocalizedMessage
-                  resolution={message(
-                    busy ? 'learner.home.continuing' : 'learner.home.continue',
-                  )}
-                />
+                <span>
+                  <LocalizedMessage
+                    resolution={message(
+                      busy
+                        ? 'learner.home.continuing'
+                        : 'learner.home.continue',
+                    )}
+                  />
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="learner-home__continue-arrow"
+                >
+                  →
+                </span>
               </button>
+              <div className="learner-home__coach">
+                <TutorPresence
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  mood="idle"
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
         </section>
       )}
+      {home.upcoming_reviews.length > 0 ? (
+        <section
+          aria-labelledby="upcoming-reviews-title"
+          className="learner-card learner-home__upcoming-reviews"
+        >
+          <h3
+            className="learner-card__title"
+            id="upcoming-reviews-title"
+          >
+            <LocalizedMessage
+              resolution={message('learner.home.upcoming_reviews.title')}
+            />
+          </h3>
+          <ul className="learner-home__upcoming-list">
+            {home.upcoming_reviews.map((review) => (
+              <li
+                className="learner-home__upcoming-item"
+                key={review.id}
+              >
+                <GovernedText content={review.title} />
+                <span className="learner-home__upcoming-due">
+                  <LocalizedMessage
+                    resolution={resolveInterfaceMessage(
+                      'learner.home.upcoming_reviews.due',
+                      locale,
+                      localizationPolicy,
+                      {
+                        date: formatReviewDate(
+                          review.due_at,
+                          locale,
+                          review.timezone,
+                        ),
+                      },
+                    )}
+                  />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {!hasDominantAction ? null : (
         <section
           aria-labelledby="offline-access-title"

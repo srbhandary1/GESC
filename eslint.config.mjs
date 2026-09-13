@@ -30,6 +30,7 @@ export default tseslint.config(
   {
     files: [
       'apps/web/**/*.{js,mjs,ts,tsx}',
+      'apps/marketing/**/*.{js,mjs,ts}',
       'packages/design-system/**/*.{js,mjs,ts,tsx}',
     ],
     languageOptions: {

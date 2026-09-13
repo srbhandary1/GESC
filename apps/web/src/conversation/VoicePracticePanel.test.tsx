@@ -45,6 +45,21 @@ describe('secure voice practice consent boundary', () => {
           state: 'granted' as const,
         }
       }),
+      requestRealtimeSpeechTicket: vi.fn(async () => ({
+        always_on: false as const,
+        capture_mode: 'push_to_talk' as const,
+        conversation_session_id: '01J00000000000000000000001',
+        denial_reasons: ['http_enablement_not_authorized'],
+        expires_at: '2026-09-09T16:30:00Z',
+        full_duplex: false as const,
+        preconnect_allowed: false,
+        provider_dispatch: 'denied' as const,
+        recovery_route: 'recorded_upload' as const,
+        ticket_id: '01J00000000000000000000099',
+        transport: 'recorded_recovery' as const,
+        websocket_path:
+          '/api/v1/conversation-sessions/01J00000000000000000000001/realtime-stt',
+      })),
       reviewVoiceTranscript: vi.fn(),
       startSession: vi.fn(),
       uploadVoiceRecording: vi.fn(),
@@ -114,6 +129,13 @@ describe('secure voice practice consent boundary', () => {
       },
       expect.any(String),
     )
+    await waitFor(() => {
+      expect(api.requestRealtimeSpeechTicket).toHaveBeenCalledWith(
+        '01J00000000000000000000001',
+        expect.any(String),
+        undefined,
+      )
+    })
 
     await user.click(
       screen.getByText('conversation.voice.manage_consent'),
@@ -269,7 +291,7 @@ describe('secure voice practice consent boundary', () => {
         blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
           type: 'audio/wav',
         }),
-        durationMs: 250,
+        durationMs: 1_250,
         mimeType: 'audio/webm',
       })),
     }
@@ -299,6 +321,11 @@ describe('secure voice practice consent boundary', () => {
       name: 'learner.recording.release',
     })
     await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    const send = screen.getByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
     await vi.waitFor(() => {
       expect(api.uploadVoiceRecording).toHaveBeenCalled()
     })
@@ -351,7 +378,7 @@ describe('secure voice practice consent boundary', () => {
       resume: vi.fn(),
       stop: vi.fn(async () => ({
         blob: new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/webm' }),
-        durationMs: 250,
+        durationMs: 1_250,
         mimeType: 'audio/webm',
       })),
     }
@@ -381,25 +408,28 @@ describe('secure voice practice consent boundary', () => {
       name: 'learner.recording.release',
     })
     await user.pointer({ keys: '[/MouseLeft]', target: hold })
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'conversation.voice.use_transcript' }),
-      ).toBeInTheDocument()
+    const send = screen.getByRole('button', {
+      name: 'learner.recording.release',
     })
-    await user.click(
-      screen.getByRole('button', { name: 'conversation.voice.use_transcript' }),
-    )
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
+
     await waitFor(() => {
       expect(onTranscriptSelected).toHaveBeenCalledWith(
         'I practise English after work.',
       )
     })
+    expect(api.reviewVoiceTranscript).toHaveBeenCalledWith(
+      recording.id,
+      { action: 'accept', corrected_transcript: null },
+      'voice-command',
+      expect.any(AbortSignal),
+    )
     expect(
-      await screen.findByRole('button', { name: 'learner.recording.hold' }),
-    ).toBeEnabled()
+      screen.getByRole('button', { name: 'learner.recording.processing' }),
+    ).toBeDisabled()
     expect(
-      screen.queryByRole('button', { name: 'learner.recording.processing' }),
+      screen.queryByRole('button', { name: 'conversation.voice.use_transcript' }),
     ).not.toBeInTheDocument()
   })
 
@@ -440,7 +470,7 @@ describe('secure voice practice consent boundary', () => {
           blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
             type: 'audio/wav',
           }),
-          durationMs: 250,
+          durationMs: 1_250,
           mimeType: 'audio/webm',
         })),
       })),
@@ -465,6 +495,11 @@ describe('secure voice practice consent boundary', () => {
     })
     await user.pointer({ keys: '[MouseLeft>]', target: hold })
     await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    const send = await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'conversation.voice.error',
@@ -478,6 +513,11 @@ describe('secure voice practice consent boundary', () => {
     })
     await user.pointer({ keys: '[MouseLeft>]', target: retryHold })
     await user.pointer({ keys: '[/MouseLeft]', target: retryHold })
+    const retrySend = await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: retrySend })
+    await user.pointer({ keys: '[/MouseLeft]', target: retrySend })
 
     await waitFor(() => {
       expect(uploadCommands).toHaveLength(2)
@@ -539,7 +579,7 @@ describe('secure voice practice consent boundary', () => {
           blob: new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {
             type: 'audio/wav',
           }),
-          durationMs: 512,
+          durationMs: 1_250,
           mimeType: 'audio/webm',
         })),
       })),
@@ -564,6 +604,11 @@ describe('secure voice practice consent boundary', () => {
     })
     await user.pointer({ keys: '[MouseLeft>]', target: hold })
     await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    const send = await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'conversation.voice.error',
@@ -577,6 +622,11 @@ describe('secure voice practice consent boundary', () => {
     })
     await user.pointer({ keys: '[MouseLeft>]', target: retryHold })
     await user.pointer({ keys: '[/MouseLeft]', target: retryHold })
+    const retrySend = await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: retrySend })
+    await user.pointer({ keys: '[/MouseLeft]', target: retrySend })
 
     await waitFor(() => {
       expect(uploadCommands).toHaveLength(2)

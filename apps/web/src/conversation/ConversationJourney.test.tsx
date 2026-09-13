@@ -11,7 +11,7 @@ import {
   type FriendTurnEvent,
 } from './ConversationJourneyApi'
 
-import { resetSpeakLoopHistory } from './speakLoopTimings'
+import { beginSpeakLoop, resetSpeakLoopHistory } from './speakLoopTimings'
 
 afterEach(() => {
   cleanup()
@@ -57,6 +57,10 @@ describe('Friend practice journey', () => {
         'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
       ),
     ).toBeInTheDocument()
+    expect(document.querySelectorAll('.tutor-presence')).toHaveLength(1)
+    expect(
+      document.querySelector('.conversation-journey__heading figcaption'),
+    ).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', {
@@ -94,11 +98,12 @@ describe('Friend practice journey', () => {
     expect(
       screen.getByLabelText('Explanation in your language'),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'A clearer sentence is: "I enjoy learning English after work."',
-      ),
-    ).toHaveAttribute('lang', 'en-IN')
+    const correction = screen.getByText(
+      'A clearer sentence is: "I enjoy learning English after work."',
+    )
+    expect(correction).toHaveAttribute('lang', 'en-IN')
+    expect(correction.closest('.conversation-journey__bubble--teacher')).not.toBeNull()
+    expect(correction.closest('.conversation-journey__bubble--you')).toBeNull()
     expect(
       screen.getByText(
         'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
@@ -410,6 +415,56 @@ describe('Friend practice journey', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('hides Speak-room chrome for an Introduction drill and keeps it for Conversation', () => {
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    const { rerender } = render(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={fakeSession()}
+        lessonRoom="introduction"
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Listen. Say: I can drink water. Now you try."
+      />,
+    )
+
+    expect(
+      screen.getByText('Listen. Say: I can drink water. Now you try.'),
+    ).toBeInTheDocument()
+    expect(document.querySelector('[data-lesson-room="introduction"]')).not.toBeNull()
+    expect(screen.queryByText('Stage')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Skip this turn' }),
+    ).not.toBeInTheDocument()
+
+    rerender(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={fakeSession()}
+        lessonRoom="conversation"
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Ask a coworker if you can use the printer."
+      />,
+    )
+
+    expect(
+      screen.getByText('Ask a coworker if you can use the printer.'),
+    ).toBeInTheDocument()
+    expect(document.querySelector('[data-lesson-room="conversation"]')).not.toBeNull()
+    expect(screen.queryByText('Stage')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Skip this turn' }),
+    ).toBeInTheDocument()
+  })
+
   it('speaks warmup through session guidance TTS, not the phone voice', async () => {
     const session = fakeSession()
     const synthesizeSpeech = vi.fn(async () => ({
@@ -469,9 +524,17 @@ describe('Friend practice journey', () => {
     }
     let releaseEvents: (value: readonly FriendTurnEvent[]) => void =
       () => undefined
+    const recordSpeechLatency = vi.fn(async () => ({
+      accepted: true,
+      replayed: false,
+      retention_days: 30 as const,
+      sample_policy_version: 'speech-first-audible-v1',
+      sampled: true,
+    }))
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => session),
       createTurn: vi.fn(async () => turn),
+      recordSpeechLatency,
       events: vi.fn(
         () =>
           new Promise<readonly FriendTurnEvent[]>((resolve) => {
@@ -488,7 +551,8 @@ describe('Friend practice journey', () => {
           .fn()
           .mockReturnValueOnce('session-command')
           .mockReturnValueOnce('turn-command')
-          .mockReturnValueOnce('next-turn-command')}
+          .mockReturnValueOnce('next-turn-command')
+          .mockReturnValue('telemetry-command')}
         locale="en-IN"
         localizationPolicy="development-preview"
       />,
@@ -506,10 +570,16 @@ describe('Friend practice journey', () => {
       }),
       'I practise English after work.',
     )
+    beginSpeakLoop()
     await user.click(screen.getByRole('button', { name: 'Send turn' }))
 
     await vi.waitFor(() => {
       expect(play).toHaveBeenCalled()
+      expect(recordSpeechLatency).toHaveBeenCalledWith(
+        turn.id,
+        expect.objectContaining({ playback_outcome: 'started' }),
+        'telemetry-command',
+      )
     })
     expect(screen.queryByText('Turn completed')).not.toBeInTheDocument()
     releaseEvents(events)

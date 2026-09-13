@@ -8,16 +8,23 @@ import { useLearnerEntitlement } from './useLearnerEntitlement'
 
 const premium: LearnerEntitlement = {
   allows_roleplay: true,
+  allows_free_speech: true,
+  allowed_session_parts: [
+    'introduction',
+    'practice',
+    'conversation',
+    'interaction',
+  ],
   applies: true,
   entitlement_id: 'entitlement-premium',
   expires_at: '2026-10-05T00:00:00+00:00',
   gstin_is_placeholder: false,
   is_demo: false,
-  live_ai_cap_seconds: 5400,
+  live_ai_cap_seconds: 7200,
   live_ai_seconds_remaining: 4920,
   max_level_number: null,
   plan_code: 'monthly_modules_roleplay',
-  plan_name: 'Premium',
+  plan_name: 'Premium with Role-play',
   status: 'active',
 }
 

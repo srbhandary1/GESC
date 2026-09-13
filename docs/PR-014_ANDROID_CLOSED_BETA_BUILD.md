@@ -51,6 +51,14 @@ WebView. Android cleartext also requires the host in
 Never embed provider secrets, OTP credentials or Passport private keys in the
 Android package.
 
+The debug closed-beta target explicitly sets
+`VITE_UI_TRANSLATION_PREVIEW=true`. This permits the current Kannada catalogue
+while its exact revision is pending independent review and keeps the visible
+translation-preview notice in the app. The signed release target explicitly
+sets the value to `false` and therefore remains fail-closed to approved
+catalogues. Do not remove either explicit setting or mark a catalogue approved
+without the recorded human review required by ADR-0005.
+
 ## Debug APK (default closed-beta path)
 
 ```bash
@@ -61,10 +69,12 @@ Equivalent steps:
 
 ```bash
 cd apps/web
+GE_ANDROID_WEB_BUNDLE=1 \
+VITE_UI_TRANSLATION_PREVIEW=true \
 VITE_MOBILE_API_ORIGIN="$VITE_MOBILE_API_ORIGIN" pnpm build
 CAPACITOR_APP=production pnpm exec cap sync android
 cd android-app
-./gradlew assembleDebug
+./gradlew --no-daemon testDebugUnitTest assembleDebug
 ```
 
 Artifact:

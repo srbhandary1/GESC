@@ -11,8 +11,11 @@ import type {
   LearnerAiMemoryFactListingItem,
   LearnerAiMemoryListing,
   ReviewVoiceTranscriptRequest,
+  SpeechLatencySampleRequest,
+  SpeechLatencySampleResult,
   StartConversationSessionRequest,
   SupportedLocale as ApiSupportedLocale,
+  RealtimeSpeechTicket,
   SynthesizeConversationSpeechRequest,
   UpdateLearnerAiMemoryFactRequest,
   VoiceConsentEvent,
@@ -58,12 +61,25 @@ export interface ConversationJourneyApi {
     signal?: AbortSignal,
   ): Promise<FriendTurn>
 
+  recordSpeechLatency?(
+    turnId: string,
+    input: SpeechLatencySampleRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<SpeechLatencySampleResult>
+
   synthesizeSpeech?(
     sessionId: string,
     input: SynthesizeConversationSpeechRequest,
     commandId: string,
     signal?: AbortSignal,
   ): Promise<ConversationSpeechResult>
+
+  requestRealtimeSpeechTicket?(
+    sessionId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<RealtimeSpeechTicket>
 
   events(
     eventsUrl: string,

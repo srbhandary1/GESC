@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { AudioControls } from './AudioControls'
@@ -82,12 +82,12 @@ describe('media presentation controls', () => {
     expect(onRequestStop).toHaveBeenCalledOnce()
   })
 
-  it('starts on press and stops on release in hold-to-talk mode', async () => {
+  it('starts on a quick tap and stops on the next tap in hold-to-talk mode', async () => {
     const onRequestStart = vi.fn()
     const onRequestStop = vi.fn()
     const user = userEvent.setup()
 
-    render(
+    const { rerender } = render(
       <RecordingControls
         captureMode="hold"
         labels={{
@@ -107,10 +107,62 @@ describe('media presentation controls', () => {
 
     const button = screen.getByRole('button', { name: 'Hold to talk' })
     await user.pointer({ keys: '[MouseLeft>]', target: button })
-    expect(onRequestStart).toHaveBeenCalledOnce()
     await user.pointer({ keys: '[/MouseLeft]', target: button })
+    expect(onRequestStart).toHaveBeenCalledOnce()
+    expect(onRequestStop).not.toHaveBeenCalled()
+
+    rerender(
+      <RecordingControls
+        captureMode="hold"
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+          holding: 'Listening…',
+          release: 'Release to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="recording"
+      />,
+    )
+
+    const sendButton = screen.getByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[MouseLeft>]', target: sendButton })
+    await user.pointer({ keys: '[/MouseLeft]', target: sendButton })
     expect(onRequestStop).toHaveBeenCalledOnce()
     expect(screen.queryByRole('button', { name: 'Pause recording' })).not.toBeInTheDocument()
+  })
+
+  it('stops when a sustained hold is released', async () => {
+    const onRequestStart = vi.fn()
+    const onRequestStop = vi.fn()
+    const now = vi.spyOn(performance, 'now')
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        labels={{ ...recordingLabels, hold: 'Hold to talk' }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="ready"
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    now.mockReturnValue(100)
+    fireEvent.pointerDown(button, { button: 0, pointerId: 1 })
+    now.mockReturnValue(800)
+    fireEvent.pointerUp(button, { button: 0, pointerId: 1 })
+
+    expect(onRequestStart).toHaveBeenCalledOnce()
+    expect(onRequestStop).toHaveBeenCalledOnce()
+    now.mockRestore()
   })
 
   it('exposes cancel during hold processing so the request can be aborted', async () => {
@@ -184,5 +236,59 @@ describe('media presentation controls', () => {
 
     expect(screen.getByText('Microphone unavailable')).toBeVisible()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('keeps hold-to-talk available after microphone permission is blocked', async () => {
+    const onRequestStart = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+          holding: 'Listening…',
+          release: 'Release to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={vi.fn()}
+        state="blocked"
+      />,
+    )
+
+    expect(screen.getByText('Microphone unavailable')).toBeVisible()
+    await user.pointer({
+      keys: '[MouseLeft>]',
+      target: screen.getByRole('button', { name: 'Hold to talk' }),
+    })
+    expect(onRequestStart).toHaveBeenCalledOnce()
+  })
+
+  it('offers cancel while microphone permission is being requested', () => {
+    render(
+      <RecordingControls
+        captureMode="hold"
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+          holding: 'Listening…',
+          release: 'Release to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={vi.fn()}
+        onRequestStop={vi.fn()}
+        state="requesting-permission"
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Cancel recording' }),
+    ).toBeVisible()
   })
 })

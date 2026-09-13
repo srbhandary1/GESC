@@ -5,9 +5,15 @@ import type {
 import { createClientId } from '../shared/createClientId'
 import {
   offlineBundleRecordId,
+  offlineCheckpointDetailRecordId,
+  offlineLevelBundleRecordId,
+  type CachedLevelCheckpointDetail,
+  type OfflineLevelBundle,
+  type StoredOfflineLevelBundle,
   type OfflineLearningStore,
   type OfflinePersonalDeviceResume,
   type OfflineProfileBinding,
+  type PendingLevelCheckpointCommand,
   type PendingOfflineCommand,
   type StoredOfflineBundle,
 } from './OfflineLearningStore'
@@ -32,7 +38,15 @@ interface StoredRecord {
   readonly storageKey: string
   readonly partitionId: string
   readonly id: string
-  readonly type: 'binding' | 'bundle' | 'audio' | 'command' | 'receipt'
+  readonly type:
+    | 'binding'
+    | 'bundle'
+    | 'audio'
+    | 'command'
+    | 'receipt'
+    | 'checkpoint-detail'
+    | 'level-bundle'
+    | 'checkpoint-command'
   readonly state: 'stored' | 'pending' | 'needs-attention' | 'accepted'
   readonly iv: ArrayBuffer
   readonly ciphertext: ArrayBuffer
@@ -57,6 +71,18 @@ interface StoredCommandPayload {
 
 interface StoredReceiptPayload {
   readonly result: LearnerMissionResult
+}
+
+interface StoredCheckpointDetailPayload {
+  readonly detail: CachedLevelCheckpointDetail
+}
+
+interface StoredCheckpointCommandPayload {
+  readonly command: PendingLevelCheckpointCommand
+}
+
+interface StoredLevelBundlePayload {
+  readonly bundle: OfflineLevelBundle
 }
 
 export class BrowserOfflineLearningStore
@@ -412,7 +438,13 @@ export class BrowserOfflineLearningStore
         transaction.objectStore(RECORD_STORE).getAll(),
       )) as StoredRecord[]
 
-      if (records.some(({ type }) => type === 'command')) {
+      if (
+        records.some(
+          ({ type, state }) =>
+            (type === 'command' || type === 'checkpoint-command') &&
+            state !== 'accepted',
+        )
+      ) {
         throw new OfflinePendingWorkError()
       }
 
@@ -454,6 +486,276 @@ export class BrowserOfflineLearningStore
           },
         } satisfies StoredCommandPayload,
         'needs-attention',
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async saveCheckpointDetail(
+    binding: OfflineProfileBinding,
+    detail: CachedLevelCheckpointDetail,
+  ): Promise<void> {
+    rejectForbiddenOfflineFields(detail)
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      await this.putEncrypted(
+        database,
+        profile,
+        'checkpoint-detail',
+        offlineCheckpointDetailRecordId(detail.level_number),
+        { detail } satisfies StoredCheckpointDetailPayload,
+        'stored',
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async loadCheckpointDetail(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    blueprintContentHash: string,
+  ): Promise<CachedLevelCheckpointDetail | null> {
+    if (!this.available() || !(await databaseExists())) {
+      return null
+    }
+
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.profile(database, binding)
+
+      if (profile === null) {
+        return null
+      }
+
+      await this.assertBinding(database, profile, binding)
+      const payload =
+        await this.readEncrypted<StoredCheckpointDetailPayload>(
+          database,
+          profile,
+          'checkpoint-detail',
+          offlineCheckpointDetailRecordId(levelNumber),
+        )
+
+      if (
+        payload === null ||
+        payload.detail.blueprint_content_hash !== blueprintContentHash
+      ) {
+        return null
+      }
+
+      return payload.detail
+    } finally {
+      database.close()
+    }
+  }
+
+  async saveLevelBundle(
+    binding: OfflineProfileBinding,
+    bundle: OfflineLevelBundle,
+  ): Promise<void> {
+    rejectForbiddenOfflineFields(bundle)
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      await this.putEncrypted(
+        database,
+        profile,
+        'level-bundle',
+        offlineLevelBundleRecordId(bundle.manifest.level.level_number),
+        { bundle } satisfies StoredLevelBundlePayload,
+        'stored',
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async loadLevelBundle(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    blueprintContentHash: string,
+  ): Promise<StoredOfflineLevelBundle | null> {
+    if (!this.available() || !(await databaseExists())) {
+      return null
+    }
+
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.profile(database, binding)
+
+      if (profile === null) {
+        return null
+      }
+
+      await this.assertBinding(database, profile, binding)
+      const payload = await this.readEncrypted<StoredLevelBundlePayload>(
+        database,
+        profile,
+        'level-bundle',
+        offlineLevelBundleRecordId(levelNumber),
+      )
+
+      if (
+        payload === null ||
+        payload.bundle.manifest.level.blueprint_content_hash !==
+          blueprintContentHash
+      ) {
+        return null
+      }
+
+      return payload
+    } finally {
+      database.close()
+    }
+  }
+
+  async queueCheckpointSubmission(
+    binding: OfflineProfileBinding,
+    command: PendingLevelCheckpointCommand,
+  ): Promise<void> {
+    rejectForbiddenOfflineFields(command)
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      await this.putEncrypted(
+        database,
+        profile,
+        'checkpoint-command',
+        command.commandId,
+        { command } satisfies StoredCheckpointCommandPayload,
+        command.state,
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async pendingCheckpointCommands(
+    binding: OfflineProfileBinding,
+  ): Promise<ReadonlyArray<PendingLevelCheckpointCommand>> {
+    if (!this.available() || !(await databaseExists())) {
+      return []
+    }
+
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.profile(database, binding)
+
+      if (profile === null) {
+        return []
+      }
+
+      await this.assertBinding(database, profile, binding)
+      const records = await recordsForPartition(
+        database,
+        profile.partitionId,
+        'checkpoint-command',
+      )
+      const commands = await Promise.all(
+        records.map(async (record) => {
+          const payload =
+            await this.decrypt<StoredCheckpointCommandPayload>(
+              profile,
+              record,
+            )
+
+          if (
+            payload.command.state === 'pending' &&
+            Date.now() -
+              new Date(payload.command.createdAt).getTime() >=
+              PENDING_ACTIVE_MILLISECONDS
+          ) {
+            const command = {
+              ...payload.command,
+              state: 'needs-attention' as const,
+            }
+            await this.putEncrypted(
+              database,
+              profile,
+              'checkpoint-command',
+              record.id,
+              { command } satisfies StoredCheckpointCommandPayload,
+              'needs-attention',
+            )
+
+            return command
+          }
+
+          return payload.command
+        }),
+      )
+
+      return commands.sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt),
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async markCheckpointNeedsAttention(
+    binding: OfflineProfileBinding,
+    commandId: string,
+  ): Promise<void> {
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      const payload =
+        await this.readEncrypted<StoredCheckpointCommandPayload>(
+          database,
+          profile,
+          'checkpoint-command',
+          commandId,
+        )
+
+      if (payload === null) {
+        return
+      }
+
+      await this.putEncrypted(
+        database,
+        profile,
+        'checkpoint-command',
+        commandId,
+        {
+          command: {
+            ...payload.command,
+            state: 'needs-attention',
+          },
+        } satisfies StoredCheckpointCommandPayload,
+        'needs-attention',
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async acceptCheckpointReceipt(
+    binding: OfflineProfileBinding,
+    commandId: string,
+  ): Promise<void> {
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      await deleteValue(
+        database,
+        RECORD_STORE,
+        storageKey(
+          profile.partitionId,
+          'checkpoint-command',
+          commandId,
+        ),
       )
     } finally {
       database.close()

@@ -164,9 +164,12 @@ trait MobilePasswordSignInTests
 
     public function test_mobile_password_mode_and_recovery_are_available_without_a_session(): void
     {
+        $client = $this->createApprovedMobileClient();
+
         $this->getJson('/api/v1/auth/mobile/password/mode')
             ->assertOk()
-            ->assertExactJson(['mode' => 'password_only']);
+            ->assertJsonPath('mode', 'password_only')
+            ->assertJsonPath('client_id', (string) $client->getKey());
 
         $this->withHeader('Origin', 'https://localhost')
             ->postJson('/api/v1/auth/mobile/password/recovery-requests', [

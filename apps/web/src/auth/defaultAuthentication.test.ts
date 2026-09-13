@@ -41,7 +41,7 @@ describe('createDefaultAuthentication', () => {
       isNativeAndroid: true,
       env: {
         VITE_MOBILE_API_ORIGIN: 'https://api.global-english.test',
-        VITE_MOBILE_OAUTH_CLIENT_ID: 'public-android-client',
+        VITE_MOBILE_OAUTH_CLIENT_ID: '019fdd3f-4bba-720b-9e4e-a771ecccdd7f',
       },
     })
 
@@ -83,7 +83,7 @@ describe('createDefaultAuthentication', () => {
     const runtime = createDefaultAuthenticationRuntime({
       env: {
         VITE_MOBILE_API_ORIGIN: 'https://api.global-english.test',
-        VITE_MOBILE_OAUTH_CLIENT_ID: 'public-android-client',
+        VITE_MOBILE_OAUTH_CLIENT_ID: '019fdd3f-4bba-720b-9e4e-a771ecccdd7f',
       },
       fetch: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const request = new Request(input, init)

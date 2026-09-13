@@ -42,6 +42,8 @@ export class RecordingUnavailableError extends Error {
 export class BrowserAudioRecorder implements AudioRecorder {
   isSupported(): boolean {
     return (
+      typeof window !== 'undefined' &&
+      window.isSecureContext &&
       typeof navigator !== 'undefined' &&
       navigator.mediaDevices?.getUserMedia !== undefined &&
       audioContextConstructor() !== undefined

@@ -1,4 +1,4 @@
-import type { ConversationSpeechResult, ConversationTurnEvent, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
+import type { ConversationSpeechResult, ConversationTurnEvent, RealtimeSpeechTicket, SpeechLatencySampleRequest, SpeechLatencySampleResult, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
 import type {
   CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
@@ -102,6 +102,23 @@ export class WebConversationJourneyApi
     )
   }
 
+  recordSpeechLatency(
+    turnId: string,
+    input: SpeechLatencySampleRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<SpeechLatencySampleResult> {
+    return this.#mutation<SpeechLatencySampleResult>(
+      `/conversation-turns/${encodeURIComponent(turnId)}/speech-latency-samples`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
   synthesizeSpeech(
     sessionId: string,
     input: SynthesizeConversationSpeechRequest,
@@ -144,6 +161,21 @@ export class WebConversationJourneyApi
     }
 
     return parseEventStream(await response.text())
+  }
+
+  requestRealtimeSpeechTicket(
+    sessionId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<RealtimeSpeechTicket> {
+    return this.#mutation<RealtimeSpeechTicket>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/realtime-stt-tickets`,
+      {
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
   }
 
   voiceConsents(

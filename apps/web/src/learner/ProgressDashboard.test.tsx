@@ -48,6 +48,7 @@ describe('ProgressDashboard', () => {
           completed_on_time_count: 0,
           completed_late_count: 0,
         },
+        actionable_due_review: null,
         recurring_errors: { patterns: [] },
       }),
     } as unknown as LearnerJourneyApi
@@ -109,6 +110,13 @@ describe('ProgressDashboard', () => {
           completed_on_time_count: 0,
           completed_late_count: 0,
         },
+        actionable_due_review: {
+          id: '01J00000000000000000000061',
+          enrollment_id: 'enrollment-1',
+          mission_id: 'mission-due',
+          objective_id: 'objective-due',
+          due_at: '2026-08-29T10:00:00Z',
+        },
         recurring_errors: {
           patterns: [
             {
@@ -129,6 +137,13 @@ describe('ProgressDashboard', () => {
       expect(screen.getByRole('heading', { level: 1 })).toBeDefined()
     })
 
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Review due' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Go to review' }),
+    ).toBeInTheDocument()
+
     const summarySection = screen.getByLabelText('Summary statistics')
     expect(summarySection).toHaveTextContent('5')
     expect(summarySection).toHaveTextContent('1') // due count missed
@@ -141,6 +156,67 @@ describe('ProgressDashboard', () => {
 
     const masteryList = screen.getByLabelText('can')
     expect(masteryList).toHaveTextContent('Mastered')
+  })
+
+  it('routes due-review action to home when the learner continues', async () => {
+    const user = userEvent.setup()
+    const onMissionRequested = vi.fn()
+    const api = {
+      progressDashboard: vi.fn().mockResolvedValue({
+        enrollment: { id: 'enrollment-1', status: 'active' },
+        objectives: [
+          {
+            objective_id: 'obj-1',
+            objective_key: 'can',
+            knowledge_state: 'mastered',
+            spoken_state: 'unassessed',
+            best_knowledge_score: 100,
+            mastered_at: '2026-08-30T10:00:00Z',
+            evidence_attempt_id: 'attempt-1',
+          },
+        ],
+        speaking_activity: {
+          meaningful_speaking_days_count: 1,
+          completed_turn_count: 1,
+          speaking_duration_ms: 12000,
+          speaking_minutes: 0,
+          timezone: 'Asia/Kolkata',
+        },
+        attempt_improvement: {
+          missions_attempted: 1,
+          missions_passed_on_first_attempt: 1,
+          missions_improved_on_retry: 0,
+          missions_still_not_mastered: 0,
+        },
+        delayed_review: {
+          scheduled_count: 1,
+          due_count: 1,
+          pending_count: 0,
+          completed_count: 0,
+          completed_on_time_count: 0,
+          completed_late_count: 0,
+        },
+        actionable_due_review: {
+          id: '01J00000000000000000000061',
+          enrollment_id: 'enrollment-1',
+          mission_id: 'mission-due',
+          objective_id: 'objective-due',
+          due_at: '2026-08-29T10:00:00Z',
+        },
+        recurring_errors: { patterns: [] },
+      }),
+    } as unknown as LearnerJourneyApi
+
+    render(
+      <ProgressDashboard
+        api={api}
+        locale="en-IN"
+        onMissionRequested={onMissionRequested}
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Go to review' }))
+    expect(onMissionRequested).toHaveBeenCalledTimes(1)
   })
 
   it('lets the learner retry after a progress load failure', async () => {
@@ -172,6 +248,7 @@ describe('ProgressDashboard', () => {
           completed_on_time_count: 0,
           completed_late_count: 0,
         },
+        actionable_due_review: null,
         recurring_errors: { patterns: [] },
       })
     const api = { progressDashboard } as unknown as LearnerJourneyApi

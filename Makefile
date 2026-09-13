@@ -13,7 +13,7 @@ PHPUNIT_STORAGE_DIR ?= /tmp/global-spoken-english-phpunit-$(shell id -u)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight lpl-07-rollout-gate import-tutor-glb verify-tutor-glb
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,7 @@ help:
 		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
 		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
 		'make soft-launch-refresh-web  Rebuild served web only when inputs changed' \
+		'make import-tutor-glb       Copy GLB files from SOURCE into public/tutor/avatars' \
 		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
 		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
 		'make soft-launch-status  Soft-launch process and health status' \
@@ -41,6 +42,7 @@ help:
 		'make soft-launch-stable-prereq  Fail-closed DNS/TLS check for ai.globalspokenenglish.com' \
 		'make soft-launch-systemd-install Install, enable and start the persistent user service' \
 		'make wave6-indic-preflight  Wave 6 automated Indic STT env/DI/tests preflight (not mic staff matrix)' \
+		'make lpl-07-rollout-gate   LPL-07 repository rollout gate (commissioning evidence + focused tests + level-path offline E2E)' \
 		'make media-tools   Build the signed, pinned local ffprobe inspection tool' \
 		'make media-services-up Start the opt-in loopback ClamAV media scanner' \
 		'make verify        Run formatting, static analysis, tests and dependency audits' \
@@ -88,6 +90,7 @@ check-local-auth-env:
 
 dev: check-local-auth-env
 	$(MAKE) services-up
+	cd $(API_DIR) && $(PHP) artisan migrate --force
 	$(PNPM) run dev
 
 demo:
@@ -135,7 +138,7 @@ demo-android: demo-build
 # Does not build or modify the demo APK identity (D-0078).
 android-closed-beta:
 	@test -n "$${VITE_MOBILE_API_ORIGIN}" || (printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the absolute API origin reachable from the device (see docs/PR-014_ANDROID_CLOSED_BETA_BUILD.md).' && exit 1)
-	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
+	cd $(WEB_DIR) && GE_ANDROID_WEB_BUNDLE=1 VITE_UI_TRANSLATION_PREVIEW=true VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest assembleDebug
 
@@ -144,7 +147,7 @@ android-closed-beta:
 android-release-bundle:
 	@case "$${VITE_MOBILE_API_ORIGIN}" in https://*) ;; *) printf '%s\n' 'Set VITE_MOBILE_API_ORIGIN to the deployed HTTPS API origin.'; exit 1 ;; esac
 	@test -n "$${GE_ANDROID_UPLOAD_STORE_FILE}" && test -n "$${GE_ANDROID_UPLOAD_STORE_PASSWORD}" && test -n "$${GE_ANDROID_UPLOAD_KEY_ALIAS}" && test -n "$${GE_ANDROID_UPLOAD_KEY_PASSWORD}" || (printf '%s\n' 'Set all four GE_ANDROID_UPLOAD_* signing variables from the protected operator secret source.'; exit 1)
-	cd $(WEB_DIR) && VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
+	cd $(WEB_DIR) && GE_ANDROID_WEB_BUNDLE=1 VITE_UI_TRANSLATION_PREVIEW=false VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest bundleRelease
 
@@ -261,6 +264,15 @@ soft-launch-refresh-web:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh refresh-web
 
+import-tutor-glb:
+	@test -n "$(SOURCE)" || (printf '%s\n' 'Set SOURCE to the folder containing downloaded .glb files.' && exit 1)
+	@chmod +x scripts/import-tutor-glb.sh
+	@bash scripts/import-tutor-glb.sh "$(SOURCE)"
+
+verify-tutor-glb:
+	@chmod +x scripts/verify-tutor-glb.sh
+	@bash scripts/verify-tutor-glb.sh
+
 soft-launch-status:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh status
@@ -312,3 +324,7 @@ soft-launch-systemd-install:
 wave6-indic-preflight:
 	@chmod +x scripts/wave6-indic-stt-preflight.sh
 	@bash scripts/wave6-indic-stt-preflight.sh
+
+lpl-07-rollout-gate:
+	@chmod +x scripts/lpl-07-rollout-gate.sh
+	@bash scripts/lpl-07-rollout-gate.sh
