@@ -91,7 +91,7 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.page.practice.title'),
+        name: text('demo.nav.speak'),
       }),
     ).toBeInTheDocument()
     expect(

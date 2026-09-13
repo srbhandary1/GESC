@@ -111,6 +111,9 @@ test('student click-through exercises every demo page and control', async ({
   ).toBeVisible()
   await page.getByRole('button', { name: 'Train with Swathi' }).click()
   await expect(
+    page.getByRole('heading', { level: 1, name: 'Speak' }),
+  ).toBeVisible()
+  await expect(
     page.getByRole('heading', { name: 'Speak with Swathi' }),
   ).toBeVisible()
   await page.getByRole('link', { name: 'Home' }).click()

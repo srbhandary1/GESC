@@ -119,7 +119,7 @@ const demoDestinationMessages: Readonly<
   },
   practice: {
     description: 'demo.page.practice.description',
-    title: 'demo.page.practice.title',
+    title: 'demo.nav.speak',
   },
   progress: {
     description: 'demo.page.progress.description',

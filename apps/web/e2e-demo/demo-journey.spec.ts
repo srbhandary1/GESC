@@ -80,6 +80,9 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   ).toBeVisible()
   await page.getByRole('button', { name: 'Train with Swathi' }).click()
   await expect(
+    page.getByRole('heading', { level: 1, name: 'Speak' }),
+  ).toBeVisible()
+  await expect(
     page.getByRole('heading', { name: 'Speak with Swathi' }),
   ).toBeVisible()
   await page.getByRole('link', { name: 'Progress' }).click()
