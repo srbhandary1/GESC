@@ -406,6 +406,35 @@ describe('localized application shell', () => {
 
   it('opens Learn for a learner membership without inferring role keys', async () => {
     window.history.replaceState(null, '', '/#learn')
+    const home = vi.fn(async () => {
+      throw new Error('Daily mission API must not replace Audio Lessons.')
+    })
+
+    render(
+      <App
+        authentication={membershipAuthentication(
+          'learner',
+          ['institution-student'],
+        )}
+        learnerJourneyApi={learnerApi(home)}
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: text('demo.phase1.nav.levels'),
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: text('demo.phase1.rooms.audio.title'),
+      }),
+    ).toBeInTheDocument()
+    expect(home).not.toHaveBeenCalled()
+  })
+
+  it('keeps the guided daily lesson on #mission for a signed-in learner', async () => {
+    window.history.replaceState(null, '', '/#mission')
     const home = vi.fn(async () => ({
       enrollment: null,
       next_mission: null,

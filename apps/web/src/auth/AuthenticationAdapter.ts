@@ -19,6 +19,12 @@ export interface AuthenticationAdapter {
   current(): Promise<AuthenticationSnapshot>
 
   logout(): Promise<void>
+
+  /**
+   * Optional same-origin media/API fetch. Web sessions send cookies.
+   * Android PKCE attaches the in-memory Bearer token.
+   */
+  authorizedFetch?(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 }
 
 export interface WebSessionAuthentication extends AuthenticationAdapter {

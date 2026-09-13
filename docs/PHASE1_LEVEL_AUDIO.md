@@ -8,17 +8,21 @@ The loader prefers a real file. Scripted TTS is an explicit stand-in only
 when no authored bytes are available. The UI must not play TTS as if it
 were the authored lesson.
 
-Resolution order:
+Resolution order (Levels 1–17):
 
-1. Drop-in file under `apps/web/public/demo/phase1/audio/` (or
-   `manifest.json` `file` entry).
-2. Same-origin authenticated introduction stream for Levels 1–17:
-   `GET /api/v1/me/levels/{n}/sessions/introduction/audio`
-   (`credentials: include`, `Accept: audio/*`).
-3. Otherwise **missing** (404 / no file) or **unauthenticated** (401/403).
+1. Signed-in sessions index
+   `GET /api/v1/me/levels/{n}/sessions` (`credentials: include`, plus
+   Bearer when the Android PKCE adapter has an access token). Prefer the
+   allowlisted `audio_stream_path` for `introduction`.
+2. Authorized `GET` of that path (or the hardcoded introduction path
+   when the index has no allowlisted stream) → blob URL for `<audio src>`.
+3. Same-origin drop-in `apps/web/public/demo/phase1/audio/level-N.{ext}`
+   (or `manifest.json` `file` entry) if the private stream is 401/missing.
+4. Otherwise **missing** (404 / no file) or **unauthenticated** (401/403)
+   with a sign-in CTA. TTS is labelled stand-in only.
 
 Pre-1 and Pre-2 have no numeric `/me/levels` slot. They use the drop-in
-folder only.
+folder only, then the honest missing state.
 
 ## Why Real-Studioz looked “blocked”
 
@@ -77,11 +81,13 @@ GET /api/v1/me/levels/{n}/sessions/{part}/audio
 
 OpenAPI and `LearnerLevelSessionController::audio` live on
 `origin/cursor/learner-ux-elevate-5f47` (and the Caddy+PHP host). The
-Phase 1 client calls the **introduction** path for Levels 1–17 when the
-drop-in file is absent so a signed-in studio session can play the same
-bytes the elevate Learn path uses. A 200 HTML SPA fallback (Vite / Caddy)
-is treated as missing, not as authored audio. Only `audio/*` bodies are
-played.
+Phase 1 client prefers the **sessions index** `audio_stream_path` (Audio
+Lessons uses `introduction`) and fetches it with the same credentials
+the SPA already uses for `/api/v1/me/*`. The hardcoded introduction
+path is the fallback when the index has no allowlisted stream. A 200
+HTML SPA fallback (Vite / Caddy) is treated as missing, not as authored
+audio. Only `audio/*` bodies are played. Off-origin or non-allowlisted
+stream paths are rejected.
 
 `/me/levels/pre-1/...` is not a route. `/me/levels/0/...` is not a
 Pre-level alias.

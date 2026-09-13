@@ -41,6 +41,16 @@ export class WebSessionAuthenticationAdapter
       (() => (typeof document === 'undefined' ? '' : document.cookie))
   }
 
+  authorizedFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> {
+    return this.#fetch(input, {
+      ...init,
+      credentials: 'include',
+    })
+  }
+
   async current(): Promise<AuthenticationSnapshot> {
     const result = await getCurrentUser({
       ...this.#commonOptions(),

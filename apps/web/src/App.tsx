@@ -10,6 +10,7 @@ import {
   type SupportedLocale,
 } from '@global-english/localization'
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -28,6 +29,7 @@ import { defaultAuthentication } from './auth/defaultAuthentication'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import { resolvePhase1AuthoredAudioLookup } from './demo/phase1/phase1LevelAudioAssets'
 import {
   isPhase1ModuleHash,
   PHASE1_TEACHER_NAME,
@@ -377,11 +379,43 @@ function App({
   const canShowOperatorConsole =
     isOperatorSession &&
     (destination === 'home' || destination === 'learn')
-  const showDemoPhase1 =
-    demoMode && (destination === 'home' || destination === 'learn') &&
-    !showDemoMission
-  const showDemoGuidedLesson =
-    demoMode && showDemoMission && isLearnerSession
+  const showGuidedLesson =
+    routeHash === 'mission' && isLearnerSession
+  const showPhase1 =
+    (destination === 'home' || destination === 'learn') &&
+    !showGuidedLesson &&
+    !canShowOperatorConsole &&
+    (demoMode || isLearnerSession)
+  const showDemoPhase1 = showPhase1
+  const showDemoGuidedLesson = showGuidedLesson
+  const mediaFetch = useCallback(
+    (input: RequestInfo | URL, init?: RequestInit) => {
+      if (authentication.authorizedFetch !== undefined) {
+        return authentication.authorizedFetch(input, init)
+      }
+
+      return globalThis.fetch(input, { ...init, credentials: 'include' })
+    },
+    [authentication],
+  )
+  const resolveAuthoredLevelAudio = useCallback(
+    (levelId: string) =>
+      resolvePhase1AuthoredAudioLookup(levelId, mediaFetch),
+    [mediaFetch],
+  )
+  const requestPhase1SignIn = useCallback(() => {
+    if (authentication.transport === 'passport-pkce') {
+      const androidAuth = authentication as AndroidPkceAuthentication
+      void androidAuth.beginAuthorization().catch(() => {
+        setSession({ status: 'unavailable' })
+      })
+      return
+    }
+
+    const sessionTitle = document.getElementById('session-title')
+    sessionTitle?.scrollIntoView({ block: 'start' })
+    sessionTitle?.focus()
+  }, [authentication])
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -537,6 +571,8 @@ function App({
           <DemoPhase1Shell
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onRequestSignIn={requestPhase1SignIn}
+            resolveAuthoredLevelAudio={resolveAuthoredLevelAudio}
           />
         ) : canLearn || showDemoGuidedLesson ? (
           <LearnerJourney

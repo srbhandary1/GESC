@@ -200,9 +200,9 @@ export interface Phase1LevelAudio {
   readonly lines: string
   readonly duration: string
   /**
-   * Script metadata only. Playback prefers an authored file at
-   * `apps/web/public/demo/phase1/audio/{levelId}.{ext}`, then the
-   * authenticated introduction stream for Levels 1–17.
+   * Script metadata only. Playback prefers the signed-in private stream
+   * for Levels 1–17, then a drop-in file at
+   * `apps/web/public/demo/phase1/audio/{levelId}.{ext}`.
    */
   readonly source: 'scripted-tts'
 }

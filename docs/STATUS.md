@@ -510,17 +510,18 @@ review and do not waive pre-production specialist gates.
   (`ui-*-2026-09-13.2`).
 - Demo teacher name in soft-launch chrome is **Swathi**. Longer new
   dashboard strings may still fall back to English in some draft locales.
-- Per-level Audio Lessons prefer authored files at
-  `apps/web/public/demo/phase1/audio/{levelId}.{mp3|wav|m4a|ogg|webm}`,
-  then the authenticated introduction stream
-  `GET /api/v1/me/levels/{1-17}/sessions/introduction/audio` (D-0118).
-  This checkout has **0/19** masters in git. Live Real-Studioz
-  (`http://117.254.108.143:8080`) serves the SPA (200) but private media
-  is **401** without a learner Sanctum session. The room states
-  “Model audio not yet loaded”, “Sign in to hear authored audio”, or
-  plays the file; TTS is an explicit stand-in only. Storage inventory
-  (env disk chain, `accepted/{ulid}/{sha256}` keys, studio SQL/tinker)
-  is in [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md#storage-inventory-operator-on-the-studio-box).
+- Per-level Audio Lessons for Levels 1–17 prefer the signed-in sessions
+  index `audio_stream_path` (introduction), fetched with the same
+  cookies/Bearer as other `/api/v1/me` calls, then a drop-in file at
+  `apps/web/public/demo/phase1/audio/{levelId}.{mp3|wav|m4a|ogg|webm}`
+  (D-0118). This checkout has **0/19** masters in git. Live Real-Studioz
+  (`http://117.254.108.143:8080`) streams `audio/mpeg` from SeaweedFS
+  `accepted/{ulid}/{sha256}` when the learner is signed in; 401 without
+  a session. The room states “Model audio not yet loaded”, “Sign in to
+  hear authored audio”, or plays the blob; TTS is an explicit stand-in
+  only. Storage inventory (env disk chain, `accepted/{ulid}/{sha256}`
+  keys, studio SQL/tinker) is in
+  [PHASE1_LEVEL_AUDIO.md](PHASE1_LEVEL_AUDIO.md#storage-inventory-operator-on-the-studio-box).
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.

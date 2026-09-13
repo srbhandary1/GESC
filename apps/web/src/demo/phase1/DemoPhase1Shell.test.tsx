@@ -187,11 +187,13 @@ describe('DemoPhase1Shell', () => {
 
   it('asks for a learner session when private media returns unauthenticated', async () => {
     const user = userEvent.setup()
+    const onRequestSignIn = vi.fn()
 
     render(
       <DemoPhase1Shell
         locale="en-IN"
         localizationPolicy="development-preview"
+        onRequestSignIn={onRequestSignIn}
         resolveAuthoredLevelAudio={async () => ({
           status: 'unauthenticated',
         })}
@@ -200,14 +202,17 @@ describe('DemoPhase1Shell', () => {
 
     await user.click(screen.getByRole('link', { name: 'My Levels' }))
     await user.click(screen.getByRole('button', { name: 'Audio Lessons' }))
-    expect(
-      await screen.findByText('Sign in to hear authored audio'),
-    ).toBeInTheDocument()
+    const signIn = await screen.findByRole('button', {
+      name: 'Sign in to hear authored audio',
+    })
+    expect(signIn).toBeInTheDocument()
     expect(
       screen.getByText(
         'This host is up. Private lesson audio needs a learner session. Scripted stand-in is not the authored file.',
       ),
     ).toBeInTheDocument()
+    await user.click(signIn)
+    expect(onRequestSignIn).toHaveBeenCalledOnce()
     expect(
       screen.getByRole('button', { name: 'Hear scripted stand-in' }),
     ).toBeInTheDocument()

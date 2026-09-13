@@ -91,6 +91,8 @@ const demoAuthentication: AuthenticationAdapter = {
     },
   }),
   logout: async () => undefined,
+  authorizedFetch: (input, init) =>
+    globalThis.fetch(input, { ...init, credentials: 'include' }),
 }
 
 class LocalDemoLearnerApi implements LearnerJourneyApi {

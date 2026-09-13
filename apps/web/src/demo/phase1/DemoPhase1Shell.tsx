@@ -37,6 +37,7 @@ import './DemoPhase1Shell.css'
 export interface DemoPhase1ShellProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
+  readonly onRequestSignIn?: () => void
   readonly resolveAuthoredLevelAudio?: (
     levelId: string,
   ) => Promise<Phase1AuthoredAudioLookup | Phase1AuthoredAudio | null>
@@ -148,6 +149,7 @@ const localeEndonymKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
 export function DemoPhase1Shell({
   locale,
   localizationPolicy,
+  onRequestSignIn,
   resolveAuthoredLevelAudio = resolvePhase1AuthoredAudioLookup,
 }: DemoPhase1ShellProps) {
   const [module, setModule] = useState<Phase1Module>(() =>
@@ -1003,6 +1005,19 @@ export function DemoPhase1Shell({
                           />
                         </button>
                       )}
+                      {authoredUnauthenticated && onRequestSignIn ? (
+                        <button
+                          type="button"
+                          className="ge-button ge-button--primary"
+                          onClick={onRequestSignIn}
+                        >
+                          <LocalizedMessage
+                            resolution={message(
+                              'demo.phase1.rooms.audio.unauthenticated',
+                            )}
+                          />
+                        </button>
+                      ) : null}
                       {authoredMissing || authoredUnauthenticated ? (
                         <button
                           type="button"

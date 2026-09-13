@@ -165,6 +165,26 @@ describe('WebSessionAuthenticationAdapter', () => {
     ])
   })
 
+  it('authorizedFetch sends cookies for same-origin private media', async () => {
+    const fetcher = vi.fn(async () => new Response(null, { status: 204 }))
+    const adapter = new WebSessionAuthenticationAdapter({
+      fetch: fetcher as typeof fetch,
+    })
+
+    await adapter.authorizedFetch('/api/v1/me/levels/1/sessions', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    })
+
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/v1/me/levels/1/sessions',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'GET',
+      }),
+    )
+  })
+
   it('does not revoke the session when protected pending work blocks logout', async () => {
     const fetcher = vi.fn()
     const adapter = new WebSessionAuthenticationAdapter({

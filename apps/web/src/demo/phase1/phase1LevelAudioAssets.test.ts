@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  allowlistedPhase1AudioStreamPath,
   asPhase1AuthoredAudioLookup,
+  createPhase1AuthorizedFetch,
   defaultPhase1AudioManifest,
   isPhase1PrivateLessonAudioPath,
   mimeTypeForAudioFile,
+  parsePhase1SessionsIndex,
   phase1AudioCoverageTable,
   phase1LevelAudioIds,
   phase1LevelAudioPublicUrl,
@@ -73,9 +76,57 @@ describe('phase1 level audio contract', () => {
     expect(
       isPhase1PrivateLessonAudioPath('/api/v1/media-assets/01/content'),
     ).toBe(false)
+    expect(
+      isPhase1PrivateLessonAudioPath(
+        '/api/v1/me/levels/1/sessions/practice/audio',
+      ),
+    ).toBe(true)
+    expect(
+      allowlistedPhase1AudioStreamPath(
+        '/api/v1/me/levels/4/sessions/introduction/audio',
+        4,
+      ),
+    ).toBe('/api/v1/me/levels/4/sessions/introduction/audio')
+    expect(
+      allowlistedPhase1AudioStreamPath(
+        '/api/v1/me/levels/4/sessions/introduction/audio',
+        5,
+      ),
+    ).toBeNull()
+    expect(
+      allowlistedPhase1AudioStreamPath(
+        'https://evil.example/api/v1/me/levels/1/sessions/introduction/audio',
+      ),
+    ).toBeNull()
+    expect(
+      parsePhase1SessionsIndex({
+        data: [
+          {
+            part: 'practice',
+            audio_stream_path: '/api/v1/me/levels/1/sessions/practice/audio',
+          },
+          {
+            part: 'introduction',
+            media_asset_id: '01JTESTASSET00000000000001',
+            audio_stream_path:
+              '/api/v1/me/levels/1/sessions/introduction/audio',
+          },
+        ],
+      }),
+    ).toEqual([
+      {
+        part: 'practice',
+        audio_stream_path: '/api/v1/me/levels/1/sessions/practice/audio',
+      },
+      {
+        part: 'introduction',
+        media_asset_id: '01JTESTASSET00000000000001',
+        audio_stream_path: '/api/v1/me/levels/1/sessions/introduction/audio',
+      },
+    ])
   })
 
-  it('prefers a probed file and reports missing levels', async () => {
+  it('falls back to a probed drop-in when the private stream is absent', async () => {
     const fetchImpl = asFetch(async (input, init) => {
       const href = String(input)
       if (href.endsWith('level-1.mp3') && init?.method === 'HEAD') {
@@ -143,6 +194,27 @@ describe('phase1 level audio contract', () => {
     })
   })
 
+  it('reports unauthenticated when the private sessions index is 401', async () => {
+    const fetchImpl = asFetch(async (input) => {
+      const href = String(input)
+      if (href.includes('/me/levels/1/sessions') && !href.includes('/audio')) {
+        return new Response(JSON.stringify({ title: 'Unauthenticated' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/problem+json' },
+        })
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-1', fetchImpl),
+    ).resolves.toEqual({ status: 'unauthenticated' })
+    await expect(
+      resolvePhase1AuthoredAudio('level-1', fetchImpl),
+    ).resolves.toBeNull()
+  })
+
   it('reports unauthenticated when the private introduction stream is 401', async () => {
     const fetchImpl = asFetch(async (input) => {
       const href = String(input)
@@ -162,6 +234,224 @@ describe('phase1 level audio contract', () => {
     await expect(
       resolvePhase1AuthoredAudio('level-1', fetchImpl),
     ).resolves.toBeNull()
+  })
+
+  it('never calls /me/levels for Pre-1 or Pre-2', async () => {
+    const fetchImpl = asFetch(async (input) => {
+      const href = String(input)
+      if (href.includes('/me/levels')) {
+        throw new Error(`Pre-level must not call ${href}`)
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('pre-1', fetchImpl),
+    ).resolves.toEqual({ status: 'missing' })
+    await expect(
+      resolvePhase1AuthoredAudioLookup('pre-2', fetchImpl),
+    ).resolves.toEqual({ status: 'missing' })
+  })
+
+  it('prefers an allowlisted audio_stream_path from the sessions index', async () => {
+    const createObjectURL = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:level-3-introduction')
+    const requests: { href: string; credentials?: RequestCredentials }[] = []
+
+    const fetchImpl = asFetch(async (input, init) => {
+      const href = String(input)
+      requests.push({ href, credentials: init?.credentials })
+
+      if (href.endsWith('/me/levels/3/sessions')) {
+        return Response.json({
+          data: [
+            {
+              part: 'practice',
+              audio_stream_path: '/api/v1/me/levels/3/sessions/practice/audio',
+            },
+            {
+              part: 'introduction',
+              media_asset_id: '01JTESTASSET00000000000003',
+              audio_stream_path:
+                '/api/v1/me/levels/3/sessions/introduction/audio',
+            },
+          ],
+        })
+      }
+
+      if (href.includes('/me/levels/3/sessions/introduction/audio')) {
+        return new Response(new Uint8Array([9, 8, 7, 6]), {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
+      }
+
+      if (href.includes('/me/levels/3/sessions/practice/audio')) {
+        throw new Error('Audio Lessons must use introduction, not practice')
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-3', fetchImpl),
+    ).resolves.toEqual({
+      status: 'ready',
+      audio: {
+        levelId: 'level-3',
+        url: 'blob:level-3-introduction',
+        mimeType: 'audio/mpeg',
+        file: '/api/v1/me/levels/3/sessions/introduction/audio',
+        source: 'private-api',
+      },
+    })
+    expect(requests.every((request) => request.credentials === 'include')).toBe(
+      true,
+    )
+
+    createObjectURL.mockRestore()
+  })
+
+  it('rejects a non-allowlisted stream path and uses the introduction fallback', async () => {
+    const createObjectURL = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:level-5-introduction')
+
+    const fetchImpl = asFetch(async (input) => {
+      const href = String(input)
+      if (href.endsWith('/me/levels/5/sessions')) {
+        return Response.json({
+          data: [
+            {
+              part: 'introduction',
+              audio_stream_path: 'https://evil.example/stolen.mp3',
+            },
+          ],
+        })
+      }
+
+      if (href.includes('/me/levels/5/sessions/introduction/audio')) {
+        return new Response(new Uint8Array([4, 5, 6]), {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-5', fetchImpl),
+    ).resolves.toMatchObject({
+      status: 'ready',
+      audio: {
+        source: 'private-api',
+        file: '/api/v1/me/levels/5/sessions/introduction/audio',
+        url: 'blob:level-5-introduction',
+      },
+    })
+
+    createObjectURL.mockRestore()
+  })
+
+  it('prefers the signed-in stream over a local drop-in for Levels 1–17', async () => {
+    const createObjectURL = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:level-1-private')
+
+    const fetchImpl = asFetch(async (input) => {
+      const href = String(input)
+      if (href.endsWith('/me/levels/1/sessions')) {
+        return Response.json({
+          data: [
+            {
+              part: 'introduction',
+              audio_stream_path:
+                '/api/v1/me/levels/1/sessions/introduction/audio',
+            },
+          ],
+        })
+      }
+
+      if (href.includes('/me/levels/1/sessions/introduction/audio')) {
+        return new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
+      }
+
+      if (href.endsWith('level-1.mp3')) {
+        return new Response(null, {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-1', fetchImpl),
+    ).resolves.toMatchObject({
+      status: 'ready',
+      audio: {
+        source: 'private-api',
+        url: 'blob:level-1-private',
+      },
+    })
+
+    createObjectURL.mockRestore()
+  })
+
+  it('attaches a Bearer token when the authorized fetch wrapper is used', async () => {
+    const createObjectURL = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:level-7-bearer')
+    const headers: string[] = []
+
+    const fetchImpl = asFetch(async (input, init) => {
+      const href = String(input)
+      headers.push(new Headers(init?.headers).get('Authorization') ?? '')
+
+      if (href.endsWith('/me/levels/7/sessions')) {
+        return Response.json({
+          data: [
+            {
+              part: 'introduction',
+              audio_stream_path:
+                '/api/v1/me/levels/7/sessions/introduction/audio',
+            },
+          ],
+        })
+      }
+
+      if (href.includes('/me/levels/7/sessions/introduction/audio')) {
+        return new Response(new Uint8Array([7, 7, 7]), {
+          status: 200,
+          headers: { 'Content-Type': 'audio/mpeg' },
+        })
+      }
+
+      return new Response(null, { status: 404 })
+    })
+
+    const authorized = createPhase1AuthorizedFetch(fetchImpl, (next) => {
+      next.set('Authorization', 'Bearer memory-only-access-token')
+    })
+
+    await expect(
+      resolvePhase1AuthoredAudioLookup('level-7', authorized),
+    ).resolves.toMatchObject({
+      status: 'ready',
+      audio: { source: 'private-api', url: 'blob:level-7-bearer' },
+    })
+    expect(headers.every((value) => value === 'Bearer memory-only-access-token')).toBe(
+      true,
+    )
+
+    createObjectURL.mockRestore()
   })
 
   it('does not treat an HTML 200 for a drop-in filename as a master', async () => {

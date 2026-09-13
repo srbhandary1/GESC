@@ -1,3 +1,17 @@
+/**
+ * Phase-1 Audio Lessons: signed-in private stream first for Levels 1–17,
+ * then same-origin drop-in files. Public `/storage/lesson-audio/{level}.mp3`
+ * is never used — those objects are private on S3-compatible disks.
+ *
+ * Resolution order (Levels 1–17):
+ * 1. Authenticated sessions index → allowlisted `audio_stream_path`
+ *    (prefer `introduction`) → authorized GET → blob URL for `<audio src>`
+ * 2. Hardcoded introduction path when the index has no allowlisted path
+ * 3. Same-origin drop-in `demo/phase1/audio/level-N.mp3` if present
+ * 4. Unauthenticated (401/403) or missing
+ *
+ * Pre-1 / Pre-2 have no `/me/levels` slot: drop-in only, then missing.
+ */
 import { phase1Levels, type Phase1Level } from './phase1Fixtures'
 
 export const PHASE1_LEVEL_AUDIO_PUBLIC_DIR = 'demo/phase1/audio'
@@ -32,6 +46,9 @@ export const PHASE1_PRIVATE_LEVEL_MAX = 17
  */
 export const PHASE1_PRIVATE_INTRODUCTION_AUDIO_PATH =
   /^\/api\/v1\/me\/levels\/([1-9]|1[0-7])\/sessions\/introduction\/audio$/
+
+export const PHASE1_PRIVATE_SESSION_AUDIO_PATH =
+  /^\/api\/v1\/me\/levels\/([1-9]|1[0-7])\/sessions\/(?:introduction|practice|conversation|interaction)\/audio$/
 
 export interface Phase1AudioManifestLevel {
   readonly id: string
@@ -145,18 +162,190 @@ export function phase1PrivateIntroductionAudioPath(
 }
 
 export function isPhase1PrivateLessonAudioPath(pathname: string): boolean {
-  return PHASE1_PRIVATE_INTRODUCTION_AUDIO_PATH.test(pathname)
+  return PHASE1_PRIVATE_SESSION_AUDIO_PATH.test(pathname)
+}
+
+export function phase1ApiUrl(path: string): string {
+  const configured = import.meta.env.VITE_API_BASE_URL
+  if (typeof configured === 'string' && configured.trim() !== '') {
+    const prefix = configured.replace(/\/$/, '')
+    const suffix = path.startsWith('/api/v1')
+      ? path.slice('/api/v1'.length)
+      : path
+
+    return `${prefix}${suffix.startsWith('/') ? suffix : `/${suffix}`}`
+  }
+
+  return path
 }
 
 export function phase1PrivateIntroductionAudioUrl(
   levelNumber: number,
 ): string {
-  const configured = import.meta.env.VITE_API_BASE_URL
-  if (typeof configured === 'string' && configured.trim() !== '') {
-    return `${configured.replace(/\/$/, '')}/me/levels/${levelNumber}/sessions/introduction/audio`
+  return phase1ApiUrl(phase1PrivateIntroductionAudioPath(levelNumber))
+}
+
+export function phase1SessionsIndexPath(levelNumber: number): string {
+  return `/api/v1/me/levels/${levelNumber}/sessions`
+}
+
+export interface Phase1SessionAudioHint {
+  readonly part: string
+  readonly audio_stream_path: string
+  readonly media_asset_id?: string
+}
+
+export function allowlistedPhase1AudioStreamPath(
+  candidate: string | null | undefined,
+  expectedLevel?: number,
+): string | null {
+  if (candidate === null || candidate === undefined || candidate.trim() === '') {
+    return null
   }
 
-  return phase1PrivateIntroductionAudioPath(levelNumber)
+  try {
+    const parsed =
+      candidate.startsWith('http://') || candidate.startsWith('https://')
+        ? new URL(candidate)
+        : new URL(candidate, 'https://phase1.invalid')
+    const pathname = parsed.pathname
+    const match = PHASE1_PRIVATE_SESSION_AUDIO_PATH.exec(pathname)
+
+    if (match === null) {
+      return null
+    }
+
+    if (
+      expectedLevel !== undefined &&
+      Number(match[1]) !== expectedLevel
+    ) {
+      return null
+    }
+
+    if (
+      (candidate.startsWith('http://') || candidate.startsWith('https://')) &&
+      typeof globalThis.location?.origin === 'string' &&
+      parsed.origin !== globalThis.location.origin
+    ) {
+      return null
+    }
+
+    return pathname
+  } catch {
+    return null
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function sessionHintFrom(value: unknown): Phase1SessionAudioHint | null {
+  const record = asRecord(value)
+  if (record === null) {
+    return null
+  }
+
+  const path =
+    typeof record.audio_stream_path === 'string'
+      ? record.audio_stream_path
+      : null
+  if (path === null || path.trim() === '') {
+    return null
+  }
+
+  const part =
+    typeof record.part === 'string'
+      ? record.part
+      : typeof record.part_id === 'string'
+        ? record.part_id
+        : typeof record.id === 'string'
+          ? record.id
+          : ''
+  const mediaAssetId =
+    typeof record.media_asset_id === 'string'
+      ? record.media_asset_id
+      : undefined
+
+  return {
+    part,
+    audio_stream_path: path,
+    media_asset_id: mediaAssetId,
+  }
+}
+
+export function parsePhase1SessionsIndex(
+  payload: unknown,
+): readonly Phase1SessionAudioHint[] {
+  if (Array.isArray(payload)) {
+    return payload
+      .map(sessionHintFrom)
+      .filter((hint): hint is Phase1SessionAudioHint => hint !== null)
+  }
+
+  const record = asRecord(payload)
+  if (record === null) {
+    return []
+  }
+
+  const collections = [record.data, record.sessions, record.parts]
+  for (const collection of collections) {
+    if (Array.isArray(collection)) {
+      return collection
+        .map(sessionHintFrom)
+        .filter((hint): hint is Phase1SessionAudioHint => hint !== null)
+    }
+
+    const nested = asRecord(collection)
+    if (nested !== null && Array.isArray(nested.data)) {
+      return nested.data
+        .map(sessionHintFrom)
+        .filter((hint): hint is Phase1SessionAudioHint => hint !== null)
+    }
+  }
+
+  const hints: Phase1SessionAudioHint[] = []
+  for (const part of [
+    'introduction',
+    'practice',
+    'conversation',
+    'interaction',
+  ] as const) {
+    const hint = sessionHintFrom(record[part])
+    if (hint !== null) {
+      hints.push(hint.part === '' ? { ...hint, part } : hint)
+    }
+  }
+
+  return hints
+}
+
+export function preferIntroductionSession(
+  sessions: readonly Phase1SessionAudioHint[],
+): Phase1SessionAudioHint | null {
+  return (
+    sessions.find((session) => session.part === 'introduction') ??
+    sessions[0] ??
+    null
+  )
+}
+
+export function createPhase1AuthorizedFetch(
+  fetchImpl: typeof fetch = fetch,
+  authorize?: (headers: Headers) => void,
+): typeof fetch {
+  return ((input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers)
+    authorize?.(headers)
+
+    return fetchImpl(input, {
+      ...init,
+      credentials: 'include',
+      headers,
+    })
+  }) as typeof fetch
 }
 
 function audioMimeFrom(response: Response): string | null {
@@ -258,20 +447,72 @@ export async function resolveLocalPhase1AuthoredAudio(
   return null
 }
 
-export async function fetchPrivateLevelIntroductionAudio(
-  levelId: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<Phase1AuthoredAudioLookup> {
-  const levelNumber = phase1LevelPrivateSessionNumber(levelId)
-  if (levelNumber === null) {
-    return { status: 'missing' }
-  }
+type PrivateStreamResolution =
+  | { readonly kind: 'path'; readonly path: string }
+  | { readonly kind: 'unauthenticated' }
+  | { readonly kind: 'missing' }
 
-  const path = phase1PrivateIntroductionAudioPath(levelNumber)
-  const url = phase1PrivateIntroductionAudioUrl(levelNumber)
+/**
+ * Read `audio_stream_path` from the signed-in sessions index. Rejects any
+ * path that is not the allowlisted `/me/levels/{1-17}/sessions/{part}/audio`.
+ */
+async function resolveAllowlistedStreamPath(
+  levelNumber: number,
+  fetchImpl: typeof fetch,
+): Promise<PrivateStreamResolution> {
+  let response: Response
 
   try {
-    const response = await fetchImpl(url, {
+    response = await fetchImpl(phase1ApiUrl(phase1SessionsIndexPath(levelNumber)), {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+  } catch {
+    return { kind: 'missing' }
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return { kind: 'unauthenticated' }
+  }
+
+  if (!response.ok) {
+    return { kind: 'missing' }
+  }
+
+  let payload: unknown
+  try {
+    payload = await response.json()
+  } catch {
+    return { kind: 'missing' }
+  }
+
+  const preferred = preferIntroductionSession(parsePhase1SessionsIndex(payload))
+  const path = allowlistedPhase1AudioStreamPath(
+    preferred?.audio_stream_path,
+    levelNumber,
+  )
+
+  if (path === null) {
+    return { kind: 'missing' }
+  }
+
+  return { kind: 'path', path }
+}
+
+/**
+ * Fetch the private lesson-audio stream with the same credentials the SPA
+ * already uses for `/api/v1/me/*`. The response is copied into a blob URL
+ * so `<audio src>` does not need to re-send cookies (or Bearer) on every
+ * range request.
+ */
+export async function fetchPrivateLessonAudio(
+  levelId: string,
+  path: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Phase1AuthoredAudioLookup> {
+  try {
+    const response = await fetchImpl(phase1ApiUrl(path), {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -313,16 +554,59 @@ export async function fetchPrivateLevelIntroductionAudio(
   }
 }
 
+export async function fetchPrivateLevelIntroductionAudio(
+  levelId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Phase1AuthoredAudioLookup> {
+  const levelNumber = phase1LevelPrivateSessionNumber(levelId)
+  if (levelNumber === null) {
+    return { status: 'missing' }
+  }
+
+  return fetchPrivateLessonAudio(
+    levelId,
+    phase1PrivateIntroductionAudioPath(levelNumber),
+    fetchImpl,
+  )
+}
+
+async function localOr(
+  levelId: string,
+  fetchImpl: typeof fetch,
+  fallback: Phase1AuthoredAudioLookup,
+): Promise<Phase1AuthoredAudioLookup> {
+  const local = await resolveLocalPhase1AuthoredAudio(levelId, fetchImpl)
+  return local === null ? fallback : { status: 'ready', audio: local }
+}
+
 export async function resolvePhase1AuthoredAudioLookup(
   levelId: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<Phase1AuthoredAudioLookup> {
-  const local = await resolveLocalPhase1AuthoredAudio(levelId, fetchImpl)
-  if (local !== null) {
-    return { status: 'ready', audio: local }
+  const levelNumber = phase1LevelPrivateSessionNumber(levelId)
+  if (levelNumber === null) {
+    return localOr(levelId, fetchImpl, { status: 'missing' })
   }
 
-  return fetchPrivateLevelIntroductionAudio(levelId, fetchImpl)
+  const stream = await resolveAllowlistedStreamPath(levelNumber, fetchImpl)
+  if (stream.kind === 'unauthenticated') {
+    return localOr(levelId, fetchImpl, { status: 'unauthenticated' })
+  }
+
+  const path =
+    stream.kind === 'path'
+      ? stream.path
+      : phase1PrivateIntroductionAudioPath(levelNumber)
+  const remote = await fetchPrivateLessonAudio(levelId, path, fetchImpl)
+  if (remote.status === 'ready') {
+    return remote
+  }
+
+  if (remote.status === 'unauthenticated') {
+    return localOr(levelId, fetchImpl, { status: 'unauthenticated' })
+  }
+
+  return localOr(levelId, fetchImpl, { status: 'missing' })
 }
 
 export async function resolvePhase1AuthoredAudio(
