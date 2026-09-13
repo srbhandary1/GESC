@@ -475,6 +475,14 @@
   min-block-size: var(--ge-mira-chrome-target);
 }
 
+.guest-mira-home {
+  width: min(100%, 36rem);
+}
+
+.guest-mira-home__about {
+  margin: 0;
+}
+
 /* —— Onboarding chrome —— */
 .ge-select-grid {
   display: grid;

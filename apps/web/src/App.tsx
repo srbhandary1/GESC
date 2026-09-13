@@ -127,6 +127,10 @@ const MarketingLanding = lazy(async () => {
   const module = await import('./marketing/MarketingLanding')
   return { default: module.MarketingLanding }
 })
+const GuestMiraHome = lazy(async () => {
+  const module = await import('./learner/GuestMiraHome')
+  return { default: module.GuestMiraHome }
+})
 const OperatorConsole = lazy(async () => {
   const module = await import('./operator/OperatorConsole')
   return { default: module.OperatorConsole }
@@ -529,11 +533,6 @@ function App({
       session.status === 'anonymous' ||
       session.status === 'unavailable')
 
-  useEffect(() => {
-    if (isGuestSession && themePreference !== 'light') {
-      setThemePreference('light')
-    }
-  }, [isGuestSession, setThemePreference, themePreference])
   const showDemoPhase1 = demoMode && destination === 'home'
   const isOperatorWorkspaceHash = operatorWorkspaceHashFromLocation(locationHash)
   const showDedicatedSignIn =
@@ -541,9 +540,28 @@ function App({
     (locationHash === '#sign-in' || isOperatorWorkspaceHash)
   const showMarketingLanding =
     isGuestSession &&
+    isMarketingLandingHash(locationHash) &&
+    !showDedicatedSignIn
+  const showGuestMiraHome =
+    isGuestSession &&
     destination === 'home' &&
     !showDedicatedSignIn &&
+    !showMarketingLanding &&
     !isOperatorWorkspaceHash
+  useEffect(() => {
+    if (
+      isGuestSession &&
+      showMarketingLanding &&
+      themePreference !== 'light'
+    ) {
+      setThemePreference('light')
+    }
+  }, [
+    isGuestSession,
+    setThemePreference,
+    showMarketingLanding,
+    themePreference,
+  ])
   const accountSecurityVisible =
     accountSecurityOpen && session.status === 'authenticated'
   const showAuthenticatedAccountPanel =
@@ -571,6 +589,7 @@ function App({
   const useQuietHero =
     !suppressVisibleHero &&
     !showMarketingLanding &&
+    !showGuestMiraHome &&
     !showDedicatedSignIn &&
     !showDemoPhase1 &&
     (isLearnerSession ||
@@ -650,12 +669,14 @@ function App({
     if (previousDestination.current !== destination) {
       if (showMarketingLanding) {
         document.getElementById('marketing-hero-title')?.focus()
+      } else if (showGuestMiraHome) {
+        document.getElementById('guest-mira-home-title')?.focus()
       } else {
         destinationTitle.current?.focus()
       }
       previousDestination.current = destination
     }
-  }, [destination, showMarketingLanding])
+  }, [destination, showGuestMiraHome, showMarketingLanding])
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -683,7 +704,9 @@ function App({
               destination === 'home' ? ' ge-application-frame--home' : ''
             }${isNativeAndroid ? ' ge-application-frame--native-android' : ''}${
               isGuestSession
-                ? ' ge-application-frame--studio'
+                ? showGuestMiraHome
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
+                  : ' ge-application-frame--studio'
                 : isLearnerSession || demoMode
                   ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
                   : ''
@@ -1056,7 +1079,10 @@ function App({
           </aside>
         ) : null}
 
-        {showDemoPhase1 || showMarketingLanding || showDedicatedSignIn ? null : suppressVisibleHero ? (
+        {showDemoPhase1 ||
+        showMarketingLanding ||
+        showGuestMiraHome ||
+        showDedicatedSignIn ? null : suppressVisibleHero ? (
           <h1
             className="visually-hidden"
             id="destination-title"
@@ -1098,6 +1124,13 @@ function App({
             </p>
           }
         >
+        {showGuestMiraHome ? (
+          <GuestMiraHome
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+          />
+        ) : null}
+
         {showMarketingLanding ? (
           <MarketingLanding
             hideAndroidPromo={isNativeAndroid}
@@ -1290,7 +1323,9 @@ function App({
             }}
             organizationApi={operatorOrganizationApi}
           />
-        ) : showMarketingLanding || showDedicatedSignIn ? null : session.status === 'anonymous' ||
+        ) : showMarketingLanding ||
+          showGuestMiraHome ||
+          showDedicatedSignIn ? null : session.status === 'anonymous' ||
           session.status === 'unavailable' ? (
           <p className="shell-sign-in-hint">
             <LocalizedMessage resolution={message('session.sign_in_hint')} />{' '}
@@ -1529,6 +1564,10 @@ function operatorWorkspaceHashFromLocation(hash: string): boolean {
     normalized.startsWith('operator-') ||
     normalized === 'operator-workspace-overview'
   )
+}
+
+function isMarketingLandingHash(hash: string): boolean {
+  return hash === '#about' || hash === '#marketing'
 }
 
 function destinationFromHash(

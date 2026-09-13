@@ -1,5 +1,29 @@
 # Quality review
 
+## D-0286: Guest `#home` Mira chrome — 13 September 2026
+
+### Scope reviewed
+
+- Default unsigned `#home` switched from `MarketingLanding` to
+  `GuestMiraHome` (Mira hero + next-lesson card + Sign in).
+- `#sign-in` dedicated page preserved. Marketing landing kept at
+  `#about` / `#marketing`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Guest default home | Pass | `showGuestMiraHome` for anonymous/checking/unavailable `#home` |
+| Sign-in page | Pass | `#sign-in` still `showDedicatedSignIn` |
+| Marketing retained | Pass | `#about` and `#marketing` still render `MarketingLanding` |
+| Lesson/audio paths | Pass | No LessonPractice / orchestrator / TTS / ConversationJourney edits |
+
+### Verification and limitations
+
+- Focused tests recorded after the first run on this branch.
+- Soft-launch rebuild is an operator step; this agent does not deploy.
+- F0 / Play / production remain unauthorized.
+
 ## D-0285: Mira / Wonder learner chrome on soft-launch — 13 September 2026
 
 ### Scope reviewed
