@@ -110,6 +110,16 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('button', { name: /Pre-Level 1/i }),
     ).toBeInTheDocument()
     expect(screen.getByText('Content Room')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Introduce yourself clearly' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Phase 1 learner shell')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/Synthetic dashboard for Attendance/),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Reading and phrase notes for today\'s outcomes.'),
+    ).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Notice Board' }))
     expect(

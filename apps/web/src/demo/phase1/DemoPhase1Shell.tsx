@@ -4,7 +4,7 @@ import type {
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { LocalizedMessage } from '../../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../../localization/interfaceLocalization'
 import { AvatarSlot } from '../../ui/AvatarSlot'
@@ -83,17 +83,6 @@ const roomTitleKeys = {
   unlock: 'demo.phase1.rooms.unlock.title',
 } as const satisfies Record<Phase1RoomId, MessageKey>
 
-const roomSummaryKeys = {
-  'ai-teacher': 'demo.phase1.rooms.ai_teacher.summary',
-  audio: 'demo.phase1.rooms.audio.summary',
-  content: 'demo.phase1.rooms.content.summary',
-  conversation: 'demo.phase1.rooms.conversation.summary',
-  activity: 'demo.phase1.rooms.activity.summary',
-  assignment: 'demo.phase1.rooms.assignment.summary',
-  assessment: 'demo.phase1.rooms.assessment.summary',
-  unlock: 'demo.phase1.rooms.unlock.summary',
-} as const satisfies Record<Phase1RoomId, MessageKey>
-
 const noticeTitleKeys = {
   n1: 'demo.phase1.notices.n1.title',
   n2: 'demo.phase1.notices.n2.title',
@@ -137,6 +126,68 @@ const localeEndonymKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
   'ml-IN': 'locale.ml_IN',
   'ta-IN': 'locale.ta_IN',
   'te-IN': 'locale.te_IN',
+}
+
+function RoomGlyph({ id }: { readonly id: Phase1RoomId }) {
+  if (id === 'audio') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+      </svg>
+    )
+  }
+
+  if (id === 'conversation') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    )
+  }
+
+  if (id === 'content') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    )
+  }
+
+  if (id === 'activity') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </svg>
+    )
+  }
+
+  if (id === 'assignment' || id === 'assessment') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+      </svg>
+    )
+  }
+
+  if (id === 'unlock') {
+    return (
+      <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+        <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
+        <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
 }
 
 export function DemoPhase1Shell({
@@ -292,17 +343,18 @@ export function DemoPhase1Shell({
     )
   }
 
+  const continueLevel =
+    phase1Levels.find((level) => level.status === 'current') ?? selectedLevel
+
   return (
     <div className="phase1-shell" data-demo-phase1="synthetic">
-      <p className="phase1-shell__eyebrow">
-        <LocalizedMessage resolution={message('demo.phase1.eyebrow')} />
-      </p>
-      <h1 className="phase1-shell__title" id="destination-title" tabIndex={-1}>
+      <h1
+        className={module === 'levels' ? 'visually-hidden' : 'phase1-shell__title'}
+        id="destination-title"
+        tabIndex={-1}
+      >
         <LocalizedMessage resolution={message(moduleTitleKeys[module])} />
       </h1>
-      <p className="phase1-shell__lead">
-        <LocalizedMessage resolution={message('demo.phase1.lead')} />
-      </p>
 
       <nav
         className="phase1-shell__nav"
@@ -731,60 +783,167 @@ export function DemoPhase1Shell({
       ) : null}
 
       {module === 'levels' ? (
-        <section className="phase1-panel">
-          <div className="phase1-levels">
-            {phase1Levels.map((level) => {
-              const title = levelTitle(level)
-              return (
-                <button
-                  key={level.id}
-                  type="button"
-                  className="phase1-level"
-                  data-status={level.status}
-                  aria-current={
-                    selectedLevelId === level.id ? 'true' : undefined
-                  }
-                  disabled={level.status === 'locked'}
-                  onClick={() => setSelectedLevelId(level.id)}
-                >
-                  <strong lang={title.resolvedLocale}>{title.text}</strong>
-                  <span>
-                    <LocalizedMessage
-                      resolution={message(levelStatusKeys[level.status])}
-                    />
-                  </span>
-                  <span>{level.progressPercent}%</span>
-                </button>
-              )
-            })}
-          </div>
-          <div className="phase1-rooms">
-            <h2>
-              <span lang={levelTitle(selectedLevel).resolvedLocale}>
-                {levelTitle(selectedLevel).text}
+        <section className="phase1-learn" aria-label={message('nav.learn').text}>
+          <article className="ge-continue-hero">
+            <p className="ge-continue-hero__eyebrow">
+              <LocalizedMessage
+                resolution={message('demo.phase1.home.hero_label')}
+              />
+            </p>
+            <h2 className="ge-continue-hero__title">
+              <LocalizedMessage
+                resolution={message('demo.phase1.daily.audio_lesson_title')}
+              />
+            </h2>
+            <p className="ge-continue-hero__meta">
+              <span lang={levelTitle(continueLevel).resolvedLocale}>
+                {levelTitle(continueLevel).text}
               </span>
-              :{' '}
+              <span>{continueLevel.progressPercent}%</span>
+              <span>
+                <LocalizedMessage
+                  resolution={message('demo.phase1.daily.audio_lesson_duration')}
+                />
+              </span>
+              <span>
+                <LocalizedMessage
+                  resolution={message('demo.phase1.ai.listen')}
+                />
+              </span>
+            </p>
+            <div
+              className="ge-continue-hero__progress"
+              aria-hidden="true"
+            >
+              <span
+                className="ge-continue-hero__progress-bar"
+                style={
+                  {
+                    '--ge-continue-progress': `${continueLevel.progressPercent}%`,
+                  } as CSSProperties
+                }
+              />
+            </div>
+            <div className="ge-continue-hero__actions">
+              <button
+                className="ge-button ge-button--primary"
+                type="button"
+                onClick={playDailyAudio}
+                disabled={audioSpeaking}
+                aria-busy={audioSpeaking}
+              >
+                <LocalizedMessage
+                  resolution={message('demo.phase1.ai.listen')}
+                />
+              </button>
+              <a
+                className="ge-button ge-button--ghost"
+                href="#speak"
+              >
+                <LocalizedMessage
+                  resolution={message('conversation.start')}
+                />
+              </a>
+            </div>
+          </article>
+
+          <section
+            className="ge-chip-section"
+            aria-label={message('level.path.title').text}
+          >
+            <h2 className="ge-chip-section__title">
+              <LocalizedMessage resolution={message('level.path.title')} />
+            </h2>
+            <div className="ge-chip-row" role="list">
+              {phase1Levels.map((level) => {
+                const title = levelTitle(level)
+                const current = selectedLevelId === level.id
+                return (
+                  <button
+                    key={level.id}
+                    type="button"
+                    role="listitem"
+                    className="ge-level-chip"
+                    data-status={level.status}
+                    aria-current={current ? 'true' : undefined}
+                    disabled={level.status === 'locked'}
+                    onClick={() => setSelectedLevelId(level.id)}
+                  >
+                    <span lang={title.resolvedLocale}>{title.text}</span>
+                    {level.status === 'current' ? (
+                      <span>{level.progressPercent}%</span>
+                    ) : null}
+                    <span className="visually-hidden">
+                      <LocalizedMessage
+                        resolution={message(levelStatusKeys[level.status])}
+                      />
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <section
+            className="ge-chip-section"
+            aria-label={message('demo.phase1.levels.rooms_title').text}
+          >
+            <h2 className="ge-chip-section__title">
               <LocalizedMessage
                 resolution={message('demo.phase1.levels.rooms_title')}
               />
             </h2>
-            <ul>
-              {phase1LevelRooms.map((room) => (
-                <li key={room.id} data-available={room.available}>
-                  <strong>
-                    <LocalizedMessage
-                      resolution={message(roomTitleKeys[room.id])}
-                    />
-                  </strong>
-                  <p>
-                    <LocalizedMessage
-                      resolution={message(roomSummaryKeys[room.id])}
-                    />
-                  </p>
-                </li>
-              ))}
+            <ul className="ge-chip-row">
+              {phase1LevelRooms.map((room) => {
+                const active = room.id === 'audio' && room.available
+                return (
+                  <li key={room.id}>
+                    <button
+                      type="button"
+                      className="ge-room-chip"
+                      data-status={
+                        room.available
+                          ? active
+                            ? 'active'
+                            : 'available'
+                          : 'locked'
+                      }
+                      disabled={!room.available}
+                      onClick={() => {
+                        if (room.id === 'ai-teacher') {
+                          go('ai-teacher')
+                          return
+                        }
+                        if (room.id === 'audio' || room.id === 'activity') {
+                          go('daily-activity')
+                          return
+                        }
+                        if (room.id === 'conversation') {
+                          globalThis.location.hash = '#speak'
+                        }
+                      }}
+                    >
+                      <span className="ge-room-chip__icon" aria-hidden="true">
+                        <RoomGlyph id={room.id} />
+                      </span>
+                      <LocalizedMessage
+                        resolution={message(roomTitleKeys[room.id])}
+                      />
+                      <span className="visually-hidden">
+                        <LocalizedMessage
+                          resolution={
+                            room.available
+                              ? message(levelStatusKeys.current)
+                              : message(levelStatusKeys.locked)
+                          }
+                        />
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
-          </div>
+          </section>
         </section>
       ) : null}
 

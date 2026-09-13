@@ -22,6 +22,10 @@ describe('Mira learner chrome', () => {
     expect(chrome).toContain('mira-home-hero')
     expect(chrome).toContain('LessonPractice / audio curriculum files stay untouched')
     expect(chrome).toContain('max(3rem, 48px)')
+    expect(chrome).toContain('ge-continue-hero')
+    expect(chrome).toContain('--ge-color-soft-brand: #e6f2ec')
+    expect(chrome).toContain('#1a1a1a')
+    expect(chrome).toContain('#fafbfa')
 
     expect(nav).toContain("'speak'")
     expect(nav).toContain("'tuition'")
@@ -32,5 +36,17 @@ describe('Mira learner chrome', () => {
     expect(pinImport).toBeGreaterThan(-1)
     expect(chromeImport).toBeGreaterThan(pinImport)
     expect(app).toContain('ge-application-frame--mira-learner')
+    expect(app).toContain('shell-locale-note')
+    expect(app).not.toContain('className="shell-preview"')
+
+    const skipStyles = readFileSync(
+      resolve(
+        themeDir,
+        '../../../../packages/design-system/src/styles/components.css',
+      ),
+      'utf8',
+    )
+    expect(skipStyles).toContain('clip-path: inset(50%)')
+    expect(skipStyles).toContain('.ge-skip-link:focus-visible')
   })
 })

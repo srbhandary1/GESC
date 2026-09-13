@@ -1,5 +1,25 @@
 # Repository status
 
+## Variant A learner chrome (design-audit) — 13 September 2026
+
+- Learner Learn / demo My Levels now uses the locked Variant A pattern:
+  Continue Learning hero, horizontal level chips, room icon chips, and a
+  calm Home · Learn · Speak · Progress pill cluster. ADR-0026 still keeps
+  1:1 as the fifth destination.
+- Learner tokens align to `#006B3F` / `#005533` / `#e6f2ec` / `#1a1a1a` /
+  `#5c6670` / `#e2e8e5` / `#fafbfa` / `#ffffff`. Learner titles use the UI
+  sans stack (no serif page titles).
+- Removed from learner chrome: “Phase 1 learner shell” / synthetic
+  dashboard lead; the sticky yellow language-fallback banner (now a note
+  under the language control); a skip-link that painted over content
+  (skip remains, visually hidden until focus).
+- Routes, APIs, room types, auth and learning logic are unchanged.
+  LessonPractice, audio curriculum, ConversationOrchestrator and TTS
+  adapters are untouched. Marketing guest landing is unchanged.
+- Operator rebuild after merge:
+  `VITE_UI_TRANSLATION_PREVIEW=true pnpm --filter @global-english/web build`
+  or `make soft-launch-refresh-web`. Do not deploy from this agent.
+
 ## Guest `#home` uses Mira chrome — 13 September 2026
 
 - Unsigned / guest `#home` no longer renders `MarketingLanding`. Soft-launch

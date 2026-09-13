@@ -184,8 +184,15 @@ describe('LevelPathPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('Level 1')).toBeInTheDocument()
     })
+    expect(
+      screen.getByRole('heading', { name: 'Can — ability and permission' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open level' })).toBeInTheDocument()
     expect(screen.getByText(/Coming next/)).toBeInTheDocument()
     expect(screen.getByText('Level 2')).toBeInTheDocument()
+    expect(
+      screen.queryByText(/Listen to the lesson, answer your teacher/),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('Commissioning pending')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Level 1/i }))

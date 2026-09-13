@@ -1026,6 +1026,25 @@ function App({
                   )
                 })}
               </select>
+              {previewNotice.isPreview ? (
+                <aside
+                  className="shell-locale-note"
+                  aria-label={previewLabel.text}
+                  data-review-status={previewNotice.reviewStatus}
+                  lang={previewNotice.resolvedLocale}
+                >
+                  <LocalizedMessage resolution={previewNotice} />
+                </aside>
+              ) : isFallbackActive ? (
+                <aside
+                  className="shell-locale-note"
+                  aria-label={fallbackLabel.text}
+                  data-fallback-reason={title.reason}
+                  lang={fallbackNotice.resolvedLocale}
+                >
+                  <LocalizedMessage resolution={fallbackNotice} />
+                </aside>
+              ) : null}
               <p
                 className="visually-hidden"
                 aria-atomic="true"
@@ -1078,36 +1097,6 @@ function App({
                 {demoOrganization}
               </span>
             )}
-          </aside>
-        ) : null}
-
-        {previewNotice.isPreview ? (
-          <aside
-            className="shell-preview"
-            aria-label={previewLabel.text}
-            data-review-status={previewNotice.reviewStatus}
-            lang={previewNotice.resolvedLocale}
-          >
-            <span className="shell-preview__label">
-              <LocalizedMessage resolution={previewLabel} />
-            </span>
-            <span className="shell-preview__message">
-              <LocalizedMessage resolution={previewNotice} />
-            </span>
-          </aside>
-        ) : isFallbackActive ? (
-          <aside
-            className="shell-preview"
-            aria-label={fallbackLabel.text}
-            data-fallback-reason={title.reason}
-            lang={fallbackNotice.resolvedLocale}
-          >
-            <span className="shell-preview__label">
-              <LocalizedMessage resolution={fallbackLabel} />
-            </span>
-            <span className="shell-preview__message">
-              <LocalizedMessage resolution={fallbackNotice} />
-            </span>
           </aside>
         ) : null}
 

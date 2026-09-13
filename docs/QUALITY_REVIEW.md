@@ -1,5 +1,37 @@
 # Quality review
 
+## D-0287: Variant A learner chrome — 13 September 2026
+
+### Scope reviewed
+
+- Demo My Levels (`DemoPhase1Shell`) and authenticated Learn
+  (`LevelPathPanel`) restyled to Variant A: continue hero, level chips,
+  room chips. Learner frame tokens, pill nav, locale note, skip-link
+  visibility.
+- No LessonPractice, audio curriculum, ConversationOrchestrator, or TTS
+  edits. Marketing landing routes unchanged.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Variant A Learn/My Levels structure | Pass | Continue hero + chip rows in `DemoPhase1Shell` and `LevelPathPanel` |
+| Scaffolding copy removed | Pass | Phase 1 eyebrow/lead not rendered; room summaries not shown on Learn |
+| Language fallback | Pass | `shell-locale-note` under locale control; `shell-preview` banner removed from `App.tsx` |
+| Skip-link | Pass | Hidden with clip-path until `:focus` / `:focus-visible` |
+| Tokens | Pass | Learner `--ge-*` aligned to `#006B3F` / `#fafbfa` / `#1a1a1a` family |
+| Nav / routes | Pass | ADR-0026 five destinations retained; demo Phase 1 modules still linked |
+| Lesson/audio paths | Pass | No LessonPractice / orchestrator / TTS edits |
+
+### Verification and limitations
+
+- Focused web Vitest and lint results are recorded after the test pass
+  on this branch.
+- `make verify` / `make e2e` may be environment-limited (PHP/Composer,
+  pinned Node). Do not treat an unrun command as passed.
+- Soft-launch is **not** deployed by this change.
+- F0 / Play / production remain unauthorized.
+
 ## D-0286: Guest `#home` Mira chrome — 13 September 2026
 
 ### Scope reviewed

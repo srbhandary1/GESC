@@ -1,14 +1,18 @@
 /* Mira / Wonder learner chrome layered on Studio + GESC-green pin.
-   Layout, nav FAB, home hero, next-lesson card, onboarding, Speak chrome.
+   Variant A (design-audit): continue hero, level/room chips, pill nav.
    LessonPractice / audio curriculum files stay untouched. */
 
 :root {
   --ge-radius-pill: 999px;
   --ge-radius-2xl: 1.25rem;
+  --ge-radius-control: 0.625rem;
+  --ge-radius-chip: 0.75rem;
+  --ge-radius-hero: 1rem;
   --ge-mira-chrome-target: max(3rem, 48px);
-  --ge-elevation-1: 0 14px 36px rgb(11 18 16 / 0.14);
+  --ge-elevation-1: 0 14px 36px rgb(0 107 63 / 0.1);
   --ge-color-success: var(--ge-mira-mint, #3ddc97);
   --ge-color-glow: var(--ge-color-glow-emerald, rgb(0 107 63 / 0.4));
+  --ge-color-soft-brand: #e6f2ec;
 }
 
 .ge-visually-hidden {
@@ -732,8 +736,479 @@
   .ge-primary-navigation__link--speak .ge-nav-glyph,
   .mira-home-hero,
   .phase1-home__lesson,
-  .learner-home__action {
+  .learner-home__action,
+  .ge-continue-hero,
+  .ge-level-chip,
+  .ge-room-chip {
     transition: none;
     animation: none;
   }
+}
+
+/* —— Variant A learner tokens + chrome (design-audit) —— */
+.ge-application-frame--mira-learner,
+.demo-experience .ge-application-frame--studio-learner {
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #005533;
+  --ge-color-soft-brand: #e6f2ec;
+  --ge-color-ink: #1a1a1a;
+  --ge-color-text: #1a1a1a;
+  --ge-color-text-muted: #5c6670;
+  --ge-color-border: #e2e8e5;
+  --ge-color-canvas: #fafbfa;
+  --ge-color-canvas-deep: #fafbfa;
+  --ge-color-surface: #ffffff;
+  --ge-color-surface-elevated: #ffffff;
+  --ge-color-action-text: #ffffff;
+  --ge-color-status: #e6f2ec;
+  --ge-color-focus: #006b3f;
+  --ge-shadow-soft: 0 12px 32px rgb(0 107 63 / 0.08);
+  --ge-shadow-panel: 0 12px 32px rgb(0 107 63 / 0.08);
+  --ge-panel-background: #ffffff;
+  --ge-panel-border: #e2e8e5;
+  --ge-font-family-display: "Inter", var(--ge-font-family-ui);
+  --ge-radius-sm: var(--ge-radius-control);
+  --ge-nav-bg: #ffffff;
+  --ge-shell-header-bg: #ffffff;
+  color: var(--ge-color-text);
+  background: var(--ge-color-canvas);
+}
+
+.ge-application-frame--mira-learner :focus-visible,
+.demo-experience .ge-application-frame--studio-learner :focus-visible {
+  outline: 2px solid var(--ge-color-action);
+  outline-offset: 2px;
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .ge-application-frame__header,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .ge-application-frame__header {
+  background: var(--ge-color-surface);
+  border-block-end: 1px solid var(--ge-color-border);
+  color: var(--ge-color-ink);
+  box-shadow: none;
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-studio-brand,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-studio-brand {
+  color: var(--ge-color-ink);
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-studio-brand__name b,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-studio-brand__name b {
+  color: var(--ge-color-action);
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-studio-brand__mark,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-studio-brand__mark {
+  transform: none;
+  border-color: transparent;
+  background: var(--ge-color-action);
+  box-shadow: 0 0 0 0.2rem rgb(0 107 63 / 0.12);
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-studio-brand__mark i,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-studio-brand__mark i {
+  background: #ffffff;
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .ge-application-frame__header a:not(.shell-header-authentication):not(.shell-android-download),
+[data-ge-theme='light'] .ge-application-frame--mira-learner .ge-application-frame__header .shell-header-nav-link,
+[data-ge-theme='light'] .ge-application-frame--mira-learner .ge-application-frame__header .shell-header-authentication--quiet,
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-locale-control__select,
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-theme-control__select,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-locale-control__select,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-theme-control__select {
+  color: var(--ge-color-ink);
+  background: var(--ge-color-surface);
+  border-color: var(--ge-color-border);
+}
+
+[data-ge-theme='light'] .ge-application-frame--mira-learner .shell-locale-note,
+[data-ge-theme='light'] .demo-experience .ge-application-frame--studio-learner .shell-locale-note {
+  color: var(--ge-color-text-muted);
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation__list,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: calc(100% - 1.5rem);
+  margin: 0.85rem auto 0;
+  padding: 0.3rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation__item,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__item,
+.ge-application-frame--mira-learner .ge-primary-navigation__item--speak,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__item--speak {
+  width: auto;
+  display: block;
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation__link,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link,
+.ge-application-frame--mira-learner .ge-primary-navigation__link--speak,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link--speak {
+  min-block-size: var(--ge-mira-chrome-target);
+  min-inline-size: 4.5rem;
+  margin: 0;
+  padding: 0.45rem 1.05rem;
+  border: 0;
+  border-radius: var(--ge-radius-pill);
+  background: transparent;
+  color: var(--ge-color-text-muted);
+  box-shadow: none;
+  flex-direction: row;
+  gap: 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.ge-application-frame--mira-learner .ge-nav-glyph,
+.demo-experience .ge-application-frame--studio-learner .ge-nav-glyph,
+.ge-application-frame--mira-learner .ge-primary-navigation__link--speak .ge-nav-glyph,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link--speak .ge-nav-glyph {
+  display: none;
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation__link[aria-current='page'],
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link[aria-current='page'],
+.ge-application-frame--mira-learner .ge-primary-navigation__link--speak[aria-current='page'],
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link--speak[aria-current='page'] {
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
+  box-shadow: none;
+}
+
+.ge-application-frame--mira-learner .ge-primary-navigation__link:hover,
+.ge-application-frame--mira-learner .ge-primary-navigation__link:focus-visible,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link:hover,
+.demo-experience .ge-application-frame--studio-learner .ge-primary-navigation__link:focus-visible {
+  background: var(--ge-color-soft-brand);
+  color: var(--ge-color-action);
+  border-color: transparent;
+}
+
+.ge-application-frame--mira-learner .ge-button--primary,
+.demo-experience .ge-application-frame--studio-learner .ge-button--primary {
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
+  box-shadow: 0 8px 20px rgb(0 107 63 / 0.2);
+}
+
+.ge-application-frame--mira-learner .ge-button--ghost,
+.demo-experience .ge-application-frame--studio-learner .ge-button--ghost {
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-ink);
+  box-shadow: none;
+  text-decoration: none;
+}
+
+@media (max-width: 40rem) {
+  .ge-application-frame--mira-learner,
+  .demo-experience .ge-application-frame--studio-learner,
+  .ge-application-frame--mira-learner .ge-application-frame__main,
+  .demo-experience .ge-application-frame--studio-learner .ge-application-frame__main {
+    padding-block-end: calc(var(--ge-space-5) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner .ge-primary-navigation,
+  .demo-experience .ge-primary-navigation {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    border: 0;
+    background: transparent;
+    padding-block-end: 0;
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__list,
+  .demo-experience .ge-primary-navigation__list {
+    align-items: center;
+    justify-content: flex-start;
+    width: auto;
+    max-width: 100%;
+    margin-inline: var(--ge-space-3);
+    padding: 0.3rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .ge-application-frame--mira-learner .ge-primary-navigation__link,
+  .ge-application-frame--mira-learner .ge-primary-navigation__link--speak,
+  .demo-experience .ge-primary-navigation__link,
+  .demo-experience .ge-primary-navigation__link--speak {
+    min-block-size: var(--ge-mira-chrome-target);
+    min-inline-size: 4.5rem;
+    width: auto;
+    margin: 0;
+    padding: 0.45rem 1rem;
+    flex-direction: row;
+    font-size: 0.9rem;
+  }
+
+  .ge-application-frame--mira-learner .ge-nav-glyph,
+  .demo-experience .ge-nav-glyph,
+  .ge-application-frame--mira-learner .ge-primary-navigation__link--speak .ge-nav-glyph,
+  .demo-experience .ge-primary-navigation__link--speak .ge-nav-glyph {
+    display: none;
+  }
+}
+
+.ge-continue-hero {
+  display: grid;
+  gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+  padding: 1.35rem 1.4rem 1.45rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-hero);
+  background: var(--ge-color-surface);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.ge-continue-hero__eyebrow {
+  margin: 0;
+  color: var(--ge-color-action);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ge-continue-hero__title {
+  margin: 0;
+  color: var(--ge-color-ink);
+  font-family: var(--ge-font-family-ui);
+  font-size: clamp(1.65rem, 4vw, 2.1rem);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.ge-continue-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.92rem;
+}
+
+.ge-continue-hero__progress {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-soft-brand);
+}
+
+.ge-continue-hero__progress-bar {
+  display: block;
+  width: var(--ge-continue-progress, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ge-color-action);
+}
+
+.ge-continue-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-block-start: 0.25rem;
+}
+
+.ge-continue-hero__actions .ge-button {
+  min-block-size: var(--ge-mira-chrome-target);
+  padding-inline: 1.25rem;
+  border-radius: var(--ge-radius-pill);
+}
+
+.ge-chip-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.15rem 0.1rem 0.35rem;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.ge-chip-section {
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.ge-chip-section__title {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-family: var(--ge-font-family-ui);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ge-level-chip,
+.ge-room-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-block-size: var(--ge-mira-chrome-target);
+  padding: 0.4rem 0.95rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ge-level-chip[data-status='current'],
+.ge-level-chip[aria-current='true'],
+.ge-room-chip[data-status='active'] {
+  border-color: var(--ge-color-action);
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
+}
+
+.ge-level-chip[data-status='completed'] {
+  border-color: var(--ge-color-border);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-ink);
+}
+
+.ge-level-chip[data-status='locked'],
+.ge-room-chip[data-status='locked'],
+.ge-level-chip:disabled,
+.ge-room-chip:disabled {
+  color: var(--ge-color-text-muted);
+  background: #f4f6f5;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.ge-room-chip__icon {
+  display: grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ge-color-soft-brand);
+  color: var(--ge-color-action);
+}
+
+.ge-room-chip[data-status='active'] .ge-room-chip__icon {
+  background: rgb(255 255 255 / 0.18);
+  color: #ffffff;
+}
+
+.ge-room-chip[data-status='locked'] .ge-room-chip__icon {
+  background: #e8ece9;
+  color: var(--ge-color-text-muted);
+}
+
+.ge-room-chip__icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.phase1-learn,
+.level-path--variant-a {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.phase1-shell__title,
+.phase1-card__value,
+.phase1-stats__value,
+.phase1-ai-reply,
+.level-path__intro h2,
+.level-path__ready h3,
+.learner-home__title,
+.learner-home__action-title {
+  font-family: var(--ge-font-family-ui);
+}
+
+.phase1-shell__eyebrow,
+.phase1-shell__lead {
+  display: none;
+}
+
+.level-path--variant-a .level-path__intro p,
+.level-path--variant-a .level-path__eyebrow {
+  display: none;
+}
+
+.level-path--variant-a .level-path__intro h2 {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ge-color-text-muted);
+}
+
+.level-path--variant-a .level-path__ready,
+.level-path--variant-a .level-path__later {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.level-path--variant-a .level-path__list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  overflow-x: auto;
+  grid-template-columns: none;
+}
+
+.level-path--variant-a .level-path__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+  min-block-size: var(--ge-mira-chrome-target);
+  min-inline-size: auto;
+  height: auto;
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--ge-radius-pill);
+  grid-template-rows: none;
+}
+
+.level-path--variant-a .level-path__item-index,
+.level-path--variant-a .level-path__item-copy span,
+.level-path--variant-a .level-path__item-action {
+  display: none;
+}
+
+.level-path--variant-a .level-path__item-copy strong {
+  font-size: 0.88rem;
 }

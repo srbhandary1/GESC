@@ -1,19 +1,38 @@
 .ge-skip-link {
-  position: fixed;
+  position: absolute;
   z-index: 100;
-  inset-block-start: var(--ge-space-2);
-  inset-inline-start: var(--ge-space-2);
-  min-block-size: var(--ge-target-minimum);
-  padding: var(--ge-space-3) var(--ge-space-4);
-  transform: translateY(calc(-100% - var(--ge-space-4)));
-  border-radius: var(--ge-radius-sm);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  transform: none;
   background: var(--ge-color-action);
   color: var(--ge-color-action-text);
   font-weight: 700;
 }
 
-.ge-skip-link:focus {
-  transform: translateY(0);
+.ge-skip-link:focus,
+.ge-skip-link:focus-visible {
+  position: fixed;
+  inset-block-start: var(--ge-space-2);
+  inset-inline-start: var(--ge-space-2);
+  width: auto;
+  height: auto;
+  min-block-size: var(--ge-target-minimum);
+  margin: 0;
+  padding: var(--ge-space-3) var(--ge-space-4);
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-color-action);
+  color: var(--ge-color-action-text);
 }
 
 .ge-application-frame {
