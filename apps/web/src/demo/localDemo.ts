@@ -18,7 +18,14 @@ import type {
   MissionResult,
   OnboardingInput,
 } from '../learner/LearnerJourneyApi'
+import { LearnerJourneyUnavailableError } from '../learner/LearnerJourneyApi'
 import { encodeDemoSpeechUrl } from './browserSpeech'
+import {
+  chapterFriendReply,
+  chapterUsesPattern,
+  currentChapterPractice,
+  explanationForLocale,
+} from './chapterPractice'
 import { requestDemoChatReply } from './demoChat'
 
 const ids = {
@@ -158,6 +165,13 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
     )
   }
 
+  async progressDashboard(
+    signal?: AbortSignal,
+  ): Promise<import('../learner/LearnerJourneyApi').LearnerProgressDashboard> {
+    abortIfNeeded(signal)
+    throw new LearnerJourneyUnavailableError()
+  }
+
   async progress(
     _enrollmentId: string,
     signal?: AbortSignal,
@@ -175,7 +189,7 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
         {
           evidence: result.evidence,
           knowledge_state: result.knowledge_state,
-          label: content('en-IN', 'Introduce myself'),
+          label: content('en-IN', 'Use can and cannot'),
           local_capture_receipt_present:
             result.local_capture_receipt_present,
           objective_id: ids.objective,
@@ -193,7 +207,7 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
             latest_attempt_number: 1,
           },
           knowledge_state: 'developing',
-          label: content('en-IN', 'Greet a colleague at work'),
+          label: content('en-IN', 'Use should for advice'),
           local_capture_receipt_present: false,
           objective_id: ids.greetingObjective,
           review_due_at: '2026-08-02T09:00:00Z',
@@ -208,6 +222,9 @@ class LocalDemoLearnerApi implements LearnerJourneyApi {
 class LocalDemoConversationApi implements ConversationJourneyApi {
   #turnNumber = 0
   #roleplaySession: FriendSession | null = null
+  #uiLocale: FriendSession['ui_locale'] = 'en-IN'
+  #coachingMode: NonNullable<StartFriendSessionInput['coaching_mode']> =
+    'gentle'
 
   async startSession(
     input: StartFriendSessionInput,
@@ -215,6 +232,8 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     signal?: AbortSignal,
   ): Promise<FriendSession> {
     abortIfNeeded(signal)
+    this.#uiLocale = input.ui_locale
+    this.#coachingMode = input.coaching_mode ?? 'gentle'
 
     const isRoleplay =
       input.persona_key === 'clinic-reception-roleplay-prototype' ||
@@ -285,11 +304,40 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
     abortIfNeeded(signal)
     this.#turnNumber += 1
 
-    const openRouter = await requestDemoChatReply(input.prototype_utterance)
+    const chapter = currentChapterPractice()
+    const openRouter = await requestDemoChatReply(input.prototype_utterance, {
+      locale: this.#uiLocale,
+      chapter:
+        chapter === null
+          ? undefined
+          : {
+              title: chapter.title,
+              modelLine: chapter.modelLine,
+              patterns: chapter.targetPatterns,
+              scenario: chapter.scenario,
+            },
+    })
     abortIfNeeded(signal)
     const assistantReply =
       openRouter?.reply ??
-      demoFriendReply(input.prototype_utterance, this.#turnNumber)
+      (chapter === null
+        ? demoFriendReply(input.prototype_utterance, this.#turnNumber)
+        : chapterFriendReply(
+            input.prototype_utterance,
+            chapter,
+            this.#turnNumber,
+          ))
+    const clearer =
+      chapter?.modelLine ?? 'I enjoy learning English after work.'
+    const needed =
+      chapter === null
+        ? true
+        : !chapterUsesPattern(input.prototype_utterance, chapter)
+    const explanation = explanationForLocale(
+      this.#uiLocale,
+      this.#coachingMode,
+      clearer,
+    )
 
     return {
       assistant_reply: assistantReply,
@@ -297,16 +345,13 @@ class LocalDemoConversationApi implements ConversationJourneyApi {
       events_url: `local-demo://turn/${this.#turnNumber}`,
       id: ids.turn,
       priority_correction: {
-        correction_en:
-          'A clearer sentence is: "I enjoy learning English after work."',
-        error_category: 'grammar.article',
-        explanation_l1:
-          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
-        explanation_locale: 'kn-IN',
-        explanation_kn:
-          'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
-        needed: true,
-        retry_recommended: false,
+        correction_en: `A clearer sentence is: "${clearer}"`,
+        error_category: 'grammar.pattern',
+        explanation_l1: explanation,
+        explanation_locale: this.#uiLocale,
+        ...(this.#uiLocale === 'kn-IN' ? { explanation_kn: explanation } : {}),
+        needed,
+        retry_recommended: needed,
       },
       replayed: false,
       safety_state: 'ok',
@@ -482,13 +527,19 @@ function demoHome(): LearnerHome {
     next_mission: {
       estimated_minutes: 5,
       id: ids.mission,
-      title: content('en-IN', 'Introduce yourself'),
+      title: content('en-IN', 'Can'),
     },
     onboarding: {
       adult_confirmed: true,
       completed: true,
       goal_key: 'workplace-confidence',
     },
+    streak: {
+      count: 0,
+      as_of_date: '2026-09-12',
+      timezone: 'Asia/Kolkata',
+    },
+    due_review: null,
   }
 }
 
@@ -499,18 +550,18 @@ function demoMission(): LearnerMission {
       options: [
         {
           id: 'correct-option',
-          label: content('en-IN', 'Hello, my name is Ravi.'),
+          label: content('en-IN', 'I can speak English.'),
         },
         {
           id: 'incorrect-option',
           label: content('en-IN', 'Goodbye yesterday.'),
         },
       ],
-      prompt: content('en-IN', 'Choose the correct introduction.'),
+      prompt: content('en-IN', 'Choose the correct sentence.'),
     },
     enrollment_id: ids.enrollment,
     id: ids.mission,
-    kannada_guidance: content('kn-IN', 'ನಿಮ್ಮ ಹೆಸರನ್ನು ಹೇಳಿ.'),
+    kannada_guidance: content('kn-IN', 'ಈ ಪಾಠದಲ್ಲಿ can ಬಳಕೆಯನ್ನು ಕಲಿಯಿರಿ.'),
     model_audio: {
       asset_id: ids.asset,
       duration_ms: 2_400,
@@ -519,14 +570,14 @@ function demoMission(): LearnerMission {
       mime_type: 'audio/wav',
       stream_url: encodeDemoSpeechUrl(
         'en-IN',
-        'Hello, my name is Ravi.',
+        'I can speak English. Can I help you?',
       ),
     },
-    model_text: content('en-IN', 'Hello, my name is Ravi.'),
+    model_text: content('en-IN', 'I can speak English. Can I help you?'),
     objective_id: ids.objective,
     publication_id: ids.publication,
-    title: content('en-IN', 'Introduce yourself'),
-    transcript: content('en-IN', 'Hello, my name is Ravi.'),
+    title: content('en-IN', 'Can'),
+    transcript: content('en-IN', 'I can speak English. Can I help you?'),
   }
 }
 
@@ -539,7 +590,7 @@ function demoResult(
 
   return {
     attempt_id: ids.attempt,
-    can_do: content('en-IN', 'I can introduce myself.'),
+    can_do: content('en-IN', 'I can use can and cannot.'),
     check_state: correct ? 'correct' : 'incorrect',
     evidence: {
       best_attempt_id: ids.best,

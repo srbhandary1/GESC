@@ -14,6 +14,11 @@ import {
   recognizeWithBrowserSpeech,
   speakWithBrowserSpeech,
 } from '../demo/browserSpeech'
+import {
+  defaultAudioRecorder,
+  type AudioRecordingSession,
+} from '../learner/BrowserAudioRecorder'
+import { canAttemptMicrophoneCapture } from '../learner/canAttemptMicrophoneCapture'
 import { speakDemoText, stopDemoSpeech } from '../demo/demoTts'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
@@ -31,6 +36,14 @@ import {
   CONFIDENCE_LISTEN_LINES,
   CONFIDENCE_MIN_TURNS_BEFORE_REFLECT,
 } from './confidenceContent'
+import {
+  PRACTICE_ABOUT_STORAGE_KEY,
+  persistFirstRunDismissed,
+  readFirstRunDismissed,
+} from '../ui/firstRunPreference'
+import { AvatarSlot } from '../ui/AvatarSlot'
+import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
+import { TapToPlay } from '../ui/TapToPlay'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -45,6 +58,14 @@ export interface ConversationJourneyProps {
    * browser speech for model lines as a non-evidence interim aid.
    */
   readonly demoMode?: boolean
+  readonly listenLines?: readonly string[]
+  /** Restored from 9818fe2: embed inside a level room without the Speak chrome. */
+  readonly embedded?: boolean
+  readonly openingLine?: string
+  readonly autoStart?: boolean
+  readonly speakOpening?: boolean
+  /** Bound ConversationOrchestrator session from `/me/levels/.../conversation-sessions`. */
+  readonly initialSession?: FriendSession
 }
 
 type ConfidenceStage = 'warmup' | 'listen' | 'talk' | 'reflect'
@@ -104,8 +125,29 @@ export function ConversationJourney({
   api = defaultConversationJourneyApi,
   createClientId = createRandomClientId,
   demoMode = false,
+  listenLines,
+  embedded = false,
+  openingLine,
+  autoStart = false,
+  speakOpening = true,
+  initialSession,
 }: ConversationJourneyProps) {
-  const [state, setState] = useState<ConversationState>({ kind: 'idle' })
+  const modelLines =
+    listenLines !== undefined && listenLines.length > 0
+      ? listenLines
+      : openingLine !== undefined && openingLine.trim() !== ''
+        ? [openingLine]
+        : CONFIDENCE_LISTEN_LINES
+  const [state, setState] = useState<ConversationState>(() =>
+    initialSession === undefined
+      ? { kind: 'idle' }
+      : {
+          kind: 'ready',
+          session: initialSession,
+          stage: 'talk',
+          completedTurns: 0,
+        },
+  )
   const [utterance, setUtterance] = useState('')
   const [coachingMode, setCoachingMode] = useState<
     'gentle' | 'tutor' | 'fluency'
@@ -116,9 +158,17 @@ export function ConversationJourney({
   const [showHint, setShowHint] = useState(false)
   const [showSilenceNudge, setShowSilenceNudge] = useState(false)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('type')
+  const [aboutOpen, setAboutOpen] = useState(
+    () =>
+      !embedded && !readFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY),
+  )
+  const autoStarted = useRef(false)
+  const openingSpoken = useRef(false)
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
   const stopRecognition = useRef<(() => void) | null>(null)
+  const micSession = useRef<AudioRecordingSession | null>(null)
+  const holdLimitTimer = useRef<number | null>(null)
   const utteranceFieldRef = useRef<HTMLTextAreaElement | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
@@ -133,6 +183,7 @@ export function ConversationJourney({
 
   useEffect(() => {
     if (state.kind !== 'ready' || state.stage !== 'talk') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- leave talk stage must hide the nudge
       setShowSilenceNudge(false)
       return
     }
@@ -171,6 +222,8 @@ export function ConversationJourney({
     setState({ kind: 'starting' })
     setShowHint(false)
     setUtterance('')
+    const initialStage: ConfidenceStage =
+      autoStart || embedded ? 'listen' : 'warmup'
     api
       .startSession(
         {
@@ -181,16 +234,49 @@ export function ConversationJourney({
         },
         sessionCommandId.current,
       )
-      .then((session) =>
+      .then((session) => {
         setState({
           kind: 'ready',
           session,
-          stage: 'warmup',
+          stage: initialStage,
           completedTurns: 0,
-        }),
-      )
+        })
+        const spoken = openingLine?.trim() || modelLines[0]
+        if (
+          speakOpening &&
+          !openingSpoken.current &&
+          spoken !== undefined &&
+          spoken.trim() !== '' &&
+          (autoStart || embedded)
+        ) {
+          openingSpoken.current = true
+          speakEnglish(spoken)
+        }
+      })
       .catch(() => setState({ kind: 'error' }))
   }
+
+  useEffect(() => {
+    if (
+      openingSpoken.current ||
+      initialSession === undefined ||
+      openingLine === undefined ||
+      openingLine.trim() === '' ||
+      !speakOpening
+    ) {
+      return
+    }
+    openingSpoken.current = true
+    speakEnglish(openingLine)
+  })
+
+  useEffect(() => {
+    if (!autoStart || autoStarted.current || initialSession !== undefined) {
+      return
+    }
+    autoStarted.current = true
+    start()
+  })
 
   const send = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -252,32 +338,63 @@ export function ConversationJourney({
   }
 
   const startListening = () => {
-    if (!demoMode || !browserSpeechRecognitionAvailable()) {
+    setSpeechError(false)
+    setInputMode('speak')
+
+    if (browserSpeechRecognitionAvailable()) {
+      setListening(true)
+      const recognition = recognizeWithBrowserSpeech('en-IN')
+      stopRecognition.current = recognition.stop
+      void recognition.promise
+        .then(({ transcript }) => {
+          if (transcript !== '') {
+            setUtterance(transcript)
+          }
+        })
+        .catch(() => setSpeechError(true))
+        .finally(() => {
+          setListening(false)
+          stopRecognition.current = null
+        })
+      return
+    }
+
+    if (
+      !defaultAudioRecorder.isSupported() &&
+      !canAttemptMicrophoneCapture()
+    ) {
       setSpeechError(true)
       return
     }
 
-    setSpeechError(false)
     setListening(true)
-    setInputMode('speak')
-    const recognition = recognizeWithBrowserSpeech('en-IN')
-    stopRecognition.current = recognition.stop
-    void recognition.promise
-      .then(({ transcript }) => {
-        if (transcript !== '') {
-          setUtterance(transcript)
-        }
+    void defaultAudioRecorder
+      .start()
+      .then((session) => {
+        micSession.current = session
+        holdLimitTimer.current = window.setTimeout(() => {
+          stopListening()
+        }, HOLD_MAXIMUM_DURATION_MS)
       })
-      .catch(() => setSpeechError(true))
-      .finally(() => {
+      .catch(() => {
         setListening(false)
-        stopRecognition.current = null
+        setSpeechError(true)
       })
   }
 
   const stopListening = () => {
     stopRecognition.current?.()
+    stopRecognition.current = null
+    if (holdLimitTimer.current !== null) {
+      window.clearTimeout(holdLimitTimer.current)
+      holdLimitTimer.current = null
+    }
+    const session = micSession.current
+    micSession.current = null
     setListening(false)
+    if (session !== null) {
+      void session.stop().catch(() => undefined)
+    }
   }
 
   const playReply = () => {
@@ -289,7 +406,7 @@ export function ConversationJourney({
   }
 
   const playModelLines = () => {
-    speakEnglish(CONFIDENCE_LISTEN_LINES.join(' '))
+    speakEnglish(modelLines.join(' '))
   }
 
   const advanceStage = (stage: ConfidenceStage) => {
@@ -350,11 +467,13 @@ export function ConversationJourney({
   }
 
   const restart = () => {
+    stopListening()
     sessionCommandId.current = createClientId()
     turnCommandId.current = createClientId()
     setState({ kind: 'idle' })
     setUtterance('')
     setShowHint(false)
+    setSpeechError(false)
   }
 
   const session =
@@ -392,16 +511,28 @@ export function ConversationJourney({
   const carrySentence =
     lastTurn?.priority_correction?.correction_en ??
     lastTurn?.assistant_reply ??
-    CONFIDENCE_LISTEN_LINES[0]
+    modelLines[0]
 
   return (
     <section
-      className="conversation-journey"
+      className={
+        embedded
+          ? 'conversation-journey conversation-journey--embedded'
+          : 'conversation-journey conversation-journey--speak'
+      }
       aria-labelledby="conversation-title"
       data-demo-speech={demoMode ? 'browser' : undefined}
       data-confidence-stage={stage}
+      data-embedded={embedded ? 'true' : undefined}
     >
       <div className="conversation-journey__heading">
+        <div className="conversation-journey__presence">
+          <AvatarSlot
+            label={text('shell.mira.name')}
+            size="lg"
+            slot="ai-friend"
+          />
+        </div>
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message(
@@ -411,50 +542,89 @@ export function ConversationJourney({
             )}
           />
         </p>
-        <h2 id="conversation-title">
+        {embedded ? (
+          <h2 id="conversation-title">
+            <LocalizedMessage
+              resolution={message(
+                demoMode ? 'conversation.demo.title' : 'conversation.title',
+              )}
+            />
+          </h2>
+        ) : (
+          <h1 id="conversation-title">
+            <LocalizedMessage
+              resolution={message(
+                demoMode ? 'conversation.demo.title' : 'conversation.title',
+              )}
+            />
+          </h1>
+        )}
+        {embedded ? null : (
+        <button
+          className="ge-button ge-button--quiet conversation-journey__about"
+          onClick={() => setAboutOpen(true)}
+          type="button"
+        >
           <LocalizedMessage
-            resolution={message(
-              demoMode ? 'conversation.demo.title' : 'conversation.title',
-            )}
+            resolution={message('conversation.about_action')}
           />
-        </h2>
+        </button>
+        )}
       </div>
 
-      <aside
-        className="conversation-journey__notice"
-        aria-labelledby="conversation-disclosure"
-      >
-        <h3 id="conversation-disclosure">
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.disclosure_title'
-                : 'conversation.disclosure_title',
-            )}
-          />
-        </h3>
-        <p>
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.prototype_notice'
-                : 'conversation.prototype_notice',
-            )}
-          />
-        </p>
-        <p>
-          <LocalizedMessage
-            resolution={message(
-              demoMode
-                ? 'conversation.demo.browser_speech_notice'
-                : 'conversation.privacy_notice',
-            )}
-          />
-        </p>
-      </aside>
+      {aboutOpen ? (
+        <div className="ge-sheet-backdrop">
+          <aside
+            aria-labelledby="conversation-disclosure"
+            aria-modal="true"
+            className="ge-sheet conversation-journey__notice"
+            role="dialog"
+          >
+            <h3 id="conversation-disclosure">
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.disclosure_title'
+                    : 'conversation.disclosure_title',
+                )}
+              />
+            </h3>
+            <p>
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.prototype_notice'
+                    : 'conversation.prototype_notice',
+                )}
+              />
+            </p>
+            <p>
+              <LocalizedMessage
+                resolution={message(
+                  demoMode
+                    ? 'conversation.demo.browser_speech_notice'
+                    : 'conversation.privacy_notice',
+                )}
+              />
+            </p>
+            <button
+              className="ge-button ge-button--primary"
+              onClick={() => {
+                persistFirstRunDismissed(PRACTICE_ABOUT_STORAGE_KEY)
+                setAboutOpen(false)
+              }}
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={message('conversation.about_continue')}
+              />
+            </button>
+          </aside>
+        </div>
+      ) : null}
 
-      {state.kind === 'idle' || state.kind === 'starting' ? (
-        <div className="conversation-journey__start">
+      {!embedded && (state.kind === 'idle' || state.kind === 'starting') ? (
+        <div className="conversation-journey__start rounded-xl border border-line/70 bg-surface p-5 shadow-elevation-1">
           <label htmlFor="coaching-mode">
             <LocalizedMessage
               resolution={message('conversation.coaching_mode.label')}
@@ -520,11 +690,11 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-warmup"
         >
-          <h3 id="confidence-warmup">
+          <h2 id="confidence-warmup">
             <LocalizedMessage
               resolution={message('conversation.confidence.warmup_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.warmup_lead')}
@@ -552,21 +722,44 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-listen"
         >
-          <h3 id="confidence-listen">
+          <h2 id="confidence-listen">
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_lead')}
             />
           </p>
-          <ol className="conversation-journey__model-lines" lang="en-IN">
-            {CONFIDENCE_LISTEN_LINES.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ol>
+          <div className="conversation-journey__prompt">
+            <TapToPlay
+              idleLabel={
+                <LocalizedMessage resolution={message('shell.listen')} />
+              }
+              onPlay={playModelLines}
+              playingLabel={
+                <LocalizedMessage
+                  resolution={message('shell.listen.playing')}
+                />
+              }
+              unavailableLabel={
+                <LocalizedMessage
+                  resolution={message('shell.listen.unavailable')}
+                />
+              }
+            />
+            <p className="conversation-journey__prompt-text" lang="en-IN">
+              {modelLines[0]}
+            </p>
+          </div>
+          {modelLines.length > 1 ? (
+            <ol className="conversation-journey__model-lines" lang="en-IN">
+              {modelLines.slice(1).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ol>
+          ) : null}
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.listen_text_first')}
@@ -608,11 +801,11 @@ export function ConversationJourney({
           className="conversation-journey__stage"
           aria-labelledby="confidence-reflect"
         >
-          <h3 id="confidence-reflect">
+          <h2 id="confidence-reflect">
             <LocalizedMessage
               resolution={message('conversation.confidence.reflect_title')}
             />
-          </h3>
+          </h2>
           <p lang={locale}>
             <LocalizedMessage
               resolution={message('conversation.confidence.reflect_lead')}
@@ -645,24 +838,24 @@ export function ConversationJourney({
 
       {session !== undefined && stage === 'talk' ? (
         <>
-          {demoMode ? null : (
-            <>
-              <VoicePracticePanel
-                api={api}
-                createClientId={createClientId}
-                locale={locale}
-                onTranscriptSelected={setUtterance}
-                sessionId={session.id}
-                text={text}
-              />
-              <AiMemoryPanel
-                api={api}
-                createClientId={createClientId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                text={text}
-              />
-            </>
+          {api.uploadVoiceRecording === undefined ? null : (
+            <VoicePracticePanel
+              api={api}
+              createClientId={createClientId}
+              locale={locale}
+              onTranscriptSelected={setUtterance}
+              sessionId={session.id}
+              text={text}
+            />
+          )}
+          {demoMode || api.listAiMemory === undefined ? null : (
+            <AiMemoryPanel
+              api={api}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              text={text}
+            />
           )}
 
           <div
@@ -744,31 +937,48 @@ export function ConversationJourney({
               onChange={(event) => setUtterance(event.currentTarget.value)}
             />
             {demoMode ? (
-              <div className="conversation-journey__speech-actions">
+              <div className="conversation-journey__mic-dock">
+                <p className="conversation-journey__mic-hint">
+                  <LocalizedMessage
+                    resolution={message(
+                      listening
+                        ? 'conversation.demo.listening'
+                        : 'conversation.demo.hold_to_speak',
+                    )}
+                  />
+                </p>
                 <button
-                  className="ge-button"
+                  className="ge-mic-button"
+                  data-listening={listening ? 'true' : undefined}
                   type="button"
                   disabled={state.kind === 'sending'}
                   onClick={listening ? stopListening : startListening}
                 >
-                  <LocalizedMessage
-                    resolution={message(
-                      listening
-                        ? 'conversation.demo.stop_listening'
-                        : 'conversation.demo.speak_turn',
-                    )}
-                  />
-                </button>
-                {listening ? (
-                  <p
-                    className="conversation-journey__listening"
-                    role="status"
-                  >
+                  <span aria-hidden="true" className="ge-mic-button__glyph">
+                    <svg
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" x2="12" y1="19" y2="23" />
+                      <line x1="8" x2="16" y1="23" y2="23" />
+                    </svg>
+                  </span>
+                  <span className="visually-hidden">
                     <LocalizedMessage
-                      resolution={message('conversation.demo.listening')}
+                      resolution={message(
+                        listening
+                          ? 'conversation.demo.stop_listening'
+                          : 'conversation.demo.speak_turn',
+                      )}
                     />
-                  </p>
-                ) : null}
+                  </span>
+                </button>
               </div>
             ) : null}
             <button
@@ -795,27 +1005,49 @@ export function ConversationJourney({
         >
           {state.turn.status === 'completed' ? (
             <>
-              <h3 id="conversation-reply">
+              <h2 id="conversation-reply">
                 <LocalizedMessage
                   resolution={message('conversation.reply_title')}
                 />
-              </h3>
-              <dl>
-                <div>
+              </h2>
+              <dl className="conversation-journey__transcript">
+                <div className="conversation-journey__bubble conversation-journey__bubble--you">
                   <dt>
                     <LocalizedMessage
-                      resolution={message('conversation.transcript_label')}
+                      resolution={message('conversation.transcript.you')}
                     />
                   </dt>
                   <dd lang="en-IN">{state.turn.transcript}</dd>
                 </div>
-                <div>
+                <div className="conversation-journey__bubble conversation-journey__bubble--mira">
                   <dt>
                     <LocalizedMessage
-                      resolution={message('conversation.friend_label')}
+                      resolution={message('shell.mira.name')}
                     />
                   </dt>
-                  <dd lang="en-IN">{state.turn.assistant_reply}</dd>
+                  <dd lang="en-IN">
+                    {state.turn.assistant_reply}
+                    <TapToPlay
+                      idleLabel={
+                        <LocalizedMessage
+                          resolution={message('shell.listen')}
+                        />
+                      }
+                      onPlay={playReply}
+                      playingLabel={
+                        <LocalizedMessage
+                          resolution={message('shell.listen.playing')}
+                        />
+                      }
+                      unavailableLabel={
+                        <LocalizedMessage
+                          resolution={message(
+                            'shell.listen.unavailable',
+                          )}
+                        />
+                      }
+                    />
+                  </dd>
                 </div>
               </dl>
               {state.turn.priority_correction ? (
@@ -903,16 +1135,16 @@ export function ConversationJourney({
               </div>
             </>
           ) : (
-            <h3 id="conversation-reply">
+            <h2 id="conversation-reply">
               <LocalizedMessage resolution={message('conversation.failed')} />
-            </h3>
+            </h2>
           )}
 
-          <h4>
+          <h3>
             <LocalizedMessage
               resolution={message('conversation.events_title')}
             />
-          </h4>
+          </h3>
           <ol className="conversation-journey__events">
             {state.events.map((turnEvent) => (
               <li key={turnEvent.sequence}>
@@ -929,15 +1161,24 @@ export function ConversationJourney({
       ) : null}
 
       {state.kind === 'error' || speechError ? (
-        <p role="alert">
-          <LocalizedMessage
-            resolution={message(
-              speechError && demoMode
-                ? 'conversation.demo.recognition_unavailable'
-                : 'conversation.error',
-            )}
-          />
-        </p>
+        <div className="ge-async-error conversation-journey__error">
+          <p role="alert">
+            <LocalizedMessage
+              resolution={message(
+                speechError && demoMode
+                  ? 'conversation.demo.recognition_unavailable'
+                  : 'conversation.error',
+              )}
+            />
+          </p>
+          <button
+            className="ge-button ge-button--primary"
+            onClick={restart}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.retry')} />
+          </button>
+        </div>
       ) : null}
     </section>
   )

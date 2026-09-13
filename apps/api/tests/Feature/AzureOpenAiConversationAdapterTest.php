@@ -88,6 +88,41 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         $this->assertContains('secret_file_invalid', $errors);
     }
 
+    public function test_configuration_rejects_soft_launch_scaffold_evidence(): void
+    {
+        $this->configureAuthorizedBoundary();
+        config()->set([
+            'conversation.azure_openai.endpoint' => 'https://REPLACE.openai.azure.com',
+            'conversation.azure_openai.allowed_host' => 'REPLACE.openai.azure.com',
+            'conversation.azure_openai.deployment' => 'REPLACE_DEPLOYMENT_NAME',
+            'conversation.azure_openai.evidence.subscription' => 'soft-launch-subscription-v1',
+            'conversation.azure_openai.evidence.contracting_entity' => 'soft-launch-entity-v1',
+            'conversation.azure_openai.evidence.agreement_sha256' => str_repeat('a', 64),
+            'conversation.azure_openai.evidence.dpa_sha256' => str_repeat('b', 64),
+            'conversation.azure_openai.evidence.subprocessor_sha256' => str_repeat('c', 64),
+            'conversation.azure_openai.evidence.privacy_legal_review' => 'soft-launch-privacy-v1',
+            'conversation.azure_openai.evidence.logging_disabled' => 'soft-launch-logging-v1',
+            'conversation.azure_openai.evidence.credential_version' => 'soft-launch-credential-v1',
+            'conversation.azure_openai.evidence.region_acceptance' => 'soft-launch-region-v1',
+        ]);
+
+        $errors = $this->app->make(
+            AzureOpenAiConversationConfiguration::class,
+        )->preflightErrors();
+
+        $this->assertContains('endpoint_invalid', $errors);
+        $this->assertContains('deployment_invalid', $errors);
+        $this->assertContains('subscription_evidence_missing', $errors);
+        $this->assertContains('contracting_entity_evidence_missing', $errors);
+        $this->assertContains('agreement_sha256_invalid', $errors);
+        $this->assertContains('dpa_sha256_invalid', $errors);
+        $this->assertContains('subprocessor_sha256_invalid', $errors);
+        $this->assertContains('privacy_legal_review_evidence_missing', $errors);
+        $this->assertContains('logging_disabled_evidence_missing', $errors);
+        $this->assertContains('credential_version_evidence_missing', $errors);
+        $this->assertContains('region_acceptance_evidence_missing', $errors);
+    }
+
     public function test_chat_completions_maps_structured_turn_with_explanation_l1(): void
     {
         $this->configureAuthorizedBoundary();
@@ -153,8 +188,49 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
                 && $request->hasHeader('api-key', 'not-a-real-provider-key')
                 && ($payload['response_format']['type'] ?? null) === 'json_object'
                 && str_contains((string) ($payload['messages'][1]['content'] ?? ''), 'kn-IN')
+                && str_contains((string) ($payload['messages'][0]['content'] ?? ''), 'Speak only as Swathi')
                 && ! str_contains($request->body(), 'not-a-real-provider-key');
         });
+    }
+
+    public function test_chat_completions_maps_unneeded_correction_to_null(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+
+        $modelJson = json_encode([
+            'understood_intent' => 'share_about_work',
+            'assistant_reply_en' => 'That sounds like a productive day.',
+            'safety_state' => 'ok',
+            'priority_correction' => [
+                'needed' => false,
+                'error_category' => 'none',
+                'correction_en' => 'none',
+                'explanation_l1' => 'none',
+                'explanation_locale' => 'kn-IN',
+                'retry_recommended' => false,
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        Http::fake([
+            'https://conv-test.openai.azure.com/*' => Http::response(
+                [
+                    'choices' => [[
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => $modelJson,
+                        ],
+                    ]],
+                ],
+                200,
+                ['Content-Type' => 'application/json'],
+            ),
+        ]);
+
+        $result = $this->app->make(AzureOpenAiConversationModelProvider::class)
+            ->respond($this->sampleRequest());
+
+        $this->assertNull($result->priorityCorrection);
     }
 
     public function test_malformed_model_json_fails_closed_without_leaking_body(): void
@@ -211,6 +287,9 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         $this->app->detectEnvironment(
             static fn (): string => 'conversation-model-dev',
         );
+        $agreementSha256 = hash('sha256', 'conversation-agreement-evidence-v1');
+        $dpaSha256 = hash('sha256', 'conversation-dpa-evidence-v1');
+        $subprocessorSha256 = hash('sha256', 'conversation-subprocessor-evidence-v1');
         $secretPath = $this->temporaryPath('secret');
         $vendorPath = $this->temporaryPath('vendor.json');
         $spendPath = $this->temporaryPath('spend.json');
@@ -225,9 +304,9 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
             'model_improvement_enabled' => false,
             'subscription_evidence_id' => 'subscription-evidence-v1',
             'contracting_entity_review_id' => 'entity-review-v1',
-            'agreement_sha256' => str_repeat('a', 64),
-            'dpa_sha256' => str_repeat('b', 64),
-            'subprocessor_sha256' => str_repeat('c', 64),
+            'agreement_sha256' => $agreementSha256,
+            'dpa_sha256' => $dpaSha256,
+            'subprocessor_sha256' => $subprocessorSha256,
             'privacy_legal_review_id' => 'privacy-review-v1',
             'logging_disabled_evidence_id' => 'logging-review-v1',
             'reviewed_at' => '2026-08-07T00:00:00Z',
@@ -251,14 +330,15 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
             'conversation.azure_openai.api_version' => '2024-10-21',
             'conversation.azure_openai.credential_kind' => 'api-key',
             'conversation.azure_openai.secret_file' => $secretPath,
+            'conversation.azure_openai.maximum_spend_inr' => 10000.0,
             'conversation.azure_openai.approved_spend_cap_inr' => 500,
             'conversation.azure_openai.vendor_evidence_path' => $vendorPath,
             'conversation.azure_openai.spend_approval_path' => $spendPath,
             'conversation.azure_openai.evidence.subscription' => 'subscription-evidence-v1',
             'conversation.azure_openai.evidence.contracting_entity' => 'entity-review-v1',
-            'conversation.azure_openai.evidence.agreement_sha256' => str_repeat('a', 64),
-            'conversation.azure_openai.evidence.dpa_sha256' => str_repeat('b', 64),
-            'conversation.azure_openai.evidence.subprocessor_sha256' => str_repeat('c', 64),
+            'conversation.azure_openai.evidence.agreement_sha256' => $agreementSha256,
+            'conversation.azure_openai.evidence.dpa_sha256' => $dpaSha256,
+            'conversation.azure_openai.evidence.subprocessor_sha256' => $subprocessorSha256,
             'conversation.azure_openai.evidence.privacy_legal_review' => 'privacy-review-v1',
             'conversation.azure_openai.evidence.logging_disabled' => 'logging-review-v1',
             'conversation.azure_openai.evidence.credential_version' => 'credential-version-v1',

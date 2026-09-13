@@ -84,10 +84,41 @@ function truncateReply(text: string): string {
   return `${[...trimmed].slice(0, MAXIMUM_REPLY_CHARS - 1).join('')}…`
 }
 
+function chapterSystemExtra(chapter: {
+  title?: unknown
+  modelLine?: unknown
+  patterns?: unknown
+  scenario?: unknown
+}): string {
+  const title = typeof chapter.title === 'string' ? chapter.title.trim() : ''
+  const modelLine =
+    typeof chapter.modelLine === 'string' ? chapter.modelLine.trim() : ''
+  const scenario =
+    typeof chapter.scenario === 'string' ? chapter.scenario.trim() : ''
+  const patterns = Array.isArray(chapter.patterns)
+    ? chapter.patterns
+        .filter((item): item is string => typeof item === 'string')
+        .slice(0, 6)
+        .join('; ')
+    : ''
+  if (title === '' && modelLine === '') {
+    return ''
+  }
+
+  return `
+
+This turn is the "${title || 'current'}" listen-learn chapter.
+Stay on this grammar/topic. Model line: ${modelLine || 'use the chapter pattern'}.
+${scenario === '' ? '' : `Scenario: ${scenario}`}
+${patterns === '' ? '' : `Target patterns: ${patterns}`}
+Reply about this chapter. Ask one follow-up that uses the same pattern.`
+}
+
 async function callOpenRouter(
   apiKey: string,
   model: string,
   message: string,
+  chapterExtra = '',
 ): Promise<string> {
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
@@ -102,7 +133,7 @@ async function callOpenRouter(
       temperature: 0.6,
       max_tokens: 220,
       messages: [
-        { role: 'system', content: FRIEND_SYSTEM_PROMPT },
+        { role: 'system', content: `${FRIEND_SYSTEM_PROMPT}${chapterExtra}` },
         { role: 'user', content: message },
       ],
     }),
@@ -153,11 +184,12 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
       return
     }
 
-    let payload: { message?: unknown; locale?: unknown }
+    let payload: { message?: unknown; locale?: unknown; chapter?: unknown }
     try {
       payload = JSON.parse(await readBody(req)) as {
         message?: unknown
         locale?: unknown
+        chapter?: unknown
       }
     } catch {
       sendJson(res, 400, { error: 'invalid_json' })
@@ -169,6 +201,7 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
     if (
       message === '' ||
       [...message].length > MAXIMUM_MESSAGE_CHARS ||
+      // eslint-disable-next-line no-control-regex -- reject C0 controls in chat text
       /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(message)
     ) {
       sendJson(res, 400, { error: 'invalid_message' })
@@ -176,10 +209,15 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
     }
 
     const model = resolveModel()
+    const chapterExtra =
+      payload.chapter !== null &&
+      payload.chapter !== undefined &&
+      typeof payload.chapter === 'object'
+        ? chapterSystemExtra(payload.chapter as Record<string, unknown>)
+        : ''
 
     try {
-      const reply = await callOpenRouter(apiKey, model, message)
-      // eslint-disable-next-line no-console -- intentional demo telemetry
+      const reply = await callOpenRouter(apiKey, model, message, chapterExtra)
       console.info(
         `[demo-chat] provider=openrouter model=${model} chars_in=${[...message].length} chars_out=${[...reply].length}`,
       )
@@ -190,7 +228,6 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
       })
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'openrouter_failed'
-      // eslint-disable-next-line no-console -- intentional demo diagnostics
       console.warn(`[demo-chat] failed: ${detail}`)
       sendJson(res, 502, { error: 'openrouter_failed', detail })
     }

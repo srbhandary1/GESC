@@ -217,9 +217,9 @@ export function VoicePracticePanel({
       aria-labelledby="secure-voice-title"
       className="conversation-journey__voice"
     >
-      <h3 id="secure-voice-title">
+      <h2 id="secure-voice-title">
         {text('conversation.voice.title')}
-      </h3>
+      </h2>
       <p>{text('conversation.voice.optional')}</p>
 
       {state.kind === 'idle' ? (
@@ -229,7 +229,13 @@ export function VoicePracticePanel({
       ) : null}
 
       {state.kind === 'loading' ? (
-        <p role="status">{text('conversation.voice.processing')}</p>
+        <div className="ge-skeleton-status" role="status">
+          <span className="ge-visually-hidden">
+            {text('conversation.voice.processing')}
+          </span>
+          <div className="ge-skeleton ge-skeleton--line" />
+          <div className="ge-skeleton ge-skeleton--line ge-skeleton--short" />
+        </div>
       ) : null}
 
       {state.kind === 'consent' ? (

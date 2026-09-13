@@ -6,9 +6,12 @@ namespace App\Authentication\Mobile;
 
 use App\Audit\AuditEventRecorder;
 use App\Authentication\AuthenticationSecretDigester;
+use App\Models\Membership;
 use App\Models\MobileRefreshToken;
 use App\Models\MobileTokenFamily;
+use App\Models\Organization;
 use App\Tenancy\PlatformOperationAuthorizer;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -85,6 +88,24 @@ final readonly class MobileTokenFamilyService
             $userId,
             $membershipId,
         ): ?MobileTokenFamily {
+            $membership = DB::table('memberships')
+                ->where('id', $membershipId)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->first(['organization_id', 'status']);
+
+            if (
+                $membership === null
+                || $membership->status !== Membership::STATUS_ACTIVE
+                || ! is_string($membership->organization_id)
+                || ! DB::table('organizations')
+                    ->where('id', $membership->organization_id)
+                    ->where('status', Organization::STATUS_ACTIVE)
+                    ->exists()
+            ) {
+                return null;
+            }
+
             /** @var MobileTokenFamily|null $family */
             $family = MobileTokenFamily::query()
                 ->whereKey($familyId)
@@ -92,7 +113,11 @@ final readonly class MobileTokenFamilyService
                 ->lockForUpdate()
                 ->first();
 
-            $membership = DB::table('memberships')
+            if ($family === null || ! $this->isActive($family)) {
+                return null;
+            }
+
+            $membershipRemainsSelectable = DB::table('memberships')
                 ->join(
                     'organizations',
                     'organizations.id',
@@ -101,17 +126,15 @@ final readonly class MobileTokenFamilyService
                 )
                 ->where('memberships.id', $membershipId)
                 ->where('memberships.user_id', $userId)
-                ->where('memberships.status', 'active')
-                ->where('organizations.status', 'active')
-                ->lockForUpdate()
-                ->first(['memberships.organization_id']);
+                ->where(
+                    'memberships.organization_id',
+                    $membership->organization_id,
+                )
+                ->where('memberships.status', Membership::STATUS_ACTIVE)
+                ->where('organizations.status', Organization::STATUS_ACTIVE)
+                ->exists();
 
-            if (
-                $family === null
-                || ! $this->isActive($family)
-                || $membership === null
-                || ! is_string($membership->organization_id)
-            ) {
+            if (! $membershipRemainsSelectable) {
                 return null;
             }
 
@@ -221,7 +244,7 @@ final readonly class MobileTokenFamilyService
             throw new RuntimeException('The issued OAuth refresh-token record is unavailable.');
         }
 
-        if ($grantType === 'authorization_code') {
+        if (in_array($grantType, ['authorization_code', 'password_sign_in', 'federated_sign_in'], true)) {
             /** @var MobileTokenFamily $family */
             $family = MobileTokenFamily::query()->forceCreate([
                 'user_id' => $accessTokenRecord->user_id,
@@ -340,6 +363,22 @@ final readonly class MobileTokenFamilyService
             ->update(['revoked' => true]);
 
         $this->audit->recordPlatform($authorization);
+    }
+
+    public function revokeAllForUser(string $userId, string $reason): void
+    {
+        DB::transaction(function () use ($userId, $reason): void {
+            /** @var Collection<int, MobileTokenFamily> $families */
+            $families = MobileTokenFamily::query()
+                ->where('user_id', $userId)
+                ->whereNull('revoked_at')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($families as $family) {
+                $this->revoke($family, $reason);
+            }
+        });
     }
 
     private function isActive(MobileTokenFamily $family): bool

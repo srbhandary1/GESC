@@ -2,12 +2,41 @@
 <html lang="kn-IN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="Kannada-guided spoken-English platform"
     />
-    <title>Global English</title>
+    <meta name="theme-color" content="#0B1210" />
+    <title>Global spoken English Course</title>
+    <script>
+      ;(function applyStoredInterfaceTheme() {
+        var storageKey = 'ge-interface-theme-preference-v2'
+        var preference = localStorage.getItem(storageKey) || 'dark'
+        var prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+        var resolved =
+          preference === 'light'
+            ? 'light'
+            : preference === 'system'
+              ? prefersDark
+                ? 'dark'
+                : 'light'
+              : 'dark'
+        document.documentElement.dataset.geTheme = resolved
+        document.documentElement.dataset.geThemePreference = preference
+        document.documentElement.dataset.theme = resolved
+        document.documentElement.style.colorScheme = resolved
+        var themeColor = document.querySelector('meta[name="theme-color"]')
+        if (themeColor) {
+          themeColor.setAttribute(
+            'content',
+            resolved === 'light' ? '#E8F3EC' : '#0B1210',
+          )
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

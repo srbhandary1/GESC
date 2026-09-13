@@ -2906,6 +2906,369 @@ APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
 accept and Play public release remain unauthorized.
 
+---
+
+## Student-facing IA declutter (presentation)
+
+### Scope reviewed
+
+- demo Phase 1 Home / Learn / AI Teacher / Profile information architecture;
+- Learn leading with the mission, then a compact room list;
+- relocation of attendance, notices and institute-about copy off the primary
+  student path;
+- UI catalogue additions at revision `ui-*-2026-09-12.6`;
+- synthetic-demo disclosure moved from global chrome to Profile;
+- Tailwind CSS 4 on student surfaces, mapped to design-system tokens;
+- design-system mobile primary navigation as a floating bar;
+- light/dark appearance tokens, 48px targets, and skeleton/error/retry
+  on async student surfaces;
+- anonymous / checking / unavailable pre-sign-in splash (no primary
+  learner nav, no Secure session essay).
+
+### Review result
+
+Presentation-only. School model (levels, unlocks, deterministic marks,
+bilingual guidance) is unchanged. Not production or Play evidence.
+
+### Known limitations
+
+- Long About copy in `ml-IN` / `ta-IN` / `te-IN` still uses English for a
+  few new Profile strings; short chrome is localized.
+- Non-demo authenticated Home remains the checkpoint shell until published
+  content exists.
+- Friend first-run about-copy is persisted as `ge-ui-practice-about-dismissed`
+  in localStorage (UI chrome only; not credentials or learner records).
+- Teacher avatar slots now ship the static Mira coach portrait. No Lottie,
+  video or third-party avatar SDK.
+- The synthetic-demo notice is Profile-only; primary tabs have no banner.
+- Non-demo anonymous splash hides primary nav; web Sign in opens the
+  Session disclosure rather than inventing an OTP form. Android PKCE
+  still uses `beginAuthorization`. Offline unavailable resume still
+  reaches Learn.
+- F0 DoD, production and Play remain unauthorized.
+
+---
+
+## Grove learner visual language (presentation)
+
+### Scope reviewed
+
+- Wonder GESC learner artboards as visual north star (structure + GESC green);
+- brand-green / dark tokens (`#006B3F`, `#0B1210`, `#0F1F17`) and mint `#3DDC97`;
+- Fraunces display type and the static Mira coach portrait;
+- one-question-per-screen onboarding with Mira, icon goal cards, sticky Continue;
+- demo first-run stepper (language, goal, speaking comfort) as a full-screen overlay;
+- home lesson hero, streak chip, Speak now, Mira tip card, homepage Android demo download, and a Learn catalog of 16 foundation lessons with Mira Tap to Play;
+- circular brand-green Speak FAB on a 4-destination dock (Profile stays header);
+- Tap to Play chips and a centered Mira speak session with green mic;
+- MD3 empty / error / success surfaces.
+
+### Review result
+
+Presentation-only. Authoritative onboarding still submits only
+`adult_confirmed` + `goal_key`. Speaking comfort is local chrome.
+Product goals remain the three API keys. Destinations remain four.
+Homepage and first-run expose `Download Android demo` at
+`/downloads/global-english-demo.apk` (synthetic sideload only).
+Catalogue revision `ui-*-2026-09-12.12`.
+Learn exposes the first 16 §6.2 foundation lessons with scripted
+English models and Mira speech. Not approved curriculum.
+Not production or Play evidence.
+
+### Known limitations
+
+- New Indic strings for the Mira / Wonder pass are implementation drafts;
+  several chrome lines reuse English until independent review.
+- Superdesign drafts were unread (403 / unauthenticated).
+- Speaking comfort is not an enrollment or mastery field.
+- F0 DoD, production and Play remain unauthorized.
+
+---
+
+## PR #6 learner-UX regression restore (presentation)
+
+### What broke
+
+- Tunnel / `dist-demo` / APK speech fell through to robotic browser
+  `speechSynthesis` because `/demo/tts` existed only on Vite middleware
+  (D-0092). Azure keys were never in the static host. Git history had
+  Sarvam as Indic **STT** on another lineage and ElevenLabs as an
+  explicitly deferred product path — not a demo TTS proxy on this branch.
+- Goal cards, lesson tiles, Speak CTAs and transcript bubbles hugged the
+  start edge after the redesign (`justify-self: start` on every Speak
+  button; stacked left-aligned lesson rows).
+- The 16 listen-and-learn lessons were only a Learn list plus a Home
+  “More” text link; Practise opened generic Friend lines, so the catalog
+  felt replaced by today’s hero.
+
+### What was restored
+
+- Shared `/demo/tts` handler on Vite **and**
+  `scripts/demo-client-static-server.mjs` with Sarvam / ElevenLabs / Azure
+  failover; optional `VITE_DEMO_TTS_ORIGIN` for the APK. Browser speech
+  remains last-resort fallback only.
+- Wonder-aligned card padding: trailing radios, selected green goal
+  icons, 2-column Home lesson grid, horizontal Learn tiles, centered
+  Speak column and 86% transcript bubbles.
+- All 16 lessons on Home and Learn; `#learn/<id>` detail with Mira
+  Tap to Play; `#practice/<id>` uses that lesson’s English model on
+  Speak Listen.
+
+### Known limitations
+
+- Neural voice still requires operator keys on the demo host (env or
+  Profile Admin). This environment cannot invent keys. Secrets stay
+  server-side; `/demo/tts/status` is booleans only (D-0117).
+- F0 DoD, production and Play remain unauthorized.
+
+---
+
+## PR #6 multi-provider demo TTS (presentation)
+
+### History vs this slice
+
+- This branch had no Sarvam or ElevenLabs **TTS** product path.
+- `09e3345` (other lineage) wired Sarvam as Indic HTTP **STT**, not TTS.
+- `85c0124` recorded ElevenLabs as not accepted for ordinary product TTS.
+- Demo-local Sarvam + ElevenLabs TTS is therefore newly implemented under
+  the existing D-0092 host exception, not restored from Laravel DI.
+
+### Behaviour
+
+- Neural providers are preferred over `speechSynthesis` whenever any is
+  configured. Default order: Sarvam → ElevenLabs → Azure for `en-IN`;
+  Sarvam → Azure → ElevenLabs for Indic locales. Explicit Admin / env
+  order overrides; failover on provider error.
+- Profile **Voice providers** writes `/demo/tts/settings` with an admin
+  token. Keys are stored in `$HOME/ge-demo-tts/settings.json` or env.
+  Responses mask secrets. The admin token is not persisted in the browser.
+
+### Known limitations
+
+- No live provider keys are present in this environment. Routing tests
+  mock `fetch`. Ordinary ADR-0008 provider binding remains unchanged.
+
+---
+
+## PR #6 Android demo APK rebuild
+
+`make demo-android` on `cursor/learner-ux-elevate-5f47` produced
+`apps/web/android/app/build/outputs/apk/debug/app-debug.apk` (5.4 MB,
+`com.globalenglish.demo`). Capacitor `webDir` is `dist-demo`, so the
+Wonder alignment, 16 lessons, and Profile Voice providers are the same
+UI as web. The existing Home download URL is
+`/downloads/global-english-demo.apk`. The APK is not committed.
+
+---
+
+## PR #6 Can curriculum restore (presentation)
+
+### What was wrong
+
+Home and Learn were occupied by the Grove 16-card `foundationLessons`
+catalog (lesson 1 = Greetings / Order coffee). That displaced the Phase 1
+dashboard and the Level 1 **Can** listen/check content that existed on
+`9818fe2` (`localDemo.ts` + LPL-01 blueprint).
+
+### What was restored
+
+- Home module grid from `8ebacba`: Attendance, AI Teacher, Daily
+  Activity, My Levels, Notice Board (Mira / GESC green polish kept).
+- Learn destination opens My Levels / rooms, not the 16-card catalog.
+- Daily audio title **Can**; model line
+  `I can speak English. Can I help you?`; five-question check from
+  LPL-01 `can-01`–`can-03` plus two `cannot` / `Can I sit here?`
+  pattern items.
+- Catalogue revision `ui-*-2026-09-12.13`.
+
+### Known limitations
+
+- Laravel LessonPractice / `09e3345` Indic STT is not on this demo
+  branch. Demo Learn no longer mounts the PR-006 “Introduce yourself”
+  mission (D-0119).
+- Pre-Level 1 and Pre-Level 2 have no authored LessonPractice session
+  in git history; the UI states that gap instead of inventing fillers.
+- te-IN / ml-IN Can chrome lines reuse English pending independent
+  review.
+- F0 DoD, production and Play remain unauthorized.
+
+---
+
+## PR #6 all-levels listen-learn (presentation)
+
+### Wired
+
+- **17 / 19** level entries have authored sessions: Level 1 Can
+  (`9818fe2` / LPL-01) and Levels 2–17 (`c4c810f` APP-0065).
+- Audio, Content, Activity and AI Teacher rooms open that session.
+- Conversation Room opens Speak with the level’s fallback turns.
+- Learn hub is My Levels only.
+
+### Still missing
+
+- Pre-Level 1 and Pre-Level 2: no historical LessonPractice copy.
+
+`make demo-android` after this restore refreshed
+`apps/web/dist-demo/downloads/global-english-demo.apk` and
+`/downloads/global-english-demo.apk` (5.6 MB, `com.globalenglish.demo`).
+The APK is not committed.
+
+---
+
+## PR #6 interactive listen + chapter tutor (presentation)
+
+### Restored from git (Vite demo path)
+
+- Listen playback: `speakDemoText` / `/demo/tts` (current-branch D-0117
+  Sarvam/ElevenLabs/Azure). Audio rooms auto-play the chapter model line.
+- Chapter tutor: `ConversationJourney` `embedded` / `openingLine` /
+  `autoStart` restored from `9818fe2` `LevelPathPanel` behaviour, mounted
+  inside Audio / Content / Activity / AI Teacher / Conversation rooms.
+- L1 correction: `priority_correction.explanation_l1` now follows
+  `ui_locale` (map from `5582c9a` `SyntheticL1Explanations.php`).
+- Chapter replies: OpenRouter `/demo/chat` with chapter system extra, or
+  `chapterFriendReply` when unconfigured.
+
+### Later closed on this branch (D-0121)
+
+Laravel LessonPractice, the streamer, Indic STT DI, and Pre-Level Be /
+This-That are restored or newly authored. See the following section.
+
+---
+
+## PR #6 LessonPractice + Pre-Level close (product path)
+
+### Restored from `codex/confidence-conversation` (`9818fe2` / `c4c810f` / `fb0748c`)
+
+- Laravel `LessonPractice`, `LevelSessionDeliveryService`,
+  `LevelSessionAudioStreamer`, `LearnerLevelSessionController`,
+  APP-0063/65/66/67 commands, Indic HTTP STT provider + `voice.indic`.
+- Web `WebLevelSessionsApi`, `LevelPathPanel`, authenticated-media
+  `ModelAudioPlayer`.
+- Routes: `/api/v1/me/levels/*` and operator lesson-practice blueprints.
+- Conversation prototype key `skill_focus` (persona/scenario reuse the
+  reviewed friend prototype already seeded on this branch).
+
+### Newly authored (not in CC history)
+
+- Pre-Level 1 **Be** and Pre-Level 2 **This / That** in
+  `levelCurriculum.ts` and `AuthoredPreLevels.php`. Identity / pointing
+  foundation — not greetings or coffee-shop fixtures.
+
+### Client behaviour
+
+- Learn prefers API `LevelPathPanel` when `GET /me/levels` returns an
+  available level; otherwise Phase 1 rooms.
+- Rooms play stored audio when `audio_stream_path` is present, else
+  `/demo/tts`.
+- Chapter chat uses bound conversation-sessions when
+  `startConversation` succeeds; else demo `ConversationJourney`.
+- Home AI Teacher is the current-level chapter session (Level 1 Can).
+- `VoicePracticePanel` shows when `uploadVoiceRecording` exists.
+
+### Known limitations
+
+- OpenAPI / generated `@global-english/contracts` types were not
+  regenerated; `WebLevelSessionsApi` talks to the restored routes
+  directly.
+- Pre-Levels are not numeric streamer levels 1–17; they play via TTS
+  until commissioned with media.
+- Soft-launch Azure STT/TTS DI from CC is present as classes but not
+  rebound (this branch lacks the extra SoftLaunch conversation config).
+- F0 DoD, production and Play remain unauthorized.
+
+Runbook: [DEMO_LESSON_PRACTICE.md](DEMO_LESSON_PRACTICE.md).
+Catalogue revision `ui-*-2026-09-12.14`.
+
+## PR #6 CC cherry-pick + Mira / GESC-green restore (D-0122)
+
+### Theme loss (cause)
+
+Early PR #6 Wonder artboards shipped Mira plus brand green `#006B3F` /
+nocturnal `#0B1210`. Later LessonPractice / Phase 1 product-shell restores
+overrode that chrome with light mint cards. Cherry-picking
+`1a02330` (Futuristic Learning Studio) then applied teal/cyan/violet tokens
+and a light default. LessonPractice and conversation behavior were kept;
+the Mira / GESC-green system is re-applied on top.
+
+### Scope
+
+- Cherry-pick of 11 unpublished `codex/confidence-conversation` commits
+  `a5753fb`…`1a02330` onto PR #6.
+- Working Phase 1 dashboard + LessonPractice + 4 destinations retained.
+- No Grove 16-card catalog; no fifth tuition tab.
+- Learner-facing Swathi chrome restored to Mira.
+- Catalogue revision `ui-*-2026-09-12.16`.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Cherry-picks landed | Pass | `c2b6014`…`c9f6b8d` on `cursor/learner-ux-elevate-5f47`; `origin/codex/confidence-conversation` fetched at `1a02330` (equivalent tips, not a full-branch merge) |
+| Web typecheck | Pass | `pnpm --filter @global-english/web typecheck` |
+| Web unit tests | Pass | 331 passed |
+| Localization tests | Pass | 35 passed |
+| Design-system tests | Pass | 16 passed |
+| Demo e2e first-run + Phase 1 axe | Pass | `demo-journey` first-run and LessonPractice specs |
+| Grove catalog excluded | Pass | Demo Learn remains Phase 1 My Levels |
+| Sideload APK | Pass | `5984575` bytes at `/downloads/global-english-demo.apk` after the D-0122 + landing-href rebuild |
+| Production / Play | Not authorized | D-0122 |
+
+### Verification (this close)
+
+| Command or check | Result |
+|---|---|
+| `pnpm --filter @global-english/web test` | 160 passed |
+| `pnpm --filter @global-english/web typecheck` | passed |
+| `pnpm --filter @global-english/localization test` | 31 passed |
+| Demo Chromium e2e on `127.0.0.1:4180` (3 specs) | passed; rooms probe `/api/v1/me/levels` then fall back |
+| `make demo-android` | passed; sideload APK `5819193` bytes at `/downloads/global-english-demo.apk` |
+| Laravel Pint on SoftLaunch/conversation leftovers | Pass (`pint --test` on the 4 previously dirty files) |
+| SoftLaunch STT/TTS binds | `ConfirmedTextSpeechToTextProvider` / `TextFirstTextToSpeechProvider` restored for `azure-openai-dev` |
+| CC API dependency tree | Restored 295 missing `apps/api` PHP files plus overlapping helpers (`TenancyIntegrationTestCase`, `ConversationEnvironmentGate`, routes, `AppServiceProvider`) from `1a02330`. No web/theme files. |
+| Overlapping CC API models | Restored 104 differing `apps/api` files from `1a02330` so PHPStan can resolve `hasFreshMfaForFactorReplacement`, `revokeAllForUser`, `passwordCredential`, `recordPlatform`, `Role::STATUS_ACTIVE`, and non-final `CurriculumOperationRejected`. `AuthoredPreLevels.php` kept. Laravel Pint `--test` on those PHP files passed. |
+| `make verify` | In CI after overlapping-model restore; not claimed locally (Node 22 vs pin 24.18.1) |
+| Static-IP Android access | Demo APK may live-load `http://117.254.108.143:8080` via `make demo-android-remote`. Soft-launch HTTP Caddy serves `/downloads/*.apk` and proxies `/oauth` + `/auth/mobile`. Restored missing `level1-authored-blueprint-draft.json` for PHPUnit. |
+
+## PR #6 theme-only Mira / GESC-green leftover remap (D-0123)
+
+Theme-only; LessonPractice restore preserved.
+
+### Scope
+
+- Live dark tokens in `themeTokens.css` no longer resolve Futuristic cyan /
+  violet / navy leftovers (`#22d3ee`, `#a78bfa`, `#0b1020`). Values are
+  GESC green `#006B3F`, nocturnal `#0B1210` / `#0F1F17`, mint `#3DDC97`.
+- `index.html` first-paint default matches `interfaceTheme.ts` (dark,
+  `theme-color` `#0B1210`).
+- Onboarding cards, Speak FAB glow, Mira avatar rings are chrome-only.
+- No LessonPractice / LevelSession / ConversationOrchestrator / `/demo/tts`
+  / Phase 1 destination edits.
+- CC tips `9818fe2..1a02330` were **not** re-cherry-picked (already on
+  branch as `c2b6014`…`c9f6b8d`). Skipped a blind merge of
+  `origin/codex/confidence-conversation`.
+- Superdesign drafts unread; Wonder editor disconnected.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| LessonPractice / curriculum files | Untouched | No `LessonPractice`, `LevelSession`, `AuthoredFoundation`, or `localDemo` session edits |
+| Theme surface | Pass | `themeTokens.css`, `index.html`, design-system onboarding/FAB, AvatarSlot, LearnerJourney slow-chip |
+| Web unit tests | Pass | `pnpm --filter @global-english/web test` — 336 passed |
+| Design-system tests | Pass | 16 passed |
+| Web typecheck | Pass | `pnpm --filter @global-english/web typecheck` |
+| Demo e2e first-run + LessonPractice | Pass | `demo-journey` 2 specs; API `:8000` down, rooms fall back |
+| Demo e2e student click-through | Fail (not curriculum) | Role-play **Perform** shows **Continue** before **Type instead**. Confidence Conversation listen / type / Mira / hint already passed in the same spec. Theme not reverted. |
+| Sideload APK | Pass | `make demo-android` bundled `https://localhost`; **6145419** bytes |
+| `pnpm audit --audit-level=high` | Pass locally | Overrides `js-yaml@4.3.2`, `@xmldom/xmldom@0.9.12`, `nanoid@<3.3.18`→`3.3.18`. Lockfile-only; 2 moderate remain (below the verify gate). |
+| `pnpm run lint` | Pass locally | CI `34716225218` failed after OpenAPI restore on `set-state-in-effect` (AiMemoryPanel, ConversationJourney silence nudge, LevelSessionPanel bind/autoplay), `no-control-regex` in demo TTS/chat validators, unused `no-console` disables, `no-useless-assignment` in `demoTtsSettings.mjs`, and OnboardingStepper refresh export. Fixes are comments or unused-assignment cleanup only. |
+| Phase 1 My Levels visibility | Pass | First-run hid Attendance / AI Teacher / Daily Activity / My Levels (Pre-1…L17) / Notice Board behind a 3-step sheet that also covered Learn. **Skip and open My Levels** dismisses first-run and opens the My Levels hub (`#levels`: Pre-1…L17 plus the eight rooms). Completing the stepper still lands on Home. Grove 16-card catalog remains excluded. |
+| Web typecheck | Pass locally after contract restore | `8f45ae2` verify failed: PrivilegedMfa / OperatorMedia / OperatorPublicationStatus fields missing from generated clients. Restored `docs/api/openapi.yaml` from `1a02330` and regenerated `packages/contracts/src/generated/*`. Local `tsc -b` and Redocly lint passed. |
+| Locale governance | Pass after hash stamp | `dc8cc64` verify failed `locale:check` with `catalogue-hash-mismatch` on all six locales. `demo.phase1.first_run.skip` was added in `59baa4b` without recomputing `sha256-canonical-json-v1`. Governance now stamps `ui-*-2026-09-12.17` and current source hashes. |
+| Production e2e after verify | Pass in CI | GitHub Actions `34719710450` on `ce502c0` passed `make verify`, `make e2e` (accessible learner shell), and `make build`. Production splash remounts MarketingLanding; Learn keeps LearnerJourney when LessonPractice levels are uncommissioned; operators get the console on every destination without the learner dock when a non-learner membership also carries an operator role key (including hyphenated e2e keys). Speak page title is the conversation `h1` (shell introduction stays hidden). Dark-theme contrast, heading order, and 320px operator overflow were remapped without LessonPractice behavior changes. Theme-only; LessonPractice restore preserved. |
+| Production / Play | Not authorized | D-0123 |
+
 
 
 

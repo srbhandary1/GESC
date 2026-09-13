@@ -5,6 +5,7 @@ export type Phase1Module =
   | 'daily-activity'
   | 'levels'
   | 'notices'
+  | 'profile'
 
 export const PHASE1_MODULES = [
   'dashboard',
@@ -13,7 +14,25 @@ export const PHASE1_MODULES = [
   'daily-activity',
   'levels',
   'notices',
+  'profile',
 ] as const satisfies readonly Phase1Module[]
+
+/** Surfaces that stay on the Home destination instead of primary nav. */
+export const PHASE1_SECONDARY_HASHES = [
+  'dashboard',
+  'attendance',
+  'ai-teacher',
+  'daily-activity',
+  'levels',
+  'notices',
+  'profile',
+] as const satisfies readonly Phase1Module[]
+
+export const PHASE1_FOCUS_AI_TOPICS = [
+  'welcome',
+  'level',
+  'motivate',
+] as const
 
 export interface Phase1AttendanceDay {
   readonly date: string
@@ -98,53 +117,71 @@ export const phase1Attendance = {
   presentDays: 3,
   workingDaysSoFar: 4,
   percentage: 75,
+  streakDays: 3,
   days: monthDays(),
 }
 
-/** English learning-content quiz (stays English across UI locales). */
+/**
+ * Level 1 Can listen/check content restored from commit `9818fe2`
+ * (`apps/web/src/demo/localDemo.ts` sessionDetail + LPL-01 blueprint
+ * `docs/evidence/lpl-01/level1-authored-blueprint-draft.json`).
+ * Learning-content strings stay English across UI locales.
+ */
+export const CAN_MODEL_LINE = 'I can speak English. Can I help you?'
+
 export const phase1DailyActivity = {
   monthlyScore: 42,
   monthlyMaximum: 155,
+  conceptKey: 'can',
+  modelLine: CAN_MODEL_LINE,
   questions: [
     {
-      id: 'q1',
-      prompt: 'Choose the natural greeting.',
+      id: 'can-01',
+      prompt: 'Choose the correct sentence.',
       options: [
-        'Hello, my name is Ravi.',
-        'Hello name Ravi.',
-        'Name is Ravi hello.',
+        'I can speak English.',
+        'I can speaking English.',
+        'I can to speak English.',
       ],
       correctIndex: 0,
     },
     {
-      id: 'q2',
-      prompt: 'Which sentence is correct?',
+      id: 'can-02',
+      prompt: 'Choose the permission question.',
       options: [
-        'I am learning English.',
-        'I learning English.',
-        'I is learn English.',
+        'Can I use your pen?',
+        'I can use your pen?',
+        'Can I using your pen?',
       ],
       correctIndex: 0,
     },
     {
-      id: 'q3',
-      prompt: 'Pick the polite close.',
-      options: ['Nice to meet you.', 'Meet you nice.', 'You meet nice.'],
-      correctIndex: 0,
-    },
-    {
-      id: 'q4',
-      prompt: 'Complete: "I work ___ a bank."',
-      options: ['in', 'on', 'at to'],
-      correctIndex: 0,
-    },
-    {
-      id: 'q5',
-      prompt: 'Best reply to "How are you?"',
+      id: 'can-03',
+      prompt: 'Choose the answer.',
       options: [
-        'I am fine, thank you.',
-        'I fine thank.',
-        'Fine I am thank.',
+        'Yes, you can.',
+        'Yes, you can to.',
+        'Yes, you can sitting.',
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: 'can-04',
+      prompt: 'Choose the correct negative.',
+      options: [
+        'I cannot swim.',
+        'I cannot swimming.',
+        'I cannot to swim.',
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: 'can-05',
+      prompt: 'Choose the permission question.',
+      options: [
+        'Can I sit here?',
+        'I can sit here?',
+        'Can I sitting here?',
       ],
       correctIndex: 0,
     },
@@ -213,6 +250,9 @@ export const phase1AiTopics: readonly Phase1AiTopic[] = [
 
 export function moduleFromHash(hash: string): Phase1Module {
   const value = hash.replace(/^#/, '')
+  if (value === 'home' || value === '') {
+    return 'dashboard'
+  }
   if ((PHASE1_MODULES as readonly string[]).includes(value)) {
     return value as Phase1Module
   }

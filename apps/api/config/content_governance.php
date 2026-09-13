@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 return [
+    'local_lpl_pilot_authority_bootstrap_enabled' => env(
+        'LPL01_PILOT_AUTHORITY_BOOTSTRAP_ENABLED',
+        false,
+    ),
+
     /*
      * Repository approval evidence alone cannot identify a runtime account.
      * Production must bind APP-0004 to S R Bhandary's stable application user

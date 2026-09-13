@@ -22,6 +22,20 @@ final class PcmWavInspectorTest extends TestCase
         $this->assertSame(100, $metadata->durationMs);
     }
 
+    public function test_accepts_twenty_five_second_mono_pcm_wav(): void
+    {
+        $metadata = (new PcmWavInspector)->inspect(self::wav(durationMs: 25_000));
+
+        $this->assertSame(25_000, $metadata->durationMs);
+    }
+
+    public function test_rejects_recordings_longer_than_twenty_five_seconds(): void
+    {
+        $this->expectException(VoiceOperationRejected::class);
+
+        (new PcmWavInspector)->inspect(self::wav(durationMs: 25_001));
+    }
+
     #[DataProvider('invalidWavProvider')]
     public function test_rejects_malformed_or_unreviewed_audio_shapes(
         string $bytes,
@@ -53,10 +67,16 @@ final class PcmWavInspectorTest extends TestCase
         int $channels = 1,
         int $bits = 16,
         string $extraChunk = '',
+        int $durationMs = 100,
     ): string {
         $bytesPerSample = intdiv($bits, 8);
-        $dataSize = max(2, $sampleRate * $channels * $bytesPerSample / 10);
-        $dataSize = (int) $dataSize;
+        $dataSize = (int) floor(
+            $sampleRate * $channels * $bytesPerSample * $durationMs / 1000,
+        );
+        if ($dataSize % 2 !== 0) {
+            $dataSize--;
+        }
+        $dataSize = max(2, $dataSize);
         $blockAlign = $channels * $bytesPerSample;
         $byteRate = $sampleRate * $blockAlign;
         $format = 'fmt '

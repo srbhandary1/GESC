@@ -1,0 +1,31 @@
+{
+  "status": "pending",
+  "approval_reference": "WAVE-6",
+  "preflight_command": "make wave6-indic-preflight",
+  "origin": "https://example.trycloudflare.com",
+  "tester_identifier": "staff initials only",
+  "scenarios": {
+    "english_only": {
+      "attempts": 3,
+      "successes": 0,
+      "passed": false
+    },
+    "kannada_english_mix": {
+      "attempts": 3,
+      "successes": 0,
+      "passed": false
+    },
+    "noisy_room": {
+      "attempts": 3,
+      "successes": 0,
+      "passed": false
+    }
+  },
+  "twenty_five_second_cap_observed": false,
+  "sarvam_failover_or_clean_error_tested": false,
+  "demo_live_ai_meter_verified": false,
+  "roleplay_perform_verified": false,
+  "azure_chat_and_tts_verified": false,
+  "voice_provider_runs_indic_succeeded_count": 0,
+  "note": "Counts and booleans only. No transcripts, audio, secrets or learner identifiers."
+}

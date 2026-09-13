@@ -1,9 +1,13 @@
 # Demo Azure TTS (client presentation)
 
+Azure remains one neural provider in the demo-host TTS layer. For Sarvam,
+ElevenLabs, Admin key entry, failover, and `/demo/tts/status`, see
+**[DEMO_TTS.md](DEMO_TTS.md)** (D-0117).
+
 ## Purpose
 
 Accountable Product Owner client-demo request (D-0092): spoken demo surfaces
-use Azure neural TTS matched to the UI language, with no human lesson
+may use Azure neural TTS matched to the UI language, with no human lesson
 recordings and no Azure key in the browser.
 
 This is a **local presentation exception**. It does not change the ordinary
@@ -11,7 +15,7 @@ application Azure binding (ADR-0008 / D-0074) or the locked PR-009 benchmark.
 
 ## Credentials (local only)
 
-Export before `make demo`:
+Export before `make demo` — never as `VITE_*`:
 
 ```bash
 export AZURE_SPEECH_ENDPOINT='https://<your-resource>.cognitiveservices.azure.com'
@@ -20,12 +24,11 @@ export AZURE_SPEECH_KEY='<subscription-key>'
 # export AZURE_SPEECH_SECRET_FILE="$HOME/ge-speech-benchmark/secret.key"
 ```
 
-Never put the key in `VITE_*` variables, git, `dist-demo`, or the Android APK.
-
 `make demo` / `scripts/run-local-demo.sh` auto-loads
-`$HOME/ge-speech-benchmark/env/speech-benchmark.env` when present (and uses
-`AZURE_SPEECH_SECRET_FILE` from that file). It warns only when credentials are
-still missing; the UI then falls back to on-device browser speech.
+`$HOME/ge-speech-benchmark/env/speech-benchmark.env` when present.
+
+Admin UI (Profile → Voice providers) can store the same values on the demo
+host when `DEMO_TTS_ADMIN_TOKEN` is set. See [DEMO_TTS.md](DEMO_TTS.md).
 
 ## Voice map
 
@@ -43,26 +46,19 @@ Region: `centralindia`. Route: `/tts/cognitiveservices/v1`.
 English learning content (Friend replies, English model lines) uses `en-IN`.
 AI Teacher replies use the selected guidance locale (or English when toggled).
 
-## Endpoints (Vite middleware)
+## Endpoints
+
+Shared with Sarvam and ElevenLabs. Status is booleans only:
 
 | Method | Path | Behaviour |
 |---|---|---|
-| `GET` | `/demo/tts/status` | `{ configured: boolean, voices: … }` |
-| `POST` | `/demo/tts` | Body `{ locale, text }` → `audio/wav` or JSON error |
-
-Character cap: 500. Character-count logs are written to the Vite process
-stdout for rough spend awareness; no learner PII is logged.
-
-## Surfaces
-
-- Phase 1 AI Teacher (auto-speak + Listen)
-- Phase 1 Daily Activity audio button
-- Mission model audio (`demo-speech:` player)
-- Friend reply Listen (English)
+| `GET` | `/demo/tts/status` | `{ configured, providers: { azure, sarvam, elevenlabs }, … }` |
+| `POST` | `/demo/tts` | Body `{ locale, text }` → audio or JSON error |
+| `GET`/`POST` | `/demo/tts/settings` | Admin token; masked secrets |
 
 ## Limitations
 
-- Generative LLM Teacher replies are not included (scripted catalogue text).
-- Static `dist-demo` / Android APK cannot embed Azure secrets; use
-  `make demo` with credentials for neural voices, or accept browser fallback.
-- STT for spoken turns remains on-device browser recognition where available.
+- Static `dist-demo` / Android APK still cannot embed secrets. The host
+  process may serve `/demo/tts` when any provider is configured.
+- Optional `VITE_DEMO_TTS_ORIGIN` is an origin override only.
+- STT remains on-device browser recognition where available.

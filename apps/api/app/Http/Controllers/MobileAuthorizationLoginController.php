@@ -8,6 +8,8 @@ use App\Authentication\Mobile\OAuthAuthorizationTarget;
 use App\Authentication\Otp\OtpChallengeService;
 use App\Authentication\Otp\OtpDeliveryUnavailable;
 use App\Authentication\Otp\OtpVerificationFailed;
+use App\Authentication\Password\PasswordAuthenticationFailed;
+use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Identity\VerifiedIdentityProvisioner;
@@ -40,6 +42,7 @@ final class MobileAuthorizationLoginController extends Controller
         private readonly InstitutionInviteAcceptor $institutionInvites,
         private readonly AuthenticationSessionService $sessions,
         private readonly OAuthAuthorizationTarget $targets,
+        private readonly PasswordCredentialService $passwords,
     ) {}
 
     public function show(Request $request): Response
@@ -50,11 +53,53 @@ final class MobileAuthorizationLoginController extends Controller
             ], 400);
         }
 
-        return response()->view('auth.mobile-sign-in');
+        return response()->view('auth.mobile-sign-in', [
+            'passwordMode' => $this->passwords->mode() !== 'legacy_otp',
+        ]);
+    }
+
+    public function submitPassword(Request $request): Response|RedirectResponse
+    {
+        $target = $this->targets->current($request);
+
+        if (! is_string($target) || $this->passwords->mode() === 'legacy_otp') {
+            return response()->view('auth.mobile-sign-in', [
+                'passwordMode' => true,
+                'error' => 'The sign-in attempt has expired. Please start again.',
+            ], 422);
+        }
+
+        $password = (string) $request->input('password', '');
+
+        try {
+            $user = $this->passwords->authenticate(
+                (string) $request->input('username', ''),
+                $password,
+                $request,
+            );
+            $this->sessions->start($user, $request);
+        } catch (PasswordAuthenticationFailed) {
+            return response()->view('auth.mobile-sign-in', [
+                'passwordMode' => true,
+                'error' => 'Sign-in could not be completed. Check the details and try again.',
+            ], 422);
+        } finally {
+            $request->request->remove('password');
+            $password = str_repeat('0', strlen($password));
+            unset($password);
+        }
+
+        $this->targets->forget($request);
+
+        return redirect($target);
     }
 
     public function requestChallenge(Request $request): Response
     {
+        if ($this->passwords->mode() === 'password_only') {
+            return response('The legacy authentication contract is retired.', 410);
+        }
+
         try {
             $mobileNumber = $this->phoneNumbers->normalize(
                 (string) $request->input('mobile_number', ''),
@@ -107,6 +152,10 @@ final class MobileAuthorizationLoginController extends Controller
 
     public function verifyChallenge(Request $request): Response|RedirectResponse
     {
+        if ($this->passwords->mode() === 'password_only') {
+            return response('The legacy authentication contract is retired.', 410);
+        }
+
         $code = (string) $request->input('code', '');
 
         if (preg_match('/^[0-9]{6}$/', $code) !== 1) {

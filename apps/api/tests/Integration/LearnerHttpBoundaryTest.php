@@ -44,6 +44,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
 
         $requests = [
             fn (): TestResponse => $this->getJson('/api/v1/home'),
+            fn (): TestResponse => $this->getJson('/api/v1/me/progress-dashboard'),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
                 $idempotencyKey,
@@ -125,6 +126,16 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             ), [
                 'prototype_utterance' => 'Synthetic unauthenticated turn.',
             ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson(sprintf(
+                '/api/v1/conversation-sessions/%s/speech',
+                $conversationSessionId,
+            ), [
+                'purpose' => 'model_en',
+                'text' => 'Synthetic unauthenticated speech.',
+            ]),
             fn (): TestResponse => $this->get(sprintf(
                 '/api/v1/conversation-turns/%s/events',
                 $conversationTurnId,
@@ -198,6 +209,25 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         $sessionId = $session->json('id');
         self::assertIsString($sessionId);
 
+        $spoken = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson(sprintf(
+            '/api/v1/conversation-sessions/%s/speech',
+            $sessionId,
+        ), [
+            'purpose' => 'model_en',
+            'text' => 'I went to the market this morning.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('playback_available', false)
+            ->assertJsonPath(
+                'rendering_mode',
+                'deterministic-fake-text-only',
+            )
+            ->assertJsonPath('model_audio_base64', null);
+        $this->assertNoStore($spoken);
+
         $replay = $this->withHeaders([
             'Origin' => 'https://localhost',
             'Idempotency-Key' => $sessionCommand,
@@ -234,7 +264,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 'speech.rendering_mode',
                 'deterministic-fake-text-only',
             )
-            ->assertJsonPath('usage.provider_attempts', 3)
+            ->assertJsonPath('usage.provider_attempts', 4)
             ->assertJsonPath('usage.estimated_cost_microunits', 0);
         $this->assertNoStore($turn);
         $turnId = $turn->json('id');

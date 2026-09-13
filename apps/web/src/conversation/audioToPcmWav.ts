@@ -1,17 +1,30 @@
 import type { CapturedAudio } from '../learner/BrowserAudioRecorder'
+import {
+  encodeMonoPcmWav,
+  PCM_WAV_SAMPLE_RATE,
+  resampleMono,
+} from '../shared/pcmWav'
 
-const TARGET_SAMPLE_RATE = 16_000
 const MAXIMUM_DURATION_MS = 120_000
 
 export async function audioToPcmWav(
   capture: CapturedAudio,
+  maximumDurationMs = MAXIMUM_DURATION_MS,
 ): Promise<Blob> {
   if (
     capture.durationMs < 1 ||
-    capture.durationMs > MAXIMUM_DURATION_MS ||
+    maximumDurationMs < 1 ||
+    maximumDurationMs > MAXIMUM_DURATION_MS ||
     capture.blob.size < 1
   ) {
     throw new Error('The recording is outside the accepted bounds.')
+  }
+
+  if (
+    (capture.blob.type === 'audio/wav' || capture.mimeType === 'audio/wav') &&
+    capture.blob.size >= 44
+  ) {
+    return trimCanonicalPcmWav(capture.blob, maximumDurationMs)
   }
 
   const AudioContextConstructor =
@@ -33,72 +46,74 @@ export async function audioToPcmWav(
       await capture.blob.arrayBuffer(),
     )
     const sourceLength = decoded.length
-    const targetLength = Math.max(
-      1,
-      Math.round(decoded.duration * TARGET_SAMPLE_RATE),
-    )
-    const mono = new Float32Array(targetLength)
+    const mixed = new Float32Array(sourceLength)
 
-    for (let targetIndex = 0; targetIndex < targetLength; targetIndex += 1) {
-      const sourcePosition =
-        targetIndex * decoded.sampleRate / TARGET_SAMPLE_RATE
-      const leftIndex = Math.min(
-        sourceLength - 1,
-        Math.floor(sourcePosition),
-      )
-      const rightIndex = Math.min(sourceLength - 1, leftIndex + 1)
-      const fraction = sourcePosition - leftIndex
+    for (let index = 0; index < sourceLength; index += 1) {
       let sample = 0
-
       for (let channel = 0; channel < decoded.numberOfChannels; channel += 1) {
-        const values = decoded.getChannelData(channel)
-        sample +=
-          (values[leftIndex] ?? 0) * (1 - fraction) +
-          (values[rightIndex] ?? 0) * fraction
+        sample += decoded.getChannelData(channel)[index] ?? 0
       }
-
-      mono[targetIndex] = sample / decoded.numberOfChannels
+      mixed[index] = sample / decoded.numberOfChannels
     }
 
-    return new Blob([encodeMonoPcmWav(mono)], { type: 'audio/wav' })
+    const mono = resampleMono(mixed, decoded.sampleRate, PCM_WAV_SAMPLE_RATE)
+    const maximumSamples = Math.floor(
+      (PCM_WAV_SAMPLE_RATE * maximumDurationMs) / 1000,
+    )
+
+    return new Blob(
+      [encodeMonoPcmWav(mono.subarray(0, maximumSamples))],
+      { type: 'audio/wav' },
+    )
   } finally {
     await context.close()
   }
 }
 
-function encodeMonoPcmWav(samples: Float32Array): ArrayBuffer {
-  const dataBytes = samples.length * 2
-  const buffer = new ArrayBuffer(44 + dataBytes)
-  const view = new DataView(buffer)
-
-  writeAscii(view, 0, 'RIFF')
-  view.setUint32(4, 36 + dataBytes, true)
-  writeAscii(view, 8, 'WAVE')
-  writeAscii(view, 12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, TARGET_SAMPLE_RATE, true)
-  view.setUint32(28, TARGET_SAMPLE_RATE * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeAscii(view, 36, 'data')
-  view.setUint32(40, dataBytes, true)
-
-  for (let index = 0; index < samples.length; index += 1) {
-    const bounded = Math.max(-1, Math.min(1, samples[index] ?? 0))
-    view.setInt16(
-      44 + index * 2,
-      bounded < 0 ? bounded * 0x8000 : bounded * 0x7fff,
-      true,
-    )
+async function trimCanonicalPcmWav(
+  blob: Blob,
+  maximumDurationMs: number,
+): Promise<Blob> {
+  const bytes = await blob.arrayBuffer()
+  const view = new DataView(bytes)
+  if (
+    bytes.byteLength < 44 ||
+    ascii(view, 0, 4) !== 'RIFF' ||
+    ascii(view, 8, 4) !== 'WAVE' ||
+    ascii(view, 36, 4) !== 'data'
+  ) {
+    throw new Error('The recording is not a canonical PCM WAV file.')
   }
 
-  return buffer
+  const byteRate = view.getUint32(28, true)
+  const blockAlign = view.getUint16(32, true)
+  const dataBytes = view.getUint32(40, true)
+  const maximumBytes =
+    Math.floor((byteRate * maximumDurationMs) / 1000 / blockAlign) * blockAlign
+  const acceptedDataBytes = Math.min(dataBytes, maximumBytes)
+  if (acceptedDataBytes < 1 || 44 + dataBytes > bytes.byteLength) {
+    throw new Error('The recording is outside the accepted bounds.')
+  }
+
+  if (acceptedDataBytes === dataBytes) {
+    return blob.type === 'audio/wav'
+      ? blob
+      : new Blob([blob], { type: 'audio/wav' })
+  }
+
+  const trimmed = bytes.slice(0, 44 + acceptedDataBytes)
+  const trimmedView = new DataView(trimmed)
+  trimmedView.setUint32(4, 36 + acceptedDataBytes, true)
+  trimmedView.setUint32(40, acceptedDataBytes, true)
+
+  return new Blob([trimmed], { type: 'audio/wav' })
 }
 
-function writeAscii(view: DataView, offset: number, value: string): void {
-  for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index))
+function ascii(view: DataView, offset: number, length: number): string {
+  let value = ''
+  for (let index = 0; index < length; index += 1) {
+    value += String.fromCharCode(view.getUint8(offset + index))
   }
+
+  return value
 }

@@ -6,6 +6,7 @@ use App\Http\Middleware\AssignCorrelationId;
 use App\Http\Middleware\AuthenticateFirstParty;
 use App\Http\Middleware\EnforceAuthenticationSession;
 use App\Http\Middleware\RequireFreshPrivilegedMfa;
+use App\Http\Middleware\RequireWebAuthentication;
 use App\Http\Middleware\ResolveOrganizationContext;
 use App\Http\Problems\ProblemDetailsFactory;
 use Illuminate\Foundation\Application;
@@ -23,12 +24,27 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Proxies come from config/trustedproxy.php, which TrustProxies reads per
+        // request. The environment file is not loaded yet at this point, so reading
+        // TRUSTED_PROXIES here would silently ignore it.
+        $middleware->trustProxies(
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
         $middleware->prepend(AssignCorrelationId::class);
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/auth/mobile/password/*',
+            'api/v1/auth/mobile/social/*',
+        ]);
         $middleware->alias([
             'auth.first-party' => AuthenticateFirstParty::class,
             'auth.session' => EnforceAuthenticationSession::class,
             'auth.mfa' => RequireFreshPrivilegedMfa::class,
+            'auth.password-confirmed' => RequireFreshPrivilegedMfa::class,
+            'auth.web-only' => RequireWebAuthentication::class,
             'organization.context' => ResolveOrganizationContext::class,
             'scope' => CheckToken::class,
             'scopes' => CheckTokenForAnyScope::class,
@@ -65,7 +81,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 /** @var ProblemDetailsFactory $problems */
                 $problems = app(ProblemDetailsFactory::class);
 
-                return $problems->fromExceptionResponse($request, $response);
+                return $problems->fromExceptionResponse(
+                    $request,
+                    $response,
+                    $exception,
+                );
             },
         );
     })

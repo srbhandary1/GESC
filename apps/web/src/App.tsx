@@ -1,5 +1,7 @@
 import {
   ApplicationFrame,
+  ThemeToggle,
+  useColorScheme,
   type PrimaryDestination,
 } from '@global-english/design-system'
 import {
@@ -18,6 +20,7 @@ import {
 } from 'react'
 import './App.css'
 import './demo/demoExperience.css'
+import './theme/themeTokens.css'
 import type {
   AndroidPkceAuthentication,
   AuthenticationAdapter,
@@ -25,9 +28,17 @@ import type {
 } from './auth/AuthenticationAdapter'
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
+import { PreSignInSplash } from './auth/PreSignInSplash'
+import { MarketingLanding } from './marketing/MarketingLanding'
 import { ConversationJourney } from './conversation/ConversationJourney'
 import { DemoLearnerProgress } from './demo/DemoLearnerProgress'
+import { curriculumByLevelId } from './demo/curriculum/levelCurriculum'
+import {
+  foundationLessonById,
+  lessonIdFromHash,
+} from './demo/foundationLessons'
 import { DemoPhase1Shell } from './demo/phase1/DemoPhase1Shell'
+import { PHASE1_SECONDARY_HASHES } from './demo/phase1/phase1Fixtures'
 import type { ConversationJourneyApi } from './conversation/ConversationJourneyApi'
 import { RoleplayJourney } from './conversation/RoleplayJourney'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
@@ -39,15 +50,18 @@ import {
 } from './localization/interfaceLocalization'
 import { LocalizedMessage } from './localization/LocalizedMessage'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
-import { LearnerJourney } from './learner/LearnerJourney'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
+import { LearnerLevelsSurface } from './learner/LearnerLevelsSurface'
+import type { LevelSessionsApi } from './learner/LevelSessionsApi'
+import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import { browserOfflineLearningStore } from './offline/BrowserOfflineLearningStore'
 import type {
   OfflineLearningStore,
   OfflinePersonalDeviceResume,
   OfflineProfileBinding,
 } from './offline/OfflineLearningStore'
+import { ProgressDashboard } from './learner/ProgressDashboard'
 import { OperatorConsole } from './operator/OperatorConsole'
 import type { OperatorConsoleApi } from './operator/OperatorConsoleApi'
 import { defaultOperatorConsoleApi } from './operator/OperatorConsoleApi'
@@ -64,6 +78,7 @@ interface AppProps {
   createClientId?: () => string
   demoMode?: boolean
   learnerJourneyApi?: LearnerJourneyApi
+  levelSessionsApi?: LevelSessionsApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
   operatorConsoleApi?: OperatorConsoleApi
@@ -73,6 +88,10 @@ const OPERATOR_ROLE_KEYS = new Set([
   'trainer',
   'organization_admin',
   'content_reviewer',
+  'institution-admin',
+  'content-governor',
+  'governed-media-operator',
+  'custom-governed-operator',
 ])
 
 const destinationMessages: Readonly<
@@ -139,6 +158,7 @@ function App({
   createClientId,
   demoMode = false,
   learnerJourneyApi = defaultLearnerJourneyApi,
+  levelSessionsApi = defaultLevelSessionsApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
   operatorConsoleApi = defaultOperatorConsoleApi,
@@ -154,6 +174,7 @@ function App({
   const [practiceSurface, setPracticeSurface] = useState<
     'confidence' | 'roleplay'
   >('confidence')
+  const { scheme, toggleScheme } = useColorScheme()
   // In demo mode Home renders the learner journey directly, so every
   // runtime starts on Home unless the URL hash selects another destination.
   const [destination, setDestination] = useState<PrimaryDestination>(
@@ -265,13 +286,22 @@ function App({
 
   useEffect(() => {
     if (previousDestination.current !== destination) {
-      destinationTitle.current?.focus()
+      const titleNode =
+        destinationTitle.current ??
+        document.getElementById('destination-title')
+      titleNode?.focus({ preventScroll: true })
+      globalThis.scrollTo(0, 0)
       previousDestination.current = destination
     }
   }, [destination])
 
   const brand = resolveInterfaceMessage(
     'app.name',
+    'en-IN',
+    localizationPolicy,
+  )
+  const compactBrand = resolveInterfaceMessage(
+    'app.short_name',
     'en-IN',
     localizationPolicy,
   )
@@ -304,7 +334,7 @@ function App({
     },
     practice: {
       href: '#practice',
-      label: <LocalizedMessage resolution={message('nav.practice')} />,
+      label: <LocalizedMessage resolution={message('nav.speak')} />,
     },
     progress: {
       href: '#progress',
@@ -341,21 +371,45 @@ function App({
   const isOperatorSession =
     !demoMode &&
     session.status === 'authenticated' &&
-    (session.identity.current_membership?.role_keys.some((roleKey) =>
+    session.identity.current_membership !== null &&
+    session.identity.current_membership.membership_type !== 'learner' &&
+    session.identity.current_membership.role_keys.some((roleKey) =>
       OPERATOR_ROLE_KEYS.has(roleKey),
-    ) ??
-      false)
+    )
   const canLearn =
     destination === 'learn' &&
-    (isLearnerSession || offlineResume !== null)
+    (demoMode || isLearnerSession || offlineResume !== null)
   const canPractice =
-    destination === 'practice' && isLearnerSession
+    destination === 'practice' && (isLearnerSession || demoMode)
   const canShowDemoProgress =
     demoMode && destination === 'progress' && isLearnerSession
-  const canShowOperatorConsole =
-    isOperatorSession &&
-    (destination === 'home' || destination === 'learn')
+  const canShowLevelProgress =
+    !demoMode && destination === 'progress' && isLearnerSession
+  const canShowOperatorConsole = isOperatorSession
   const showDemoPhase1 = demoMode && destination === 'home'
+  const showDemoLearnHub = demoMode && canLearn
+  const hideDemoIntroduction = demoMode
+  const showPreSignInGate =
+    !demoMode &&
+    session.status !== 'authenticated' &&
+    offlineResume === null
+  const androidAuth =
+    authentication.transport === 'passport-pkce'
+      ? (authentication as AndroidPkceAuthentication)
+      : null
+  const practiceHashId = (globalThis.location?.hash ?? '')
+    .replace(/^#/u, '')
+    .replace(/^(?:learn|practice)\//u, '')
+  const practiceLesson = foundationLessonById(
+    lessonIdFromHash(globalThis.location?.hash),
+  )
+  const practiceCurriculum = curriculumByLevelId(practiceHashId)
+  const practiceListenLines =
+    practiceCurriculum?.fallbackTurns.length
+      ? practiceCurriculum.fallbackTurns
+      : practiceLesson === null
+        ? undefined
+        : [practiceLesson.modelEn]
 
   useInterfaceFallbackReporting([navigationLabel])
 
@@ -378,10 +432,24 @@ function App({
     <ApplicationFrame
       brandLabel={brand.text}
       brandLabelLocale={brand.resolvedLocale}
+      compactBrandLabel={compactBrand.text}
       currentDestination={destination}
-      hidePrimaryNavigation={false}
+      hidePrimaryNavigation={showPreSignInGate || canShowOperatorConsole}
       headerActions={
-        <div className="shell-locale-control">
+        <div className="shell-header-tools">
+          {demoMode ? (
+            <a className="shell-profile-link" href="#profile">
+              <LocalizedMessage resolution={message('shell.profile_label')} />
+            </a>
+          ) : null}
+          <ThemeToggle
+            darkLabel={message('shell.theme.dark').text}
+            label={message('shell.theme.label').text}
+            lightLabel={message('shell.theme.light').text}
+            onToggle={toggleScheme}
+            scheme={scheme}
+          />
+          <div className="shell-locale-control">
           <label
             className="shell-locale-control__label"
             htmlFor="interface-locale"
@@ -425,6 +493,7 @@ function App({
               />
             )}
           </p>
+          </div>
         </div>
       }
       navigationLabel={navigationLabel.text}
@@ -434,27 +503,10 @@ function App({
         <LocalizedMessage resolution={skipToContent} />
       }
     >
-      <div className="shell-content">
-        {demoMode ? (
-          <aside
-            className="shell-demo"
-            aria-label={message('demo.label').text}
-            data-demo-mode="synthetic-local"
-          >
-            <strong>
-              <LocalizedMessage resolution={message('demo.label')} />
-            </strong>
-            <span>
-              <LocalizedMessage resolution={message('demo.notice')} />
-            </span>
-            {demoOrganization === undefined ? null : (
-              <span className="shell-demo__organization">
-                {demoOrganization}
-              </span>
-            )}
-          </aside>
-        ) : null}
-
+      <div
+        className="shell-content mx-auto w-full max-w-content"
+        data-destination={destination}
+      >
         {previewNotice.isPreview ? (
           <aside
             className="shell-preview"
@@ -485,7 +537,71 @@ function App({
           </aside>
         ) : null}
 
-        {showDemoPhase1 ? null : (
+        {showPreSignInGate ? (
+          <>
+            <PreSignInSplash
+              canStartAuthorization={androidAuth !== null}
+              message={message}
+              onRetry={() => {
+                setSession({ status: 'checking' })
+                authentication
+                  .current()
+                  .then((snapshot) => {
+                    setOfflineResume(null)
+                    setSession(snapshot)
+                  })
+                  .catch(() => {
+                    setSession({ status: 'unavailable' })
+                  })
+              }}
+              onSignIn={() => {
+                if (androidAuth === null) {
+                  return
+                }
+
+                void androidAuth.beginAuthorization().catch(() => {
+                  setSession({ status: 'unavailable' })
+                })
+              }}
+              status={
+                session.status === 'unavailable'
+                  ? 'unavailable'
+                  : session.status === 'checking'
+                    ? 'checking'
+                    : 'anonymous'
+              }
+            />
+            <MarketingLanding locale={locale} message={message} />
+          </>
+        ) : canShowOperatorConsole ? (
+          <h1
+            className="shell-title"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={message('operator.shell.title')} />
+          </h1>
+        ) : hideDemoIntroduction && destination === 'learn' ? (
+          <h1
+            className="visually-hidden"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : hideDemoIntroduction &&
+          (destination === 'practice' || destination === 'progress') ? (
+          <h1
+            className="shell-title shell-title--compact"
+            id="destination-title"
+            ref={destinationTitle}
+            tabIndex={-1}
+          >
+            <LocalizedMessage resolution={title} />
+          </h1>
+        ) : hideDemoIntroduction ? null : (
           <section
             className="shell-introduction"
             aria-labelledby="destination-title"
@@ -507,22 +623,47 @@ function App({
           </section>
         )}
 
-        {showDemoPhase1 ? (
+        {showPreSignInGate ? null : showDemoPhase1 ? (
           <DemoPhase1Shell
+            conversationApi={conversationApi}
+            demoMode={demoMode}
+            demoOrganization={demoOrganization}
+            levelSessionsApi={levelSessionsApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onLocaleChange={setLocale}
           />
         ) : canLearn ? (
-          <LearnerJourney
-            api={learnerJourneyApi}
-            audioRecorder={audioRecorder}
-            createClientId={createClientId}
-            locale={locale}
-            localizationPolicy={localizationPolicy}
-            offlineBinding={offlineBinding}
-            offlineStore={offlineStore}
-            resumeBundle={offlineResume?.storedBundle}
-          />
+          <>
+            {showDemoLearnHub ? (
+              <DemoPhase1Shell
+                conversationApi={conversationApi}
+                demoMode={demoMode}
+                demoOrganization={demoOrganization}
+                forcedModule="levels"
+                levelSessionsApi={levelSessionsApi}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                onLocaleChange={setLocale}
+              />
+            ) : (
+              <LearnerLevelsSurface
+                audioRecorder={audioRecorder}
+                conversationApi={conversationApi}
+                createClientId={createClientId}
+                demoMode={demoMode}
+                demoOrganization={demoOrganization}
+                learnerJourneyApi={learnerJourneyApi}
+                levelSessionsApi={levelSessionsApi}
+                locale={locale}
+                localizationPolicy={localizationPolicy}
+                offlineBinding={offlineBinding}
+                offlineStore={offlineStore}
+                onLocaleChange={setLocale}
+                resumeBundle={offlineResume?.storedBundle}
+              />
+            )}
+          </>
         ) : canPractice ? (
           practiceSurface === 'roleplay' ? (
             <RoleplayJourney
@@ -554,6 +695,7 @@ function App({
                 api={conversationApi}
                 createClientId={createClientId}
                 demoMode={demoMode}
+                listenLines={practiceListenLines}
                 locale={locale}
                 localizationPolicy={localizationPolicy}
               />
@@ -564,6 +706,15 @@ function App({
             api={learnerJourneyApi}
             locale={locale}
             localizationPolicy={localizationPolicy}
+          />
+        ) : canShowLevelProgress ? (
+          <ProgressDashboard
+            api={learnerJourneyApi}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onMissionRequested={() => {
+              window.location.hash = '#home'
+            }}
           />
         ) : canShowOperatorConsole ? (
           <OperatorConsole
@@ -579,7 +730,7 @@ function App({
           </p>
         )}
 
-        {demoMode ? null : (
+        {demoMode || session.status !== 'authenticated' ? null : (
           <SessionSummary
             authentication={authentication}
             message={message}
@@ -694,14 +845,22 @@ function destinationFromHash(
   hash: string | undefined,
 ): PrimaryDestination | null {
   const candidate = hash?.replace(/^#/u, '')
+  const destination = candidate?.split('/')[0]
 
   if (
-    candidate === 'home' ||
-    candidate === 'learn' ||
-    candidate === 'practice' ||
-    candidate === 'progress'
+    destination === 'home' ||
+    destination === 'learn' ||
+    destination === 'practice' ||
+    destination === 'progress'
   ) {
-    return candidate
+    return destination
+  }
+
+  if (
+    candidate !== undefined &&
+    (PHASE1_SECONDARY_HASHES as readonly string[]).includes(candidate)
+  ) {
+    return 'home'
   }
 
   return null

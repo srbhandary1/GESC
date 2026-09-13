@@ -45,5 +45,27 @@ return [
         'audio/webm',
     ],
 
+    /*
+     * Lesson-video delivery (ADR-0013) is separate from model audio. Legacy
+     * level MP4 feedstock can exceed the 10 MB audio ceiling; bound and verify
+     * before any private object is streamed to a learner.
+     *
+     * Staging/prod-like: set LEARNING_LESSON_VIDEO_DISK=lesson_videos (private
+     * S3 prefix). See docs/LESSON_VIDEO_STAGING_HARDENING.md. This is not a
+     * production content-approval or Play authorization.
+     */
+    'lesson_video_maximum_bytes' => 20_000_000,
+    'lesson_video_disk' => env(
+        'LEARNING_LESSON_VIDEO_DISK',
+        env(
+            'LEARNING_MODEL_AUDIO_DISK',
+            env('FILESYSTEM_DISK', 'local'),
+        ),
+    ),
+    'lesson_video_mime_types' => [
+        'video/mp4',
+    ],
+    'lesson_video_usage_key' => 'lesson_video',
+
     'default_rule_version' => 'daily-speaking-v1',
 ];

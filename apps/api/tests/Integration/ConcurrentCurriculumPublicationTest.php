@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Curriculum\CanonicalJson;
+use App\Curriculum\CurriculumGraphProjector;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Curriculum\Publication\CurriculumPublicationScheduler;
 use App\Curriculum\Publication\CurriculumPublisher;
+use App\Curriculum\Publication\CurriculumRollbackService;
 use App\Learning\Attempts\DailyMissionAttemptService;
 use App\Learning\Exceptions\LearningIdempotencyConflict;
 use App\Learning\Exceptions\LearningOperationRejected;
@@ -64,6 +66,7 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
             DB::statement(
                 <<<'SQL'
                     TRUNCATE TABLE
+                        roleplay_scenarios,
                         learning_commands,
                         review_schedules,
                         mastery_states,
@@ -446,6 +449,188 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
             DB::table('publication_commands')
                 ->where('organization_id', $fixture['organization_id'])
                 ->where('operation', 'curriculum.schedule')
+                ->where('aggregate_id', $fixture['program_id'])
+                ->count(),
+        );
+    }
+
+    public function test_two_rollbacks_with_the_same_expected_head_allow_exactly_one_winner(): void
+    {
+        self::assertSame('pgsql', DB::connection()->getDriverName());
+        self::assertTrue(
+            function_exists('pcntl_fork'),
+            'The PostgreSQL concurrency gate requires the pcntl extension.',
+        );
+
+        $fixture = $this->makeSeededDraftPublishable();
+        $actor = User::query()->findOrFail($fixture['actor_user_id']);
+        $context = new OrganizationContext(
+            organizationId: $fixture['organization_id'],
+            actorUserId: $fixture['actor_user_id'],
+            membershipId: $fixture['actor_membership_id'],
+            source: OrganizationContextSource::Membership,
+        );
+        $contexts = $this->app->make(OrganizationContextManager::class);
+        $first = $contexts->run(
+            $context,
+            fn () => $this->app->make(CurriculumPublisher::class)->publish(
+                actor: $actor,
+                curriculumVersionId: $fixture['curriculum_version_id'],
+                expectedHeadVersion: 0,
+                idempotencyKey: 'rollback-race-first-publication',
+            ),
+        );
+        $secondVersionId = $this->insertAdditionalPublishableVersion(
+            $fixture,
+            'rollback-v2',
+        );
+        $second = $contexts->run(
+            $context,
+            fn () => $this->app->make(CurriculumPublisher::class)->publish(
+                actor: $actor,
+                curriculumVersionId: $secondVersionId,
+                expectedHeadVersion: 1,
+                idempotencyKey: 'rollback-race-second-publication',
+            ),
+        );
+        self::assertNotSame($first->publicationId, $second->publicationId);
+        self::assertSame(2, $second->headVersion);
+        $databaseConfig = DB::connection()->getConfig();
+        DB::disconnect();
+
+        /** @var list<array{pid: int, pipe: resource, reaped: bool}> $workers */
+        $workers = [];
+        $lockConnection = null;
+        $results = [];
+        $bothWorkersBlocked = false;
+
+        try {
+            for ($worker = 0; $worker < 2; $worker++) {
+                $workers[] = $this->spawnPublicationWorker(
+                    organizationId: $fixture['organization_id'],
+                    actorUserId: $fixture['actor_user_id'],
+                    actorMembershipId: $fixture['actor_membership_id'],
+                    curriculumVersionId: $fixture['curriculum_version_id'],
+                    idempotencyKey: sprintf('rollback-race-%d', $worker),
+                    rollbackProgramId: $fixture['program_id'],
+                    rollbackTargetPublicationId: $first->publicationId,
+                    expectedHeadVersion: 2,
+                );
+            }
+
+            foreach ($workers as $worker) {
+                stream_set_timeout($worker['pipe'], 10);
+
+                if (fgets($worker['pipe']) !== "ready\n") {
+                    throw new RuntimeException(
+                        'A concurrent rollback worker did not become ready.',
+                    );
+                }
+            }
+
+            $lockConnection = $this->openPostgreSqlConnection($databaseConfig);
+            $lockConnection->beginTransaction();
+            $lock = $lockConnection->prepare(
+                'select id from programs where id = :id for update',
+            );
+            $lock->execute(['id' => $fixture['program_id']]);
+
+            foreach ($workers as $worker) {
+                fwrite($worker['pipe'], "go\n");
+                fflush($worker['pipe']);
+            }
+
+            $bothWorkersBlocked = $this->waitUntilBothWorkersBlock(
+                $lockConnection,
+            );
+            $lockConnection->commit();
+
+            foreach ($workers as $index => $worker) {
+                $line = fgets($worker['pipe']);
+
+                if (! is_string($line)) {
+                    throw new RuntimeException(
+                        'A concurrent rollback worker returned no result.',
+                    );
+                }
+
+                $result = json_decode($line, true, flags: JSON_THROW_ON_ERROR);
+
+                if (! is_array($result)) {
+                    throw new RuntimeException(
+                        'A concurrent rollback worker returned invalid JSON.',
+                    );
+                }
+
+                $results[] = $result;
+                $waited = pcntl_waitpid($worker['pid'], $processStatus);
+
+                if (
+                    $waited !== $worker['pid']
+                    || pcntl_wexitstatus($processStatus) !== 0
+                ) {
+                    throw new RuntimeException(
+                        'A concurrent rollback worker failed.',
+                    );
+                }
+
+                $workers[$index]['reaped'] = true;
+            }
+        } finally {
+            if (
+                $lockConnection instanceof PDO
+                && $lockConnection->inTransaction()
+            ) {
+                $lockConnection->rollBack();
+            }
+
+            foreach ($workers as $index => $worker) {
+                if (is_resource($worker['pipe'])) {
+                    fclose($worker['pipe']);
+                }
+
+                if ($worker['reaped']) {
+                    continue;
+                }
+
+                $waited = pcntl_waitpid(
+                    $worker['pid'],
+                    $processStatus,
+                    WNOHANG,
+                );
+
+                if ($waited === 0 && function_exists('posix_kill')) {
+                    posix_kill($worker['pid'], SIGKILL);
+                    pcntl_waitpid($worker['pid'], $processStatus);
+                }
+
+                $workers[$index]['reaped'] = true;
+            }
+
+            DB::purge();
+            DB::reconnect();
+        }
+
+        self::assertTrue($bothWorkersBlocked);
+        self::assertSame(
+            ['rejected', 'rolled_back'],
+            collect($results)
+                ->pluck('outcome')
+                ->sort()
+                ->values()
+                ->all(),
+        );
+        $head = DB::table('publication_heads')
+            ->where('organization_id', $fixture['organization_id'])
+            ->where('program_id', $fixture['program_id'])
+            ->sole();
+        self::assertSame($first->publicationId, $head->active_publication_id);
+        self::assertSame(3, $head->lock_version);
+        self::assertSame(
+            1,
+            DB::table('publication_commands')
+                ->where('organization_id', $fixture['organization_id'])
+                ->where('operation', 'curriculum.rollback')
                 ->where('aggregate_id', $fixture['program_id'])
                 ->count(),
         );
@@ -1032,7 +1217,14 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
      *   actor_user_id: string,
      *   actor_membership_id: string,
      *   program_id: string,
-     *   curriculum_version_id: string
+     *   curriculum_version_id: string,
+     *   translator_membership_id: string,
+     *   english_appointment_id: string,
+     *   english_appointment_event_id: string,
+     *   english_reviewer_membership_id: string,
+     *   kannada_appointment_id: string,
+     *   kannada_appointment_event_id: string,
+     *   kannada_reviewer_membership_id: string
      * }
      */
     private function makeSeededDraftPublishable(): array
@@ -1212,7 +1404,270 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
             'actor_membership_id' => $publisher['membership_id'],
             'program_id' => $programId,
             'curriculum_version_id' => $curriculumVersionId,
+            'translator_membership_id' => $translator['membership_id'],
+            'english_appointment_id' => $englishAppointmentId,
+            'english_appointment_event_id' => $englishAcceptanceEventId,
+            'english_reviewer_membership_id' => $englishReviewer['membership_id'],
+            'kannada_appointment_id' => $kannadaAppointmentId,
+            'kannada_appointment_event_id' => $kannadaAcceptanceEventId,
+            'kannada_reviewer_membership_id' => $kannadaReviewer['membership_id'],
         ];
+    }
+
+    /**
+     * @param  array{
+     *   organization_id: string,
+     *   actor_membership_id: string,
+     *   program_id: string,
+     *   translator_membership_id: string,
+     *   english_appointment_id: string,
+     *   english_appointment_event_id: string,
+     *   english_reviewer_membership_id: string,
+     *   kannada_appointment_id: string,
+     *   kannada_appointment_event_id: string,
+     *   kannada_reviewer_membership_id: string
+     * }  $fixture
+     */
+    private function insertAdditionalPublishableVersion(
+        array $fixture,
+        string $versionKey,
+    ): string {
+        $versionId = (string) Str::ulid();
+        $objectiveId = (string) Str::ulid();
+        $moduleId = (string) Str::ulid();
+        $lessonId = (string) Str::ulid();
+        $documentId = (string) Str::ulid();
+        $sourceRevisionId = (string) Str::ulid();
+        $variantId = (string) Str::ulid();
+        $itemId = (string) Str::ulid();
+        $missionId = (string) Str::ulid();
+        $sourcePayload = [
+            'instruction' => 'Synthetic rollback-race English instruction.',
+        ];
+        $variantPayload = [
+            'instruction' => 'Synthetic rollback-race Kannada instruction.',
+        ];
+        $sourceHash = CanonicalJson::sha256($sourcePayload);
+        $variantHash = CanonicalJson::sha256($variantPayload);
+        $now = now();
+
+        DB::table('curriculum_versions')->insert([
+            'id' => $versionId,
+            'organization_id' => $fixture['organization_id'],
+            'program_id' => $fixture['program_id'],
+            'key' => $versionKey,
+            'created_by_membership_id' => $fixture['actor_membership_id'],
+            'created_by_attribution' => 'synthetic-rollback-race',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('learning_objectives')->insert([
+            'id' => $objectiveId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'key' => 'rollback-objective',
+            'outcome_code' => 'ROLLBACK_RACE',
+            'sequence' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('curriculum_modules')->insert([
+            'id' => $moduleId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'key' => 'rollback-module',
+            'sequence' => 1,
+            'estimated_minutes' => 5,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('lessons')->insert([
+            'id' => $lessonId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'curriculum_module_id' => $moduleId,
+            'key' => 'rollback-lesson',
+            'sequence' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('lesson_objectives')->insert([
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'lesson_id' => $lessonId,
+            'objective_id' => $objectiveId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('content_documents')->insert([
+            'id' => $documentId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'key' => 'rollback-instruction',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('content_revisions')->insert([
+            'id' => $sourceRevisionId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'content_document_id' => $documentId,
+            'parent_revision_id' => null,
+            'revision_number' => 1,
+            'source_locale' => 'en-IN',
+            'content_type' => 'instruction',
+            'learner_visible' => true,
+            'localization_requirement' => 'kn_required',
+            'pedagogically_authoritative' => true,
+            'payload' => CanonicalJson::encode($sourcePayload),
+            'content_hash' => $sourceHash,
+            'authored_by_membership_id' => $fixture['actor_membership_id'],
+            'author_attribution' => 'synthetic-rollback-race',
+            'authored_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('content_revision_heads')->insert([
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'content_document_id' => $documentId,
+            'content_revision_id' => $sourceRevisionId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('localized_variants')->insert([
+            'id' => $variantId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'source_revision_id' => $sourceRevisionId,
+            'parent_variant_id' => null,
+            'locale' => 'kn-IN',
+            'revision_number' => 1,
+            'source_content_hash' => $sourceHash,
+            'payload' => CanonicalJson::encode($variantPayload),
+            'content_hash' => $variantHash,
+            'translated_by_membership_id' => $fixture['translator_membership_id'],
+            'translator_attribution' => 'synthetic-rollback-race',
+            'translated_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('learning_items')->insert([
+            'id' => $itemId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'lesson_id' => $lessonId,
+            'content_document_id' => $documentId,
+            'key' => 'rollback-item',
+            'item_type' => 'speaking_prompt',
+            'sequence' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('curriculum_missions')->insert([
+            'id' => $missionId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'instruction_content_document_id' => $documentId,
+            'key' => 'rollback-mission',
+            'sequence' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('mission_items')->insert([
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'mission_id' => $missionId,
+            'learning_item_id' => $itemId,
+            'sequence' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $graph = $this->app->make(CurriculumGraphProjector::class)->project(
+            $fixture['organization_id'],
+            $versionId,
+        );
+        $graphRevisionId = (string) Str::ulid();
+        DB::table('curriculum_graph_revisions')->insert([
+            'id' => $graphRevisionId,
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'parent_revision_id' => null,
+            'parent_revision_number' => null,
+            'revision_number' => 1,
+            'graph' => CanonicalJson::encode($graph['graph']),
+            'graph_hash' => $graph['graph_hash'],
+            'authored_by_membership_id' => $fixture['actor_membership_id'],
+            'author_attribution' => 'synthetic-rollback-race',
+            'authored_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('curriculum_graph_heads')->insert([
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'curriculum_graph_revision_id' => $graphRevisionId,
+            'graph_hash' => $graph['graph_hash'],
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('curriculum_graph_reviews')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $fixture['organization_id'],
+            'curriculum_version_id' => $versionId,
+            'curriculum_graph_revision_id' => $graphRevisionId,
+            'graph_hash' => $graph['graph_hash'],
+            'authority_kind' => 'english_academic_reviewer',
+            'authority_appointment_id' => $fixture['english_appointment_id'],
+            'authority_appointment_event_id' => $fixture['english_appointment_event_id'],
+            'authority_appointment_event_type' => 'accepted',
+            'reviewer_membership_id' => $fixture['english_reviewer_membership_id'],
+            'decision' => 'approved',
+            'rationale_key' => null,
+            'reviewed_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('content_reviews')->insert([
+            [
+                'id' => (string) Str::ulid(),
+                'organization_id' => $fixture['organization_id'],
+                'curriculum_version_id' => $versionId,
+                'review_kind' => 'academic_en',
+                'source_revision_id' => $sourceRevisionId,
+                'localized_variant_id' => null,
+                'authority_appointment_id' => $fixture['english_appointment_id'],
+                'authority_appointment_event_id' => $fixture['english_appointment_event_id'],
+                'reviewer_membership_id' => $fixture['english_reviewer_membership_id'],
+                'decision' => 'approved',
+                'source_content_hash' => $sourceHash,
+                'localized_content_hash' => null,
+                'rationale_key' => null,
+                'reviewed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'id' => (string) Str::ulid(),
+                'organization_id' => $fixture['organization_id'],
+                'curriculum_version_id' => $versionId,
+                'review_kind' => 'kannada',
+                'source_revision_id' => $sourceRevisionId,
+                'localized_variant_id' => $variantId,
+                'authority_appointment_id' => $fixture['kannada_appointment_id'],
+                'authority_appointment_event_id' => $fixture['kannada_appointment_event_id'],
+                'reviewer_membership_id' => $fixture['kannada_reviewer_membership_id'],
+                'decision' => 'approved',
+                'source_content_hash' => $sourceHash,
+                'localized_content_hash' => $variantHash,
+                'rationale_key' => null,
+                'reviewed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ]);
+
+        return $versionId;
     }
 
     /**
@@ -1758,6 +2213,9 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         string $curriculumVersionId,
         string $idempotencyKey,
         ?string $activationAt = null,
+        ?string $rollbackProgramId = null,
+        ?string $rollbackTargetPublicationId = null,
+        int $expectedHeadVersion = 0,
     ): array {
         $sockets = stream_socket_pair(
             STREAM_PF_UNIX,
@@ -1792,6 +2250,9 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                 curriculumVersionId: $curriculumVersionId,
                 idempotencyKey: $idempotencyKey,
                 activationAt: $activationAt,
+                rollbackProgramId: $rollbackProgramId,
+                rollbackTargetPublicationId: $rollbackTargetPublicationId,
+                expectedHeadVersion: $expectedHeadVersion,
             );
         }
 
@@ -1815,6 +2276,9 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
         string $curriculumVersionId,
         string $idempotencyKey,
         ?string $activationAt,
+        ?string $rollbackProgramId,
+        ?string $rollbackTargetPublicationId,
+        int $expectedHeadVersion,
     ): never {
         try {
             DB::purge();
@@ -1845,14 +2309,33 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                         $actor,
                         $curriculumVersionId,
                         $idempotencyKey,
+                        $rollbackProgramId,
+                        $rollbackTargetPublicationId,
+                        $expectedHeadVersion,
                     ) {
+                        if (
+                            $rollbackProgramId !== null
+                            && $rollbackTargetPublicationId !== null
+                        ) {
+                            return $this->app
+                                ->make(CurriculumRollbackService::class)
+                                ->rollback(
+                                    actor: $actor,
+                                    programId: $rollbackProgramId,
+                                    targetPublicationId: $rollbackTargetPublicationId,
+                                    expectedHeadVersion: $expectedHeadVersion,
+                                    idempotencyKey: $idempotencyKey,
+                                    reasonKey: 'concurrent_rollback',
+                                );
+                        }
+
                         if ($activationAt === null) {
                             return $this->app
                                 ->make(CurriculumPublisher::class)
                                 ->publish(
                                     actor: $actor,
                                     curriculumVersionId: $curriculumVersionId,
-                                    expectedHeadVersion: 0,
+                                    expectedHeadVersion: $expectedHeadVersion,
                                     idempotencyKey: $idempotencyKey,
                                 );
                         }
@@ -1865,15 +2348,15 @@ final class ConcurrentCurriculumPublicationTest extends TestCase
                                 activationAt: CarbonImmutable::parse(
                                     $activationAt,
                                 ),
-                                expectedHeadVersion: 0,
+                                expectedHeadVersion: $expectedHeadVersion,
                                 idempotencyKey: $idempotencyKey,
                             );
                     },
                 );
             $payload = [
-                'outcome' => $activationAt === null
-                    ? 'published'
-                    : 'scheduled',
+                'outcome' => $rollbackProgramId !== null
+                    ? 'rolled_back'
+                    : ($activationAt === null ? 'published' : 'scheduled'),
                 'publication_id' => $result->publicationId,
                 'head_version' => $result->headVersion,
             ];

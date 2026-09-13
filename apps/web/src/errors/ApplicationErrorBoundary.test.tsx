@@ -106,9 +106,7 @@ describe('ApplicationErrorBoundary', () => {
       </ApplicationErrorBoundary>,
     )
 
-    expect(
-      await screen.findByRole('status'),
-    ).toHaveTextContent(
+    expect(await screen.findByRole('status')).toHaveTextContent(
       message('localization.fallback_notice', 'approved-only'),
     )
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -131,14 +129,42 @@ describe('ApplicationErrorBoundary', () => {
       sensitiveFixture,
     )
   })
+
+  it('uses a visible English fallback when pending Hindi is requested', async () => {
+    document.documentElement.dataset.requestedLocale = 'hi-IN'
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const consoleWarning = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined)
+
+    render(
+      <ApplicationErrorBoundary localizationPolicy="approved-only">
+        <BrokenChild />
+      </ApplicationErrorBoundary>,
+    )
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      message('localization.fallback_notice', 'approved-only', 'hi-IN'),
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      message('error.message', 'approved-only', 'hi-IN'),
+    )
+    await waitFor(() => expect(consoleWarning).toHaveBeenCalled())
+    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
+    expect(document.documentElement).toHaveAttribute(
+      'data-requested-locale',
+      'hi-IN',
+    )
+  })
 })
 
 function message(
   key: MessageKey,
   policy: ResolutionPolicy = 'development-preview',
+  requestedLocale: typeof DEFAULT_LOCALE | 'hi-IN' = DEFAULT_LOCALE,
 ): string {
   return resolveMessage(key, {
     policy,
-    requestedLocale: DEFAULT_LOCALE,
+    requestedLocale,
   }).text
 }

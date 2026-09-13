@@ -12,12 +12,10 @@ use App\Tenancy\PlatformOperationAuthorizer;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Session\SessionManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 final readonly class AuthenticationSessionService
 {
@@ -28,7 +26,7 @@ final readonly class AuthenticationSessionService
         private AuditEventRecorder $audit,
         private PlatformOperationAuthorizer $platformOperations,
         private AuthenticationSecretDigester $secrets,
-        private SessionManager $sessionManager,
+        private AuthenticationSessionCleanupWorker $cleanup,
     ) {}
 
     public function start(Authenticatable $user, Request $request): AuthenticationSession
@@ -104,7 +102,10 @@ final readonly class AuthenticationSessionService
                 $authenticationSession->forceFill([
                     'revoked_at' => $authenticationSession->revoked_at ?? $now,
                     'revocation_reason' => $authenticationSession->revocation_reason ?? 'expired',
+                    'selected_organization_id' => null,
+                    'selected_membership_id' => null,
                 ])->save();
+                $this->cleanup->enqueue($authenticationSession);
                 $this->audit->recordPlatform(
                     $this->platformOperations
                         ->authorizeAuthenticationSessionAudit(
@@ -138,7 +139,10 @@ final readonly class AuthenticationSessionService
                         'absolute_expires_at' => $absoluteExpiresAt,
                         'revoked_at' => $now,
                         'revocation_reason' => 'expired',
+                        'selected_organization_id' => null,
+                        'selected_membership_id' => null,
                     ])->save();
+                    $this->cleanup->enqueue($authenticationSession);
                     $this->audit->recordPlatform(
                         $this->platformOperations
                             ->authorizeAuthenticationSessionAudit(
@@ -187,7 +191,7 @@ final readonly class AuthenticationSessionService
         Request $request,
         string $reason = 'user_revoked',
     ): bool {
-        /** @var array{storage_session_ciphertext: string, current: bool}|null $revoked */
+        /** @var array{cleanup_request_id: string, current: bool}|null $revoked */
         $revoked = DB::transaction(function () use (
             $user,
             $publicSessionId,
@@ -210,7 +214,12 @@ final readonly class AuthenticationSessionService
             $authenticationSession->forceFill([
                 'revoked_at' => $authenticationSession->revoked_at ?? Date::now(),
                 'revocation_reason' => $authenticationSession->revocation_reason ?? $reason,
+                'selected_organization_id' => null,
+                'selected_membership_id' => null,
             ])->save();
+            $cleanupRequestId = $this->cleanup->enqueue(
+                $authenticationSession,
+            );
 
             if ($wasActive) {
                 $this->audit->recordPlatform(
@@ -226,8 +235,7 @@ final readonly class AuthenticationSessionService
             }
 
             return [
-                'storage_session_ciphertext' => $authenticationSession
-                    ->storage_session_ciphertext,
+                'cleanup_request_id' => $cleanupRequestId,
                 'current' => hash_equals(
                     (string) $request->session()->get(self::SESSION_KEY, ''),
                     (string) $authenticationSession->getKey(),
@@ -239,11 +247,21 @@ final readonly class AuthenticationSessionService
             return false;
         }
 
-        $this->destroyStorageSession($revoked['storage_session_ciphertext']);
+        $finalize = function () use ($revoked, $request): void {
+            $this->cleanup->processOne($revoked['cleanup_request_id']);
 
-        if ($revoked['current']) {
-            $this->invalidateCurrent($request);
+            if ($revoked['current']) {
+                $this->invalidateCurrent($request);
+            }
+        };
+
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit($finalize);
+
+            return true;
         }
+
+        $finalize();
 
         return true;
     }
@@ -253,8 +271,8 @@ final readonly class AuthenticationSessionService
         Request $request,
         string $reason = 'user_revoked_all',
     ): void {
-        /** @var list<string> $storageCiphertexts */
-        $storageCiphertexts = DB::transaction(function () use (
+        /** @var list<string> $cleanupRequestIds */
+        $cleanupRequestIds = DB::transaction(function () use (
             $user,
             $request,
             $reason,
@@ -271,10 +289,23 @@ final readonly class AuthenticationSessionService
                 ->update([
                     'revoked_at' => Date::now(),
                     'revocation_reason' => $reason,
+                    'selected_organization_id' => null,
+                    'selected_membership_id' => null,
                     'updated_at' => Date::now(),
                 ]);
 
+            $cleanupRequestIds = [];
+
             foreach ($sessions as $authenticationSession) {
+                $authenticationSession->forceFill([
+                    'revoked_at' => Date::now(),
+                    'revocation_reason' => $reason,
+                    'selected_organization_id' => null,
+                    'selected_membership_id' => null,
+                ]);
+                $cleanupRequestIds[] = $this->cleanup->enqueue(
+                    $authenticationSession,
+                );
                 $this->audit->recordPlatform(
                     $this->platformOperations
                         ->authorizeAuthenticationSessionAudit(
@@ -287,21 +318,24 @@ final readonly class AuthenticationSessionService
                 );
             }
 
-            return $sessions
-                ->map(
-                    static fn (
-                        AuthenticationSession $authenticationSession,
-                    ): string => $authenticationSession->storage_session_ciphertext,
-                )
-                ->values()
-                ->all();
+            return $cleanupRequestIds;
         });
 
-        foreach ($storageCiphertexts as $storageCiphertext) {
-            $this->destroyStorageSession($storageCiphertext);
+        $finalize = function () use ($cleanupRequestIds, $request): void {
+            foreach ($cleanupRequestIds as $cleanupRequestId) {
+                $this->cleanup->processOne($cleanupRequestId);
+            }
+
+            $this->invalidateCurrent($request);
+        };
+
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit($finalize);
+
+            return;
         }
 
-        $this->invalidateCurrent($request);
+        $finalize();
     }
 
     public function revokeCurrent(
@@ -323,12 +357,48 @@ final readonly class AuthenticationSessionService
     public function hasFreshMfa(AuthenticationSession $authenticationSession): bool
     {
         if (! $authenticationSession->is_privileged) {
-            return true;
+            return false;
         }
 
         $verifiedAt = $authenticationSession->mfa_verified_at;
 
         return $verifiedAt !== null
+            && $authenticationSession->mfa_factor_id !== null
+            && $authenticationSession->mfa_verified_method
+                === AuthenticationSession::MFA_METHOD_TOTP
+            && $authenticationSession->mfa_verified_scope
+                === AuthenticationSession::MFA_SCOPE_PRIVILEGED_ACTIONS
+            && $verifiedAt->greaterThan(
+                Date::now()->subMinutes((int) config(
+                    'authentication.privileged.mfa_fresh_minutes',
+                    15,
+                )),
+            );
+    }
+
+    public function hasFreshMfaForFactorReplacement(
+        AuthenticationSession $authenticationSession,
+    ): bool {
+        if (! $authenticationSession->is_privileged) {
+            return false;
+        }
+
+        $verifiedAt = $authenticationSession->mfa_verified_at;
+        $methodAndScopeAreAllowed = (
+            $authenticationSession->mfa_verified_method
+                === AuthenticationSession::MFA_METHOD_TOTP
+            && $authenticationSession->mfa_verified_scope
+                === AuthenticationSession::MFA_SCOPE_PRIVILEGED_ACTIONS
+        ) || (
+            $authenticationSession->mfa_verified_method
+                === AuthenticationSession::MFA_METHOD_RECOVERY_CODE
+            && $authenticationSession->mfa_verified_scope
+                === AuthenticationSession::MFA_SCOPE_FACTOR_REPLACEMENT
+        );
+
+        return $verifiedAt !== null
+            && $authenticationSession->mfa_factor_id !== null
+            && $methodAndScopeAreAllowed
             && $verifiedAt->greaterThan(
                 Date::now()->subMinutes((int) config(
                     'authentication.privileged.mfa_fresh_minutes',
@@ -342,18 +412,6 @@ final readonly class AuthenticationSessionService
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-    }
-
-    private function destroyStorageSession(string $storageSessionCiphertext): bool
-    {
-        try {
-            return $this->sessionManager
-                ->driver()
-                ->getHandler()
-                ->destroy(Crypt::decryptString($storageSessionCiphertext));
-        } catch (Throwable) {
-            return false;
-        }
     }
 
     private function idleMinutes(bool $privileged): int

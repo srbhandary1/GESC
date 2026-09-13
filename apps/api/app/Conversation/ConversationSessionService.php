@@ -6,7 +6,9 @@ namespace App\Conversation;
 
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\RoleplayCatalog;
 use App\Conversation\Support\RoleplayStages;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -20,6 +22,7 @@ final readonly class ConversationSessionService
         private ConversationEnvironmentGate $environment,
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
+        private EntitlementAccess $entitlements,
     ) {}
 
     /**
@@ -47,6 +50,10 @@ final readonly class ConversationSessionService
             $context = $this->authority->require($learner);
             $membershipId = (string) $context->membershipId;
             $mode = $this->resolveMode($personaKey, $scenarioKey);
+
+            if ($mode === 'roleplay') {
+                $this->entitlements->assertRoleplay($learner);
+            }
             $fingerprint = $this->commands->fingerprint([
                 'coaching_mode' => $coachingMode,
                 'mode' => $mode,
@@ -156,6 +163,12 @@ final readonly class ConversationSessionService
 
     private function resolveMode(string $personaKey, string $scenarioKey): string
     {
+        $catalogMode = RoleplayCatalog::modeFor($personaKey, $scenarioKey);
+
+        if (is_string($catalogMode)) {
+            return $catalogMode;
+        }
+
         $prototypes = config('conversation.prototypes', []);
 
         if (is_array($prototypes)) {
@@ -481,7 +494,7 @@ final readonly class ConversationSessionService
         string $organizationId,
         string $scenarioVersionId,
     ): array {
-        return DB::table('scenario_objectives')
+        return array_values(DB::table('scenario_objectives')
             ->where('organization_id', $organizationId)
             ->where('scenario_version_id', $scenarioVersionId)
             ->orderBy('sort_order')
@@ -501,7 +514,7 @@ final readonly class ConversationSessionService
                 ),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -511,7 +524,7 @@ final readonly class ConversationSessionService
         string $organizationId,
         string $sessionId,
     ): array {
-        return DB::table('roleplay_feedback_evidence')
+        return array_values(DB::table('roleplay_feedback_evidence')
             ->where('organization_id', $organizationId)
             ->where('conversation_session_id', $sessionId)
             ->orderBy('created_at')
@@ -531,7 +544,7 @@ final readonly class ConversationSessionService
                 'completion_state' => $this->string($row, 'completion_state'),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     private function string(stdClass $row, string $field): string

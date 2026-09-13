@@ -85,7 +85,7 @@ final class PcmWavInspector
             $durationMs < 1
             || $durationMs > (int) config(
                 'voice.maximum_duration_ms',
-                120_000,
+                25_000,
             )
         ) {
             throw new VoiceOperationRejected;

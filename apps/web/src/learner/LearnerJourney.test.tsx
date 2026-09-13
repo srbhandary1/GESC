@@ -3,7 +3,7 @@ import {
   resolveMessage,
   type MessageKey,
 } from '@global-english/localization'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -63,6 +63,41 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+async function completeOnboarding(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.click(
+    await screen.findByRole('checkbox', {
+      name: t('learner.onboarding.adult_confirmation'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('radio', {
+      name: t('learner.onboarding.goal_workplace'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('radio', {
+      name: t('learner.onboarding.level_new'),
+    }),
+  )
+  await user.click(
+    screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }),
+  )
+}
+
 describe('deterministic learner journey', () => {
   it('onboards, records locally, retries, submits and renders server authority', async () => {
     const user = userEvent.setup()
@@ -79,27 +114,14 @@ describe('deterministic learner journey', () => {
       />,
     )
 
-    expect(
-      await screen.findByRole('heading', {
-        name: t('learner.onboarding.title'),
-      }),
-    ).toHaveFocus()
+    const onboardingTitle = await screen.findByRole('heading', {
+      name: t('learner.onboarding.adult_title'),
+    })
+    await waitFor(() => {
+      expect(onboardingTitle).toHaveFocus()
+    })
 
-    await user.click(
-      screen.getByRole('checkbox', {
-        name: t('learner.onboarding.adult_confirmation'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('button', {
-        name: t('learner.onboarding.continue'),
-      }),
-    )
+    await completeOnboarding(user)
 
     expect(api.updateOnboarding).toHaveBeenCalledWith(
       {
@@ -296,8 +318,23 @@ describe('deterministic learner journey', () => {
       }),
     )
     await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.continue'),
+      }),
+    )
+    await user.click(
       screen.getByRole('radio', {
         name: t('learner.onboarding.goal_workplace'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: t('learner.onboarding.continue'),
+      }),
+    )
+    await user.click(
+      screen.getByRole('radio', {
+        name: t('learner.onboarding.level_new'),
       }),
     )
     const submit = screen.getByRole('button', {
@@ -308,14 +345,13 @@ describe('deterministic learner journey', () => {
     expect(
       await screen.findByText(t('learner.onboarding.error')),
     ).toBeVisible()
-    const travelGoal = screen.getByRole('radio', {
-      name: t('learner.onboarding.goal_travel'),
+    const someLevel = screen.getByRole('radio', {
+      name: t('learner.onboarding.level_some'),
     })
-    expect(travelGoal).toBeDisabled()
-    await user.click(travelGoal)
+    await user.click(someLevel)
     expect(
       screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
+        name: t('learner.onboarding.level_new'),
       }),
     ).toBeChecked()
 
@@ -604,6 +640,9 @@ describe('deterministic learner journey', () => {
 function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
   const api: LearnerJourneyApi = {
     home: vi.fn(async () => initialHome),
+    progressDashboard: vi.fn(async () => {
+      throw new Error('progress dashboard is unused in these tests')
+    }),
     updateOnboarding: vi.fn(async () => completeHome()),
     mission: vi.fn(async () => mission),
     startAttempt: vi.fn(async () => ({
@@ -647,6 +686,12 @@ function incompleteHome(): LearnerHome {
       completed: false,
       goal_key: null,
     },
+    streak: {
+      count: 0,
+      as_of_date: '2026-09-12',
+      timezone: 'Asia/Kolkata',
+    },
+    due_review: null,
   }
 }
 
@@ -663,6 +708,12 @@ function completeHome(): LearnerHome {
       completed: true,
       goal_key: 'workplace-confidence',
     },
+    streak: {
+      count: 1,
+      as_of_date: '2026-09-12',
+      timezone: 'Asia/Kolkata',
+    },
+    due_review: null,
   }
 }
 

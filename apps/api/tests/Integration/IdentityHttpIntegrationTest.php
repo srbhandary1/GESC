@@ -560,6 +560,34 @@ final class IdentityHttpIntegrationTest extends TenancyIntegrationTestCase
         ?string $roleId = null,
         ?string $cohortId = null,
     ): InstitutionInvite {
+        $now = now();
+
+        if ($roleId === null) {
+            $roleId = (string) Str::ulid();
+            DB::table('roles')->insert([
+                'id' => $roleId,
+                'organization_id' => $organization->getKey(),
+                'key' => 'learner-safe-'.Str::lower((string) Str::ulid()),
+                'name' => 'Learner',
+                'is_system' => false,
+                'status' => 'active',
+                'version' => 1,
+                'retired_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        DB::table('role_permissions')->insertOrIgnore([
+            'organization_id' => $organization->getKey(),
+            'role_id' => $roleId,
+            'permission_id' => DB::table('permissions')
+                ->where('key', 'learning.participate')
+                ->value('id'),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
         return $this->contexts()->run(
             $context,
             fn (): InstitutionInvite => InstitutionInvite::query()->forceCreate([

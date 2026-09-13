@@ -17,7 +17,14 @@ export const SUPPORTED_LOCALES = [
   FALLBACK_LOCALE,
 ] as const
 
+/** Learner-facing interface languages currently offered in the product UI. */
+export const INTERFACE_LOCALES = [
+  DEFAULT_LOCALE,
+  FALLBACK_LOCALE,
+] as const
+
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+export type InterfaceLocale = (typeof INTERFACE_LOCALES)[number]
 export type MessageKey = keyof typeof enInSource
 export type ReviewStatus =
   | 'source'
@@ -120,3 +127,4 @@ export function isSupportedLocale(locale: string): locale is SupportedLocale {
 export function getCatalogue(locale: SupportedLocale): MessageCatalogue {
   return catalogues[locale]
 }
+

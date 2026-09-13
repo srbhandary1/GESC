@@ -27,6 +27,7 @@ final readonly class PublicationManifestBuilder
     public function __construct(
         private OrganizationContextManager $contexts,
         private CurriculumGraphProjector $graphProjector,
+        private ManagedMediaGovernanceEvidence $managedMedia,
     ) {}
 
     /**
@@ -57,16 +58,35 @@ final readonly class PublicationManifestBuilder
         }
 
         $programId = $this->string($version, 'program_id');
+        $workspaceIsV2 = DB::table('curriculum_workspaces')
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
+            ->where('curriculum_version_id', $curriculumVersionId)
+            ->where('graph_schema_version', 2)
+            ->exists();
         $graphRevision = $this->approvedGraphManifest(
             organizationId: $organizationId,
             curriculumVersionId: $curriculumVersionId,
             programId: $programId,
             evaluatedAt: $evaluatedAt,
         );
+        $levels = $workspaceIsV2
+            ? $this->rows(
+                DB::table('curriculum_levels')
+                    ->where('organization_id', $organizationId)
+                    ->where('curriculum_version_id', $curriculumVersionId)
+                    ->whereNull('retired_at')
+                    ->orderBy('sequence')
+                    ->orderBy('key')
+                    ->orderBy('id')
+                    ->get(['id', 'key', 'sequence']),
+            )
+            : [];
         $objectives = $this->rows(
             DB::table('learning_objectives')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
@@ -90,15 +110,27 @@ final readonly class PublicationManifestBuilder
             DB::table('curriculum_modules')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
+                ->when(
+                    $workspaceIsV2,
+                    fn ($query) => $query->orderBy('curriculum_level_id'),
+                )
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
-                ->get(['id', 'key', 'sequence', 'estimated_minutes']),
+                ->get([
+                    'id',
+                    'curriculum_level_id',
+                    'key',
+                    'sequence',
+                    'estimated_minutes',
+                ]),
         );
         $lessons = $this->rows(
             DB::table('lessons')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('curriculum_module_id')
                 ->orderBy('sequence')
                 ->orderBy('key')
@@ -122,6 +154,7 @@ final readonly class PublicationManifestBuilder
             DB::table('learning_items')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('lesson_id')
                 ->orderBy('sequence')
                 ->orderBy('key')
@@ -139,6 +172,7 @@ final readonly class PublicationManifestBuilder
             DB::table('curriculum_missions')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
@@ -193,11 +227,14 @@ final readonly class PublicationManifestBuilder
                 programId: $programId,
                 document: $document,
                 evaluatedAt: $evaluatedAt,
+                workspaceIsV2: $workspaceIsV2,
             );
         }
 
-        return [
-            'schema' => 'global-english.curriculum-publication.v1',
+        $manifest = [
+            'schema' => $workspaceIsV2
+                ? 'global-english.curriculum-publication.v2'
+                : 'global-english.curriculum-publication.v1',
             'organization_id' => $organizationId,
             'program' => [
                 'id' => $programId,
@@ -224,15 +261,23 @@ final readonly class PublicationManifestBuilder
                 ],
                 $prerequisites,
             ),
-            'modules' => array_map(fn (stdClass $row): array => [
-                'id' => $this->string($row, 'id'),
-                'key' => $this->string($row, 'key'),
-                'sequence' => $this->integer($row, 'sequence'),
-                'estimated_minutes' => $this->nullableInteger(
-                    $row,
-                    'estimated_minutes',
-                ),
-            ], $modules),
+            'modules' => array_map(
+                fn (stdClass $row): array => array_filter([
+                    'id' => $this->string($row, 'id'),
+                    'level_id' => $workspaceIsV2
+                        ? $this->string($row, 'curriculum_level_id')
+                        : null,
+                    'key' => $this->string($row, 'key'),
+                    'sequence' => $this->integer($row, 'sequence'),
+                    'estimated_minutes' => $this->nullableInteger(
+                        $row,
+                        'estimated_minutes',
+                    ),
+                ], static fn (mixed $value, string $key): bool => (
+                    $key !== 'level_id' || $value !== null
+                ), ARRAY_FILTER_USE_BOTH),
+                $modules,
+            ),
             'lessons' => array_map(fn (stdClass $row): array => [
                 'id' => $this->string($row, 'id'),
                 'module_id' => $this->string($row, 'curriculum_module_id'),
@@ -276,6 +321,20 @@ final readonly class PublicationManifestBuilder
             ], $missionItems),
             'content' => $content,
         ];
+
+        if ($workspaceIsV2) {
+            if ($levels === []) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $manifest['levels'] = array_map(fn (stdClass $row): array => [
+                'id' => $this->string($row, 'id'),
+                'key' => $this->string($row, 'key'),
+                'sequence' => $this->integer($row, 'sequence'),
+            ], $levels);
+        }
+
+        return $manifest;
     }
 
     /**
@@ -465,6 +524,7 @@ final readonly class PublicationManifestBuilder
         string $programId,
         stdClass $document,
         CarbonInterface $evaluatedAt,
+        bool $workspaceIsV2,
     ): array {
         $documentId = $this->string($document, 'id');
         $head = DB::table('content_revision_heads')
@@ -583,7 +643,25 @@ final readonly class PublicationManifestBuilder
             programId: $programId,
             sourceRevisionId: $this->string($head, 'id'),
             evaluatedAt: $evaluatedAt,
+            workspaceIsV2: $workspaceIsV2,
         );
+
+        if (
+            $workspaceIsV2
+            && ($payload['schema'] ?? null)
+                === 'global-english.daily-speaking-mission.v1'
+        ) {
+            $modelAudio = array_values(array_filter(
+                $media,
+                static fn (array $entry): bool => (
+                    ($entry['usage_key'] ?? null) === 'model_audio'
+                ),
+            ));
+
+            if (count($modelAudio) !== 1) {
+                throw new CurriculumOperationRejected;
+            }
+        }
 
         return [
             'document' => [
@@ -779,6 +857,7 @@ final readonly class PublicationManifestBuilder
         string $programId,
         string $sourceRevisionId,
         CarbonInterface $evaluatedAt,
+        bool $workspaceIsV2,
     ): array {
         $rows = $this->rows(
             DB::table('content_revision_media_assets')
@@ -814,6 +893,15 @@ final readonly class PublicationManifestBuilder
 
         foreach ($rows as $attachment) {
             $assetId = $this->string($attachment, 'media_asset_id');
+            $managed = DB::table('media_asset_lifecycles')
+                ->where('organization_id', $organizationId)
+                ->where('media_asset_id', $assetId)
+                ->exists();
+
+            if ($managed !== $workspaceIsV2) {
+                throw new CurriculumOperationRejected;
+            }
+
             $rights = DB::table('media_rights_revisions')
                 ->where('organization_id', $organizationId)
                 ->where('program_id', $programId)
@@ -854,7 +942,7 @@ final readonly class PublicationManifestBuilder
                 $rights,
                 $evaluatedAt,
             );
-            $result[] = [
+            $entry = [
                 'asset_id' => $assetId,
                 'asset_hash' => $this->sha256($rights, 'asset_hash'),
                 'rights_revision_id' => $this->string(
@@ -873,6 +961,29 @@ final readonly class PublicationManifestBuilder
                     'derivative_use_allowed',
                 ),
             ];
+
+            if ($workspaceIsV2) {
+                $entry['governance'] = $this->managedMedia->selectCurrent(
+                    organizationId: $organizationId,
+                    programId: $programId,
+                    curriculumVersionId: $curriculumVersionId,
+                    sourceRevisionId: $sourceRevisionId,
+                    mediaAssetId: $assetId,
+                    assetHash: $this->sha256($rights, 'asset_hash'),
+                    usageKey: $this->string($attachment, 'usage_key'),
+                    rightsRevisionId: $this->string(
+                        $rights,
+                        'media_rights_revision_id',
+                    ),
+                    rightsEvidenceHash: $this->sha256(
+                        $rights,
+                        'evidence_hash',
+                    ),
+                    evaluatedAt: $evaluatedAt,
+                );
+            }
+
+            $result[] = $entry;
         }
 
         return $result;

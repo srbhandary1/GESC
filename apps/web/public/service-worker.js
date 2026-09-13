@@ -1,6 +1,17 @@
 const CACHE_PREFIX = 'global-english-public-shell-'
-const CACHE_NAME = `${CACHE_PREFIX}v1`
-const FORBIDDEN_PATH_PREFIXES = ['/api/', '/sanctum/', '/oauth/']
+const requestedRelease = new URL(self.location.href).searchParams.get('release')
+const CACHE_VERSION = /^[a-f0-9]{64}$/.test(requestedRelease ?? '')
+  ? requestedRelease
+  : 'unversioned'
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`
+const FORBIDDEN_PATH_PREFIXES = [
+  '/api/',
+  '/sanctum/',
+  '/oauth/',
+  '/auth/mobile/',
+  '/password-establishment.html',
+  '/password-recovery.html',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -30,6 +41,14 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'GET_OFFLINE_SHELL_VERSION') {
+    event.source?.postMessage({
+      type: 'OFFLINE_SHELL_VERSION',
+      version: CACHE_VERSION,
+    })
+    return
+  }
+
   if (
     event.data?.type !== 'CACHE_PUBLIC_SHELL' ||
     !Array.isArray(event.data.urls)

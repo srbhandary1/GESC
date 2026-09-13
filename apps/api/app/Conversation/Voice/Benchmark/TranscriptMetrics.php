@@ -285,21 +285,13 @@ final class TranscriptMetrics
 
         $digits = [];
         $current = 0;
+        $hasCurrent = false;
         $consumed = 0;
         $count = count($tokens);
-        $flush = static function () use (&$digits, &$current): void {
-            if ($current <= 0) {
-                return;
-            }
-            foreach (str_split((string) $current) as $digit) {
-                $digits[] = $digit;
-            }
-            $current = 0;
-        };
 
         while ($index + $consumed < $count) {
             $token = $tokens[$index + $consumed];
-            if ($token === 'and' && ($current > 0 || $digits !== [])) {
+            if ($token === 'and' && ($hasCurrent || $digits !== [])) {
                 $consumed++;
 
                 continue;
@@ -310,7 +302,8 @@ final class TranscriptMetrics
 
             $number = self::NUMBER_WORDS[$token];
             if ($number === 100) {
-                $current = ($current === 0 ? 1 : $current) * 100;
+                $current = ($hasCurrent && $current !== 0 ? $current : 1) * 100;
+                $hasCurrent = true;
                 $consumed++;
 
                 continue;
@@ -319,13 +312,12 @@ final class TranscriptMetrics
             // "nine thirty" / "6:45" style: bare unit then tens → separate groups.
             if (
                 $number >= 20
-                && $number < 100
-                && $number % 10 === 0
                 && $current >= 1
                 && $current <= 9
             ) {
-                $flush();
+                $this->appendNumberDigits($digits, $current);
                 $current = $number;
+                $hasCurrent = true;
                 $consumed++;
 
                 continue;
@@ -333,19 +325,19 @@ final class TranscriptMetrics
 
             if ($number >= 10) {
                 $current += $number;
+                $hasCurrent = true;
                 $consumed++;
 
                 continue;
             }
 
             $current += $number;
+            $hasCurrent = true;
             $consumed++;
         }
 
-        $flush();
-
-        if ($consumed === 0 || $digits === []) {
-            return null;
+        if ($hasCurrent) {
+            $this->appendNumberDigits($digits, $current);
         }
 
         return [
@@ -357,7 +349,16 @@ final class TranscriptMetrics
     private function isUnitWord(string $token): bool
     {
         return isset(self::NUMBER_WORDS[$token])
-            && self::NUMBER_WORDS[$token] >= 0
             && self::NUMBER_WORDS[$token] <= 9;
+    }
+
+    /**
+     * @param  list<string>  $digits
+     */
+    private function appendNumberDigits(array &$digits, int $number): void
+    {
+        foreach (str_split((string) $number) as $digit) {
+            $digits[] = $digit;
+        }
     }
 }

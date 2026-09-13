@@ -118,6 +118,14 @@ export class WebLearnerJourneyApi implements LearnerJourneyApi {
     )
   }
 
+  progressDashboard(
+    signal?: AbortSignal,
+  ): Promise<import('./LearnerJourneyApi').LearnerProgressDashboard> {
+    return this.#json<
+      import('./LearnerJourneyApi').LearnerProgressDashboard
+    >('/me/progress-dashboard', { signal })
+  }
+
   progress(
     enrollmentId: string,
     signal?: AbortSignal,

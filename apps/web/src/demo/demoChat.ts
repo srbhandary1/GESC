@@ -38,8 +38,19 @@ export async function demoOpenRouterConfigured(): Promise<boolean> {
   }
 }
 
+export interface DemoChatChapter {
+  readonly title?: string
+  readonly modelLine?: string
+  readonly patterns?: readonly string[]
+  readonly scenario?: string | null
+}
+
 export async function requestDemoChatReply(
   message: string,
+  options: {
+    readonly locale?: string
+    readonly chapter?: DemoChatChapter
+  } = {},
 ): Promise<DemoChatResult | null> {
   const trimmed = message.trim()
   if (trimmed === '') {
@@ -58,7 +69,11 @@ export async function requestDemoChatReply(
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: trimmed, locale: 'en-IN' }),
+      body: JSON.stringify({
+        message: trimmed,
+        locale: options.locale ?? 'en-IN',
+        chapter: options.chapter,
+      }),
     })
     if (!response.ok) {
       return null

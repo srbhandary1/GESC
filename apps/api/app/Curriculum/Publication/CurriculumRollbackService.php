@@ -6,6 +6,7 @@ namespace App\Curriculum\Publication;
 
 use App\Audit\AuditEventRecorder;
 use App\Curriculum\CanonicalJson;
+use App\Curriculum\Exceptions\CurriculumHeadConflict;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Models\User;
@@ -132,11 +133,12 @@ final readonly class CurriculumRollbackService
                     'lock_version',
                 ]);
 
-            if (
-                ! $head instanceof stdClass
-                || $this->integer($head, 'lock_version') !== $expectedHeadVersion
-            ) {
+            if (! $head instanceof stdClass) {
                 throw new CurriculumOperationRejected;
+            }
+
+            if ($this->integer($head, 'lock_version') !== $expectedHeadVersion) {
+                throw new CurriculumHeadConflict;
             }
 
             $previousVersionId = $this->nullableString(
@@ -206,6 +208,7 @@ final readonly class CurriculumRollbackService
                 $targetPublicationId,
                 $occurredAt,
                 rejectSupersededRights: true,
+                requireCurrentManagedMedia: true,
             );
 
             if (

@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --ge-font-family-ui:
     "Noto Sans Kannada Variable", "Noto Sans Malayalam Variable",
     "Noto Sans Tamil Variable", "Noto Sans Telugu Variable",
@@ -6,28 +7,94 @@
     "Noto Sans Malayalam", "Noto Sans Tamil", "Noto Sans Telugu",
     "Noto Sans Devanagari", "Noto Sans", ui-sans-serif, system-ui,
     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ge-font-family-display:
+    "Fraunces", "Fraunces Fallback", var(--ge-font-family-ui);
   --ge-font-size-sm: 0.875rem;
   --ge-font-size-md: 1rem;
   --ge-font-size-lg: 1.25rem;
-  --ge-line-height-ui: 1.65;
-  --ge-color-canvas: #f8fbf9;
+  --ge-line-height-ui: 1.55;
+  --ge-color-canvas: #e8f3ec;
   --ge-color-surface: #ffffff;
-  --ge-color-text: #10231a;
-  --ge-color-text-muted: #405348;
-  --ge-color-border: #afbeb5;
-  --ge-color-action: #075e42;
-  --ge-color-action-hover: #044b34;
+  --ge-color-surface-high: #f3faf5;
+  --ge-color-text: #0a1a14;
+  --ge-color-text-muted: #3d5348;
+  --ge-color-border: #c5d4cc;
+  --ge-color-action: #006b3f;
+  --ge-color-mint: #006b3f;
+  --ge-color-action-hover: #005533;
   --ge-color-action-text: #ffffff;
-  --ge-color-focus: #6f2dbd;
-  --ge-color-status: #e8f4ed;
+  --ge-color-focus: #0f766e;
+  --ge-color-status: #d7f5e4;
+  --ge-color-mint: #b8ecd0;
+  --ge-color-glow: rgb(0 107 63 / 26%);
+  --ge-color-danger: #9f1239;
+  --ge-color-success: #006b3f;
   --ge-space-1: 0.25rem;
   --ge-space-2: 0.5rem;
   --ge-space-3: 0.75rem;
   --ge-space-4: 1rem;
   --ge-space-5: 1.5rem;
   --ge-space-6: 2rem;
-  --ge-radius-sm: 0.375rem;
-  --ge-radius-md: 0.75rem;
-  --ge-target-minimum: max(2.75rem, 44px);
+  --ge-radius-sm: 0.75rem;
+  --ge-radius-md: 1rem;
+  --ge-radius-lg: 1.25rem;
+  --ge-radius-xl: 1.75rem;
+  --ge-radius-pill: 999px;
+  --ge-target-minimum: 3rem;
   --ge-content-width: 72rem;
+  --ge-elevation-1:
+    0 1px 2px rgb(10 26 20 / 6%), 0 8px 24px rgb(10 26 20 / 6%);
+  --ge-elevation-2:
+    0 10px 40px rgb(10 26 20 / 12%);
+  --ge-motion-fast: 140ms;
+  --ge-motion-med: 240ms;
+  --ge-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ge-color-canvas: #0b1210;
+  --ge-color-surface: #12241c;
+  --ge-color-surface-high: #1a2620;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #8fa099;
+  --ge-color-border: #24332c;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #3ddc97;
+  --ge-color-action-text: #ffffff;
+  --ge-color-focus: #3ddc97;
+  --ge-color-status: #12241c;
+  --ge-color-mint: #3ddc97;
+  --ge-color-glow: rgb(0 107 63 / 40%);
+  --ge-color-danger: #fda4af;
+  --ge-color-success: #3ddc97;
+  --ge-elevation-1:
+    0 1px 2px rgb(0 0 0 / 35%), 0 10px 28px rgb(0 0 0 / 28%);
+  --ge-elevation-2:
+    0 16px 48px rgb(0 0 0 / 42%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ge-color-canvas: #0b1210;
+    --ge-color-surface: #12241c;
+    --ge-color-surface-high: #1a2620;
+    --ge-color-text: #f7fbf9;
+    --ge-color-text-muted: #8fa099;
+    --ge-color-border: #24332c;
+    --ge-color-action: #006b3f;
+    --ge-color-action-hover: #3ddc97;
+    --ge-color-action-text: #ffffff;
+    --ge-color-focus: #3ddc97;
+    --ge-color-status: #12241c;
+    --ge-color-mint: #3ddc97;
+    --ge-color-glow: rgb(0 107 63 / 40%);
+    --ge-color-danger: #fda4af;
+    --ge-color-success: #3ddc97;
+    --ge-elevation-1:
+      0 1px 2px rgb(0 0 0 / 35%), 0 10px 28px rgb(0 0 0 / 28%);
+    --ge-elevation-2:
+      0 16px 48px rgb(0 0 0 / 42%);
+  }
 }

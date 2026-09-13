@@ -1,10 +1,15 @@
 .conversation-journey {
   display: grid;
   gap: var(--ge-space-5);
-  max-width: 48rem;
+  width: 100%;
+  max-width: none;
 }
 
-.conversation-journey__heading,
+.conversation-journey__presence {
+  display: flex;
+  justify-content: center;
+}
+
 .conversation-journey__notice,
 .conversation-journey__result,
 .conversation-journey__correction,
@@ -16,6 +21,61 @@
 .conversation-journey__form {
   display: grid;
   gap: var(--ge-space-3);
+}
+
+.conversation-journey__heading,
+.conversation-journey__stage,
+.conversation-journey__result,
+.conversation-journey__start,
+.conversation-journey__notice,
+.conversation-journey__voice,
+.conversation-journey__memory {
+  min-width: 0;
+  padding: clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: conversation-rise 520ms ease-out both;
+}
+
+.conversation-journey__heading {
+  background: var(--ge-accent-panel-bg);
+  color: var(--ge-accent-panel-text);
+  border-color: var(--ge-accent-panel-border);
+}
+
+.speak-loop-timings {
+  justify-self: end;
+  margin: 0;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px dashed var(--ge-timing-chip-border);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-timing-chip-bg);
+  color: var(--ge-timing-chip-text);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.speak-loop-timings p,
+.speak-loop-timings ul {
+  margin: 0;
+}
+
+.speak-loop-timings ul {
+  padding-inline-start: 1.1rem;
+}
+
+.conversation-journey__heading h1,
+.conversation-journey__heading h2,
+.conversation-journey__heading h3 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ge-accent-panel-heading);
 }
 
 .conversation-journey__controls {
@@ -32,14 +92,54 @@
 }
 
 .conversation-journey__progress {
-  font-weight: 600;
+  font-weight: 650;
+  color: var(--ge-color-accent, var(--ge-color-ink));
+}
+
+.conversation-journey__example {
+  display: grid;
+  gap: var(--ge-space-3);
+  padding: var(--ge-space-3);
+  border: 1px dashed color-mix(in srgb, var(--ge-color-border) 80%, transparent);
+  border-radius: var(--ge-radius-sm);
+}
+
+.conversation-journey__example summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.conversation-journey__consent-details {
+  display: grid;
+  gap: var(--ge-space-2);
+}
+
+.speak-room {
+  display: grid;
+  justify-items: center;
+  gap: var(--ge-space-4);
+  width: min(36rem, 100%);
+  max-width: none;
+  margin-inline: auto;
+}
+
+.speak-room > * {
+  width: 100%;
+}
+
+.level-session__part-hint {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 550;
 }
 
 .conversation-journey__memory {
   background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-lg);
   padding: var(--ge-space-4);
+  box-shadow: var(--ge-elevation-1);
 }
 
 .conversation-journey__memory-list {
@@ -78,13 +178,7 @@
   max-width: 16rem;
   min-height: var(--ge-target-minimum);
   padding-inline: var(--ge-space-3);
-}
-
-.conversation-journey__voice {
-  background: var(--ge-color-surface);
-  border: 2px solid var(--ge-color-border);
-  border-radius: var(--ge-radius-md);
-  padding: var(--ge-space-4);
+  box-shadow: var(--ge-input-inset-shadow);
 }
 
 .conversation-journey__voice-notice {
@@ -96,6 +190,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ge-space-3);
+}
+
+.learner-recording__waveform {
+  display: block;
+  width: min(100%, 15rem);
+  height: 3rem;
+  margin-inline: auto;
+  border-radius: var(--ge-radius-sm);
+  background: color-mix(in srgb, var(--ge-color-brass) 12%, var(--ge-color-surface));
 }
 
 .conversation-journey__eyebrow {
@@ -124,8 +227,12 @@
 }
 
 .conversation-journey button {
-  justify-self: start;
   min-height: var(--ge-target-minimum);
+}
+
+.conversation-journey .ge-button--primary {
+  width: 100%;
+  justify-content: center;
 }
 
 .conversation-journey__identity {
@@ -147,4 +254,11 @@
   gap: var(--ge-space-2);
   margin: 0;
   padding-inline-start: 1.5rem;
+}
+
+@media (min-width: 720px) {
+  .conversation-journey--speak {
+    width: min(36rem, 100%);
+    margin-inline: auto;
+  }
 }

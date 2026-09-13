@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use App\Authentication\Sessions\AuthenticationSessionCleanupWorker;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Models\AuthenticationSession;
 use App\Models\User;
@@ -86,6 +87,11 @@ final class AuthenticationSessionRevocationTest extends TestCase
             'corrupt-storage-session-ciphertext',
             $auditPayload,
         );
+        $this->assertDatabaseHas('authentication_session_cleanup_requests', [
+            'authentication_session_id' => $authenticationSession->getKey(),
+            'status' => 'pending',
+            'attempts' => 1,
+        ]);
     }
 
     public function test_storage_handler_failure_cannot_prevent_authoritative_revocation(): void
@@ -132,6 +138,80 @@ final class AuthenticationSessionRevocationTest extends TestCase
             'action' => 'authentication.session.revoked',
             'subject_id' => $authenticationSession->getKey(),
         ]);
+        $this->assertDatabaseHas('authentication_session_cleanup_requests', [
+            'authentication_session_id' => $authenticationSession->getKey(),
+            'status' => 'pending',
+            'attempts' => 1,
+        ]);
+    }
+
+    public function test_scheduled_retry_completes_durable_cleanup_without_exposing_storage_id(): void
+    {
+        $storageId = 'durable-retry-storage-id';
+        $failingHandler = new ThrowingSessionHandler;
+        $this->useSessionHandler('failing-cleanup', $failingHandler);
+        $user = User::query()->forceCreate(['status' => User::STATUS_ACTIVE]);
+        $request = $this->requestWithSession($storageId);
+        $authenticationSession = $this->createAuthenticationSession(
+            $user,
+            Crypt::encryptString($storageId),
+        );
+
+        self::assertTrue(
+            $this->app
+                ->make(AuthenticationSessionService::class)
+                ->revoke(
+                    $user,
+                    (string) $authenticationSession->getKey(),
+                    $request,
+                ),
+        );
+
+        DB::table('authentication_session_cleanup_requests')
+            ->where(
+                'authentication_session_id',
+                $authenticationSession->getKey(),
+            )
+            ->update(['available_at' => now()->subMinute()]);
+        $successfulHandler = new RecordingSessionHandler;
+        $this->useSessionHandler('successful-cleanup', $successfulHandler);
+        $result = $this->app
+            ->make(AuthenticationSessionCleanupWorker::class)
+            ->processDue();
+
+        self::assertSame($storageId, $successfulHandler->destroyedSessionId);
+        self::assertSame([
+            'completed' => 1,
+            'retried' => 0,
+            'exhausted' => 0,
+        ], $result);
+        $this->assertDatabaseHas('authentication_session_cleanup_requests', [
+            'authentication_session_id' => $authenticationSession->getKey(),
+            'status' => 'completed',
+            'attempts' => 2,
+        ]);
+        $cleanupPayload = json_encode(
+            DB::table('authentication_session_cleanup_requests')
+                ->get()
+                ->all(),
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertStringNotContainsString($storageId, $cleanupPayload);
+    }
+
+    private function useSessionHandler(
+        string $driver,
+        SessionHandlerInterface $handler,
+    ): void {
+        $sessionManager = new SessionManager($this->app);
+        $sessionManager->extend(
+            $driver,
+            fn (): SessionHandlerInterface => $handler,
+        );
+        $sessionManager->setDefaultDriver($driver);
+        $this->app->instance('session', $sessionManager);
+        $this->app->forgetInstance(AuthenticationSessionCleanupWorker::class);
+        $this->app->forgetInstance(AuthenticationSessionService::class);
     }
 
     private function requestWithSession(string $storageId): Request
@@ -197,6 +277,43 @@ final class ThrowingSessionHandler implements SessionHandlerInterface
         $this->attemptedSessionId = $id;
 
         throw new RuntimeException('Simulated session storage failure.');
+    }
+
+    public function gc(int $max_lifetime): int
+    {
+        return 0;
+    }
+}
+
+final class RecordingSessionHandler implements SessionHandlerInterface
+{
+    public ?string $destroyedSessionId = null;
+
+    public function open(string $path, string $name): bool
+    {
+        return true;
+    }
+
+    public function close(): bool
+    {
+        return true;
+    }
+
+    public function read(string $id): string
+    {
+        return '';
+    }
+
+    public function write(string $id, string $data): bool
+    {
+        return true;
+    }
+
+    public function destroy(string $id): bool
+    {
+        $this->destroyedSessionId = $id;
+
+        return true;
     }
 
     public function gc(int $max_lifetime): int

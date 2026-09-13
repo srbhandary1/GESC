@@ -1,0 +1,16 @@
+[Unit]
+Description=Global English soft-launch observe (API / queue / provider 5xx)
+Documentation=file://@PROJECT_ROOT@/docs/ops/ALERTS_SKELETON.md
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+Environment=HOME=%h
+Environment=GE_SOFT_LAUNCH_RUNTIME=%h/ge-soft-launch
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=@PROJECT_ROOT@/scripts/soft-launch-observe.sh
+Nice=10
+
+[Install]
+WantedBy=default.target

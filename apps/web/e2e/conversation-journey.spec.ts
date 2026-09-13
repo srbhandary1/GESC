@@ -35,18 +35,15 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     .selectOption('en-IN')
 
   await expect(
-    page.getByText(
-      'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
-    ),
+    page.getByText(messageEn('conversation.prototype_notice')),
   ).toBeVisible()
   await expect(
-    page.getByText(
-      'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
-    ),
+    page.getByText(messageEn('conversation.privacy_notice')),
   ).toBeVisible()
+  await dismissPracticeAboutSheet(page)
 
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: messageEn('conversation.start') })
     .click()
   await expect(
     page.getByText('I am a deterministic AI prototype, not a human.'),
@@ -66,9 +63,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
       'Thank you for sharing that. What would you like to talk about next?',
     ),
   ).toBeVisible()
-  await expect(
-    page.getByText('The English text above is enough. Playback is optional.'),
-  ).toBeVisible()
+  await page.getByText('Turn status', { exact: true }).click()
   await expect(page.getByText('Turn completed')).toBeVisible()
 
   expect(
@@ -89,8 +84,14 @@ test('completes the disclosed deterministic fake-provider conversation journey',
       .every(({ postData }) => postData !== null),
   ).toBe(true)
   await expect
-    .poll(() => page.evaluate(() => window.localStorage.length))
-    .toBe(0)
+    .poll(() =>
+      page.evaluate(() =>
+        Object.keys(window.localStorage).every((key) =>
+          key.startsWith('ge-ui-'),
+        ),
+      ),
+    )
+    .toBe(true)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
@@ -111,13 +112,18 @@ test('shows separate optional voice purposes before microphone capture', async (
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await dismissPracticeAboutSheet(page)
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: messageEn('conversation.start') })
     .click()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
   await page
-    .getByRole('button', { name: 'Set up optional voice practice' })
+    .getByRole('button', { name: messageEn('conversation.confidence.warmup_continue') })
+    .click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.confidence.listen_continue') })
+    .click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.voice.setup') })
     .click()
 
   await expect(
@@ -162,22 +168,22 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await dismissPracticeAboutSheet(page)
   await page
-    .getByRole('button', { name: 'Role-play (synthetic)' })
+    .getByRole('button', { name: messageEn('conversation.roleplay.entry_button') })
     .click()
-
   await expect(
-    page.getByText(
-      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
-    ),
+    page.getByText(messageEn('conversation.roleplay.prototype_notice')),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
+  await page
+    .getByRole('button', { name: messageEn('conversation.roleplay.start') })
+    .click()
   await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: messageEn('conversation.roleplay.continue') }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
   await expect(
     page.getByText('Advisory feedback', { exact: true }),
@@ -200,6 +206,13 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
 })
+
+async function dismissPracticeAboutSheet(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await page.getByRole('button', { name: 'Got it' }).click()
+  await expect(dialog).toHaveCount(0)
+}
 
 async function mockConversationApi(
   page: Page,
@@ -247,6 +260,24 @@ async function mockConversationApi(
         },
         memberships: [],
         user: { id: ids.user },
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/entitlement') {
+      await json(route, {
+        applies: true,
+        entitlement_id: '01J2000000000000000000000E',
+        plan_code: 'monthly_modules_roleplay',
+        plan_name: 'Premium',
+        status: 'active',
+        allows_roleplay: true,
+        max_level_number: null,
+        is_demo: false,
+        expires_at: '2026-10-05T00:00:00+00:00',
+        live_ai_seconds_remaining: 4920,
+        live_ai_cap_seconds: 5400,
+        gstin_is_placeholder: false,
       })
       return
     }
@@ -500,7 +531,7 @@ function voiceConsents() {
       history_optional: true,
       notice:
         'Implementation draft: audio is uploaded privately and deleted after transcription.',
-      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_revision: 'voice-processing-notice-2026-09-01',
       notice_sha256: 'c'.repeat(64),
       policy_version: 'recording-policy-v1',
       purposes: [
@@ -531,5 +562,12 @@ function message(key: MessageKey): string {
   return resolveMessage(key, {
     policy: 'development-preview',
     requestedLocale: 'kn-IN',
+  }).text
+}
+
+function messageEn(key: MessageKey): string {
+  return resolveMessage(key, {
+    policy: 'development-preview',
+    requestedLocale: 'en-IN',
   }).text
 }

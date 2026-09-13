@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await mockAnonymousSession(page)
 })
 
-test('renders an axe-clean Kannada-first semantic shell', async ({
+test('renders an axe-clean Kannada-first pre-sign-in splash', async ({
   page,
 }) => {
   await page.goto('/')
@@ -26,17 +26,47 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
     page.getByRole('navigation', {
       name: message('shell.navigation_label'),
     }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(page.getByRole('main')).toBeVisible()
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title'),
+      name: message('shell.splash.tagline'),
     }),
   ).toBeVisible()
+  await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
+  await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
   await expect(
-    page.getByRole('link', { name: message('nav.home') }),
-  ).toHaveAttribute('aria-current', 'page')
+    page.getByText(message('conversation.prototype_notice')),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', {
+      name: message('marketing.hero.cta_learn'),
+    }),
+  ).toHaveAttribute('href', '#how-it-works')
+  for (const sectionHeading of [
+    'marketing.showcase.title',
+    'marketing.section.how',
+    'marketing.section.why',
+    'marketing.section.pedagogy',
+    'marketing.benefit.together.title',
+    'marketing.join.title',
+  ] as const) {
+    await expect(
+      page.getByRole('heading', { name: message(sectionHeading) }),
+    ).toBeVisible()
+  }
+  await expect(page.locator('.marketing-landing img')).toHaveCount(0)
+  await expect(page.locator('.marketing-split, .marketing-showcase, .marketing-why')).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: message('session.sign_in') }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: message('session.label') }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByText(message('shell.eyebrow')),
+  ).toHaveCount(0)
   await expect(page.getByRole('alert')).toHaveCount(0)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
@@ -55,7 +85,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   }
 })
 
-test('supports skip-link and destination navigation from the keyboard', async ({
+test('supports skip-link focus without exposing learner destinations', async ({
   page,
 }) => {
   await page.goto('/')
@@ -70,51 +100,30 @@ test('supports skip-link and destination navigation from the keyboard', async ({
   await page.keyboard.press('Enter')
   await expect(page.getByRole('main')).toBeFocused()
 
-  await page.reload()
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-
-  const learnLink = page.locator('a[href="#learn"]')
-  await expect(learnLink).toBeFocused()
-  await page.keyboard.press('Enter')
-
-  const learnTitle = page.getByRole('heading', {
-    level: 1,
-    name: message('page.learn.title'),
-  })
-
-  await expect(learnLink).toHaveAttribute('aria-current', 'page')
-  await expect(learnTitle).toBeFocused()
+  await page.goto('/#learn')
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: message('shell.splash.tagline'),
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('navigation', {
+      name: message('shell.navigation_label'),
+    }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: message('page.learn.title') }),
+  ).toHaveCount(0)
 
   await page.goto('/#progress')
-
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.progress.title'),
+      name: message('shell.splash.tagline'),
     }),
   ).toBeVisible()
-  await expect(page.locator('a[href="#progress"]')).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
-
-  await page.goto('/#learn')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Enter')
-
-  await expect(page.getByRole('main')).toBeFocused()
-  expect(new URL(page.url()).hash).toBe('#learn')
-
-  await page.reload()
-  await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: message('page.learn.title'),
-    }),
-  ).toBeVisible()
+  await expect(page.locator('a[href="#progress"]')).toHaveCount(0)
 })
 
 test('keeps the locale selection ephemeral and stores no credentials', async ({
@@ -130,12 +139,18 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title', 'en-IN'),
+      name: message('shell.splash.tagline', 'en-IN'),
     }),
   ).toBeVisible()
   await expect
-    .poll(() => page.evaluate(() => window.localStorage.length))
-    .toBe(0)
+    .poll(() =>
+      page.evaluate(() =>
+        Object.keys(window.localStorage).filter(
+          (key) => !key.startsWith('ge-ui-'),
+        ),
+      ),
+    )
+    .toEqual([])
   await expect
     .poll(() =>
       page.evaluate(async () => {
@@ -163,7 +178,10 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
 
     await expectNoHorizontalOverflow(page)
     await expect(page.getByRole('main')).toBeVisible()
-    await expect(page.locator('.ge-primary-navigation')).toBeVisible()
+    await expect(page.locator('.ge-primary-navigation')).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: message('session.sign_in') }),
+    ).toBeVisible()
   }
 
   await page.setViewportSize({ height: 900, width: 320 })
@@ -181,13 +199,15 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
   })
 
   for (const target of await page
-    .locator('.ge-primary-navigation__link, #interface-locale')
+    .locator(
+      '[data-pre-sign-in] .ge-button, .ge-theme-toggle, #interface-locale',
+    )
     .all()) {
     const box = await target.boundingBox()
 
     expect(box).not.toBeNull()
-    expect(box!.height).toBeGreaterThanOrEqual(44)
-    expect(box!.width).toBeGreaterThanOrEqual(44)
+    expect(box!.height).toBeGreaterThanOrEqual(48)
+    expect(box!.width).toBeGreaterThanOrEqual(48)
   }
 })
 

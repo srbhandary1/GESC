@@ -1,6 +1,6 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.1"
+version: "3.14"
 status: "Canonical implementation baseline"
 prepared: "30 July 2026"
 classification: "Confidential — Product, architecture and delivery plan"
@@ -93,7 +93,7 @@ The product promise is:
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
-| Authentication | Mobile OTP for direct learners; organization invite/code or admission-ID setup for institutional learners; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android |
+| Authentication | One platform-global username/password credential for enrollment and privileged freshness; Google and Facebook may sign in already-enrolled users and issue the same web session or Android Passport family; roles and permission groups authorize work after sign-in; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with Passport refresh_token thereafter; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Authoritative records | Deterministic, versioned, explainable and auditable |
 | AI authority | Advisory only; never writes marks, mastery, attendance or unlocks |
 | Offline | Downloaded deterministic mission, recording/playback and queued progress; no offline AI in Phase 1 |
@@ -629,11 +629,26 @@ Home has one dominant action:
 - connection, offline and sync state;
 - one urgent support or service message when necessary.
 
+Home also shows a **meaningful-speaking-day streak** as secondary chrome. A day
+counts only when it contains learner speech and a recorded response or task
+outcome, matching the §3.3 north-star definition; application opens, lesson-audio
+playback and multiple-choice-only sessions never count. The streak is derived,
+advisory and never gates content. There is no attendance percentage in canonical
+learning records, and no streak freeze, repair or purchase in Phase 1. See
+[ADR-0028](docs/adr/0028-meaningful-speaking-streak-and-delayed-review.md).
+
+Authentication before Home is one platform-global username/password surface
+for every role, with optional Google or Facebook for already-enrolled users.
+Organization, role, cohort, program, level and tier are
+resolved only after sign-in. Every role uses the same enumeration-safe,
+verified-contact password setup/recovery path under ADR-0022; a privileged
+role never selects a different login or recovery product.
+
 ### 7.3 Core screens
 
 | Screen | Required experience |
 |---|---|
-| Sign in | Direct learner: mobile number + six-digit OTP. Institutional learner: organization invite/code + OTP, or admission ID + one-time setup code where a personal phone is unavailable. Kannada-first recovery |
+| Sign in | Every learner and operator uses a platform-global username and password. After enrollment, Google or Facebook may sign in the same user. Institutional invite/code or admission workflows establish enrollment before one-time credential setup; they are not continuing sign-in factors. Kannada-first recovery |
 | First use | Adult confirmation, language/accessibility preferences, audio-led walkthrough, goal selection, short placement, recording and AI consent |
 | Home | One recommended action, sync state, review due and concise progress |
 | Tutor | Kannada concept, model English, audio, guided speaking, correction, retry and next step |
@@ -718,6 +733,33 @@ The following are deliberately outside the voice-product critical path and requi
 
 The core data model must not confuse learning engagement with attendance, even if attendance is introduced later.
 
+#### Approved operator-parity expansion
+
+DR-0014 Option A and ADR-0014 approve a separate, staged operator-parity
+expansion after the ordered PRIV-DSR-01, REL-01 and MAINT-01 remediation
+checkpoints. The approved expansion may add:
+
+- admin-managed plan catalogues and deterministic manual, operator-granted or
+  Direct in-app checkout entitlements with immutable grant, adjustment and
+  revocation evidence (ADR-0035; Play Billing and live payment credentials
+  remain unauthorized);
+- moderated notices and explicitly typed organization groups, subject to
+  purpose, audience, retention, reporting, blocking and deletion policies
+  fixed before the affected implementation;
+- assignment and workshop submissions with rubric-based human review,
+  correction history and learner-visible feedback;
+- timezone-aware facilitated-session scheduling with validated external
+  meeting links, without an in-product conferencing or recording service; and
+- separate in-app post and public editorial-CMS workflows with governed
+  revisions, publication authority, accessibility and media rights.
+
+These capabilities are optional operations, not Phase 1 voice-product
+prerequisites. Their exact functional inventory, checkpoint order and retained
+decision gates are defined by
+[the approved reference-admin parity specification](docs/ADMIN_REFERENCE_PARITY_PLAN.md).
+Approval of the program does not claim implementation, checkpoint acceptance,
+production data migration, deployment or production release.
+
 ---
 
 ## 9. Phase 1 scope
@@ -758,10 +800,13 @@ The core data model must not confuse learning engagement with attendance, even i
   audio or AI explanation support unless separately approved;
 - formal CEFR certification;
 - support for minors;
-- live classes or video conferencing;
-- peer-to-peer chat, social feed or learner marketplace;
-- consumer billing, subscriptions, coupons and accounting;
-- broad attendance, notices and LMS administration unless separately approved;
+- in-product conferencing, class recording or a video-conferencing service;
+- open peer-to-peer chat, an unmoderated social feed or learner marketplace;
+- consumer checkout for institutional tenants, coupons, accounting and
+  live payment-provider credentials; Direct dummy in-app checkout is
+  authorized by ADR-0035 / ADMIN-ENT-01;
+- broad attendance and LMS semantics that conflate scheduled operations with
+  canonical learning engagement or mastery;
 - complete authored content for all future levels;
 - CRM, ERP, HRMS, SIS/LMS and external institution integrations;
 - self-service multi-tenant commercial provisioning;
@@ -806,7 +851,7 @@ Exact patch versions are pinned during repository scaffolding and updated throug
 | Object storage | S3-compatible storage with signed access and lifecycle policies |
 | API contract | OpenAPI 3.1.1 under `/api/v1` |
 | Web/PWA authentication | Laravel Sanctum same-origin Secure, HttpOnly cookie sessions |
-| Android authentication | Laravel Passport Authorization Code with PKCE; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
+| Android authentication | First-party in-app username/password issues the Passport token family; linked Google or Facebook may issue that same family; refresh uses Passport `refresh_token`; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
 | Credential-storage rule | No authentication credential in browser `localStorage`, IndexedDB or ordinary Capacitor preferences |
 | Privileged authentication | MFA plus session listing/revocation |
 | Background processing | Laravel queues and scheduler |
@@ -842,15 +887,18 @@ Authentication verifies the same user identity but uses a platform-appropriate c
 
 **Capacitor Android**
 
-- use the system browser, not an embedded credential form, for the OAuth authorization step;
-- use Laravel Passport Authorization Code with PKCE as a public mobile client;
-- complete mobile-number OTP or institutional setup inside the server-controlled authorization journey;
-- issue short-lived access tokens and rotating refresh tokens;
+- collect username and password in the first-party in-app form (the Capacitor WebView);
+- POST `/api/v1/auth/mobile/password/sign-ins` with the installation ULID and public client id;
+- allow linked Google or Facebook to issue the same Passport family via origin-pinned Custom Tabs on `/oauth/social/{provider}/authorize` and `POST /api/v1/auth/mobile/social/sign-ins`;
+- do not enable OAuth `grant_type=password` on `/oauth/token`;
+- issue short-lived Passport access tokens and rotating refresh tokens for `mobile:api`;
+- refresh through Passport `refresh_token` with installation binding;
 - store credentials only through a reviewed native secure-storage implementation;
 - keep access tokens in memory while the app is active where practical;
-- revoke the active token family on logout, account closure, security reset or detected refresh-token reuse.
+- revoke the active token family on logout, account closure, security reset or detected refresh-token reuse;
+- keep Passport Authorization Code with PKCE implemented; guest password sign-in does not open the system browser.
 
-The React client uses one project-owned authentication interface with separate web and Android adapters. OTP proves the user identity; it is not itself the long-lived application credential. Exact lifetimes, rotation and device-binding policy are fixed in the authentication ADR before PR-003 is accepted.
+The React client uses one project-owned authentication interface with separate web and Android adapters. A password is verified only by the server and is never the long-lived application transport credential. Successful sign-in establishes the Web session used for routine learner, trainer, reviewer, content, media, privacy and administrator work; current organization role and permission groups are checked independently at command time. Current-password confirmation is limited to changing credentials, replacing a recovery contact and changing administrator authority. Exact password, recovery, lifetime, rotation and device-binding policy is fixed by ADR-0002 as amended by ADR-0021, ADR-0023, ADR-0033 and ADR-0034. ADR-0022 requires the same verified-contact setup/recovery lifecycle for every role, retires active two-actor/24-hour privileged recovery and keeps lost-contact replacement behind one freshly password-confirmed explicit platform capability with global revocation and content-free audit.
 
 ---
 
@@ -1272,6 +1320,16 @@ AI logs are redacted and retained under policy. A model response is not an autho
 - `academic_calendars`, `scheduled_learning_days`
 - `class_attendance_records`, `attendance_corrections`
 - `notices`, `notice_localizations`, `notice_audiences`, `notice_acknowledgements`
+- `entitlement_plans`, `learner_entitlements`, `entitlement_events`,
+  `organization_tax_settings`, `subscription_checkouts`,
+  `live_ai_meter_charges`, `live_ai_talk_packs`
+- `facilitated_sessions`, `external_meeting_links`, `session_reminders`
+- `typed_groups`, `group_memberships`, `group_moderation_events`
+- `assignments`, `assignment_submissions`, `human_review_decisions`,
+  `review_corrections`
+- `message_templates`, `message_deliveries`, `message_moderation_events`
+- `in_app_posts`, `editorial_articles`, `editorial_revisions`,
+  `editorial_publication_events`
 
 These records remain semantically separate from learning engagement and mastery.
 
@@ -1937,9 +1995,9 @@ Deliver:
 - automatic assignment of direct learners to the platform-owned direct organization;
 - institution invite/code membership and cohorts/enrollments at minimum viable depth;
 - same-origin Sanctum web/PWA session flow;
-- Laravel Passport Authorization Code with PKCE mobile-client foundation and a shared frontend authentication adapter;
-- fake/local OTP adapter;
-- privileged MFA extension point;
+- Laravel Passport token-family mobile-client foundation, first-party Android password sign-in and a shared frontend authentication adapter;
+- project-owned username/password credential, local recovery adapters, and optional Google/Facebook federated sign-in for already-enrolled users;
+- narrowly scoped current-password confirmation for credential, recovery-contact and administrator-authority changes;
 - tenant-scoped policies and tests.
 
 Acceptance:
@@ -2243,7 +2301,11 @@ Ongoing provider monitoring, model changes, security updates, dependency upgrade
 
 ### Phase 2 — Commercial and institutional expansion
 
-- subscriptions and entitlements;
+- Direct subscriptions and entitlements are implemented for
+  `platform_direct` under ADMIN-ENT-01 / ADR-0035 / ADR-0036 (dummy
+  checkout, GST settings, demo meter, Premium flagship, courtesy month for
+  current Direct learners). Live payment providers, Play Billing, invoices,
+  old-website student import and institutional paid plans remain later gates;
 - institution operations pack;
 - richer trainer review;
 - pronunciation laboratory after validation;
@@ -2285,7 +2347,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Architecture | Modular monolith with external inference adapters |
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
-| Authentication | Direct learners use mobile OTP without an organization code; institutional learners use an invite/code or admission-ID setup; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with credentials only in native secure storage; privileged MFA |
+| Authentication | Every role uses one platform-global username/password credential for enrollment and privileged freshness, with optional Google/Facebook for already-enrolled users; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; role and permission groups authorize routine work after sign-in; Sanctum cookie sessions for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with transport credentials only in native secure storage; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
@@ -2297,7 +2359,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Security | OWASP ASVS 5.0.0 Level 2 target where applicable |
 | Android | Capacitor 8, minimum API 24, target API 36 at scaffold |
 | Pilot tenancy | Global English Direct plus at most one manually provisioned partner institution; self-service tenant sales deferred |
-| Monetization | Deferred |
+| Monetization | Direct dummy in-app checkout (ADR-0035); Premium flagship and courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); live providers and Play Billing deferred |
 | Minors | Deferred behind a separate legal/safety gate |
 
 ### 32.1 Decisions that do not block Step 1
@@ -2338,7 +2400,7 @@ After PR-000 is reviewed and accepted, instruct Codex to execute only PR-001.
 
 - Laravel 13 release/support policy: <https://laravel.com/docs/13.x/releases>
 - Laravel Sanctum SPA authentication: <https://laravel.com/docs/13.x/sanctum>
-- Laravel Passport Authorization Code with PKCE: <https://laravel.com/docs/13.x/passport#authorization-code-grant-with-pkce>
+- Laravel Passport token family (RFC 6749 refresh) and first-party Android password: <https://laravel.com/docs/13.x/passport>
 - React current versions: <https://react.dev/versions>
 - Node.js release status: <https://nodejs.org/en/about/previous-releases>
 - PostgreSQL versioning/support: <https://www.postgresql.org/support/versioning/>

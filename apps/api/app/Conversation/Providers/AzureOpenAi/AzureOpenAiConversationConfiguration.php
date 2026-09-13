@@ -14,7 +14,7 @@ final readonly class AzureOpenAiConversationConfiguration
 {
     private const string PROVIDER_KEY = 'azure-openai';
 
-    private const float MAXIMUM_SPEND_INR = 500.0;
+    private const float MAXIMUM_SPEND_INR = 10000.0;
 
     /**
      * @var list<string>
@@ -23,6 +23,39 @@ final readonly class AzureOpenAiConversationConfiguration
         'local',
         'testing',
         'conversation-model-dev',
+        'staging',
+        'soft-launch',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const array ALLOWED_SPEND_APPROVAL_IDS = [
+        'APP-0022',
+        'APP-0053',
+    ];
+
+    /**
+     * Setup scaffolds must never become live authorization evidence.
+     *
+     * @var list<string>
+     */
+    private const array SCAFFOLD_EVIDENCE_IDENTIFIERS = [
+        'soft-launch-subscription-v1',
+        'soft-launch-entity-v1',
+        'soft-launch-privacy-v1',
+        'soft-launch-logging-v1',
+        'soft-launch-credential-v1',
+        'soft-launch-region-v1',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const array SCAFFOLD_EVIDENCE_HASHES = [
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
     ];
 
     public function __construct(
@@ -242,7 +275,9 @@ final readonly class AzureOpenAiConversationConfiguration
         if (($payload['schema_version'] ?? null) !== 1) {
             $errors[] = 'spend_evidence_schema_invalid';
         }
-        if (($payload['approval_id'] ?? null) !== 'APP-0022') {
+        if (($payload['approval_id'] ?? null) === null
+            || ! in_array((string) $payload['approval_id'], self::ALLOWED_SPEND_APPROVAL_IDS, true)
+        ) {
             $errors[] = 'spend_evidence_approval_id_invalid';
         }
         if (($payload['approved'] ?? null) !== true) {
@@ -252,8 +287,17 @@ final readonly class AzureOpenAiConversationConfiguration
         $cap = $payload['cap_inr'] ?? null;
         if (! is_int($cap) && ! is_float($cap)) {
             $errors[] = 'spend_evidence_cap_invalid';
-        } elseif ((float) $cap > self::MAXIMUM_SPEND_INR || (float) $cap <= 0) {
-            $errors[] = 'spend_evidence_cap_invalid';
+        } else {
+            $capValue = (float) $cap;
+            $approvalId = (string) ($payload['approval_id'] ?? '');
+            $approvalCeiling = match ($approvalId) {
+                'APP-0022' => 500.0,
+                'APP-0053' => self::MAXIMUM_SPEND_INR,
+                default => 0.0,
+            };
+            if ($capValue <= 0.0 || $capValue > $approvalCeiling) {
+                $errors[] = 'spend_evidence_cap_invalid';
+            }
         }
 
         $approvedCap = $this->float(
@@ -345,6 +389,7 @@ final readonly class AzureOpenAiConversationConfiguration
         $host = strtolower($parts['host']);
         if (
             $host === ''
+            || str_contains(strtoupper($host), 'REPLACE')
             || ! hash_equals($allowedHost, $host)
             || (
                 ! str_ends_with($host, '.openai.azure.com')
@@ -432,7 +477,8 @@ final readonly class AzureOpenAiConversationConfiguration
 
     private function safeDeploymentName(string $value): bool
     {
-        return preg_match('/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/', $value) === 1;
+        return preg_match('/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/', $value) === 1
+            && ! str_contains(strtoupper($value), 'REPLACE');
     }
 
     private function safeApiVersion(string $value): bool
@@ -442,12 +488,15 @@ final readonly class AzureOpenAiConversationConfiguration
 
     private function safeIdentifier(string $value): bool
     {
-        return preg_match('/\A[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z/', $value) === 1;
+        return preg_match('/\A[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z/', $value) === 1
+            && ! str_contains(strtoupper($value), 'REPLACE')
+            && ! in_array($value, self::SCAFFOLD_EVIDENCE_IDENTIFIERS, true);
     }
 
     private function sha256(string $value): bool
     {
-        return preg_match('/\A[a-f0-9]{64}\z/', $value) === 1;
+        return preg_match('/\A[a-f0-9]{64}\z/', $value) === 1
+            && ! in_array($value, self::SCAFFOLD_EVIDENCE_HASHES, true);
     }
 
     private function absolutePath(string $path): bool

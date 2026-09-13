@@ -9,6 +9,8 @@ use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LearnerAuthority;
 use App\Learning\Missions\DailyMissionReader;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -17,6 +19,7 @@ final readonly class LearnerHomeService
     public function __construct(
         private LearnerAuthority $authority,
         private DailyMissionReader $missions,
+        private MeaningfulSpeakingStreakReader $streaks,
     ) {}
 
     /**
@@ -27,17 +30,22 @@ final readonly class LearnerHomeService
         $context = $this->authority->require($learner);
         $membershipId = (string) $context->membershipId;
         $onboarding = DB::table('learner_profiles')
-            ->leftJoin('learner_goals', function ($join): void {
+            ->leftJoin('learner_profile_current_goals', function ($join): void {
                 $join
                     ->on(
-                        'learner_goals.organization_id',
+                        'learner_profile_current_goals.organization_id',
                         '=',
                         'learner_profiles.organization_id',
                     )
                     ->on(
-                        'learner_goals.learner_profile_id',
+                        'learner_profile_current_goals.learner_profile_id',
                         '=',
                         'learner_profiles.id',
+                    )
+                    ->on(
+                        'learner_profile_current_goals.learner_membership_id',
+                        '=',
+                        'learner_profiles.learner_membership_id',
                     );
             })
             ->where(
@@ -51,7 +59,7 @@ final readonly class LearnerHomeService
             ->first([
                 'learner_profiles.adult_confirmed_at',
                 'learner_profiles.onboarding_completed_at',
-                'learner_goals.goal_key',
+                'learner_profile_current_goals.goal_key',
             ]);
         $enrollment = DB::table('enrollments')
             ->where('organization_id', $context->organizationId)
@@ -62,6 +70,7 @@ final readonly class LearnerHomeService
             ->orderBy('id')
             ->first(['id', 'status']);
         $mission = null;
+        $dueReview = null;
 
         if ($enrollment instanceof stdClass) {
             try {
@@ -77,7 +86,32 @@ final readonly class LearnerHomeService
                 // suspended or its current rights predicate fails.
                 $mission = null;
             }
+
+            if ($mission !== null) {
+                $dueReview = DB::table('delayed_review_occurrences')
+                    ->where('organization_id', $context->organizationId)
+                    ->where('learner_membership_id', $membershipId)
+                    ->where('enrollment_id', $this->string($enrollment, 'id'))
+                    ->where('curriculum_mission_id', $mission->missionId)
+                    ->whereNull('completed_at')
+                    ->where('due_at', '<=', Date::now())
+                    ->orderBy('due_at')
+                    ->orderBy('sequence')
+                    ->first([
+                        'id',
+                        'learning_objective_id',
+                        'curriculum_mission_id',
+                        'interval_days',
+                        'due_at',
+                        'timezone',
+                    ]);
+            }
         }
+
+        $streak = $this->streaks->read(
+            $context->organizationId,
+            $membershipId,
+        );
 
         return [
             'onboarding' => [
@@ -94,6 +128,28 @@ final readonly class LearnerHomeService
                 ? [
                     'id' => $this->string($enrollment, 'id'),
                     'status' => 'active',
+                ]
+                : null,
+            'streak' => $streak,
+            'due_review' => $dueReview instanceof stdClass
+                && $enrollment instanceof stdClass
+                && $mission !== null
+                ? [
+                    'id' => $this->string($dueReview, 'id'),
+                    'enrollment_id' => $this->string($enrollment, 'id'),
+                    'mission_id' => $this->string($dueReview, 'curriculum_mission_id'),
+                    'objective_id' => $this->string($dueReview, 'learning_objective_id'),
+                    'interval_days' => (int) $dueReview->interval_days,
+                    'due_at' => CarbonImmutable::parse(
+                        $this->string($dueReview, 'due_at'),
+                    )->utc()->toIso8601String(),
+                    'timezone' => $this->string($dueReview, 'timezone'),
+                    'title' => [
+                        'locale' => 'en-IN',
+                        'text' => $mission->title,
+                        'revision_id' => $mission->sourceRevisionId,
+                        'content_hash' => $mission->sourceContentHash,
+                    ],
                 ]
                 : null,
             'next_mission' => $mission === null

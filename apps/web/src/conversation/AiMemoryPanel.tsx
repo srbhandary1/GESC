@@ -51,6 +51,7 @@ export function AiMemoryPanel({
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load memory once when the panel mounts
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once when panel mounts
   }, [])

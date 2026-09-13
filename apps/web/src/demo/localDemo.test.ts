@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bindChapterPractice,
+  chapterFromCurriculum,
+} from './chapterPractice'
+import { curriculumByLevelId } from './curriculum/levelCurriculum'
+import {
   createLocalDemoRuntime,
   isLocalDemoEnabled,
 } from './localDemo'
@@ -72,12 +77,12 @@ describe('local demo boundary', () => {
     )
 
     expect(session.status).toBe('authenticated')
-    expect(home.next_mission?.title.text).toBe('Introduce yourself')
+    expect(home.next_mission?.title.text).toBe('Can')
     expect(mission.model_audio.stream_url).toMatch(
       /^demo-speech:en-IN:/u,
     )
     expect(mission.model_audio.stream_url).toContain(
-      encodeURIComponent('Hello, my name is Ravi.'),
+      encodeURIComponent('I can speak English. Can I help you?'),
     )
     expect(result).toMatchObject({
       check_state: 'correct',
@@ -195,13 +200,65 @@ describe('local demo boundary', () => {
     )
 
     expect(progress.objectives).toHaveLength(2)
-    expect(progress.objectives[0]!.label.text).toBe('Introduce myself')
+    expect(progress.objectives[0]!.label.text).toBe('Use can and cannot')
     expect(progress.objectives[1]).toMatchObject({
       knowledge_state: 'developing',
       spoken_state: 'unassessed',
     })
     expect(progress.objectives[1]!.label.text).toBe(
-      'Greet a colleague at work',
+      'Use should for advice',
     )
+  })
+
+  it('corrects in the session UI locale using the bound chapter model line', async () => {
+    const { conversationApi } = createLocalDemoRuntime()
+    const can = curriculumByLevelId('level-1')
+    bindChapterPractice(chapterFromCurriculum(can!)!)
+
+    const english = await conversationApi.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'en-IN',
+      },
+      'chapter-en',
+    )
+    const englishTurn = await conversationApi.createTurn(
+      english.id,
+      { prototype_utterance: 'I speaking English.' },
+      'chapter-en-turn',
+    )
+    expect(englishTurn.assistant_reply).toContain('Can')
+    expect(englishTurn.priority_correction).not.toBeNull()
+    expect(englishTurn.priority_correction!.explanation_locale).toBe('en-IN')
+    expect(englishTurn.priority_correction!.explanation_l1).toContain(
+      'I can speak English. Can I help you?',
+    )
+    expect(englishTurn.priority_correction!.explanation_l1).toMatch(
+      /Say it more clearly/i,
+    )
+
+    const kannada = await conversationApi.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'chapter-kn',
+    )
+    const kannadaTurn = await conversationApi.createTurn(
+      kannada.id,
+      { prototype_utterance: 'I speaking English.' },
+      'chapter-kn-turn',
+    )
+    expect(kannadaTurn.priority_correction).not.toBeNull()
+    expect(kannadaTurn.priority_correction!.explanation_locale).toBe('kn-IN')
+    expect(kannadaTurn.priority_correction!.explanation_l1).toContain(
+      'ಸ್ಪಷ್ಟವಾಗಿ',
+    )
+
+    bindChapterPractice(null)
   })
 })

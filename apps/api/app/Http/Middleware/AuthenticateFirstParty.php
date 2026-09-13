@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Authentication\AuthenticatedPrincipal;
 use App\Authentication\Mobile\MobileTokenFamilyService;
 use App\Authentication\Sessions\AuthenticationSessionService;
+use App\Models\AuthenticationSession;
 use App\Models\User;
 use Closure;
 use Illuminate\Auth\AuthenticationException;
@@ -122,6 +123,12 @@ final readonly class AuthenticateFirstParty
             AuthenticatedPrincipal::REQUEST_ATTRIBUTE,
             $principal,
         );
+        if ($principal->webSession instanceof AuthenticationSession) {
+            $request->attributes->set(
+                EnforceAuthenticationSession::REQUEST_ATTRIBUTE,
+                $principal->webSession,
+            );
+        }
         $request->setUserResolver(
             static fn (?string $guard = null): User => $principal->user,
         );

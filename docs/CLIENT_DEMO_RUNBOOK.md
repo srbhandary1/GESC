@@ -4,12 +4,13 @@
 
 Let a remote client open the disclosed synthetic Global English Speaking
 Course demo over the workstation static public IP. This is presentation
-packaging only: in-memory fixtures, Azure neural TTS when the local demo
-process is configured (D-0092) otherwise on-device browser speech, no learner
-accounts, no ordinary application API and no production data.
+packaging only: in-memory fixtures, neural TTS (Sarvam / ElevenLabs / Azure)
+when the local demo process is configured (D-0092 / D-0117) otherwise
+on-device browser speech, no learner accounts, no ordinary application API
+and no production data.
 
 Ordinary local commands remain loopback-only (`make demo`, `make demo-serve`).
-For Azure voice setup on `make demo`, see [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+For voice setup on `make demo`, see [DEMO_TTS.md](DEMO_TTS.md).
 This runbook is an explicit opt-in for remote review.
 
 For the path from this presentation to real Azure Speech evidence, see
@@ -24,7 +25,7 @@ turn or local recording practice.
 From the repository root:
 
 ```bash
-make demo-android   # optional; builds the APK used by /downloads
+make demo-android-remote   # APK WebView loads http://117.254.108.143:8080
 make demo-client
 make demo-client-tunnel
 ```
@@ -68,7 +69,8 @@ Defaults:
 | Bind host | `0.0.0.0` |
 | Public port | `8080` (port `8000` is already used by another local demo) |
 | Bundle | `apps/web/dist-demo` (built automatically if missing) |
-| APK download | `/downloads/global-english-demo.apk` when the debug APK exists |
+| APK download | `/downloads/global-english-demo.apk` when the debug APK exists (`make demo`, `make demo-serve`, `make demo-client`, and soft-launch Caddy after `make demo-android-remote`) |
+| Android live origin | `make demo-android-remote` sets Capacitor `server.url` to `http://117.254.108.143:8080` so the installed app opens the same host as the browser. That HTTP origin cannot use `getUserMedia`. Sideload `make demo-android` (bundled `https://localhost`) for Speak / hold-to-talk. |
 
 Useful commands:
 

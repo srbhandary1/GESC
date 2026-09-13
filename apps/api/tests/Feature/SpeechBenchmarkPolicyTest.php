@@ -120,6 +120,10 @@ final class SpeechBenchmarkPolicyTest extends TestCase
                 'The mock order number is 5831.',
             ],
             [
+                'The sample balance is zero.',
+                'The sample balance is 0.',
+            ],
+            [
                 'The bus arrives at six forty-five.',
                 'the bus arrives at six forty five.',
             ],

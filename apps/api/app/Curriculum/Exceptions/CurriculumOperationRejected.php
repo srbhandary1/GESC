@@ -6,7 +6,7 @@ namespace App\Curriculum\Exceptions;
 
 use RuntimeException;
 
-final class CurriculumOperationRejected extends RuntimeException
+class CurriculumOperationRejected extends RuntimeException
 {
     public function __construct()
     {

@@ -60,6 +60,14 @@ final class ConversationOrchestrationTest extends TenancyIntegrationTestCase
             1,
             DB::table('prompt_versions')->where('coaching_mode', 'tutor')->count(),
         );
+        $this->assertStringContainsString(
+            'You are Swathi',
+            (string) DB::table('prompt_versions')
+                ->where('prompt_key', 'friend.turn.v1')
+                ->where('coaching_mode', 'tutor')
+                ->where('status', 'active')
+                ->value('body'),
+        );
         $this->assertSame(1, DB::table('correction_suggestions')->count());
         $this->assertSame(1, DB::table('learner_error_patterns')->count());
         $this->assertSame($learningBefore, $this->learningCounts());

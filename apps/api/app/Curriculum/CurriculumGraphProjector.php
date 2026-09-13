@@ -30,10 +30,29 @@ final class CurriculumGraphProjector
             throw new CurriculumOperationRejected;
         }
 
+        $workspaceIsV2 = DB::table('curriculum_workspaces')
+            ->where('organization_id', $organizationId)
+            ->where('curriculum_version_id', $curriculumVersionId)
+            ->where('graph_schema_version', 2)
+            ->exists();
+        $levels = $workspaceIsV2
+            ? $this->rows(
+                DB::table('curriculum_levels')
+                    ->where('organization_id', $organizationId)
+                    ->where('curriculum_version_id', $curriculumVersionId)
+                    ->whereNull('retired_at')
+                    ->orderBy('sequence')
+                    ->orderBy('key')
+                    ->orderBy('id')
+                    ->get(['id', 'key', 'sequence']),
+            )
+            : [];
+
         $objectives = $this->rows(
             DB::table('learning_objectives')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
@@ -51,15 +70,27 @@ final class CurriculumGraphProjector
             DB::table('curriculum_modules')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
+                ->when(
+                    $workspaceIsV2,
+                    fn ($query) => $query->orderBy('curriculum_level_id'),
+                )
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
-                ->get(['id', 'key', 'sequence', 'estimated_minutes']),
+                ->get([
+                    'id',
+                    'curriculum_level_id',
+                    'key',
+                    'sequence',
+                    'estimated_minutes',
+                ]),
         );
         $lessons = $this->rows(
             DB::table('lessons')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('curriculum_module_id')
                 ->orderBy('sequence')
                 ->orderBy('key')
@@ -83,6 +114,7 @@ final class CurriculumGraphProjector
             DB::table('learning_items')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('lesson_id')
                 ->orderBy('sequence')
                 ->orderBy('key')
@@ -100,6 +132,7 @@ final class CurriculumGraphProjector
             DB::table('curriculum_missions')
                 ->where('organization_id', $organizationId)
                 ->where('curriculum_version_id', $curriculumVersionId)
+                ->whereNull('retired_at')
                 ->orderBy('sequence')
                 ->orderBy('key')
                 ->orderBy('id')
@@ -120,6 +153,7 @@ final class CurriculumGraphProjector
                 ->get(['mission_id', 'learning_item_id', 'sequence']),
         );
 
+        $levelIds = $this->idSet($levels);
         $objectiveIds = $this->idSet($objectives);
         $moduleIds = $this->idSet($modules);
         $lessonIds = $this->idSet($lessons);
@@ -128,6 +162,7 @@ final class CurriculumGraphProjector
 
         if (
             $objectiveIds === []
+            || ($workspaceIsV2 && $levelIds === [])
             || $moduleIds === []
             || $lessonIds === []
             || $itemIds === []
@@ -136,12 +171,27 @@ final class CurriculumGraphProjector
             throw new CurriculumOperationRejected;
         }
 
+        $levelModuleCount = array_fill_keys(array_keys($levelIds), 0);
         $moduleLessonCount = array_fill_keys(array_keys($moduleIds), 0);
         $lessonObjectiveCount = array_fill_keys(array_keys($lessonIds), 0);
         $lessonItemCount = array_fill_keys(array_keys($lessonIds), 0);
         $objectiveUsageCount = array_fill_keys(array_keys($objectiveIds), 0);
         $itemUsageCount = array_fill_keys(array_keys($itemIds), 0);
         $missionItemCount = array_fill_keys(array_keys($missionIds), 0);
+
+        if ($workspaceIsV2) {
+            foreach ($modules as $module) {
+                $levelId = $this->string($module, 'curriculum_level_id');
+
+                if (! isset($levelIds[$levelId])) {
+                    throw new CurriculumOperationRejected;
+                }
+
+                $levelModuleCount[$levelId]++;
+            }
+
+            $this->assertEveryNodeUsed($levelModuleCount);
+        }
 
         foreach ($lessons as $lesson) {
             $moduleId = $this->string($lesson, 'curriculum_module_id');
@@ -202,7 +252,9 @@ final class CurriculumGraphProjector
         $this->assertAcyclicPrerequisites($objectiveIds, $prerequisites);
 
         $graph = [
-            'schema' => 'global-english.curriculum-graph.v1',
+            'schema' => $workspaceIsV2
+                ? 'global-english.curriculum-graph.v2'
+                : 'global-english.curriculum-graph.v1',
             'organization_id' => $organizationId,
             'curriculum_version_id' => $curriculumVersionId,
             'objectives' => array_map(fn (stdClass $row): array => [
@@ -221,15 +273,23 @@ final class CurriculumGraphProjector
                 ],
                 $prerequisites,
             ),
-            'modules' => array_map(fn (stdClass $row): array => [
-                'id' => $this->string($row, 'id'),
-                'key' => $this->string($row, 'key'),
-                'sequence' => $this->integer($row, 'sequence'),
-                'estimated_minutes' => $this->nullableInteger(
-                    $row,
-                    'estimated_minutes',
-                ),
-            ], $modules),
+            'modules' => array_map(
+                fn (stdClass $row): array => array_filter([
+                    'id' => $this->string($row, 'id'),
+                    'level_id' => $workspaceIsV2
+                        ? $this->string($row, 'curriculum_level_id')
+                        : null,
+                    'key' => $this->string($row, 'key'),
+                    'sequence' => $this->integer($row, 'sequence'),
+                    'estimated_minutes' => $this->nullableInteger(
+                        $row,
+                        'estimated_minutes',
+                    ),
+                ], static fn (mixed $value, string $key): bool => (
+                    $key !== 'level_id' || $value !== null
+                ), ARRAY_FILTER_USE_BOTH),
+                $modules,
+            ),
             'lessons' => array_map(fn (stdClass $row): array => [
                 'id' => $this->string($row, 'id'),
                 'module_id' => $this->string(
@@ -275,6 +335,14 @@ final class CurriculumGraphProjector
                 'sequence' => $this->integer($row, 'sequence'),
             ], $missionItems),
         ];
+
+        if ($workspaceIsV2) {
+            $graph['levels'] = array_map(fn (stdClass $row): array => [
+                'id' => $this->string($row, 'id'),
+                'key' => $this->string($row, 'key'),
+                'sequence' => $this->integer($row, 'sequence'),
+            ], $levels);
+        }
 
         return [
             'graph' => $graph,

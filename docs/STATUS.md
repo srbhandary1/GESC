@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034 |
-| Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off) |
+| Checkpoint | Pre-F0 Phase 1 evidence-closure under APP-0034; PR #6 D-0122 CC cherry-pick + Mira/GESC-green restore |
+| Status | Pre-F0 evidence-closure authorized ([APP-0034](APPROVALS.md#app-0034) / D-0114); Active step **F0** (evidence work, not DoD sign-off). `origin/codex/confidence-conversation` is `9818fe2..1a02330`; those 11 tips are already on this branch as cherry-picks (`c2b6014`…`c9f6b8d`) and were **not** re-picked this pass. The whole CC branch is not merged (merge-base is ancient). Theme-only Mira / GESC-green restore (D-0123) remaps leftover Futuristic cyan/violet/navy tokens and HTML `theme-color` to `#006B3F` / `#0B1210` / `#3DDC97` without touching LessonPractice, ConversationOrchestrator, `/demo/tts`, or Phase 1 destinations. CI `verify` after lint cleanup failed web typecheck (missing PrivilegedMfa / OperatorMedia contract exports). Restored the remaining OpenAPI surface from `1a02330` and regenerated clients. CI `verify` after the OpenAPI restore failed on ESLint (`react-hooks/set-state-in-effect`, `no-control-regex`, unused disables, `no-useless-assignment`); comments-only / assignment cleanup unblocks lint without changing LessonPractice or listen/play/chat behavior. CI `verify` after the contract restore then failed `locale:check` (`catalogue-hash-mismatch` on all six locales) because `demo.phase1.first_run.skip` landed without a governance stamp. Hashes and revisions are now `ui-*-2026-09-12.17`. GitHub CI run `34719710450` on `ce502c0` passed `make verify`, `make e2e`, and `make build`. Production anonymous `/` mounts MarketingLanding under the compact splash; Learn falls back to LearnerJourney when LessonPractice levels are uncommissioned (demo Learn stays My Levels); operators keep the console on every destination when membership is non-learner **and** a role key matches `trainer` / `organization_admin` / `content_reviewer` or the hyphenated e2e keys (`institution-admin`, `content-governor`, `governed-media-operator`, `custom-governed-operator`); a trainer whose only role is `learner` stays on the checkpoint. Conversation e2e uses current Mira catalogue strings and the About sheet. `pnpm audit --audit-level=high` stays green via workspace overrides (js-yaml / `@xmldom/xmldom` / nanoid). Demo first-run **Skip and open My Levels** dismisses the sheet and opens the My Levels hub (`#levels`, Pre-1…L17 plus the eight rooms). Completing the stepper still lands on Home. Learn stays the course-level hub, not the Grove 16-card catalog. `make demo-android` (bundled `https://localhost`) remains the Speak/mic APK. Soft-launch Caddy on the staff static IP serves `/downloads/*.apk` and Android `/oauth` + `/auth/mobile` on the HTTP edge. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.1 |
-| Updated date | 7 August 2026 |
-| Git branch | `codex/confidence-conversation` |
+| Updated date | 12 September 2026 |
+| Git branch | `cursor/learner-ux-elevate-5f47` (PR #6; LessonPractice from `9818fe2` plus 11 CC commits through `1a02330`) |
 | Product code | PR-008 through PR-015 bounded ops accepted; pre-F0 evidence in progress; F0 DoD / Play unauthorized |
 | Next checkpoint | Execute APP-0034 evidence closure (Android assemble/matrix, drills, §27 matrix). F0 Exact-commit DoD accept remains unauthorized |
 | Professional client path | APP-0016–0034; production/Play not claimed ([PROFESSIONAL_CLIENT_SETUP.md](PROFESSIONAL_CLIENT_SETUP.md)) |
@@ -503,9 +503,9 @@ review and do not waive pre-production specialist gates.
 ## Localization release state
 
 - The `en-IN` catalogue is the governed source at revision
-  `ui-en-IN-2026-08-06.8`.
+  `ui-en-IN-2026-09-12.17`.
 - The `kn-IN`, `ml-IN`, `ta-IN`, `te-IN` and `hi-IN` catalogues are
-  attributed Codex implementation drafts at revisions ending in `.8`.
+  attributed Codex implementation drafts at revision `ui-*-2026-09-12.17`.
 - Visible product name is **Global English Speaking Course**.
 - Interface language picker options use native endonyms (ಕನ್ನಡ, English,
   हिन्दी, മലയാളം, தமிழ், తెలుగు) in every catalogue.
@@ -513,10 +513,20 @@ review and do not waive pre-production specialist gates.
   replies resolve from the selected interface locale (`en`/`kn`/`hi`/`ml`/
   `ta`/`te`); the AI toggle is that locale’s endonym vs English. English quiz
   stems remain English learning content.
-- Under D-0092, local `make demo` may synthesize Azure neural TTS for AI
-  Teacher, Daily audio, Friend Listen and model audio via `/demo/tts`, with
-  voice selected from the UI language map; browser speech is fallback. See
-  [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Under D-0092 / D-0116 / D-0117, `make demo` **and** the demo-client
+  static server may synthesize neural TTS (Sarvam, ElevenLabs, Azure with
+  failover) for AI Teacher, Daily audio, Friend Listen, the 16 foundation
+  lessons and model audio via `/demo/tts`. `/demo/tts/status` reports
+  provider booleans only.   Profile Admin can store host keys when
+  `DEMO_TTS_ADMIN_TOKEN` is set. Host file `$HOME/ge-demo-tts/tts.env`
+  is also read (never committed). ElevenLabs needs only
+  `ELEVENLABS_API_KEY`; voice id is optional. Browser speech is
+  last-resort fallback.
+  See [DEMO_TTS.md](DEMO_TTS.md). Home is the Phase 1 dashboard
+  (Attendance, AI Teacher, Daily Activity, My Levels, Notice Board).
+  Learn opens My Levels. Daily audio lesson 1 is **Can**
+  (`I can speak English. Can I help you?`) restored from `9818fe2`
+  / LPL-01. The Grove 16-card foundation catalog is not the course.
 - Under D-0094, local `make demo` Practice Friend may call OpenRouter free
   models via `/demo/chat` when `OPENROUTER_API_KEY` is configured; otherwise
   scripted pattern replies remain. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
@@ -588,6 +598,88 @@ review and do not waive pre-production specialist gates.
 - No real learner data, captured audio, unlicensed media, provider SDK or
   later-checkpoint authoritative record was added.
 
+## Student-facing IA (presentation)
+
+The disclosed demo learner shell was decluttered for day-to-day student use.
+This is a UI/UX refinement of the existing D-0081 Phase 1 presentation
+surface. It does not authorize production, Play, real providers or F0 DoD.
+
+What moved:
+
+- **Home** shows one next-lesson CTA, a short level/streak summary, and
+  secondary links (Speak, Levels, AI Teacher, Profile). The six-module
+  dashboard dump and Phase 1 pill nav are gone.
+- **Learn** still runs the deterministic mission first, then a compact
+  current-level room list.
+- **Profile / About** holds institute orientation, attendance reports and
+  notices.
+- **AI Teacher** keeps today’s task, current-level reminder and next-step
+  motivation. Course-structure copy lives on Profile.
+- Student chrome now uses design-system dark mode, 48px targets, and
+  skeleton/error/retry on Learn, Progress and Practice async states.
+- Narrow viewports show the short wordmark **Global English**; Friend
+  about-copy sits in a first-run sheet (`ge-ui-practice-about-dismissed`).
+- Student web chrome uses Tailwind CSS 4 (Vite plugin, no Preflight) mapped
+  onto live `--ge-*` tokens. Home and AI Teacher reserve an empty
+  `data-avatar-slot` hook (`shell.avatar.teacher`); no face or avatar SDK.
+  Demo CSS went from 40.04 kB / 6.84 kB gzip to 44.12 kB / 7.71 kB gzip
+  (+0.87 kB gzip). Presentation-only; not F0 or Play evidence.
+- Anonymous / checking / unavailable (non-demo, no offline resume) is a
+  compact pre-sign-in splash: short wordmark, one tagline, one Sign in
+  action (Android PKCE `beginAuthorization` when that transport exists),
+  language + appearance in the header, and no Home/Learn/Practice/Progress
+  nav. Session detail sits in a disclosure; `unavailable` shows retry only.
+  Local demo still auto-authenticates and does not reintroduce a global
+  demo banner. Auth protocol unchanged.
+
+## Grove learner visual language (presentation)
+
+A follow-on student UX pass on the decluttered shell. Visual north star is
+the Wonder GESC learner artboards (onboarding, home, speak) with GESC green
+identity — not a purple Supernova clone.
+
+- Tokens: action `#006B3F`, dark canvas `#0B1210` / `#0F1F17`, mint `#3DDC97`,
+  Fraunces display + Noto/system sans.
+- Dark-first when the OS does not explicitly prefer light.
+- Avatar slots render the static Mira coach portrait. No avatar SDK.
+- Learner onboarding is one question per screen with Mira presence, icon
+  goal cards, and sticky Continue. Adult + goal remain the only API payload;
+  comfort is chrome-only. Three product goals only (no Interviews goal).
+- Demo first-run uses the same stepper (language → goal → comfort) and is
+  dismissed via `ge-ui-grove-welcome-dismissed`.
+- Home uses a greeting (no personal name), streak chip, today’s lesson hero,
+  Speak now, and a Mira tip card. Profile stays a header/home action.
+- Practice destination visible label is **Speak**, with a circular brand-green
+  mic FAB on narrow viewports. Destinations remain Home / Learn / Speak /
+  Progress (not a 5-tab dock).
+- AI text uses **Tap to Play** chips; the Speak session centers Mira, a
+  prompt card, transcript bubbles, and a green mic control.
+- Demo Home and first-run include a **Download Android demo** link to
+  `/downloads/global-english-demo.apk` for client sideload testing.
+- Home restores the Phase 1 module grid (Attendance, AI Teacher, Daily
+  Activity, My Levels, Notice Board) from `8ebacba`, keeping Mira / GESC
+  green polish. Learn opens **My Levels** (Pre-Level 1 … Level 17 and the
+  eight rooms). Daily Activity first audio is the Level 1 **Can** lesson
+  from `9818fe2` / LPL-01. Levels 2–17 Audio / Content / Activity / AI
+  Teacher rooms use APP-0065 authored sessions from `c4c810f` and now
+  auto-play `/demo/tts` plus an embedded chapter Friend (listen → talk →
+  locale-aware `explanation_l1`). Pre-Level 1 Be and Pre-Level 2 This/That
+  are newly authored. Learn no longer mounts the Introduce-yourself
+  mission. The Grove 16-card foundation catalog no longer occupies Home
+  or Learn. Laravel LessonPractice / Indic STT / `/me/levels` are restored
+  onto this branch (D-0121); demo TTS is fallback when the API is down.
+  Demo Chromium e2e first-run + Phase 1/LessonPractice fallback passed
+  after theme remap. Student click-through reached Speak listen / type /
+  Mira / hint, then timed out on Role-play Perform (Continue vs Type
+  instead) — not a curriculum regression; theme not reverted. Sideload
+  APK refreshed (`6145419` bytes, bundled `https://localhost`).
+- UI catalogues at revision `ui-*-2026-09-12.17`.
+- Superdesign drafts at project `854f4826…` stayed unread (unauthenticated / 403).
+  Wonder editor was disconnected this pass; leftover Futuristic token values
+  were remapped from documented D-0115 / D-0122 tokens (D-0123).
+  Presentation-only; LessonPractice restore preserved. Not F0, production or
+  Play evidence.
+
 ## Local synthetic demo
 
 - `make demo` starts a Vite-development-only preview on `127.0.0.1:5173`.
@@ -603,10 +695,11 @@ review and do not waive pre-production specialist gates.
   destination, and returns deterministic zero-cost text-only Friend replies
   (rotating follow-up questions plus a tiny curated set of gentle pattern
   tips that are scripted demo content, not grammar analysis).
-- A visible localized notice states that the fixtures are synthetic and use
-  no learner data, real AI, approved curriculum or production service. All
-  five non-English notices remain implementation drafts pending independent
-  human review.
+- The synthetic-demo disclosure (`demo.label` + `demo.notice`) lives on
+  Profile under **Demo status**. Home, Learn, Practice and Progress no longer
+  show a page-wide demo banner. The notice is not deleted; it remains
+  findable while `demoMode` is on. All five non-English notices remain
+  implementation drafts pending independent human review.
 - `VITE_LOCAL_DEMO=true` is effective only in a Vite development runtime or
   in the explicit `vite build --mode demo` distribution build (D-0077). The
   ordinary production build mode cannot activate the demo adapters; unit and
@@ -630,6 +723,9 @@ review and do not waive pre-production specialist gates.
   draft interface locales (Kannada first) with the existing visible preview
   notice through `VITE_UI_TRANSLATION_PREVIEW=true` (ADR-0005). Ordinary
   production builds remain `approved-only`.
+- Under D-0078, `make demo-android` on this PR rebuilt the demo APK
+  (`com.globalenglish.demo`, 5.4 MB) from the current `dist-demo` learner
+  UI. Home download remains `/downloads/global-english-demo.apk`.
 - Under D-0078, `make demo-android` wraps the same bundle in the Capacitor 8
   project at `apps/web/android` and builds
   `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`

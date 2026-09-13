@@ -26,13 +26,16 @@ provider path or authorize production deployment.
 - Demo fixtures remain in-memory, synthetic and reset on reload. The demo
   registers no service worker, writes no `localStorage`, IndexedDB,
   service-worker cache or other device storage. Ordinary product API routes
-  are unused. Under D-0092, the **local Vite demo process only** may call
+  are unused. Under D-0092 / D-0116 / D-0117, the local Vite demo process
+  **and** the demo-client static server may call Sarvam, ElevenLabs or
   Azure Speech TTS through `POST /demo/tts` when credentials are present in
-  process env; the browser never receives the key. Static `dist-demo` and
-  the Android APK still ship without secrets.
-- The visible synthetic-demo notice remains part of every demo surface. All
-  five translated notices remain implementation drafts pending independent
-  review; English is the reviewed source.
+  process env or the host settings file; the browser never receives a key.
+  Static `dist-demo` and the Android APK still ship without secrets.
+  Optional `VITE_DEMO_TTS_ORIGIN` points the APK at that host.
+- The visible synthetic-demo notice remains on **Profile** (`Demo status`)
+  while `demoMode` is on. Home, Learn, Practice and Progress no longer show
+  a page-wide demo banner. All five translated notices remain implementation
+  drafts pending independent review; English is the reviewed source.
 - The demo distribution is an explicitly requested review artifact and sets
   `VITE_UI_TRANSLATION_PREVIEW=true`, so the Kannada-first interface and the
   other draft locales render with the existing visible preview notice
@@ -44,11 +47,13 @@ provider path or authorize production deployment.
   Attendance, AI Teacher (scripted replies + Azure/browser voice), Daily
   Activity, My Levels and Notice Board. Generative AI and approved curriculum
   remain deferred; Friend replies stay deterministic pattern scripting.
-- Speech preference order (D-0092 / D-0079): Azure neural TTS via local
-  `/demo/tts` when configured, else on-device `speechSynthesis`. Optional
-  spoken turns still use browser `SpeechRecognition`. Production STT/TTS
-  remains behind the project-owned provider ports (PR-009+) and is unchanged
-  by this presentation exception. See [DEMO_AZURE_TTS.md](DEMO_AZURE_TTS.md).
+- Speech preference order (D-0092 / D-0116 / D-0117 / D-0079): neural TTS
+  via `/demo/tts` when any of Sarvam, ElevenLabs or Azure is configured on
+  the demo host (locale-aware failover; explicit `TTS_PROVIDER_ORDER`
+  allowed), else on-device `speechSynthesis`. Spoken turns still use
+  browser `SpeechRecognition`. Production STT/TTS remains behind the
+  project-owned provider ports (PR-009+) and is unchanged by this
+  presentation exception. See [DEMO_TTS.md](DEMO_TTS.md).
 - Friend chat preference order (D-0094): OpenRouter free model via local
   `/demo/chat` when configured, else deterministic pattern replies. No
   ordinary Laravel LLM binding. See [DEMO_OPENROUTER.md](DEMO_OPENROUTER.md).
@@ -74,7 +79,7 @@ provider path or authorize production deployment.
 | `make demo-client-tunnel` | Temporary HTTPS Cloudflare tunnel for mic-capable remote review |
 | `make demo-e2e` | Chromium journey against the development-server demo |
 | `make demo-dist-e2e` | Chromium journey against the built bundle |
-| `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` |
+| `make demo-android` | Build `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` and copy it to `apps/web/dist-demo/downloads/global-english-demo.apk` for the Home download link |
 
 Client presentation disclosure/walkthrough:
 [CLIENT_DEMO_RUNBOOK.md](CLIENT_DEMO_RUNBOOK.md). Path from presentation to

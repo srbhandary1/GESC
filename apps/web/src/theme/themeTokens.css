@@ -1,0 +1,623 @@
+:root {
+  --ge-font-family-display: 'Fraunces Variable', 'Fraunces', 'Noto Serif',
+    Georgia, 'Times New Roman', serif;
+  --ge-font-family-ui: 'Noto Sans Kannada Variable',
+    'Noto Sans Malayalam Variable', 'Noto Sans Tamil Variable',
+    'Noto Sans Telugu Variable', 'Noto Sans Devanagari Variable',
+    'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Tamil',
+    'Noto Sans Telugu', 'Noto Sans Devanagari', 'Noto Sans', ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ge-content-width: min(112rem, 100%);
+  --ge-futura-cyan: #3ddc97;
+  --ge-futura-violet: #006b3f;
+  --ge-futura-rose: #fb7185;
+}
+
+[data-ge-theme='light'] {
+  color-scheme: light;
+
+  --ge-color-canvas: #ffffff;
+  --ge-color-canvas-deep: #f3fffb;
+  --ge-color-surface: #ffffff;
+  --ge-color-surface-elevated: #ffffff;
+  --ge-color-ink: #0a1a14;
+  --ge-color-text: #0a1a14;
+  --ge-color-text-muted: #3d5348;
+  --ge-color-border: #d9e8e2;
+  --ge-color-border-strong: #006b3f;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #005533;
+  --ge-color-action-text: #ffffff;
+  --ge-color-accent: #006b3f;
+  --ge-color-accent-hover: #005533;
+  --ge-color-brass: #d4a017;
+  --ge-color-brass-soft: #ffe44d;
+  --ge-color-focus: #0f766e;
+  --ge-color-status: #e3fff2;
+  --ge-color-glow-emerald: rgb(11 107 76 / 0.12);
+  --ge-color-glow-brass: rgb(143 111 40 / 0.1);
+  --ge-shadow-soft: 0 1px 0 rgb(7 22 17 / 0.04), 0 18px 40px rgb(7 22 17 / 0.08);
+  --ge-shadow-panel: 0 1px 0 rgb(255 255 255 / 0.85) inset,
+    0 12px 32px rgb(7 22 17 / 0.07);
+  --ge-panel-background: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.98) 0%,
+    rgb(247 250 248 / 0.96) 100%
+  );
+  --ge-panel-border: color-mix(in srgb, var(--ge-color-brass) 18%, var(--ge-color-border));
+  --ge-notice-background: color-mix(in srgb, var(--ge-color-brass-soft) 22%, white);
+  --ge-notice-border: color-mix(in srgb, var(--ge-color-brass) 40%, var(--ge-color-border));
+
+  --ge-body-background-image: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
+
+  --ge-shell-header-bg: #006b3f;
+  --ge-shell-header-border: rgb(255 255 255 / 0.12);
+  --ge-nav-bg: #006b3f;
+  --ge-nav-border: rgb(255 255 255 / 0.16);
+  --ge-brand-text-gradient: linear-gradient(120deg, #ffffff 0%, #e3fff2 100%);
+  --ge-nav-link-hover-bg: rgb(255 255 255 / 0.12);
+  --ge-nav-link-hover-border: transparent;
+  --ge-nav-current-bg: rgb(255 255 255 / 0.16);
+  --ge-nav-current-border: #ffffff;
+  --ge-nav-current-text: #ffffff;
+  --ge-nav-current-shadow: inset 0 -0.18rem 0 #ffffff;
+  --ge-accent-brand: var(--ge-color-action);
+  --ge-accent-brand-strong: #065e4e;
+  --ge-button-primary-bg: #006b3f;
+  --ge-button-primary-text: var(--ge-color-action-text);
+  --ge-button-quiet-bg: var(--ge-color-surface);
+  --ge-button-quiet-border: var(--ge-color-border);
+  --ge-button-quiet-text: var(--ge-color-text-muted);
+  --ge-input-bg: var(--ge-color-surface-elevated);
+  --ge-input-border: var(--ge-color-border);
+  --ge-input-text: var(--ge-color-ink);
+  --ge-input-focus-border: var(--ge-color-action);
+  --ge-input-focus-ring: rgb(15 122 58 / 0.18);
+  --ge-chip-bg: color-mix(in srgb, var(--ge-color-brass-soft) 24%, white);
+  --ge-chip-border: color-mix(in srgb, var(--ge-color-brass) 45%, white);
+  --ge-chip-text: var(--ge-color-ink);
+  --ge-level-card-bg: var(--ge-panel-background);
+  --ge-level-card-border: var(--ge-panel-border);
+  --ge-level-action-bg: color-mix(in srgb, var(--ge-color-action) 10%, white);
+  --ge-level-action-border: color-mix(in srgb, var(--ge-color-action) 35%, var(--ge-color-border));
+  --ge-level-action-text: var(--ge-color-action);
+  --ge-level-index-bg: var(--ge-color-action);
+  --ge-level-index-text: var(--ge-color-action-text);
+  --ge-stat-bg: var(--ge-color-surface-elevated);
+  --ge-stat-border: var(--ge-color-border);
+  --ge-stat-muted-bg: var(--ge-color-status);
+  --ge-hero-badge-bg: color-mix(in srgb, var(--ge-color-action) 8%, white);
+  --ge-hero-badge-border: color-mix(in srgb, var(--ge-color-action) 24%, var(--ge-color-border));
+  --ge-hero-badge-text: var(--ge-color-action);
+  --ge-error-bg: color-mix(in srgb, var(--ge-color-accent) 10%, white);
+  --ge-error-border: var(--ge-color-accent);
+
+  --ge-accent-panel-bg: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ge-color-action) 10%, white) 0%,
+    color-mix(in srgb, var(--ge-color-brass-soft) 16%, white) 62%,
+    color-mix(in srgb, var(--ge-color-action) 8%, white) 100%
+  );
+  --ge-accent-panel-border: color-mix(in srgb, var(--ge-color-brass) 35%, var(--ge-color-border));
+  --ge-accent-panel-text: var(--ge-color-text);
+  --ge-accent-panel-heading: var(--ge-color-ink);
+  --ge-accent-panel-muted: var(--ge-color-text-muted);
+  --ge-inverse-surface-bg: var(--ge-color-action);
+  --ge-inverse-surface-text: var(--ge-color-action-text);
+  --ge-inverse-surface-border: var(--ge-color-action);
+  --ge-gate-session-border: color-mix(in srgb, var(--ge-color-brass) 18%, var(--ge-color-border));
+  --ge-gate-session-bg: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ge-color-surface-elevated) 96%, white) 0%,
+    color-mix(in srgb, var(--ge-color-surface) 94%, white) 100%
+  );
+  --ge-signin-visual-bg: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ge-color-action) 18%, var(--ge-color-ink)) 0%,
+    color-mix(in srgb, var(--ge-color-action) 32%, var(--ge-color-ink)) 58%,
+    color-mix(in srgb, var(--ge-color-action) 42%, var(--ge-color-ink)) 100%
+  );
+  --ge-signin-visual-glow-1: color-mix(in srgb, var(--ge-color-brass-soft) 44%, transparent);
+  --ge-signin-visual-glow-2: color-mix(in srgb, var(--ge-color-action) 35%, transparent);
+  --ge-signin-visual-ring-border: color-mix(in srgb, white 16%, transparent);
+  --ge-signin-visual-mark-border: color-mix(in srgb, white 34%, transparent);
+  --ge-signin-visual-mark-text: var(--ge-color-brass-soft);
+  --ge-signin-visual-mark-shadow: color-mix(in srgb, white 5%, transparent);
+  --ge-signin-visual-orbit-border: color-mix(in srgb, var(--ge-color-brass-soft) 22%, transparent);
+  --ge-signin-divider-border: color-mix(in srgb, var(--ge-color-border) 80%, transparent);
+  --ge-promo-surface-bg: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--ge-color-action) 14%, var(--ge-color-ink)) 0%,
+    color-mix(in srgb, var(--ge-color-action) 24%, var(--ge-color-ink)) 52%,
+    color-mix(in srgb, var(--ge-color-ink) 92%, black) 100%
+  );
+  --ge-promo-surface-border: color-mix(in srgb, var(--ge-color-action) 24%, white);
+  --ge-promo-surface-text: var(--ge-color-action-text);
+  --ge-promo-surface-text-muted: color-mix(in srgb, var(--ge-color-action-text) 88%, transparent);
+  --ge-promo-surface-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
+    0 22px 48px color-mix(in srgb, var(--ge-color-ink) 24%, transparent);
+  --ge-promo-eyebrow-bg: color-mix(in srgb, white 12%, transparent);
+  --ge-promo-eyebrow-text: var(--ge-color-brass-soft);
+  --ge-promo-orbit-primary: color-mix(in srgb, var(--ge-color-brass-soft) 42%, transparent);
+  --ge-promo-orbit-secondary: color-mix(in srgb, var(--ge-color-action) 38%, transparent);
+  --ge-promo-error-bg: color-mix(in srgb, var(--ge-color-accent) 18%, transparent);
+  --ge-promo-error-text: color-mix(in srgb, var(--ge-color-accent) 12%, white);
+  --ge-promo-cta-bg: linear-gradient(180deg, var(--ge-color-accent), var(--ge-color-accent-hover));
+  --ge-promo-cta-text: var(--ge-color-action-text);
+  --ge-promo-cta-shadow: 0 14px 28px color-mix(in srgb, var(--ge-color-accent) 35%, transparent);
+  --ge-marketing-hero-bg: #ffffff;
+  --ge-marketing-hero-text: #0a1a14;
+  --ge-marketing-hero-title: #006b3f;
+  --ge-marketing-hero-lede: #3d5348;
+  --ge-marketing-hero-scrim: linear-gradient(
+    112deg,
+    rgb(4 18 13 / 0.94) 0%,
+    rgb(4 18 13 / 0.74) 38%,
+    rgb(4 18 13 / 0.26) 64%,
+    transparent 100%
+  ),
+  linear-gradient(180deg, transparent 38%, rgb(4 18 13 / 0.84) 100%);
+  --ge-marketing-hero-copy-bg: linear-gradient(
+    165deg,
+    rgb(4 18 13 / 0.78),
+    rgb(4 18 13 / 0.58)
+  );
+  --ge-marketing-hero-copy-border: rgb(255 255 255 / 0.12);
+  --ge-marketing-hero-border: rgb(255 255 255 / 0.08);
+  --ge-marketing-badge-bg: rgb(255 255 255 / 0.1);
+  --ge-marketing-badge-border: rgb(196 164 90 / 0.5);
+  --ge-marketing-badge-text: #f8f4e8;
+  --ge-marketing-stat-border: var(--ge-color-border);
+  --ge-marketing-stat-bg: var(--ge-panel-background);
+  --ge-marketing-stat-value-gradient: linear-gradient(
+    120deg,
+    var(--ge-color-ink),
+    var(--ge-color-action) 55%,
+    var(--ge-color-brass)
+  );
+  --ge-marketing-android-border: color-mix(in srgb, var(--ge-color-action) 22%, var(--ge-color-border));
+  --ge-marketing-android-bg: var(--ge-panel-background);
+  --ge-marketing-cta-primary-bg: linear-gradient(
+    135deg,
+    var(--ge-color-accent),
+    var(--ge-color-accent-hover) 55%,
+    var(--ge-color-brass)
+  );
+  --ge-marketing-cta-primary-shadow: 0 16px 36px color-mix(in srgb, var(--ge-color-accent) 32%, transparent);
+  --ge-marketing-cta-android-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ge-color-action) 18%, transparent),
+    color-mix(in srgb, var(--ge-color-brass) 16%, transparent)
+  );
+  --ge-marketing-cta-android-border: color-mix(in srgb, var(--ge-color-action) 35%, transparent);
+  --ge-marketing-cta-android-text: var(--ge-color-ink);
+  --ge-marketing-cta-android-shadow: 0 14px 32px color-mix(in srgb, var(--ge-color-action) 16%, transparent);
+  --ge-marketing-cta-android-hover-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ge-color-action) 28%, transparent),
+    color-mix(in srgb, var(--ge-color-brass) 24%, transparent)
+  );
+  --ge-marketing-ghost-border: color-mix(in srgb, var(--ge-color-brass-soft) 35%, transparent);
+  --ge-marketing-ghost-bg: color-mix(in srgb, var(--ge-color-surface) 8%, transparent);
+  --ge-marketing-ghost-text: var(--ge-marketing-hero-text);
+  --ge-marketing-ghost-hover-bg: color-mix(in srgb, var(--ge-color-surface) 14%, transparent);
+  --ge-marketing-primary-text: var(--ge-color-action-text);
+  --ge-timing-chip-bg: color-mix(in srgb, var(--ge-color-ink) 45%, transparent);
+  --ge-timing-chip-text: var(--ge-color-text-muted);
+  --ge-timing-chip-border: color-mix(in srgb, var(--ge-color-brass) 45%, transparent);
+  --ge-guidance-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ge-color-brass-soft) 16%, var(--ge-color-surface)) 0%,
+    var(--ge-color-surface) 100%
+  );
+  --ge-guidance-text: var(--ge-color-text);
+  --ge-tutor-face-border: color-mix(in srgb, white 88%, transparent);
+  --ge-tutor-face-shadow: 0 0 0 6px color-mix(in srgb, var(--ge-color-accent) 18%, transparent),
+    0 18px 40px color-mix(in srgb, var(--ge-color-ink) 28%, transparent);
+  --ge-tutor-face-bg: color-mix(in srgb, var(--ge-color-action) 24%, var(--ge-color-ink));
+  --ge-tutor-orbit-default: color-mix(in srgb, var(--ge-color-brass-soft) 45%, transparent);
+  --ge-tutor-orbit-delay: color-mix(in srgb, var(--ge-color-action) 40%, transparent);
+  --ge-tutor-orbit-speaking: color-mix(in srgb, var(--ge-color-accent) 55%, transparent);
+  --ge-tutor-orbit-listening: color-mix(in srgb, var(--ge-color-action) 55%, transparent);
+  --ge-tutor-orbit-processing: color-mix(in srgb, var(--ge-color-brass-soft) 70%, transparent);
+  --ge-futura-hero-bg: var(--ge-accent-panel-bg);
+  --ge-futura-hero-border: var(--ge-accent-panel-border);
+  --ge-futura-hero-text: var(--ge-accent-panel-text);
+  --ge-session-nav-bg: color-mix(in srgb, var(--ge-color-surface) 72%, transparent);
+  --ge-session-tab-active-border: color-mix(in srgb, var(--ge-color-action) 35%, transparent);
+  --ge-session-tab-active-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ge-color-action) 22%, transparent),
+    color-mix(in srgb, var(--ge-color-brass) 24%, transparent)
+  );
+  --ge-session-tab-active-text: var(--ge-color-ink);
+  --ge-pending-item-border: color-mix(in srgb, var(--ge-color-border) 28%, transparent);
+  --ge-pending-item-bg: color-mix(in srgb, var(--ge-color-surface) 4%, transparent);
+  --ge-ambient-orb-violet: color-mix(in srgb, var(--ge-futura-violet) 34%, transparent);
+  --ge-ambient-orb-cyan: color-mix(in srgb, var(--ge-futura-cyan) 28%, transparent);
+  --ge-media-bg: #000;
+  --ge-input-inset-shadow: inset 0 1px 2px color-mix(in srgb, var(--ge-color-ink) 4%, transparent);
+  --ge-focus-ring-brass: 0 0 0 0.2rem color-mix(in srgb, var(--ge-color-brass) 18%, transparent);
+  --ge-button-shadow-action: 0 10px 24px color-mix(in srgb, var(--ge-color-action) 20%, transparent);
+  --ge-surface-highlight-inset: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
+  --ge-shell-title: var(--ge-accent-panel-heading);
+  --ge-shell-description: var(--ge-accent-panel-muted);
+  --ge-tutor-orb-accent: color-mix(in srgb, var(--ge-color-accent) 28%, transparent);
+  --ge-tutor-orb-action: color-mix(in srgb, var(--ge-color-action) 26%, transparent);
+  --ge-conversation-heading-bg: var(--ge-promo-surface-bg);
+  --ge-bubble-learner-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ge-color-action) 32%, var(--ge-color-ink)),
+    color-mix(in srgb, var(--ge-color-action) 18%, var(--ge-color-ink))
+  );
+  --ge-bubble-learner-text: var(--ge-color-action-text);
+  --ge-bubble-teacher-bg: var(--ge-color-surface-elevated);
+  --ge-bubble-teacher-text: var(--ge-color-ink);
+  --ge-correction-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ge-color-brass-soft) 24%, white),
+    var(--ge-color-surface-elevated)
+  );
+  --ge-correction-shadow: 0 12px 28px color-mix(in srgb, var(--ge-color-brass) 16%, transparent);
+  --ge-roleplay-scene-bg: linear-gradient(
+    165deg,
+    var(--ge-color-surface-elevated),
+    color-mix(in srgb, var(--ge-color-status) 55%, white)
+  );
+  --ge-roleplay-scene-selected-shadow: 0 14px 28px color-mix(in srgb, var(--ge-color-accent) 18%, transparent);
+  --ge-audio-eq-gradient: linear-gradient(
+    90deg,
+    var(--ge-color-action),
+    var(--ge-color-accent),
+    var(--ge-color-brass-soft)
+  );
+  --ge-practice-switch-bg: color-mix(in srgb, var(--ge-color-surface-elevated) 78%, transparent);
+  --ge-practice-switch-active-bg: var(--ge-inverse-surface-bg);
+  --ge-speak-button-ring: color-mix(in srgb, var(--ge-color-accent) 16%, transparent);
+  --ge-speak-button-shadow: 0 16px 32px color-mix(in srgb, var(--ge-color-accent) 32%, transparent);
+  --ge-mask-fade: var(--ge-media-bg);
+}
+
+[data-ge-theme='dark'] {
+  color-scheme: dark;
+
+  --ge-color-canvas: #0b1210;
+  --ge-color-canvas-deep: #0f1f17;
+  --ge-color-surface: #12241c;
+  --ge-color-surface-elevated: #1a2620;
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #c4d0c9;
+  --ge-color-border: #24332c;
+  --ge-color-border-strong: #006b3f;
+  --ge-color-action: #006b3f;
+  --ge-color-action-hover: #3ddc97;
+  --ge-color-action-text: #ffffff;
+  --ge-color-accent: #3ddc97;
+  --ge-color-accent-hover: #2ec986;
+  --ge-color-brass: #3ddc97;
+  --ge-color-brass-soft: #b8ecd0;
+  --ge-color-focus: #3ddc97;
+  --ge-color-status: #12241c;
+  --ge-color-glow-emerald: rgb(0 107 63 / 0.4);
+  --ge-color-glow-brass: rgb(61 220 151 / 0.16);
+  --ge-shadow-soft: 0 1px 0 rgb(255 255 255 / 0.04),
+    0 24px 60px rgb(2 6 23 / 0.55);
+  --ge-shadow-panel: 0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 18px 40px rgb(2 6 23 / 0.45);
+  --ge-panel-background: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.1) 0%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  --ge-panel-border: rgb(61 220 151 / 0.16);
+  --ge-notice-background: #243018;
+  --ge-notice-border: #8a7320;
+
+  --ge-body-background-image:
+    radial-gradient(
+      ellipse 120% 80% at 10% -20%,
+      rgb(0 107 63 / 0.38),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 90% 70% at 100% 0%,
+      rgb(61 220 151 / 0.16),
+      transparent 52%
+    ),
+    linear-gradient(180deg, #0b1210 0%, #0f1f17 48%, #0b1210 100%);
+
+  --ge-shell-header-bg: rgb(11 18 16 / 0.88);
+  --ge-shell-header-border: rgb(255 255 255 / 0.08);
+  --ge-nav-bg: rgb(11 18 16 / 0.92);
+  --ge-nav-border: rgb(255 255 255 / 0.06);
+  --ge-brand-text-gradient: linear-gradient(
+    120deg,
+    #fff 0%,
+    #b8ecd0 45%,
+    #3ddc97 100%
+  );
+  --ge-nav-link-hover-bg: rgb(255 255 255 / 0.05);
+  --ge-nav-link-hover-border: rgb(255 255 255 / 0.08);
+  --ge-nav-current-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.45),
+    rgb(61 220 151 / 0.22)
+  );
+  --ge-nav-current-border: rgb(61 220 151 / 0.45);
+  --ge-nav-current-text: #fff;
+  --ge-nav-current-shadow: 0 0 0 1px rgb(255 255 255 / 0.06) inset,
+    0 12px 28px rgb(61 220 151 / 0.18);
+  --ge-accent-brand: #006b3f;
+  --ge-accent-brand-strong: #05824e;
+  --ge-button-primary-bg: #006b3f;
+  --ge-button-primary-text: #ffffff;
+  --ge-button-quiet-bg: rgb(255 255 255 / 0.04);
+  --ge-button-quiet-border: rgb(255 255 255 / 0.14);
+  --ge-button-quiet-text: var(--ge-color-text);
+  --ge-input-bg: rgb(255 255 255 / 0.06);
+  --ge-input-border: rgb(255 255 255 / 0.14);
+  --ge-input-text: var(--ge-color-ink);
+  --ge-input-focus-border: #3ddc97;
+  --ge-input-focus-ring: rgb(61 220 151 / 0.22);
+  --ge-chip-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.28),
+    rgb(61 220 151 / 0.14)
+  );
+  --ge-chip-border: rgb(61 220 151 / 0.35);
+  --ge-chip-text: #e3fff2;
+  --ge-level-card-bg: linear-gradient(
+    145deg,
+    rgb(18 36 28 / 0.98),
+    rgb(11 18 16 / 0.94)
+  );
+  --ge-level-card-border: rgb(61 220 151 / 0.16);
+  --ge-level-action-bg: rgb(0 107 63 / 0.18);
+  --ge-level-action-border: rgb(61 220 151 / 0.28);
+  --ge-level-action-text: #3ddc97;
+  --ge-level-index-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.95),
+    rgb(61 220 151 / 0.72)
+  );
+  --ge-level-index-text: #041810;
+  --ge-stat-bg: rgb(255 255 255 / 0.05);
+  --ge-stat-border: rgb(255 255 255 / 0.12);
+  --ge-stat-muted-bg: rgb(255 255 255 / 0.05);
+  --ge-hero-badge-bg: rgb(0 107 63 / 0.22);
+  --ge-hero-badge-border: rgb(61 220 151 / 0.28);
+  --ge-hero-badge-text: #3ddc97;
+  --ge-error-bg: rgb(251 113 133 / 0.12);
+  --ge-error-border: var(--ge-futura-rose);
+
+  --ge-accent-panel-bg: linear-gradient(
+    145deg,
+    #0a1f18 0%,
+    #071611 70%,
+    color-mix(in srgb, var(--ge-color-brass) 28%, #071611) 100%
+  );
+  --ge-accent-panel-border: color-mix(in srgb, var(--ge-color-brass) 35%, #071611);
+  --ge-accent-panel-text: #f4f8f5;
+  --ge-accent-panel-heading: #f8f4e8;
+  --ge-accent-panel-muted: color-mix(in srgb, #f4f8f5 86%, transparent);
+  --ge-inverse-surface-bg: #0a1f18;
+  --ge-inverse-surface-text: #f8f4e8;
+  --ge-inverse-surface-border: #0a1f18;
+  --ge-gate-session-border: var(--ge-panel-border);
+  --ge-gate-session-bg: var(--ge-panel-background);
+  --ge-signin-visual-bg: linear-gradient(145deg, #071611 0%, #0c3427 58%, #14563f 100%);
+  --ge-signin-visual-glow-1: rgb(222 185 89 / 0.44);
+  --ge-signin-visual-glow-2: rgb(61 171 127 / 0.35);
+  --ge-signin-visual-ring-border: rgb(255 255 255 / 0.16);
+  --ge-signin-visual-mark-border: rgb(255 255 255 / 0.34);
+  --ge-signin-visual-mark-text: #fff9e8;
+  --ge-signin-visual-mark-shadow: rgb(255 255 255 / 0.05);
+  --ge-signin-visual-orbit-border: rgb(222 185 89 / 0.22);
+  --ge-signin-divider-border: rgb(183 197 188 / 0.8);
+  --ge-promo-surface-bg: linear-gradient(
+    155deg,
+    #071611 0%,
+    #0d2a22 52%,
+    #132018 100%
+  );
+  --ge-promo-surface-border: color-mix(in srgb, var(--ge-color-action) 24%, white);
+  --ge-promo-surface-text: #f3faf6;
+  --ge-promo-surface-text-muted: rgb(243 250 246 / 0.88);
+  --ge-promo-surface-shadow: 0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 22px 48px rgb(7 22 17 / 0.24);
+  --ge-promo-eyebrow-bg: rgb(255 255 255 / 0.12);
+  --ge-promo-eyebrow-text: #f8e7a6;
+  --ge-promo-orbit-primary: rgb(196 164 90 / 0.42);
+  --ge-promo-orbit-secondary: rgb(15 122 58 / 0.38);
+  --ge-promo-error-bg: rgb(227 28 35 / 0.18);
+  --ge-promo-error-text: #ffe8ea;
+  --ge-promo-cta-bg: linear-gradient(180deg, #05824e, #006b3f);
+  --ge-promo-cta-text: #fff;
+  --ge-promo-cta-shadow: 0 14px 28px rgb(0 107 63 / 0.35);
+  --ge-marketing-hero-bg:
+    radial-gradient(circle at 80% 20%, rgb(0 107 63 / 0.42), transparent 42%),
+    radial-gradient(circle at 12% 80%, rgb(61 220 151 / 0.18), transparent 48%),
+    linear-gradient(145deg, #0b1210 0%, #0f1f17 52%, #0b1210 100%);
+  --ge-marketing-hero-text: #f4f8f5;
+  --ge-marketing-hero-title: #f8f4e8;
+  --ge-marketing-hero-lede: #d7e6de;
+  --ge-marketing-hero-scrim: linear-gradient(
+    112deg,
+    rgb(5 8 22 / 0.95) 0%,
+    rgb(5 8 22 / 0.78) 42%,
+    rgb(5 8 22 / 0.28) 68%,
+    transparent 100%
+  ),
+  linear-gradient(180deg, transparent 38%, rgb(5 8 22 / 0.86) 100%);
+  --ge-marketing-hero-copy-bg: linear-gradient(
+    165deg,
+    rgb(5 8 22 / 0.72),
+    rgb(5 8 22 / 0.52)
+  );
+  --ge-marketing-hero-copy-border: rgb(255 255 255 / 0.12);
+  --ge-marketing-hero-border: rgb(255 255 255 / 0.08);
+  --ge-marketing-badge-bg: rgb(255 255 255 / 0.08);
+  --ge-marketing-badge-border: rgb(196 164 90 / 0.45);
+  --ge-marketing-badge-text: #f8f4e8;
+  --ge-marketing-stat-border: rgb(255 255 255 / 0.1);
+  --ge-marketing-stat-bg: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.08),
+    rgb(255 255 255 / 0.03)
+  );
+  --ge-marketing-stat-value-gradient: linear-gradient(120deg, #fff, #3ddc97 55%, #006b3f);
+  --ge-marketing-android-border: rgb(61 220 151 / 0.22);
+  --ge-marketing-android-bg: radial-gradient(
+      circle at 100% 0%,
+      rgb(61 220 151 / 0.18),
+      transparent 42%
+    ),
+    linear-gradient(145deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03));
+  --ge-marketing-cta-primary-bg: linear-gradient(135deg, #05824e, #006b3f 55%, #3ddc97);
+  --ge-marketing-cta-primary-shadow: 0 0 0 1px rgb(255 255 255 / 0.08) inset,
+    0 16px 36px rgb(0 107 63 / 0.32);
+  --ge-marketing-cta-android-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.28),
+    rgb(61 220 151 / 0.16)
+  );
+  --ge-marketing-cta-android-border: rgb(61 220 151 / 0.35);
+  --ge-marketing-cta-android-text: #e3fff2;
+  --ge-marketing-cta-android-shadow: 0 14px 32px rgb(0 107 63 / 0.16);
+  --ge-marketing-cta-android-hover-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.38),
+    rgb(61 220 151 / 0.24)
+  );
+  --ge-marketing-ghost-border: rgb(248 244 232 / 0.35);
+  --ge-marketing-ghost-bg: rgb(255 255 255 / 0.08);
+  --ge-marketing-ghost-text: var(--ge-marketing-hero-text);
+  --ge-marketing-ghost-hover-bg: rgb(255 255 255 / 0.14);
+  --ge-marketing-primary-text: #ffffff;
+  --ge-timing-chip-bg: rgb(7 22 17 / 0.45);
+  --ge-timing-chip-text: #d7e4dc;
+  --ge-timing-chip-border: color-mix(in srgb, var(--ge-color-brass) 45%, transparent);
+  --ge-guidance-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ge-color-brass-soft) 16%, #0a1f18) 0%,
+    #071611 100%
+  );
+  --ge-guidance-text: #e8f2ec;
+  --ge-tutor-face-border: rgb(255 255 255 / 0.88);
+  --ge-tutor-face-shadow: 0 0 0 6px rgb(0 107 63 / 0.28),
+    0 18px 40px rgb(7 16 24 / 0.28);
+  --ge-tutor-face-bg: #123;
+  --ge-tutor-orbit-default: rgb(61 220 151 / 0.45);
+  --ge-tutor-orbit-delay: rgb(0 107 63 / 0.4);
+  --ge-tutor-orbit-speaking: rgb(61 220 151 / 0.55);
+  --ge-tutor-orbit-listening: rgb(0 107 63 / 0.55);
+  --ge-tutor-orbit-processing: rgb(184 236 208 / 0.7);
+  --ge-futura-hero-bg: radial-gradient(
+      circle at 88% 0%,
+      rgb(0 107 63 / 0.32),
+      transparent 42%
+    ),
+    linear-gradient(145deg, #0b1210 0%, #0f1f17 58%, #0b1210 100%);
+  --ge-futura-hero-border: rgb(61 220 151 / 0.18);
+  --ge-futura-hero-text: #f4f8f5;
+  --ge-session-nav-bg: rgb(11 18 16 / 0.72);
+  --ge-session-tab-active-border: rgb(61 220 151 / 0.35);
+  --ge-session-tab-active-bg: linear-gradient(
+    135deg,
+    rgb(0 107 63 / 0.32),
+    rgb(61 220 151 / 0.18)
+  );
+  --ge-session-tab-active-text: #e3fff2;
+  --ge-pending-item-border: rgb(61 220 151 / 0.22);
+  --ge-pending-item-bg: rgb(255 255 255 / 0.04);
+  --ge-ambient-orb-violet: rgb(0 107 63 / 0.34);
+  --ge-ambient-orb-cyan: rgb(61 220 151 / 0.28);
+  --ge-media-bg: #000;
+  --ge-input-inset-shadow: inset 0 1px 2px rgb(7 22 17 / 0.04);
+  --ge-focus-ring-brass: 0 0 0 0.2rem rgb(143 111 40 / 0.18);
+  --ge-button-shadow-action: 0 10px 24px rgb(11 107 76 / 0.2);
+  --ge-surface-highlight-inset: inset 0 1px 0 rgb(255 255 255 / 0.55);
+  --ge-shell-title: var(--ge-accent-panel-heading);
+  --ge-shell-description: var(--ge-accent-panel-muted);
+  --ge-tutor-orb-accent: rgb(61 220 151 / 0.28);
+  --ge-tutor-orb-action: rgb(0 107 63 / 0.26);
+  --ge-conversation-heading-bg:
+    radial-gradient(circle at 80% 0%, rgb(0 107 63 / 0.42), transparent 42%),
+    linear-gradient(165deg, #0b1210 0%, #0f1f17 70%, #12241c 100%);
+  --ge-bubble-learner-bg: linear-gradient(180deg, #1d4d3f, #12352c);
+  --ge-bubble-learner-text: #f4f8f5;
+  --ge-bubble-teacher-bg: var(--ge-color-surface-elevated);
+  --ge-bubble-teacher-text: var(--ge-color-ink);
+  --ge-correction-bg: linear-gradient(180deg, #1a2620, #12241c);
+  --ge-correction-shadow: 0 12px 28px rgb(0 107 63 / 0.16);
+  --ge-roleplay-scene-bg: linear-gradient(
+    165deg,
+    var(--ge-color-surface-elevated),
+    color-mix(in srgb, var(--ge-color-status) 55%, white)
+  );
+  --ge-roleplay-scene-selected-shadow: 0 14px 28px rgb(0 107 63 / 0.18);
+  --ge-audio-eq-gradient: linear-gradient(90deg, #006b3f, #3ddc97, #b8ecd0);
+  --ge-practice-switch-bg: rgb(18 36 28 / 0.88);
+  --ge-practice-switch-active-bg: linear-gradient(180deg, #1d4d3f, #0a1f18);
+  --ge-speak-button-ring: rgb(0 107 63 / 0.22);
+  --ge-speak-button-shadow: 0 16px 32px rgb(0 107 63 / 0.32);
+  --ge-mask-fade: var(--ge-media-bg);
+}
+
+body {
+  background-color: var(--ge-color-canvas);
+  background-image: var(--ge-body-background-image);
+}
+
+#root {
+  color: var(--ge-color-text);
+  background: transparent;
+}
+
+.shell-theme-control {
+  display: flex;
+  align-items: center;
+  width: auto;
+  min-width: 0;
+}
+
+.shell-theme-control--compact {
+  display: flex;
+  align-items: center;
+}
+
+.shell-header-toolbar .shell-theme-control__select,
+.shell-theme-control__select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--ge-target-minimum);
+  width: auto;
+  min-inline-size: 7.25rem;
+  max-inline-size: min(100%, 10rem);
+  padding-block: 0.45rem;
+  padding-inline: var(--ge-space-3);
+  border: 1px solid var(--ge-input-border);
+  border-radius: 999px;
+  background: var(--ge-input-bg);
+  color: var(--ge-input-text);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.shell-theme-control__select:focus {
+  border-color: var(--ge-input-focus-border);
+  box-shadow: 0 0 0 0.2rem var(--ge-input-focus-ring);
+  outline: none;
+}
+
+@media (max-width: 30rem) {
+  .shell-header-toolbar .shell-theme-control,
+  .shell-header-toolbar .shell-theme-control__select {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -326,6 +326,7 @@ final class InviteAwareOtpAuthenticationTest extends TestCase
         $now = now();
         $organizationId = (string) Str::ulid();
         $inviteId = (string) Str::ulid();
+        $roleId = (string) Str::ulid();
 
         DB::table('organizations')->insert([
             'id' => $organizationId,
@@ -337,6 +338,27 @@ final class InviteAwareOtpAuthenticationTest extends TestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+        DB::table('roles')->insert([
+            'id' => $roleId,
+            'organization_id' => $organizationId,
+            'key' => 'learner-safe',
+            'name' => 'Learner',
+            'is_system' => false,
+            'status' => 'active',
+            'version' => 1,
+            'retired_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('role_permissions')->insert([
+            'organization_id' => $organizationId,
+            'role_id' => $roleId,
+            'permission_id' => DB::table('permissions')
+                ->where('key', 'learning.participate')
+                ->value('id'),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
         DB::table('institution_invites')->insert([
             'id' => $inviteId,
             'organization_id' => $organizationId,
@@ -344,6 +366,7 @@ final class InviteAwareOtpAuthenticationTest extends TestCase
                 ->make(InstitutionInviteCodeDigester::class)
                 ->digest($rawCode),
             'membership_type' => Membership::TYPE_LEARNER,
+            'role_id' => $roleId,
             'status' => InstitutionInvite::STATUS_PENDING,
             'expires_at' => $now->copy()->addDay(),
             'created_at' => $now,

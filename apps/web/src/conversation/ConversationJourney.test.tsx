@@ -11,6 +11,7 @@ import type {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.removeItem('ge-ui-practice-about-dismissed')
   vi.restoreAllMocks()
 })
 
@@ -42,18 +43,27 @@ describe('deterministic Friend prototype', () => {
 
     expect(
       screen.getByText(
-        'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+        'Mira is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+        'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
       ),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
+    expect(
+      screen.queryByRole('dialog', { name: 'About Mira' }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'About' }))
+    expect(
+      screen.getByRole('dialog', { name: 'About Mira' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Mira',
       }),
     )
     expect(
@@ -104,7 +114,7 @@ describe('deterministic Friend prototype', () => {
     ).toHaveAttribute('lang', 'kn-IN')
     expect(
       screen.getByText(
-        'The English text above is enough. Playback is optional.',
+        'Listen first. You can also read the English.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
@@ -129,6 +139,42 @@ describe('deterministic Friend prototype', () => {
       'turn-command',
     )
     expect(api.events).toHaveBeenCalledWith(turn.events_url)
+  })
+
+  it('uses a lesson model line on Listen when provided', async () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'lesson-command'}
+        listenLines={['Hello, my name is Ravi. I am pleased to meet you.']}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Talk with Mira',
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Continue to listen' }),
+    )
+    expect(
+      screen.getByText('Hello, my name is Ravi. I am pleased to meet you.'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText('I went to the market this morning.'),
+    ).not.toBeInTheDocument()
   })
 
   it('exposes browser speech actions in the disclosed demo mode', async () => {
@@ -224,6 +270,42 @@ describe('deterministic Friend prototype', () => {
     })
   })
 
+  it('auto-starts an embedded chapter listen session without the about sheet', async () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(async () => []),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        autoStart
+        createClientId={() => 'embed-command'}
+        demoMode
+        embedded
+        listenLines={['I can speak English. Can I help you?']}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Can I help you?"
+        speakOpening={false}
+      />,
+    )
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Listen' }),
+    ).toBeVisible()
+    expect(
+      screen.getByText('I can speak English. Can I help you?'),
+    ).toBeVisible()
+    expect(api.startSession).toHaveBeenCalled()
+    expect(
+      screen.queryByRole('button', { name: 'Start speaking practice' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows a visible error when the fake provider is disabled', async () => {
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => {
@@ -243,14 +325,14 @@ describe('deterministic Friend prototype', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Mira',
       }),
     )
 
     expect(
       await screen.findByRole('alert'),
     ).toHaveTextContent(
-      'The AI Friend prototype is unavailable. Try again.',
+      'Mira is unavailable. Try again.',
     )
   })
 })

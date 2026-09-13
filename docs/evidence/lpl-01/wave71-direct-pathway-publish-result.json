@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "approval_reference": "WAVE-7.1",
+  "levels_processed": 17,
+  "levels_published": 17,
+  "replay_skipped": 17,
+  "publication_eligible": true,
+  "latest_blueprint_state": "published",
+  "prior_draft_revisions_retained": true,
+  "used_graph_curriculum_publisher": false,
+  "live_database_overwritten": false,
+  "note": "Counts only. No learner identifiers."
+}

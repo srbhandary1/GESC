@@ -144,6 +144,16 @@ final class OrganizationContextMiddlewareTest extends TestCase
             'no-store',
             (string) $single->headers->get('Cache-Control'),
         );
+        $webSessionId = DB::table('authentication_sessions')
+            ->where('user_id', $user->getKey())
+            ->sole()
+            ->id;
+        self::assertIsString($webSessionId);
+        $this->assertDatabaseHas('authentication_sessions', [
+            'id' => $webSessionId,
+            'selected_organization_id' => $directOrganization->getKey(),
+            'selected_membership_id' => $directMembership->id,
+        ]);
         $this->assertContextCleared();
 
         $institutionMembershipId = (string) Str::ulid();
@@ -160,8 +170,12 @@ final class OrganizationContextMiddlewareTest extends TestCase
 
         $this->withHeader('Origin', 'https://localhost')
             ->getJson('/api/v1/testing/organization-context-probe')
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.forbidden');
+            ->assertOk()
+            ->assertJsonPath(
+                'organization_id',
+                $directOrganization->getKey(),
+            )
+            ->assertJsonPath('membership_id', $directMembership->id);
         $this->assertContextCleared();
 
         $this->withHeader('Origin', 'https://localhost')
@@ -169,6 +183,11 @@ final class OrganizationContextMiddlewareTest extends TestCase
                 'membership_id' => $institutionMembershipId,
             ])
             ->assertOk();
+        $this->assertDatabaseHas('authentication_sessions', [
+            'id' => $webSessionId,
+            'selected_organization_id' => $institutionId,
+            'selected_membership_id' => $institutionMembershipId,
+        ]);
 
         $this->withHeaders([
             'Origin' => 'https://localhost',
@@ -211,8 +230,13 @@ final class OrganizationContextMiddlewareTest extends TestCase
             'Origin' => 'https://localhost',
             InjectOrganizationSelectionForTest::HEADER => $otherMembershipId,
         ])->getJson('/api/v1/testing/organization-context-probe')
-            ->assertForbidden()
-            ->assertJsonPath('message_key', 'problem.forbidden');
+            ->assertUnauthorized()
+            ->assertJsonPath('message_key', 'problem.unauthenticated');
+        $this->assertDatabaseHas('authentication_sessions', [
+            'id' => $webSessionId,
+            'selected_organization_id' => null,
+            'selected_membership_id' => null,
+        ]);
         $this->assertContextCleared();
     }
 

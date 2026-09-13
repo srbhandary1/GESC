@@ -1,10 +1,15 @@
-import { MixedLanguageText } from '@global-english/design-system'
+import {
+  AsyncError,
+  EmptyState,
+  MixedLanguageText,
+  SkeletonStatus,
+} from '@global-english/design-system'
 import type {
   MessageKey,
   ResolutionPolicy,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import type {
@@ -35,8 +40,13 @@ export function DemoLearnerProgress({
   localizationPolicy,
 }: DemoLearnerProgressProps) {
   const [state, setState] = useState<ProgressState>({ kind: 'loading' })
+  const [reloadToken, setReloadToken] = useState(0)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const reload = useCallback(() => {
+    setState({ kind: 'loading' })
+    setReloadToken((token) => token + 1)
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -60,31 +70,44 @@ export function DemoLearnerProgress({
     return () => {
       controller.abort()
     }
-  }, [api])
+  }, [api, reloadToken])
 
   if (state.kind === 'loading') {
     return (
-      <p
-        className="learner-status"
-        role="status"
-      >
-        <LocalizedMessage resolution={message('learner.loading')} />
-      </p>
+      <SkeletonStatus
+        label={<LocalizedMessage resolution={message('learner.loading')} />}
+      />
     )
   }
 
   if (state.kind === 'error') {
     return (
-      <p role="alert">
+      <AsyncError
+        actionLabel={<LocalizedMessage resolution={message('learner.retry')} />}
+        onRetry={reload}
+        title={<LocalizedMessage resolution={message('learner.error.title')} />}
+      >
         <LocalizedMessage resolution={message('learner.error.message')} />
-      </p>
+      </AsyncError>
+    )
+  }
+
+  if (state.progress.objectives.length === 0) {
+    return (
+      <EmptyState
+        title={<LocalizedMessage resolution={message('learner.progress.title')} />}
+      >
+        <LocalizedMessage
+          resolution={message('learner.progress.empty')}
+        />
+      </EmptyState>
     )
   }
 
   return (
     <section
       aria-labelledby="demo-progress-title"
-      className="learner-stack"
+      className="learner-stack max-w-content"
     >
       <h2
         className="learner-section-title"

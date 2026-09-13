@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
+import { isLessonPracticeProbe } from './productPathProbes'
+
 /**
  * Full student click-through of the synthetic demo shell:
  * every Phase 1 module, Learn mission, Practice Friend + Role-play,
@@ -17,13 +19,16 @@ test('student click-through exercises every demo page and control', async ({
     }
   })
   await installWorkingMicrophone(page)
+  await page.addInitScript(() => {
+    window.localStorage.setItem('ge-ui-grove-welcome-dismissed', '1')
+  })
 
   await page.goto('/')
   // Default UI locale is kn-IN; use the combobox role (not English name).
   await page.getByRole('combobox').selectOption('en-IN')
   await expect(
     page.getByRole('complementary', { name: 'Synthetic local demo' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
 
   // Locale cycle (all Phase 1 interface options), then return to English.
   for (const locale of [
@@ -39,54 +44,79 @@ test('student click-through exercises every demo page and control', async ({
 
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /Continue today’s lesson/ }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Download Android demo' }),
+  ).toHaveAttribute('href', '/downloads/global-english-demo.apk')
+  await expect(page.getByRole('button', { name: 'Attendance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Notice Board' })).toBeVisible()
+  await expect(page.getByText('Can', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: 'Daily Activity' }).click()
+  await expect(page.getByText("Today's 5-mark check")).toBeVisible()
+  await expect(
+    page.getByText('I can speak English. Can I help you?'),
+  ).toBeVisible()
+  await expect(
+    page.getByText('I can speak English.', { exact: true }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
 
-  // Dashboard module cards.
-  for (const card of [
-    'Attendance',
-    'AI Teacher',
-    'Daily Activity',
-    'My Levels',
-    'Notice Board',
-  ]) {
-    await page.getByRole('button', { name: new RegExp(card) }).click()
+  // Secondary student links from Home.
+  for (const item of ['My Levels', 'AI Teacher', 'Profile']) {
+    await page.getByRole('button', { name: item }).click()
     await expect(
-      page.getByRole('heading', { level: 1, name: card }),
+      page.getByRole('heading', { level: 1, name: item }),
     ).toBeVisible()
-    await page.getByRole('link', { name: 'Dashboard' }).click()
+    await page.getByRole('button', { name: 'Back' }).click()
   }
 
-  // Attendance (read-only).
-  await page.getByRole('link', { name: 'Attendance' }).click()
-  await expect(page.getByText('75%').or(page.getByText('75 %'))).toBeVisible()
-
-  // AI Teacher — language toggles, every prompt, Listen.
-  await page.getByRole('link', { name: 'AI Teacher' }).click()
+  // Profile holds attendance and notices.
+  await page.getByRole('link', { name: 'Profile' }).click()
+  await expect(page.getByRole('heading', { name: 'Demo status' })).toBeVisible()
   await expect(
-    page.getByText(
-      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
-    ),
+    page.getByRole('heading', { name: 'Voice providers' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('complementary', { name: 'Synthetic local demo' }),
+  ).toContainText('does not use learner data')
+  await expect(page.getByText('About this school')).toBeVisible()
+  await page.getByRole('button', { name: 'Attendance report' }).click()
+  await expect(page.getByText('75%').or(page.getByText('75 %'))).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Profile' }).click()
+  await page.getByRole('button', { name: 'Notices' }).click()
+  await expect(
+    page.getByText('Welcome to the Phase 1 demo pathway'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+
+  // AI Teacher — language toggles, focused prompts, Listen.
+  await page.getByRole('button', { name: 'AI Teacher' }).click()
+  await expect(page.getByRole('heading', { name: 'Can' })).toBeVisible()
+  await expect(
+    page.getByText('I can speak English. Can I help you?').first(),
   ).toBeVisible()
   const englishButtons = page.getByRole('button', { name: 'English' })
   await englishButtons.first().click()
   if ((await englishButtons.count()) > 1) {
     await englishButtons.nth(1).click()
   }
-  for (const prompt of [
-    'Welcome me',
-    'Explain the course',
-    'Explain my level',
-    'Attendance status',
-    'Daily score',
-    'Motivate me',
-  ]) {
-    await page.getByRole('button', { name: prompt }).click()
-  }
-  await page.getByRole('button', { name: 'Listen' }).click()
+  await expect(
+    page.getByText(
+      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
+    ),
+  ).toHaveCount(0)
 
-  // Daily Activity — audio + full quiz.
-  await page.getByRole('link', { name: 'Daily Activity' }).click()
+  // Daily Activity — audio + full quiz from the Home CTA.
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Continue today’s lesson/ }).click()
   await page.getByRole('button', { name: 'Play model audio (demo)' }).click()
   const radios = page.getByRole('radio')
   for (let index = 0; index < 5; index += 1) {
@@ -97,61 +127,72 @@ test('student click-through exercises every demo page and control', async ({
   await expect(page.getByText('5/5')).toBeVisible()
 
   // My Levels — unlocked pickers.
-  await page.getByRole('link', { name: 'My Levels' }).click()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'My Levels' }).click()
   await page.getByRole('button', { name: /Pre-Level 1/i }).click()
   await page.getByRole('button', { name: /Pre-Level 2/i }).click()
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
   await expect(page.getByText('Conversation Room')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Level 17/i })).toBeDisabled()
-
-  // Notice Board.
-  await page.getByRole('link', { name: 'Notice Board' }).click()
+  await expect(page.getByRole('button', { name: /Level 17/i })).toBeEnabled()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Can' })).toBeVisible()
   await expect(
-    page.getByText('Welcome to the Phase 1 demo pathway'),
+    page.getByText('I can speak English. Can I help you?').first(),
   ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Level 2 Locked/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Should' })).toBeVisible()
+  await expect(
+    page.getByText('You should drink some water.').first(),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Level 17 Locked/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Used to' })).toBeVisible()
+  await expect(
+    page.getByText('I used to walk to school.').first(),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: /Pre-Level 1/i }).click()
+  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByRole('heading', { name: 'Be' })).toBeVisible()
+  await expect(
+    page.getByText('I am a student. This is my book.').first(),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
 
-  // Learn mission (demo skips onboarding).
+  // Learn is My Levels only — no synthetic Introduce-yourself mission.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await page.getByRole('button', { name: 'Start mission' }).click()
-  await page.getByRole('button', { name: 'Play model audio' }).click()
-  await page
-    .getByRole('button', { name: 'Continue to speaking practice' })
-    .click()
-  await page.getByRole('button', { name: 'Start recording' }).click()
-  await page.waitForTimeout(300)
-  await page.getByRole('button', { name: 'Stop recording' }).click()
   await expect(
-    page.getByLabel('Your recording playback'),
+    page.getByRole('heading', { name: 'My Levels' }),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Record again' }).click()
-  await page.getByRole('button', { name: 'Start recording' }).click()
-  await page.waitForTimeout(300)
-  await page.getByRole('button', { name: 'Stop recording' }).click()
-  await page
-    .getByRole('button', { name: 'Continue to the check' })
-    .click()
-  await page.getByRole('radio', { name: 'Hello, my name is Ravi.' }).check()
-  await page.getByRole('button', { name: 'Submit check' }).click()
+  await expect(page.getByText('Pre-Level 1')).toBeVisible()
+  await expect(page.getByText('Audio Lessons')).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Mission result' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Try the mission again' }).click()
-  // Retry restarts the mission at listen (not the home Start button).
+    page.getByRole('heading', { name: '16 speaking lessons' }),
+  ).toHaveCount(0)
   await expect(
-    page.getByRole('button', { name: 'Play model audio' }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('button', { name: 'Continue to speaking practice' }),
-  ).toBeVisible()
+    page.getByRole('button', { name: 'Start mission' }),
+  ).toHaveCount(0)
+  await expect(page.getByText('Introduce yourself')).toHaveCount(0)
 
   // Practice — coaching modes, Confidence Conversation, talk controls.
-  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Speak' }).click()
+  const gotIt = page.getByRole('button', { name: 'Got it' })
+  await gotIt.click({ timeout: 5_000 }).catch(() => undefined)
+  await expect(page.locator('.ge-sheet-backdrop')).toHaveCount(0)
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
     await coaching.selectOption({ label: 'Fluency' })
     await coaching.selectOption({ label: 'Gentle' })
   }
+  await gotIt.click({ timeout: 1_000 }).catch(() => undefined)
+  await expect(page.locator('.ge-sheet-backdrop')).toHaveCount(0)
   await page.getByRole('button', { name: 'Start speaking practice' }).click()
   await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue to listen' }).click()
@@ -171,7 +212,7 @@ test('student click-through exercises every demo page and control', async ({
     await expect(send).toBeEnabled({ timeout: 5_000 })
     await send.click()
     await expect(
-      page.getByRole('heading', { name: 'Friend reply' }),
+      page.getByRole('heading', { name: 'Mira' }),
     ).toBeVisible({ timeout: 15_000 })
   }
 
@@ -203,15 +244,25 @@ test('student click-through exercises every demo page and control', async ({
   await page.goto('/#practice')
   await page.getByLabel('Interface language').selectOption('en-IN')
   await page.getByRole('button', { name: 'Role-play (synthetic)' }).click()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
-  for (const stage of ['Observe', 'Rehearse', 'Perform', 'Reflect']) {
-    await expect(page.getByRole('heading', { name: stage })).toBeVisible({
-      timeout: 10_000,
-    })
-    if (stage !== 'Reflect') {
-      await page.getByRole('button', { name: 'Continue' }).click()
-    }
-  }
+  await page.getByRole('button', { name: 'Start this situation' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible({
+    timeout: 10_000,
+  })
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible({
+    timeout: 10_000,
+  })
+  await page.getByRole('button', { name: 'Type instead' }).click()
+  await page
+    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .fill('Hello, I have an appointment.')
+  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible({
+    timeout: 10_000,
+  })
   await expect(
     page.getByText('Advisory feedback', { exact: true }),
   ).toBeVisible()
@@ -224,16 +275,20 @@ test('student click-through exercises every demo page and control', async ({
   await expect(
     page.getByRole('heading', { name: 'Your progress' }),
   ).toBeVisible()
-  await expect(page.getByText('Introduce myself')).toBeVisible()
+  await expect(page.getByText('Use can and cannot')).toBeVisible()
 
   // Return home.
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Dashboard' }),
+    page.getByRole('heading', { level: 1, name: 'Today' }),
   ).toBeVisible()
 
-  expect(apiRequests).toEqual([])
-  expect(await page.evaluate(() => window.localStorage.length)).toBe(0)
+  expect(apiRequests.every(isLessonPracticeProbe)).toBe(true)
+  expect(
+    await page.evaluate(() =>
+      Object.keys(window.localStorage).every((key) => key.startsWith('ge-ui-')),
+    ),
+  ).toBe(true)
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
 })

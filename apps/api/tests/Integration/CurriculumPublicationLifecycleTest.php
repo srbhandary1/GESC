@@ -9,7 +9,9 @@ use App\Curriculum\CurriculumGraphProjector;
 use App\Curriculum\Enrollment\EnrollmentCurriculumPinner;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
+use App\Curriculum\Governance\CurriculumGraphGovernanceCommands;
 use App\Curriculum\Publication\CurriculumPublicationActivator;
+use App\Curriculum\Publication\CurriculumPublicationScheduleCancellationService;
 use App\Curriculum\Publication\CurriculumPublicationScheduler;
 use App\Curriculum\Publication\CurriculumPublisher;
 use App\Curriculum\Publication\CurriculumRetirementService;
@@ -25,11 +27,12 @@ use App\Learning\Missions\DailyMissionReader;
 use App\Learning\Offline\OfflineCompletionService;
 use App\Learning\Offline\OfflineMissionBundleService;
 use App\Learning\Onboarding\LearnerOnboardingService;
-use App\Models\AuthenticationSession;
+use App\Learning\Review\DelayedReviewScheduler;
 use App\Models\Membership;
 use App\Models\Organization;
-use App\Models\Permission;
 use App\Models\User;
+use App\Operator\ContentWorkspace\ContentDraftGraphService;
+use App\Operator\OperatorPublicationStatusQuery;
 use App\Tenancy\OrganizationContext;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -37,7 +40,6 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCase
 {
@@ -46,6 +48,276 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         CarbonImmutable::setTestNow();
 
         parent::tearDown();
+    }
+
+    public function test_workspace_v2_publication_contains_levels_managed_media_and_seals_the_exact_workspace(): void
+    {
+        CarbonImmutable::setTestNow('2026-08-09T10:00:00+00:00');
+        $organization = $this->createOrganization('Workspace V2 Publication');
+        $authority = $this->createPublicationAuthority($organization);
+        $this->grantPermissions(
+            membership: $authority['operator_membership'],
+            context: $authority['operator_context'],
+            permissionKeys: ['curriculum.author'],
+        );
+        $version = $this->createReadyVersion(
+            authority: $authority,
+            versionKey: 'workspace-v2',
+            dailyMission: true,
+        );
+        $versionId = $version['version_id'];
+        $organizationId = $authority['organization_id'];
+        $levelId = (string) Str::ulid();
+        $now = now();
+        DB::table('curriculum_levels')->insert([
+            'id' => $levelId,
+            'organization_id' => $organizationId,
+            'curriculum_version_id' => $versionId,
+            'key' => 'a1',
+            'sequence' => 1,
+            'retired_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('learning_objectives')
+            ->where('organization_id', $organizationId)
+            ->where('curriculum_version_id', $versionId)
+            ->update(['outcome_code' => 'CAN_COMPLETE_SYNTHETIC_MISSION']);
+        DB::table('curriculum_modules')
+            ->where('organization_id', $organizationId)
+            ->where('curriculum_version_id', $versionId)
+            ->update(['curriculum_level_id' => $levelId]);
+        DB::table('curriculum_workspaces')->insert([
+            'organization_id' => $organizationId,
+            'program_id' => $authority['program_id'],
+            'curriculum_version_id' => $versionId,
+            'source_curriculum_version_id' => null,
+            'source_curriculum_publication_id' => null,
+            'graph_schema_version' => 2,
+            'state' => 'draft',
+            'version' => 1,
+            'current_draft_revision_id' => null,
+            'submitted_graph_revision_id' => null,
+            'legacy_level_assignment_required' => false,
+            'created_by_membership_id' => $authority['operator_membership']->getKey(),
+            'sealed_at' => null,
+            'abandoned_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $draftGraph = [
+            'schema' => ContentDraftGraphService::DRAFT_SCHEMA,
+            'levels' => [['key' => 'a1', 'sequence' => 1]],
+            'objectives' => [[
+                'key' => 'objective-workspace-v2',
+                'outcome_code' => 'CAN_COMPLETE_SYNTHETIC_MISSION',
+                'sequence' => 1,
+                'prerequisite_keys' => [],
+            ]],
+            'modules' => [[
+                'key' => 'module-workspace-v2',
+                'level_key' => 'a1',
+                'sequence' => 1,
+                'estimated_minutes' => 5,
+            ]],
+            'lessons' => [[
+                'key' => 'lesson-workspace-v2',
+                'module_key' => 'module-workspace-v2',
+                'sequence' => 1,
+                'objective_keys' => ['objective-workspace-v2'],
+            ]],
+            'items' => [[
+                'key' => 'item-workspace-v2',
+                'lesson_key' => 'lesson-workspace-v2',
+                'content_document_key' => 'instruction-workspace-v2',
+                'item_type' => 'speaking_prompt',
+                'sequence' => 1,
+            ]],
+            'delivery_bundles' => [[
+                'key' => 'mission-workspace-v2',
+                'instruction_document_key' => 'instruction-workspace-v2',
+                'sequence' => 1,
+                'item_keys' => ['item-workspace-v2'],
+            ]],
+        ];
+        $materialized = $this->app
+            ->make(ContentDraftGraphService::class)
+            ->replace($organizationId, $versionId, $draftGraph, $now);
+        self::assertTrue($materialized['is_complete']);
+        $projected = $this->app->make(CurriculumGraphProjector::class)->project(
+            $organizationId,
+            $versionId,
+        );
+        self::assertSame(
+            'global-english.curriculum-graph.v2',
+            $projected['graph']['schema'],
+        );
+        $graphRevisionId = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app
+                ->make(CurriculumGraphGovernanceCommands::class)
+                ->snapshot(
+                    actor: $authority['operator'],
+                    curriculumVersionId: $versionId,
+                    expectedRevisionNumber: 1,
+                    expectedGraphHash: $projected['graph_hash'],
+                    idempotencyKey: 'workspace-v2-graph-snapshot',
+                    authorAttribution: 'synthetic-workspace-v2-author',
+                ),
+        );
+        $draftRevisionId = (string) Str::ulid();
+        DB::table('curriculum_draft_graph_revisions')->insert([
+            'id' => $draftRevisionId,
+            'organization_id' => $organizationId,
+            'program_id' => $authority['program_id'],
+            'curriculum_version_id' => $versionId,
+            'parent_revision_id' => null,
+            'revision_number' => 1,
+            'graph' => CanonicalJson::encode($materialized['graph']),
+            'graph_hash' => $materialized['graph_hash'],
+            'blocker_codes' => CanonicalJson::encode([]),
+            'is_complete' => true,
+            'authored_by_membership_id' => $authority['operator_membership']->getKey(),
+            'authored_at' => $now,
+            'created_at' => $now,
+        ]);
+        $graphReviewId = (string) Str::ulid();
+        DB::table('curriculum_graph_reviews')->insert([
+            'id' => $graphReviewId,
+            'organization_id' => $organizationId,
+            'curriculum_version_id' => $versionId,
+            'curriculum_graph_revision_id' => $graphRevisionId,
+            'graph_hash' => $projected['graph_hash'],
+            'authority_kind' => 'english_academic_reviewer',
+            'authority_appointment_id' => $authority['english_appointment_id'],
+            'authority_appointment_event_id' => $authority['english_appointment_event_id'],
+            'authority_appointment_event_type' => 'accepted',
+            'reviewer_membership_id' => $authority['english_reviewer_membership_id'],
+            'decision' => 'approved',
+            'rationale_key' => 'meets_standard',
+            'reviewed_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('curriculum_workspaces')
+            ->where('organization_id', $organizationId)
+            ->where('curriculum_version_id', $versionId)
+            ->where('version', 1)
+            ->update([
+                'state' => 'in_review',
+                'version' => 2,
+                'current_draft_revision_id' => $draftRevisionId,
+                'submitted_graph_revision_id' => $graphRevisionId,
+                'updated_at' => $now,
+            ]);
+
+        $managedRights = $this->attachApprovedMediaRights(
+            authority: $authority,
+            version: $version,
+            usageKey: 'model_audio',
+            audio: 'governed-workspace-v2-model-audio',
+            assetKind: 'model_audio',
+        );
+        $managed = $this->attachManagedMediaGovernance(
+            authority: $authority,
+            version: $version,
+            rights: $managedRights,
+        );
+
+        $published = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $this->app->make(CurriculumPublisher::class)->publish(
+                actor: $authority['operator'],
+                curriculumVersionId: $versionId,
+                expectedHeadVersion: 0,
+                idempotencyKey: 'publish-workspace-v2',
+            ),
+        );
+        $manifest = DB::table('curriculum_publications')
+            ->where('organization_id', $organizationId)
+            ->where('id', $published->publicationId)
+            ->value('manifest');
+        self::assertIsString($manifest);
+        $decoded = json_decode($manifest, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame('global-english.curriculum-publication.v2', $decoded['schema']);
+        self::assertSame(
+            'global-english.curriculum-graph.v2',
+            $decoded['graph_revision']['graph']['schema'],
+        );
+        self::assertSame('a1', $decoded['graph_revision']['graph']['levels'][0]['key']);
+        self::assertSame(
+            $managed['scan_id'],
+            $decoded['content'][0]['media'][0]['governance']['selected_scan']['id'],
+        );
+        self::assertSame(
+            $managed['metadata_revision_id'],
+            $decoded['content'][0]['media'][0]['governance']['metadata']['revision_id'],
+        );
+        self::assertSame(
+            $managedRights['rights_revision_id'],
+            $decoded['content'][0]['media'][0]['governance']['rights']['revision_id'],
+        );
+        $this->assertDatabaseHas('publication_media_governance_components', [
+            'organization_id' => $organizationId,
+            'curriculum_publication_id' => $published->publicationId,
+            'media_asset_id' => $managedRights['media_asset_id'],
+            'selected_scan_id' => $managed['scan_id'],
+            'metadata_revision_id' => $managed['metadata_revision_id'],
+            'english_review_id' => $managed['english_review_id'],
+            'metadata_variant_id' => $managed['metadata_variant_id'],
+            'kannada_review_id' => $managed['kannada_review_id'],
+            'media_rights_revision_id' => $managedRights[
+                'rights_revision_id'
+            ],
+        ]);
+        $this->assertDatabaseHas('curriculum_workspaces', [
+            'organization_id' => $organizationId,
+            'curriculum_version_id' => $versionId,
+            'state' => 'sealed',
+            'version' => 3,
+        ]);
+        $this->assertDatabaseHas('curriculum_workspace_events', [
+            'organization_id' => $organizationId,
+            'curriculum_version_id' => $versionId,
+            'event_type' => 'workspace.sealed',
+            'workspace_version' => 3,
+        ]);
+
+        DB::table('media_asset_lifecycles')
+            ->where('organization_id', $organizationId)
+            ->where('media_asset_id', $managedRights['media_asset_id'])
+            ->update([
+                'state' => 'retired',
+                'version' => 2,
+                'retired_by_membership_id' => $authority[
+                    'operator_membership'
+                ]->getKey(),
+                'retirement_reason_key' => 'publication_fixture_retired',
+                'retired_at' => $now,
+                'updated_at' => $now,
+            ]);
+        $revalidator = $this->app->make(
+            PublicationEvidenceRevalidator::class,
+        );
+        $verifiedPrior = $revalidator->verify(
+            ownerOrganizationId: $organizationId,
+            publicationId: $published->publicationId,
+            evaluatedAt: $now,
+            requireCurrentManagedMedia: false,
+        );
+        self::assertSame(
+            $published->publicationId,
+            $verifiedPrior->publicationId,
+        );
+        $this->assertOperationRejected(
+            fn () => $revalidator->verify(
+                ownerOrganizationId: $organizationId,
+                publicationId: $published->publicationId,
+                evaluatedAt: $now,
+                requireCurrentManagedMedia: true,
+            ),
+        );
     }
 
     public function test_unapproved_kannada_blocks_publish_without_residue_then_exact_evidence_publishes_and_replays(): void
@@ -696,6 +968,84 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
                 $secondResult['review']['due_at'],
             )->toIso8601String(),
         );
+        $masteryAttempt = DB::table('learner_attempts')
+            ->where('organization_id', $organization->getKey())
+            ->where('id', $second['id'])
+            ->firstOrFail();
+        $masteryAt = CarbonImmutable::parse((string) $masteryAttempt->submitted_at);
+        $scheduler = $this->app->make(
+            DelayedReviewScheduler::class,
+        );
+        $scheduler->reconcile($masteryAttempt, $masteryAt);
+        $scheduler->reconcile($masteryAttempt, $masteryAt);
+        self::assertSame(
+            count(config('review.interval_days')),
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', $organization->getKey())
+                ->where('source_attempt_id', $second['id'])
+                ->count(),
+            'A replayed mastery event must not duplicate review occurrences.',
+        );
+        self::assertSame(
+            0,
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', '!=', $organization->getKey())
+                ->where('learner_membership_id', $learnerMembership->getKey())
+                ->count(),
+        );
+
+        // ADR-0028: only deterministic mastery evidence may create a review
+        // occurrence. $first never reached mastery, so a row naming it as the
+        // source must be refused however the write is attempted.
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $organizationId = (string) $organization->getKey();
+            $unmasteredAttemptId = $first['id'];
+            $fabricatedOccurrence = [
+                'organization_id' => $organizationId,
+                'enrollment_id' => $enrollmentId,
+                'learner_membership_id' => (string) $learnerMembership->getKey(),
+                'learning_objective_id' => $mission->objectiveId,
+                'source_attempt_id' => $unmasteredAttemptId,
+                'curriculum_mission_id' => $mission->missionId,
+                'sequence' => 1,
+                'interval_days' => 1,
+                'rule_version' => 'provisional-v1',
+                'timezone' => 'Asia/Kolkata',
+                'due_at' => $masteryAt,
+                'completed_at' => null,
+                'completion_attempt_id' => null,
+                'created_at' => $masteryAt,
+                'updated_at' => $masteryAt,
+            ];
+
+            try {
+                // A nested transaction is a savepoint, so the expected
+                // constraint failure does not abort the test transaction.
+                DB::transaction(static function () use ($fabricatedOccurrence): void {
+                    DB::table('delayed_review_occurrences')->insert([
+                        'id' => (string) Str::ulid(),
+                        ...$fabricatedOccurrence,
+                    ]);
+                });
+                self::fail(
+                    'A review occurrence without mastery evidence must be refused.',
+                );
+            } catch (QueryException $exception) {
+                self::assertStringContainsString(
+                    'deterministic mastery evidence',
+                    $exception->getMessage(),
+                );
+            }
+
+            self::assertSame(
+                0,
+                DB::table('delayed_review_occurrences')
+                    ->where('organization_id', $organizationId)
+                    ->where('source_attempt_id', $unmasteredAttemptId)
+                    ->count(),
+                'The refused occurrence must leave no residue.',
+            );
+        }
         $this->assertDatabaseHas('item_responses', [
             'organization_id' => $organization->getKey(),
             'learner_attempt_id' => $second['id'],
@@ -2021,6 +2371,152 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         );
     }
 
+    public function test_schedule_cancellation_replays_blocks_activation_and_permits_one_guarded_replacement(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-30T16:00:00+00:00');
+        $organization = $this->createOrganization('Schedule Cancellation Tenant');
+        $authority = $this->createPublicationAuthority($organization);
+        $version = $this->createReadyVersion($authority, 'cancel-v1');
+        $scheduler = $this->app->make(CurriculumPublicationScheduler::class);
+        $cancellations = $this->app->make(
+            CurriculumPublicationScheduleCancellationService::class,
+        );
+        $activationAt = CarbonImmutable::parse('2026-07-30T18:00:00+00:00');
+        $scheduled = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $scheduler->schedule(
+                actor: $authority['operator'],
+                curriculumVersionId: $version['version_id'],
+                activationAt: $activationAt,
+                expectedHeadVersion: 0,
+                idempotencyKey: 'schedule-before-cancellation',
+            ),
+        );
+        $cancelled = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $cancellations->cancel(
+                actor: $authority['operator'],
+                publicationId: $scheduled->publicationId,
+                expectedHeadVersion: 1,
+                reasonKey: 'timing_changed',
+                idempotencyKey: 'cancel-schedule-v1',
+            ),
+        );
+        $cancelReplay = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $cancellations->cancel(
+                actor: $authority['operator'],
+                publicationId: $scheduled->publicationId,
+                expectedHeadVersion: 1,
+                reasonKey: 'timing_changed',
+                idempotencyKey: 'cancel-schedule-v1',
+            ),
+        );
+
+        self::assertFalse($cancelled->replayed);
+        self::assertTrue($cancelReplay->replayed);
+        self::assertTrue($cancelled->cancelledAt->equalTo($cancelReplay->cancelledAt));
+        self::assertSame(2, $cancelled->headVersion);
+        self::assertSame(2, $cancelReplay->headVersion);
+        $this->assertDatabaseHas('publication_heads', [
+            'organization_id' => $organization->getKey(),
+            'program_id' => $authority['program_id'],
+            'active_publication_id' => null,
+            'lock_version' => 2,
+        ]);
+        $cancelledStatus = $this->contexts()->run(
+            $authority['operator_context'],
+            fn (): array => $this->app
+                ->make(OperatorPublicationStatusQuery::class)
+                ->list($authority['operator']),
+        );
+        self::assertSame(
+            'cancelled',
+            $cancelledStatus['items'][0]['lifecycle_status'],
+        );
+        self::assertSame([], $cancelledStatus['items'][0]['allowed_actions']);
+
+        CarbonImmutable::setTestNow($activationAt);
+        $this->assertOperationRejected(
+            fn () => $this->contexts()->run(
+                $authority['operator_context'],
+                fn () => $this->app
+                    ->make(CurriculumPublicationActivator::class)
+                    ->activate(
+                        actor: $authority['operator'],
+                        publicationId: $scheduled->publicationId,
+                        expectedHeadVersion: 2,
+                        idempotencyKey: 'activate-cancelled-schedule',
+                    ),
+            ),
+        );
+
+        CarbonImmutable::setTestNow('2026-07-30T16:30:00+00:00');
+        $replacementAt = CarbonImmutable::parse('2026-07-30T19:00:00+00:00');
+        $replacement = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $scheduler->schedule(
+                actor: $authority['operator'],
+                curriculumVersionId: $version['version_id'],
+                activationAt: $replacementAt,
+                expectedHeadVersion: 2,
+                idempotencyKey: 'replacement-schedule-v1',
+            ),
+        );
+        self::assertSame($scheduled->publicationId, $replacement->publicationId);
+        self::assertSame($scheduled->manifestHash, $replacement->manifestHash);
+        self::assertSame(3, $replacement->headVersion);
+        self::assertSame(
+            1,
+            DB::table('curriculum_publications')
+                ->where('organization_id', $organization->getKey())
+                ->where('curriculum_version_id', $version['version_id'])
+                ->count(),
+        );
+
+        $otherVersion = $this->createReadyVersion($authority, 'cancel-v2');
+        $this->assertOperationRejected(
+            fn () => $this->contexts()->run(
+                $authority['operator_context'],
+                fn () => $scheduler->schedule(
+                    actor: $authority['operator'],
+                    curriculumVersionId: $otherVersion['version_id'],
+                    activationAt: $replacementAt->addHour(),
+                    expectedHeadVersion: 3,
+                    idempotencyKey: 'overlapping-schedule-v2',
+                ),
+            ),
+        );
+
+        $replacementCancellation = $this->contexts()->run(
+            $authority['operator_context'],
+            fn () => $cancellations->cancel(
+                actor: $authority['operator'],
+                publicationId: $replacement->publicationId,
+                expectedHeadVersion: 3,
+                reasonKey: 'release_withdrawn',
+                idempotencyKey: 'cancel-replacement-v1',
+            ),
+        );
+        self::assertSame(4, $replacementCancellation->headVersion);
+        self::assertSame(
+            2,
+            DB::table('publication_events')
+                ->where('organization_id', $organization->getKey())
+                ->where('curriculum_publication_id', $scheduled->publicationId)
+                ->where('event_type', 'scheduled')
+                ->count(),
+        );
+        self::assertSame(
+            2,
+            DB::table('publication_events')
+                ->where('organization_id', $organization->getKey())
+                ->where('curriculum_publication_id', $scheduled->publicationId)
+                ->where('event_type', 'schedule_cancelled')
+                ->count(),
+        );
+    }
+
     public function test_review_withdrawal_between_schedule_and_activation_fails_without_activation_residue(): void
     {
         CarbonImmutable::setTestNow('2026-07-30T14:00:00+00:00');
@@ -2443,22 +2939,15 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         );
 
         CarbonImmutable::setTestNow('2026-07-30T22:05:00+00:00');
-        $authenticationSession = AuthenticationSession::query()->forceCreate([
-            'user_id' => $authority['operator']->getKey(),
-            'storage_session_digest' => hash(
-                'sha256',
-                'suspended-replacement-'.Str::ulid(),
-            ),
-            'storage_session_ciphertext' => 'synthetic-test-session',
-            'is_privileged' => true,
-            'started_at' => now()->subMinute(),
-            'last_seen_at' => now(),
-            'idle_expires_at' => now()->addMinutes(30),
-            'absolute_expires_at' => now()->addHours(6),
-            'mfa_verified_at' => now(),
-            'revoked_at' => null,
-            'revocation_reason' => null,
-        ]);
+        $authenticationSession = $this
+            ->createTestPrivilegedAuthenticationSession(
+                $authority['operator'],
+                now(),
+                [
+                    'idle_expires_at' => now()->addMinutes(30),
+                    'absolute_expires_at' => now()->addHours(6),
+                ],
+            );
         $suspendedEventId = (string) Str::ulid();
         DB::table('publication_events')->insert([
             'id' => $suspendedEventId,
@@ -2793,6 +3282,263 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'english_appointment_event_id' => $englishAppointmentEventId,
             'kannada_appointment_id' => $kannadaAppointmentId,
             'kannada_appointment_event_id' => $kannadaAppointmentEventId,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $authority
+     * @param  array<string, string>  $version
+     * @param  array{
+     *   media_asset_id: string,
+     *   rights_revision_id: string,
+     *   asset_hash: string,
+     *   evidence_hash: string,
+     *   confirmer_membership_id: string,
+     *   appointment_id: string,
+     *   appointment_event_id: string,
+     *   storage_object_key: string,
+     *   audio: string
+     * }  $rights
+     * @return array{
+     *   scan_id: string,
+     *   metadata_revision_id: string,
+     *   english_review_id: string,
+     *   metadata_variant_id: string,
+     *   kannada_review_id: string
+     * }
+     */
+    private function attachManagedMediaGovernance(
+        array $authority,
+        array $version,
+        array $rights,
+    ): array {
+        $organizationId = (string) $authority['organization_id'];
+        $assetId = $rights['media_asset_id'];
+        $assetHash = $rights['asset_hash'];
+        $audio = $rights['audio'];
+        $scanId = (string) Str::ulid();
+        $metadataRevisionId = (string) Str::ulid();
+        $metadataVariantId = (string) Str::ulid();
+        $englishReviewId = (string) Str::ulid();
+        $kannadaReviewId = (string) Str::ulid();
+        $operatorMembershipId = (string) $authority[
+            'operator_membership'
+        ]->getKey();
+        $englishTranscript = 'Hello. How are you today?';
+        $kannadaTranscript = 'ನಮಸ್ಕಾರ. ಇಂದು ನೀವು ಹೇಗಿದ್ದೀರಿ?';
+        $metadataHash = CanonicalJson::sha256([
+            'asset_kind' => 'model_audio',
+            'locale' => 'en-IN',
+            'operator_label' => 'Governed workspace model audio',
+            'text_alternative' => null,
+            'transcript' => $englishTranscript,
+        ]);
+        $variantHash = CanonicalJson::sha256([
+            'asset_kind' => 'model_audio',
+            'locale' => 'kn-IN',
+            'source_content_hash' => $metadataHash,
+            'text_alternative' => null,
+            'transcript' => $kannadaTranscript,
+        ]);
+        $technicalHash = CanonicalJson::sha256([
+            'asset_kind' => 'model_audio',
+            'byte_size' => strlen($audio),
+            'detected_mime_type' => 'audio/ogg',
+            'duration_milliseconds' => 1400,
+            'inspection_outcome' => 'passed',
+            'inspector_name' => 'synthetic-managed-inspector',
+            'inspector_policy_version' => 'test-managed-v1',
+            'malware_outcome' => 'clean',
+            'object_hash' => $assetHash,
+            'scanner_engine_version' => 'test-managed-v1',
+            'scanner_name' => 'synthetic-managed-scanner',
+            'scanner_policy_version' => 'test-managed-v1',
+        ]);
+        $now = now();
+
+        DB::table('media_security_scans')->insert([
+            'id' => $scanId,
+            'organization_id' => $organizationId,
+            'media_upload_id' => null,
+            'media_asset_id' => $assetId,
+            'asset_kind' => 'model_audio',
+            'object_hash' => $assetHash,
+            'byte_size' => strlen($audio),
+            'inspection_outcome' => 'passed',
+            'malware_outcome' => 'clean',
+            'detected_mime_type' => 'audio/ogg',
+            'duration_milliseconds' => 1400,
+            'inspector_name' => 'synthetic-managed-inspector',
+            'inspector_policy_version' => 'test-managed-v1',
+            'scanner_name' => 'synthetic-managed-scanner',
+            'scanner_engine_version' => 'test-managed-v1',
+            'scanner_policy_version' => 'test-managed-v1',
+            'technical_metadata_hash' => $technicalHash,
+            'inspected_at' => $now,
+            'scanned_at' => $now,
+            'created_at' => $now,
+        ]);
+        DB::table('media_asset_lifecycles')->insert([
+            'organization_id' => $organizationId,
+            'media_asset_id' => $assetId,
+            'asset_kind' => 'model_audio',
+            'state' => 'active',
+            'version' => 1,
+            'selected_scan_id' => $scanId,
+            'predecessor_media_asset_id' => null,
+            'managed_by_membership_id' => $operatorMembershipId,
+            'retired_by_membership_id' => null,
+            'retirement_reason_key' => null,
+            'managed_at' => $now,
+            'retired_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('media_asset_events')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'media_asset_id' => $assetId,
+            'event_type' => 'asset.adopted',
+            'lifecycle_version' => 1,
+            'selected_scan_id' => $scanId,
+            'related_media_asset_id' => null,
+            'media_upload_id' => null,
+            'actor_membership_id' => $operatorMembershipId,
+            'reason_key' => null,
+            'occurred_at' => $now,
+            'created_at' => $now,
+        ]);
+        DB::table('media_asset_metadata_revisions')->insert([
+            'id' => $metadataRevisionId,
+            'organization_id' => $organizationId,
+            'media_asset_id' => $assetId,
+            'asset_kind' => 'model_audio',
+            'parent_revision_id' => null,
+            'revision_number' => 1,
+            'operator_label' => 'Governed workspace model audio',
+            'transcript' => $englishTranscript,
+            'text_alternative' => null,
+            'content_hash' => $metadataHash,
+            'authored_by_membership_id' => $authority['author_membership_id'],
+            'authored_at' => $now,
+            'created_at' => $now,
+        ]);
+        DB::table('media_asset_metadata_heads')->insert([
+            'organization_id' => $organizationId,
+            'media_asset_id' => $assetId,
+            'metadata_revision_id' => $metadataRevisionId,
+            'version' => 1,
+            'updated_by_membership_id' => $authority['author_membership_id'],
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('media_asset_metadata_variants')->insert([
+            'id' => $metadataVariantId,
+            'organization_id' => $organizationId,
+            'media_asset_id' => $assetId,
+            'metadata_revision_id' => $metadataRevisionId,
+            'asset_kind' => 'model_audio',
+            'locale' => 'kn-IN',
+            'parent_variant_id' => null,
+            'revision_number' => 1,
+            'source_content_hash' => $metadataHash,
+            'transcript' => $kannadaTranscript,
+            'text_alternative' => null,
+            'content_hash' => $variantHash,
+            'translated_by_membership_id' => $authority[
+                'translator_membership_id'
+            ],
+            'translated_at' => $now,
+            'created_at' => $now,
+        ]);
+        DB::table('media_asset_metadata_variant_heads')->insert([
+            'organization_id' => $organizationId,
+            'metadata_revision_id' => $metadataRevisionId,
+            'metadata_variant_id' => $metadataVariantId,
+            'version' => 1,
+            'updated_by_membership_id' => $authority[
+                'translator_membership_id'
+            ],
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('media_asset_metadata_reviews')->insert([
+            [
+                'id' => $englishReviewId,
+                'organization_id' => $organizationId,
+                'media_asset_id' => $assetId,
+                'program_id' => $authority['program_id'],
+                'metadata_revision_id' => $metadataRevisionId,
+                'source_content_hash' => $metadataHash,
+                'review_kind' => 'academic_en',
+                'metadata_variant_id' => null,
+                'variant_content_hash' => null,
+                'decision' => 'approved',
+                'rationale_key' => null,
+                'authority_appointment_id' => $authority[
+                    'english_appointment_id'
+                ],
+                'authority_appointment_event_id' => $authority[
+                    'english_appointment_event_id'
+                ],
+                'reviewer_membership_id' => $authority[
+                    'english_reviewer_membership_id'
+                ],
+                'reviewed_at' => $now,
+                'created_at' => $now,
+            ],
+            [
+                'id' => $kannadaReviewId,
+                'organization_id' => $organizationId,
+                'media_asset_id' => $assetId,
+                'program_id' => $authority['program_id'],
+                'metadata_revision_id' => $metadataRevisionId,
+                'source_content_hash' => $metadataHash,
+                'review_kind' => 'kannada',
+                'metadata_variant_id' => $metadataVariantId,
+                'variant_content_hash' => $variantHash,
+                'decision' => 'approved',
+                'rationale_key' => null,
+                'authority_appointment_id' => $authority[
+                    'kannada_appointment_id'
+                ],
+                'authority_appointment_event_id' => $authority[
+                    'kannada_appointment_event_id'
+                ],
+                'reviewer_membership_id' => $authority[
+                    'kannada_reviewer_membership_id'
+                ],
+                'reviewed_at' => $now,
+                'created_at' => $now,
+            ],
+        ]);
+        DB::table('media_attachment_events')->insert([
+            'id' => (string) Str::ulid(),
+            'organization_id' => $organizationId,
+            'program_id' => $authority['program_id'],
+            'curriculum_version_id' => $version['version_id'],
+            'source_revision_id' => $version['source_revision_id'],
+            'media_asset_id' => $assetId,
+            'usage_key' => 'model_audio',
+            'previous_workspace_version' => 1,
+            'successor_workspace_version' => 2,
+            'selected_scan_id' => $scanId,
+            'metadata_revision_id' => $metadataRevisionId,
+            'english_review_id' => $englishReviewId,
+            'metadata_variant_id' => $metadataVariantId,
+            'kannada_review_id' => $kannadaReviewId,
+            'media_rights_revision_id' => $rights['rights_revision_id'],
+            'attached_by_membership_id' => $operatorMembershipId,
+            'attached_at' => $now,
+            'created_at' => $now,
+        ]);
+
+        return [
+            'scan_id' => $scanId,
+            'metadata_revision_id' => $metadataRevisionId,
+            'english_review_id' => $englishReviewId,
+            'metadata_variant_id' => $metadataVariantId,
+            'kannada_review_id' => $kannadaReviewId,
         ];
     }
 
@@ -3263,40 +4009,12 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         OrganizationContext $context,
         array $permissionKeys,
     ): void {
-        $role = $this->createRole(
+        $this->grantTestPermissions(
+            $membership,
             $context,
-            'publication-'.strtolower((string) Str::ulid()),
+            $permissionKeys,
+            'publication',
         );
-        $now = now();
-
-        DB::table('membership_roles')->insert([
-            'organization_id' => $membership->organizationId(),
-            'membership_id' => $membership->getKey(),
-            'role_id' => $role->getKey(),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        foreach ($permissionKeys as $permissionKey) {
-            $permission = Permission::query()
-                ->where('key', $permissionKey)
-                ->first();
-
-            if (! $permission instanceof Permission) {
-                throw new RuntimeException(sprintf(
-                    'Missing synthetic test permission: %s.',
-                    $permissionKey,
-                ));
-            }
-
-            DB::table('role_permissions')->insert([
-                'organization_id' => $membership->organizationId(),
-                'role_id' => $role->getKey(),
-                'permission_id' => $permission->getKey(),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
     }
 
     private function createPendingEnrollment(
@@ -3362,6 +4080,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
      *   media_asset_id: string,
      *   rights_revision_id: string,
      *   asset_hash: string,
+     *   evidence_hash: string,
      *   confirmer_membership_id: string,
      *   appointment_id: string,
      *   appointment_event_id: string,
@@ -3375,6 +4094,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
         ?CarbonInterface $expiresAt = null,
         string $usageKey = 'instruction_audio',
         string $audio = 'synthetic-scheduled-audio',
+        string $assetKind = 'instruction_audio',
     ): array {
         $organization = Organization::query()->findOrFail(
             $authority['organization_id'],
@@ -3408,7 +4128,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'id' => $mediaAssetId,
             'organization_id' => $authority['organization_id'],
             'key' => 'scheduled-audio-'.strtolower((string) Str::ulid()),
-            'asset_kind' => 'instruction_audio',
+            'asset_kind' => $assetKind,
             'storage_object_key' => $storageObjectKey,
             'mime_type' => 'audio/ogg',
             'byte_size' => strlen($audio),
@@ -3467,6 +4187,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'media_asset_id' => $mediaAssetId,
             'rights_revision_id' => $rightsRevisionId,
             'asset_hash' => $assetHash,
+            'evidence_hash' => $evidenceHash,
             'confirmer_membership_id' => (string) $confirmerMembership->getKey(),
             'appointment_id' => $appointmentId,
             'appointment_event_id' => $appointmentEventId,
