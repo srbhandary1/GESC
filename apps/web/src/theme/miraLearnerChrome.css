@@ -333,11 +333,14 @@
 /* —— Phase 1 / demo Mira home —— */
 .phase1-home {
   display: grid;
+  min-width: 0;
   gap: var(--ge-space-4);
 }
 
 .phase1-home__hello {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
@@ -356,6 +359,8 @@
 .phase1-home__title,
 .phase1-screen-head__title {
   margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
   font-size: clamp(2rem, 7vw, 2.7rem);
   font-weight: 750;
@@ -382,15 +387,21 @@
 .phase1-home__lesson {
   display: grid;
   gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 1.15rem 1.2rem 1.25rem;
   border: 1px solid var(--ge-color-border);
   border-radius: 1.35rem;
   background: var(--ge-color-surface);
   box-shadow: var(--ge-elevation-1);
+  overflow-wrap: anywhere;
 }
 
 .phase1-home__lesson-meta {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -398,20 +409,24 @@
 
 .phase1-home__eyebrow {
   margin: 0;
+  max-width: 100%;
   padding: 0.25rem 0.6rem;
   border-radius: var(--ge-radius-pill);
   background: color-mix(in srgb, var(--ge-mira-mint, #3ddc97) 16%, transparent);
-  color: var(--ge-mira-mint, #3ddc97);
+  color: var(--ge-mira-brand, #006b3f);
   font-size: 0.68rem;
   font-weight: 750;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .phase1-home__duration,
 .phase1-home__level {
   margin: 0;
   color: var(--ge-color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .phase1-home__lesson-title {
@@ -422,6 +437,7 @@
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .phase1-home__progress {
@@ -443,11 +459,17 @@
 .phase1-home__cta {
   display: inline-flex;
   width: 100%;
+  min-width: 0;
+  min-inline-size: 0;
+  max-width: 100%;
   min-block-size: var(--ge-mira-chrome-target);
   align-items: center;
   justify-content: center;
   border-radius: 0.875rem;
+  text-align: center;
   text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .phase1-home__tip {
@@ -477,6 +499,7 @@
 
 .guest-mira-home {
   width: min(100%, 36rem);
+  min-width: 0;
 }
 
 .guest-mira-home__about {
@@ -695,6 +718,14 @@
 .ge-application-frame--mira-learner .conversation-journey__heading,
 .demo-experience .conversation-journey__heading {
   border-radius: var(--ge-radius-2xl);
+}
+
+@media (max-width: 30rem) {
+  .phase1-home__lesson,
+  .phase1-home__tip,
+  .tutor-home-hero.mira-home-hero {
+    padding-inline: clamp(0.5rem, 3vw, 1rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

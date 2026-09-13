@@ -1162,6 +1162,18 @@
   clip-path: inset(50%);
   overflow: hidden;
   white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.visually-hidden * {
+  display: inline-block;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: inherit;
+  clip-path: inherit;
+  white-space: nowrap;
 }
 
 .operator-console {
