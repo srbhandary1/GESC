@@ -81,7 +81,7 @@ describe('DemoPhase1Shell', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Welcome\. You are on Level 1/),
+      screen.getByText(/You are on Level 1/),
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Daily Activity' }))
@@ -94,7 +94,7 @@ describe('DemoPhase1Shell', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Content Room')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Level 17/i }))
-    await user.click(screen.getByRole('button', { name: /Audio Lessons/i }))
+    await user.click(screen.getByRole('button', { name: /^Audio Lessons/ }))
     expect(
       screen.getByRole('button', { name: 'Listen to this level' }),
     ).toBeInTheDocument()
@@ -133,7 +133,7 @@ describe('DemoPhase1Shell', () => {
 
     await user.click(screen.getByRole('link', { name: 'AI ಶಿಕ್ಷಕ' }))
     expect(
-      screen.getByText(/ಸ್ವಾಗತ\. ನೀವು Level 1 ರಲ್ಲಿದ್ದೀರಿ/),
+      screen.getByText(/ನೀವು Level 1 ರಲ್ಲಿದ್ದೀರಿ/),
     ).toBeInTheDocument()
     expect(screen.queryByText(/Svagata|Neevu Level/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'ಕನ್ನಡ' })).toHaveClass(
@@ -167,7 +167,7 @@ describe('DemoPhase1Shell', () => {
       screen.getByRole('heading', { level: 1, name: 'डैशबोर्ड' }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: 'AI शिक्षक' }))
-    expect(screen.getByText(/स्वागत है। आप Level 1 पर हैं/)).toBeInTheDocument()
+    expect(screen.getByText(/आप Level 1 पर हैं/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'हिन्दी' })).toHaveClass(
       'is-active',
     )

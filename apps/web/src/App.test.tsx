@@ -155,7 +155,11 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Audio Lessons/i }),
+      screen.getByRole('button', {
+        name: new RegExp(
+          `^${text('demo.phase1.rooms.audio.title')}`,
+        ),
+      }),
     ).toBeInTheDocument()
   })
 

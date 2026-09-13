@@ -290,6 +290,8 @@ function App({
   const fallbackNotice = message('localization.fallback_notice')
   const previewLabel = message('localization.preview_label')
   const previewNotice = message('localization.preview_notice')
+  const routeHash = locationHash.replace(/^#/u, '')
+  const showDemoMission = demoMode && routeHash === 'mission'
   const routeMessages = demoMode
     ? showDemoMission
       ? {
@@ -363,8 +365,6 @@ function App({
       OPERATOR_ROLE_KEYS.has(roleKey),
     ) ??
       false)
-  const routeHash = locationHash.replace(/^#/u, '')
-  const showDemoMission = demoMode && routeHash === 'mission'
   const canLearn =
     destination === 'learn' &&
     !showDemoMission &&
@@ -538,7 +538,7 @@ function App({
             locale={locale}
             localizationPolicy={localizationPolicy}
           />
-        ) : showDemoGuidedLesson ? (
+        ) : canLearn || showDemoGuidedLesson ? (
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}

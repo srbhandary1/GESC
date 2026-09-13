@@ -105,7 +105,7 @@ test('student click-through exercises every demo page and control', async ({
   await page.getByRole('button', { name: /^Level 1\b/i }).click()
   await expect(page.getByText('Conversation Room')).toBeVisible()
   await page.getByRole('button', { name: /Level 17/i }).click()
-  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await page.getByRole('button', { name: /^Audio Lessons/ }).click()
   await expect(
     page.getByRole('button', { name: 'Listen to this level' }),
   ).toBeVisible()
@@ -123,7 +123,7 @@ test('student click-through exercises every demo page and control', async ({
 
   // Learn serves My Levels rooms.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await expect(page.getByText('Audio Lessons')).toBeVisible()
+  await expect(page.getByText('Audio Lessons').first()).toBeVisible()
 
   // Guided speaking lesson remains available from Daily Activity.
   await page.getByRole('link', { name: 'Daily Activity' }).click()

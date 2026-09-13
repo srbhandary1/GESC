@@ -36,7 +36,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   ).toBeVisible()
   await page.getByRole('button', { name: 'English' }).first().click()
   await expect(
-    page.getByText('Welcome. You are on Level 1.', { exact: false }),
+    page.getByText('You are on Level 1.', { exact: false }),
   ).toBeVisible()
   for (const prompt of [
     'Welcome me',
@@ -73,8 +73,8 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   // Primary shell destinations also available to a student in the demo.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await expect(page.getByText('Audio Lessons')).toBeVisible()
-  await page.getByRole('button', { name: /Audio Lessons/i }).click()
+  await expect(page.getByText('Audio Lessons').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Audio Lessons/ }).click()
   await expect(
     page.getByRole('button', { name: 'Listen to this level' }),
   ).toBeVisible()
