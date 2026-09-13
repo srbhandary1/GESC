@@ -203,7 +203,8 @@ export function WebPasswordSignInPanel({
             maxLength={64}
             minLength={4}
             onChange={(event) => setUsername(event.currentTarget.value)}
-            pattern="[A-Za-z][-A-Za-z0-9._]{3,63}"
+            // HTML pattern omitted: Chromium validates pattern with the v
+            // flag and rejects this username character class.
             required
             spellCheck={false}
             type="text"

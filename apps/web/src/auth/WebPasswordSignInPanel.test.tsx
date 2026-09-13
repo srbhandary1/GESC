@@ -49,10 +49,7 @@ describe('web password sign-in panel', () => {
     const username = screen.getByLabelText('Username')
     const password = screen.getByLabelText('Password')
     expect(username).toHaveAttribute('autocomplete', 'username')
-    expect(username).toHaveAttribute(
-      'pattern',
-      '[A-Za-z][-A-Za-z0-9._]{3,63}',
-    )
+    expect(username).not.toHaveAttribute('pattern')
     expect(password).toHaveAttribute('autocomplete', 'current-password')
     expect(password).toHaveAttribute('type', 'password')
     await user.type(username, 'learner.one')
