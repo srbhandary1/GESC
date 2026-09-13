@@ -10,12 +10,11 @@ Codex is not an approver. Live cutover remains an operator action.
 ## Step 0 — Merge the marketing homepage (PR #5)
 
 **Complete (13 September 2026).** The operator requested merge. The Superdesign
-homepage from [PR #5](https://github.com/srbhandary1/GESC/pull/5)
-(`cursor/marketing-homepage-cd75`) and this runbook land on the default
-branch together. Continue from Preflight.
+homepage from [PR #5](https://github.com/srbhandary1/GESC/pull/5) and this
+runbook are on `main` at merge commit `1853ad6`. Continue from Preflight.
 
-Build `dist/` from that default-branch tree. Do not upload an unmerged
-working copy to live.
+Build `dist/` from that default-branch tree (`git checkout 1853ad6` or later
+`main`). Do not upload an unmerged working copy to live.
 
 PR #5 / follow-up CI `verify` was red on a pre-existing `league/commonmark`
 Composer audit in `apps/api`, not on `apps/marketing`. That API audit is
