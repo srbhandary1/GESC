@@ -31,6 +31,15 @@
   (`jezwebLearnerChrome`, `miraLearnerChrome`, `miraGescGreenPin`,
   `androidNativeStudioThemeContract`, `MarketingLanding`, `App`).
 - ESLint on changed TS/TSX passed (`--max-warnings=0`).
+- Real-Studioz `make android-closed-beta` BUILD SUCCESSFUL (103 Gradle
+  tasks) with `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080`.
+  `aapt2 dump badging`: `com.globalenglish.app` 1.0 (1), targetSdk 36,
+  `RECORD_AUDIO`. APK contains `variant-c-jezweb` and
+  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080`.
+- `make soft-launch-refresh-web` staged the APK; public
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c`
+  returns 200 / 55,616,920 bytes. Homepage marketing chunk href is
+  `?v=jezweb-c`.
 - MagicPath was over quota and Superdesign CLI was unauthenticated, so the
   named `03-variant-c-jezweb-ux` canvas file was not imported pixel-for-pixel.
   The implemented chrome follows jezweb design-review (professional light

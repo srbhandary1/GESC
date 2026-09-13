@@ -10,9 +10,12 @@
 - Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c`.
   Staff LAN download:
   `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c`.
-- Closed-beta APK must be rebuilt with
-  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080` so the WebView stays
-  on `https://localhost` (mic) while API calls use the LAN origin.
+- Closed-beta APK rebuilt on Real-Studioz with
+  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080`. Package
+  `com.globalenglish.app` 1.0 (1), targetSdk 36, 55,616,920 bytes,
+  SHA-256 `bd8422d9499ac10bad1807a97ec657137b29383644a34844e319026ae2e519d3`.
+  Artifact: `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c-20260913T191151Z.apk`.
+  Live `HEAD` of the download URL returned `content-length: 55616920`.
 - Routes, APIs, room types, auth, LessonPractice, audio curriculum,
   ConversationOrchestrator and TTS adapters are unchanged.
 - This does not authorize Play, production, or marketing cutover.
