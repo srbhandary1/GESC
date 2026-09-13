@@ -2906,6 +2906,63 @@ APO path: authorize pre-F0 evidence-closure APP, or defer F0.
 APP-0034 authorized. Local debug APK assemble recorded; F0 Exact-commit DoD
 accept and Play public release remain unauthorized.
 
+## Public marketing homepage (`apps/marketing`)
+
+### Scope reviewed
+
+- Superdesign draft `2f31af01-afcd-4ede-8746-8756d1a720f8` implemented as a
+  clean static Vite site;
+- isolation from the learner app;
+- live-site typo and `maximum-scale` issues not reproduced;
+- deploy/DNS still required on the existing Plesk host.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Marketing isolated from `apps/web` | Pass | `apps/marketing` only |
+| Superdesign structure and brand tokens | Pass | Homepage sections and CSS variables |
+| Preview runtime stripped | Pass | No petite-vue / Superdesign bridge |
+| Local preview documented | Pass | `apps/marketing/README.md`, `make marketing` |
+| Live domain already pointed | Fail / not claimed | Plesk PHP site still serves the domain |
+
+### Security, privacy and tenancy
+
+- No learner data, credentials, or institute marketing inside the learner app.
+- No tracking pixels copied from the live PHP site.
+- `/login` is the existing institute path, not Sanctum/Passport.
+
+### Known limitations
+
+- Paid checkout and the product demo are not wired.
+- DNS/hosting cutover is an operations step outside this repository.
+
+## Phase 1 marketing cutover prep
+
+### Scope reviewed
+
+- Operator runbook `apps/marketing/CUTOVER.md`;
+- PR #5 merge requested by the operator on 13 September 2026 (Step 0);
+- marketing-only copy alignment to 17 institute levels;
+- `make marketing-dist` packs `apps/marketing/dist.tar.gz` from `dist/`;
+- hard guards exclude `apps/web`, Capacitor, audio, and PR #6.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Learner / audio files unchanged | Pass | This follow-up touches marketing package, Makefile marketing targets, and marketing docs only |
+| Viewport | Pass | Single `width=device-width, initial-scale=1` meta; no `maximum-scale` |
+| Primary CTA / login | Pass | **Try free demo**; **Log in** → `/login` |
+| Level copy | Pass | Hero/benefits/pricing say 17; 12 theme cards documented as overview |
+| Live cutover executed | Not claimed | Operator runbook only |
+
+### Known limitations
+
+- Live Plesk upload still requires an operator; build `dist/` from default-branch `apps/marketing`.
+- 12 named theme cards are not a 17-row syllabus.
+- Learner audio baseline after cutover is an operator check, not a code change.
+
 
 
 

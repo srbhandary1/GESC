@@ -12,7 +12,7 @@
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "concurrently --kill-others --names api,web,worker --prefix-colors blue,magenta,yellow \"php apps/api/artisan serve --host=127.0.0.1 --port=8000\" \"pnpm --filter @global-english/web dev\" \"php apps/api/artisan queue:work --tries=1 --timeout=60\"",
     "e2e": "pnpm --filter @global-english/web e2e",
-    "lint": "eslint apps/web packages/design-system packages/localization scripts/validate-locales.mjs --max-warnings=0",
+    "lint": "eslint apps/web apps/marketing packages/design-system packages/localization scripts/validate-locales.mjs --max-warnings=0",
     "locale:check": "node scripts/validate-locales.mjs",
     "openapi:check": "REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint global-english@v1 --lint-config=error && node scripts/validate-openapi-policy.mjs && node scripts/generate-contracts.mjs --check",
     "test": "pnpm -r --if-present test",
