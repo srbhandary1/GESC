@@ -35,6 +35,7 @@ final class Enrollment extends Model implements OrganizationOwned
         'curriculum_publication_id',
         'curriculum_share_grant_id',
         'status',
+        'version',
         'enrolled_at',
         'activated_at',
         'ended_at',
@@ -73,6 +74,7 @@ final class Enrollment extends Model implements OrganizationOwned
             'enrolled_at' => 'immutable_datetime',
             'activated_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
+            'version' => 'integer',
         ];
     }
 }

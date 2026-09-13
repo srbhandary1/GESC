@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { playwrightOutputDir } from './playwrightOutput'
 
 // Runs the same disclosed synthetic demo journey against the built
 // `dist-demo` distribution artifact served by `vite preview`, proving the
@@ -6,8 +7,7 @@ import { defineConfig, devices } from '@playwright/test'
 // without a development server or any API.
 export default defineConfig({
   testDir: './e2e-demo',
-  // Avoid default ./test-results when that directory is root-owned (EACCES).
-  outputDir: './.playwright-output',
+  outputDir: playwrightOutputDir('demo-dist'),
   fullyParallel: false,
   forbidOnly: true,
   retries: 0,

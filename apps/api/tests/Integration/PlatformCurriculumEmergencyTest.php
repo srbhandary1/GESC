@@ -815,22 +815,15 @@ final class PlatformCurriculumEmergencyTest extends TenancyIntegrationTestCase
         User $user,
         CarbonInterface $mfaVerifiedAt,
     ): AuthenticationSession {
-        return AuthenticationSession::query()->forceCreate([
-            'user_id' => $user->getKey(),
-            'storage_session_digest' => hash(
-                'sha256',
-                (string) Str::uuid(),
-            ),
-            'storage_session_ciphertext' => 'synthetic-test-session',
-            'is_privileged' => true,
-            'started_at' => now()->subHour(),
-            'last_seen_at' => now(),
-            'idle_expires_at' => now()->addMinutes(30),
-            'absolute_expires_at' => now()->addHours(6),
-            'mfa_verified_at' => $mfaVerifiedAt,
-            'revoked_at' => null,
-            'revocation_reason' => null,
-        ]);
+        return $this->createTestPrivilegedAuthenticationSession(
+            $user,
+            $mfaVerifiedAt,
+            [
+                'started_at' => now()->subHour(),
+                'idle_expires_at' => now()->addMinutes(30),
+                'absolute_expires_at' => now()->addHours(6),
+            ],
+        );
     }
 
     /**

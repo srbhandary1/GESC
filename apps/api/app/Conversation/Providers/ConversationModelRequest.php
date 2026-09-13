@@ -8,6 +8,7 @@ final readonly class ConversationModelRequest
 {
     /**
      * @param  list<string>  $memoryFacts
+     * @param  array<string, mixed>  $lessonDrill
      */
     public function __construct(
         public string $interactionId,
@@ -20,5 +21,6 @@ final readonly class ConversationModelRequest
         public string $promptBodySha256,
         public string $promptBody = '',
         public array $memoryFacts = [],
+        public array $lessonDrill = [],
     ) {}
 }

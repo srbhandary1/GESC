@@ -38,6 +38,11 @@ final readonly class OperatorContentAuthorization
         throw new CurriculumOperationRejected;
     }
 
+    public function allows(User $actor, string $permission): bool
+    {
+        return $this->authorization->allows($actor, $permission);
+    }
+
     public function assertCanReadAudit(User $actor): void
     {
         if (! $this->authorization->allows(

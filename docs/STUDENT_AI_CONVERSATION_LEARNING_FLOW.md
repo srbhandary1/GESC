@@ -2,7 +2,7 @@
 
 **Status:** Product design accepted as the UX spine for APP-0021 Confidence Conversation (enterprise path). Not a substitute for the [spec](CONFIDENCE_CONVERSATION_SPEC.md) or [verification scope](CONFIDENCE_CONVERSATION_VERIFICATION_SCOPE.md).  
 **Date:** 2026-08-07  
-**Enterprise delivery plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) — Active step **A7**.  
+**Enterprise delivery plan:** [ENTERPRISE_STUDENT_PATH_PLAN.md](ENTERPRISE_STUDENT_PATH_PLAN.md) — APP-0053 invite-only soft-launch implementation; external provider/release gates remain.
 **Aligns with:** master plan §§4–7, 14 (Tutor + Friend + correction object); extends L1 guidance from Kannada-first to all Phase 1 UI locales (`kn`, `hi`, `ml`, `ta`, `te`, `en`).  
 **Hard product rules:**
 
@@ -209,21 +209,36 @@ A release is student-helpful only when all are true:
 
 | Design need | Current state |
 |---|---|
-| Two-way confidence chat | Demo Friend: OpenRouter free **or** patterns; not production-bound |
-| L1 grammar explanation | Partial (e.g. kn fields); not full 6-locale structured pipeline |
-| AI-only lesson audio | Demo Azure TTS; production STT/TTS still gated / English-locked in ADR-0008 |
-| No recorded lessons | Aligned as product intent; content still synthetic |
-| Production integration | Not authorized (Play/production; real LLM DI) |
+| Two-way confidence chat | Implemented for typed or learner-confirmed text through project-owned STT/model/TTS ports; Azure OpenAI remains evidence-, secret- and kill-switch-gated |
+| Session types | Confidence Chat, Skill Focus, Review and Role-play are implemented; the three Friend types use distinct immutable scenario snapshots |
+| L1 grammar explanation | Structured correction output and locked evaluation cover all six UI locales; five Indic catalogue drafts still require independent review and production falls back to approved English |
+| AI-only lesson audio | No human lesson recording is used; English reply/model-line playback is text-first with optional on-device speech. Ordinary Azure learner STT and multi-locale Azure speech remain gated by ADR-0007/0008/0011 |
+| Editable transcript and typing | Secure voice lifecycle supports candidate review/correction when enabled; typing is always available and is the current soft-launch path |
+| No recorded lessons | Implemented; synthetic text/scenario content remains unreviewed development content |
+| Ubuntu integration | Persistent invite-only `APP_ENV=soft-launch` service is enabled with reboot lingering, loopback HTTPS tunnel origin and static-IP HTTP listener |
+| Production integration | Public/Play production remains unauthorized; Azure evidence/credentials, independent review and stable public networking are open gates |
 
 ---
 
-## 10. Suggested delivery slices (authorization required)
+## 10. Remaining release gates
 
-1. **APP: Confidence Conversation vertical slice** — structured LLM output + L1 explanation for all UI locales + Azure TTS playbook; Gentle mode only; demo + API path behind drivers.
-2. **ADR amendment** — allow multi-locale TTS for *guidance* audio while keeping STT/`en-IN` for learning speech (or keep L1 text-first until eval passes).
-3. **Eval** — locked fixtures: false-correction rate, L1 explanation adequacy per locale, shame-language ban list.
-4. **PR-012 role-play** — only after confidence chat works for shy learners.
-5. **Production binding** — separate spend, DPA, and release reviews; not the demo OpenRouter key path.
+1. Obtain Microsoft modified-abuse-monitoring approval for the provisioned
+   South India Azure OpenAI resource, verify its management capability is
+   exactly `ContentLogging=false`, update the truthful vendor evidence, pass
+   live-enabled readiness and execute one explicitly authorized capped
+   soft-launch smoke. Endpoint, pinned regional deployment and mode-`0600`
+   model credential are installed; the live switch remains false until this
+   one provider privacy gate closes.
+2. Resolve ordinary learner-audio provider activation under ADR-0007/0008 with
+   exact legal/privacy/vendor evidence; until then keep confirmed text primary.
+3. Complete independent language review for Kannada, Hindi, Malayalam, Tamil
+   and Telugu catalogue revisions and rerun locale/evaluation gates.
+4. Configure and externally verify router/ISP NAT forwarding for the static IP,
+   or bind a stable reviewed HTTPS domain. The temporary Cloudflare hostname is
+   suitable only for the invite-only soft launch.
+5. Obtain the separate security/privacy/tenancy/accessibility/content and
+   production/public release approvals. APP-0053 does not authorize Play or
+   `APP_ENV=production` live drivers.
 
 ---
 

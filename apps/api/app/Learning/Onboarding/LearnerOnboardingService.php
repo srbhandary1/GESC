@@ -104,6 +104,17 @@ final readonly class LearnerOnboardingService
                 'selected_at' => $now,
                 'created_at' => $now,
             ]);
+            DB::table('learner_profile_current_goals')->insert([
+                'id' => $goalId,
+                'organization_id' => $context->organizationId,
+                'learner_profile_id' => $profileId,
+                'learner_membership_id' => $membershipId,
+                'goal_key' => $goalKey,
+                'version' => 1,
+                'corrected_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
             $this->commands->record(
                 actor: $learner,
                 operation: 'learner.onboarding.complete',
@@ -167,6 +178,24 @@ final readonly class LearnerOnboardingService
                         'learner_profiles.learner_membership_id',
                     );
             })
+            ->join('learner_profile_current_goals', function ($join): void {
+                $join
+                    ->on(
+                        'learner_profile_current_goals.organization_id',
+                        '=',
+                        'learner_profiles.organization_id',
+                    )
+                    ->on(
+                        'learner_profile_current_goals.learner_profile_id',
+                        '=',
+                        'learner_profiles.id',
+                    )
+                    ->on(
+                        'learner_profile_current_goals.learner_membership_id',
+                        '=',
+                        'learner_profiles.learner_membership_id',
+                    );
+            })
             ->where(
                 'learner_profiles.organization_id',
                 $organizationId,
@@ -178,7 +207,7 @@ final readonly class LearnerOnboardingService
             ->first([
                 'learner_profiles.id as profile_id',
                 'learner_goals.id as goal_id',
-                'learner_goals.goal_key',
+                'learner_profile_current_goals.goal_key',
             ]);
 
         if (! $row instanceof stdClass) {

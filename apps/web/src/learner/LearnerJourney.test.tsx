@@ -3,7 +3,7 @@ import {
   resolveMessage,
   type MessageKey,
 } from '@global-english/localization'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -79,11 +79,10 @@ describe('deterministic learner journey', () => {
       />,
     )
 
-    expect(
-      await screen.findByRole('heading', {
-        name: t('learner.onboarding.title'),
-      }),
-    ).toHaveFocus()
+    const onboardingTitle = await screen.findByRole('heading', {
+      name: t('learner.onboarding.title'),
+    })
+    await waitFor(() => expect(onboardingTitle).toHaveFocus())
 
     await user.click(
       screen.getByRole('checkbox', {
@@ -110,7 +109,7 @@ describe('deterministic learner journey', () => {
     )
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     expect(
@@ -234,7 +233,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -359,7 +358,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -431,7 +430,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -538,7 +537,7 @@ describe('deterministic learner journey', () => {
     globalThis.dispatchEvent(new Event('offline'))
     await user.click(
       screen.getByRole('button', {
-        name: t('learner.home.start_mission'),
+        name: t('learner.home.continue'),
       }),
     )
     await user.click(
@@ -599,12 +598,252 @@ describe('deterministic learner journey', () => {
     expect(api.completeOffline).toHaveBeenCalledOnce()
     expect(store.acceptReceipt).toHaveBeenCalledOnce()
   })
+
+  it('shows Level videos on home and switches the authenticated stream source', async () => {
+    const user = userEvent.setup()
+    const listLevelVideos = vi.fn(async (enrollmentId: string) => ({
+      enrollment_id: enrollmentId,
+      videos: [
+        {
+          enrollment_id: enrollmentId,
+          lesson_id: '01J00000000000000000000041',
+          level_label: 'Level 1',
+          publication_id: ids.publication,
+          title: { locale: 'en-IN' as const, text: 'Level 1 introduction' },
+          video: {
+            asset_id: '01J00000000000000000000051',
+            byte_size: 11515204,
+            mime_type: 'video/mp4' as const,
+            stream_url: '/api/v1/media-assets/01J00000000000000000000051/lesson-video',
+          },
+        },
+        {
+          enrollment_id: enrollmentId,
+          lesson_id: '01J00000000000000000000042',
+          level_label: 'Level 2',
+          publication_id: ids.publication,
+          title: { locale: 'en-IN' as const, text: 'Level 2 introduction' },
+          video: {
+            asset_id: '01J00000000000000000000052',
+            byte_size: 2048,
+            mime_type: 'video/mp4' as const,
+            stream_url: '/api/v1/media-assets/01J00000000000000000000052/lesson-video',
+          },
+        },
+      ],
+    }))
+    const api = {
+      ...fakeApi(completeHome()),
+      listLevelVideos,
+    } satisfies LearnerJourneyApi
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByTestId('lesson-video-element')).toBeVisible()
+    expect(screen.getByTestId('level-videos-panel')).toBeVisible()
+    expect(
+      screen.getByRole('heading', { name: t('learner.level_videos.title') }),
+    ).toBeVisible()
+    expect(listLevelVideos).toHaveBeenCalledWith(ids.enrollment, expect.any(AbortSignal))
+    expect(screen.getByTestId('lesson-video-element').querySelector('source'))
+      .toHaveAttribute(
+        'src',
+        '/api/v1/media-assets/01J00000000000000000000051/lesson-video',
+      )
+
+    await user.click(screen.getByRole('button', { name: 'Level 2' }))
+    expect(screen.getByTestId('lesson-video-element').querySelector('source'))
+      .toHaveAttribute(
+        'src',
+        '/api/v1/media-assets/01J00000000000000000000052/lesson-video',
+      )
+  })
+
+  it('hides Level videos when the enrollment catalog is empty', async () => {
+    const api = fakeApi(completeHome())
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('button', {
+        name: t('learner.home.continue'),
+      }),
+    ).toBeVisible()
+    await vi.waitFor(() => {
+      expect(api.listLevelVideos).toHaveBeenCalled()
+    })
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId('level-videos-panel')).not.toBeInTheDocument()
+    })
+  })
+
+  it('presents a due review before the next mission and keeps streak secondary', async () => {
+    const user = userEvent.setup()
+    const longKnTitle =
+      'ಪರಿಚಯಗಳ ಮರುಅಭ್ಯಾಸ: ದಿನಚರಿ ಸಂಭಾಷಣೆಯಲ್ಲಿ ಸ್ವಯಂ ಪರಿಚಯ, ಕೆಲಸದ ಸ್ಥಳದಲ್ಲಿ ಸಹೋದ್ಯೋಗಿಗಳೊಂದಿಗೆ ಮಾತನಾಡುವುದು ಮತ್ತು ಅತಿಥಿಗಳನ್ನು ಸ್ವಾಗತಿಸುವುದು'
+    const home = {
+      ...completeHome(),
+      due_review: {
+        due_at: '2026-08-30T03:30:00Z',
+        enrollment_id: ids.enrollment,
+        id: '01J00000000000000000000061',
+        interval_days: 3,
+        mission_id: ids.mission,
+        objective_id: ids.objective,
+        timezone: 'Asia/Kolkata',
+        title: content('kn-IN', longKnTitle),
+      },
+    } satisfies LearnerHome
+    const api = fakeApi(home)
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    const dominantTitle = await screen.findByRole('heading', {
+      level: 3,
+      name: longKnTitle,
+    })
+    const dominantAction = dominantTitle.closest('.learner-home__action')
+    expect(dominantAction).not.toBeNull()
+    expect(screen.getByText(longKnTitle)).toHaveAttribute('lang', 'kn-IN')
+    expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    ).toHaveClass('learner-home__continue')
+    expect(
+      screen.queryByText(
+        resolveMessage('learner.home.estimated_minutes', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { minutes: 5 },
+        }).text,
+      ),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        resolveMessage('learner.home.review_interval', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { days: '3' },
+        }).text,
+      ),
+    ).toBeVisible()
+    const coach = dominantAction?.querySelector('.learner-home__coach')
+    expect(coach).not.toBeNull()
+    expect(
+      within(coach as HTMLElement).getByText(t('tutor.name')),
+    ).toBeVisible()
+    expect(
+      within(coach as HTMLElement).getByText(t('tutor.ready')),
+    ).toBeVisible()
+    expect(
+      coach?.querySelector('.tutor-presence__face'),
+    ).toHaveAttribute('src', '/tutor/tutor-maya.png')
+    expect(
+      dominantAction?.querySelectorAll('.ge-button--primary'),
+    ).toHaveLength(1)
+    await user.click(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    )
+    expect(api.mission).toHaveBeenCalledWith(ids.mission, ids.enrollment)
+  })
+
+  it('lists upcoming reviews beneath the dominant action', async () => {
+    const home = {
+      ...completeHome(),
+      upcoming_reviews: [
+        {
+          due_at: '2026-09-01T03:30:00Z',
+          enrollment_id: ids.enrollment,
+          id: '01J00000000000000000000062',
+          interval_days: 7,
+          mission_id: '01J00000000000000000000063',
+          objective_id: ids.objective,
+          timezone: 'Asia/Kolkata',
+          title: content('en-IN', 'Workplace introductions review'),
+        },
+      ],
+    } satisfies LearnerHome
+    const api = fakeApi(home)
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 3,
+        name: t('learner.home.upcoming_reviews.title'),
+      }),
+    ).toBeVisible()
+    expect(screen.getByText('Workplace introductions review')).toBeVisible()
+    expect(screen.getByText(/Due /)).toBeVisible()
+  })
+
+  it('shows neutral streak copy when the learner has not spoken yet', async () => {
+    const api = fakeApi({
+      ...completeHome(),
+      streak: {
+        as_of_date: '2026-08-30',
+        count: 0,
+        timezone: 'Asia/Kolkata',
+      },
+    })
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      await screen.findByText(t('learner.home.streak_zero')),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: t('learner.home.continue') }),
+    ).toBeVisible()
+    expect(screen.getByText(t('learner.home.guidance_kn'))).toHaveAttribute(
+      'lang',
+      'kn-IN',
+    )
+    expect(screen.getByText(t('learner.home.guidance_en'))).toHaveAttribute(
+      'lang',
+      'en-IN',
+    )
+  })
 })
 
 function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
   const api: LearnerJourneyApi = {
     home: vi.fn(async () => initialHome),
     updateOnboarding: vi.fn(async () => completeHome()),
+    listLevelVideos: vi.fn(async (enrollmentId: string) => ({
+      enrollment_id: enrollmentId,
+      videos: [],
+    })),
     mission: vi.fn(async () => mission),
     startAttempt: vi.fn(async () => ({
       id: ids.attempt,
@@ -616,6 +855,9 @@ function fakeApi(initialHome: LearnerHome): LearnerJourneyApi {
     ),
     progress: vi.fn(async () =>
       initialHome.onboarding.completed ? noSpeechProgress : progress,
+    ),
+    progressDashboard: vi.fn(async () =>
+      Promise.reject(new Error('no progressDashboard stubbed')),
     ),
   }
 
@@ -640,6 +882,8 @@ function fakeRecorder(): AudioRecorder {
 
 function incompleteHome(): LearnerHome {
   return {
+    due_review: null,
+    upcoming_reviews: [],
     enrollment: null,
     next_mission: null,
     onboarding: {
@@ -647,11 +891,18 @@ function incompleteHome(): LearnerHome {
       completed: false,
       goal_key: null,
     },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 0,
+      timezone: 'Asia/Kolkata',
+    },
   }
 }
 
 function completeHome(): LearnerHome {
   return {
+    due_review: null,
+    upcoming_reviews: [],
     enrollment: { id: ids.enrollment, status: 'active' },
     next_mission: {
       estimated_minutes: 5,
@@ -662,6 +913,11 @@ function completeHome(): LearnerHome {
       adult_confirmed: true,
       completed: true,
       goal_key: 'workplace-confidence',
+    },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 2,
+      timezone: 'Asia/Kolkata',
     },
   }
 }

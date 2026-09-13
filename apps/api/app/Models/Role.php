@@ -6,11 +6,17 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use App\Tenancy\OrganizationOwned;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property string $status
+ * @property int $version
+ * @property CarbonImmutable|null $retired_at
+ */
 final class Role extends Model implements OrganizationOwned
 {
     use BelongsToOrganization, HasUlids;
@@ -23,6 +29,10 @@ final class Role extends Model implements OrganizationOwned
 
     public const string DIRECT_CONTENT_REVIEWER_KEY = 'content_reviewer';
 
+    public const string STATUS_ACTIVE = 'active';
+
+    public const string STATUS_RETIRED = 'retired';
+
     /**
      * @var list<string>
      */
@@ -31,6 +41,9 @@ final class Role extends Model implements OrganizationOwned
         'organization_id',
         'key',
         'is_system',
+        'status',
+        'version',
+        'retired_at',
     ];
 
     /**
@@ -68,6 +81,8 @@ final class Role extends Model implements OrganizationOwned
     {
         return [
             'is_system' => 'boolean',
+            'version' => 'integer',
+            'retired_at' => 'immutable_datetime',
         ];
     }
 }

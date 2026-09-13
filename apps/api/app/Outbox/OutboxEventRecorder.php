@@ -17,6 +17,7 @@ final readonly class OutboxEventRecorder
     private const array SAFE_PAYLOAD_KEYS = [
         'authority_appointment_event_id',
         'authority_appointment_id',
+        'account_recovery_management_event_id',
         'cohort_id',
         'content_review_id',
         'curriculum_clone_id',
@@ -32,7 +33,15 @@ final readonly class OutboxEventRecorder
         'learner_profile_id',
         'localized_variant_id',
         'media_asset_id',
+        'media_asset_metadata_revision_id',
+        'media_asset_metadata_review_id',
+        'media_asset_metadata_variant_id',
+        'media_transcription_campaign_asset_id',
+        'media_transcription_campaign_id',
+        'media_transcription_reconciliation_id',
         'media_rights_revision_id',
+        'media_security_scan_id',
+        'media_upload_id',
         'mastery_state_id',
         'membership_id',
         'organization_id',
@@ -42,6 +51,7 @@ final readonly class OutboxEventRecorder
         'publication_id',
         'recipient_organization_id',
         'review_schedule_id',
+        'role_id',
         'source_publication_id',
         'source_revision_id',
         'user_id',
@@ -77,6 +87,33 @@ final readonly class OutboxEventRecorder
             'aggregate_id' => $aggregateId,
             'payload' => $payload,
             'correlation_id' => $correlationId ?? $context->correlationId,
+            'occurred_at' => $occurredAt,
+            'available_at' => $occurredAt,
+        ]);
+    }
+
+    /** @param array<string, string> $payload */
+    public function recordPlatform(
+        string $eventType,
+        string $aggregateType,
+        string $aggregateId,
+        array $payload,
+        ?string $correlationId = null,
+    ): OutboxEvent {
+        $this->assertSafeDescriptor($eventType);
+        $this->assertSafeDescriptor($aggregateType);
+        $this->assertUlid($aggregateId);
+        $this->assertSafePayload($payload);
+        $occurredAt = now();
+
+        return OutboxEvent::query()->create([
+            'scope_kind' => 'platform',
+            'organization_id' => null,
+            'event_type' => $eventType,
+            'aggregate_type' => $aggregateType,
+            'aggregate_id' => $aggregateId,
+            'payload' => $payload,
+            'correlation_id' => $correlationId,
             'occurred_at' => $occurredAt,
             'available_at' => $occurredAt,
         ]);

@@ -1,0 +1,27 @@
+{
+  "schema": "lpl01.app0062.lesson_audio_ingest_result.v1",
+  "approval_reference": "APP-0062",
+  "observed_at": "2026-08-14T09:58:04.254420+00:00",
+  "privacy_boundary": "no_media_bytes_no_credentials",
+  "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+  "authority_appointment_id": "01KZNK3BWRCRWG1EYK7T1ZAYYE",
+  "inventory_path": "docs/evidence/lpl-01/levels-1-17-teaching-audio-hash-inventory.json",
+  "result": {
+    "skipped_existing": 4,
+    "accepted": 63,
+    "rights_confirmed": 63,
+    "failures": []
+  },
+  "drivers": {
+    "inspector": "ffprobe",
+    "scanner": "clamav"
+  },
+  "db_verification": {
+    "lesson_audio_count": 67,
+    "inventory_hash_match": true,
+    "approved_program_rights_assets": 67,
+    "app0062_rights_rows": 63,
+    "mime_type": "audio/mpeg",
+    "bytes_sum": 300247014
+  }
+}

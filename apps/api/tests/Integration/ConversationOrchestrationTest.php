@@ -6,6 +6,10 @@ namespace Tests\Integration;
 
 use App\Conversation\ConversationSessionService;
 use App\Conversation\ConversationTurnService;
+use App\Conversation\LessonDrillContext;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\EntitlementAccess;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -60,9 +64,119 @@ final class ConversationOrchestrationTest extends TenancyIntegrationTestCase
             1,
             DB::table('prompt_versions')->where('coaching_mode', 'tutor')->count(),
         );
+        $this->assertStringContainsString(
+            'You are Swathi',
+            (string) DB::table('prompt_versions')
+                ->where('prompt_key', 'friend.turn.v1')
+                ->where('coaching_mode', 'tutor')
+                ->where('status', 'active')
+                ->value('body'),
+        );
+        $this->assertStringContainsString(
+            'one-pattern drill',
+            (string) DB::table('prompt_versions')
+                ->where('prompt_key', 'friend.turn.v1')
+                ->where('coaching_mode', 'tutor')
+                ->where('status', 'active')
+                ->value('body'),
+        );
         $this->assertSame(1, DB::table('correction_suggestions')->count());
         $this->assertSame(1, DB::table('learner_error_patterns')->count());
         $this->assertSame($learningBefore, $this->learningCounts());
+    }
+
+    public function test_lesson_drill_keeps_tutor_on_can_patterns(): void
+    {
+        [$learner, , $context] = $this->learner();
+        $sessions = $this->app->make(ConversationSessionService::class);
+        $turns = $this->app->make(ConversationTurnService::class);
+        $drill = new LessonDrillContext(
+            levelNumber: 1,
+            partId: 'introduction',
+            conceptKey: 'can',
+            communicationFunction: 'ability_and_permission',
+            talkScenario: 'Ask for permission.',
+            targetPatterns: [
+                'I can + base verb.',
+                'I cannot + base verb.',
+                'Can I + base verb?',
+                'Yes, you can. / No, you cannot.',
+            ],
+            elicitationGoals: ['Ask one Can I…? question.'],
+        );
+
+        $session = $this->contexts()->run(
+            $context,
+            fn (): array => $sessions->start(
+                learner: $learner,
+                personaKey: 'patient-friend-prototype',
+                scenarioKey: 'past-tense-skill-focus-prototype',
+                coachingMode: 'tutor',
+                uiLocale: 'kn-IN',
+                idempotencyKey: (string) Str::uuid(),
+                lessonDrill: $drill,
+            ),
+        );
+        $offTopic = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'Tell me about your weekend.',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('completed', $offTopic['status']);
+        $this->assertSame(
+            'lesson_drill_pattern_retry',
+            $offTopic['understood_intent'],
+        );
+        $this->assertStringContainsString(
+            'I can drink water',
+            (string) $offTopic['assistant_reply'],
+        );
+        $this->assertTrue($offTopic['priority_correction']['retry_recommended']);
+        $this->assertSame(
+            0,
+            (int) DB::table('conversation_lesson_drills')
+                ->where('conversation_session_id', $session['id'])
+                ->value('accepted_pattern_count'),
+        );
+
+        $accepted = $this->contexts()->run(
+            $context,
+            fn (): array => $turns->create(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                prototypeUtterance: 'I can drink water.',
+                idempotencyKey: (string) Str::uuid(),
+            ),
+        );
+
+        $this->assertSame('completed', $accepted['status']);
+        $this->assertSame(
+            'lesson_drill_pattern_accepted',
+            $accepted['understood_intent'],
+        );
+        $this->assertStringContainsString('I cannot drink water', $accepted['assistant_reply']);
+        $this->assertStringContainsString('Your turn', $accepted['assistant_reply']);
+        $this->assertStringNotContainsString(
+            'Do not start a free conversation',
+            $accepted['assistant_reply'],
+        );
+        $this->assertSame(
+            1,
+            (int) DB::table('conversation_lesson_drills')
+                ->where('conversation_session_id', $session['id'])
+                ->value('accepted_pattern_count'),
+        );
+        $this->assertSame(
+            'can',
+            DB::table('conversation_lesson_drills')
+                ->where('conversation_session_id', $session['id'])
+                ->value('concept_key'),
+        );
     }
 
     public function test_unsafe_model_output_uses_curated_fallback(): void
@@ -145,6 +259,22 @@ final class ConversationOrchestrationTest extends TenancyIntegrationTestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+
+        if ($organization->system_key === Organization::DIRECT_SYSTEM_KEY) {
+            $this->contexts()->run($context, function () use ($user, $organization): void {
+                $this->app->make(EntitlementAccess::class)->snapshot($user);
+                $planId = DB::table('entitlement_plans')
+                    ->where('organization_id', $organization->getKey())
+                    ->where('code', DirectPlanDefaults::MONTHLY_MODULES)
+                    ->value('id');
+                $this->assertIsString($planId);
+                $this->app->make(LearnerSubscriptionService::class)->checkout(
+                    $user,
+                    $planId,
+                    (string) Str::ulid(),
+                );
+            });
+        }
 
         return [$user, $membership, $context];
     }

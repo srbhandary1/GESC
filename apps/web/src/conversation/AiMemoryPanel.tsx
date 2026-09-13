@@ -31,29 +31,39 @@ export function AiMemoryPanel({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(() => api.listAiMemory !== undefined)
   const [error, setError] = useState(false)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
-  const refresh = () => {
+  useEffect(() => {
     if (api.listAiMemory === undefined) {
       return
     }
 
-    setBusy(true)
-    setError(false)
+    let active = true
     void api
       .listAiMemory()
-      .then((listing) => setFacts(listing.facts))
-      .catch(() => setError(true))
-      .finally(() => setBusy(false))
-  }
+      .then((listing) => {
+        if (active) {
+          setFacts(listing.facts)
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(true)
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setBusy(false)
+        }
+      })
 
-  useEffect(() => {
-    refresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once when panel mounts
-  }, [])
+    return () => {
+      active = false
+    }
+  }, [api])
 
   if (
     api.listAiMemory === undefined ||

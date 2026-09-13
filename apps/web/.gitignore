@@ -10,7 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.playwright-output*
 *.local
+public/downloads/*.apk
+public/tutor/avatars/*.glb
+public/tutor/LICENSE-tutor-avatars.txt
 
 # Editor directories and files
 .vscode/*

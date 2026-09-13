@@ -56,6 +56,18 @@ final readonly class PlatformOperationAuthorizer
         'user_not_active',
         'user_revoked',
         'user_revoked_all',
+        'mfa_factor_replaced',
+        'mfa_factor_revoked',
+        'mfa_recovery_regenerated',
+        'password_established',
+        'password_changed',
+        'username_changed',
+        'password_recovered',
+        'account_setup_requested',
+        'account_setup_completed',
+        'recovery_contact_replaced',
+        'password_cutover',
+        'privacy_erasure',
     ];
 
     /**
@@ -75,6 +87,78 @@ final readonly class PlatformOperationAuthorizer
         'installation_mismatch',
         'mobile_logout',
         'refresh_token_reuse',
+        'mfa_factor_replaced',
+        'mfa_factor_revoked',
+        'mfa_recovery_regenerated',
+        'password_established',
+        'password_changed',
+        'username_changed',
+        'password_recovered',
+        'account_setup_requested',
+        'account_setup_completed',
+        'recovery_contact_replaced',
+        'password_cutover',
+        'privacy_erasure',
+    ];
+
+    /** @var array<string, list<string>> */
+    private const array ACCOUNT_RECOVERY_MANAGEMENT_AUDIT = [
+        'authentication.account_recovery.setup_requested' => [
+            'account_recovery.migration_setup',
+        ],
+        'authentication.account_recovery.contact_replaced' => [
+            'account_recovery.verified_contact_replacement',
+        ],
+    ];
+
+    /**
+     * @var array<string, array{subject: string, reasons: list<string>}>
+     */
+    private const array PRIVILEGED_MFA_AUDIT = [
+        'authentication.mfa.enrollment.started' => [
+            'subject' => 'privileged_mfa_factor',
+            'reasons' => ['enrollment_started'],
+        ],
+        'authentication.mfa.enrollment.confirmed' => [
+            'subject' => 'privileged_mfa_factor',
+            'reasons' => ['enrollment_confirmed'],
+        ],
+        'authentication.mfa.challenge.issued' => [
+            'subject' => 'privileged_mfa_challenge',
+            'reasons' => ['assertion_challenge_issued'],
+        ],
+        'authentication.mfa.verification.succeeded' => [
+            'subject' => 'privileged_mfa_challenge',
+            'reasons' => [
+                'enrollment_totp_verified',
+                'totp_verified',
+                'recovery_verified',
+            ],
+        ],
+        'authentication.mfa.verification.failed' => [
+            'subject' => 'privileged_mfa_challenge',
+            'reasons' => [
+                'invalid_assertion',
+                'challenge_expired',
+                'attempt_limit_reached',
+            ],
+        ],
+        'authentication.mfa.recovery.used' => [
+            'subject' => 'privileged_mfa_recovery_code',
+            'reasons' => ['recovery_code_used'],
+        ],
+        'authentication.mfa.recovery.regenerated' => [
+            'subject' => 'privileged_mfa_factor',
+            'reasons' => ['recovery_codes_regenerated'],
+        ],
+        'authentication.mfa.factor.replaced' => [
+            'subject' => 'privileged_mfa_factor',
+            'reasons' => ['factor_replaced'],
+        ],
+        'authentication.mfa.factor.revoked' => [
+            'subject' => 'privileged_mfa_factor',
+            'reasons' => ['factor_revoked'],
+        ],
     ];
 
     public function __construct(
@@ -172,6 +256,66 @@ final readonly class PlatformOperationAuthorizer
         );
     }
 
+    public function authorizePrivilegedMfaAudit(
+        string $action,
+        string $reasonKey,
+        string $subjectType,
+        string $subjectId,
+        string $actorUserId,
+        ?string $correlationId = null,
+    ): PlatformOperationAuthorization {
+        $definition = self::PRIVILEGED_MFA_AUDIT[$action] ?? null;
+
+        if (
+            $definition === null
+            || $subjectType !== $definition['subject']
+            || ! in_array($reasonKey, $definition['reasons'], true)
+        ) {
+            throw new UnauthorizedPlatformOperation;
+        }
+
+        return $this->issue(
+            capability: PlatformCapability::PrivilegedMfaLifecycle,
+            reasonKey: $reasonKey,
+            targetOrganizationId: null,
+            actorUserId: $actorUserId,
+            action: $action,
+            subjectType: $subjectType,
+            subjectId: $subjectId,
+            correlationId: $correlationId,
+        );
+    }
+
+    public function authorizeAccountRecoveryManagementAudit(
+        string $action,
+        string $reasonKey,
+        string $managementEventId,
+        string $actorUserId,
+        ?string $correlationId = null,
+    ): PlatformOperationAuthorization {
+        if (
+            ! isset(self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$action])
+            || ! in_array(
+                $reasonKey,
+                self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$action],
+                true,
+            )
+        ) {
+            throw new UnauthorizedPlatformOperation;
+        }
+
+        return $this->issue(
+            capability: PlatformCapability::AccountRecoveryManagement,
+            reasonKey: $reasonKey,
+            targetOrganizationId: null,
+            actorUserId: $actorUserId,
+            action: $action,
+            subjectType: 'account_recovery_management_event',
+            subjectId: $managementEventId,
+            correlationId: $correlationId,
+        );
+    }
+
     public function authorizeContentEmergencySuspension(
         Organization $targetOrganization,
         string $programId,
@@ -251,6 +395,19 @@ final readonly class PlatformOperationAuthorizer
                     true,
                 )
                 && $authorization->targetOrganizationId === null,
+            PlatformCapability::PrivilegedMfaLifecycle => $this
+                ->privilegedMfaAuthorizationIsAllowed($authorization),
+            PlatformCapability::AccountRecoveryManagement => isset(
+                self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$authorization->action],
+            )
+                && in_array(
+                    $authorization->reasonKey,
+                    self::ACCOUNT_RECOVERY_MANAGEMENT_AUDIT[$authorization->action],
+                    true,
+                )
+                && $authorization->subjectType === 'account_recovery_management_event'
+                && $authorization->targetOrganizationId === null
+                && $authorization->actorUserId !== null,
             PlatformCapability::ContentEmergencySuspend => $authorization
                 ->subjectType === 'program'
                 && $authorization->targetOrganizationId !== null
@@ -334,7 +491,9 @@ final readonly class PlatformOperationAuthorizer
             PlatformCapability::ContentEmergencySuspend => $this
                 ->contentEmergencyContextIsCurrent($authorization),
             PlatformCapability::AuthenticationSessionLifecycle,
-            PlatformCapability::MobileCredentialLifecycle => false,
+            PlatformCapability::MobileCredentialLifecycle,
+            PlatformCapability::PrivilegedMfaLifecycle => false,
+            PlatformCapability::AccountRecoveryManagement => false,
         };
 
         if (! $allowed) {
@@ -631,26 +790,61 @@ final readonly class PlatformOperationAuthorizer
 
         $now = Date::now();
         $query = DB::table('authentication_sessions')
-            ->where('id', $authenticationSessionId)
-            ->where('user_id', $actorUserId)
-            ->where('is_privileged', true)
-            ->whereNull('revoked_at')
-            ->where('idle_expires_at', '>', $now)
-            ->where('absolute_expires_at', '>', $now)
-            ->where(
-                'mfa_verified_at',
-                '>',
-                $now->copy()->subMinutes((int) config(
-                    'authentication.privileged.mfa_fresh_minutes',
-                    15,
-                )),
-            );
+            ->join('users', 'users.id', '=', 'authentication_sessions.user_id')
+            ->where('authentication_sessions.id', $authenticationSessionId)
+            ->where('authentication_sessions.user_id', $actorUserId)
+            ->where('authentication_sessions.is_privileged', true)
+            ->whereNull('authentication_sessions.revoked_at')
+            ->where('authentication_sessions.idle_expires_at', '>', $now)
+            ->where('authentication_sessions.absolute_expires_at', '>', $now)
+            ->where(function ($freshness) use ($now): void {
+                $freshness->where(function ($password) use ($now): void {
+                    $password->where(
+                        'authentication_sessions.password_confirmed_at',
+                        '>',
+                        $now->copy()->subMinutes((int) config(
+                            'authentication.password.confirmation_minutes',
+                            5,
+                        )),
+                    )->whereColumn(
+                        'authentication_sessions.password_confirmed_credential_version',
+                        'users.credential_version',
+                    );
+                })->orWhere(function ($mfa) use ($now): void {
+                    $mfa->where(
+                        'authentication_sessions.mfa_verified_at',
+                        '>',
+                        $now->copy()->subMinutes((int) config(
+                            'authentication.privileged.mfa_fresh_minutes',
+                            15,
+                        )),
+                    )->where('authentication_sessions.mfa_verified_method', 'totp')
+                        ->where('authentication_sessions.mfa_verified_scope', 'privileged_actions')
+                        ->whereNotNull('authentication_sessions.mfa_factor_id');
+                });
+            });
 
         if ($lockForUpdate) {
             $query->lockForUpdate();
         }
 
-        return $query->first(['id']) instanceof \stdClass;
+        return $query->first(['authentication_sessions.id']) instanceof \stdClass;
+    }
+
+    private function privilegedMfaAuthorizationIsAllowed(
+        PlatformOperationAuthorization $authorization,
+    ): bool {
+        $definition = self::PRIVILEGED_MFA_AUDIT[$authorization->action] ?? null;
+
+        return $definition !== null
+            && $authorization->subjectType === $definition['subject']
+            && in_array(
+                $authorization->reasonKey,
+                $definition['reasons'],
+                true,
+            )
+            && $authorization->targetOrganizationId === null
+            && $authorization->actorUserId !== null;
     }
 
     private function assertDescriptor(string $value): void

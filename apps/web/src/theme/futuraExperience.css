@@ -1,0 +1,569 @@
+.ge-application-frame__header {
+  border-block-end: 1px solid var(--ge-shell-header-border);
+  background: var(--ge-shell-header-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.ge-application-frame__brand-text {
+  background: var(--ge-brand-text-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ge-primary-navigation {
+  border-block-end: 1px solid var(--ge-nav-border);
+  background: var(--ge-nav-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ge-primary-navigation__link {
+  border: 1px solid transparent;
+  color: var(--ge-color-text-muted);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.ge-primary-navigation__link:hover {
+  color: var(--ge-color-ink);
+  border-color: var(--ge-nav-link-hover-border);
+  background: var(--ge-nav-link-hover-bg);
+}
+
+.ge-primary-navigation__link[aria-current='page'] {
+  color: var(--ge-nav-current-text);
+  border-color: var(--ge-nav-current-border);
+  background: var(--ge-nav-current-bg);
+  box-shadow: var(--ge-nav-current-shadow);
+}
+
+.ge-application-frame--tutor::before {
+  background: radial-gradient(circle, var(--ge-ambient-orb-violet), transparent 68%);
+}
+
+.ge-application-frame--tutor::after {
+  background: radial-gradient(circle, var(--ge-ambient-orb-cyan), transparent 70%);
+}
+
+.ge-application-frame--tutor .ge-application-frame__header,
+.ge-application-frame--tutor .ge-primary-navigation {
+  background: var(--ge-nav-bg);
+}
+
+.ge-application-frame--tutor .ge-primary-navigation__link[aria-current='page'] {
+  background: var(--ge-nav-current-bg);
+  box-shadow: var(--ge-nav-current-shadow);
+}
+
+.shell-header-authentication {
+  background: var(--ge-button-primary-bg);
+  color: var(--ge-button-primary-text);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.shell-header-authentication--quiet {
+  border-color: var(--ge-button-quiet-border);
+  background: var(--ge-button-quiet-bg);
+  color: var(--ge-button-quiet-text);
+}
+
+.shell-live-ai-chip {
+  border-color: var(--ge-chip-border);
+  background: var(--ge-chip-bg);
+  color: var(--ge-chip-text);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.shell-android-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-block-size: 2.625rem;
+  padding-inline: var(--ge-space-3);
+  border: 1px solid var(--ge-button-quiet-border);
+  border-radius: 999px;
+  background: var(--ge-button-quiet-bg);
+  color: var(--ge-color-ink);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.shell-android-download:hover,
+.shell-android-download:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--ge-input-focus-border);
+  background: var(--ge-level-action-bg);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.shell-android-download__icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.shell-locale-control__select {
+  border-color: var(--ge-input-border);
+  background: var(--ge-input-bg);
+  color: var(--ge-input-text);
+}
+
+.shell-content,
+.subscription-panel,
+.level-session__nav,
+.marketing-path__item,
+.marketing-pedagogy__item,
+.marketing-why__item,
+.marketing-benefit,
+.marketing-showcase__item,
+.conversation-journey__bubble--teacher,
+.web-password-sign-in__card,
+.shell-session--account {
+  border-color: var(--ge-panel-border);
+  background: var(--ge-panel-background);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.subscription-panel,
+.marketing-path__item {
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.ge-application-frame--tutor .level-path__list {
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 16.5rem), 1fr)
+  );
+}
+
+.ge-application-frame--tutor .level-path__item {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: start;
+  gap: var(--ge-space-3);
+  min-block-size: 9.5rem;
+  padding: var(--ge-space-4);
+  border: 1px solid var(--ge-level-card-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-level-card-bg);
+  color: var(--ge-color-ink);
+  text-align: start;
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.ge-application-frame--tutor .level-path__item-copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.ge-application-frame--tutor .level-path__item-copy strong {
+  font-size: 1.05rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ge-application-frame--tutor .level-path__item-copy span {
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.ge-application-frame--tutor .level-path__item-action {
+  justify-self: stretch;
+  width: 100%;
+  padding-block: var(--ge-space-2);
+  border: 1px solid var(--ge-level-action-border);
+  border-radius: 999px;
+  background: var(--ge-level-action-bg);
+  color: var(--ge-level-action-text);
+  font-size: var(--ge-font-size-sm);
+  font-weight: 750;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ge-application-frame--tutor .level-path__pending {
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+}
+
+.ge-application-frame--tutor .level-path__pending-item {
+  display: grid;
+  place-items: center;
+  min-block-size: 2.75rem;
+  padding: var(--ge-space-2) var(--ge-space-3);
+  border: 1px dashed var(--ge-pending-item-border);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ge-pending-item-bg);
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.35;
+  text-align: center;
+}
+
+.ge-application-frame--tutor .level-path__intro,
+.ge-application-frame--tutor .level-path__ready,
+.ge-application-frame--tutor .level-path__later,
+.ge-application-frame--tutor .level-session__panel {
+  background: var(--ge-panel-background);
+  border-color: var(--ge-panel-border);
+  color: var(--ge-color-text);
+}
+
+.ge-application-frame--tutor .level-path__intro h2,
+.ge-application-frame--tutor .level-path__ready h3 {
+  color: var(--ge-color-ink);
+}
+
+.ge-application-frame--tutor .level-path__intro p {
+  color: var(--ge-color-text-muted);
+}
+
+.ge-application-frame--tutor .level-path__hero,
+.ge-application-frame--tutor .level-session__hero {
+  background: var(--ge-futura-hero-bg);
+  border-color: var(--ge-futura-hero-border);
+  color: var(--ge-futura-hero-text);
+}
+
+.ge-application-frame--tutor .level-session__nav {
+  padding: 0.35rem;
+  border-radius: 1rem;
+  background: var(--ge-session-nav-bg);
+}
+
+.ge-application-frame--tutor .level-session__tab {
+  border: 1px solid transparent;
+  border-radius: 0.85rem;
+  background: transparent;
+  color: var(--ge-color-text-muted);
+  line-height: 1.25;
+  text-align: center;
+}
+
+.ge-application-frame--tutor .level-session__tab--active {
+  border-color: var(--ge-session-tab-active-border);
+  background: var(--ge-session-tab-active-bg);
+  color: var(--ge-session-tab-active-text);
+  box-shadow: none;
+}
+
+@media (max-width: 40rem) {
+  .ge-application-frame--tutor .level-path__item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ge-application-frame--tutor .level-path__item-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.level-path__item-index,
+.level-session__tab--active,
+.ge-application-frame--tutor .ge-primary-navigation__link[aria-current='page'] {
+  background: var(--ge-level-index-bg);
+  color: var(--ge-level-index-text);
+}
+
+.ge-application-frame--tutor .ge-button--primary,
+.ge-application-frame--tutor .level-session__primary,
+.marketing-button--primary {
+  background: var(--ge-marketing-cta-primary-bg);
+  box-shadow: var(--ge-marketing-cta-primary-shadow);
+}
+
+.marketing-button--android {
+  border: 1px solid var(--ge-marketing-cta-android-border);
+  background: var(--ge-marketing-cta-android-bg);
+  color: var(--ge-marketing-cta-android-text);
+  box-shadow: var(--ge-marketing-cta-android-shadow);
+}
+
+.marketing-button--android:hover {
+  transform: translateY(-1px);
+  background: var(--ge-marketing-cta-android-hover-bg);
+}
+
+.marketing-hero {
+  border: 1px solid var(--ge-color-border);
+  background: var(--ge-color-surface-elevated);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.marketing-hero__badge {
+  border-color: var(--ge-hero-badge-border);
+  background: var(--ge-hero-badge-bg);
+  color: var(--ge-hero-badge-text);
+}
+
+.marketing-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ge-space-3);
+}
+
+@media (min-width: 48rem) {
+  .marketing-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.marketing-stats__item {
+  display: grid;
+  gap: 0.35rem;
+  padding: var(--ge-space-4);
+  border: 1px solid var(--ge-marketing-stat-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-marketing-stat-bg);
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: blur(14px);
+}
+
+.marketing-stats__value {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.1;
+  background: var(--ge-marketing-stat-value-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.marketing-stats__label {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.4;
+}
+
+.marketing-android {
+  display: grid;
+  gap: var(--ge-space-4);
+  padding: clamp(var(--ge-space-4), 4vw, var(--ge-space-6));
+  border: 1px solid var(--ge-marketing-android-border);
+  border-radius: calc(var(--ge-radius-lg) + 0.15rem);
+  background: var(--ge-marketing-android-bg);
+  box-shadow: var(--ge-shadow-soft);
+}
+
+.marketing-android__copy {
+  display: grid;
+  gap: var(--ge-space-2);
+  max-inline-size: 40rem;
+}
+
+.marketing-android__copy h2 {
+  margin: 0;
+  font-family: var(--ge-font-family-display);
+  font-size: clamp(1.2rem, 2.8vw, 1.65rem);
+  color: var(--ge-color-ink);
+}
+
+.marketing-android__copy p {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  line-height: var(--ge-line-height-ui);
+}
+
+.marketing-android__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-3);
+  align-items: center;
+}
+
+.marketing-android__note {
+  margin: 0;
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.45;
+}
+
+.marketing-section__header h2,
+.marketing-path__body h3,
+.marketing-pedagogy__item h3,
+.marketing-why__copy h3,
+.marketing-benefit__copy h3 {
+  color: var(--ge-color-ink);
+}
+
+.marketing-section__header p,
+.marketing-path__meta dd,
+.marketing-pedagogy__item p,
+.marketing-why__copy p,
+.marketing-benefit__copy p,
+.marketing-showcase__item p {
+  color: var(--ge-color-text-muted);
+}
+
+@media (max-width: 30rem) {
+  .marketing-hero {
+    background: var(--ge-panel-background);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-android-download,
+  .marketing-button--android {
+    transition: none;
+  }
+}
+
+.level-path,
+.level-session,
+.conversation-journey,
+.speak-room,
+.learner-stack,
+.progress-dashboard,
+.marketing-landing {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 64rem) {
+  .progress-dashboard:not(.progress-dashboard--empty) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--ge-space-6);
+  }
+
+  .progress-dashboard__header,
+  .progress-dashboard__title,
+  .progress-dashboard__empty-message,
+  .progress-dashboard__error,
+  .progress-dashboard__loading,
+  .progress-dashboard__summary {
+    grid-column: 1 / -1;
+  }
+}
+
+.shell-sign-in-page__card {
+  width: min(100%, 28rem);
+  border-color: var(--ge-panel-border);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+  color: var(--ge-color-text);
+}
+
+.shell-sign-in-page__header h1 {
+  color: var(--ge-color-ink);
+}
+
+.shell-sign-in-page__lede {
+  color: var(--ge-color-text-muted);
+}
+
+.shell-sign-in-page__eyebrow {
+  border-color: var(--ge-hero-badge-border);
+  background: var(--ge-hero-badge-bg);
+  color: var(--ge-hero-badge-text);
+}
+
+.shell-sign-in-page__close {
+  border-color: var(--ge-button-quiet-border);
+  background: var(--ge-button-quiet-bg);
+  color: var(--ge-color-ink);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form {
+  gap: var(--ge-space-3);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form label {
+  color: var(--ge-color-ink);
+  font-weight: 650;
+  text-align: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form input:not([type='checkbox']) {
+  width: 100%;
+  border-color: var(--ge-input-border);
+  background: var(--ge-input-bg);
+  color: var(--ge-input-text);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form input:not([type='checkbox']):focus {
+  border-color: var(--ge-input-focus-border);
+  box-shadow: 0 0 0 0.2rem var(--ge-input-focus-ring);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form label:has(input[type='checkbox']) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: auto;
+  color: var(--ge-color-text-muted);
+}
+
+.shell-sign-in-page .web-otp-sign-in__form button {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.shell-sign-in-page .web-otp-sign-in__form button[type='submit'] {
+  border-color: transparent;
+  background: var(--ge-button-primary-bg);
+  color: var(--ge-button-primary-text);
+}
+
+.shell-sign-in-page .web-otp-sign-in__error {
+  color: var(--ge-color-ink);
+  background: var(--ge-error-bg);
+  border-inline-start: 0;
+  text-align: center;
+}
+
+.progress-dashboard__section {
+  padding: var(--ge-space-4);
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-panel-background);
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.progress-dashboard__stat {
+  background: var(--ge-stat-bg);
+  border-color: var(--ge-stat-border);
+}
+
+.progress-dashboard__improvement-list li,
+.progress-dashboard__mastery-group {
+  background: var(--ge-stat-muted-bg);
+  border-color: var(--ge-stat-border);
+}
+
+.progress-dashboard__mastery-item--mastered .progress-dashboard__mastery-status {
+  background-color: var(--ge-accent-brand);
+}
+
+.ge-application-frame--home::before,
+.ge-application-frame--home::after {
+  animation: none;
+}
+
+.learner-home__action-orbit {
+  display: none;
+}

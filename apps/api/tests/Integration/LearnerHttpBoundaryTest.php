@@ -6,6 +6,10 @@ namespace Tests\Integration;
 
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
+use App\Conversation\Providers\ProviderUsage;
+use App\Conversation\Providers\TextToSpeechResult;
+use App\Conversation\Speech\ConversationSpeechArtifactStore;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,6 +48,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
 
         $requests = [
             fn (): TestResponse => $this->getJson('/api/v1/home'),
+            fn (): TestResponse => $this->getJson('/api/v1/me/progress-dashboard'),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
                 $idempotencyKey,
@@ -125,10 +130,47 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             ), [
                 'prototype_utterance' => 'Synthetic unauthenticated turn.',
             ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson(sprintf(
+                '/api/v1/conversation-sessions/%s/speech',
+                $conversationSessionId,
+            ), [
+                'purpose' => 'model_en',
+                'text' => 'Synthetic unauthenticated speech.',
+            ]),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson(sprintf(
+                '/api/v1/conversation-sessions/%s/realtime-stt-tickets',
+                $conversationSessionId,
+            )),
+            fn (): TestResponse => $this->get(sprintf(
+                '/api/v1/conversation-sessions/%s/realtime-stt?ticket=%s',
+                $conversationSessionId,
+                $conversationSessionId,
+            )),
             fn (): TestResponse => $this->get(sprintf(
                 '/api/v1/conversation-turns/%s/events',
                 $conversationTurnId,
             )),
+            fn (): TestResponse => $this->get(sprintf(
+                '/api/v1/conversation-turns/%s/speech/model_en',
+                $conversationTurnId,
+            )),
+            fn (): TestResponse => $this->withHeader(
+                'Idempotency-Key',
+                $idempotencyKey,
+            )->postJson(sprintf(
+                '/api/v1/conversation-turns/%s/speech-latency-samples',
+                $conversationTurnId,
+            ), [
+                'client_runtime' => 'web',
+                'network_class' => 'unknown',
+                'playback_outcome' => 'unavailable',
+            ]),
             fn (): TestResponse => $this->getJson('/api/v1/me/ai-memory'),
             fn (): TestResponse => $this->withHeader(
                 'Idempotency-Key',
@@ -173,6 +215,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
     public function test_fake_friend_turn_runs_through_http_and_streams_safe_events(): void
     {
         $this->signInWeb();
+        $this->activatePaidFreeSpeechPlan();
         $sessionCommand = (string) Str::uuid();
         $turnCommand = (string) Str::uuid();
         $utterance = 'I practise English after work.';
@@ -197,6 +240,37 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         $this->assertNoStore($session);
         $sessionId = $session->json('id');
         self::assertIsString($sessionId);
+        $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson(sprintf(
+            '/api/v1/conversation-sessions/%s/realtime-stt-tickets',
+            $sessionId,
+        ))->assertNotFound();
+        $this->get(sprintf(
+            '/api/v1/conversation-sessions/%s/realtime-stt?ticket=%s',
+            $sessionId,
+            $sessionId,
+        ))->assertNotFound();
+
+        $spoken = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson(sprintf(
+            '/api/v1/conversation-sessions/%s/speech',
+            $sessionId,
+        ), [
+            'purpose' => 'model_en',
+            'text' => 'I went to the market this morning.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('playback_available', false)
+            ->assertJsonPath(
+                'rendering_mode',
+                'deterministic-fake-text-only',
+            )
+            ->assertJsonPath('model_audio_base64', null);
+        $this->assertNoStore($spoken);
 
         $replay = $this->withHeaders([
             'Origin' => 'https://localhost',
@@ -235,10 +309,83 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
                 'deterministic-fake-text-only',
             )
             ->assertJsonPath('usage.provider_attempts', 3)
+            ->assertJsonPath('speech.guidance_speech_status', 'deferred')
+            ->assertJsonPath('speech.model_audio_base64', null)
             ->assertJsonPath('usage.estimated_cost_microunits', 0);
         $this->assertNoStore($turn);
         $turnId = $turn->json('id');
         self::assertIsString($turnId);
+        $this->get(sprintf(
+            '/api/v1/conversation-turns/%s/speech/model_en',
+            $turnId,
+        ))->assertNotFound();
+
+        $ownedTurn = DB::table('conversation_turns')
+            ->where('id', $turnId)
+            ->first();
+        $this->assertNotNull($ownedTurn);
+        $this->app->make(ConversationSpeechArtifactStore::class)->persist(
+            (string) $ownedTurn->organization_id,
+            (string) $ownedTurn->learner_membership_id,
+            $turnId,
+            ConversationSpeechArtifactStore::KIND_MODEL,
+            new TextToSpeechResult(
+                playbackAvailable: true,
+                renderingMode: 'azure-soft-launch-guidance-wav',
+                providerUsage: new ProviderUsage(
+                    providerKey: 'test-speech',
+                    modelVersion: 'test',
+                    latencyMilliseconds: 1,
+                    inputUnits: 1,
+                    outputUnits: 1,
+                    estimatedCostMicrounits: 0,
+                ),
+                audioBytes: self::wav(),
+                mimeType: 'audio/wav',
+            ),
+        );
+        $stream = $this->get(sprintf(
+            '/api/v1/conversation-turns/%s/speech/model_en',
+            $turnId,
+        ))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'audio/wav');
+        $this->assertNoStore($stream);
+        $this->assertSame(self::wav(), $stream->streamedContent());
+
+        $latencyCommand = (string) Str::uuid();
+        $latencyPayload = [
+            'client_runtime' => 'web',
+            'network_class' => 'wifi',
+            'playback_outcome' => 'started',
+            'release_to_ack_ms' => 40,
+            'release_to_first_signal_ms' => 1800,
+            'release_to_first_audio_ms' => 2400,
+            'turn_json_to_first_audio_ms' => 600,
+        ];
+        $latency = $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => $latencyCommand,
+        ])->postJson(sprintf(
+            '/api/v1/conversation-turns/%s/speech-latency-samples',
+            $turnId,
+        ), $latencyPayload)
+            ->assertAccepted()
+            ->assertJsonPath('accepted', true)
+            ->assertJsonPath('sampled', true)
+            ->assertJsonPath('replayed', false)
+            ->assertJsonPath('retention_days', 30);
+        $this->assertNoStore($latency);
+        $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => $latencyCommand,
+        ])->postJson(sprintf(
+            '/api/v1/conversation-turns/%s/speech-latency-samples',
+            $turnId,
+        ), $latencyPayload)
+            ->assertAccepted()
+            ->assertJsonPath('replayed', true);
+        $this->assertDatabaseCount('speech_client_latency_samples', 1);
 
         $stream = $this->get(sprintf(
             '/api/v1/conversation-turns/%s/events',
@@ -484,6 +631,24 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         $this->withCookie($cookie->getName(), (string) $cookie->getValue());
     }
 
+    private function activatePaidFreeSpeechPlan(): void
+    {
+        $plans = $this->getJson('/api/v1/me/subscription-plans')
+            ->assertOk()
+            ->json('plans');
+        self::assertIsArray($plans);
+        $planId = collect($plans)
+            ->firstWhere('code', 'monthly_modules')['id'] ?? null;
+        self::assertIsString($planId);
+
+        $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson('/api/v1/me/subscription-checkouts', [
+            'plan_id' => $planId,
+        ])->assertCreated();
+    }
+
     /**
      * @param  TestResponse<Response>  $response
      */
@@ -493,6 +658,18 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
             'no-store',
             (string) $response->headers->get('Cache-Control'),
         );
+    }
+
+    private static function wav(): string
+    {
+        $sampleRate = 16_000;
+        $dataSize = 320;
+        $format = 'fmt '
+            .pack('VvvVVvv', 16, 1, 1, $sampleRate, $sampleRate * 2, 2, 16);
+        $data = 'data'.pack('V', $dataSize).str_repeat("\0", $dataSize);
+        $body = 'WAVE'.$format.$data;
+
+        return 'RIFF'.pack('V', strlen($body)).$body;
     }
 }
 

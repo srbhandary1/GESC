@@ -79,11 +79,9 @@ export class KeystoreSecureCredentialStore
     state: string
     verifier: string
   } | null> {
-    const result = await this.#plugin.get({
+    const result = await this.#plugin.take({
       key: PENDING_AUTHORIZATION_KEY,
     })
-
-    await this.#plugin.remove({ key: PENDING_AUTHORIZATION_KEY })
 
     if (result.value === null || result.value === '') {
       return null

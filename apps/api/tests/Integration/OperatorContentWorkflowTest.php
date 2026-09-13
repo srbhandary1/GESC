@@ -10,7 +10,6 @@ use App\Curriculum\CanonicalJson;
 use App\Curriculum\CurriculumGraphProjector;
 use App\Models\Membership;
 use App\Models\Organization;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Tenancy\OrganizationContext;
@@ -113,6 +112,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             'source_content_hash' => $fixture['source_hash'],
             'authority_appointment_id' => $fixture['english_appointment_id'],
             'decision' => 'approved',
+            'rationale_key' => 'meets_standard',
         ])
             ->assertCreated()
             ->assertJsonStructure(['content_review_id']);
@@ -128,6 +128,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             'localized_content_hash' => $fixture['variant_hash'],
             'authority_appointment_id' => $fixture['kannada_appointment_id'],
             'decision' => 'approved',
+            'rationale_key' => 'meets_standard',
         ])
             ->assertCreated()
             ->assertJsonStructure(['content_review_id']);
@@ -151,10 +152,31 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
         $publicationId = $published->json('publication_id');
         self::assertIsString($publicationId);
 
+        $this->withHeaders([
+            'Origin' => 'https://localhost',
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])->postJson('/api/v1/operator/content/publications', [
+            'curriculum_version_id' => $fixture['version_id'],
+            'expected_head_version' => 0,
+        ])
+            ->assertConflict()
+            ->assertJsonPath(
+                'message_key',
+                'problem.content_workspace.head_conflict',
+            );
+
         $this->getJson('/api/v1/operator/content/publications')
             ->assertOk()
             ->assertJsonPath('items.0.publication_id', $publicationId)
-            ->assertJsonPath('items.0.is_head', true);
+            ->assertJsonPath('items.0.is_head', true)
+            ->assertJsonPath('items.0.publication_head_version', 1)
+            ->assertJsonPath('items.0.lifecycle_status', 'active')
+            ->assertJsonPath('items.0.allowed_actions.0', 'retire')
+            ->assertJsonPath('next_cursor', null);
+        $this->getJson('/api/v1/operator/content/publications?unexpected=1')
+            ->assertUnprocessable();
+        $this->getJson('/api/v1/operator/content/publications?cursor=invalid')
+            ->assertUnprocessable();
 
         $audit = $this->getJson('/api/v1/operator/audit-events?limit=20')
             ->assertOk()
@@ -172,7 +194,9 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
                 ],
             ]);
         $this->assertNoStore($audit);
-        $actions = collect($audit->json('items'))
+        $auditItems = $audit->json('items');
+        self::assertIsArray($auditItems);
+        $actions = collect($auditItems)
             ->pluck('action')
             ->all();
         self::assertContains(
@@ -183,7 +207,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             'curriculum.publication.activated',
             $actions,
         );
-        foreach ($audit->json('items') as $event) {
+        foreach ($auditItems as $event) {
             self::assertIsArray($event);
             self::assertArrayNotHasKey('payload', $event);
             self::assertArrayNotHasKey('transcript', $event);
@@ -197,6 +221,7 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             'source_content_hash' => $foreign['source_hash'],
             'authority_appointment_id' => $foreign['english_appointment_id'],
             'decision' => 'approved',
+            'rationale_key' => 'meets_standard',
         ])->assertNotFound();
 
         $this->withHeaders([
@@ -224,6 +249,26 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
             $publicationId,
             $secondPublished->json('publication_id'),
         );
+
+        $firstPage = $this->getJson(
+            '/api/v1/operator/content/publications?limit=1',
+        )
+            ->assertOk()
+            ->assertJsonPath(
+                'items.0.publication_id',
+                $secondPublished->json('publication_id'),
+            )
+            ->assertJsonPath('items.0.lifecycle_status', 'active');
+        $nextCursor = $firstPage->json('next_cursor');
+        self::assertIsString($nextCursor);
+        $this->getJson(
+            '/api/v1/operator/content/publications?limit=1&cursor='.
+            urlencode($nextCursor),
+        )
+            ->assertOk()
+            ->assertJsonPath('items.0.publication_id', $publicationId)
+            ->assertJsonPath('items.0.lifecycle_status', 'superseded')
+            ->assertJsonPath('items.0.allowed_actions.0', 'rollback');
 
         $rollback = $this->withHeaders([
             'Origin' => 'https://localhost',
@@ -305,10 +350,43 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
         self::assertSame(
             [
                 'audit.read',
+                'branches.manage',
+                'branches.read',
+                'cohorts.manage',
+                'cohorts.read',
                 'curriculum.authority.manage',
                 'curriculum.publish',
                 'curriculum.share.manage',
                 'enrollments.curriculum.assign',
+                'enrollments.manage',
+                'enrollments.read',
+                'entitlement_plans.manage',
+                'entitlement_plans.read',
+                'entitlements.adjust',
+                'entitlements.grant',
+                'entitlements.read',
+                'entitlements.revoke',
+                'institution_invites.manage',
+                'learners.lifecycle.manage',
+                'learners.profile.correct',
+                'learners.read',
+                'media.library.read',
+                'media.metadata.manage',
+                'media.quarantine.review',
+                'media.replace',
+                'media.retire',
+                'media.upload',
+                'membership_sessions.revoke',
+                'memberships.manage',
+                'memberships.read',
+                'organization.settings.read',
+                'privacy.erasure.request',
+                'privacy.export.request',
+                'roles.manage',
+                'speech.economics.usage',
+                'support.diagnostics.read',
+                'trainer_profiles.manage',
+                'trainer_profiles.read',
             ],
             $permissionKeys,
         );
@@ -340,7 +418,15 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
         $this->withCookie($cookie->getName(), (string) $cookie->getValue());
 
         $userId = $verified->json('user.id');
+        $sessionId = $verified->json('session.id');
         self::assertIsString($userId);
+        self::assertIsString($sessionId);
+
+        $this->markTestAuthenticationSessionPrivileged(
+            $sessionId,
+            $userId,
+            now(),
+        );
 
         return User::query()->whereKey($userId)->sole();
     }
@@ -864,39 +950,12 @@ final class OperatorContentWorkflowTest extends TenancyIntegrationTestCase
         OrganizationContext $context,
         array $permissionKeys,
     ): void {
-        $role = $this->createRole(
+        $this->grantTestPermissions(
+            $membership,
             $context,
-            'operator-'.strtolower((string) Str::ulid()),
+            $permissionKeys,
+            'operator',
         );
-        $now = now();
-        DB::table('membership_roles')->insert([
-            'organization_id' => $membership->organizationId(),
-            'membership_id' => $membership->getKey(),
-            'role_id' => $role->getKey(),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        foreach ($permissionKeys as $permissionKey) {
-            $permission = Permission::query()
-                ->where('key', $permissionKey)
-                ->first();
-
-            if (! $permission instanceof Permission) {
-                throw new RuntimeException(sprintf(
-                    'Missing synthetic test permission: %s.',
-                    $permissionKey,
-                ));
-            }
-
-            DB::table('role_permissions')->insert([
-                'organization_id' => $membership->organizationId(),
-                'role_id' => $role->getKey(),
-                'permission_id' => $permission->getKey(),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
     }
 
     /**

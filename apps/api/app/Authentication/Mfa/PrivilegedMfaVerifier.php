@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Authentication\Mfa;
 
-use Illuminate\Contracts\Auth\Authenticatable;
-
 interface PrivilegedMfaVerifier
 {
     /**
-     * A future reviewed MFA adapter must verify a factor independent of the
-     * primary OTP before returning true.
+     * Return the accepted RFC 6238 time step, or null when the assertion is
+     * invalid or would replay the factor's last accepted step.
      */
-    public function verify(Authenticatable $user, string $assertion): bool;
+    public function verify(
+        string $base32Secret,
+        string $assertion,
+        ?int $lastUsedTimeStep,
+    ): ?int;
 }

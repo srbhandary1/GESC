@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { ServerResponse } from 'node:http'
 import type { Connect, Plugin } from 'vite'
+import { containsDisallowedControlCharacter } from './demoInput.ts'
 
 /**
  * Demo-only OpenRouter free-model chat for local presentation (`make demo`).
@@ -94,8 +95,8 @@ async function callOpenRouter(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'http://127.0.0.1:5173/',
-      'X-Title': 'Global English Speaking Course Demo',
+      'HTTP-Referer': 'http://127.0.0.1:5174/',
+      'X-Title': 'Global Spoken English App Demo',
     },
     body: JSON.stringify({
       model,
@@ -169,7 +170,7 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
     if (
       message === '' ||
       [...message].length > MAXIMUM_MESSAGE_CHARS ||
-      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(message)
+      containsDisallowedControlCharacter(message)
     ) {
       sendJson(res, 400, { error: 'invalid_message' })
       return
@@ -179,7 +180,6 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
 
     try {
       const reply = await callOpenRouter(apiKey, model, message)
-      // eslint-disable-next-line no-console -- intentional demo telemetry
       console.info(
         `[demo-chat] provider=openrouter model=${model} chars_in=${[...message].length} chars_out=${[...reply].length}`,
       )
@@ -190,7 +190,6 @@ function attachDemoChatMiddleware(middlewares: Connect.Server): void {
       })
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'openrouter_failed'
-      // eslint-disable-next-line no-console -- intentional demo diagnostics
       console.warn(`[demo-chat] failed: ${detail}`)
       sendJson(res, 502, { error: 'openrouter_failed', detail })
     }

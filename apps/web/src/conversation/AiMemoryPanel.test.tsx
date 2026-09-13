@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AiMemoryPanel } from './AiMemoryPanel'
 import type { ConversationJourneyApi } from './ConversationJourneyApi'
+import { WebConversationJourneyApi } from './WebConversationJourneyApi'
 
 afterEach(() => {
   cleanup()
@@ -10,6 +11,34 @@ afterEach(() => {
 })
 
 describe('AI memory panel', () => {
+  it('preserves the web API receiver while loading facts', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(Response.json({ facts: [] }))
+    const api = new WebConversationJourneyApi({ fetch })
+
+    render(
+      <AiMemoryPanel
+        api={api}
+        createClientId={() => 'memory-command'}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        text={(key) => key}
+      />,
+    )
+
+    expect(
+      await screen.findByText('No saved AI memory facts yet.'),
+    ).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/me/ai-memory',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'GET',
+      }),
+    )
+  })
+
   it('lists creates edits and deletes learner-visible facts', async () => {
     const facts = [
       {

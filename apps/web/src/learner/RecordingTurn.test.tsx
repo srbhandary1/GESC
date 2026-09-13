@@ -1,10 +1,12 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   AudioRecorder,
   AudioRecordingSession,
 } from './BrowserAudioRecorder'
+import { RecordingPermissionDeniedError } from './BrowserAudioRecorder'
+import { HOLD_MAXIMUM_DURATION_MS } from '../conversation/holdToTalkLimit'
 import {
   RecordingTurn,
   type RecordingTurnLabels,
@@ -49,6 +51,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
@@ -105,9 +108,11 @@ describe('RecordingTurn privacy boundaries', () => {
   it.each([
     'audio/webm',
     'audio/webm;codecs=opus',
+    'audio/webm; codecs=opus',
     'audio/ogg',
     'audio/ogg;codecs=opus',
     'audio/mp4',
+    'audio/mp4;codecs=mp4a.40.2',
   ])('accepts bounded integer metadata for %s', (mimeType) => {
     const blob = new Blob([], { type: mimeType })
     Object.defineProperty(blob, 'size', { value: 128 })
@@ -215,6 +220,325 @@ describe('RecordingTurn privacy boundaries', () => {
     view.unmount()
 
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:local')
+  })
+
+  it('hold-to-talk release submits capture without local playback', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const onAudioCaptureChange = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={onAudioCaptureChange}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: button })
+    await screen.findByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[/MouseLeft]', target: button })
+    const send = screen.getByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
+
+    await waitFor(() => {
+      expect(onAudioCaptureChange).toHaveBeenCalled()
+    })
+    expect(
+      screen.queryByLabelText(labels.playbackLabel),
+    ).not.toBeInTheDocument()
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole('button', { name: labels.controls.cancel }),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps voice capture in place and explains a sub-second clip', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['too short'], { type: 'audio/webm' }),
+        durationMs: 750,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          tooShort: 'That recording was too short.',
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={vi.fn()}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+        minimumDurationMs={1_000}
+      />,
+    )
+
+    const hold = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await screen.findByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    const send = screen.getByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
+
+    expect(await screen.findByText(labels.controls.error)).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'That recording was too short.',
+    )
+    const retry = screen.getByRole('button', { name: 'Hold to talk' })
+    expect(retry).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: labels.retry }),
+    ).not.toBeInTheDocument()
+
+    await user.pointer({ keys: '[MouseLeft>]', target: retry })
+    await waitFor(() => {
+      expect(recorder.start).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  it('hold cancel after release aborts the in-flight submit', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const onCancelInFlight = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={vi.fn()}
+        onCaptureChange={vi.fn()}
+        onCancelInFlight={onCancelInFlight}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    await user.pointer({ keys: '[MouseLeft>]', target: button })
+    await screen.findByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[/MouseLeft]', target: button })
+    const send = screen.getByRole('button', { name: 'Release to send' })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
+    await screen.findByRole('button', { name: labels.controls.cancel })
+    await user.click(screen.getByRole('button', { name: labels.controls.cancel }))
+    expect(onCancelInFlight).toHaveBeenCalledOnce()
+  })
+
+  it('hold-to-talk auto-stops at the 25 second Speak cap', async () => {
+    vi.useFakeTimers()
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: HOLD_MAXIMUM_DURATION_MS,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const onAudioCaptureChange = vi.fn()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          holdRemaining: '{seconds} seconds left',
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={onAudioCaptureChange}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={vi.fn()}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    await act(async () => {
+      fireEvent.pointerDown(
+        screen.getByRole('button', { name: 'Hold to talk' }),
+        { button: 0 },
+      )
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Release to send' }),
+    ).toBeVisible()
+    expect(screen.getByText('25 seconds left')).toBeVisible()
+
+    await act(async () => {
+      vi.advanceTimersByTime(HOLD_MAXIMUM_DURATION_MS)
+    })
+
+    expect(session.stop).toHaveBeenCalledOnce()
+    expect(onAudioCaptureChange).toHaveBeenCalled()
+  })
+
+  it('tap recording does not auto-stop at the Speak hold cap', async () => {
+    vi.useFakeTimers()
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    renderTurn(recorder)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: labels.controls.start }))
+    })
+
+    expect(
+      screen.getByRole('button', { name: labels.controls.stop }),
+    ).toBeVisible()
+
+    await act(async () => {
+      vi.advanceTimersByTime(HOLD_MAXIMUM_DURATION_MS)
+    })
+
+    expect(session.stop).not.toHaveBeenCalled()
+  })
+
+  it('recovers from denied microphone permission in hold-to-talk mode', async () => {
+    const onHoldPhaseChange = vi.fn()
+    const onContinueWithoutRecording = vi.fn()
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => {
+        throw new RecordingPermissionDeniedError()
+      }),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <RecordingTurn
+        captureMode="hold"
+        createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+        labels={{
+          ...labels,
+          controls: {
+            ...labels.controls,
+            hold: 'Hold to talk',
+            holding: 'Listening…',
+            release: 'Release to send',
+          },
+        }}
+        onAudioCaptureChange={vi.fn()}
+        onCaptureChange={vi.fn()}
+        onContinueWithoutRecording={onContinueWithoutRecording}
+        onHoldPhaseChange={onHoldPhaseChange}
+        recorder={recorder}
+        skipReviewPlayback
+      />,
+    )
+
+    await user.pointer({
+      keys: '[MouseLeft>]',
+      target: screen.getByRole('button', { name: 'Hold to talk' }),
+    })
+
+    expect(await screen.findByText('Recording blocked')).toBeVisible()
+    expect(onHoldPhaseChange).toHaveBeenCalledWith('idle')
+    expect(
+      screen.getByRole('button', { name: 'Record again' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Continue without recording' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Hold to talk' }),
+    ).toBeEnabled()
   })
 })
 

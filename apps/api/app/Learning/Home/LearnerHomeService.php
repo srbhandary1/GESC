@@ -8,6 +8,7 @@ use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LearnerAuthority;
 use App\Learning\Missions\DailyMissionReader;
+use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use stdClass;
@@ -17,6 +18,8 @@ final readonly class LearnerHomeService
     public function __construct(
         private LearnerAuthority $authority,
         private DailyMissionReader $missions,
+        private MeaningfulSpeakingStreakReader $streaks,
+        private ReviewDueBlockingService $reviewDue,
     ) {}
 
     /**
@@ -27,17 +30,22 @@ final readonly class LearnerHomeService
         $context = $this->authority->require($learner);
         $membershipId = (string) $context->membershipId;
         $onboarding = DB::table('learner_profiles')
-            ->leftJoin('learner_goals', function ($join): void {
+            ->leftJoin('learner_profile_current_goals', function ($join): void {
                 $join
                     ->on(
-                        'learner_goals.organization_id',
+                        'learner_profile_current_goals.organization_id',
                         '=',
                         'learner_profiles.organization_id',
                     )
                     ->on(
-                        'learner_goals.learner_profile_id',
+                        'learner_profile_current_goals.learner_profile_id',
                         '=',
                         'learner_profiles.id',
+                    )
+                    ->on(
+                        'learner_profile_current_goals.learner_membership_id',
+                        '=',
+                        'learner_profiles.learner_membership_id',
                     );
             })
             ->where(
@@ -51,7 +59,7 @@ final readonly class LearnerHomeService
             ->first([
                 'learner_profiles.adult_confirmed_at',
                 'learner_profiles.onboarding_completed_at',
-                'learner_goals.goal_key',
+                'learner_profile_current_goals.goal_key',
             ]);
         $enrollment = DB::table('enrollments')
             ->where('organization_id', $context->organizationId)
@@ -62,6 +70,8 @@ final readonly class LearnerHomeService
             ->orderBy('id')
             ->first(['id', 'status']);
         $mission = null;
+        $dueReviewPayload = null;
+        $upcomingReviews = [];
 
         if ($enrollment instanceof stdClass) {
             try {
@@ -78,6 +88,72 @@ final readonly class LearnerHomeService
                 $mission = null;
             }
         }
+
+        $dueSummary = $this->reviewDue->firstDueIncompleteReview($context);
+        if ($dueSummary !== null) {
+            try {
+                $reviewMission = $this->missions->resolve(
+                    $learner,
+                    $dueSummary['enrollment_id'],
+                    $dueSummary['curriculum_mission_id'],
+                );
+                $dueReviewPayload = [
+                    'id' => $dueSummary['id'],
+                    'enrollment_id' => $dueSummary['enrollment_id'],
+                    'mission_id' => $dueSummary['curriculum_mission_id'],
+                    'objective_id' => $dueSummary['learning_objective_id'],
+                    'interval_days' => $dueSummary['interval_days'],
+                    'due_at' => $dueSummary['due_at'],
+                    'timezone' => $dueSummary['timezone'],
+                    'title' => [
+                        'locale' => 'en-IN',
+                        'text' => $reviewMission->title,
+                        'revision_id' => $reviewMission->sourceRevisionId,
+                        'content_hash' => $reviewMission->sourceContentHash,
+                    ],
+                ];
+            } catch (
+                CurriculumOperationRejected
+                |LearningOperationRejected
+            ) {
+                $dueReviewPayload = null;
+            }
+        }
+
+        foreach ($this->reviewDue->upcomingIncompleteReviews($context) as $upcoming) {
+            try {
+                $upcomingMission = $this->missions->resolve(
+                    $learner,
+                    $upcoming['enrollment_id'],
+                    $upcoming['curriculum_mission_id'],
+                );
+                $upcomingReviews[] = [
+                    'id' => $upcoming['id'],
+                    'enrollment_id' => $upcoming['enrollment_id'],
+                    'mission_id' => $upcoming['curriculum_mission_id'],
+                    'objective_id' => $upcoming['learning_objective_id'],
+                    'interval_days' => $upcoming['interval_days'],
+                    'due_at' => $upcoming['due_at'],
+                    'timezone' => $upcoming['timezone'],
+                    'title' => [
+                        'locale' => 'en-IN',
+                        'text' => $upcomingMission->title,
+                        'revision_id' => $upcomingMission->sourceRevisionId,
+                        'content_hash' => $upcomingMission->sourceContentHash,
+                    ],
+                ];
+            } catch (
+                CurriculumOperationRejected
+                |LearningOperationRejected
+            ) {
+                continue;
+            }
+        }
+
+        $streak = $this->streaks->read(
+            $context->organizationId,
+            $membershipId,
+        );
 
         return [
             'onboarding' => [
@@ -96,6 +172,9 @@ final readonly class LearnerHomeService
                     'status' => 'active',
                 ]
                 : null,
+            'streak' => $streak,
+            'due_review' => $dueReviewPayload,
+            'upcoming_reviews' => $upcomingReviews,
             'next_mission' => $mission === null
                 ? null
                 : [

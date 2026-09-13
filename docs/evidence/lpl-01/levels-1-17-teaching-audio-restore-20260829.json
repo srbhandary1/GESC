@@ -1,0 +1,31 @@
+{
+  "schema": "lpl01.soft-launch.teaching-audio-restore.v1",
+  "observed_at": "2026-08-29T06:54:07Z",
+  "privacy_boundary": "no_media_bytes_no_credentials_no_legacy_site_access",
+  "source": "local SeaweedFS/S3 accepted objects remaining after the 13 August database restore",
+  "legacy_site_mutated": false,
+  "approval_reference": "APP-0062",
+  "inventory_path": "docs/evidence/lpl-01/levels-1-17-teaching-audio-hash-inventory.json",
+  "ingest": {
+    "skipped_existing": 4,
+    "accepted": 63,
+    "rights_confirmed": 63,
+    "failures": []
+  },
+  "db_verification": {
+    "lesson_audio_count": 67,
+    "inventory_hash_match": true,
+    "concepts_attached": 17,
+    "blueprints": 65,
+    "media_rows": 260,
+    "blueprints_with_four_parts": 65
+  },
+  "commission": {
+    "app0061_level1_restored": true,
+    "app0063": true,
+    "app0065": true,
+    "app0066": true,
+    "app0067": true
+  },
+  "publication_eligible": false
+}

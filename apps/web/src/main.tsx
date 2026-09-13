@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@global-english/design-system/styles.css'
 import './index.css'
+import { initializeInterfaceTheme } from './theme/interfaceTheme'
 import App from './App.tsx'
 import { ApplicationErrorBoundary } from './errors/ApplicationErrorBoundary.tsx'
 import { createRootErrorOptions } from './errors/rootErrorReporting.ts'
@@ -17,6 +18,8 @@ const demoMode = isLocalDemoEnabled({
   requested: import.meta.env.VITE_LOCAL_DEMO === 'true',
 })
 const demoRuntime = demoMode ? createLocalDemoRuntime() : null
+
+initializeInterfaceTheme()
 
 if (!demoMode) {
   // The synthetic demo must stay storage-free: it registers no service
@@ -35,6 +38,7 @@ createRoot(
         conversationApi={demoRuntime?.conversationApi}
         demoMode={demoMode}
         learnerJourneyApi={demoRuntime?.learnerJourneyApi}
+        levelSessionsApi={demoRuntime?.levelSessionsApi}
       />
     </StrictMode>
   </ApplicationErrorBoundary>,

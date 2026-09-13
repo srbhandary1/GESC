@@ -1,10 +1,12 @@
 import type {
   MessageKey,
+  MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   defaultAudioRecorder,
+  type AudioRecorder,
   type CapturedAudio,
 } from '../learner/BrowserAudioRecorder'
 import { RecordingTurn } from '../learner/RecordingTurn'
@@ -14,24 +16,39 @@ import type {
   VoiceConsents,
 } from './ConversationJourneyApi'
 import { audioToPcmWav } from './audioToPcmWav'
+import {
+  abandonSpeakLoop,
+  markSpeakLoop,
+  type SpeakLoopPhase,
+} from './speakLoopTimings'
+import { isAbortError } from '../shared/isAbortError'
+import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
+import { conversationErrorMessageKey } from './conversationErrorMessage'
+import { preconnectRealtimeSpeechAfterConsent } from './preconnectRealtimeSpeech'
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
   readonly createClientId: () => string
   readonly locale: SupportedLocale
+  readonly onPreferTyping?: () => void
   readonly onTranscriptSelected: (transcript: string) => void
+  readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
+  readonly onCancelInFlight?: () => void
+  readonly recorder?: AudioRecorder
+  readonly resetEpoch?: number
   readonly sessionId: string
-  readonly text: (key: MessageKey) => string
+  readonly text: (key: MessageKey, parameters?: MessageParameters) => string
+  readonly unavailableMessageKey?: MessageKey
 }
 
 type VoicePanelState =
+  | { readonly kind: 'checking' }
   | { readonly kind: 'idle' }
   | { readonly kind: 'loading' }
   | { readonly kind: 'consent'; readonly listing: VoiceConsents }
   | {
       readonly kind: 'recording'
       readonly listing: VoiceConsents
-      readonly capture: CapturedAudio | null
     }
   | {
       readonly kind: 'candidate'
@@ -39,24 +56,86 @@ type VoicePanelState =
       readonly recording: SecureVoiceRecording
     }
   | { readonly kind: 'error'; readonly listing?: VoiceConsents }
+  | { readonly kind: 'unavailable' }
 
 const REQUIRED_PURPOSES = [
   'voice_upload_and_transcription',
   'conversation_provider_processing',
 ] as const
 
+const AUTO_ACCEPT_MIN_CONFIDENCE = 0.6
+
 export function VoicePracticePanel({
   api,
   createClientId,
   locale,
+  onPreferTyping,
   onTranscriptSelected,
+  onLoopPhase,
+  onCancelInFlight,
+  recorder = defaultAudioRecorder,
+  resetEpoch = 0,
   sessionId,
   text,
+  unavailableMessageKey,
 }: VoicePracticePanelProps) {
-  const [state, setState] = useState<VoicePanelState>({ kind: 'idle' })
+  const [state, setState] = useState<VoicePanelState>({ kind: 'checking' })
   const [correctedTranscript, setCorrectedTranscript] = useState('')
-  const uploadCommand = useRef(createClientId())
-  const reviewCommand = useRef(createClientId())
+  const [correcting, setCorrecting] = useState(false)
+  const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
+  const [localResetEpoch, setLocalResetEpoch] = useState(0)
+  const [uploadError, setUploadError] = useState<MessageKey | null>(null)
+  const uploadCommand = useRef('')
+  const reviewCommand = useRef('')
+  const uploadAbort = useRef<AbortController | null>(null)
+
+  const setPhase = (phase: SpeakLoopPhase) => {
+    setLoopPhase(phase)
+    onLoopPhase?.(phase)
+  }
+
+  const releaseHold = () => {
+    setLocalResetEpoch((epoch) => epoch + 1)
+    setPhase('waiting')
+  }
+
+  const cancelInFlight = () => {
+    uploadAbort.current?.abort()
+    uploadAbort.current = null
+    abandonSpeakLoop()
+    onCancelInFlight?.()
+    releaseHold()
+  }
+
+  useEffect(() => {
+    if (api.voiceConsents === undefined) {
+      return
+    }
+
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const listing = await api.voiceConsents!(locale)
+        if (cancelled) {
+          return
+        }
+        setState(
+          requiredPurposesGranted(listing)
+            ? { kind: 'recording', listing }
+            : { kind: 'consent', listing },
+        )
+      } catch {
+        if (!cancelled) {
+          setState({ kind: 'unavailable' })
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [api, locale])
 
   if (
     api.voiceConsents === undefined ||
@@ -69,6 +148,18 @@ export function VoicePracticePanel({
     return null
   }
 
+  if (unavailableMessageKey !== undefined) {
+    return (
+      <section
+        aria-labelledby="secure-voice-title"
+        className="conversation-journey__voice"
+      >
+        <h3 id="secure-voice-title">{text('conversation.voice.title')}</h3>
+        <p role="alert">{text(unavailableMessageKey)}</p>
+      </section>
+    )
+  }
+
   const loadConsent = async () => {
     setState({ kind: 'loading' })
 
@@ -76,11 +167,11 @@ export function VoicePracticePanel({
       const listing = await api.voiceConsents!(locale)
       setState(
         requiredPurposesGranted(listing)
-          ? { capture: null, kind: 'recording', listing }
+          ? { kind: 'recording', listing }
           : { kind: 'consent', listing },
       )
     } catch {
-      setState({ kind: 'error' })
+      setState({ kind: 'unavailable' })
     }
   }
 
@@ -96,42 +187,111 @@ export function VoicePracticePanel({
         createClientId(),
       )
       const refreshed = await api.voiceConsents!(locale)
-      setState(
-        requiredPurposesGranted(refreshed)
-          ? { capture: null, kind: 'recording', listing: refreshed }
-          : { kind: 'consent', listing: refreshed },
-      )
+      if (requiredPurposesGranted(refreshed)) {
+        void preconnectRealtimeSpeechAfterConsent({
+          api,
+          commandId: createClientId(),
+          sessionId,
+        })
+        setState({ kind: 'recording', listing: refreshed })
+      } else {
+        setState({ kind: 'consent', listing: refreshed })
+      }
     } catch {
       setState({ kind: 'error', listing })
     }
   }
 
-  const upload = async (
-    listing: VoiceConsents,
-    capture: CapturedAudio,
-  ) => {
+  const grantBoth = async (listing: VoiceConsents) => {
     setState({ kind: 'loading' })
 
     try {
-      const wav = await audioToPcmWav(capture)
+      for (const purpose of REQUIRED_PURPOSES) {
+        const alreadyGranted = listing.consents.some(
+          (consent) =>
+            consent.purpose === purpose && consent.state === 'granted',
+        )
+        if (!alreadyGranted) {
+          await api.grantVoiceConsent!(
+            { purpose, requested_locale: locale },
+            createClientId(),
+          )
+        }
+      }
+      const refreshed = await api.voiceConsents!(locale)
+      if (requiredPurposesGranted(refreshed)) {
+        void preconnectRealtimeSpeechAfterConsent({
+          api,
+          commandId: createClientId(),
+          sessionId,
+        })
+        setState({ kind: 'recording', listing: refreshed })
+      } else {
+        setState({ kind: 'consent', listing: refreshed })
+      }
+    } catch {
+      setState({ kind: 'error', listing })
+    }
+  }
+
+  const uploadAndAccept = async (
+    listing: VoiceConsents,
+    capture: CapturedAudio,
+  ) => {
+    setUploadError(null)
+    setPhase('processing')
+    uploadAbort.current?.abort()
+    const controller = new AbortController()
+    uploadAbort.current = controller
+
+    try {
+      if (uploadCommand.current === '') {
+        uploadCommand.current = createClientId()
+      }
+      const wav = await audioToPcmWav(capture, HOLD_MAXIMUM_DURATION_MS)
+      markSpeakLoop('wav_ready')
       const recording = await api.uploadVoiceRecording!(
         sessionId,
         wav,
         uploadCommand.current,
+        controller.signal,
       )
+      markSpeakLoop('upload_done')
 
       if (
         recording.status !== 'awaiting_learner_confirmation' ||
-        recording.transcript === null
+        recording.transcript === null ||
+        recording.transcript.trim() === ''
       ) {
-        setState({ kind: 'error', listing })
+        uploadCommand.current = createClientId()
+        setUploadError('conversation.voice.error')
+        setState({ kind: 'recording', listing })
+        releaseHold()
+        return
+      }
+
+      const confidence = recording.transcript_confidence
+      if (confidence !== null && confidence >= AUTO_ACCEPT_MIN_CONFIDENCE) {
+        await acceptTranscript(listing, recording, 'accept', controller.signal)
         return
       }
 
       setCorrectedTranscript(recording.transcript)
+      setCorrecting(false)
       setState({ kind: 'candidate', listing, recording })
-    } catch {
-      setState({ kind: 'error', listing })
+      releaseHold()
+    } catch (error) {
+      if (isAbortError(error) || controller.signal.aborted) {
+        releaseHold()
+        return
+      }
+
+      uploadCommand.current = createClientId()
+      setUploadError(
+        conversationErrorMessageKey(error, 'conversation.voice.error'),
+      )
+      setState({ kind: 'recording', listing })
+      releaseHold()
     }
   }
 
@@ -154,6 +314,45 @@ export function VoicePracticePanel({
     }
   }
 
+  const acceptTranscript = async (
+    listing: VoiceConsents,
+    recording: SecureVoiceRecording,
+    action: 'accept' | 'correct' = 'accept',
+    signal?: AbortSignal,
+  ) => {
+    if (reviewCommand.current === '') {
+      reviewCommand.current = createClientId()
+    }
+    const result = await api.reviewVoiceTranscript!(
+      recording.id,
+      {
+        action,
+        corrected_transcript:
+          action === 'correct' ? correctedTranscript.trim() : null,
+      },
+      reviewCommand.current,
+      signal,
+    )
+
+    const selected =
+      action === 'correct'
+        ? correctedTranscript.trim()
+        : recording.transcript
+
+    if (selected !== null && selected !== '') {
+      markSpeakLoop('transcript_ready')
+      setPhase('preparing')
+      onTranscriptSelected(selected)
+    }
+
+    reviewCommand.current = createClientId()
+    uploadCommand.current = createClientId()
+    setCorrecting(false)
+    setState({ kind: 'recording', listing })
+
+    return result
+  }
+
   const review = async (
     action: 'accept' | 'correct' | 'discard',
     listing: VoiceConsents,
@@ -162,34 +361,24 @@ export function VoicePracticePanel({
     setState({ kind: 'loading' })
 
     try {
-      const result = await api.reviewVoiceTranscript!(
-        recording.id,
-        {
-          action,
-          corrected_transcript:
-            action === 'correct' ? correctedTranscript.trim() : null,
-        },
-        reviewCommand.current,
-      )
-
-      if (action !== 'discard') {
-        const selected =
-          action === 'correct'
-            ? correctedTranscript.trim()
-            : recording.transcript
-
-        if (selected !== null && selected !== '') {
-          onTranscriptSelected(selected)
+      if (action === 'discard') {
+        if (reviewCommand.current === '') {
+          reviewCommand.current = createClientId()
         }
-      }
-
-      reviewCommand.current = createClientId()
-      uploadCommand.current = createClientId()
-      setState({ capture: null, kind: 'recording', listing })
-
-      if (result.status === 'discarded') {
+        await api.reviewVoiceTranscript!(
+          recording.id,
+          { action, corrected_transcript: null },
+          reviewCommand.current,
+        )
+        reviewCommand.current = createClientId()
+        uploadCommand.current = createClientId()
+        setCorrecting(false)
         setCorrectedTranscript('')
+        setState({ kind: 'recording', listing })
+        return
       }
+
+      await acceptTranscript(listing, recording, action)
     } catch {
       setState({ kind: 'error', listing })
     }
@@ -206,21 +395,59 @@ export function VoicePracticePanel({
       setCorrectedTranscript('')
       uploadCommand.current = createClientId()
       reviewCommand.current = createClientId()
-      setState({ capture: null, kind: 'recording', listing })
+      setState({ kind: 'recording', listing })
     } catch {
       setState({ kind: 'error', listing })
     }
   }
 
+  const purposeButtons = (listing: VoiceConsents) =>
+    REQUIRED_PURPOSES.map((purpose) => {
+      const granted = listing.consents.some(
+        (consent) =>
+          consent.purpose === purpose && consent.state === 'granted',
+      )
+
+      return (
+        <button
+          key={purpose}
+          onClick={() =>
+            void (
+              granted ? withdraw(purpose, listing) : grant(purpose, listing)
+            )
+          }
+          type="button"
+        >
+          {granted
+            ? text(
+                purpose === 'voice_upload_and_transcription'
+                  ? 'conversation.voice.withdraw_upload'
+                  : 'conversation.voice.withdraw_provider',
+              )
+            : text(
+                purpose === 'voice_upload_and_transcription'
+                  ? 'conversation.voice.consent_upload'
+                  : 'conversation.voice.consent_provider',
+              )}
+        </button>
+      )
+    })
+
   return (
     <section
       aria-labelledby="secure-voice-title"
       className="conversation-journey__voice"
+      data-voice-panel-state={state.kind}
     >
-      <h3 id="secure-voice-title">
+      <h3 className="conversation-journey__voice-title" id="secure-voice-title">
         {text('conversation.voice.title')}
       </h3>
-      <p>{text('conversation.voice.optional')}</p>
+      <p className="conversation-journey__voice-intro">
+        {text('conversation.voice.optional')}
+      </p>
+      <p className="conversation-journey__voice-intro">
+        {text('conversation.voice.hold_help')}
+      </p>
 
       {state.kind === 'idle' ? (
         <button onClick={() => void loadConsent()} type="button">
@@ -232,6 +459,22 @@ export function VoicePracticePanel({
         <p role="status">{text('conversation.voice.processing')}</p>
       ) : null}
 
+      {state.kind === 'recording' && loopPhase !== 'waiting' ? (
+        <p role="status" data-speak-loop-phase={loopPhase}>
+          {text(
+            loopPhase === 'listening'
+              ? 'conversation.loop.listening'
+              : loopPhase === 'processing'
+                ? 'conversation.loop.processing'
+                : loopPhase === 'preparing'
+                  ? 'conversation.loop.preparing'
+                  : loopPhase === 'speaking'
+                    ? 'conversation.loop.speaking'
+                    : 'conversation.voice.processing',
+          )}
+        </p>
+      ) : null}
+
       {state.kind === 'consent' ? (
         <>
           <aside
@@ -241,51 +484,36 @@ export function VoicePracticePanel({
             <strong>{text('conversation.voice.notice_draft')}</strong>
             <p>{state.listing.notice.notice}</p>
           </aside>
-          {REQUIRED_PURPOSES.map((purpose) => {
-            const granted = state.listing.consents.some(
-              (consent) =>
-                consent.purpose === purpose &&
-                consent.state === 'granted',
-            )
-
-            return (
-              <button
-                key={purpose}
-                onClick={() =>
-                  void (
-                    granted
-                      ? withdraw(purpose, state.listing)
-                      : grant(purpose, state.listing)
-                  )
-                }
-                type="button"
-              >
-                {granted
-                  ? text(
-                      purpose === 'voice_upload_and_transcription'
-                        ? 'conversation.voice.withdraw_upload'
-                        : 'conversation.voice.withdraw_provider',
-                    )
-                  : text(
-                      purpose === 'voice_upload_and_transcription'
-                        ? 'conversation.voice.consent_upload'
-                        : 'conversation.voice.consent_provider',
-                    )}
-              </button>
-            )
-          })}
+          <button
+            className="ge-button ge-button--primary"
+            onClick={() => void grantBoth(state.listing)}
+            type="button"
+          >
+            {text('conversation.voice.consent_both')}
+          </button>
+          {purposeButtons(state.listing)}
         </>
       ) : null}
 
       {state.kind === 'recording' ? (
         <>
+          {uploadError !== null ? (
+            <p role="alert">{text(uploadError)}</p>
+          ) : null}
           <RecordingTurn
+            key={`${resetEpoch}-${localResetEpoch}`}
+            captureMode="hold"
             createClientId={createClientId}
             labels={{
               controls: {
-                blocked: text('learner.recording.blocked'),
+                blocked:
+                  typeof window !== 'undefined' && !window.isSecureContext
+                    ? text('conversation.voice.error')
+                    : text('learner.recording.blocked'),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
+                hold: text('learner.recording.hold'),
+                holding: text('learner.recording.holding'),
                 idle: text('learner.recording.idle'),
                 pause: text('learner.recording.pause'),
                 paused: text('learner.recording.paused'),
@@ -293,6 +521,7 @@ export function VoicePracticePanel({
                 ready: text('learner.recording.ready'),
                 recording: text('learner.recording.recording'),
                 region: text('learner.recording.region'),
+                release: text('learner.recording.release'),
                 requestingPermission: text(
                   'learner.recording.requesting_permission',
                 ),
@@ -310,59 +539,70 @@ export function VoicePracticePanel({
               playbackHelp: text('conversation.voice.playback_help'),
               playbackLabel: text('learner.recording.playback_label'),
               retry: text('learner.recording.retry'),
+              holdRemaining: text('conversation.voice.hold_remaining', {
+                seconds: '{seconds}',
+              }),
+              tooShort: text('conversation.voice.too_short'),
             }}
-            onAudioCaptureChange={(capture) =>
-              setState({
-                capture,
-                kind: 'recording',
-                listing: state.listing,
-              })
-            }
+            minimumDurationMs={1_000}
+            onAudioCaptureChange={(capture) => {
+              if (capture === null) {
+                return
+              }
+
+              void uploadAndAccept(state.listing, capture)
+            }}
             onCaptureChange={() => undefined}
-            onContinueWithoutRecording={() =>
-              setState({ kind: 'idle' })
-            }
-            recorder={defaultAudioRecorder}
-          />
-          <button
-            disabled={state.capture === null}
-            onClick={() => {
-              if (state.capture !== null) {
-                void upload(state.listing, state.capture)
+            onCancelInFlight={cancelInFlight}
+            onContinueWithoutRecording={() => onPreferTyping?.()}
+            onHoldPhaseChange={(phase) => {
+              if (phase === 'listening') {
+                setPhase('listening')
+              } else if (phase === 'processing') {
+                setPhase('processing')
+              } else if (loopPhase !== 'preparing' && loopPhase !== 'speaking') {
+                setPhase('waiting')
               }
             }}
-            type="button"
-          >
-            {text('conversation.voice.upload')}
-          </button>
-          <button
-            onClick={() =>
-              setState({
-                kind: 'consent',
-                listing: state.listing,
-              })
-            }
-            type="button"
-          >
-            {text('conversation.voice.manage_consent')}
-          </button>
+            recorder={recorder}
+            skipReviewPlayback
+          />
+          <details className="conversation-journey__consent-details">
+            <summary>{text('conversation.voice.manage_consent')}</summary>
+            {purposeButtons(state.listing)}
+          </details>
         </>
       ) : null}
 
       {state.kind === 'candidate' ? (
         <>
-          <label htmlFor="voice-transcript-candidate">
-            {text('conversation.voice.transcript_label')}
-          </label>
-          <textarea
-            id="voice-transcript-candidate"
-            maxLength={500}
-            onChange={(event) =>
-              setCorrectedTranscript(event.currentTarget.value)
-            }
-            rows={4}
-            value={correctedTranscript}
-          />
+          <p>
+            <strong>{text('conversation.voice.heard')}</strong>
+          </p>
+          <p lang="en-IN">{state.recording.transcript}</p>
+          {correcting ? (
+            <>
+              <label htmlFor="voice-transcript-candidate">
+                {text('conversation.voice.transcript_label')}
+              </label>
+              <textarea
+                id="voice-transcript-candidate"
+                maxLength={500}
+                onChange={(event) =>
+                  setCorrectedTranscript(event.currentTarget.value)
+                }
+                rows={4}
+                value={correctedTranscript}
+              />
+            </>
+          ) : (
+            <button
+              onClick={() => setCorrecting(true)}
+              type="button"
+            >
+              {text('conversation.confidence.type_instead')}
+            </button>
+          )}
           <p>
             {text('conversation.voice.confidence')}{' '}
             {Math.round(
@@ -418,7 +658,6 @@ export function VoicePracticePanel({
                 void loadConsent()
               } else if (requiredPurposesGranted(state.listing)) {
                 setState({
-                  capture: null,
                   kind: 'recording',
                   listing: state.listing,
                 })
@@ -434,6 +673,10 @@ export function VoicePracticePanel({
             {text('learner.retry')}
           </button>
         </>
+      ) : null}
+
+      {state.kind === 'unavailable' ? (
+        <p role="status">{text('conversation.voice.error')}</p>
       ) : null}
     </section>
   )

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Learner;
 
+use App\Http\Requests\IdempotentRequest;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-final class CompleteOfflineMissionRequest extends FormRequest
+final class CompleteOfflineMissionRequest extends IdempotentRequest
 {
     /**
      * @return array<string, list<mixed>>
      */
-    public function rules(): array
+    protected function payloadRules(): array
     {
         $rules = [
             'schema' => [
@@ -37,11 +37,6 @@ final class CompleteOfflineMissionRequest extends FormRequest
                 'regex:/\A[a-z0-9][a-z0-9._-]{0,99}\z/',
             ],
             'local_recording' => ['present', 'nullable', 'array'],
-            'idempotency_key' => [
-                'required',
-                'string',
-                'regex:/\A(?:[0-9A-HJKMNP-TV-Z]{26}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z/',
-            ],
         ];
 
         if (! is_array($this->input('local_recording'))) {
@@ -88,17 +83,6 @@ final class CompleteOfflineMissionRequest extends FormRequest
                     120_000,
                 ),
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function validationData(): array
-    {
-        return [
-            ...parent::validationData(),
-            'idempotency_key' => $this->header('Idempotency-Key'),
         ];
     }
 

@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 /**
  * Full student click-through of the synthetic demo shell:
- * every Phase 1 module, Learn mission, Practice Friend + Role-play,
- * Progress, and primary shell destinations.
+ * every Phase 1 module, demo mission (`#mission`), Learn level path,
+ * Speak room, 1:1, Progress, and primary shell destinations.
  */
 test('student click-through exercises every demo page and control', async ({
   page,
@@ -111,7 +111,7 @@ test('student click-through exercises every demo page and control', async ({
   ).toBeVisible()
 
   // Learn mission (demo skips onboarding).
-  await page.getByRole('link', { name: 'Learn' }).click()
+  await page.goto('/#mission')
   await page.getByRole('button', { name: 'Start mission' }).click()
   await page.getByRole('button', { name: 'Play model audio' }).click()
   await page
@@ -144,8 +144,14 @@ test('student click-through exercises every demo page and control', async ({
     page.getByRole('button', { name: 'Continue to speaking practice' }),
   ).toBeVisible()
 
-  // Practice — coaching modes, Confidence Conversation, talk controls.
-  await page.getByRole('link', { name: 'Practice' }).click()
+  // Learn — four-session level path.
+  await page.getByRole('link', { name: 'Learn' }).click()
+  await expect(
+    page.getByRole('button', { name: /Level 1/i }),
+  ).toBeVisible()
+
+  // Speak — coaching modes, everyday talk, talk controls.
+  await page.getByRole('link', { name: 'Speak' }).click()
   const coaching = page.getByLabel('Coaching mode')
   if (await coaching.count()) {
     await coaching.selectOption({ label: 'Tutor' })
@@ -153,12 +159,7 @@ test('student click-through exercises every demo page and control', async ({
     await coaching.selectOption({ label: 'Gentle' })
   }
   await page.getByRole('button', { name: 'Start speaking practice' }).click()
-  await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
-  await page.getByRole('button', { name: 'Play model English' }).click()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
-
+  await expect(page.getByText('Hear an example')).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
   const turnBox = page.getByRole('textbox', {
     name: 'Type one English practice turn',
@@ -171,7 +172,7 @@ test('student click-through exercises every demo page and control', async ({
     await expect(send).toBeEnabled({ timeout: 5_000 })
     await send.click()
     await expect(
-      page.getByRole('heading', { name: 'Friend reply' }),
+      page.getByRole('heading', { name: 'Maya' }),
     ).toBeVisible({ timeout: 15_000 })
   }
 
@@ -199,25 +200,41 @@ test('student click-through exercises every demo page and control', async ({
     await startAgain.click()
   }
 
-  // Fresh Practice-play entry after Confidence Conversation.
-  await page.goto('/#practice')
+  // Fresh Speak-room situation after everyday talk.
+  await page.goto('/#speak')
   await page.getByLabel('Interface language').selectOption('en-IN')
-  await page.getByRole('button', { name: 'Role-play (synthetic)' }).click()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
-  for (const stage of ['Observe', 'Rehearse', 'Perform', 'Reflect']) {
-    await expect(page.getByRole('heading', { name: stage })).toBeVisible({
-      timeout: 10_000,
-    })
-    if (stage !== 'Reflect') {
-      await page.getByRole('button', { name: 'Continue' }).click()
-    }
-  }
+  await page.getByRole('tab', { name: 'A situation' }).click()
+  await page.getByRole('button', { name: 'Start this situation' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible({
+    timeout: 10_000,
+  })
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible({
+    timeout: 10_000,
+  })
+  await page.getByRole('button', { name: 'Type instead' }).click()
+  await page
+    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .fill('Hello, I have an appointment.')
+  await page.getByRole('button', { name: 'Send turn' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible({
+    timeout: 10_000,
+  })
   await expect(
     page.getByText('Advisory feedback', { exact: true }),
   ).toBeVisible()
   await page
-    .getByRole('button', { name: 'Back to Confidence Conversation' })
+    .getByRole('button', { name: 'Back to everyday talk' })
     .click()
+
+  // 1:1 waitlist (no in-app call).
+  await page.getByRole('link', { name: '1:1' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Request 1:1 tuition' }),
+  ).toBeVisible()
 
   // Progress (read-only).
   await page.getByRole('link', { name: 'Progress' }).click()

@@ -13,6 +13,7 @@ use App\Learning\Missions\DailyMissionDefinition;
 use App\Learning\Missions\DailyMissionReader;
 use App\Learning\Policy\DailySpeakingPolicy;
 use App\Learning\Policy\DailySpeakingPolicyRegistry;
+use App\Learning\Review\DelayedReviewScheduler;
 use App\Models\User;
 use App\Outbox\OutboxEventRecorder;
 use Carbon\CarbonImmutable;
@@ -30,6 +31,7 @@ final readonly class DailyMissionAttemptService
         private DailySpeakingPolicyRegistry $policies,
         private AuditEventRecorder $audit,
         private OutboxEventRecorder $outbox,
+        private DelayedReviewScheduler $delayedReviews,
     ) {}
 
     /**
@@ -462,6 +464,8 @@ final readonly class DailyMissionAttemptService
                 submittedAt: $now,
                 policy: $policy,
             );
+            $this->delayedReviews->completeDue($attempt, $now);
+            $this->delayedReviews->reconcile($attempt, $now);
             $review = $this->scheduleReview(
                 attempt: $attempt,
                 correct: $knowledgeCorrect,

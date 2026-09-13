@@ -1,6 +1,7 @@
 import type {
   AdvanceConversationSessionStageRequest,
   ConversationSession,
+  ConversationSpeechResult,
   ConversationTurn,
   ConversationTurnEvent,
   CreateConversationTurnRequest,
@@ -10,8 +11,12 @@ import type {
   LearnerAiMemoryFactListingItem,
   LearnerAiMemoryListing,
   ReviewVoiceTranscriptRequest,
+  SpeechLatencySampleRequest,
+  SpeechLatencySampleResult,
   StartConversationSessionRequest,
   SupportedLocale as ApiSupportedLocale,
+  RealtimeSpeechTicket,
+  SynthesizeConversationSpeechRequest,
   UpdateLearnerAiMemoryFactRequest,
   VoiceConsentEvent,
   VoiceConsentListing,
@@ -55,6 +60,26 @@ export interface ConversationJourneyApi {
     commandId: string,
     signal?: AbortSignal,
   ): Promise<FriendTurn>
+
+  recordSpeechLatency?(
+    turnId: string,
+    input: SpeechLatencySampleRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<SpeechLatencySampleResult>
+
+  synthesizeSpeech?(
+    sessionId: string,
+    input: SynthesizeConversationSpeechRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<ConversationSpeechResult>
+
+  requestRealtimeSpeechTicket?(
+    sessionId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<RealtimeSpeechTicket>
 
   events(
     eventsUrl: string,
@@ -122,10 +147,12 @@ export interface ConversationJourneyApi {
 
 export class ConversationJourneyUnavailableError extends Error {
   readonly status?: number
+  readonly messageKey?: string
 
-  constructor(status?: number) {
+  constructor(status?: number, messageKey?: string) {
     super('The deterministic Friend prototype is unavailable.')
     this.name = 'ConversationJourneyUnavailableError'
     this.status = status
+    this.messageKey = messageKey
   }
 }

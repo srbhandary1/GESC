@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { ServerResponse } from 'node:http'
 import type { Connect, Plugin } from 'vite'
+import { containsDisallowedControlCharacter } from './demoInput.ts'
 
 /**
  * Demo-only Azure TTS middleware for local presentation (`make demo`).
@@ -179,7 +180,7 @@ function attachDemoTtsMiddleware(middlewares: Connect.Server): void {
     if (
       text === '' ||
       [...text].length > MAXIMUM_CHARACTERS ||
-      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)
+      containsDisallowedControlCharacter(text)
     ) {
       sendJson(res, 400, { error: 'invalid_text' })
       return
@@ -187,7 +188,6 @@ function attachDemoTtsMiddleware(middlewares: Connect.Server): void {
 
     try {
       const audio = await synthesizeAzure(credentials, locale, text)
-      // eslint-disable-next-line no-console -- intentional demo spend telemetry
       console.info(
         `[demo-tts] locale=${locale} voice=${DEMO_AZURE_VOICES[locale]} chars=${[...text].length}`,
       )
@@ -198,7 +198,6 @@ function attachDemoTtsMiddleware(middlewares: Connect.Server): void {
       res.end(Buffer.from(audio))
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'azure_failed'
-      // eslint-disable-next-line no-console -- intentional demo diagnostics
       console.warn(`[demo-tts] synthesis failed: ${detail}`)
       sendJson(res, 502, { error: 'azure_tts_failed', detail })
     }

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Authentication\Otp\OtpChallengeService;
 use App\Authentication\Otp\OtpDeliveryUnavailable;
 use App\Authentication\Otp\OtpVerificationFailed;
+use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\PhoneNumberNormalizer;
 use App\Authentication\Sessions\AuthenticationSessionService;
 use App\Http\Problems\ProblemDetailsFactory;
@@ -21,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response;
 
 final class OtpAuthenticationController extends Controller
 {
@@ -32,10 +34,12 @@ final class OtpAuthenticationController extends Controller
         private readonly InstitutionInviteAcceptor $institutionInvites,
         private readonly AuthenticationSessionService $sessions,
         private readonly ProblemDetailsFactory $problems,
+        private readonly PasswordCredentialService $passwords,
     ) {}
 
     public function requestChallenge(Request $request): JsonResponse
     {
+        $this->assertLegacyAuthenticationAvailable();
         $this->rejectUnexpectedFields($request, ['mobile_number']);
         $validated = $request->validate([
             'mobile_number' => ['required', 'string', 'regex:/^\+[1-9][0-9]{7,14}$/'],
@@ -57,6 +61,7 @@ final class OtpAuthenticationController extends Controller
 
     public function verifyChallenge(Request $request): JsonResponse
     {
+        $this->assertLegacyAuthenticationAvailable();
         $this->rejectUnexpectedFields(
             $request,
             [
@@ -156,6 +161,9 @@ final class OtpAuthenticationController extends Controller
                     ->toIso8601String(),
                 'privileged' => $authenticationSession->is_privileged,
                 'mfa_verified_at' => $authenticationSession->mfa_verified_at?->toIso8601String(),
+                'mfa_verified_method' => $authenticationSession->mfa_verified_method,
+                'mfa_verified_scope' => $authenticationSession->mfa_verified_scope,
+                'password_confirmed_at' => null,
             ],
         ])->header('Cache-Control', 'no-store');
     }
@@ -168,6 +176,13 @@ final class OtpAuthenticationController extends Controller
             throw ValidationException::withMessages([
                 'mobile_number' => ['The mobile number must use E.164 format.'],
             ]);
+        }
+    }
+
+    private function assertLegacyAuthenticationAvailable(): void
+    {
+        if ($this->passwords->mode() === 'password_only') {
+            abort(Response::HTTP_GONE, 'The legacy authentication contract is retired.');
         }
     }
 

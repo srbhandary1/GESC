@@ -68,4 +68,4 @@ else
   echo "info: OpenRouter demo chat credentials detected for /demo/chat." >&2
 fi
 
-exec env VITE_LOCAL_DEMO=true pnpm --filter @global-english/web dev --host 127.0.0.1 --port 5173
+exec env VITE_LOCAL_DEMO=true pnpm --filter @global-english/web dev --host 127.0.0.1 --port 5174

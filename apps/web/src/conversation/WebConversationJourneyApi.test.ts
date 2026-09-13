@@ -2,6 +2,50 @@ import { describe, expect, it, vi } from 'vitest'
 import { WebConversationJourneyApi } from './WebConversationJourneyApi'
 
 describe('web deterministic conversation API', () => {
+  it('submits content-free speech latency with an idempotency key', async () => {
+    const result = {
+      accepted: true,
+      replayed: false,
+      retention_days: 30,
+      sample_policy_version: 'speech-first-audible-v1',
+      sampled: true,
+    }
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json(result, { status: 202 }))
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await expect(
+      api.recordSpeechLatency(
+        '01J00000000000000000000006',
+        {
+          client_runtime: 'web',
+          network_class: 'unknown',
+          playback_outcome: 'started',
+          release_to_ack_ms: null,
+          release_to_first_signal_ms: 1800,
+          release_to_first_audio_ms: 2400,
+          turn_json_to_first_audio_ms: 600,
+        },
+        '018f6f12-6a09-7d8a-8f28-a5910041319e',
+      ),
+    ).resolves.toEqual(result)
+
+    const request = fetch.mock.calls[1]
+    expect(request?.[0]).toBe(
+      '/api/v1/conversation-turns/01J00000000000000000000006/speech-latency-samples',
+    )
+    expect(request?.[1]?.headers).toMatchObject({
+      'Idempotency-Key': '018f6f12-6a09-7d8a-8f28-a5910041319e',
+      'X-XSRF-TOKEN': 'csrf-token',
+    })
+    expect(String(request?.[1]?.body)).not.toContain('transcript')
+  })
+
   it('uses CSRF mutations and parses safe SSE events', async () => {
     const session = {
       coaching_mode: 'gentle',
@@ -69,7 +113,6 @@ describe('web deterministic conversation API', () => {
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(Response.json(session, { status: 201 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(Response.json(turn, { status: 201 }))
       .mockResolvedValueOnce(
         new Response(
@@ -127,8 +170,75 @@ describe('web deterministic conversation API', () => {
       }),
     )
     expect(fetch).toHaveBeenNthCalledWith(
-      5,
+      4,
       turn.events_url,
+      expect.objectContaining({
+        credentials: 'include',
+        headers: { Accept: 'text/event-stream' },
+      }),
+    )
+  })
+
+  it('reuses a cached Sanctum token instead of fetching csrf-cookie again', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        Response.json({ id: 'session-1' }, { status: 201 }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ id: 'turn-1' }, { status: 201 }),
+      )
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await api.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'session-command',
+    )
+    await api.createTurn(
+      'session-1',
+      { prototype_utterance: 'Hello' },
+      'turn-command',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(3)
+    expect(fetch.mock.calls[0]?.[0]).toBe('/sanctum/csrf-cookie')
+    expect(fetch.mock.calls[1]?.[0]).toBe('/api/v1/conversation-sessions')
+    expect(fetch.mock.calls[2]?.[0]).toBe(
+      '/api/v1/conversation-sessions/session-1/turns',
+    )
+  })
+
+  it('resolves turn events against the baked API origin on Android', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      new Response(
+        'id: 1\nevent: conversation-status\ndata: {"sequence":1,"state":"accepted","event_code":"turn.accepted","provider_stage":null,"provider_attempt":null,"recorded_at":"2026-07-30T12:00:00Z"}\n\n',
+        {
+          headers: { 'Content-Type': 'text/event-stream' },
+          status: 200,
+        },
+      ),
+    )
+    const api = new WebConversationJourneyApi({
+      baseUrl: 'https://api.global-english.test/api/v1',
+      csrfProtection: 'none',
+      fetch,
+    })
+
+    await api.events(
+      '/api/v1/conversation-turns/01J00000000000000000000006/events',
+    )
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.global-english.test/api/v1/conversation-turns/01J00000000000000000000006/events',
       expect.objectContaining({
         credentials: 'include',
         headers: { Accept: 'text/event-stream' },
@@ -177,6 +287,9 @@ describe('web deterministic conversation API', () => {
       '/api/v1/conversation-sessions/01J00000000000000000000001/recordings',
     )
     expect(init?.body).toBeInstanceOf(FormData)
+    const audio = (init?.body as FormData).get('audio')
+    expect(audio).toBeInstanceOf(File)
+    expect((audio as File).name).toBe('voice-practice.wav')
     expect(new Headers(init?.headers).get('Content-Type')).toBeNull()
     expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(
       'voice-command',
@@ -184,5 +297,117 @@ describe('web deterministic conversation API', () => {
     expect(new Headers(init?.headers).get('X-XSRF-TOKEN')).toBe(
       'voice-csrf',
     )
+  })
+
+  it('does not request a Sanctum cookie for Android bearer mutations', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ id: 'android-session' }, { status: 201 }),
+    )
+    const api = new WebConversationJourneyApi({
+      baseUrl: 'https://api.global-english.test/api/v1',
+      csrfProtection: 'none',
+      fetch,
+    })
+
+    await api.startSession(
+      {
+        coaching_mode: 'gentle',
+        persona_key: 'patient-friend-prototype',
+        scenario_key: 'everyday-friend-prototype',
+        ui_locale: 'kn-IN',
+      },
+      'android-session-command',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.global-english.test/api/v1/conversation-sessions',
+      expect.objectContaining({
+        headers: expect.not.objectContaining({
+          'X-XSRF-TOKEN': expect.anything(),
+        }),
+        method: 'POST',
+      }),
+    )
+  })
+
+  it('posts bounded session speech through CSRF JSON', async () => {
+    const speech = {
+      guidance_audio_base64: null,
+      guidance_audio_mime_type: null,
+      model_audio_base64: 'QQ==',
+      model_audio_mime_type: 'audio/wav' as const,
+      playback_available: true,
+      rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+    }
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json(speech, { status: 200 }))
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=speech-csrf',
+    })
+
+    await expect(
+      api.synthesizeSpeech(
+        '01J00000000000000000000001',
+        {
+          purpose: 'model_en',
+          text: 'I went to the market this morning.',
+        },
+        'speech-command',
+      ),
+    ).resolves.toEqual(speech)
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/conversation-sessions/01J00000000000000000000001/speech',
+      expect.objectContaining({
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'Idempotency-Key': 'speech-command',
+          'X-XSRF-TOKEN': 'speech-csrf',
+        }),
+        method: 'POST',
+      }),
+    )
+  })
+
+  it('surfaces entitlement problem keys from failed mutations', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            correlation_id: '00000000-0000-4000-8000-000000000001',
+            detail: 'This month’s live-AI allowance is used up.',
+            instance:
+              'urn:global-english:problem-instance:00000000-0000-4000-8000-000000000001',
+            message_key: 'entitlement.ai_exhausted',
+            status: 409,
+            title: 'Live speaking time used',
+            type: 'urn:global-english:problem:entitlement-ai-exhausted',
+          },
+          { status: 409 },
+        ),
+      )
+    const api = new WebConversationJourneyApi({
+      fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await expect(
+      api.createTurn(
+        '01J00000000000000000000001',
+        { prototype_utterance: 'Hello' },
+        'turn-command',
+      ),
+    ).rejects.toMatchObject({
+      messageKey: 'entitlement.ai_exhausted',
+      name: 'ConversationJourneyUnavailableError',
+      status: 409,
+    })
   })
 })

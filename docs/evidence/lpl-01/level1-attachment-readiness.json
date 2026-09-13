@@ -1,0 +1,18 @@
+{
+  "schema": "global-english.lpl01.attachment-readiness.v1",
+  "blueprint_id": "01KZZY3RFR2DB04JY0GTFRXQZ1",
+  "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+  "curriculum_version_id": "01KZZY3RFJGXQENRM5YBEWE67C",
+  "content_hash": "5294e5799749563947a52c35e5951d3ecb36d1094746bcbd982fc93ff920cc5c",
+  "state": "private_draft_attached",
+  "publication_eligible": false,
+  "approval_reference": "APP-0061",
+  "review_requirements": {"english_academic": "approved", "kannada": "approved"},
+  "parts": [
+    {"order": 1, "part_id": "introduction", "asset_id": "01KZNFYHCJSDWSPK08ZAC7G3AJ", "rights_revision_id": "01KZNKNFWGSRDBD57H18YCDPG8"},
+    {"order": 2, "part_id": "practice", "asset_id": "01KZNFYJ1M911SB8YVH9P4EZZ0", "rights_revision_id": "01KZNKNFXKFRSVXRKPYWHDCF7C"},
+    {"order": 3, "part_id": "conversation", "asset_id": "01KZNFYJVSZRPZCEPTTQ4QTMNT", "rights_revision_id": "01KZNKNFYDDC31CV2BR155DXVR"},
+    {"order": 4, "part_id": "interaction", "asset_id": "01KZNFYK75V9WF8R5VCWRRZHNN", "rights_revision_id": "01KZNKNFZ7A5Z9JPSC2AV0QPZQ"}
+  ],
+  "blockers": ["publication_decision", "production_public_release"]
+}

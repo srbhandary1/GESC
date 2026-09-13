@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import {
   DEFAULT_LOCALE,
+  INTERFACE_LOCALES,
   resolveMessage,
-  SUPPORTED_LOCALES,
   type MessageKey,
   type SupportedLocale,
 } from '@global-english/localization'
@@ -10,6 +10,75 @@ import { expect, test, type Page } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   await mockAnonymousSession(page)
+})
+
+test('opens the dedicated sign-in page instead of the retired LPL-01 review aid', async ({
+  page,
+}) => {
+  await page.goto('/lpl01-reconciliation.html')
+  await expect(
+    page.getByRole('heading', {
+      name: 'LPL-01 human transcript reconciliation',
+    }),
+  ).toHaveCount(0)
+
+  await page.goto('/#sign-in')
+  await expect(page.locator('#sign-in-title')).toBeVisible()
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
+test('creates one invited password account without browser persistence', async ({
+  page,
+}) => {
+  let submitted: unknown = null
+  await page.route(
+    '**/api/v1/auth/password/invitation-enrollments',
+    async (route) => {
+      submitted = route.request().postDataJSON()
+      await route.fulfill({ status: 204 })
+    },
+  )
+  await page.goto('/#sign-in')
+
+  await page
+    .getByRole('button', {
+      name: message('auth.password.invitation_open'),
+    })
+    .click()
+  await page
+    .getByLabel(message('auth.password.invitation_code'))
+    .fill('GEI-CLOSED-GROUP-2026')
+  await page
+    .getByLabel(message('auth.password.username'))
+    .fill('closed.tester')
+  await page
+    .locator('#web-password-password')
+    .fill('Closed group learner phrase 2026!')
+  await page
+    .locator('#web-password-confirmation')
+    .fill('Closed group learner phrase 2026!')
+  await page
+    .getByRole('button', {
+      name: message('auth.password.invitation_submit'),
+    })
+    .click()
+
+  await expect(
+    page.getByText(message('auth.password.invitation_complete')),
+  ).toBeVisible()
+  expect(submitted).toEqual({
+    invitation_code: 'GEI-CLOSED-GROUP-2026',
+    username: 'closed.tester',
+    password: 'Closed group learner phrase 2026!',
+  })
+  expect(
+    await page.evaluate(() => ({
+      local: Object.keys(localStorage),
+      session: Object.keys(sessionStorage),
+    })),
+  ).toEqual({ local: [], session: [] })
 })
 
 test('renders an axe-clean Kannada-first semantic shell', async ({
@@ -23,27 +92,52 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   )
   await expect(page.getByRole('banner')).toBeVisible()
   await expect(
-    page.getByRole('navigation', {
-      name: message('shell.navigation_label'),
-    }),
+    // exact: the marketing hero CTA contains this label as a substring.
+    page.getByRole('link', { exact: true, name: message('session.label') }),
   ).toBeVisible()
   await expect(page.getByRole('main')).toBeVisible()
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title'),
+      name: message('marketing.hero.title'),
     }),
   ).toBeVisible()
+  await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
+  await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
   await expect(
-    page.getByRole('link', { name: message('nav.home') }),
-  ).toHaveAttribute('aria-current', 'page')
+    page.getByText(message('conversation.prototype_notice')),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', {
+      name: message('marketing.hero.cta_learn'),
+    }),
+  ).toHaveAttribute('href', '#how-it-works')
+  for (const sectionHeading of [
+    'marketing.showcase.title',
+    'marketing.section.how',
+    'marketing.section.why',
+    'marketing.section.pedagogy',
+    'marketing.benefit.together.title',
+    'marketing.join.title',
+  ] as const) {
+    await expect(
+      page.getByRole('heading', { name: message(sectionHeading) }),
+    ).toBeVisible()
+  }
+  await expect(page.locator('.marketing-landing img')).toHaveCount(0)
+  await expect(page.locator('.marketing-split, .marketing-showcase, .marketing-why')).toHaveCount(0)
+  await expect(
+    page.getByRole('navigation', {
+      name: message('shell.navigation_label'),
+    }),
+  ).toHaveCount(0)
   await expect(page.getByRole('alert')).toHaveCount(0)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
 
   expect(accessibility.violations).toEqual([])
 
-  for (const locale of SUPPORTED_LOCALES.filter(
+  for (const locale of INTERFACE_LOCALES.filter(
     (candidate) => candidate !== DEFAULT_LOCALE,
   )) {
     await page.locator('#interface-locale').selectOption(locale)
@@ -55,7 +149,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   }
 })
 
-test('supports skip-link and destination navigation from the keyboard', async ({
+test('supports skip-link and sign-in from the keyboard', async ({
   page,
 }) => {
   await page.goto('/')
@@ -70,51 +164,11 @@ test('supports skip-link and destination navigation from the keyboard', async ({
   await page.keyboard.press('Enter')
   await expect(page.getByRole('main')).toBeFocused()
 
-  await page.reload()
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Tab')
-
-  const learnLink = page.locator('a[href="#learn"]')
-  await expect(learnLink).toBeFocused()
-  await page.keyboard.press('Enter')
-
-  const learnTitle = page.getByRole('heading', {
-    level: 1,
-    name: message('page.learn.title'),
-  })
-
-  await expect(learnLink).toHaveAttribute('aria-current', 'page')
-  await expect(learnTitle).toBeFocused()
-
-  await page.goto('/#progress')
-
-  await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: message('page.progress.title'),
-    }),
-  ).toBeVisible()
-  await expect(page.locator('a[href="#progress"]')).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
-
-  await page.goto('/#learn')
-  await page.keyboard.press('Tab')
-  await page.keyboard.press('Enter')
-
-  await expect(page.getByRole('main')).toBeFocused()
-  expect(new URL(page.url()).hash).toBe('#learn')
-
-  await page.reload()
-  await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: message('page.learn.title'),
-    }),
-  ).toBeVisible()
+  await page
+    .getByRole('link', { exact: true, name: message('session.label') })
+    .click()
+  await expect(page.locator('#sign-in-title')).toBeVisible()
+  await expect(page.locator('#web-password-username')).toBeFocused()
 })
 
 test('keeps the locale selection ephemeral and stores no credentials', async ({
@@ -130,7 +184,7 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('page.home.title', 'en-IN'),
+      name: 'Let’s speak English fluently',
     }),
   ).toBeVisible()
   await expect
@@ -163,7 +217,9 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
 
     await expectNoHorizontalOverflow(page)
     await expect(page.getByRole('main')).toBeVisible()
-    await expect(page.locator('.ge-primary-navigation')).toBeVisible()
+    await expect(
+      page.getByRole('link', { exact: true, name: message('session.label') }),
+    ).toBeVisible()
   }
 
   await page.setViewportSize({ height: 900, width: 320 })
@@ -181,7 +237,7 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
   })
 
   for (const target of await page
-    .locator('.ge-primary-navigation__link, #interface-locale')
+    .locator('.shell-header-authentication, #interface-locale')
     .all()) {
     const box = await target.boundingBox()
 
@@ -279,6 +335,23 @@ test('loads every Phase 1 interface font and honors reduced motion', async ({
 })
 
 async function mockAnonymousSession(page: Page): Promise<void> {
+  await page.context().addCookies([
+    {
+      name: 'XSRF-TOKEN',
+      url: 'http://127.0.0.1:4173',
+      value: 'bootstrap-e2e-csrf-token',
+    },
+  ])
+  await page.route('**/sanctum/csrf-cookie', async (route) => {
+    await route.fulfill({ status: 204 })
+  })
+  await page.route('**/api/v1/auth/password/mode', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: { mode: 'password_only' },
+      status: 200,
+    })
+  })
   await page.route('**/api/v1/me', async (route) => {
     await route.fulfill({
       contentType: 'application/problem+json',
@@ -299,13 +372,43 @@ async function mockAnonymousSession(page: Page): Promise<void> {
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   await expect
     .poll(() =>
-      page.evaluate(
-        () =>
-          document.documentElement.scrollWidth <=
-          document.documentElement.clientWidth,
-      ),
+      page.evaluate(() => {
+        const viewportWidth = document.documentElement.clientWidth
+        if (document.documentElement.scrollWidth <= viewportWidth) {
+          return []
+        }
+
+        return Array.from(document.querySelectorAll<HTMLElement>('body *'))
+          .filter((element) => {
+            const bounds = element.getBoundingClientRect()
+
+            return bounds.left < 0 || bounds.right > viewportWidth
+          })
+          .slice(0, 12)
+          .map((element) => {
+            const ancestry: string[] = []
+            let ancestor: HTMLElement | null = element
+            while (ancestor !== null && ancestry.length < 5) {
+              const bounds = ancestor.getBoundingClientRect()
+              ancestry.push(
+                `${ancestor.tagName}.${ancestor.className || '-'}[${Math.round(bounds.left)},${Math.round(bounds.right)}]`,
+              )
+              ancestor = ancestor.parentElement
+            }
+
+            return {
+              ancestry,
+              className: element.className,
+              documentWidth: document.documentElement.scrollWidth,
+              left: Math.round(element.getBoundingClientRect().left),
+              right: Math.round(element.getBoundingClientRect().right),
+              tagName: element.tagName,
+              text: element.textContent?.trim().slice(0, 80) ?? '',
+            }
+          })
+      }),
     )
-    .toBe(true)
+    .toEqual([])
 }
 
 function message(

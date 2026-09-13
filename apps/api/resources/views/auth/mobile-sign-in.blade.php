@@ -9,12 +9,22 @@
 <body>
     <main>
         <h1>Sign in to Global English</h1>
-        <p>Enter your mobile number with its country code.</p>
+        <p>{{ ($passwordMode ?? false) ? 'Enter your username and password.' : 'Enter your mobile number with its country code.' }}</p>
 
         @isset($error)
             <p role="alert">{{ $error }}</p>
         @endisset
 
+        @if ($passwordMode ?? false)
+        <form method="post" action="{{ route('auth.mobile.password.store') }}">
+            @csrf
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="64">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="512">
+            <button type="submit">Sign in</button>
+        </form>
+        @else
         <form method="post" action="{{ route('auth.mobile.otp.requests.store') }}">
             @csrf
             <label for="mobile_number">Mobile number</label>
@@ -42,6 +52,7 @@
             >
             <button type="submit">Send verification code</button>
         </form>
+        @endif
     </main>
 </body>
 </html>

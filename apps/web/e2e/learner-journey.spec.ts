@@ -6,6 +6,9 @@ import {
 } from '@global-english/localization'
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
+import { calculateWebBuildFingerprint } from '../buildFingerprint'
+
+const publicShellCacheName = `global-english-public-shell-${calculateWebBuildFingerprint()}`
 
 const ids = {
   asset: '01J10000000000000000000014',
@@ -23,6 +26,86 @@ const ids = {
   user: '01J10000000000000000000012',
 } as const
 
+test('keeps the Kannada Android Home compact, coach-led and accessible', async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 800, width: 360 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockLearnerApi(page, true)
+
+  await page.goto('/#home')
+
+  const locale = page.locator('#interface-locale')
+  await locale.selectOption('en-IN')
+  await locale.selectOption(DEFAULT_LOCALE)
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+
+  const home = page.locator('.learner-home')
+  const action = home.locator('.learner-home__action')
+  const continueButton = action.getByRole('button', {
+    name: message('learner.home.continue'),
+  })
+
+  await expect(
+    home.getByRole('heading', {
+      name: message('learner.home.title'),
+    }),
+  ).toBeVisible()
+  await expect(locale).toHaveValue(DEFAULT_LOCALE)
+  await expect(page.locator('html')).toHaveAttribute('lang', DEFAULT_LOCALE)
+  await expect(action.locator('.tutor-presence__face')).toBeVisible()
+  await expect(action.getByText(message('tutor.name'))).toBeVisible()
+  await expect(home.locator('.ge-button--primary')).toHaveCount(1)
+  await expect(page.locator('.tutor-home-hero')).toHaveCount(1)
+
+  const metrics = await page.evaluate(() => {
+    const button = document.querySelector<HTMLElement>(
+      '.learner-home__continue',
+    )
+    const title = document.querySelector<HTMLElement>(
+      '.learner-home__action-title',
+    )
+    const portrait = document.querySelector<HTMLElement>(
+      '.learner-home__coach .tutor-presence__face',
+    )
+    const navigationLinks = [
+      ...document.querySelectorAll<HTMLElement>(
+        '.ge-primary-navigation__link',
+      ),
+    ]
+
+    return {
+      buttonHeight: button?.getBoundingClientRect().height ?? 0,
+      hasHorizontalOverflow:
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+      navigationTargetHeights: navigationLinks.map(
+        (link) => link.getBoundingClientRect().height,
+      ),
+      portraitWidth: portrait?.getBoundingClientRect().width ?? 0,
+      titleFontSize: Number.parseFloat(
+        title === null ? '0' : getComputedStyle(title).fontSize,
+      ),
+    }
+  })
+
+  expect(metrics.hasHorizontalOverflow).toBe(false)
+  expect(metrics.buttonHeight).toBeGreaterThanOrEqual(44)
+  expect(metrics.buttonHeight).toBeLessThanOrEqual(56)
+  expect(metrics.titleFontSize).toBeLessThanOrEqual(28)
+  expect(metrics.portraitWidth).toBeGreaterThanOrEqual(56)
+  expect(metrics.portraitWidth).toBeLessThanOrEqual(80)
+  expect(
+    metrics.navigationTargetHeights.every((height) => height >= 44),
+  ).toBe(true)
+  await expect(continueButton).toBeEnabled()
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
 test('completes the contract-stubbed online no-AI learner journey', async ({
   page,
 }) => {
@@ -31,7 +114,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
   await installWorkingMicrophone(page)
   const api = await mockLearnerApi(page, false)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
 
   await expect(
     page.getByRole('heading', {
@@ -56,7 +139,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
 
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await expect(
@@ -89,7 +172,9 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       name: message('learner.recording.start'),
     })
     .click()
-  await page.waitForTimeout(300)
+  // The PCM recorder needs real capture time: ~80ms settle plus 4096-frame
+  // ScriptProcessor buffers, so a short window yields no samples at all.
+  await page.waitForTimeout(1200)
   await page
     .getByRole('button', {
       name: message('learner.recording.stop'),
@@ -109,7 +194,9 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       name: message('learner.recording.start'),
     })
     .click()
-  await page.waitForTimeout(300)
+  // The PCM recorder needs real capture time: ~80ms settle plus 4096-frame
+  // ScriptProcessor buffers, so a short window yields no samples at all.
+  await page.waitForTimeout(1200)
   await page
     .getByRole('button', {
       name: message('learner.recording.stop'),
@@ -155,7 +242,8 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     client_capture_id: expect.stringMatching(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     ),
-    mime_type: 'audio/webm',
+    // Chromium's real recorder reports the canonical opus-tagged variant.
+    mime_type: expect.stringMatching(/^audio\/webm(;codecs=opus)?$/),
   })
   expect(api.lastResponse!.local_recording!.byte_size).toBeGreaterThanOrEqual(
     128,
@@ -235,7 +323,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
       }),
     )
     .toMatchObject({
-      cacheKeys: ['global-english-public-shell-v1'],
+      cacheKeys: [publicShellCacheName],
       serviceWorkerRegistrations: 1,
     })
   const cachedUrls = await page.evaluate(async () => {
@@ -267,10 +355,10 @@ test('contract-stubbed microphone denial stays spoken-unassessed', async ({
   await installDeniedMicrophone(page)
   const api = await mockLearnerApi(page, true)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await page
@@ -320,7 +408,7 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   await installDeniedMicrophone(page)
   const api = await mockLearnerApi(page, true)
 
-  await page.goto('/#learn')
+  await page.goto('/#home')
   await page
     .getByRole('checkbox', {
       name: message('learner.offline.personal_confirmation'),
@@ -394,7 +482,7 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   await context.setOffline(true)
   await page
     .getByRole('button', {
-      name: message('learner.home.start_mission'),
+      name: message('learner.home.continue'),
     })
     .click()
   await page
@@ -551,6 +639,10 @@ async function mockLearnerApi(
       state.requestBodies.push(postData)
     }
 
+    if (await fulfillPasswordSecurity(route, path)) {
+      return
+    }
+
     if (path === '/api/v1/me') {
       await json(route, {
         current_membership: {
@@ -670,6 +762,26 @@ async function mockLearnerApi(
   return state
 }
 
+async function fulfillPasswordSecurity(
+  route: Route,
+  path: string,
+): Promise<boolean> {
+  if (path === '/api/v1/auth/password/status') {
+    await json(route, {
+      credential_ready: true,
+      mode: 'password_only',
+      password_confirmed_at: null,
+      username: 'learner.one',
+    })
+    return true
+  }
+  if (path === '/api/v1/auth/sessions') {
+    await json(route, { data: [] })
+    return true
+  }
+  return false
+}
+
 async function installWorkingMicrophone(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const testState = {
@@ -682,58 +794,36 @@ async function installWorkingMicrophone(page: Page): Promise<void> {
       nativeRevoke(url)
     }
     Object.assign(window, { __recordingTestState: testState })
+
+    // The PCM recorder feeds getUserMedia's stream into a real AudioContext,
+    // so a scripted stub object cannot work and headless CI has no capture
+    // device. Synthesize a genuine MediaStream from an oscillator instead:
+    // deterministic, device-free, and type-correct for WebAudio.
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,
       value: {
-        getUserMedia: async () => ({
-          getTracks: () => [
-            {
-              stop: () => {
-                testState.stoppedTracks += 1
-              },
-            },
-          ],
-        }),
+        getUserMedia: async () => {
+          const context = new AudioContext()
+          const oscillator = context.createOscillator()
+          const destination = context.createMediaStreamDestination()
+          oscillator.frequency.value = 440
+          oscillator.connect(destination)
+          oscillator.start()
+          void context.resume()
+
+          const stream = destination.stream
+          for (const track of stream.getTracks()) {
+            const nativeStop = track.stop.bind(track)
+            track.stop = () => {
+              testState.stoppedTracks += 1
+              oscillator.stop()
+              void context.close()
+              nativeStop()
+            }
+          }
+          return stream
+        },
       },
-    })
-
-    class DeterministicMediaRecorder extends EventTarget {
-      static isTypeSupported(): boolean {
-        return true
-      }
-
-      readonly mimeType = 'audio/webm'
-      state: RecordingState = 'inactive'
-
-      start(): void {
-        this.state = 'recording'
-      }
-
-      pause(): void {
-        this.state = 'paused'
-      }
-
-      resume(): void {
-        this.state = 'recording'
-      }
-
-      stop(): void {
-        this.state = 'inactive'
-        const data = new Blob(['deterministic-local-audio'.padEnd(128, 'x')], {
-          type: this.mimeType,
-        })
-        const event = new Event('dataavailable')
-        Object.defineProperty(event, 'data', { value: data })
-        queueMicrotask(() => {
-          this.dispatchEvent(event)
-          this.dispatchEvent(new Event('stop'))
-        })
-      }
-    }
-
-    Object.defineProperty(window, 'MediaRecorder', {
-      configurable: true,
-      value: DeterministicMediaRecorder,
     })
   })
 }
@@ -762,6 +852,8 @@ async function installDeniedMicrophone(page: Page): Promise<void> {
 
 function home(onboarded: boolean) {
   return {
+    due_review: null,
+    upcoming_reviews: [],
     enrollment: onboarded
       ? { id: ids.enrollment, status: 'active' }
       : null,
@@ -776,6 +868,11 @@ function home(onboarded: boolean) {
       adult_confirmed: onboarded,
       completed: onboarded,
       goal_key: onboarded ? 'workplace-confidence' : null,
+    },
+    streak: {
+      as_of_date: '2026-08-30',
+      count: 0,
+      timezone: 'Asia/Kolkata',
     },
   }
 }

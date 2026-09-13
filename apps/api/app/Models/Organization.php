@@ -56,6 +56,14 @@ final class Organization extends Model
         return $this->hasMany(Cohort::class);
     }
 
+    /**
+     * @return HasMany<Branch, $this>
+     */
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class);
+    }
+
     protected static function booted(): void
     {
         self::updating(static function (self $organization): void {

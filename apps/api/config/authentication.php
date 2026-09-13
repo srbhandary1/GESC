@@ -3,8 +3,14 @@
 declare(strict_types=1);
 
 return [
+    'mode' => env('AUTHENTICATION_MODE', 'legacy_otp'),
+
     'identity' => [
         'digest_key' => env('AUTH_IDENTITY_DIGEST_KEY'),
+        'local_operator_bootstrap_enabled' => env(
+            'LOCAL_OPERATOR_IDENTITY_BOOTSTRAP_ENABLED',
+            false,
+        ),
     ],
 
     'web' => [
@@ -23,6 +29,44 @@ return [
                 'organization_owner,organization_admin,trainer,content_reviewer,content_editor,support'
             )),
         ))),
+    ],
+
+    'password' => [
+        'policy_version' => (int) env('AUTH_PASSWORD_POLICY_VERSION', 1),
+        'confirmation_minutes' => (int) env('AUTH_PASSWORD_CONFIRMATION_MINUTES', 5),
+        'argon_memory' => (int) env('AUTH_PASSWORD_ARGON_MEMORY', 65_536),
+        'argon_time' => (int) env('AUTH_PASSWORD_ARGON_TIME', 3),
+        'argon_threads' => (int) env('AUTH_PASSWORD_ARGON_THREADS', 1),
+        'blocklist_path' => env('AUTH_PASSWORD_BLOCKLIST_PATH'),
+        'blocklist_sha256' => env('AUTH_PASSWORD_BLOCKLIST_SHA256'),
+        'cutover_exclusion_reconciliation_enabled' => env(
+            'AUTH_PASSWORD_CUTOVER_EXCLUSION_RECONCILIATION_ENABLED',
+            false,
+        ),
+        'cutover_manifest_sha256' => env('AUTH_PASSWORD_CUTOVER_MANIFEST_SHA256'),
+        'recovery_delivery_driver' => env(
+            'AUTH_PASSWORD_RECOVERY_DELIVERY_DRIVER',
+            'unavailable',
+        ),
+        'protected_delivery_path' => env(
+            'AUTH_PASSWORD_PROTECTED_DELIVERY_PATH',
+            '/tmp/global-english-password-recovery-deliveries',
+        ),
+        'recovery_digest_key' => env(
+            'AUTH_RECOVERY_DIGEST_KEY',
+            in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)
+                ? 'base64:Z2xvYmFsLWVuZ2xpc2gtcmVjb3ZlcnktbG9jYWwta2V5'
+                : null,
+        ),
+        'blocked' => [
+            'password',
+            'password123',
+            'qwertyuiop',
+            'letmein',
+            '123456789012345',
+            'globalenglish',
+            'global spoken english',
+        ],
     ],
 
     'otp' => [
@@ -46,5 +90,24 @@ return [
         'access_token_minutes' => (int) env('AUTH_MOBILE_ACCESS_TOKEN_MINUTES', 15),
         'family_inactivity_days' => (int) env('AUTH_MOBILE_FAMILY_INACTIVITY_DAYS', 30),
         'family_absolute_days' => (int) env('AUTH_MOBILE_FAMILY_ABSOLUTE_DAYS', 90),
+    ],
+
+    'federated' => [
+        'driver' => env('AUTH_FEDERATED_DRIVER', 'oidc'),
+        'web_return_url' => env('AUTH_FEDERATED_WEB_RETURN_URL', '/'),
+        'google' => [
+            'client_id' => env('GOOGLE_OAUTH_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI'),
+        ],
+        'facebook' => [
+            'client_id' => env('FACEBOOK_OAUTH_CLIENT_ID'),
+            'client_secret' => env('FACEBOOK_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('FACEBOOK_OAUTH_REDIRECT_URI'),
+        ],
+    ],
+
+    'mobile' => [
+        'native_oauth_client_id' => env('AUTH_MOBILE_NATIVE_OAUTH_CLIENT_ID'),
     ],
 ];

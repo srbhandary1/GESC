@@ -1,5 +1,6 @@
 import type { AudioControlLabels } from '@global-english/design-system'
 import { cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 
@@ -41,6 +42,7 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        slowLabel="Slow"
         source="/first.wav"
       />,
     )
@@ -55,6 +57,7 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        slowLabel="Slow"
         source="/second.wav"
       />,
     )
@@ -67,5 +70,95 @@ describe('ModelAudioPlayer', () => {
       '/second.wav',
     )
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
+  })
+
+  it('keeps play disabled until authenticated audio is in a blob URL', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(
+      'blob:authenticated-model-audio',
+    )
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    let finishLoad: ((audio: Blob) => void) | undefined
+    const loadSource = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          finishLoad = resolve
+        }),
+    )
+
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/mpeg"
+        slowLabel="Slow"
+        source="/api/v1/me/levels/1/sessions/introduction/audio"
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Loading' }),
+    ).toBeDisabled()
+    expect(screen.queryByTestId('model-audio-element')).toBeNull()
+
+    finishLoad?.(new Blob(['audio'], { type: 'audio/mpeg' }))
+
+    await screen.findByTestId('model-audio-element')
+    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
+  })
+
+  it('loads authenticated audio into a revocable object URL', async () => {
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:authenticated-model-audio')
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const loadSource = vi.fn(async () => new Blob(['audio']))
+
+    const view = render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/wav"
+        slowLabel="Slow"
+        source="https://api.example.test/api/v1/media/model-audio"
+      />,
+    )
+
+    expect(screen.queryByTestId('model-audio-element')).toBeNull()
+
+    await screen.findByTestId('model-audio-element')
+
+    expect(loadSource).toHaveBeenCalledWith(
+      'https://api.example.test/api/v1/media/model-audio',
+      expect.any(AbortSignal),
+    )
+    expect(createObjectUrl).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByTestId('model-audio-element').querySelector('source'),
+    ).toHaveAttribute('src', 'blob:authenticated-model-audio')
+
+    view.unmount()
+    expect(revokeObjectUrl).toHaveBeenCalledWith(
+      'blob:authenticated-model-audio',
+    )
+  })
+
+  it('exposes a slow-speed toggle without resetting resume position', async () => {
+    const user = userEvent.setup()
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        mimeType="audio/wav"
+        slowLabel="Slow"
+        source="/first.wav"
+      />,
+    )
+
+    const slow = screen.getByRole('button', { name: 'Slow' })
+    expect(slow).toHaveAttribute('aria-pressed', 'false')
+    await user.click(slow)
+    expect(slow).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
   })
 })

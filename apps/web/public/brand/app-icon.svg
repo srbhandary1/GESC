@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0FDF4"/>
+      <stop offset="100%" stop-color="#DCFCE7"/>
+    </linearGradient>
+    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A86B"/>
+      <stop offset="100%" stop-color="#006B3F"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  
+  <!-- Globe centered -->
+  <g transform="translate(212, 180)" filter="url(#shadow)">
+    <circle cx="300" cy="300" r="280" fill="#FFFFFF"/>
+    <path d="M120,160 Q180,100 250,140 Q320,80 390,160 Q440,120 500,180 Q460,240 390,220 Q340,280 280,240 Q210,300 160,260 Q120,220 120,160" fill="url(#globeGrad)" opacity="0.95"/>
+    <path d="M140,320 Q200,280 260,340 Q320,300 380,360 Q340,420 280,400 Q220,440 180,400 Q130,360 140,320" fill="url(#globeGrad)" opacity="0.9"/>
+    <path d="M420,220 Q480,200 520,280 Q500,340 440,320 Q420,260 420,220" fill="url(#globeGrad)" opacity="0.85"/>
+    
+    <!-- Grid -->
+    <ellipse cx="300" cy="300" rx="280" ry="100" fill="none" stroke="#00A86B" stroke-width="3" opacity="0.2"/>
+    <ellipse cx="300" cy="300" rx="280" ry="180" fill="none" stroke="#00A86B" stroke-width="3" opacity="0.15"/>
+    <line x1="20" y1="300" x2="580" y2="300" stroke="#00A86B" stroke-width="3" opacity="0.2"/>
+    
+    <!-- Red e -->
+    <path d="M180,220 Q180,160 260,160 Q340,160 340,220 Q340,270 290,290 Q340,310 340,360 Q340,420 260,420 Q180,420 180,360" 
+          fill="none" stroke="#E31C23" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M180,290 L310,290" stroke="#E31C23" stroke-width="42" stroke-linecap="round"/>
+    
+    <!-- Swooshes -->
+    <path d="M40,440 Q140,500 240,480 Q340,510 480,440" fill="none" stroke="#E31C23" stroke-width="32" stroke-linecap="round" opacity="0.9"/>
+    <path d="M60,490 Q160,560 300,540 Q440,570 540,480" fill="none" stroke="#00A86B" stroke-width="38" stroke-linecap="round"/>
+  </g>
+</svg>

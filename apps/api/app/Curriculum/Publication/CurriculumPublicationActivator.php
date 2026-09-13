@@ -6,6 +6,7 @@ namespace App\Curriculum\Publication;
 
 use App\Audit\AuditEventRecorder;
 use App\Curriculum\CanonicalJson;
+use App\Curriculum\Exceptions\CurriculumHeadConflict;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Models\User;
@@ -143,39 +144,37 @@ final readonly class CurriculumPublicationActivator
                     'lock_version',
                 ]);
 
-            if (
-                ! $head instanceof stdClass
-                || $this->integer($head, 'lock_version')
-                    !== $expectedHeadVersion
-            ) {
+            if (! $head instanceof stdClass) {
                 throw new CurriculumOperationRejected;
             }
 
-            $schedule = DB::table('publication_events')
+            if ($this->integer($head, 'lock_version') !== $expectedHeadVersion) {
+                throw new CurriculumHeadConflict;
+            }
+
+            $scheduledEvent = DB::table('publication_events')
                 ->where('organization_id', $context->organizationId)
                 ->where('program_id', $programId)
                 ->where('curriculum_publication_id', $publicationId)
-                ->where('event_type', 'scheduled')
+                ->whereIn('event_type', [
+                    'scheduled',
+                    'schedule_cancelled',
+                    'activated',
+                    'rollback_activated',
+                    'retired',
+                ])
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->lockForUpdate()
-                ->get(['id', 'effective_at']);
+                ->first(['event_type', 'effective_at']);
 
             if (
-                $schedule->count() !== 1
-                || DB::table('publication_events')
-                    ->where('organization_id', $context->organizationId)
-                    ->where('program_id', $programId)
-                    ->where('curriculum_publication_id', $publicationId)
-                    ->whereIn(
-                        'event_type',
-                        ['activated', 'rollback_activated', 'retired'],
-                    )
-                    ->exists()
+                ! $scheduledEvent instanceof stdClass
+                || $this->string($scheduledEvent, 'event_type') !== 'scheduled'
             ) {
                 throw new CurriculumOperationRejected;
             }
 
-            /** @var stdClass $scheduledEvent */
-            $scheduledEvent = $schedule->first();
             $this->evidence->lockMutableEvidence();
             $activatedAt = Date::now()->toImmutable()->utc();
 
@@ -192,6 +191,7 @@ final readonly class CurriculumPublicationActivator
                 evaluatedAt: $activatedAt,
                 lockMutableEvidence: false,
                 rejectSupersededRights: true,
+                requireCurrentManagedMedia: true,
             );
 
             if (

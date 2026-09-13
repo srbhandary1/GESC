@@ -20,6 +20,52 @@ const identityResponse = {
 } as const
 
 describe('WebSessionAuthenticationAdapter', () => {
+  it('submits username/password only over CSRF-protected cookie transport', async () => {
+    const requests: Request[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      requests.push(request)
+
+      return request.url.endsWith('/sanctum/csrf-cookie')
+        ? new Response(null, { status: 204 })
+        : Response.json({ session: { id: '01J00000000000000000000001' } })
+    })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: fetcher as typeof fetch,
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await adapter.signIn('learner.one', 'Correct horse battery 2026!')
+
+    const request = requests.at(-1)
+    expect(request?.url).toBe(
+      'https://app.global-english.test/api/v1/auth/password/sign-ins',
+    )
+    expect(request?.credentials).toBe('include')
+    expect(request?.headers.get('X-XSRF-TOKEN')).toBe('csrf-token')
+    expect(request?.headers.get('Authorization')).toBeNull()
+    await expect(request?.json()).resolves.toEqual({
+      username: 'learner.one',
+      password: 'Correct horse battery 2026!',
+    })
+  })
+
+  it('starts Google sign-in on the first-party authorize path', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { assign })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: vi.fn() as typeof fetch,
+      readCookie: () => '',
+    })
+
+    await adapter.beginFederatedSignIn('google')
+
+    expect(assign).toHaveBeenCalledWith('/oauth/social/google/authorize')
+    vi.unstubAllGlobals()
+  })
+
   it('uses CSRF-protected cookie requests without browser credential storage', async () => {
     const requests: Request[] = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -178,5 +224,134 @@ describe('WebSessionAuthenticationAdapter', () => {
       'Pending offline work.',
     )
     expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('uses only CSRF-protected cookie transport for the privileged MFA lifecycle', async () => {
+    const requests: Request[] = []
+    const recoveryCodes = Array.from(
+      { length: 10 },
+      (_, index) => `${index.toString().padStart(8, '0')}-11111111-22222222-33333333`,
+    )
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      requests.push(request)
+      const path = new URL(request.url).pathname
+
+      if (path === '/sanctum/csrf-cookie') {
+        return new Response(null, { status: 204 })
+      }
+
+      if (path === '/api/v1/auth/mfa' && request.method === 'GET') {
+        return Response.json({
+          factor_status: 'none',
+          factor_id: null,
+          pending_expires_at: null,
+          recovery_codes_remaining: 0,
+          fresh_assertion_scope: null,
+          fresh_assertion_expires_at: null,
+          can_enroll: true,
+          requires_support: false,
+        })
+      }
+
+      if (path === '/api/v1/auth/mfa/enrollments') {
+        return Response.json(
+          {
+            factor_id: '01J00000000000000000000011',
+            challenge_id: '01J00000000000000000000012',
+            provisioning_uri:
+              'otpauth://totp/Global%20English?secret=ABCDEFGHIJKLMNOPQRSTUV234567ABCD',
+            expires_at: '2026-08-08T10:05:00Z',
+          },
+          { status: 201 },
+        )
+      }
+
+      if (path.endsWith('/confirm')) {
+        return Response.json({
+          recovery_codes: recoveryCodes,
+          sessions_revoked: false,
+        })
+      }
+
+      if (path === '/api/v1/auth/mfa/challenges') {
+        return Response.json(
+          {
+            challenge_id: '01J00000000000000000000013',
+            expires_at: '2026-08-08T10:05:00Z',
+          },
+          { status: 201 },
+        )
+      }
+
+      if (path.endsWith('/verify')) {
+        return Response.json({
+          verified_at: '2026-08-08T10:00:00Z',
+          scope: 'privileged_actions',
+        })
+      }
+
+      if (path.endsWith('/recovery-codes/regenerate')) {
+        return Response.json({
+          recovery_codes: recoveryCodes,
+          sessions_revoked: true,
+        })
+      }
+
+      if (path.endsWith('/factor') && request.method === 'DELETE') {
+        return new Response(null, { status: 204 })
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${path}`)
+    })
+    const localStorageWrite = vi.spyOn(Storage.prototype, 'setItem')
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: fetcher as typeof fetch,
+      readCookie: () => 'XSRF-TOKEN=mfa-csrf-token',
+    })
+
+    await adapter.privilegedMfaStatus()
+    const enrollment = await adapter.beginPrivilegedMfaEnrollment()
+    await adapter.confirmPrivilegedMfaEnrollment(
+      enrollment.factor_id,
+      enrollment.challenge_id,
+      '123456',
+    )
+    const challenge = await adapter.createPrivilegedMfaChallenge()
+    await adapter.verifyPrivilegedMfaChallenge(
+      challenge.challenge_id,
+      'totp',
+      '654321',
+    )
+    await adapter.regeneratePrivilegedMfaRecoveryCodes()
+    await adapter.revokePrivilegedMfaFactor()
+
+    const authenticatedRequests = requests.filter(
+      (request) => !request.url.endsWith('/sanctum/csrf-cookie'),
+    )
+    expect(
+      authenticatedRequests.every(
+        (request) =>
+          request.credentials === 'include' &&
+          request.headers.get('Authorization') === null,
+      ),
+    ).toBe(true)
+    expect(
+      authenticatedRequests
+        .filter((request) => request.method !== 'GET')
+        .every(
+          (request) =>
+            request.headers.get('X-XSRF-TOKEN') === 'mfa-csrf-token',
+        ),
+    ).toBe(true)
+    const verification = authenticatedRequests.find((request) =>
+      request.url.endsWith('/challenges/01J00000000000000000000013/verify'),
+    )
+    await expect(verification?.json()).resolves.toEqual({
+      code: '654321',
+      method: 'totp',
+    })
+    expect(localStorageWrite).not.toHaveBeenCalled()
   })
 })

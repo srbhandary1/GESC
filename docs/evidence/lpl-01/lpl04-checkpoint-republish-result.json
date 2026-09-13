@@ -1,0 +1,56 @@
+{
+  "status": "completed",
+  "checkpoint": "LPL-04",
+  "approval_reference": "WAVE-7.1",
+  "organization_id": "01KYS97G7MX374P303XJHDXT72",
+  "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+  "database": "global_english",
+  "commands": [
+    "lesson-practice:replace-app0065-authored-levels --approval=APP-0065",
+    "lesson-practice:record-app0066-english-review --approval=APP-0066",
+    "lesson-practice:record-app0067-kannada-review --approval=APP-0067",
+    "lesson-practice:publish-direct-pathway --approval=WAVE-7.1"
+  ],
+  "idempotency_key_prefix": "lpl04-checkpoint",
+  "initial_publish": {
+    "levels_processed": 17,
+    "levels_published": 17,
+    "levels_skipped": 0,
+    "publication_eligible": true,
+    "note": "All 17 levels created new published revisions with level_checkpoint."
+  },
+  "replay_publish": {
+    "levels_processed": 17,
+    "levels_published": 0,
+    "levels_skipped": 17,
+    "publication_eligible": true,
+    "note": "Hash-idempotent replay; no duplicate revisions."
+  },
+  "checkpoint_verification": {
+    "all_have_checkpoint": true,
+    "items_per_level": 3,
+    "levels": [
+      {"level_number": 1, "concept_key": "can", "blueprint_id": "01M2D8W1BC5DY0BXS538GBFGS5", "revision_number": 3, "first_checkpoint_id": "can-cp-01"},
+      {"level_number": 2, "concept_key": "should", "blueprint_id": "01M2D8W1BSXNJDHD2M206G96X6", "revision_number": 9, "first_checkpoint_id": "should-cp-01"},
+      {"level_number": 3, "concept_key": "do_does", "blueprint_id": "01M2D8W1C4TB6XSD6CCRDRXWJY", "revision_number": 9, "first_checkpoint_id": "do_does-cp-01"},
+      {"level_number": 4, "concept_key": "is_are_ing", "blueprint_id": "01M2D8W1CHGFABHCES6ED84P9T", "revision_number": 9, "first_checkpoint_id": "is_are_ing-cp-01"},
+      {"level_number": 5, "concept_key": "did", "blueprint_id": "01M2D8W1CTH5CT0QSKHTJ8EWZH", "revision_number": 9, "first_checkpoint_id": "did-cp-01"},
+      {"level_number": 6, "concept_key": "was_were_ing", "blueprint_id": "01M2D8W1D30NXHV6TZ3D3RPZYQ", "revision_number": 9, "first_checkpoint_id": "was_were_ing-cp-01"},
+      {"level_number": 7, "concept_key": "have_has", "blueprint_id": "01M2D8W1DHK9AAVJNTPCSB3P35", "revision_number": 9, "first_checkpoint_id": "have_has-cp-01"},
+      {"level_number": 8, "concept_key": "have_been_has_been", "blueprint_id": "01M2D8W1ECJCPM21XM9KSR0BGD", "revision_number": 9, "first_checkpoint_id": "have_been_has_been-cp-01"},
+      {"level_number": 9, "concept_key": "had", "blueprint_id": "01M2D8W1F6697752MQC717P3V5", "revision_number": 9, "first_checkpoint_id": "had-cp-01"},
+      {"level_number": 10, "concept_key": "will", "blueprint_id": "01M2D8W1FTRF0A0R76ZN5CZFYM", "revision_number": 9, "first_checkpoint_id": "will-cp-01"},
+      {"level_number": 11, "concept_key": "gonna_wanna", "blueprint_id": "01M2D8W1G576XX00R17A21812S", "revision_number": 9, "first_checkpoint_id": "gonna_wanna-cp-01"},
+      {"level_number": 12, "concept_key": "would", "blueprint_id": "01M2D8W1GGJGHSB3T8NCDYQ9DK", "revision_number": 9, "first_checkpoint_id": "would-cp-01"},
+      {"level_number": 13, "concept_key": "may", "blueprint_id": "01M2D8W1GX8D7EDCJEPT9E0DP8", "revision_number": 9, "first_checkpoint_id": "may-cp-01"},
+      {"level_number": 14, "concept_key": "if", "blueprint_id": "01M2D8W1H8QTX236HE3462BJSF", "revision_number": 9, "first_checkpoint_id": "if-cp-01"},
+      {"level_number": 15, "concept_key": "must", "blueprint_id": "01M2D8W1HJE7FGJ90S219XNM5E", "revision_number": 9, "first_checkpoint_id": "must-cp-01"},
+      {"level_number": 16, "concept_key": "should_have", "blueprint_id": "01M2D8W1HX0P2W0XRZ1MPHQ8FX", "revision_number": 9, "first_checkpoint_id": "should_have-cp-01"},
+      {"level_number": 17, "concept_key": "used_to", "blueprint_id": "01M2D8W1J8ZNHHYSH6TWCFZZEV", "revision_number": 9, "first_checkpoint_id": "used_to-cp-01"}
+    ]
+  },
+  "prior_draft_revisions_retained": true,
+  "used_graph_curriculum_publisher": false,
+  "live_database_overwritten": false,
+  "note": "Counts and blueprint ids only. No learner identifiers."
+}

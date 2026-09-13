@@ -20,6 +20,15 @@ class MemoryPlugin implements GlobalEnglishSecureCredentialsPlugin {
     this.values.delete(options.key)
   }
 
+  async take(options: {
+    key: string
+  }): Promise<{ value: string | null }> {
+    const value = this.values.get(options.key) ?? null
+    this.values.delete(options.key)
+
+    return { value }
+  }
+
   async clearAuthentication(): Promise<void> {
     this.values.delete(SECURE_CREDENTIAL_STORAGE_KEYS.refreshToken)
     this.values.delete(SECURE_CREDENTIAL_STORAGE_KEYS.pendingAuthorization)
@@ -29,6 +38,8 @@ class MemoryPlugin implements GlobalEnglishSecureCredentialsPlugin {
 describe('KeystoreSecureCredentialStore', () => {
   it('persists installation ULID and refresh token only through the secure plugin', async () => {
     const plugin = new MemoryPlugin()
+    const takeSpy = vi.spyOn(plugin, 'take')
+    const removeSpy = vi.spyOn(plugin, 'remove')
     const store = new KeystoreSecureCredentialStore({
       createUlid: () => '01JTESTINSTALLATION000000001',
       plugin,
@@ -52,6 +63,8 @@ describe('KeystoreSecureCredentialStore', () => {
       verifier: 'verifier-1',
     })
     await expect(store.takePendingAuthorization()).resolves.toBeNull()
+    expect(takeSpy).toHaveBeenCalledTimes(2)
+    expect(removeSpy).not.toHaveBeenCalled()
 
     await store.clearAuthentication()
     expect(await store.readRefreshToken()).toBeNull()

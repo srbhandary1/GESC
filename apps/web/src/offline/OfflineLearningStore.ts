@@ -27,6 +27,61 @@ export interface PendingOfflineCommand {
   readonly state: 'pending' | 'needs-attention'
 }
 
+export interface CachedLevelCheckpointDetail {
+  readonly level_number: number
+  readonly concept_key: string
+  readonly blueprint_id: string
+  readonly blueprint_content_hash: string
+  readonly rule_key: string
+  readonly rule_hash: string
+  readonly pass_threshold: number
+  readonly max_attempts: number
+  readonly attempts_remaining: number | null
+  readonly items: Array<{
+    readonly id: string
+    readonly weight: number
+    readonly prompt: string
+    readonly options: readonly string[]
+  }>
+}
+
+export interface OfflineLevelBundle {
+  readonly manifest: {
+    readonly schema: 'global-english.offline-level-bundle.v1'
+    readonly bundle_id: string
+    readonly bundle_hash: string
+    readonly issued_at: string
+    readonly expires_at: string
+    readonly binding: OfflineProfileBinding
+    readonly level: {
+      readonly level_number: number
+      readonly concept_key: string
+      readonly blueprint_id: string
+      readonly blueprint_content_hash: string
+      readonly checkpoint_rule_key: string
+      readonly checkpoint_rule_hash: string
+    }
+    readonly checkpoint: CachedLevelCheckpointDetail
+  }
+  readonly lease: string
+}
+
+export interface StoredOfflineLevelBundle {
+  readonly bundle: OfflineLevelBundle
+}
+
+export interface PendingLevelCheckpointCommand {
+  readonly commandId: string
+  readonly levelNumber: number
+  readonly blueprintContentHash: string
+  readonly bundleId: string
+  readonly lease: string
+  readonly answers: Record<string, number>
+  readonly idempotencyKey: string
+  readonly createdAt: string
+  readonly state: 'pending' | 'needs-attention'
+}
+
 export interface OfflineLearningStore {
   available(): boolean
 
@@ -73,6 +128,51 @@ export interface OfflineLearningStore {
   purge(binding: OfflineProfileBinding): Promise<void>
 
   purgeAll(): Promise<void>
+
+  saveCheckpointDetail?(
+    binding: OfflineProfileBinding,
+    detail: CachedLevelCheckpointDetail,
+  ): Promise<void>
+
+  loadCheckpointDetail?(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    blueprintContentHash: string,
+  ): Promise<CachedLevelCheckpointDetail | null>
+
+  queueCheckpointSubmission?(
+    binding: OfflineProfileBinding,
+    command: PendingLevelCheckpointCommand,
+  ): Promise<void>
+
+  pendingCheckpointCommands?(
+    binding: OfflineProfileBinding,
+  ): Promise<ReadonlyArray<PendingLevelCheckpointCommand>>
+
+  markCheckpointNeedsAttention?(
+    binding: OfflineProfileBinding,
+    commandId: string,
+  ): Promise<void>
+
+  acceptCheckpointReceipt?(
+    binding: OfflineProfileBinding,
+    commandId: string,
+  ): Promise<void>
+
+  saveLevelBundle?(
+    binding: OfflineProfileBinding,
+    bundle: OfflineLevelBundle,
+  ): Promise<void>
+
+  loadLevelBundle?(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    blueprintContentHash: string,
+  ): Promise<StoredOfflineLevelBundle | null>
+}
+
+export function offlineLevelBundleRecordId(levelNumber: number): string {
+  return `level-bundle:${levelNumber}`
 }
 
 export function offlineBundleRecordId(
@@ -80,4 +180,8 @@ export function offlineBundleRecordId(
   missionId: string,
 ): string {
   return `bundle:${enrollmentId}:${missionId}`
+}
+
+export function offlineCheckpointDetailRecordId(levelNumber: number): string {
+  return `checkpoint-detail:${levelNumber}`
 }

@@ -10,6 +10,7 @@ use App\Conversation\Providers\ConversationModelRequest;
 use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\LessonDrillStrictTurnResponder;
 use App\Conversation\Support\SyntheticL1Explanations;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +24,12 @@ final readonly class ConversationOrchestrator
         private ConversationContextAllowlist $allowlist,
         private ConversationOutputValidator $validator,
         private LearnerMemoryService $memory,
+        private LessonDrillStrictTurnResponder $lessonDrillStrictTurns,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $lessonDrill
+     */
     public function respond(
         string $organizationId,
         string $membershipId,
@@ -36,10 +41,35 @@ final readonly class ConversationOrchestrator
         string $coachingMode,
         string $uiLocale,
         bool $persistAdvisory = true,
+        array $lessonDrill = [],
     ): ConversationModelResult {
         $locale = ConversationUiLocales::isSupported($uiLocale)
             ? $uiLocale
             : ConversationUiLocales::default();
+
+        if ($this->lessonDrillStrictTurns->applies($lessonDrill)) {
+            $result = $this->lessonDrillStrictTurns->respond(
+                transcript: $transcript,
+                lessonDrill: $lessonDrill,
+                uiLocale: $locale,
+            );
+
+            if ($persistAdvisory) {
+                $prompt = $this->prompts->active($coachingMode);
+                $this->persistAdvisory(
+                    organizationId: $organizationId,
+                    membershipId: $membershipId,
+                    sessionId: $sessionId,
+                    turnId: $turnId,
+                    coachingMode: $coachingMode,
+                    promptVersionId: $prompt['id'],
+                    result: $result,
+                );
+            }
+
+            return $result;
+        }
+
         $prompt = $this->prompts->active($coachingMode);
         $memoryFacts = $this->memory->activeFactTexts(
             organizationId: $organizationId,
@@ -55,6 +85,7 @@ final readonly class ConversationOrchestrator
             promptVersion: $prompt['version'],
             promptBodySha256: $prompt['body_sha256'],
             memoryFacts: $memoryFacts,
+            lessonDrill: $lessonDrill,
         );
 
         $result = $this->conversationModel->respond(
@@ -69,6 +100,7 @@ final readonly class ConversationOrchestrator
                 promptBodySha256: $prompt['body_sha256'],
                 promptBody: $prompt['body'],
                 memoryFacts: $context['memory_facts'],
+                lessonDrill: $context['lesson_drill'],
             ),
         );
 

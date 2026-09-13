@@ -24,6 +24,7 @@ final class OperatorRequestValidationTest extends TestCase
                     'source_content_hash' => str_repeat('a', 64),
                     'authority_appointment_id' => (string) Str::ulid(),
                     'decision' => 'approved',
+                    'rationale_key' => 'meets_standard',
                 ],
             ),
         );
@@ -41,6 +42,7 @@ final class OperatorRequestValidationTest extends TestCase
                     'source_content_hash' => str_repeat('a', 64),
                     'authority_appointment_id' => (string) Str::ulid(),
                     'decision' => 'maybe',
+                    'rationale_key' => 'meets_standard',
                 ],
             ),
         )->fails());
@@ -54,6 +56,21 @@ final class OperatorRequestValidationTest extends TestCase
                     'source_content_hash' => str_repeat('a', 64),
                     'authority_appointment_id' => (string) Str::ulid(),
                     'decision' => 'approved',
+                    'rationale_key' => 'accuracy_revision_required',
+                ],
+            ),
+        )->fails());
+
+        self::assertTrue($this->validator(
+            RecordEnglishContentReviewRequest::create(
+                '/api/v1/operator/content/reviews/english',
+                'POST',
+                [
+                    'source_revision_id' => (string) Str::ulid(),
+                    'source_content_hash' => str_repeat('a', 64),
+                    'authority_appointment_id' => (string) Str::ulid(),
+                    'decision' => 'approved',
+                    'rationale_key' => 'meets_standard',
                     'unexpected' => true,
                 ],
             ),

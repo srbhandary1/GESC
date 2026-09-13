@@ -13,6 +13,10 @@ use stdClass;
 
 final class PublicationEvidenceRevalidator
 {
+    public function __construct(
+        private readonly ManagedMediaGovernanceEvidence $managedMedia,
+    ) {}
+
     public function verify(
         string $ownerOrganizationId,
         string $publicationId,
@@ -20,6 +24,7 @@ final class PublicationEvidenceRevalidator
         bool $lockMutableEvidence = false,
         bool $validateReviewAuthority = true,
         bool $rejectSupersededRights = false,
+        bool $requireCurrentManagedMedia = false,
     ): VerifiedPublication {
         if ($lockMutableEvidence) {
             $this->lockMutableEvidence();
@@ -42,6 +47,8 @@ final class PublicationEvidenceRevalidator
         $programId = $this->string($publication, 'program_id');
         $manifest = $this->json($publication, 'manifest');
         $manifestHash = $this->sha256($publication, 'manifest_hash');
+        $managedPublication = ($manifest['schema'] ?? null)
+            === 'global-english.curriculum-publication.v2';
 
         if (! hash_equals($manifestHash, CanonicalJson::sha256($manifest))) {
             throw new CurriculumOperationRejected;
@@ -57,10 +64,13 @@ final class PublicationEvidenceRevalidator
             throw new CurriculumOperationRejected;
         }
 
-        $graphComponent = DB::table('publication_graph_components')
+        $graphComponents = DB::table('publication_graph_components')
             ->where('organization_id', $ownerOrganizationId)
             ->where('curriculum_publication_id', $publicationId)
-            ->first();
+            ->get();
+        $graphComponent = $graphComponents->count() === 1
+            ? $graphComponents->first()
+            : null;
         $storedGraphRevision = DB::table('curriculum_graph_revisions')
             ->where('organization_id', $ownerOrganizationId)
             ->where(
@@ -73,10 +83,6 @@ final class PublicationEvidenceRevalidator
 
         if (
             ! $graphComponent instanceof stdClass
-            || DB::table('publication_graph_components')
-                ->where('organization_id', $ownerOrganizationId)
-                ->where('curriculum_publication_id', $publicationId)
-                ->count() !== 1
             || $this->string(
                 $graphComponent,
                 'curriculum_graph_revision_id',
@@ -140,17 +146,76 @@ final class PublicationEvidenceRevalidator
             throw new CurriculumOperationRejected;
         }
 
-        $componentCount = DB::table('publication_content_components')
+        $storedContentComponents = DB::table('publication_content_components')
             ->where('organization_id', $ownerOrganizationId)
             ->where('curriculum_publication_id', $publicationId)
-            ->count();
+            ->get();
 
-        if ($componentCount !== count($content)) {
+        if ($storedContentComponents->count() !== count($content)) {
             throw new CurriculumOperationRejected;
         }
 
-        $sharingAllowed = true;
-        $derivativeUseAllowed = true;
+        $contentComponents = [];
+
+        foreach ($storedContentComponents as $storedContentComponent) {
+            $documentId = $this->string(
+                $storedContentComponent,
+                'content_document_id',
+            );
+
+            if (array_key_exists($documentId, $contentComponents)) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $contentComponents[$documentId] = $storedContentComponent;
+        }
+
+        $storedMediaComponents = DB::table('publication_media_components')
+            ->where('organization_id', $ownerOrganizationId)
+            ->where('curriculum_publication_id', $publicationId)
+            ->get();
+        $mediaComponents = [];
+
+        foreach ($storedMediaComponents as $storedMediaComponent) {
+            $key = $this->mediaComponentKey(
+                $this->string($storedMediaComponent, 'content_document_id'),
+                $this->string($storedMediaComponent, 'source_revision_id'),
+                $this->string($storedMediaComponent, 'media_asset_id'),
+                $this->string($storedMediaComponent, 'usage_key'),
+            );
+
+            if (array_key_exists($key, $mediaComponents)) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $mediaComponents[$key] = $storedMediaComponent;
+        }
+
+        $storedGovernanceComponents = DB::table(
+            'publication_media_governance_components',
+        )
+            ->where('organization_id', $ownerOrganizationId)
+            ->where('curriculum_publication_id', $publicationId)
+            ->get();
+        $governanceComponents = [];
+
+        foreach ($storedGovernanceComponents as $storedGovernance) {
+            $key = $this->mediaGovernanceComponentKey(
+                $this->string($storedGovernance, 'source_revision_id'),
+                $this->string($storedGovernance, 'media_asset_id'),
+                $this->string($storedGovernance, 'usage_key'),
+            );
+
+            if (array_key_exists($key, $governanceComponents)) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $governanceComponents[$key] = $storedGovernance;
+        }
+
+        $usedMediaComponents = [];
+        $usedGovernanceComponents = [];
+        $rightsRequirements = [];
 
         foreach ($content as $entry) {
             if (! is_array($entry)) {
@@ -162,11 +227,7 @@ final class PublicationEvidenceRevalidator
             $academic = $this->array($entry, 'academic_review');
             $documentId = $this->arrayString($document, 'id');
             $sourceRevisionId = $this->arrayString($source, 'id');
-            $component = DB::table('publication_content_components')
-                ->where('organization_id', $ownerOrganizationId)
-                ->where('curriculum_publication_id', $publicationId)
-                ->where('content_document_id', $documentId)
-                ->first();
+            $component = $contentComponents[$documentId] ?? null;
 
             if (
                 ! $component instanceof stdClass
@@ -268,16 +329,6 @@ final class PublicationEvidenceRevalidator
                 throw new CurriculumOperationRejected;
             }
 
-            $storedMediaCount = DB::table('publication_media_components')
-                ->where('organization_id', $ownerOrganizationId)
-                ->where('curriculum_publication_id', $publicationId)
-                ->where('content_document_id', $documentId)
-                ->count();
-
-            if ($storedMediaCount !== count($media)) {
-                throw new CurriculumOperationRejected;
-            }
-
             foreach ($media as $mediaEntry) {
                 if (! is_array($mediaEntry)) {
                     throw new CurriculumOperationRejected;
@@ -285,17 +336,22 @@ final class PublicationEvidenceRevalidator
 
                 $assetId = $this->arrayString($mediaEntry, 'asset_id');
                 $usageKey = $this->arrayString($mediaEntry, 'usage_key');
-                $storedMedia = DB::table('publication_media_components')
-                    ->where('organization_id', $ownerOrganizationId)
-                    ->where('curriculum_publication_id', $publicationId)
-                    ->where('content_document_id', $documentId)
-                    ->where('source_revision_id', $sourceRevisionId)
-                    ->where('media_asset_id', $assetId)
-                    ->where('usage_key', $usageKey)
-                    ->first();
+                $key = $this->mediaComponentKey(
+                    $documentId,
+                    $sourceRevisionId,
+                    $assetId,
+                    $usageKey,
+                );
+                $governanceKey = $this->mediaGovernanceComponentKey(
+                    $sourceRevisionId,
+                    $assetId,
+                    $usageKey,
+                );
+                $storedMedia = $mediaComponents[$key] ?? null;
 
                 if (
                     ! $storedMedia instanceof stdClass
+                    || array_key_exists($key, $usedMediaComponents)
                     || ! hash_equals(
                         $this->sha256($storedMedia, 'asset_hash'),
                         $this->arraySha256($mediaEntry, 'asset_hash'),
@@ -318,21 +374,201 @@ final class PublicationEvidenceRevalidator
                     throw new CurriculumOperationRejected;
                 }
 
-                [$mediaSharing, $mediaDerivative] = $this->assertRightsStillValid(
-                    organizationId: $ownerOrganizationId,
-                    programId: $programId,
-                    mediaAssetId: $assetId,
-                    rightsRevisionId: $this->string(
+                $governance = $mediaEntry['governance'] ?? null;
+                $storedGovernance = $governanceComponents[$governanceKey]
+                    ?? null;
+
+                if (! $managedPublication) {
+                    if ($governance !== null || $storedGovernance !== null) {
+                        throw new CurriculumOperationRejected;
+                    }
+                } else {
+                    if (
+                        ! is_array($governance)
+                        || array_is_list($governance)
+                        || ! $storedGovernance instanceof stdClass
+                        || array_key_exists(
+                            $governanceKey,
+                            $usedGovernanceComponents,
+                        )
+                    ) {
+                        throw new CurriculumOperationRejected;
+                    }
+
+                    $selectedScan = $this->array(
+                        $governance,
+                        'selected_scan',
+                    );
+                    $metadata = $this->array($governance, 'metadata');
+                    $englishReview = $this->array(
+                        $metadata,
+                        'english_review',
+                    );
+                    $kannadaVariant = $this->array(
+                        $metadata,
+                        'kannada_variant',
+                    );
+                    $kannadaReview = $this->array(
+                        $kannadaVariant,
+                        'review',
+                    );
+                    $governanceRights = $this->array(
+                        $governance,
+                        'rights',
+                    );
+                    $rightsRevisionId = $this->arrayString(
+                        $mediaEntry,
+                        'rights_revision_id',
+                    );
+                    $rightsEvidenceHash = $this->arraySha256(
+                        $mediaEntry,
+                        'evidence_hash',
+                    );
+
+                    if (
+                        $this->string($storedGovernance, 'selected_scan_id')
+                            !== $this->arrayString($selectedScan, 'id')
+                        || ! hash_equals(
+                            $this->sha256($storedGovernance, 'object_hash'),
+                            $this->arraySha256(
+                                $selectedScan,
+                                'object_hash',
+                            ),
+                        )
+                        || $this->string(
+                            $storedGovernance,
+                            'inspector_policy_version',
+                        ) !== $this->arrayString(
+                            $selectedScan,
+                            'inspector_policy_version',
+                        )
+                        || $this->string(
+                            $storedGovernance,
+                            'scanner_policy_version',
+                        ) !== $this->arrayString(
+                            $selectedScan,
+                            'scanner_policy_version',
+                        )
+                        || $this->string(
+                            $storedGovernance,
+                            'metadata_revision_id',
+                        ) !== $this->arrayString($metadata, 'revision_id')
+                        || ! hash_equals(
+                            $this->sha256(
+                                $storedGovernance,
+                                'metadata_content_hash',
+                            ),
+                            $this->arraySha256($metadata, 'content_hash'),
+                        )
+                        || $this->string(
+                            $storedGovernance,
+                            'english_review_id',
+                        ) !== $this->arrayString($englishReview, 'id')
+                        || $this->string(
+                            $storedGovernance,
+                            'metadata_variant_id',
+                        ) !== $this->arrayString($kannadaVariant, 'id')
+                        || ! hash_equals(
+                            $this->sha256(
+                                $storedGovernance,
+                                'variant_content_hash',
+                            ),
+                            $this->arraySha256(
+                                $kannadaVariant,
+                                'content_hash',
+                            ),
+                        )
+                        || $this->string(
+                            $storedGovernance,
+                            'kannada_review_id',
+                        ) !== $this->arrayString($kannadaReview, 'id')
+                        || $this->string(
+                            $storedGovernance,
+                            'media_rights_revision_id',
+                        ) !== $rightsRevisionId
+                        || $this->string(
+                            $storedGovernance,
+                            'rights_evidence_status',
+                        ) !== 'approved'
+                        || $this->arrayString(
+                            $governanceRights,
+                            'revision_id',
+                        ) !== $rightsRevisionId
+                        || ! hash_equals(
+                            $this->sha256(
+                                $storedGovernance,
+                                'rights_evidence_hash',
+                            ),
+                            $rightsEvidenceHash,
+                        )
+                        || ! hash_equals(
+                            $this->arraySha256(
+                                $governanceRights,
+                                'evidence_hash',
+                            ),
+                            $rightsEvidenceHash,
+                        )
+                    ) {
+                        throw new CurriculumOperationRejected;
+                    }
+
+                    $this->managedMedia->assertSnapshot(
+                        organizationId: $ownerOrganizationId,
+                        programId: $programId,
+                        curriculumVersionId: $this->string(
+                            $publication,
+                            'curriculum_version_id',
+                        ),
+                        sourceRevisionId: $sourceRevisionId,
+                        mediaAssetId: $assetId,
+                        assetHash: $this->arraySha256(
+                            $mediaEntry,
+                            'asset_hash',
+                        ),
+                        usageKey: $usageKey,
+                        rightsRevisionId: $rightsRevisionId,
+                        rightsEvidenceHash: $rightsEvidenceHash,
+                        expected: $governance,
+                        evaluatedAt: $evaluatedAt,
+                        requireCurrentSelection: $requireCurrentManagedMedia,
+                        validateCurrentAuthority: $validateReviewAuthority,
+                    );
+                    $usedGovernanceComponents[$governanceKey] = true;
+                }
+
+                $usedMediaComponents[$key] = true;
+                $rightsRequirements[] = [
+                    'media_asset_id' => $assetId,
+                    'rights_revision_id' => $this->string(
                         $storedMedia,
                         'media_rights_revision_id',
                     ),
-                    evaluatedAt: $evaluatedAt,
-                    rejectSupersededRights: $rejectSupersededRights,
-                );
-                $sharingAllowed = $sharingAllowed && $mediaSharing;
-                $derivativeUseAllowed = $derivativeUseAllowed && $mediaDerivative;
+                ];
             }
         }
+
+        if (count($usedMediaComponents) !== $storedMediaComponents->count()) {
+            throw new CurriculumOperationRejected;
+        }
+
+        if (
+            count($usedGovernanceComponents)
+                !== $storedGovernanceComponents->count()
+            || ($managedPublication
+                && count($usedGovernanceComponents)
+                    !== count($usedMediaComponents))
+        ) {
+            throw new CurriculumOperationRejected;
+        }
+
+        [$sharingAllowed, $derivativeUseAllowed]
+            = $this->assertRightsSetStillValid(
+                organizationId: $ownerOrganizationId,
+                programId: $programId,
+                requirements: $rightsRequirements,
+                evaluatedAt: $evaluatedAt,
+                rejectSupersededRights: $rejectSupersededRights,
+            );
 
         return new VerifiedPublication(
             ownerOrganizationId: $ownerOrganizationId,
@@ -343,6 +579,7 @@ final class PublicationEvidenceRevalidator
             ),
             publicationId: $publicationId,
             manifestHash: $manifestHash,
+            manifest: $manifest,
             sharingAllowed: $sharingAllowed,
             derivativeUseAllowed: $derivativeUseAllowed,
         );
@@ -355,7 +592,7 @@ final class PublicationEvidenceRevalidator
         }
 
         DB::statement(
-            'LOCK TABLE authority_appointment_events, curriculum_graph_reviews, content_reviews, media_rights_revisions IN SHARE MODE',
+            'LOCK TABLE authority_appointment_events, curriculum_graph_reviews, content_reviews, media_rights_revisions, media_security_scans, media_asset_lifecycles, media_asset_metadata_revisions, media_asset_metadata_heads, media_asset_metadata_variants, media_asset_metadata_variant_heads, media_asset_metadata_reviews, media_attachment_events, publication_media_governance_components IN SHARE MODE',
         );
     }
 
@@ -483,23 +720,46 @@ final class PublicationEvidenceRevalidator
     }
 
     /**
+     * @param  list<array{media_asset_id: string, rights_revision_id: string}>  $requirements
      * @return array{bool, bool}
      */
-    private function assertRightsStillValid(
+    private function assertRightsSetStillValid(
         string $organizationId,
         string $programId,
-        string $mediaAssetId,
-        string $rightsRevisionId,
+        array $requirements,
         CarbonInterface $evaluatedAt,
         bool $rejectSupersededRights,
     ): array {
-        $rights = DB::table('media_rights_revisions')
+        if ($requirements === []) {
+            return [true, true];
+        }
+
+        $requiredAssetsByRevision = [];
+
+        foreach ($requirements as $requirement) {
+            $mediaAssetId = $requirement['media_asset_id'];
+            $rightsRevisionId = $requirement['rights_revision_id'];
+            $existingAssetId = $requiredAssetsByRevision[$rightsRevisionId]
+                ?? null;
+
+            if (
+                $existingAssetId !== null
+                && $existingAssetId !== $mediaAssetId
+            ) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $requiredAssetsByRevision[$rightsRevisionId] = $mediaAssetId;
+        }
+
+        $rightsRows = DB::table('media_rights_revisions')
             ->where('organization_id', $organizationId)
             ->where('program_id', $programId)
-            ->where('media_asset_id', $mediaAssetId)
-            ->where('id', $rightsRevisionId)
+            ->whereIn('id', array_keys($requiredAssetsByRevision))
             ->where('evidence_status', 'approved')
-            ->first([
+            ->get([
+                'id',
+                'media_asset_id',
                 'revision_number',
                 'effective_at',
                 'expires_at',
@@ -509,51 +769,92 @@ final class PublicationEvidenceRevalidator
                 'rights_appointment_id',
             ]);
 
-        if (! $rights instanceof stdClass) {
+        if ($rightsRows->count() !== count($requiredAssetsByRevision)) {
             throw new CurriculumOperationRejected;
         }
 
-        $effectiveAt = $this->date($rights, 'effective_at');
-        $expiresAt = $this->optionalDate($rights, 'expires_at');
+        $seenRights = [];
+        $selectedRightsByAsset = [];
+        $appointmentIds = [];
+        $sharingAllowed = true;
+        $derivativeUseAllowed = true;
+
+        foreach ($rightsRows as $rights) {
+            $rightsRevisionId = $this->string($rights, 'id');
+            $mediaAssetId = $this->string($rights, 'media_asset_id');
+            $effectiveAt = $this->date($rights, 'effective_at');
+            $expiresAt = $this->optionalDate($rights, 'expires_at');
+
+            if (
+                array_key_exists($rightsRevisionId, $seenRights)
+                || ($requiredAssetsByRevision[$rightsRevisionId] ?? null)
+                    !== $mediaAssetId
+                || $effectiveAt->greaterThan($evaluatedAt)
+                || ! $this->boolean($rights, 'learner_delivery_allowed')
+                || (
+                    $expiresAt instanceof CarbonInterface
+                    && $evaluatedAt->greaterThanOrEqualTo($expiresAt)
+                )
+            ) {
+                throw new CurriculumOperationRejected;
+            }
+
+            $seenRights[$rightsRevisionId] = true;
+            $selectedRightsByAsset[$mediaAssetId][] = $this->integer(
+                $rights,
+                'revision_number',
+            );
+            $appointmentIds[$this->string(
+                $rights,
+                'rights_appointment_id',
+            )] = true;
+            $sharingAllowed = $sharingAllowed
+                && $this->boolean($rights, 'sharing_allowed');
+            $derivativeUseAllowed = $derivativeUseAllowed
+                && $this->boolean($rights, 'derivative_use_allowed');
+        }
+
+        if (count($seenRights) !== count($requiredAssetsByRevision)) {
+            throw new CurriculumOperationRejected;
+        }
+
+        $laterRights = DB::table('media_rights_revisions')
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
+            ->whereIn('media_asset_id', array_keys($selectedRightsByAsset))
+            ->where('effective_at', '<=', $evaluatedAt)
+            ->when(
+                ! $rejectSupersededRights,
+                static fn ($query) => $query->where(
+                    'evidence_status',
+                    'withdrawn',
+                ),
+            )
+            ->get([
+                'media_asset_id',
+                'revision_number',
+            ]);
+
+        foreach ($laterRights as $laterRight) {
+            $mediaAssetId = $this->string($laterRight, 'media_asset_id');
+            $revisionNumber = $this->integer(
+                $laterRight,
+                'revision_number',
+            );
+
+            foreach ($selectedRightsByAsset[$mediaAssetId] ?? [] as $selected) {
+                if ($revisionNumber > $selected) {
+                    throw new CurriculumOperationRejected;
+                }
+            }
+        }
 
         if (
-            $effectiveAt->greaterThan($evaluatedAt)
-            || ! $this->boolean($rights, 'learner_delivery_allowed')
-            || (
-                $expiresAt instanceof CarbonInterface
-                && $evaluatedAt->greaterThanOrEqualTo($expiresAt)
-            )
-            || DB::table('media_rights_revisions')
+            DB::table('authority_appointment_events')
                 ->where('organization_id', $organizationId)
-                ->where('program_id', $programId)
-                ->where('media_asset_id', $mediaAssetId)
-                ->where(
-                    'revision_number',
-                    '>',
-                    $this->integer($rights, 'revision_number'),
-                )
-                ->where('evidence_status', 'withdrawn')
-                ->where('effective_at', '<=', $evaluatedAt)
-                ->exists()
-            || (
-                $rejectSupersededRights
-                && DB::table('media_rights_revisions')
-                    ->where('organization_id', $organizationId)
-                    ->where('program_id', $programId)
-                    ->where('media_asset_id', $mediaAssetId)
-                    ->where(
-                        'revision_number',
-                        '>',
-                        $this->integer($rights, 'revision_number'),
-                    )
-                    ->where('effective_at', '<=', $evaluatedAt)
-                    ->exists()
-            )
-            || DB::table('authority_appointment_events')
-                ->where('organization_id', $organizationId)
-                ->where(
+                ->whereIn(
                     'authority_appointment_id',
-                    $this->string($rights, 'rights_appointment_id'),
+                    array_keys($appointmentIds),
                 )
                 ->where('event_type', 'revoked_for_cause')
                 ->where('invalidates_prior_approvals', true)
@@ -563,10 +864,33 @@ final class PublicationEvidenceRevalidator
             throw new CurriculumOperationRejected;
         }
 
-        return [
-            $this->boolean($rights, 'sharing_allowed'),
-            $this->boolean($rights, 'derivative_use_allowed'),
-        ];
+        return [$sharingAllowed, $derivativeUseAllowed];
+    }
+
+    private function mediaComponentKey(
+        string $documentId,
+        string $sourceRevisionId,
+        string $assetId,
+        string $usageKey,
+    ): string {
+        return implode("\0", [
+            $documentId,
+            $sourceRevisionId,
+            $assetId,
+            $usageKey,
+        ]);
+    }
+
+    private function mediaGovernanceComponentKey(
+        string $sourceRevisionId,
+        string $assetId,
+        string $usageKey,
+    ): string {
+        return implode("\0", [
+            $sourceRevisionId,
+            $assetId,
+            $usageKey,
+        ]);
     }
 
     /**

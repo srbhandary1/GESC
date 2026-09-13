@@ -12,6 +12,9 @@ import { speakDemoText, stopDemoSpeech } from './demoTts'
 
 export interface DemoSpeechPlayerProps {
   readonly labels: AudioControlLabels
+  readonly onEnded?: () => void
+  readonly onPause?: () => void
+  readonly onPlaying?: () => void
   readonly source: string
 }
 
@@ -21,6 +24,9 @@ export interface DemoSpeechPlayerProps {
  */
 export function DemoSpeechPlayer({
   labels,
+  onEnded,
+  onPause,
+  onPlaying,
   source,
 }: DemoSpeechPlayerProps) {
   const utterance = decodeDemoSpeechUrl(source)
@@ -51,11 +57,13 @@ export function DemoSpeechPlayer({
   const play = async () => {
     playing.current = true
     setState('playing')
+    onPlaying?.()
 
     try {
       await speakDemoText(utterance.text, utterance.locale)
       if (playing.current) {
         setState('ended')
+        onEnded?.()
       }
     } catch {
       if (playing.current) {
@@ -79,6 +87,7 @@ export function DemoSpeechPlayer({
           playing.current = false
           stopDemoSpeech()
           setState('paused')
+          onPause?.()
         }}
         onRequestPlay={() => void play()}
         onRequestReplay={() => void play()}

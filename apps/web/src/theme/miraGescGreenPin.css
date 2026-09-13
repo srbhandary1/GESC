@@ -1,0 +1,252 @@
+/* Theme pin: Superdesign Futuristic Learning Studio chrome, remapped to
+   Mira GESC-green. Loaded after studioExperience.css so lesson/curriculum
+   files stay untouched. Brand green #006B3F, nocturnal ink #0B1210,
+   mint #3DDC97. Original Mira portraits — not a Supernova clone. */
+
+:root {
+  --ge-mira-green: #006b3f;
+  --ge-mira-green-hover: #005533;
+  --ge-mira-ink: #0b1210;
+  --ge-mira-mint: #3ddc97;
+  --ge-mira-mint-strong: #2ec986;
+  --ge-mira-surface: #12241c;
+  --ge-mira-light-canvas: #e8f3ec;
+  --ge-futura-cyan: var(--ge-mira-mint);
+  --ge-futura-violet: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio {
+  color-scheme: light;
+  color: var(--ge-color-text);
+  --ge-color-canvas: var(--ge-mira-light-canvas);
+  --ge-color-canvas-deep: #f3fffb;
+  --ge-color-surface: #ffffff;
+  --ge-color-surface-elevated: #ffffff;
+  --ge-color-text-muted: #3d5348;
+  background: var(--ge-color-canvas-deep);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .ge-application-frame__header {
+  background: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .ge-application-frame__header a:not(.shell-header-authentication):not(.shell-android-download),
+[data-ge-theme='light'] .ge-application-frame--studio .ge-application-frame__header .shell-header-nav-link,
+[data-ge-theme='light'] .ge-application-frame--studio .ge-application-frame__header .shell-header-authentication--quiet {
+  color: #ffffff;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__title {
+  color: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__lede,
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__path li {
+  color: var(--ge-color-text-muted);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__path li span {
+  color: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero {
+  color: var(--ge-color-text-muted);
+  background:
+    radial-gradient(circle at 74% 45%, rgb(var(--ge-studio-teal-rgb) / 0.08), transparent 25rem),
+    linear-gradient(135deg, #f3fffb 0%, #e8f3ec 56%, #f3fffb 100%);
+  box-shadow: none;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .studio-section__heading h2,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-android h2,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-closing h2,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-loop h3,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-readiness h3,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-trust .studio-section__heading h2,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-trust h3,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-plan h3 {
+  color: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .studio-trust__copy > ul > li,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-demo__bubble--coach,
+[data-ge-theme='light'] .ge-application-frame--studio .studio-section,
+[data-ge-theme='light'] .ge-application-frame--studio .shell-preview {
+  color: var(--ge-color-text-muted);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .shell-preview {
+  background: #ffffff;
+  border-color: rgb(0 107 63 / 0.2);
+}
+
+[data-ge-theme='light'] {
+  --ge-color-canvas-deep: #f3fffb;
+  --ge-color-ink: #0a1a14;
+  --ge-color-text: #0a1a14;
+  --ge-color-text-muted: #3d5348;
+  --ge-color-border-strong: var(--ge-mira-green);
+  --ge-color-action: var(--ge-mira-green);
+  --ge-color-action-hover: var(--ge-mira-green-hover);
+  --ge-color-action-text: #ffffff;
+  --ge-color-accent: var(--ge-mira-green);
+  --ge-color-accent-hover: var(--ge-mira-green-hover);
+  --ge-color-focus: var(--ge-mira-green);
+  --ge-shell-header-bg: var(--ge-mira-green);
+  --ge-nav-bg: var(--ge-mira-green);
+  --ge-accent-brand: var(--ge-mira-green);
+  --ge-accent-brand-strong: var(--ge-mira-green-hover);
+  --ge-button-primary-bg: var(--ge-mira-green);
+  --ge-marketing-hero-title: var(--ge-mira-green);
+}
+
+[data-ge-theme='dark'] {
+  --ge-color-canvas: var(--ge-mira-ink);
+  --ge-color-canvas-deep: #0f1f17;
+  --ge-color-surface: var(--ge-mira-surface);
+  --ge-color-surface-elevated: #1a2620;
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #c4d0c9;
+  --ge-color-border: #24332c;
+  --ge-color-border-strong: var(--ge-mira-green);
+  --ge-color-action: var(--ge-mira-green);
+  --ge-color-action-hover: var(--ge-mira-mint);
+  --ge-color-action-text: #ffffff;
+  --ge-color-accent: var(--ge-mira-mint);
+  --ge-color-accent-hover: var(--ge-mira-mint-strong);
+  --ge-color-brass: var(--ge-mira-mint);
+  --ge-color-brass-soft: #b8ecd0;
+  --ge-color-focus: var(--ge-mira-mint);
+  --ge-color-status: var(--ge-mira-surface);
+  --ge-color-glow-emerald: rgb(0 107 63 / 0.4);
+  --ge-panel-border: rgb(61 220 151 / 0.16);
+  --ge-shell-header-bg: rgb(11 18 16 / 0.88);
+  --ge-nav-bg: rgb(11 18 16 / 0.92);
+  --ge-accent-brand: var(--ge-mira-green);
+  --ge-button-primary-bg: var(--ge-mira-green);
+  --ge-button-primary-text: #ffffff;
+  --ge-input-focus-border: var(--ge-mira-mint);
+  --ge-body-background-image:
+    radial-gradient(ellipse 120% 80% at 10% -20%, rgb(0 107 63 / 0.38), transparent 55%),
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgb(61 220 151 / 0.16), transparent 52%),
+    linear-gradient(180deg, #0b1210 0%, #0f1f17 48%, #0b1210 100%);
+}
+
+.ge-application-frame--studio {
+  --ge-studio-cyan: var(--ge-mira-mint);
+  --ge-studio-teal: var(--ge-mira-mint-strong);
+  --ge-studio-violet: var(--ge-mira-green);
+  --ge-studio-ink: var(--ge-mira-ink);
+  --ge-studio-cyan-rgb: 61 220 151;
+  --ge-studio-teal-rgb: 46 201 134;
+  --ge-studio-violet-rgb: 0 107 63;
+  --ge-studio-ink-rgb: 11 18 16;
+  --ge-studio-panel: rgb(18 36 28 / 0.88);
+  --ge-color-canvas: var(--ge-mira-ink);
+  --ge-color-canvas-deep: var(--ge-mira-ink);
+  --ge-color-surface: rgb(18 36 28 / 0.92);
+  --ge-color-surface-elevated: rgb(26 38 32 / 0.96);
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #e3fff2;
+  --ge-color-text-muted: #c4d0c9;
+  --ge-color-action: var(--ge-mira-mint);
+  --ge-color-action-hover: var(--ge-mira-mint-strong);
+  --ge-color-action-text: #041810;
+  --ge-color-accent: var(--ge-mira-mint);
+  --ge-color-focus: var(--ge-mira-mint);
+  --ge-button-primary-bg: linear-gradient(
+    135deg,
+    var(--ge-mira-mint),
+    var(--ge-mira-green)
+  );
+  --ge-button-primary-text: #041810;
+  background:
+    radial-gradient(circle at 78% 8%, rgb(61 220 151 / 0.16), transparent 25rem),
+    radial-gradient(circle at 14% 24%, rgb(0 107 63 / 0.22), transparent 28rem),
+    var(--ge-mira-ink);
+}
+
+.ge-application-frame--studio .ge-application-frame__header {
+  background: rgb(var(--ge-studio-ink-rgb) / 0.88);
+}
+
+.ge-application-frame--studio-learner .ge-primary-navigation__link[aria-current='page'],
+.ge-application-frame--studio .marketing-button--primary,
+.ge-application-frame--studio .shell-header-authentication,
+.ge-application-frame--studio .shell-sign-in-page .web-otp-sign-in__form button[type='submit'],
+.ge-application-frame--studio .web-otp-sign-in__form button[type='submit'] {
+  background: linear-gradient(135deg, var(--ge-mira-mint), var(--ge-mira-green));
+  color: var(--ge-color-action-text);
+}
+
+.ge-application-frame--studio-learner .learner-home__action {
+  border-radius: 1rem;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner {
+  --ge-color-action: var(--ge-mira-green);
+  --ge-color-action-hover: var(--ge-mira-green-hover);
+  --ge-color-accent: var(--ge-mira-green);
+  --ge-color-text: #0a1a14;
+  --ge-color-text-muted: #3d5348;
+  --ge-color-surface: #ffffff;
+  --ge-color-surface-elevated: #ffffff;
+  --ge-promo-surface-bg: #ffffff;
+  --ge-promo-surface-border: rgb(0 107 63 / 0.18);
+  --ge-promo-surface-text: #0a1a14;
+  --ge-promo-surface-text-muted: #3d5348;
+  --ge-promo-eyebrow-bg: rgb(0 107 63 / 0.1);
+  --ge-promo-eyebrow-text: var(--ge-mira-green);
+  color: var(--ge-color-text);
+  background: var(--ge-color-canvas-deep);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-button {
+  color: var(--ge-mira-green);
+  border-color: rgb(0 107 63 / 0.35);
+  background: #ffffff;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-button--primary {
+  color: #ffffff;
+  border-color: transparent;
+  background: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-primary-navigation {
+  background: #ffffff;
+  border-block-end-color: rgb(0 107 63 / 0.16);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .learner-home__title,
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .tutor-home-hero h2 {
+  color: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-primary-navigation__link {
+  color: var(--ge-color-text-muted);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-primary-navigation__link:hover,
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-primary-navigation__link:focus-visible {
+  color: var(--ge-mira-green);
+  background: rgb(0 107 63 / 0.08);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .ge-primary-navigation__link[aria-current='page'] {
+  color: #ffffff;
+  background: var(--ge-mira-green);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .learner-home__action {
+  color: var(--ge-color-text);
+  background: #ffffff;
+  border-color: rgb(0 107 63 / 0.18);
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio.ge-application-frame--studio-learner .learner-home__streak {
+  color: var(--ge-mira-green);
+  background: rgb(0 107 63 / 0.08);
+  border-color: rgb(0 107 63 / 0.18);
+}

@@ -63,20 +63,48 @@ describe('message resolution', () => {
       usedFallback: true,
       reason: 'unapproved-translation',
       reviewStatus: 'source',
-      revision: 'ui-en-IN-2026-08-07.10',
+      revision: catalogueGovernance.catalogues['en-IN']!.revision,
       isPreview: false,
     })
     expect(onFallback).toHaveBeenCalledOnce()
   })
 
   it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
-    'returns the pending %s catalogue only under explicit development preview',
+    'falls back from the canonical pending %s under the production policy',
     (locale) => {
+      const onFallback = vi.fn<(event: FallbackEvent) => void>()
+
+      const result = resolveMessage('nav.home', {
+        policy: 'approved-only',
+        requestedLocale: locale,
+        onFallback,
+      })
+
+      expect(result.text).toBe('Home')
+      expect(result.requestedLocale).toBe(locale)
+      expect(result.resolvedLocale).toBe('en-IN')
+      expect(result.usedFallback).toBe(true)
+      expect(result.reason).toBe('unapproved-translation')
+      expect(result.reviewStatus).toBe('source')
+      expect(result.isPreview).toBe(false)
+      expect(onFallback).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
+    'returns pending %s only under explicit development preview',
+    (locale) => {
+      const entries = mutableGovernance()
+      entries[locale].reviewStatus = 'pending-independent-review'
+      entries[locale].reviewedBy = null
+      entries[locale].approvedAt = null
+      entries[locale].independentReview = false
       const onFallback = vi.fn<(event: FallbackEvent) => void>()
 
       const result = resolveMessage('nav.home', {
         policy: 'development-preview',
         requestedLocale: locale,
+        governance: manifestWith(entries),
         onFallback,
       })
 
@@ -94,9 +122,16 @@ describe('message resolution', () => {
   it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
     'falls back from pending %s under the production policy',
     (locale) => {
+      const entries = mutableGovernance()
+      entries[locale].reviewStatus = 'pending-independent-review'
+      entries[locale].reviewedBy = null
+      entries[locale].approvedAt = null
+      entries[locale].independentReview = false
+
       const result = resolveMessage('nav.home', {
         policy: 'approved-only',
         requestedLocale: locale,
+        governance: manifestWith(entries),
       })
 
       expect(result.text).toBe('Home')
@@ -108,17 +143,24 @@ describe('message resolution', () => {
     },
   )
 
-  it('returns pending Kannada only under explicit development preview', () => {
+  it('returns pending catalogues only under explicit development preview', () => {
+    const entries = mutableGovernance()
+    entries['hi-IN'].reviewStatus = 'pending-independent-review'
+    entries['hi-IN'].reviewedBy = null
+    entries['hi-IN'].approvedAt = null
+    entries['hi-IN'].independentReview = false
     const onFallback = vi.fn<(event: FallbackEvent) => void>()
 
     const result = resolveMessage('nav.home', {
       policy: 'development-preview',
+      requestedLocale: 'hi-IN',
+      governance: manifestWith(entries),
       onFallback,
     })
 
-    expect(result.text).toBe(knINCatalogue['nav.home'])
-    expect(result.requestedLocale).toBe('kn-IN')
-    expect(result.resolvedLocale).toBe('kn-IN')
+    expect(result.text).toBe(catalogues['hi-IN']['nav.home'])
+    expect(result.requestedLocale).toBe('hi-IN')
+    expect(result.resolvedLocale).toBe('hi-IN')
     expect(result.usedFallback).toBe(false)
     expect(result.reason).toBe('development-preview')
     expect(result.reviewStatus).toBe('pending-independent-review')
@@ -217,7 +259,7 @@ describe('message resolution', () => {
       requestedLocale: 'fr-FR',
     })
 
-    expect(result.text).toBe('Global English Speaking Course')
+    expect(result.text).toBe('Global Spoken English App')
     expect(result.requestedLocale).toBe('fr-FR')
     expect(result.resolvedLocale).toBe('en-IN')
     expect(result.reason).toBe('unsupported-locale')
@@ -237,10 +279,18 @@ describe('message resolution', () => {
         'app.description': 'ಸ್ವಾಗತ, {learner}',
       },
     } as CatalogueCollection
+    const entries = mutableGovernance()
+    entries['hi-IN'].reviewStatus = 'pending-independent-review'
+    entries['hi-IN'].reviewedBy = null
+    entries['hi-IN'].approvedAt = null
+    entries['hi-IN'].independentReview = false
 
     const result = resolveMessage('app.description', {
       parameters: { learner: secretParameter },
       catalogues: syntheticCatalogues,
+      governance: manifestWith(entries),
+      policy: 'approved-only',
+      requestedLocale: 'hi-IN',
       onFallback: (event) => {
         emittedEvent = event
       },

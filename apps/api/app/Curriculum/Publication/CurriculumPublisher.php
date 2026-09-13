@@ -6,6 +6,7 @@ namespace App\Curriculum\Publication;
 
 use App\Audit\AuditEventRecorder;
 use App\Curriculum\CanonicalJson;
+use App\Curriculum\Exceptions\CurriculumHeadConflict;
 use App\Curriculum\Exceptions\CurriculumIdempotencyConflict;
 use App\Curriculum\Exceptions\CurriculumOperationRejected;
 use App\Models\User;
@@ -126,7 +127,7 @@ final readonly class CurriculumPublisher
                 : 0;
 
             if ($headVersion !== $expectedHeadVersion) {
-                throw new CurriculumOperationRejected;
+                throw new CurriculumHeadConflict;
             }
 
             $evaluatedAt = now();

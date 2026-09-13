@@ -1,0 +1,42 @@
+{
+  "schema": "global-english.lesson-practice-loop.v1",
+  "blueprint_id": "lpl01-level1-can-authored-draft-v1",
+  "state": "newly_authored_review_pending",
+  "authorship": "new_content_not_legacy_reconciliation",
+  "source_snapshot_id": "lpl01-level1-can-source-v1",
+  "lesson": {
+    "level_label": "Level 1",
+    "concept_key": "can",
+    "objective": "By the end of this lesson, the learner can use can and cannot to state one ability and ask for or give permission in a short everyday exchange.",
+    "prerequisite_objective_ids": [],
+    "communication_function": "ability_and_permission",
+    "target_patterns": ["I can + base verb.", "I cannot + base verb.", "Can I + base verb?", "Yes, you can. / No, you cannot."],
+    "misconception_codes": ["CAN_BASE_VERB", "CAN_NOT_PERMISSION_CONFUSION"]
+  },
+  "ordered_parts": [
+    {"order": 1, "part_id": "introduction", "label": "Introduction", "media_asset_id": "01KZNFYHCJSDWSPK08ZAC7G3AJ", "metadata_revision_id": "01KZZB3DJFKAN8BQD30K6WJGV6", "metadata_content_hash": "2e8335f5998dace0a619acbd24945beafbb3b9a2e427bd71dd01f473b3b17e0b"},
+    {"order": 2, "part_id": "practice", "label": "Practice", "media_asset_id": "01KZNFYJ1M911SB8YVH9P4EZZ0", "metadata_revision_id": "01KZZBHZXE93YYHPGNKFJZ8EBY", "metadata_content_hash": "a185249064c4e153237e1a54f8375fe1e7e4fac2ce45525684a929ea174a6298"},
+    {"order": 3, "part_id": "conversation", "label": "Conversation", "media_asset_id": "01KZNFYJVSZRPZCEPTTQ4QTMNT", "metadata_revision_id": "01KZZBPQSS5ECMMGEBGAA2W3M4", "metadata_content_hash": "830bba76c97bb19d3b132da8bd7a021cb5160be146592cfffcaaaa810bc48635"},
+    {"order": 4, "part_id": "interaction", "label": "Interaction", "media_asset_id": "01KZNFYK75V9WF8R5VCWRRZHNN", "metadata_revision_id": "01KZZC03NX6QGCWGMD9WX1AH1D", "metadata_content_hash": "5db31dd35f5d9fe1f0d02fc116e2793f718bf6b4cff1dde00c25c93ec8ba2d37"}
+  ],
+  "talk": {
+    "scenario": "You are at a community centre. Ask a partner for permission to use an item and answer one permission question.",
+    "elicitation_goals": ["Ask one Can I...? question.", "Answer with Yes, you can or No, you cannot.", "State one ability with I can + base verb."],
+    "fallback_turns": ["Can I use your pen?", "Yes, you can.", "I can help you."]
+  },
+  "check": {
+    "pass_threshold": 80,
+    "items": [
+      {"id": "can-01", "weight": 35, "prompt": "Choose the correct sentence.", "options": ["I can speak English.", "I can speaking English.", "I can to speak English."], "correct_option": 0, "rationale": "Can is followed by the base verb speak."},
+      {"id": "can-02", "weight": 30, "prompt": "Choose the polite permission question.", "options": ["Can I use your pen?", "I can use your pen?", "Can I using your pen?"], "correct_option": 0, "rationale": "Permission questions use Can I + base verb."},
+      {"id": "can-03", "weight": 35, "prompt": "Choose the suitable answer to Can I sit here?", "options": ["Yes, you can.", "Yes, you can to.", "Yes, you can sitting."], "correct_option": 0, "rationale": "A short permission answer uses can without to or an -ing form."}
+    ]
+  },
+  "apply": {
+    "task": "Record a 20–30 second exchange: state one ability, ask permission to do one everyday action, and answer one permission question.",
+    "rubric": ["Uses one accurate I can statement", "Forms one Can I...? question", "Gives a relevant yes/no permission answer", "Speech is understandable"],
+    "evidence_state": "not_recorded"
+  },
+  "review": {"english_academic": {"status": "approved", "authority": "user_supplied_approval_2026-08-14", "scope": "authored English objective, patterns, Talk, Check and Apply draft"}, "kannada": {"status": "approved", "authority": "user_supplied_approval_2026-08-14", "scope": "separate Kannada guidance draft"}},
+  "publication": {"eligible": false, "blockers": ["english_academic_review", "kannada_creation_and_review", "rights_bound_content_attachment", "learner_evidence_validation"]}
+}

@@ -11,6 +11,7 @@ use App\Conversation\Providers\ConversationModelResult;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Support\ConversationUiLocales;
+use App\Conversation\Support\LessonDrillStepper;
 use App\Conversation\Support\SyntheticL1Explanations;
 
 final class DeterministicFakeConversationModelProvider implements ConversationModelProvider
@@ -20,8 +21,15 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
     ): ConversationModelResult {
         if (
             $request->personaStyleCode !== 'patient-friend-v1'
-            || $request->scenarioResponseCode
-                !== 'friend.everyday.follow-up.v1'
+            || ! in_array(
+                $request->scenarioResponseCode,
+                [
+                    'friend.everyday.follow-up.v1',
+                    'friend.skill-focus.past-simple.v1',
+                    'friend.review.carry-sentence.v1',
+                ],
+                true,
+            )
             || ! in_array(
                 $request->coachingMode,
                 ['gentle', 'tutor', 'fluency'],
@@ -49,6 +57,9 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
                     inputUnits: str_word_count($request->transcript),
                     outputUnits: 1,
                     estimatedCostMicrounits: 0,
+                    inputUnitKind: 'estimated_words',
+                    outputUnitKind: 'estimated_words',
+                    dispatchKind: 'local_execution',
                 ),
             );
         }
@@ -64,6 +75,9 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
                     inputUnits: str_word_count($request->transcript),
                     outputUnits: 4,
                     estimatedCostMicrounits: 0,
+                    inputUnitKind: 'estimated_words',
+                    outputUnitKind: 'estimated_words',
+                    dispatchKind: 'local_execution',
                 ),
                 priorityCorrection: new PriorityCorrection(
                     errorCategory: 'grammar.article',
@@ -86,43 +100,88 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
             default => 'Thank you for sharing that. What would you like to talk about next?',
         };
 
+        $patterns = $request->lessonDrill['target_patterns'] ?? [];
+        $listed = [];
+        if (is_array($patterns)) {
+            foreach ($patterns as $pattern) {
+                if (! is_string($pattern) || trim($pattern) === '') {
+                    continue;
+                }
+                $listed[] = trim($pattern);
+            }
+        }
+        if ($listed !== []) {
+            $partId = is_string($request->lessonDrill['part_id'] ?? null)
+                ? (string) $request->lessonDrill['part_id']
+                : 'introduction';
+            if ($partId !== 'practice') {
+                $partId = 'introduction';
+            }
+            $completedTurns = $request->lessonDrill['completed_turns'] ?? 0;
+            $fallbackTurns = $request->lessonDrill['fallback_turns'] ?? [];
+            $listedFallbacks = [];
+            if (is_array($fallbackTurns)) {
+                foreach ($fallbackTurns as $turn) {
+                    if (! is_string($turn) || trim($turn) === '') {
+                        continue;
+                    }
+                    $listedFallbacks[] = trim($turn);
+                }
+            }
+            $reply = LessonDrillStepper::reply(
+                $partId,
+                $listed,
+                is_int($completedTurns) ? $completedTurns : (int) $completedTurns,
+                $listedFallbacks,
+            );
+        }
+
         if ($request->memoryFacts !== []) {
             $reply .= ' I will keep your shared practice notes in mind.';
         }
 
         $locale = $request->uiLocale;
-        $correction = match ($request->coachingMode) {
-            'tutor' => new PriorityCorrection(
-                errorCategory: 'grammar.article',
-                correctionEn: 'Say: "I enjoy learning English after work."',
-                explanationL1: SyntheticL1Explanations::for(
-                    SyntheticL1Explanations::tutorSaySentence(),
-                    $locale,
-                ),
-                explanationLocale: $locale,
-                retryRecommended: true,
-            ),
-            'fluency' => new PriorityCorrection(
-                errorCategory: 'fluency.pacing',
-                correctionEn: 'Keep one idea per sentence so the flow stays smooth.',
-                explanationL1: SyntheticL1Explanations::for(
-                    SyntheticL1Explanations::fluencyOneIdea(),
-                    $locale,
-                ),
+        $correction = $listed !== []
+            ? new PriorityCorrection(
+                errorCategory: 'none',
+                correctionEn: 'none',
+                explanationL1: 'none',
                 explanationLocale: $locale,
                 retryRecommended: false,
-            ),
-            default => new PriorityCorrection(
-                errorCategory: 'grammar.article',
-                correctionEn: 'A clearer sentence is: "I enjoy learning English after work."',
-                explanationL1: SyntheticL1Explanations::for(
-                    SyntheticL1Explanations::gentleClearerSentence(),
-                    $locale,
+                needed: false,
+            )
+            : match ($request->coachingMode) {
+                'tutor' => new PriorityCorrection(
+                    errorCategory: 'grammar.article',
+                    correctionEn: 'Say: "I enjoy learning English after work."',
+                    explanationL1: SyntheticL1Explanations::for(
+                        SyntheticL1Explanations::tutorSaySentence(),
+                        $locale,
+                    ),
+                    explanationLocale: $locale,
+                    retryRecommended: true,
                 ),
-                explanationLocale: $locale,
-                retryRecommended: false,
-            ),
-        };
+                'fluency' => new PriorityCorrection(
+                    errorCategory: 'fluency.pacing',
+                    correctionEn: 'Keep one idea per sentence so the flow stays smooth.',
+                    explanationL1: SyntheticL1Explanations::for(
+                        SyntheticL1Explanations::fluencyOneIdea(),
+                        $locale,
+                    ),
+                    explanationLocale: $locale,
+                    retryRecommended: false,
+                ),
+                default => new PriorityCorrection(
+                    errorCategory: 'grammar.article',
+                    correctionEn: 'A clearer sentence is: "I enjoy learning English after work."',
+                    explanationL1: SyntheticL1Explanations::for(
+                        SyntheticL1Explanations::gentleClearerSentence(),
+                        $locale,
+                    ),
+                    explanationLocale: $locale,
+                    retryRecommended: false,
+                ),
+            };
 
         return new ConversationModelResult(
             understoodIntent: 'prototype_utterance_received',
@@ -134,6 +193,9 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
                 inputUnits: str_word_count($request->transcript),
                 outputUnits: str_word_count($reply),
                 estimatedCostMicrounits: 0,
+                inputUnitKind: 'estimated_words',
+                outputUnitKind: 'estimated_words',
+                dispatchKind: 'local_execution',
             ),
             priorityCorrection: $correction,
             safetyState: 'ok',

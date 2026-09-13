@@ -6,8 +6,9 @@ import { ApplicationFrame } from './ApplicationFrame'
 const navigationLinks = {
   home: { href: '/home', label: 'ಮುಖಪುಟ' },
   learn: { href: '/learn', label: 'ಕಲಿಯಿರಿ' },
-  practice: { href: '/practice', label: 'ಅಭ್ಯಾಸ' },
+  speak: { href: '/speak', label: 'ಮಾತನಾಡಿ' },
   progress: { href: '/progress', label: 'ಪ್ರಗತಿ' },
+  tuition: { href: '/tuition', label: '1:1' },
 } as const
 
 afterEach(() => {
@@ -20,13 +21,13 @@ describe('ApplicationFrame', () => {
       <ApplicationFrame
         brandLabel="Global English"
         brandLabelLocale="en-IN"
-        currentDestination="practice"
+        currentDestination="speak"
         navigationLabel="ಮುಖ್ಯ ನ್ಯಾವಿಗೇಶನ್"
         navigationLabelLocale="kn-IN"
         navigationLinks={navigationLinks}
         skipToContentLabel="ಮುಖ್ಯ ವಿಷಯಕ್ಕೆ ಹೋಗಿ"
       >
-        <h1>ಅಭ್ಯಾಸ</h1>
+        <h1>ಮಾತನಾಡಿ</h1>
       </ApplicationFrame>,
     )
 
@@ -36,16 +37,16 @@ describe('ApplicationFrame', () => {
     expect(
       screen.getByRole('navigation', { name: 'ಮುಖ್ಯ ನ್ಯಾವಿಗೇಶನ್' }),
     ).toBeVisible()
-    expect(screen.getAllByRole('link')).toHaveLength(5)
-    expect(screen.getByRole('link', { name: 'ಅಭ್ಯಾಸ' })).toHaveAttribute(
+    expect(screen.getAllByRole('link')).toHaveLength(6)
+    expect(screen.getByRole('link', { name: 'ಮಾತನಾಡಿ' })).toHaveAttribute(
       'aria-current',
       'page',
     )
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
     expect(
-      screen.getByRole('heading', { name: 'ಅಭ್ಯಾಸ' }),
+      screen.getByRole('heading', { name: 'ಮಾತನಾಡಿ' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Global English')).toHaveAttribute(
+    expect(screen.getByText('Global English').closest('[lang]')).toHaveAttribute(
       'lang',
       'en-IN',
     )

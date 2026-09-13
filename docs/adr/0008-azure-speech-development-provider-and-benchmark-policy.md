@@ -40,6 +40,12 @@ required by this ADR are recorded.
 AI-only lesson-audio policy only. The locked PR-009 synthetic benchmark
 allowlist in this ADR remains unchanged.
 
+**Recorded-STT portability amendment:** [ADR-0027](0027-indic-recorded-stt-port.md)
+(accepted 29 August 2026) allows an optional Indic HTTP recorded-STT driver
+behind `RecordedSpeechToTextProvider`. Soft-launch learner STT remains Azure
+until an explicit driver switch with a reviewed secret. This does not change
+the locked PR-009 Azure Speech synthetic benchmark.
+
 ## Context
 
 The provider-neutral PR-009 vertical slice is implemented and verified. A

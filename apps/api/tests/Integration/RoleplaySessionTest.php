@@ -7,6 +7,9 @@ namespace Tests\Integration;
 use App\Conversation\ConversationSessionService;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\RoleplayStageService;
+use App\Entitlements\DirectPlanDefaults;
+use App\Entitlements\EntitlementAccess;
+use App\Entitlements\LearnerSubscriptionService;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\Permission;
@@ -211,6 +214,22 @@ final class RoleplaySessionTest extends TenancyIntegrationTestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+
+        if ($organization->system_key === Organization::DIRECT_SYSTEM_KEY) {
+            $this->contexts()->run($context, function () use ($user, $organization): void {
+                $this->app->make(EntitlementAccess::class)->snapshot($user);
+                $planId = DB::table('entitlement_plans')
+                    ->where('organization_id', $organization->getKey())
+                    ->where('code', DirectPlanDefaults::MONTHLY_ROLEPLAY)
+                    ->value('id');
+                $this->assertIsString($planId);
+                $this->app->make(LearnerSubscriptionService::class)->checkout(
+                    $user,
+                    $planId,
+                    (string) Str::ulid(),
+                );
+            });
+        }
 
         return [$user, $membership, $context];
     }

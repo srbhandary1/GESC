@@ -1,0 +1,79 @@
+{
+  "schema": "global-english.lpl01.source-snapshot-manifest.v1",
+  "snapshot_id": "lpl01-level1-can-source-v1",
+  "state": "manifest_only_source_body_pending",
+  "source": {
+    "system": "owner-designated legacy admin",
+    "course_label": "Global Spoken English Courses",
+    "level_label": "Level 1",
+    "lesson_label": "CAN",
+    "lesson_type": "pdf_text_book",
+    "topic_key": "can",
+    "source_promise": "I can speak in English"
+  },
+  "typed_body": {
+    "status": "pending_read_only_export",
+    "fields": [],
+    "raw_markup_retained": false,
+    "assignment_audio_included": false
+  },
+  "known_source_observations": [
+    "ability, possibility/impossibility, permission and polite requests",
+    "affirmative and negative forms",
+    "yes/no, negative and WH questions",
+    "controlled substitution practice",
+    "directions/help conversation",
+    "five Workshop source tasks"
+  ],
+  "media_bindings": [
+    {
+      "order": 1,
+      "part_id": "introduction",
+      "label": "Introduction",
+      "media_asset_id": "01KZNFYHCJSDWSPK08ZAC7G3AJ",
+      "media_sha256": "6838818d74481ffe38e13948dea2954886dcc519ed927112b703f8e2064573aa",
+      "media_bytes": 4968408,
+      "metadata_revision_id": "01KZZB3DJFKAN8BQD30K6WJGV6",
+      "metadata_content_hash": "2e8335f5998dace0a619acbd24945beafbb3b9a2e427bd71dd01f473b3b17e0b",
+      "rights_revision_id": "01KZNKNFWGSRDBD57H18YCDPG8"
+    },
+    {
+      "order": 2,
+      "part_id": "practice",
+      "label": "Practice",
+      "media_asset_id": "01KZNFYJ1M911SB8YVH9P4EZZ0",
+      "media_sha256": "75909e9baf340356d7ecf66435977ee1cce1fe93a597da58a24b5b9ea1833dd7",
+      "media_bytes": 7357881,
+      "metadata_revision_id": "01KZZBHZXE93YYHPGNKFJZ8EBY",
+      "metadata_content_hash": "a185249064c4e153237e1a54f8375fe1e7e4fac2ce45525684a929ea174a6298",
+      "rights_revision_id": "01KZNKNFXKFRSVXRKPYWHDCF7C"
+    },
+    {
+      "order": 3,
+      "part_id": "conversation",
+      "label": "Conversation",
+      "media_asset_id": "01KZNFYJVSZRPZCEPTTQ4QTMNT",
+      "media_sha256": "8124b3bc6f71b65258358b0121cc3d72f1543948ca3ef3a1bb419f1fa0d65c70",
+      "media_bytes": 2157215,
+      "metadata_revision_id": "01KZZBPQSS5ECMMGEBGAA2W3M4",
+      "metadata_content_hash": "830bba76c97bb19d3b132da8bd7a021cb5160be146592cfffcaaaa810bc48635",
+      "rights_revision_id": "01KZNKNFYDDC31CV2BR155DXVR"
+    },
+    {
+      "order": 4,
+      "part_id": "interaction",
+      "label": "Interaction",
+      "media_asset_id": "01KZNFYK75V9WF8R5VCWRRZHNN",
+      "media_sha256": "4862e927078ecb0ea56b7240f6d5b52356365115a6512836357bf340fdcf895e",
+      "media_bytes": 4276686,
+      "metadata_revision_id": "01KZZC03NX6QGCWGMD9WX1AH1D",
+      "metadata_content_hash": "5db31dd35f5d9fe1f0d02fc116e2793f718bf6b4cff1dde00c25c93ec8ba2d37",
+      "rights_revision_id": "01KZNKNFZ7A5Z9JPSC2AV0QPZQ"
+    }
+  ],
+  "blockers": [
+    "exact upstream rich-text body has not been supplied as a read-only export",
+    "source-dependent typed fields cannot be asserted",
+    "no learner-visible content or answer key may be invented"
+  ]
+}

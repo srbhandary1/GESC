@@ -2,20 +2,25 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ConversationJourney } from './ConversationJourney'
-import type {
-  ConversationJourneyApi,
-  FriendSession,
-  FriendTurn,
-  FriendTurnEvent,
+import * as playBase64AudioModule from './playBase64Audio'
+import {
+  ConversationJourneyUnavailableError,
+  type ConversationJourneyApi,
+  type FriendSession,
+  type FriendTurn,
+  type FriendTurnEvent,
 } from './ConversationJourneyApi'
+
+import { beginSpeakLoop, resetSpeakLoopHistory } from './speakLoopTimings'
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  resetSpeakLoopHistory()
 })
 
-describe('deterministic Friend prototype', () => {
-  it('discloses the fake boundary and completes one typed turn', async () => {
+describe('Friend practice journey', () => {
+  it('discloses the AI boundary and completes one typed turn', async () => {
     const session = fakeSession()
     const turn = fakeTurn(session.id)
     const events = fakeEvents()
@@ -30,6 +35,7 @@ describe('deterministic Friend prototype', () => {
       .mockReturnValueOnce('turn-command')
       .mockReturnValueOnce('next-turn-command')
     const user = userEvent.setup()
+    const onLiveAiUsageChanged = vi.fn()
 
     render(
       <ConversationJourney
@@ -37,40 +43,38 @@ describe('deterministic Friend prototype', () => {
         createClientId={createClientId}
         locale="en-IN"
         localizationPolicy="development-preview"
+        onLiveAiUsageChanged={onLiveAiUsageChanged}
       />,
     )
 
     expect(
       screen.getByText(
-        'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+        'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
       ),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+        'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
       ),
     ).toBeInTheDocument()
+    expect(document.querySelectorAll('.tutor-presence')).toHaveLength(1)
+    expect(
+      document.querySelector('.conversation-journey__heading figcaption'),
+    ).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Swathi',
       }),
     )
     expect(
       await screen.findByText(
-        'I am a deterministic AI prototype, not a human.',
+        'I am Swathi, your AI English teacher. Feedback is advisory.',
       ),
     ).toHaveAttribute('lang', 'en-IN')
-    expect(screen.getByRole('heading', { name: 'Warm-up' })).toBeInTheDocument()
+    expect(screen.getByText('Hear an example')).toBeInTheDocument()
     await user.click(
-      screen.getByRole('button', { name: 'Continue to listen' }),
-    )
-    expect(screen.getByRole('heading', { name: 'Listen' })).toBeInTheDocument()
-    expect(
-      screen.getByText('I went to the market this morning.'),
-    ).toBeInTheDocument()
-    await user.click(
-      screen.getByRole('button', { name: 'Continue to talk' }),
+      screen.getByRole('button', { name: 'Type instead' }),
     )
 
     await user.type(
@@ -91,22 +95,25 @@ describe('deterministic Friend prototype', () => {
     expect(
       screen.getByText('I practise English after work.'),
     ).toHaveAttribute('lang', 'en-IN')
-    expect(screen.getByText('Priority correction')).toBeInTheDocument()
     expect(
-      screen.getByText(
-        'A clearer sentence is: "I enjoy learning English after work."',
-      ),
-    ).toHaveAttribute('lang', 'en-IN')
+      screen.getByLabelText('Explanation in your language'),
+    ).toBeInTheDocument()
+    const correction = screen.getByText(
+      'A clearer sentence is: "I enjoy learning English after work."',
+    )
+    expect(correction).toHaveAttribute('lang', 'en-IN')
+    expect(correction.closest('.conversation-journey__bubble--teacher')).not.toBeNull()
+    expect(correction.closest('.conversation-journey__bubble--you')).toBeNull()
     expect(
       screen.getByText(
         'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
       ),
     ).toHaveAttribute('lang', 'kn-IN')
     expect(
-      screen.getByText(
-        'The English text above is enough. Playback is optional.',
-      ),
-    ).toBeInTheDocument()
+      screen.getAllByText(
+        'Listen first. You can also read the English.',
+      ).length,
+    ).toBeGreaterThan(0)
     expect(screen.getByText('Turn completed')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Say that again' }),
@@ -127,9 +134,76 @@ describe('deterministic Friend prototype', () => {
       session.id,
       { prototype_utterance: 'I practise English after work.' },
       'turn-command',
+      expect.any(AbortSignal),
     )
-    expect(api.events).toHaveBeenCalledWith(turn.events_url)
+    expect(api.events).toHaveBeenCalledWith(
+      turn.events_url,
+      expect.any(AbortSignal),
+    )
+    expect(onLiveAiUsageChanged).toHaveBeenCalled()
   })
+
+  it.each([
+    [
+      'Skill focus',
+      'Start Skill Focus',
+      'tutor',
+      'past-tense-skill-focus-prototype',
+      'Yesterday, I went to the market.',
+    ],
+    [
+      'Review',
+      'Start Review',
+      'gentle',
+      'carry-sentence-review-prototype',
+      'Please say the sentence once more in your own way.',
+    ],
+  ] as const)(
+    'starts the %s journey with its bounded scenario and coaching default',
+    async (
+      sessionLabel,
+      startLabel,
+      expectedCoachingMode,
+      expectedScenario,
+      expectedModelLine,
+    ) => {
+      const session = fakeSession()
+      const api: ConversationJourneyApi = {
+        startSession: vi.fn(async () => session),
+        createTurn: vi.fn(),
+        events: vi.fn(),
+      }
+      const user = userEvent.setup()
+
+      render(
+        <ConversationJourney
+          api={api}
+          createClientId={() => 'session-command'}
+          locale="en-IN"
+          localizationPolicy="development-preview"
+        />,
+      )
+
+      await user.selectOptions(
+        screen.getByRole('combobox', { name: 'Practice type' }),
+        sessionLabel,
+      )
+      expect(
+        screen.getByRole('combobox', { name: 'Coaching mode' }),
+      ).toHaveValue(expectedCoachingMode)
+      await user.click(screen.getByRole('button', { name: startLabel }))
+      expect(screen.getByText(expectedModelLine)).toBeInTheDocument()
+      expect(api.startSession).toHaveBeenCalledWith(
+        {
+          coaching_mode: expectedCoachingMode,
+          persona_key: 'patient-friend-prototype',
+          scenario_key: expectedScenario,
+          ui_locale: 'en-IN',
+        },
+        'session-command',
+      )
+    },
+  )
 
   it('exposes browser speech actions in the disclosed demo mode', async () => {
     class FakeUtterance {
@@ -193,17 +267,14 @@ describe('deterministic Friend prototype', () => {
       screen.getByRole('region', { name: 'Practice with your Friend' }),
     ).toHaveAttribute('data-demo-speech', 'browser')
     expect(
-      screen.queryByRole('button', { name: 'Set up optional voice practice' }),
+      screen.queryByRole('button', { name: 'Speak after you consent' }),
     ).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: 'Start speaking practice' }),
     )
     await user.click(
-      await screen.findByRole('button', { name: 'Continue to listen' }),
-    )
-    await user.click(
-      screen.getByRole('button', { name: 'Continue to talk' }),
+      screen.getByRole('button', { name: 'Type instead' }),
     )
     await user.type(
       await screen.findByRole('textbox', {
@@ -224,7 +295,7 @@ describe('deterministic Friend prototype', () => {
     })
   })
 
-  it('shows a visible error when the fake provider is disabled', async () => {
+  it('shows a visible error when the provider is disabled', async () => {
     const api: ConversationJourneyApi = {
       startSession: vi.fn(async () => {
         throw new Error('disabled')
@@ -243,14 +314,282 @@ describe('deterministic Friend prototype', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: 'Start Confidence Conversation',
+        name: 'Talk with Swathi',
       }),
     )
 
     expect(
       await screen.findByRole('alert'),
     ).toHaveTextContent(
-      'The AI Friend prototype is unavailable. Try again.',
+      'Swathi is unavailable. Try again.',
+    )
+  })
+
+  it('shows paid live-AI exhaustion from the API problem key', async () => {
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => {
+        throw new ConversationJourneyUnavailableError(
+          409,
+          'entitlement.ai_exhausted',
+        )
+      }),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Talk with Swathi',
+      }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "This month's live speaking time is used up. Buy talk time or wait for the next month.",
+    )
+  })
+
+  it('uses a bound level-session without starting a second generic Friend', async () => {
+    const session = fakeSession()
+    const startSession = vi.fn()
+    const api: ConversationJourneyApi = {
+      startSession,
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        initialSession={session}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Talk with Swathi',
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Type instead' }),
+    ).toBeInTheDocument()
+    expect(startSession).not.toHaveBeenCalled()
+  })
+
+  it('asks the lesson question when a bound session opens', () => {
+    const session = fakeSession()
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    render(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={session}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Can I use your pen?"
+      />,
+    )
+
+    expect(screen.getByText('Can I use your pen?')).toBeInTheDocument()
+    expect(
+      screen.queryByText('What did you do this morning?'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('hides Speak-room chrome for an Introduction drill and keeps it for Conversation', () => {
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+
+    const { rerender } = render(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={fakeSession()}
+        lessonRoom="introduction"
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Listen. Say: I can drink water. Now you try."
+      />,
+    )
+
+    expect(
+      screen.getByText('Listen. Say: I can drink water. Now you try.'),
+    ).toBeInTheDocument()
+    expect(document.querySelector('[data-lesson-room="introduction"]')).not.toBeNull()
+    expect(screen.queryByText('Stage')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Skip this turn' }),
+    ).not.toBeInTheDocument()
+
+    rerender(
+      <ConversationJourney
+        api={api}
+        embedded
+        initialSession={fakeSession()}
+        lessonRoom="conversation"
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Ask a coworker if you can use the printer."
+      />,
+    )
+
+    expect(
+      screen.getByText('Ask a coworker if you can use the printer.'),
+    ).toBeInTheDocument()
+    expect(document.querySelector('[data-lesson-room="conversation"]')).not.toBeNull()
+    expect(screen.queryByText('Stage')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Skip this turn' }),
+    ).toBeInTheDocument()
+  })
+
+  it('speaks warmup through session guidance TTS, not the phone voice', async () => {
+    const session = fakeSession()
+    const synthesizeSpeech = vi.fn(async () => ({
+      playback_available: false,
+      rendering_mode: 'deterministic-fake-text-only' as const,
+      model_audio_base64: null,
+    }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(),
+      events: vi.fn(),
+      synthesizeSpeech,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'session-command'}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Talk with Swathi' }),
+    )
+
+    await vi.waitFor(() => {
+      expect(synthesizeSpeech).toHaveBeenCalledWith(
+        session.id,
+        {
+          purpose: 'model_en',
+          text: 'What did you do this morning?',
+        },
+        expect.any(String),
+      )
+    })
+  })
+
+  it('starts reply audio before the events stream resolves', async () => {
+    const play = vi
+      .spyOn(playBase64AudioModule, 'playBase64Audio')
+      .mockImplementation(async (_base64, _mime, options) => {
+        options?.onStarted?.()
+      })
+    const session = fakeSession()
+    const events = fakeEvents()
+    const turn: FriendTurn = {
+      ...fakeTurn(session.id),
+      speech: {
+        playback_available: true,
+        rendering_mode: 'azure-soft-launch-guidance-wav',
+        model_audio_base64: 'QQ==',
+        model_audio_mime_type: 'audio/wav',
+      },
+    }
+    let releaseEvents: (value: readonly FriendTurnEvent[]) => void =
+      () => undefined
+    const recordSpeechLatency = vi.fn(async () => ({
+      accepted: true,
+      replayed: false,
+      retention_days: 30 as const,
+      sample_policy_version: 'speech-first-audible-v1',
+      sampled: true,
+    }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(async () => session),
+      createTurn: vi.fn(async () => turn),
+      recordSpeechLatency,
+      events: vi.fn(
+        () =>
+          new Promise<readonly FriendTurnEvent[]>((resolve) => {
+            releaseEvents = resolve
+          }),
+      ),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={vi
+          .fn()
+          .mockReturnValueOnce('session-command')
+          .mockReturnValueOnce('turn-command')
+          .mockReturnValueOnce('next-turn-command')
+          .mockReturnValue('telemetry-command')}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Talk with Swathi' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Type instead' }),
+    )
+    await user.type(
+      screen.getByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+      'I practise English after work.',
+    )
+    beginSpeakLoop()
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+
+    await vi.waitFor(() => {
+      expect(play).toHaveBeenCalled()
+      expect(recordSpeechLatency).toHaveBeenCalledWith(
+        turn.id,
+        expect.objectContaining({ playback_outcome: 'started' }),
+        'telemetry-command',
+      )
+    })
+    expect(screen.queryByText('Turn completed')).not.toBeInTheDocument()
+    releaseEvents(events)
+    expect(await screen.findByText('Turn completed')).toBeInTheDocument()
+    expect(play).toHaveBeenCalledWith(
+      'QQ==',
+      'audio/wav',
+      expect.objectContaining({
+        onStarted: expect.any(Function),
+      }),
     )
   })
 })

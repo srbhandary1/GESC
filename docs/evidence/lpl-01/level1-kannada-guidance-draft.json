@@ -1,0 +1,26 @@
+{
+  "schema": "global-english.lesson-practice-loop-kannada-guidance.v1",
+  "blueprint_id": "lpl01-level1-can-authored-draft-v1",
+  "state": "draft_pending_independent_kannada_review",
+  "source_language": "en",
+  "guidance_language": "kn",
+  "source_authorship": "new_content_not_legacy_reconciliation",
+  "guidance": {
+    "concept_label": "can — ಸಾಮರ್ಥ್ಯ ಮತ್ತು ಅನುಮತಿ",
+    "objective": "ಈ ಪಾಠದ ಅಂತ್ಯದಲ್ಲಿ, ಕಲಿಯುವವರು ತಮ್ಮ ಒಂದು ಸಾಮರ್ಥ್ಯವನ್ನು ಹೇಳಲು ಮತ್ತು ದೈನಂದಿನ ಸಂದರ್ಭದಲ್ಲಿನ ಅನುಮತಿಯನ್ನು ಕೇಳಲು ಅಥವಾ ನೀಡಲು can ಮತ್ತು cannot ಅನ್ನು ಬಳಸಬಹುದು.",
+    "patterns": [
+      {"english": "I can + base verb.", "kannada": "I can + ಕ್ರಿಯಾಪದದ ಮೂಲ ರೂಪ."},
+      {"english": "Can I + base verb?", "kannada": "Can I + ಕ್ರಿಯಾಪದದ ಮೂಲ ರೂಪ?"},
+      {"english": "Yes, you can. / No, you cannot.", "kannada": "ಹೌದು, ನಿಮಗೆ ಅನುಮತಿ ಇದೆ. / ಇಲ್ಲ, ನಿಮಗೆ ಅನುಮತಿ ಇಲ್ಲ."}
+    ],
+    "learner_hint": "can ನಂತರ ಕ್ರಿಯಾಪದದ ಮೂಲ ರೂಪವನ್ನು ಬಳಸಿ; can ನಂತರ to ಅಥವಾ -ing ರೂಪವನ್ನು ಬಳಸಬೇಡಿ.",
+    "talk_prompt": "ಸಮುದಾಯ ಕೇಂದ್ರದಲ್ಲಿ ಒಂದು ವಸ್ತುವನ್ನು ಬಳಸಲು ಅನುಮತಿ ಕೇಳಿ ಮತ್ತು ನಿಮ್ಮ ಸಂಗಾತಿಯ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ.",
+    "check_explanations": [
+      "can ನಂತರ speak ಎಂಬ ಮೂಲ ರೂಪ ಬರುತ್ತದೆ.",
+      "ಅನುಮತಿ ಕೇಳಲು Can I + ಮೂಲ ಕ್ರಿಯಾಪದ ಬಳಸಿ.",
+      "ಸಣ್ಣ ಅನುಮತಿ ಉತ್ತರದಲ್ಲಿ can ನಂತರ to ಅಥವಾ -ing ರೂಪ ಬರುವುದಿಲ್ಲ."
+    ]
+  },
+  "review": {"status": "approved", "authority": "user_supplied_approval_2026-08-14", "decision": "approved_for_private_draft_use"},
+  "publication": {"eligible": false, "blockers": ["independent_kannada_review", "governed_content_attachment"]}
+}

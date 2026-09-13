@@ -124,7 +124,17 @@ Normally:
 ```text
 make verify
 make ai-eval   # when A6 fixtures land or prompts/orchestration change
+make ai-eval-review-export REVIEW_PATH=/absolute/protected/review.json
+make ai-eval-human-review REVIEW_PATH=/absolute/protected/review.json
 ```
+
+`make ai-eval` is the deterministic regression gate and does not imply human
+approval. Before any production-quality L1 claim, follow
+[the independent review runbook](L1_INDEPENDENT_REVIEW_RUNBOOK.md) and pass
+`make ai-eval-human-review` with a complete independently attributed package.
+That strict gate binds every acceptance to the suite hash and the exact
+generated reply/correction/explanation payload hash and fails closed if either
+changes.
 
 Do not claim host `make verify` green unless it actually ran successfully in
 the recorded environment. Docker/pinned toolchain evidence is acceptable when

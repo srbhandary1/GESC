@@ -7,11 +7,15 @@ namespace Tests\Integration;
 use App\Authentication\AuthenticationSecretDigester;
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
+use App\Identity\IdentityIdentifierDigester;
 use App\Models\AuthenticationSession;
 use App\Models\InstitutionInvite;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\OtpChallenge;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\UserIdentity;
 use App\Tenancy\DirectLearnerProvisioner;
 use App\Tenancy\InstitutionInviteCodeDigester;
 use Carbon\CarbonImmutable;
@@ -156,6 +160,76 @@ final class AuthenticationFlowTest extends TestCase
             ->assertJsonPath('detail', 'One or more request values are invalid.');
 
         $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_existing_verified_direct_staff_identity_uses_ordinary_otp_without_role_changes(): void
+    {
+        $phone = '+919876543219';
+        $now = now();
+        $organizationId = DB::table('organizations')
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->value('id');
+        $roleId = DB::table('roles')
+            ->where('organization_id', $organizationId)
+            ->where('key', 'organization_admin')
+            ->value('id');
+        self::assertIsString($organizationId);
+        self::assertIsString($roleId);
+        $user = User::query()->forceCreate([
+            'display_name' => null,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $membershipId = (string) Str::ulid();
+        DB::table('memberships')->insert([
+            'id' => $membershipId,
+            'organization_id' => $organizationId,
+            'user_id' => $user->getKey(),
+            'membership_type' => Membership::TYPE_ORGANIZATION_ADMIN,
+            'status' => Membership::STATUS_ACTIVE,
+            'joined_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('membership_roles')->insert([
+            'organization_id' => $organizationId,
+            'membership_id' => $membershipId,
+            'role_id' => $roleId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        UserIdentity::query()->forceCreate([
+            'user_id' => $user->getKey(),
+            'type' => 'phone',
+            'identifier_digest' => $this->app
+                ->make(IdentityIdentifierDigester::class)
+                ->digest('phone', $phone),
+            'display_hint' => null,
+            'status' => UserIdentity::STATUS_VERIFIED,
+            'verified_at' => $now,
+        ]);
+
+        $authenticated = $this->authenticateWithOtp($phone);
+
+        $authenticated['response']
+            ->assertJsonPath('user.id', (string) $user->getKey())
+            ->assertJsonPath('session.privileged', true);
+        $this->assertDatabaseHas('memberships', [
+            'id' => $membershipId,
+            'membership_type' => Membership::TYPE_ORGANIZATION_ADMIN,
+            'status' => Membership::STATUS_ACTIVE,
+        ]);
+        self::assertSame(
+            [$roleId],
+            DB::table('membership_roles')
+                ->where('organization_id', $organizationId)
+                ->where('membership_id', $membershipId)
+                ->pluck('role_id')
+                ->all(),
+        );
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('user_identities', 1);
+        $this->assertDatabaseCount('memberships', 1);
+        $this->assertDatabaseCount('membership_roles', 1);
     }
 
     public function test_invite_aware_json_otp_accepts_the_institution_without_direct_membership_on_postgresql(): void
@@ -659,16 +733,11 @@ final class AuthenticationFlowTest extends TestCase
 
         $membership = DB::table('memberships')->first(['id', 'organization_id']);
         self::assertNotNull($membership);
-        $roleId = (string) Str::ulid();
-        DB::table('roles')->insert([
-            'id' => $roleId,
-            'organization_id' => $membership->organization_id,
-            'key' => 'organization_admin',
-            'name' => 'Organization administrator',
-            'is_system' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $roleId = DB::table('roles')
+            ->where('organization_id', $membership->organization_id)
+            ->where('key', Role::DIRECT_ORGANIZATION_ADMIN_KEY)
+            ->value('id');
+        self::assertIsString($roleId);
         DB::table('membership_roles')->insert([
             'organization_id' => $membership->organization_id,
             'membership_id' => $membership->id,
@@ -721,16 +790,11 @@ final class AuthenticationFlowTest extends TestCase
             'organization_id',
         ]);
         self::assertNotNull($membership);
-        $roleId = (string) Str::ulid();
-        DB::table('roles')->insert([
-            'id' => $roleId,
-            'organization_id' => $membership->organization_id,
-            'key' => 'organization_admin',
-            'name' => 'Organization administrator',
-            'is_system' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $roleId = DB::table('roles')
+            ->where('organization_id', $membership->organization_id)
+            ->where('key', Role::DIRECT_ORGANIZATION_ADMIN_KEY)
+            ->value('id');
+        self::assertIsString($roleId);
         DB::table('membership_roles')->insert([
             'organization_id' => $membership->organization_id,
             'membership_id' => $membership->id,
@@ -849,6 +913,7 @@ final class AuthenticationFlowTest extends TestCase
         $now = now();
         $organizationId = (string) Str::ulid();
         $inviteId = (string) Str::ulid();
+        $roleId = (string) Str::ulid();
 
         DB::table('organizations')->insert([
             'id' => $organizationId,
@@ -860,6 +925,27 @@ final class AuthenticationFlowTest extends TestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+        DB::table('roles')->insert([
+            'id' => $roleId,
+            'organization_id' => $organizationId,
+            'key' => 'learner-safe',
+            'name' => 'Learner',
+            'is_system' => false,
+            'status' => 'active',
+            'version' => 1,
+            'retired_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('role_permissions')->insert([
+            'organization_id' => $organizationId,
+            'role_id' => $roleId,
+            'permission_id' => DB::table('permissions')
+                ->where('key', 'learning.participate')
+                ->value('id'),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
         DB::table('institution_invites')->insert([
             'id' => $inviteId,
             'organization_id' => $organizationId,
@@ -867,6 +953,7 @@ final class AuthenticationFlowTest extends TestCase
                 ->make(InstitutionInviteCodeDigester::class)
                 ->digest($rawCode),
             'membership_type' => Membership::TYPE_LEARNER,
+            'role_id' => $roleId,
             'status' => InstitutionInvite::STATUS_PENDING,
             'expires_at' => $now->copy()->addDay(),
             'created_at' => $now,

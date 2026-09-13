@@ -17,7 +17,7 @@ const ids = {
   user: '01J20000000000000000000009',
 } as const
 
-test('completes the disclosed deterministic fake-provider conversation journey', async ({
+test('completes the disclosed voice-first AI conversation journey', async ({
   page,
 }) => {
   const requests: Array<{
@@ -29,32 +29,32 @@ test('completes the disclosed deterministic fake-provider conversation journey',
   }> = []
   await mockConversationApi(page, requests)
 
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
 
   await expect(
     page.getByText(
-      'This is a deterministic fake for local testing. It is not a real AI provider or a human.',
+      'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
     ),
   ).toBeVisible()
   await expect(
     page.getByText(
-      'Your typed text is processed only for this request. Conversation text and audio are not persisted.',
+      'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
     ),
   ).toBeVisible()
 
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: 'Talk with Swathi' })
     .click()
   await expect(
-    page.getByText('I am a deterministic AI prototype, not a human.'),
+    page.getByText(
+      'I am Swathi, your AI English teacher. Feedback is advisory.',
+    ),
   ).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Warm-up' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await expect(page.getByRole('heading', { name: 'Listen' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
+  await expect(page.getByText('Hear an example')).toBeVisible()
+  await page.getByRole('button', { name: 'Type instead' }).click()
 
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })
@@ -66,9 +66,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
       'Thank you for sharing that. What would you like to talk about next?',
     ),
   ).toBeVisible()
-  await expect(
-    page.getByText('The English text above is enough. Playback is optional.'),
-  ).toBeVisible()
+  await page.getByText('Turn status', { exact: true }).click()
   await expect(page.getByText('Turn completed')).toBeVisible()
 
   expect(
@@ -81,7 +79,7 @@ test('completes the disclosed deterministic fake-provider conversation journey',
     ),
   ).toBe(true)
   expect(
-    requests.some(({ path }) => /audio|speech|upload/u.test(path)),
+    requests.some(({ path }) => /upload/u.test(path)),
   ).toBe(false)
   expect(
     requests
@@ -107,23 +105,15 @@ test('shows separate optional voice purposes before microphone capture', async (
     url: string
   }> = []
   await mockConversationApi(page, requests)
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
   await page
-    .getByRole('button', { name: 'Start Confidence Conversation' })
+    .getByRole('button', { name: 'Talk with Swathi' })
     .click()
-  await page.getByRole('button', { name: 'Continue to listen' }).click()
-  await page.getByRole('button', { name: 'Continue to talk' }).click()
-  await page
-    .getByRole('button', { name: 'Set up optional voice practice' })
-    .click()
-
   await expect(
-    page.getByText(
-      'Implementation draft: audio is uploaded privately and deleted after transcription.',
-    ),
+    page.getByRole('button', { name: 'Allow Swathi to hear me' }),
   ).toBeVisible()
   await expect(
     page.getByRole('button', {
@@ -158,25 +148,22 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
   }> = []
   await mockConversationApi(page, requests)
 
-  await page.goto('/#practice')
+  await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await page.getByRole('tab', { name: 'A situation' }).click()
+  await page.getByRole('button', { name: 'Start this situation' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Rehearse' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('heading', { exact: true, name: 'Perform' })).toBeVisible()
+  await page.getByRole('button', { name: 'Type instead' }).click()
   await page
-    .getByRole('button', { name: 'Role-play (synthetic)' })
-    .click()
-
-  await expect(
-    page.getByText(
-      'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
-    ),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Start Role-play' }).click()
-  await expect(page.getByRole('heading', { name: 'Observe' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByRole('heading', { name: 'Rehearse' })).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByRole('heading', { name: 'Perform' })).toBeVisible()
+    .getByRole('textbox', { name: 'Type one English practice turn' })
+    .fill('Hello, I have an appointment.')
+  await page.getByRole('button', { name: 'Send turn' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Reflect' })).toBeVisible()
   await expect(
@@ -232,6 +219,10 @@ async function mockConversationApi(
       url: request.url(),
     })
 
+    if (await fulfillPasswordSecurity(route, path)) {
+      return
+    }
+
     if (path === '/api/v1/me') {
       await json(route, {
         current_membership: {
@@ -247,6 +238,31 @@ async function mockConversationApi(
         },
         memberships: [],
         user: { id: ids.user },
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/entitlement') {
+      await json(route, {
+        applies: true,
+        entitlement_id: '01J2000000000000000000000E',
+        plan_code: 'monthly_modules_roleplay',
+        plan_name: 'Premium',
+        status: 'active',
+        allows_roleplay: true,
+        allows_free_speech: true,
+        allowed_session_parts: [
+          'introduction',
+          'practice',
+          'conversation',
+          'interaction',
+        ],
+        max_level_number: null,
+        is_demo: false,
+        expires_at: '2026-10-05T00:00:00+00:00',
+        live_ai_seconds_remaining: 4920,
+        live_ai_cap_seconds: 5400,
+        gstin_is_placeholder: false,
       })
       return
     }
@@ -319,6 +335,26 @@ async function mockConversationApi(
 
     await route.abort('failed')
   })
+}
+
+async function fulfillPasswordSecurity(
+  route: Route,
+  path: string,
+): Promise<boolean> {
+  if (path === '/api/v1/auth/password/status') {
+    await json(route, {
+      credential_ready: true,
+      mode: 'password_only',
+      password_confirmed_at: null,
+      username: 'learner.one',
+    })
+    return true
+  }
+  if (path === '/api/v1/auth/sessions') {
+    await json(route, { data: [] })
+    return true
+  }
+  return false
 }
 
 function roleplaySession(
@@ -500,7 +536,7 @@ function voiceConsents() {
       history_optional: true,
       notice:
         'Implementation draft: audio is uploaded privately and deleted after transcription.',
-      notice_revision: 'voice-processing-notice-2026-07-31',
+      notice_revision: 'voice-processing-notice-2026-09-01',
       notice_sha256: 'c'.repeat(64),
       policy_version: 'recording-policy-v1',
       purposes: [

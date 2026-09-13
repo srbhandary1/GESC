@@ -1,8 +1,8 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.1"
+version: "3.15"
 status: "Canonical implementation baseline"
-prepared: "30 July 2026"
+prepared: "14 August 2026"
 classification: "Confidential — Product, architecture and delivery plan"
 supersedes:
   - "Global_English_High_Level_Plan_v2.md"
@@ -91,9 +91,10 @@ The product promise is:
 | Primary experience | Structured Tutor + AI Friend + Role-play Studio |
 | Learning language | English |
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
+| Kannada Help | **Kannada Help — Ask Swathi** is an explicit Free-Speech-entitled advisory support path: concise Kannada answer plus an actionable English bridge; it is not an authoritative learning or assessment mode |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
-| Authentication | Mobile OTP for direct learners; organization invite/code or admission-ID setup for institutional learners; Sanctum same-origin cookies for web/PWA; Passport Authorization Code with PKCE for Android |
+| Authentication | One platform-global username/password credential for enrollment and privileged freshness; Google and Facebook may sign in already-enrolled users and issue the same web session or Android Passport family; roles and permission groups authorize work after sign-in; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with Passport refresh_token thereafter; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Authoritative records | Deterministic, versioned, explainable and auditable |
 | AI authority | Advisory only; never writes marks, mastery, attendance or unlocks |
 | Offline | Downloaded deterministic mission, recording/playback and queued progress; no offline AI in Phase 1 |
@@ -285,7 +286,48 @@ Role-play stages:
 3. **Perform:** complete an open-ended exchange.
 4. **Reflect:** review task completion, priority corrections, stronger vocabulary and a retry task.
 
-### 4.2 Standard daily mission
+#### Kannada Help — Ask Swathi support path
+
+Kannada Help is not a fourth authoritative learning or assessment mode. It is
+an explicit, authenticated support path under the same server-side Free Speech
+entitlement as Friend/free-speech sessions. A learner may ask a genuine
+question in Kannada, English or expected Kannada-English code mix. Swathi gives
+a concise Kannada answer and an actionable English bridge that invites or
+models the next English utterance.
+
+Tutor, Friend and Role-play remain English-practice modes. They may provide one
+short Kannada repair or explanation when needed, then return to English. Input
+language detection alone cannot switch a session into Kannada Help. The server
+derives mode and reply locale from the authorized session, learner intent,
+supported locale policy and safety state. Kannada Help is advisory and cannot
+write marks, mastery, progression, review schedules, certificates,
+entitlements or curriculum records.
+
+### 4.2 All-levels four-session path
+
+Every configured level uses the same learner-facing sessions, accepted under
+ADR-0025 / APP-0061:
+
+1. **Introduction** — play the exact governed Introduction audio; the
+   Structured Tutor explains it in Kannada; complete short speak-heavy
+   activities that notice the target pattern.
+2. **Practice** — rehearse with the Practice audio and authored activities;
+   complete deterministic Check items when authored.
+3. **Conversation** — open a free-speech, lesson-scoped Skill Chat on
+   level-appropriate topics (not a fixed script); meaning-first reply with a
+   separate coaching object.
+4. **Interaction** — freer Friend or light Role-play Apply speech still
+   bounded by level safety and topic policy.
+
+Session kinds are data-driven. Domain code must not hard-code Level 1–17,
+four lessons, or a single concept such as `can`. Levels without commissioned
+media remain visible as commissioning-pending shells. Review remains a
+deterministic delayed return rather than a fifth first-run room.
+
+These sessions map onto Learn → Talk → Check → Apply → Review without making
+AI authoritative for marks, mastery or unlocks.
+
+### 4.3 Standard daily mission
 
 A normal mission should take approximately 10–15 minutes:
 
@@ -303,7 +345,7 @@ A normal mission should take approximately 10–15 minutes:
 
 Every core mission contains learner speech. When a microphone is unavailable, the learner receives a transparent alternative path but is not awarded spoken mastery without spoken evidence.
 
-### 4.3 Correction model
+### 4.4 Correction model
 
 The system distinguishes:
 
@@ -336,7 +378,7 @@ A correction object should contain:
 
 The system must not correct a legitimate Indian English form merely because it differs from one native-speaker preference. Prioritize comprehensibility, task success and broadly useful professional English.
 
-### 4.4 Kannada-guided grammar teaching
+### 4.5 Kannada-guided grammar teaching
 
 Kannada explanations are contrastive, practical and short. Grammar is taught through repeated speaking rather than long lectures.
 
@@ -351,7 +393,7 @@ Kannada explanations are contrastive, practical and short. Grammar is taught thr
 
 Maintain an educator-reviewed contrastive error bank. Trigger guidance from a learner’s actual evidence, not from stereotypes about Kannada speakers.
 
-### 4.5 Pronunciation and fluency
+### 4.6 Pronunciation and fluency
 
 Phase 1 provides non-authoritative coaching through:
 
@@ -364,7 +406,7 @@ Phase 1 provides non-authoritative coaching through:
 
 Pronunciation signals do not control marks, mastery or access in Phase 1. The product must not penalize a legitimate accent merely for differing from a native accent.
 
-### 4.6 Assessment and mastery
+### 4.7 Assessment and mastery
 
 Separate practice from formal checks:
 
@@ -385,7 +427,7 @@ The speaking rubric covers:
 
 Mastery and level unlocking are deterministic, versioned, explainable and auditable. An LLM may explain a result but may not create or modify the authoritative result.
 
-### 4.7 Learner memory
+### 4.8 Learner memory
 
 The learner profile may retain:
 
@@ -421,6 +463,11 @@ The system should support, within measured limits:
 - Kannada script and mixed-script text where supported;
 - learner correction of an inaccurate transcript.
 
+The canonical learner utterance preserves the original native or code-mixed
+transcript. An English translation or semantic intent may be derived only as a
+separate field; it never replaces the original and is not grammar,
+pronunciation or correction evidence.
+
 ### 5.2 Dialect strategy
 
 Do not attempt to identify or label the learner’s dialect in Phase 1. Build an evaluation set containing consented, anonymized samples representing:
@@ -454,6 +501,10 @@ The learner can:
 - report repeated recognition failure.
 
 A transcript correction must remain linked to the original recognition result for evaluation, while the edited text becomes the learner-approved input for the next step.
+
+Realtime partial transcripts are advisory and ephemeral. Only the final
+explicitly submitted, reviewable transcript becomes learner evidence under the
+approved consent and retention policy.
 
 ### 5.4 Localization governance
 
@@ -608,20 +659,21 @@ If the delivery team must research, author, adapt, record, review and validate t
 
 ### 7.1 Mobile navigation
 
-Use four primary destinations:
+Use five primary destinations, with 1:1 last:
 
-- **Home**
-- **Learn**
-- **Practice**
+- **Home** — today’s recommended lesson journey
+- **Learn** — the four-session level path (Introduction → Practice → Conversation → Interaction)
+- **Speak** — one speaking room (everyday talk with Swathi and a situation picker)
 - **Progress**
+- **1:1** — waitlist request plus institute contact links; not an in-app call, booking or payment
 
 Account, privacy, downloads, help and settings are available through the profile/menu area. Backend module boundaries must not become learner navigation.
 
 ### 7.2 Home
 
-Home has one dominant action:
+Home has one dominant action, resolved deterministically:
 
-- today’s recommended practice;
+- a **due delayed review** when one exists; otherwise today’s recommended practice;
 - mode and estimated time;
 - download size when relevant;
 - current progress such as “1 of 3 steps complete”;
@@ -629,11 +681,26 @@ Home has one dominant action:
 - connection, offline and sync state;
 - one urgent support or service message when necessary.
 
+Home also shows a **meaningful-speaking-day streak** as secondary chrome. A day
+counts only when it contains learner speech and a recorded response or task
+outcome, matching the §3.3 north-star definition; application opens, lesson-audio
+playback and multiple-choice-only sessions never count. The streak is derived,
+advisory and never gates content. There is no attendance percentage in canonical
+learning records, and no streak freeze, repair or purchase in Phase 1. See
+[ADR-0028](docs/adr/0028-meaningful-speaking-streak-and-delayed-review.md).
+
+Authentication before Home is one platform-global username/password surface
+for every role, with optional Google or Facebook for already-enrolled users.
+Organization, role, cohort, program, level and tier are
+resolved only after sign-in. Every role uses the same enumeration-safe,
+verified-contact password setup/recovery path under ADR-0022; a privileged
+role never selects a different login or recovery product.
+
 ### 7.3 Core screens
 
 | Screen | Required experience |
 |---|---|
-| Sign in | Direct learner: mobile number + six-digit OTP. Institutional learner: organization invite/code + OTP, or admission ID + one-time setup code where a personal phone is unavailable. Kannada-first recovery |
+| Sign in | Every learner and operator uses a platform-global username and password. After enrollment, Google or Facebook may sign in the same user. Institutional invite/code or admission workflows establish enrollment before one-time credential setup; they are not continuing sign-in factors. Kannada-first recovery |
 | First use | Adult confirmation, language/accessibility preferences, audio-led walkthrough, goal selection, short placement, recording and AI consent |
 | Home | One recommended action, sync state, review due and concise progress |
 | Tutor | Kannada concept, model English, audio, guided speaking, correction, retry and next step |
@@ -701,7 +768,10 @@ Tenancy is an internal security boundary, not mandatory learner-facing friction.
 - organization, branch and cohort configuration where required;
 - enrollment and trainer assignment;
 - organization-scoped roles and permissions;
-- account/PIN reset and session revocation;
+- session revocation and organization-scoped account support; global recovery
+  contact replacement remains restricted to the explicit
+  `platform.account_recovery.manage` capability and is never granted by an
+  organization role;
 - timezone and feature settings;
 - audit, retention, export and deletion workflows.
 
@@ -717,6 +787,33 @@ The following are deliberately outside the voice-product critical path and requi
 - self-service institution provisioning and billing.
 
 The core data model must not confuse learning engagement with attendance, even if attendance is introduced later.
+
+#### Approved operator-parity expansion
+
+DR-0014 Option A and ADR-0014 approve a separate, staged operator-parity
+expansion after the ordered PRIV-DSR-01, REL-01 and MAINT-01 remediation
+checkpoints. The approved expansion may add:
+
+- admin-managed plan catalogues and deterministic manual, operator-granted or
+  Direct in-app checkout entitlements with immutable grant, adjustment and
+  revocation evidence (ADR-0035; Play Billing and live payment credentials
+  remain unauthorized);
+- moderated notices and explicitly typed organization groups, subject to
+  purpose, audience, retention, reporting, blocking and deletion policies
+  fixed before the affected implementation;
+- assignment and workshop submissions with rubric-based human review,
+  correction history and learner-visible feedback;
+- timezone-aware facilitated-session scheduling with validated external
+  meeting links, without an in-product conferencing or recording service; and
+- separate in-app post and public editorial-CMS workflows with governed
+  revisions, publication authority, accessibility and media rights.
+
+These capabilities are optional operations, not Phase 1 voice-product
+prerequisites. Their exact functional inventory, checkpoint order and retained
+decision gates are defined by
+[the approved reference-admin parity specification](docs/ADMIN_REFERENCE_PARITY_PLAN.md).
+Approval of the program does not claim implementation, checkpoint acceptance,
+production data migration, deployment or production release.
 
 ---
 
@@ -758,16 +855,25 @@ The core data model must not confuse learning engagement with attendance, even i
   audio or AI explanation support unless separately approved;
 - formal CEFR certification;
 - support for minors;
-- live classes or video conferencing;
-- peer-to-peer chat, social feed or learner marketplace;
-- consumer billing, subscriptions, coupons and accounting;
-- broad attendance, notices and LMS administration unless separately approved;
+- in-product conferencing, class recording or a video-conferencing service;
+- open peer-to-peer chat, an unmoderated social feed or learner marketplace;
+- consumer checkout for institutional tenants, coupons, accounting and
+  live payment-provider credentials; Direct dummy in-app checkout is
+  authorized by ADR-0035 / ADMIN-ENT-01;
+- broad attendance and LMS semantics that conflate scheduled operations with
+  canonical learning engagement or mastery;
 - complete authored content for all future levels;
 - CRM, ERP, HRMS, SIS/LMS and external institution integrations;
 - self-service multi-tenant commercial provisioning;
 - predictive dropout or high-stakes automated decisions;
 - 24/7 managed operations;
 - marketing, acquisition, ranking or download guarantees.
+
+Under ADR-0014, these deferrals do not exclude the separately governed safe
+operator-parity subsets in §8.3: external facilitated-session scheduling,
+moderated notices and typed groups, manual/externally reconciled entitlements,
+human assignment review and editorial CMS. They retain the exclusions above
+and require their ordered bounded checkpoints.
 
 ---
 
@@ -806,9 +912,9 @@ Exact patch versions are pinned during repository scaffolding and updated throug
 | Object storage | S3-compatible storage with signed access and lifecycle policies |
 | API contract | OpenAPI 3.1.1 under `/api/v1` |
 | Web/PWA authentication | Laravel Sanctum same-origin Secure, HttpOnly cookie sessions |
-| Android authentication | Laravel Passport Authorization Code with PKCE; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
+| Android authentication | First-party in-app username/password issues the Passport token family; linked Google or Facebook may issue that same family; refresh uses Passport `refresh_token`; short-lived access tokens and rotating refresh tokens stored only in native secure storage |
 | Credential-storage rule | No authentication credential in browser `localStorage`, IndexedDB or ordinary Capacitor preferences |
-| Privileged authentication | MFA plus session listing/revocation |
+| Privileged authentication | The signed-in session plus current organization role/permission groups authorizes routine operator work. Current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes; session listing/revocation remains available. |
 | Background processing | Laravel queues and scheduler |
 | Frontend testing | Vitest, React Testing Library and Playwright |
 | Backend testing | Pest/PHPUnit with real PostgreSQL integration tests |
@@ -842,15 +948,18 @@ Authentication verifies the same user identity but uses a platform-appropriate c
 
 **Capacitor Android**
 
-- use the system browser, not an embedded credential form, for the OAuth authorization step;
-- use Laravel Passport Authorization Code with PKCE as a public mobile client;
-- complete mobile-number OTP or institutional setup inside the server-controlled authorization journey;
-- issue short-lived access tokens and rotating refresh tokens;
+- collect username and password in the first-party in-app form (the Capacitor WebView);
+- POST `/api/v1/auth/mobile/password/sign-ins` with the installation ULID and public client id;
+- allow linked Google or Facebook to issue the same Passport family via origin-pinned Custom Tabs on `/oauth/social/{provider}/authorize` and `POST /api/v1/auth/mobile/social/sign-ins`;
+- do not enable OAuth `grant_type=password` on `/oauth/token`;
+- issue short-lived Passport access tokens and rotating refresh tokens for `mobile:api`;
+- refresh through Passport `refresh_token` with installation binding;
 - store credentials only through a reviewed native secure-storage implementation;
 - keep access tokens in memory while the app is active where practical;
-- revoke the active token family on logout, account closure, security reset or detected refresh-token reuse.
+- revoke the active token family on logout, account closure, security reset or detected refresh-token reuse;
+- keep Passport Authorization Code with PKCE implemented; guest password sign-in does not open the system browser.
 
-The React client uses one project-owned authentication interface with separate web and Android adapters. OTP proves the user identity; it is not itself the long-lived application credential. Exact lifetimes, rotation and device-binding policy are fixed in the authentication ADR before PR-003 is accepted.
+The React client uses one project-owned authentication interface with separate web and Android adapters. A password is verified only by the server and is never the long-lived application transport credential. Successful sign-in establishes the Web session used for routine learner, trainer, reviewer, content, media, privacy and administrator work; current organization role and permission groups are checked independently at command time. Current-password confirmation is limited to changing credentials, replacing a recovery contact and changing administrator authority. Exact password, recovery, lifetime, rotation and device-binding policy is fixed by ADR-0002 as amended by ADR-0021, ADR-0023, ADR-0033 and ADR-0034. ADR-0022 requires the same verified-contact setup/recovery lifecycle for every role, retires active two-actor/24-hour privileged recovery and keeps lost-contact replacement behind one freshly password-confirmed explicit platform capability with global revocation and content-free audit.
 
 ---
 
@@ -1021,6 +1130,7 @@ Use low-latency, turn-based voice interaction:
 2. voice activity or an explicit stop action closes the turn;
 3. the client uploads the audio with an idempotency key;
 4. speech-to-text produces a transcript and language metadata;
+   realtime partials, when enabled, remain ephemeral and non-authoritative;
 5. the learner can correct an uncertain transcript when policy requires;
 6. the conversation orchestrator builds allowlisted context;
 7. the model produces schema-validated reply and learning feedback;
@@ -1042,7 +1152,15 @@ The initial implementation uses:
 - bounded polling as a fallback;
 - local playback and retry before submission.
 
-A WebSocket transport may be introduced only through an ADR after the benchmark proves it materially improves latency or interaction quality.
+ADR-0038 authorizes an authenticated first-party WebSocket relay for realtime
+STT implementation and benchmarking. The server holds provider credentials;
+clients never receive a provider credential or connect directly to a provider.
+Consent, active-organization authorization, entitlement and rate/spend checks
+occur before dispatch. Explicit turn submission remains authoritative,
+recorded upload remains an accessible recovery path, and full-duplex or
+always-on capture remains excluded. Reply status continues through
+authenticated SSE/polling and private no-store or short-lived signed media
+unless a later accepted ADR changes it.
 
 ### 14.3 Audio handling
 
@@ -1077,6 +1195,20 @@ Each adapter reports:
 - safety and validation result;
 - correlation and interaction identifiers.
 
+Enabled speech routes are server-owned, environment-specific and versioned.
+They freeze provider, product/model, API version, voice, locale/profile,
+region/deployment class and a non-secret normalized configuration hash. An
+ordinary operation uses one primary and at most one reviewed fallback, for a
+hard maximum of two billable dispatches per stage and logical operation.
+Clients cannot select or shadow providers. Unselected candidates remain
+disabled or benchmark-only, and ordinary learner audio is never sent to three
+providers for comparison.
+
+The project-owned STT result preserves `transcript_original`, normalized
+`transcript_locale`, optional normalized confidence with provenance and an
+optional separate `english_intent_text`. The derived English field never
+replaces the original or becomes grammar evidence.
+
 ### 14.5 Conversation and correction output
 
 Conversation and learning feedback are logically separate, even when produced in one model call for latency.
@@ -1086,7 +1218,11 @@ Illustrative contract:
 ```json
 {
   "understood_intent": "The learner met a customer yesterday",
-  "assistant_reply": "That sounds productive. What did you discuss?",
+  "assistant_reply": {
+    "text": "That sounds productive. What did you discuss?",
+    "locale": "en-IN"
+  },
+  "english_bridge_en": null,
   "priority_correction": {
     "learner_sentence": "Yesterday I go to office and meet one customer",
     "corrected_sentence": "Yesterday I went to the office and met a customer",
@@ -1103,6 +1239,14 @@ Illustrative contract:
 ```
 
 Validate schema, locale/script expectations, length, unsafe content and forbidden authority claims before showing output.
+
+`assistant_reply.locale` is mandatory and allowlisted; it determines the TTS
+locale. During additive client migration, `assistant_reply_en` may exist only
+when the reply locale is `en-IN`, must be an exact copy, and must then be
+retired. Kannada text must never be placed in a field named `_en`. The complete
+bounded reply is validated before TTS begins; speaking unvalidated incomplete
+model tokens requires a later accepted ADR. Optional guidance audio must not
+block the first main-reply audio.
 
 ### 14.6 Context policy
 
@@ -1133,6 +1277,10 @@ When a dependency fails:
 - never fabricate a score or pretend that voice analysis succeeded;
 - keep downloaded lessons usable.
 
+Provider fallback is server-owned and limited to the one reviewed fallback
+within the two-dispatch cap. A fallback never consumes a second learner
+entitlement, but every provider dispatch is recorded as platform cost.
+
 ### 14.8 Model-selection process
 
 Do not choose a model only from marketing claims or download availability.
@@ -1156,6 +1304,10 @@ Sequence:
 2. production routing and cost optimization;
 3. open-weight benchmark using the same locked evaluation suite;
 4. on-prem packaging only after quality and concurrency thresholds pass.
+
+Routine multi-provider learner-audio shadowing is prohibited. Comparative
+evaluation uses synthetic, licensed or separately consented material in a
+governed benchmark lane with frozen configurations and a predeclared rubric.
 
 ---
 
@@ -1267,13 +1419,29 @@ Choices are normalized rows, not `option_a`, `option_b` columns. Derived percent
 
 AI logs are redacted and retained under policy. A model response is not an authoritative learning record until deterministic validation and application rules create the relevant record.
 
-### 16.5 Optional institution pack
+### 16.5 Optional operations and operator-parity records
 
 - `academic_calendars`, `scheduled_learning_days`
 - `class_attendance_records`, `attendance_corrections`
 - `notices`, `notice_localizations`, `notice_audiences`, `notice_acknowledgements`
+- `entitlement_plans`, `learner_entitlements`, `entitlement_events`,
+  `organization_tax_settings`, `subscription_checkouts`,
+  `live_ai_meter_charges`, `live_ai_talk_packs`
+- `facilitated_sessions`, `external_meeting_links`, `session_reminders`
+- `typed_groups`, `group_memberships`, `group_moderation_events`
+- `assignments`, `assignment_submissions`, `human_review_decisions`,
+  `review_corrections`
+- `message_templates`, `message_deliveries`, `message_moderation_events`
+- `in_app_posts`, `editorial_articles`, `editorial_revisions`,
+  `editorial_publication_events`
 
-These records remain semantically separate from learning engagement and mastery.
+These are target concepts, not an instruction to create every table before its
+approved vertical slice. They remain semantically separate from canonical
+learning engagement, attempt evidence, mastery, progression and attendance.
+An entitlement or human-review outcome may be authoritative for its own
+declared purpose, but it cannot be inferred from AI output or silently rewrite
+canonical learning records. Communication bodies and attachments remain
+private content and require the later policy gates retained by ADR-0014.
 
 ---
 
@@ -1288,7 +1456,7 @@ After a learner downloads a mission, the following work offline:
 - curated lesson help;
 - local progress and submission outbox.
 
-AI conversation, new transcription, generated voice, OTP sign-in and new downloads require connectivity in Phase 1.
+AI conversation, new transcription, generated voice, username/password sign-in and new downloads require connectivity in Phase 1.
 
 Technical behaviour:
 
@@ -1323,6 +1491,13 @@ The product must be designed for India’s Digital Personal Data Protection Act,
 - vendor/sub-processor register and data-processing review;
 - tested export, correction, closure and erasure workflows;
 - privacy-safe analytics and logs.
+- provider-product-specific DPA, subprocessor, processing/storage location,
+  no-training/human-review, retention, deletion and incident evidence before
+  learner-content dispatch;
+- provider-call evidence linked to learner/turn for no more than 30 days,
+  followed by reviewed anonymous aggregation and deletion under ADR-0007;
+- cancellation and consent withdrawal stop queued dispatch and retry while
+  deletion reconciliation continues.
 
 ### 18.2 Application security baseline
 
@@ -1331,7 +1506,7 @@ Use OWASP ASVS 5.0.0 Level 2 as the primary application-security verification ta
 Minimum controls:
 
 - organization-scoped authorization policies and cross-tenant tests;
-- privileged MFA;
+- one username/password sign-in for routine operator work, followed by independent command-time organization, role and permission checks; current-password confirmation is limited by ADR-0023 to credential, recovery-contact and administrator-authority changes;
 - session listing and revocation;
 - CSRF, CSP, HSTS, secure cookies and strict CORS policy;
 - rate limits and abuse controls;
@@ -1359,6 +1534,10 @@ Minimum controls:
 - rate and spend caps by learner and organization;
 - model/prompt/provider versioning;
 - staged rollout and emergency disablement;
+- independent provider dispatch kill switches, quota/spend caps and deletion
+  paths; disabling new calls must not disable deletion work;
+- content-free telemetry only: no audio, transcript/reply text, prompt,
+  personal learner data, secret or raw provider payload in labels or exports;
 - human report and support route;
 - locked safety evaluation before model changes;
 - no automated high-stakes employment, academic or eligibility decisions.
@@ -1406,6 +1585,7 @@ Dark mode is lower priority than readability, low-bandwidth use, audio guidance 
 | Normal non-AI API latency | p95 ≤ 500 ms under forecast pilot load |
 | Operator dashboard API | p95 ≤ 800 ms before network transfer |
 | End of learner turn to first response signal | median ≤ 4 s target; p95 ≤ 8 s target after benchmark |
+| End of explicit learner turn to first audible main reply | production gate median ≤ 4 s and p95 ≤ 8 s on the approved profile; launch objective median ≤ 1.8 s and p95 ≤ 4 s |
 | Known AI dependency failure fallback | visible fallback within 2 s after failure is known |
 | Submission integrity | no acknowledged attempt, turn or offline event may be lost |
 | Recovery point objective | ≤ 15 minutes |
@@ -1413,6 +1593,12 @@ Dark mode is lower priority than readability, low-bandwidth use, audio guidance 
 | Capacity validation | load test at 2× forecast pilot peak |
 
 Voice latency targets are planning gates, not guarantees until candidate providers are benchmarked on target networks.
+
+Acknowledgement has a separate 100 ms objective and never counts as a
+substantive response or first audible audio. Server connection, first STT
+partial/final, model first token/completion, first TTS byte/completion and
+sampled client first-audible milestones use documented clock origins and sample
+policies. Missing, partial and cancelled samples remain visible in denominators.
 
 ### 20.2 Reference capacity
 
@@ -1450,6 +1636,20 @@ Meter:
 - retries, failures and fallbacks;
 - cost per completed session;
 - cost per active learner and organization.
+
+Every potentially billable provider dispatch is metered, including failure,
+cancellation, partial stream, retry and fallback, even when the institutional
+learner entitlement is unmetered. One logical accepted learner turn consumes
+entitlement only once.
+
+Usage records carry explicit billable unit kinds/quantities, route role,
+dispatch/cache state, exact provider fingerprint, immutable rate-card version,
+native currency and gross/tax/discount/credit values, INR conversion
+provenance, estimated cost and invoice-reconciliation status. Rate changes
+create new immutable versions and never rewrite retained provider-call
+evidence. Negotiated terms and invoices require an audited platform-only
+permission; organization operators require a separate permission and see only
+active-organization aggregates and approved allocated cost.
 
 Controls:
 
@@ -1500,6 +1700,9 @@ Maintain a versioned locked evaluation suite covering:
 - fabricated scores or requirements;
 - provider timeout and malformed output;
 - cost and latency regression.
+- first-result, completion and first-audible latency with explicit missing,
+  partial and cancelled samples;
+- provider routing, billable dispatch identity, rate-card and invoice variance.
 
 AI tests must not depend on exact wording. Evaluate:
 
@@ -1514,6 +1717,14 @@ AI tests must not depend on exact wording. Evaluate:
 - latency and cost.
 
 Use deterministic provider fakes for routine CI. Run paid/live provider evaluations in controlled CI or scheduled environments with budgets and stored results.
+
+Before production speech selection, run a frozen controlled bake-off with at
+least 200 STT items and 20–50 TTS scripts, Kannada/English/code-mix and
+supported dialect/noise/device/network subgroups, blind bilingual review,
+accessibility review, failure/deletion drills, 50 concurrent voice turns and
+the approved 2× burst profile. Select on cost per successful usable turn,
+quality, first-audible latency, reliability, privacy/residency/retention and
+recovery—not vendor claims alone.
 
 ### 21.3 Human review
 
@@ -1567,6 +1778,8 @@ Proceed to full production only when:
 - no reviewed dialect/device/noise subgroup has an unexplained material failure gap;
 - response latency is acceptable on target devices and networks;
 - projected unit economics fit the intended commercial model;
+- the speech first-audible production gate, governed provider bake-off,
+  invoice reconciliation and provider privacy/deletion evidence pass;
 - learners demonstrate repeat use rather than one-time novelty.
 
 Exact sample sizes and statistical confidence are approved during Step 0 research.
@@ -1623,7 +1836,7 @@ Deliver:
 - OpenAPI baseline and generated client package;
 - health/readiness, correlation IDs and structured logging;
 - organization, membership, role, cohort and enrollment foundation;
-- same-origin Sanctum web/PWA authentication skeleton, Passport PKCE mobile-client foundation and fake/local OTP adapter;
+- same-origin Sanctum web/PWA authentication skeleton, Passport PKCE mobile-client foundation and project-owned password credential service;
 - `kn-IN`, `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` and `en-IN` UI localization
   bootstrap with strict English production fallback;
 - accessible application shell;
@@ -1902,7 +2115,7 @@ Deliver:
 - `apps/api` Laravel 13 application;
 - `apps/web` React 19.2 TypeScript Vite application;
 - Node 24/pnpm and PHP 8.4 version declarations;
-- PostgreSQL, Redis, S3-compatible object storage and mail/OTP fake in `compose.yaml`;
+- PostgreSQL, Redis, S3-compatible object storage and local mail/recovery-delivery support in `compose.yaml`;
 - root `Makefile` commands;
 - basic CI;
 - API and web production builds.
@@ -1937,9 +2150,9 @@ Deliver:
 - automatic assignment of direct learners to the platform-owned direct organization;
 - institution invite/code membership and cohorts/enrollments at minimum viable depth;
 - same-origin Sanctum web/PWA session flow;
-- Laravel Passport Authorization Code with PKCE mobile-client foundation and a shared frontend authentication adapter;
-- fake/local OTP adapter;
-- privileged MFA extension point;
+- Laravel Passport token-family mobile-client foundation, first-party Android password sign-in and a shared frontend authentication adapter;
+- project-owned username/password credential, local recovery adapters, and optional Google/Facebook federated sign-in for already-enrolled users;
+- narrowly scoped current-password confirmation for credential, recovery-contact and administrator-authority changes;
 - tenant-scoped policies and tests.
 
 Acceptance:
@@ -2241,9 +2454,32 @@ Ongoing provider monitoring, model changes, security updates, dependency upgrade
 
 ## 31. Roadmap after Phase 1
 
+### Approved ordered operator-parity expansion
+
+DR-0014 Option A and ADR-0014 authorize the optional safe functional-parity
+program in
+[ADMIN_REFERENCE_PARITY_PLAN.md](docs/ADMIN_REFERENCE_PARITY_PLAN.md). It
+does not displace current remediation work. After PRIV-DSR-01, REL-01 and
+MAINT-01, execution remains ordered as:
+
+`ADMIN-GOV-01 → ADMIN-SHELL-01 → ADMIN-ORG-01 → ADMIN-LEARNER-01 →
+ADMIN-CONTENT-01 → ADMIN-MEDIA-01 → ADMIN-GROUPS-01 → ADMIN-ACTIVITY-01 →
+ADMIN-REVIEW-01 → ADMIN-COMMS-01 → ADMIN-CONVERSATION-01 → ADMIN-CMS-01 →
+ADMIN-ENT-01 → ADMIN-CONFIG-01 → ADMIN-ACCEPT-01`.
+
+Each checkpoint still requires its bounded specification, implementation,
+tests, contract/document updates and exit evidence. Communication retention,
+moderation, provider-backed payment, legacy-data import and production-release
+decisions remain separately gated. Recording this roadmap does not mark any
+ADMIN implementation complete or production approved.
+
 ### Phase 2 — Commercial and institutional expansion
 
-- subscriptions and entitlements;
+- Direct subscriptions and entitlements are implemented for
+  `platform_direct` under ADMIN-ENT-01 / ADR-0035 / ADR-0036 (dummy
+  checkout, GST settings, demo meter, Premium flagship, courtesy month for
+  current Direct learners). Live payment providers, Play Billing, invoices,
+  old-website student import and institutional paid plans remain later gates;
 - institution operations pack;
 - richer trainer review;
 - pronunciation laboratory after validation;
@@ -2285,11 +2521,13 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Architecture | Modular monolith with external inference adapters |
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
-| Authentication | Direct learners use mobile OTP without an organization code; institutional learners use an invite/code or admission-ID setup; Sanctum cookie sessions for web/PWA; Passport Authorization Code with PKCE for Android with credentials only in native secure storage; privileged MFA |
+| Authentication | Every role uses one platform-global username/password credential for enrollment and privileged freshness, with optional Google/Facebook for already-enrolled users; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; role and permission groups authorize routine work after sign-in; Sanctum cookie sessions for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with transport credentials only in native secure storage; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
 | Voice | Online, turn-based, user-visible state; no full-duplex or offline AI |
+| Speech routing | ADR-0038 server-owned versioned primary plus one reviewed fallback; two-dispatch cap; no routine learner-audio shadowing; production provider choice requires the governed bake-off |
+| Kannada Help | Explicit Free-Speech-entitled Ask Swathi support path with Kannada reply and English bridge; English remains the learning language; advisory only |
 | AI | Grounded, structured, provider-adapted, evaluated and non-authoritative |
 | Memory | Explicit, purpose-bound, user-visible and deletable |
 | Offline | Downloaded deterministic mission and idempotent outbox |
@@ -2297,7 +2535,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Security | OWASP ASVS 5.0.0 Level 2 target where applicable |
 | Android | Capacitor 8, minimum API 24, target API 36 at scaffold |
 | Pilot tenancy | Global English Direct plus at most one manually provisioned partner institution; self-service tenant sales deferred |
-| Monetization | Deferred |
+| Monetization | Direct dummy in-app checkout (ADR-0035); Premium flagship and courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); live providers and Play Billing deferred |
 | Minors | Deferred behind a separate legal/safety gate |
 
 ### 32.1 Decisions that do not block Step 1
@@ -2305,7 +2543,7 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 The following can remain adapter/configuration choices during scaffolding:
 
 - initial cloud provider;
-- OTP vendor;
+- recovery-delivery provider and compromised-password blocklist source;
 - STT, LLM and TTS providers;
 - production observability vendor;
 - exact audio-retention periods;
@@ -2313,6 +2551,12 @@ The following can remain adapter/configuration choices during scaffolding:
 - final module scripts and voice talent.
 
 They must be resolved before the relevant production checkpoint.
+
+ADR-0038 controls multi-provider speech routing, Kannada Help, native/code-mix
+transcript preservation, authenticated realtime STT and the separate
+first-audible gate. Its acceptance authorizes SPEECH-OBS-01 only. Credentials,
+provider calls, spend, evaluation or learner-content processing and production
+remain subject to their later explicit gates.
 
 ---
 
@@ -2338,7 +2582,7 @@ After PR-000 is reviewed and accepted, instruct Codex to execute only PR-001.
 
 - Laravel 13 release/support policy: <https://laravel.com/docs/13.x/releases>
 - Laravel Sanctum SPA authentication: <https://laravel.com/docs/13.x/sanctum>
-- Laravel Passport Authorization Code with PKCE: <https://laravel.com/docs/13.x/passport#authorization-code-grant-with-pkce>
+- Laravel Passport token family (RFC 6749 refresh) and first-party Android password: <https://laravel.com/docs/13.x/passport>
 - React current versions: <https://react.dev/versions>
 - Node.js release status: <https://nodejs.org/en/about/previous-releases>
 - PostgreSQL versioning/support: <https://www.postgresql.org/support/versioning/>

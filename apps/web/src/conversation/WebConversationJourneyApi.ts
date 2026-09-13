@@ -1,4 +1,4 @@
-import type { ConversationTurnEvent } from '@global-english/contracts'
+import type { ConversationSpeechResult, ConversationTurnEvent, RealtimeSpeechTicket, SpeechLatencySampleRequest, SpeechLatencySampleResult, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
 import type {
   CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
@@ -23,9 +23,15 @@ import {
   type FriendTurn,
   type StartFriendSessionInput,
 } from './ConversationJourneyApi'
+import { isAbortError } from '../shared/isAbortError'
+import {
+  defaultAuthenticationRuntime,
+  type ApiCsrfProtection,
+} from '../auth/defaultAuthentication'
 
 export interface WebConversationJourneyApiOptions {
   readonly baseUrl?: string
+  readonly csrfProtection?: ApiCsrfProtection
   readonly fetch?: typeof fetch
   readonly readCookie?: () => string
 }
@@ -34,11 +40,15 @@ export class WebConversationJourneyApi
   implements ConversationJourneyApi
 {
   readonly #baseUrl: string
+  readonly #csrfProtection: ApiCsrfProtection
   readonly #fetch: typeof fetch
   readonly #readCookie: () => string
+  #csrfTokenCached = false
 
   constructor(options: WebConversationJourneyApiOptions = {}) {
     this.#baseUrl = options.baseUrl ?? '/api/v1'
+    this.#csrfProtection =
+      options.csrfProtection ?? 'sanctum-cookie'
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
     this.#readCookie =
       options.readCookie ??
@@ -92,6 +102,40 @@ export class WebConversationJourneyApi
     )
   }
 
+  recordSpeechLatency(
+    turnId: string,
+    input: SpeechLatencySampleRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<SpeechLatencySampleResult> {
+    return this.#mutation<SpeechLatencySampleResult>(
+      `/conversation-turns/${encodeURIComponent(turnId)}/speech-latency-samples`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
+  synthesizeSpeech(
+    sessionId: string,
+    input: SynthesizeConversationSpeechRequest,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<ConversationSpeechResult> {
+    return this.#mutation<ConversationSpeechResult>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/speech`,
+      {
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
+  }
+
   async events(
     eventsUrl: string,
     signal?: AbortSignal,
@@ -104,7 +148,11 @@ export class WebConversationJourneyApi
         headers: { Accept: 'text/event-stream' },
         signal,
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
@@ -113,6 +161,21 @@ export class WebConversationJourneyApi
     }
 
     return parseEventStream(await response.text())
+  }
+
+  requestRealtimeSpeechTicket(
+    sessionId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<RealtimeSpeechTicket> {
+    return this.#mutation<RealtimeSpeechTicket>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/realtime-stt-tickets`,
+      {
+        headers: { 'Idempotency-Key': commandId },
+        method: 'POST',
+        signal,
+      },
+    )
   }
 
   voiceConsents(
@@ -161,8 +224,14 @@ export class WebConversationJourneyApi
     commandId: string,
     signal?: AbortSignal,
   ): Promise<VoiceRecording> {
+    const file =
+      audio instanceof File && audio.name.trim() !== ''
+        ? audio
+        : new File([audio], 'voice-practice.wav', {
+            type: audio.type.trim() === '' ? 'audio/wav' : audio.type,
+          })
     const body = new FormData()
-    body.append('audio', audio, 'voice-practice.wav')
+    body.append('audio', file, file.name)
 
     return this.#mutation<VoiceRecording>(
       `/conversation-sessions/${encodeURIComponent(sessionId)}/recordings`,
@@ -258,6 +327,10 @@ export class WebConversationJourneyApi
     path: string,
     init: RequestInit,
   ): Promise<T> {
+    if (this.#csrfProtection === 'none') {
+      return this.#json<T>(path, init)
+    }
+
     const csrfHeaders = await this.#csrfHeaders(init.signal)
 
     return this.#json<T>(path, {
@@ -285,17 +358,25 @@ export class WebConversationJourneyApi
           ...init.headers,
         },
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
     if (!response.ok) {
-      throw new ConversationJourneyUnavailableError(response.status)
+      throw await unavailableFromResponse(response)
     }
 
     try {
       return (await response.json()) as T
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
   }
@@ -303,6 +384,13 @@ export class WebConversationJourneyApi
   async #csrfHeaders(
     signal: AbortSignal | null | undefined,
   ): Promise<Record<string, string>> {
+    if (this.#csrfTokenCached) {
+      const cached = readCookieValue(this.#readCookie(), 'XSRF-TOKEN')
+      if (cached !== undefined) {
+        return { 'X-XSRF-TOKEN': cached }
+      }
+    }
+
     let response: Response
 
     try {
@@ -311,7 +399,11 @@ export class WebConversationJourneyApi
         headers: { Accept: 'application/json' },
         signal,
       })
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error
+      }
+
       throw new ConversationJourneyUnavailableError()
     }
 
@@ -321,6 +413,7 @@ export class WebConversationJourneyApi
       throw new ConversationJourneyUnavailableError()
     }
 
+    this.#csrfTokenCached = true
     return { 'X-XSRF-TOKEN': token }
   }
 
@@ -338,6 +431,10 @@ export class WebConversationJourneyApi
     }
 
     if (eventsUrl.startsWith('/api/v1/')) {
+      if (/^https?:\/\//u.test(this.#baseUrl)) {
+        return `${new URL(this.#baseUrl).origin}${eventsUrl}`
+      }
+
       return eventsUrl
     }
 
@@ -346,7 +443,11 @@ export class WebConversationJourneyApi
 }
 
 export const defaultConversationJourneyApi =
-  new WebConversationJourneyApi()
+  new WebConversationJourneyApi({
+    baseUrl: defaultAuthenticationRuntime.apiBaseUrl,
+    csrfProtection: defaultAuthenticationRuntime.csrfProtection,
+    fetch: defaultAuthenticationRuntime.apiFetch,
+  })
 
 function parseEventStream(
   stream: string,
@@ -400,6 +501,28 @@ function isConversationTurnEvent(
     (event.provider_attempt === null ||
       typeof event.provider_attempt === 'number')
   )
+}
+
+async function unavailableFromResponse(
+  response: Response,
+): Promise<ConversationJourneyUnavailableError> {
+  let messageKey: string | undefined
+
+  try {
+    const body: unknown = await response.json()
+    if (
+      typeof body === 'object' &&
+      body !== null &&
+      'message_key' in body &&
+      typeof body.message_key === 'string'
+    ) {
+      messageKey = body.message_key
+    }
+  } catch {
+    messageKey = undefined
+  }
+
+  return new ConversationJourneyUnavailableError(response.status, messageKey)
 }
 
 function readCookieValue(

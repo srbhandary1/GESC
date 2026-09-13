@@ -1,0 +1,35 @@
+{
+    "schema": "lpl01.level1.private_attachment_result.v1",
+    "approval_reference": "APP-0061",
+    "observed_at": "2026-08-14T10:47:01+00:00",
+    "privacy_boundary": "private_unpublished_draft",
+    "program_id": "01KZNK3BWD8A8NJ5A5JW0ZVZMT",
+    "publication_eligible": false,
+    "result": {
+        "curriculum_version_id": "01KZZY3RFJGXQENRM5YBEWE67C",
+        "blueprint_id": "01KZZY3RFR2DB04JY0GTFRXQZ1",
+        "content_hash": "5294e5799749563947a52c35e5951d3ecb36d1094746bcbd982fc93ff920cc5c",
+        "blueprint_created": true,
+        "english_created": true,
+        "kannada_created": true,
+        "attach_created": true,
+        "parts": [
+            {
+                "part_id": "introduction",
+                "media_asset_id": "01KZNFYHCJSDWSPK08ZAC7G3AJ"
+            },
+            {
+                "part_id": "practice",
+                "media_asset_id": "01KZNFYJ1M911SB8YVH9P4EZZ0"
+            },
+            {
+                "part_id": "conversation",
+                "media_asset_id": "01KZNFYJVSZRPZCEPTTQ4QTMNT"
+            },
+            {
+                "part_id": "interaction",
+                "media_asset_id": "01KZNFYK75V9WF8R5VCWRRZHNN"
+            }
+        ]
+    }
+}

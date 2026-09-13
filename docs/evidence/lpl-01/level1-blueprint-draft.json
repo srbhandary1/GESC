@@ -1,0 +1,65 @@
+{
+  "schema": "global-english.lesson-practice-loop.v1",
+  "blueprint_id": "lpl01-level1-can-draft-v1",
+  "state": "ordered_shell_blocked_source_body",
+  "source_snapshot_id": "lpl01-level1-can-source-v1",
+  "lesson": {
+    "level_label": "Level 1",
+    "concept_key": "can",
+    "objective": null,
+    "prerequisite_objective_ids": []
+  },
+  "ordered_parts": [
+    {
+      "order": 1,
+      "part_id": "introduction",
+      "label": "Introduction",
+      "media_asset_id": "01KZNFYHCJSDWSPK08ZAC7G3AJ",
+      "metadata_revision_id": "01KZZB3DJFKAN8BQD30K6WJGV6",
+      "metadata_content_hash": "2e8335f5998dace0a619acbd24945beafbb3b9a2e427bd71dd01f473b3b17e0b"
+    },
+    {
+      "order": 2,
+      "part_id": "practice",
+      "label": "Practice",
+      "media_asset_id": "01KZNFYJ1M911SB8YVH9P4EZZ0",
+      "metadata_revision_id": "01KZZBHZXE93YYHPGNKFJZ8EBY",
+      "metadata_content_hash": "a185249064c4e153237e1a54f8375fe1e7e4fac2ce45525684a929ea174a6298"
+    },
+    {
+      "order": 3,
+      "part_id": "conversation",
+      "label": "Conversation",
+      "media_asset_id": "01KZNFYJVSZRPZCEPTTQ4QTMNT",
+      "metadata_revision_id": "01KZZBPQSS5ECMMGEBGAA2W3M4",
+      "metadata_content_hash": "830bba76c97bb19d3b132da8bd7a021cb5160be146592cfffcaaaa810bc48635"
+    },
+    {
+      "order": 4,
+      "part_id": "interaction",
+      "label": "Interaction",
+      "media_asset_id": "01KZNFYK75V9WF8R5VCWRRZHNN",
+      "metadata_revision_id": "01KZZC03NX6QGCWGMD9WX1AH1D",
+      "metadata_content_hash": "5db31dd35f5d9fe1f0d02fc116e2793f718bf6b4cff1dde00c25c93ec8ba2d37"
+    }
+  ],
+  "talk": null,
+  "check": null,
+  "apply": null,
+  "review": {
+    "english_academic": "blocked_source_body_pending",
+    "kannada": "blocked_english_review_pending"
+  },
+  "publication": {
+    "eligible": false,
+    "blockers": [
+      "typed_source_body",
+      "observable_objective",
+      "talk_contract",
+      "deterministic_check_items",
+      "apply_task_and_rubric",
+      "english_academic_review",
+      "kannada_creation_and_review"
+    ]
+  }
+}

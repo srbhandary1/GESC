@@ -16,6 +16,8 @@ export default tseslint.config(
       'apps/api/vendor',
       // Native demo wrapper: Gradle project plus the copied built bundle.
       'apps/web/android',
+      // Native production wrapper: Gradle output plus the copied built bundle.
+      'apps/web/android-app',
     ],
   },
   {

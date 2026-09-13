@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Conversation\Voice;
 
 use App\Conversation\ConversationCommandIdempotency;
+use App\Conversation\Observability\ProviderAttemptObservationRecorder;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextRequest;
+use App\Entitlements\EntitlementAccess;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -29,6 +31,9 @@ final readonly class VoiceRecordingService
         private ConversationCommandIdempotency $commands,
         private PcmWavInspector $wav,
         private RecordedSpeechToTextProvider $speechToText,
+        private VoiceDeletionService $deletions,
+        private EntitlementAccess $entitlements,
+        private ProviderAttemptObservationRecorder $observations,
     ) {}
 
     /**
@@ -55,6 +60,11 @@ final readonly class VoiceRecordingService
         }
 
         $metadata = $this->wav->inspect($audioBytes);
+        $this->entitlements->consumeLiveAi(
+            $learner,
+            $idempotencyKey,
+            max(1, (int) ceil($metadata->durationMs / 1000)),
+        );
         $digest = hash('sha256', $audioBytes);
         $fingerprint = $this->commands->fingerprint([
             'audio_sha256' => $digest,
@@ -338,65 +348,15 @@ final readonly class VoiceRecordingService
         string $recordingId,
         string $reason = 'learner_request',
     ): array {
-        return DB::transaction(function () use (
-            $learner,
-            $recordingId,
-            $reason,
-        ): array {
-            $context = $this->authority->require($learner);
-            $row = $this->owned($learner, $recordingId, lock: true);
-            $existing = DB::table('voice_deletion_requests')
-                ->where('organization_id', $context->organizationId)
-                ->where('voice_recording_id', $recordingId)
-                ->first();
+        $context = $this->authority->require($learner);
+        $request = $this->deletions->requestAndProcess(
+            organizationId: $context->organizationId,
+            membershipId: (string) $context->membershipId,
+            recordingId: $recordingId,
+            reason: $reason,
+        );
 
-            if ($existing instanceof stdClass) {
-                return $this->presentDeletion($existing);
-            }
-
-            $sourceDeleted = $this->deleteSource($row);
-            $now = Date::now()->toImmutable();
-            DB::table('voice_recordings')
-                ->where('organization_id', $context->organizationId)
-                ->where('learner_membership_id', $context->membershipId)
-                ->where('id', $recordingId)
-                ->update([
-                    'status' => 'withdrawn_deleted',
-                    'source_object_key' => null,
-                    'source_deleted_at' => $sourceDeleted
-                        ? ($row->source_deleted_at ?? $now)
-                        : $row->source_deleted_at,
-                    'transcript_ciphertext' => null,
-                    'transcript_expires_at' => $now,
-                    'completed_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            $id = (string) Str::ulid();
-            DB::table('voice_deletion_requests')->insert([
-                'id' => $id,
-                'organization_id' => $context->organizationId,
-                'voice_recording_id' => $recordingId,
-                'learner_membership_id' => $context->membershipId,
-                'reason' => $reason,
-                'status' => $sourceDeleted ? 'completed' : 'partially_completed',
-                'source_deleted' => $sourceDeleted,
-                'transcript_deleted' => true,
-                'provider_deletion_status' => 'not_required',
-                'requested_at' => $now,
-                'completed_at' => $sourceDeleted ? $now : null,
-            ]);
-
-            $request = DB::table('voice_deletion_requests')
-                ->where('organization_id', $context->organizationId)
-                ->where('id', $id)
-                ->first();
-
-            if (! $request instanceof stdClass) {
-                throw new VoiceOperationRejected;
-            }
-
-            return $this->presentDeletion($request);
-        }, 3);
+        return $this->presentDeletion($request);
     }
 
     /**
@@ -612,8 +572,10 @@ final readonly class VoiceRecordingService
         ?string $failureCode,
         ProviderUsage $usage,
     ): void {
+        $runId = (string) Str::ulid();
+        $recordedAt = Date::now()->toImmutable();
         DB::table('voice_provider_runs')->insert([
-            'id' => (string) Str::ulid(),
+            'id' => $runId,
             'organization_id' => $row->organization_id,
             'voice_recording_id' => $row->id,
             'conversation_session_id' => $row->conversation_session_id,
@@ -631,8 +593,21 @@ final readonly class VoiceRecordingService
                 0,
                 $usage->estimatedCostMicrounits,
             ),
-            'recorded_at' => Date::now(),
+            'recorded_at' => $recordedAt,
         ]);
+
+        $this->observations->recordVoiceRun(
+            organizationId: (string) $row->organization_id,
+            runId: $runId,
+            sessionId: (string) $row->conversation_session_id,
+            stage: 'stt',
+            semanticOperation: 'voice_recording.transcribe',
+            routeRole: 'primary',
+            resultStatus: $status,
+            safeFailureCode: $failureCode,
+            usage: $usage,
+            recordedAt: $recordedAt,
+        );
     }
 
     private function historyActive(

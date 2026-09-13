@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Conversation;
 
+use App\Conversation\Avatar\ConversationSpeechPayloadBuilder;
 use App\Conversation\Exceptions\ConversationOperationRejected;
+use App\Conversation\Observability\ProviderAttemptObservationRecorder;
 use App\Conversation\Orchestration\ConversationOrchestrator;
 use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelResult;
@@ -17,13 +19,22 @@ use App\Conversation\Providers\SpeechToTextResult;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
 use App\Conversation\Providers\TextToSpeechResult;
+use App\Conversation\Speech\ConversationSpeechArtifactStore;
+use App\Conversation\Speech\SynthesizeDeferredGuidanceSpeech;
+use App\Conversation\Support\GuidanceTtsPolicy;
+use App\Conversation\Support\LessonDrillStrictTurnResponder;
+use App\Conversation\Support\SpokenGrammarNotation;
+use App\Entitlements\EntitlementAccess;
+use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use stdClass;
 
+/** @phpstan-import-type ConversationSpeechPayload from ConversationSpeechPayloadBuilder */
 final readonly class ConversationTurnService
 {
     public function __construct(
@@ -31,9 +42,16 @@ final readonly class ConversationTurnService
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
         private ConversationTurnStateMachine $states,
+        private ConversationProviderUsagePolicy $usagePolicy,
         private SpeechToTextProvider $speechToText,
         private ConversationOrchestrator $orchestrator,
         private TextToSpeechProvider $textToSpeech,
+        private MeaningfulSpeakingDayProjector $speakingDays,
+        private EntitlementAccess $entitlements,
+        private ConversationSpeechPayloadBuilder $speechPayloadBuilder,
+        private ProviderAttemptObservationRecorder $observations,
+        private ConversationSpeechArtifactStore $speechArtifacts,
+        private ConversationSessionBudget $sessionBudget,
     ) {}
 
     /**
@@ -72,6 +90,15 @@ final readonly class ConversationTurnService
                 organizationId: $context->organizationId,
                 membershipId: $membershipId,
                 sessionId: $sessionId,
+            );
+            $this->sessionBudget->assertCanAcceptLearnerTurn(
+                $context->organizationId,
+                $sessionId,
+            );
+            $this->entitlements->consumeLiveAi(
+                $learner,
+                $idempotencyKey,
+                (int) config('billing.live_ai_turn_seconds', 10),
             );
             $fingerprint = $this->commands->fingerprint([
                 'prototype_utterance' => $utterance,
@@ -181,6 +208,12 @@ final readonly class ConversationTurnService
                         'transcript_digest' => $this->digest($transcript),
                     ],
                 );
+                $lessonDrill = $this->lessonDrillFor(
+                    $context->organizationId,
+                    $membershipId,
+                    $sessionId,
+                );
+                $grammarDrill = $lessonDrill !== [];
                 $modelResult = $this->provider(
                     organizationId: $context->organizationId,
                     membershipId: $membershipId,
@@ -212,6 +245,7 @@ final readonly class ConversationTurnService
                                 $session,
                                 'ui_locale',
                             ),
+                            lessonDrill: $lessonDrill,
                         ),
                 );
 
@@ -221,6 +255,17 @@ final readonly class ConversationTurnService
 
                 $assistantReply = $modelResult->assistantReply;
                 $understoodIntent = $modelResult->understoodIntent;
+                if (
+                    $lessonDrill !== []
+                    && $understoodIntent
+                        === LessonDrillStrictTurnResponder::INTENT_PATTERN_ACCEPTED
+                ) {
+                    $this->recordAcceptedLessonDrillPattern(
+                        organizationId: $context->organizationId,
+                        membershipId: $membershipId,
+                        sessionId: $sessionId,
+                    );
+                }
                 $priorityCorrection = $modelResult->priorityCorrection;
                 $safetyState = $modelResult->safetyState;
                 $state = $this->transition(
@@ -246,22 +291,53 @@ final readonly class ConversationTurnService
                     state: $state,
                     stage: 'tts',
                     operation: fn (): TextToSpeechResult => $this
-                        ->textToSpeech
-                        ->synthesize(new TextToSpeechRequest(
-                            interactionId: $turnId,
+                        ->synthesizeSpeech(
+                            turnId: $turnId,
                             text: $assistantReply,
-                        )),
+                            purpose: GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+                            uiLocale: $this->string($session, 'ui_locale'),
+                            grammarDrill: $grammarDrill,
+                        ),
                 );
 
                 if (! $textToSpeechResult instanceof TextToSpeechResult) {
                     throw new ConversationOperationRejected;
                 }
 
-                $speech = [
-                    'playback_available' => $textToSpeechResult
-                        ->playbackAvailable,
-                    'rendering_mode' => $textToSpeechResult->renderingMode,
-                ];
+                $guidanceText = $priorityCorrection?->explanationL1;
+                $modelArtifact = $this->speechArtifacts->persist(
+                    $context->organizationId,
+                    $membershipId,
+                    $turnId,
+                    ConversationSpeechArtifactStore::KIND_MODEL,
+                    $textToSpeechResult,
+                );
+                $guidancePending = is_string($guidanceText) && trim($guidanceText) !== '';
+                if ($guidancePending) {
+                    $this->deferGuidance(
+                        organizationId: $context->organizationId,
+                        membershipId: $membershipId,
+                        sessionId: $sessionId,
+                        turnId: $turnId,
+                        guidanceText: $guidanceText,
+                        uiLocale: $this->string($session, 'ui_locale'),
+                    );
+                }
+
+                $speech = $this->speechPayloadBuilder->build(
+                    modelSpeech: $textToSpeechResult,
+                    guidanceSpeech: null,
+                    modelText: $assistantReply,
+                    guidanceText: $guidanceText,
+                    modelAudioStreamPath: $modelArtifact['stream_path'] ?? null,
+                    guidanceAudioStreamPath: $guidancePending
+                        ? $this->speechArtifacts->streamPath(
+                            $turnId,
+                            ConversationSpeechArtifactStore::KIND_GUIDANCE,
+                        )
+                        : null,
+                    guidanceSpeechStatus: $guidancePending ? 'deferred' : 'unavailable',
+                );
                 $state = $this->transition(
                     organizationId: $context->organizationId,
                     membershipId: $membershipId,
@@ -271,6 +347,11 @@ final readonly class ConversationTurnService
                     to: 'completed',
                     eventCode: 'turn.completed',
                     updates: ['completed_at' => Date::now()->toImmutable()],
+                );
+                $this->speakingDays->reconcileTurn(
+                    $context->organizationId,
+                    $membershipId,
+                    $turnId,
                 );
             } catch (ConversationProviderException $exception) {
                 $completedAt = Date::now()->toImmutable();
@@ -395,6 +476,125 @@ final readonly class ConversationTurnService
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function lessonDrillFor(
+        string $organizationId,
+        string $membershipId,
+        string $sessionId,
+    ): array {
+        if (! Schema::hasTable('conversation_lesson_drills')) {
+            return [];
+        }
+
+        $columns = [
+            'part_id',
+            'concept_key',
+            'communication_function',
+            'talk_scenario',
+            'target_patterns',
+            'elicitation_goals',
+            'fallback_turns',
+        ];
+        if (Schema::hasColumn('conversation_lesson_drills', 'accepted_pattern_count')) {
+            $columns[] = 'accepted_pattern_count';
+        }
+
+        $row = DB::table('conversation_lesson_drills')
+            ->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)
+            ->where('conversation_session_id', $sessionId)
+            ->first($columns);
+
+        if (! $row instanceof stdClass) {
+            return [];
+        }
+
+        $completedTurns = (int) DB::table('conversation_turns')
+            ->where('organization_id', $organizationId)
+            ->where('conversation_session_id', $sessionId)
+            ->where('status', 'completed')
+            ->count();
+        $acceptedPatternCount = 0;
+        if (
+            Schema::hasColumn('conversation_lesson_drills', 'accepted_pattern_count')
+        ) {
+            $acceptedPatternCount = max(
+                0,
+                (int) ($row->accepted_pattern_count ?? 0),
+            );
+        }
+
+        return [
+            'part_id' => is_string($row->part_id ?? null)
+                ? $row->part_id
+                : '',
+            'concept_key' => is_string($row->concept_key ?? null)
+                ? $row->concept_key
+                : '',
+            'accepted_pattern_count' => $acceptedPatternCount,
+            'completed_turns' => $completedTurns,
+            'communication_function' => is_string($row->communication_function ?? null)
+                ? $row->communication_function
+                : '',
+            'talk_scenario' => is_string($row->talk_scenario ?? null)
+                ? $row->talk_scenario
+                : '',
+            'target_patterns' => $this->decodeStringList($row->target_patterns ?? null),
+            'elicitation_goals' => $this->decodeStringList($row->elicitation_goals ?? null),
+            'fallback_turns' => $this->decodeStringList($row->fallback_turns ?? null),
+        ];
+    }
+
+    private function recordAcceptedLessonDrillPattern(
+        string $organizationId,
+        string $membershipId,
+        string $sessionId,
+    ): void {
+        if (! Schema::hasColumn('conversation_lesson_drills', 'accepted_pattern_count')) {
+            return;
+        }
+
+        DB::table('conversation_lesson_drills')
+            ->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)
+            ->where('conversation_session_id', $sessionId)
+            ->increment('accepted_pattern_count');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function decodeStringList(mixed $value): array
+    {
+        if (is_array($value)) {
+            $decoded = $value;
+        } elseif (is_string($value) && $value !== '') {
+            try {
+                $decoded = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                return [];
+            }
+        } else {
+            return [];
+        }
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($decoded as $item) {
+            if (! is_string($item) || trim($item) === '') {
+                continue;
+            }
+            $items[] = trim($item);
+        }
+
+        return $items;
+    }
+
+    /**
      * @param  callable(): ProviderResult  $operation
      */
     private function provider(
@@ -414,7 +614,7 @@ final readonly class ConversationTurnService
         for ($attempt = 1; $attempt <= $maximumAttempts; $attempt++) {
             try {
                 $result = $operation();
-                $this->assertFakeUsage($result->usage());
+                $this->usagePolicy->assertAllowed($stage, $result->usage());
                 $this->recordUsage(
                     organizationId: $organizationId,
                     membershipId: $membershipId,
@@ -424,6 +624,7 @@ final readonly class ConversationTurnService
                     attempt: $attempt,
                     usage: $result->usage(),
                     resultStatus: 'succeeded',
+                    safeFailureCode: null,
                 );
 
                 return $result;
@@ -437,7 +638,7 @@ final readonly class ConversationTurnService
                     outputUnits: $exception->outputUnits,
                     estimatedCostMicrounits: 0,
                 );
-                $this->assertFakeUsage($usage);
+                $this->usagePolicy->assertAllowed($stage, $usage);
                 $this->recordUsage(
                     organizationId: $organizationId,
                     membershipId: $membershipId,
@@ -447,6 +648,7 @@ final readonly class ConversationTurnService
                     attempt: $attempt,
                     usage: $usage,
                     resultStatus: 'failed',
+                    safeFailureCode: $exception->safeCode,
                 );
 
                 if ($attempt >= $maximumAttempts) {
@@ -556,9 +758,12 @@ final readonly class ConversationTurnService
         int $attempt,
         ProviderUsage $usage,
         string $resultStatus,
+        ?string $safeFailureCode,
     ): void {
+        $ledgerId = (string) Str::ulid();
+        $recordedAt = Date::now()->toImmutable();
         DB::table('ai_cost_ledger')->insert([
-            'id' => (string) Str::ulid(),
+            'id' => $ledgerId,
             'organization_id' => $organizationId,
             'conversation_turn_id' => $turnId,
             'conversation_session_id' => $sessionId,
@@ -573,22 +778,26 @@ final readonly class ConversationTurnService
             'estimated_cost_microunits' => $usage
                 ->estimatedCostMicrounits,
             'result_status' => $resultStatus,
-            'recorded_at' => Date::now()->toImmutable(),
+            'recorded_at' => $recordedAt,
         ]);
-    }
 
-    private function assertFakeUsage(ProviderUsage $usage): void
-    {
-        if (
-            $usage->providerKey !== 'deterministic-fake'
-            || ! str_starts_with($usage->modelVersion, 'fake-')
-            || $usage->estimatedCostMicrounits !== 0
-            || $usage->latencyMilliseconds < 0
-            || $usage->inputUnits < 0
-            || $usage->outputUnits < 0
-        ) {
-            throw new ConversationOperationRejected;
-        }
+        $this->observations->recordAiLedger(
+            organizationId: $organizationId,
+            ledgerId: $ledgerId,
+            sessionId: $sessionId,
+            stage: $stage,
+            semanticOperation: match ($stage) {
+                'stt' => 'conversation.transcribe',
+                'model' => 'conversation.reply',
+                'tts' => 'conversation.synthesize',
+                default => 'conversation.unknown',
+            },
+            routeRole: 'primary',
+            resultStatus: $resultStatus,
+            safeFailureCode: $safeFailureCode,
+            usage: $usage,
+            recordedAt: $recordedAt,
+        );
     }
 
     private function stageForState(string $state): string
@@ -661,6 +870,12 @@ final readonly class ConversationTurnService
                 prototypeUtterance: $utterance,
             ),
         );
+        $lessonDrill = $this->lessonDrillFor(
+            $organizationId,
+            $membershipId,
+            $this->string($session, 'id'),
+        );
+        $grammarDrill = $lessonDrill !== [];
         $modelResult = $this->orchestrator->respond(
             organizationId: $organizationId,
             membershipId: $membershipId,
@@ -684,13 +899,65 @@ final readonly class ConversationTurnService
                 'ui_locale',
             ),
             persistAdvisory: false,
+            lessonDrill: $lessonDrill,
         );
-        $textToSpeechResult = $this->textToSpeech->synthesize(
-            new TextToSpeechRequest(
-                interactionId: $turnId,
+        $uiLocale = $this->string($session, 'ui_locale');
+        $storedModel = $this->speechArtifacts->find(
+            $organizationId,
+            $membershipId,
+            $turnId,
+            ConversationSpeechArtifactStore::KIND_MODEL,
+        );
+        if ($storedModel === null) {
+            $textToSpeechResult = $this->synthesizeSpeech(
+                turnId: $turnId,
                 text: $modelResult->assistantReply,
-            ),
-        );
+                purpose: GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+                uiLocale: $uiLocale,
+                grammarDrill: $grammarDrill,
+            );
+            $this->speechArtifacts->persist(
+                $organizationId,
+                $membershipId,
+                $turnId,
+                ConversationSpeechArtifactStore::KIND_MODEL,
+                $textToSpeechResult,
+            );
+        } else {
+            $textToSpeechResult = new TextToSpeechResult(
+                playbackAvailable: true,
+                renderingMode: 'azure-soft-launch-guidance-wav',
+                providerUsage: new ProviderUsage(
+                    providerKey: 'replayed-speech-artifact',
+                    modelVersion: 'replay',
+                    latencyMilliseconds: 0,
+                    inputUnits: 0,
+                    outputUnits: 0,
+                    estimatedCostMicrounits: 0,
+                ),
+                mimeType: (string) $storedModel->mime_type,
+            );
+        }
+        $guidanceText = $modelResult->priorityCorrection?->explanationL1;
+        $guidancePending = is_string($guidanceText) && trim($guidanceText) !== '';
+        $storedGuidance = $guidancePending
+            ? $this->speechArtifacts->find(
+                $organizationId,
+                $membershipId,
+                $turnId,
+                ConversationSpeechArtifactStore::KIND_GUIDANCE,
+            )
+            : null;
+        if ($guidancePending && $storedGuidance === null) {
+            $this->deferGuidance(
+                organizationId: $organizationId,
+                membershipId: $membershipId,
+                sessionId: $this->string($session, 'id'),
+                turnId: $turnId,
+                guidanceText: $guidanceText,
+                uiLocale: $uiLocale,
+            );
+        }
 
         if (
             ! hash_equals(
@@ -717,17 +984,34 @@ final readonly class ConversationTurnService
             understoodIntent: $modelResult->understoodIntent,
             priorityCorrection: $modelResult->priorityCorrection,
             safetyState: $modelResult->safetyState,
-            speech: [
-                'playback_available' => $textToSpeechResult
-                    ->playbackAvailable,
-                'rendering_mode' => $textToSpeechResult->renderingMode,
-            ],
+            speech: $this->speechPayloadBuilder->build(
+                modelSpeech: $textToSpeechResult,
+                guidanceSpeech: null,
+                modelText: $modelResult->assistantReply,
+                guidanceText: $guidanceText,
+                modelAudioStreamPath: $storedModel !== null
+                    || $textToSpeechResult->playbackAvailable
+                    ? $this->speechArtifacts->streamPath(
+                        $turnId,
+                        ConversationSpeechArtifactStore::KIND_MODEL,
+                    )
+                    : null,
+                guidanceAudioStreamPath: $guidancePending
+                    ? $this->speechArtifacts->streamPath(
+                        $turnId,
+                        ConversationSpeechArtifactStore::KIND_GUIDANCE,
+                    )
+                    : null,
+                guidanceSpeechStatus: $storedGuidance !== null
+                    ? 'ready'
+                    : ($guidancePending ? 'deferred' : 'unavailable'),
+            ),
             replayed: $replayed,
         );
     }
 
     /**
-     * @param  array<string, bool|string>|null  $speech
+     * @param  ConversationSpeechPayload|null  $speech
      * @return array<string, mixed>
      */
     private function result(
@@ -789,6 +1073,43 @@ final readonly class ConversationTurnService
             ),
             'replayed' => $replayed,
         ];
+    }
+
+    private function deferGuidance(
+        string $organizationId,
+        string $membershipId,
+        string $sessionId,
+        string $turnId,
+        string $guidanceText,
+        string $uiLocale,
+    ): void {
+        dispatch(new SynthesizeDeferredGuidanceSpeech(
+            $organizationId,
+            $membershipId,
+            $sessionId,
+            $turnId,
+            $guidanceText,
+            $uiLocale,
+        ))->afterResponse();
+    }
+
+    private function synthesizeSpeech(
+        string $turnId,
+        string $text,
+        string $purpose,
+        string $uiLocale,
+        bool $grammarDrill = false,
+    ): TextToSpeechResult {
+        return $this->textToSpeech->synthesize(new TextToSpeechRequest(
+            interactionId: $turnId,
+            text: SpokenGrammarNotation::forSpeech(
+                $text,
+                $grammarDrill && $purpose === GuidanceTtsPolicy::PURPOSE_MODEL_EN,
+            ),
+            voice: GuidanceTtsPolicy::voiceFor($purpose, $uiLocale),
+            purpose: $purpose,
+            uiLocale: $uiLocale,
+        ));
     }
 
     private function digest(string $value): string

@@ -73,8 +73,9 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
 
   // Primary shell destinations also available to a student in the demo.
   await page.getByRole('link', { name: 'Learn' }).click()
-  await page.getByRole('link', { name: 'Practice' }).click()
+  await page.getByRole('link', { name: 'Speak' }).click()
   await page.getByRole('link', { name: 'Progress' }).click()
+  await page.getByRole('link', { name: '1:1' }).click()
   await page.getByRole('link', { name: 'Home' }).click()
   await expect(
     page.getByRole('heading', { level: 1, name: 'Dashboard' }),

@@ -72,3 +72,139 @@ jobs:
 
       - name: Build
         run: make build
+
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.1
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Install Android API 36 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test and build production-path Android app
+        env:
+          VITE_MOBILE_API_ORIGIN: https://api.ci.invalid
+          VITE_MOBILE_OAUTH_CLIENT_ID: global-english-ci
+          VITE_MOBILE_OAUTH_REDIRECT_URI: com.globalenglish.app:/oauth/callback
+          VITE_MOBILE_OAUTH_AUTHORIZE_URL: https://api.ci.invalid/oauth/authorize
+          VITE_MOBILE_OAUTH_TOKEN_URL: https://api.ci.invalid/oauth/token
+        run: make android-closed-beta
+
+  operations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: 8.4.23
+          tools: composer:2.10.2
+          extensions: pcntl, pdo_pgsql
+          coverage: none
+
+      - name: Prepare non-production drill environment
+        run: |
+          test -f .env || cp .env.example .env
+          test -f apps/api/.env || cp apps/api/.env.example apps/api/.env
+          composer --working-dir=apps/api install --no-interaction --prefer-dist
+          php apps/api/artisan key:generate
+          docker compose up -d --wait postgres redis
+          php apps/api/artisan migrate --force
+
+      - name: Run fail-closed load drill
+        run: |
+          set -euo pipefail
+          PHP_CLI_SERVER_WORKERS=8 php apps/api/artisan serve --host=127.0.0.1 --port=8000 --no-reload >/tmp/global-english-rel-api.log 2>&1 &
+          api_pid=$!
+          cleanup_api() {
+            kill "${api_pid}" >/dev/null 2>&1 || true
+            wait "${api_pid}" >/dev/null 2>&1 || true
+          }
+          trap cleanup_api EXIT
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/health/ready >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "${ready}" != true ]; then
+            tail -n 100 /tmp/global-english-rel-api.log
+            exit 1
+          fi
+          LOAD_SOAK_CONCURRENCY=10 \
+          LOAD_SOAK_REQUESTS=100 \
+          LOAD_SOAK_MAX_P95_MS=1000 \
+          make load-soak
+
+      - name: Run fail-closed backup and restore drill
+        run: make backup-restore-drill
+
+      - name: Print safe drill evidence
+        run: |
+          test "$(find artifacts/ops -maxdepth 1 -name '*.json' -type f | wc -l)" -ge 2
+          for evidence in artifacts/ops/*.json; do
+            sed -n '1,160p' "${evidence}"
+          done
+
+      - name: Remove non-production drill services
+        if: ${{ always() }}
+        run: docker compose down --volumes --remove-orphans
+
+  release-gate:
+    if: ${{ always() }}
+    needs:
+      - verify
+      - android
+      - operations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every critical gate
+        env:
+          VERIFY_RESULT: ${{ needs.verify.result }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+          OPERATIONS_RESULT: ${{ needs.operations.result }}
+        run: |
+          if [ "${VERIFY_RESULT}" != success ] \
+            || [ "${ANDROID_RESULT}" != success ] \
+            || [ "${OPERATIONS_RESULT}" != success ]; then
+            printf 'release gate failed: verify=%s android=%s operations=%s\n' \
+              "${VERIFY_RESULT}" "${ANDROID_RESULT}" "${OPERATIONS_RESULT}" >&2
+            exit 1
+          fi
+          echo 'All critical release gates passed.'
