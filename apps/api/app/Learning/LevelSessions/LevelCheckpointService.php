@@ -57,14 +57,12 @@ final class LevelCheckpointService
     }
 
     /**
+     * @param  array<string, mixed>|null  $entitlementSnapshot
      * @return array{
      *   checkpoint_status: 'not_applicable'|'not_ready'|'ready'|'passed'|'attempts_exhausted'|'review_due_blocked',
      *   checkpoint_attempts_remaining: int|null,
      *   review_due_blocking: bool
      * }
-     */
-    /**
-     * @param  array<string, mixed>|null  $entitlementSnapshot
      */
     public function projection(
         OrganizationContext $context,
@@ -135,10 +133,8 @@ final class LevelCheckpointService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param  array<string, mixed>|null  $entitlementSnapshot
+     * @return array<string, mixed>
      */
     public function checkpointDetail(
         OrganizationContext $context,
@@ -191,10 +187,8 @@ final class LevelCheckpointService
 
     /**
      * @param  array<string, int>  $answers
-     * @return array<string, mixed>
-     */
-    /**
      * @param  array<string, mixed>|null  $entitlementSnapshot
+     * @return array<string, mixed>
      */
     public function submitCheckpoint(
         OrganizationContext $context,

@@ -24,7 +24,9 @@ describe('Mira GESC-green theme pin', () => {
 
     const studioImport = app.indexOf("import './theme/studioExperience.css'")
     const pinImport = app.indexOf("import './theme/miraGescGreenPin.css'")
+    const chromeImport = app.indexOf("import './theme/miraLearnerChrome.css'")
     expect(studioImport).toBeGreaterThan(-1)
     expect(pinImport).toBeGreaterThan(studioImport)
+    expect(chromeImport).toBeGreaterThan(pinImport)
   })
 })

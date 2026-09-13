@@ -5,6 +5,7 @@ import type {
 } from '@global-english/localization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import { AvatarSlot } from '../ui/AvatarSlot'
 import './TutorPresence.css'
 
 export type TutorMood =
@@ -89,26 +90,34 @@ export function TutorHomeHero({
 
   return (
     <section
-      className="tutor-home-hero"
+      className="tutor-home-hero mira-home-hero"
       aria-labelledby="tutor-home-hero-title"
       lang={locale}
     >
-      <div className="tutor-home-hero__copy">
-        <p className="tutor-home-hero__eyebrow">
-          <LocalizedMessage resolution={message('tutor.name')} />
+      <div className="mira-home-hero__copy tutor-home-hero__copy">
+        <p className="tutor-home-hero__eyebrow mira-home-hero__eyebrow">
+          <LocalizedMessage resolution={message('demo.phase1.home.greeting')} />
         </p>
         <h2 id="tutor-home-hero-title">
-          <LocalizedMessage resolution={message('tutor.greeting')} />
+          <LocalizedMessage resolution={message('demo.phase1.home.title')} />
         </h2>
         <p>
-          <LocalizedMessage
-            resolution={message('level.path.talk_after_listen')}
-          />
+          <LocalizedMessage resolution={message('shell.mira.role')} />
         </p>
-        <a className="tutor-home-hero__cta" href="#learn">
-          <LocalizedMessage resolution={message('page.home.continue_practice')} />
-        </a>
+        <div className="mira-home-hero__actions">
+          <a className="mira-home-hero__speak" href="#speak">
+            <LocalizedMessage resolution={message('demo.phase1.home.speak')} />
+          </a>
+          <a className="tutor-home-hero__cta mira-home-hero__cta" href="#learn">
+            <LocalizedMessage resolution={message('page.home.continue_practice')} />
+          </a>
+        </div>
       </div>
+      <AvatarSlot
+        label={message('shell.mira.name').text}
+        size="lg"
+        slot="home-teacher"
+      />
     </section>
   )
 }

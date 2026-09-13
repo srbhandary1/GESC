@@ -32,6 +32,7 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         );
         $this->withServerVariables(['HTTPS' => 'on']);
         $this->withCredentials();
+        config()->set('speech_observability.client_sample_rate_bps', 10_000);
     }
 
     public function test_every_learner_route_requires_first_party_authentication(): void

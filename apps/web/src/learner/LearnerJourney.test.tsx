@@ -728,6 +728,10 @@ describe('deterministic learner journey', () => {
       screen.getByRole('button', { name: t('learner.home.continue') }),
     ).toHaveClass('learner-home__continue')
     expect(
+      screen.getByRole('link', { name: t('demo.phase1.home.speak') }),
+    ).toHaveAttribute('href', '#speak')
+    expect(screen.getByRole('img', { name: t('shell.mira.name') })).toBeVisible()
+    expect(
       screen.queryByText(
         resolveMessage('learner.home.estimated_minutes', {
           policy: 'development-preview',

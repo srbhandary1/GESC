@@ -51,13 +51,11 @@ final class LevelSessionProgressService
     }
 
     /**
+     * @param  array<string, mixed>|null  $entitlementSnapshot
      * @return array{
      *   progress_access: 'allowed'|'locked'|'not_applicable',
      *   unlock_after_level_number: int|null
      * }
-     */
-    /**
-     * @param  array<string, mixed>|null  $entitlementSnapshot
      */
     public function projection(
         OrganizationContext $context,

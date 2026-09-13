@@ -31,10 +31,6 @@ final class LessonDrillStepper
         return "Listen. Say: {$first} Now you try.";
     }
 
-    /**
-     * @param  list<string>  $patterns
-     * @param  list<string>  $fallbackTurns
-     */
     public static function normalizeForMatch(string $text): string
     {
         $normalized = mb_strtolower(trim($text));
