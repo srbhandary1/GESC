@@ -344,11 +344,7 @@ export function LevelPathPanel({
   )
 
   return (
-    <section
-      className="level-path level-path--variant-a"
-      aria-labelledby="level-path-title"
-      lang={locale}
-    >
+    <section className="level-path" aria-labelledby="level-path-title" lang={locale}>
       <header className="level-path__intro">
         {onBack ? (
           <button type="button" className="level-path__back" onClick={onBack}>

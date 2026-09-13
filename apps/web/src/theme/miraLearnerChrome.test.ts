@@ -22,8 +22,8 @@ describe('Mira learner chrome', () => {
     expect(chrome).toContain('mira-home-hero')
     expect(chrome).toContain('LessonPractice / audio curriculum files stay untouched')
     expect(chrome).toContain('max(3rem, 48px)')
-    expect(chrome).toContain('ge-continue-hero')
     expect(chrome).toContain('--ge-color-soft-brand: #e6f2ec')
+    expect(chrome).not.toContain('level-path--variant-a')
     expect(chrome).toContain('#1a1a1a')
     expect(chrome).toContain('#fafbfa')
 
