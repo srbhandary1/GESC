@@ -243,6 +243,10 @@ staged-deploy-dry-run:
 	@bash scripts/run-staged-deploy-dry-run.sh
 
 # APP-0053 Ubuntu invite-only soft launch (real product; not make demo).
+deploy-learner-variant-a-soft-launch:
+	@chmod +x scripts/deploy-learner-variant-a-soft-launch.sh
+	@bash scripts/deploy-learner-variant-a-soft-launch.sh
+
 soft-launch-setup:
 	@chmod +x scripts/setup-soft-launch-workspace.sh scripts/install-soft-launch-caddy.sh
 	@bash scripts/setup-soft-launch-workspace.sh

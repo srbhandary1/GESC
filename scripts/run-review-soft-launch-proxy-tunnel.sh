@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Proxies a temporary Cloudflare HTTPS URL to the operator's live soft-launch
-# Caddy listener. Use this for remote review when a prior agent mistakenly
-# published the synthetic VITE_LOCAL_DEMO dev server instead of real product.
+# DEPRECATED — do not use for learner review.
 #
-# Requires: cloudflared binary and network reachability to the soft-launch host.
+# Proxying trycloudflare.com to a remote Caddy host breaks Sanctum sign-in because
+# the soft-launch API never registers that hostname in SANCTUM_STATEFUL_DOMAINS.
+#
+# On Real-Studioz run instead:
+#   bash scripts/deploy-learner-variant-a-soft-launch.sh
+#
+# That rebuilds production web (theme only) and runs make soft-launch-tunnel so
+# sign-in and governed lesson MP3s both work.
 
 set -euo pipefail
 
@@ -44,6 +49,14 @@ stop_tunnel() {
 }
 
 start_tunnel() {
+  cat <<'EOF' >&2
+
+ERROR: This proxy tunnel breaks sign-in (Sanctum hostname mismatch).
+Use on Real-Studioz:
+  bash scripts/deploy-learner-variant-a-soft-launch.sh
+
+EOF
+  exit 1
   resolve_cloudflared
   wait_for_target
   stop_tunnel
