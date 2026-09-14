@@ -44,6 +44,8 @@ interface RecordingTurnProps {
   readonly onCancelInFlight?: () => void
   readonly onHoldPhaseChange?: (phase: HoldPhase) => void
   readonly recorder: AudioRecorder
+  readonly recordingDisabled?: boolean
+  readonly recordingDisabledStatus?: string
   readonly skipReviewPlayback?: boolean
   readonly minimumDurationMs?: number
 }
@@ -64,6 +66,8 @@ export function RecordingTurn({
   onCancelInFlight,
   onHoldPhaseChange,
   recorder,
+  recordingDisabled = false,
+  recordingDisabledStatus,
   skipReviewPlayback = false,
   minimumDurationMs = 250,
 }: RecordingTurnProps) {
@@ -82,6 +86,20 @@ export function RecordingTurn({
   const stopRef = useRef<() => Promise<void>>(async () => undefined)
   const [holdElapsedMs, setHoldElapsedMs] = useState(0)
   const [validationError, setValidationError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!recordingDisabled) {
+      return
+    }
+
+    holdIntent.current = false
+    requestGeneration.current += 1
+    sessionRef.current?.cancel()
+    sessionRef.current = null
+    setLiveSession(null)
+    setState(recorder.isSupported() ? 'ready' : 'blocked')
+    onHoldPhaseChange?.('idle')
+  }, [onHoldPhaseChange, recorder, recordingDisabled])
 
   useEffect(() => {
     active.current = true
@@ -307,7 +325,9 @@ export function RecordingTurn({
       <p>{labels.permissionExplanation}</p>
       <RecordingControls
         captureMode={captureMode}
+        interactionDisabled={recordingDisabled}
         labels={labels.controls}
+        statusOverride={recordingDisabled ? recordingDisabledStatus : undefined}
         onRequestCancel={cancel}
         onRequestPause={() => {
           sessionRef.current?.pause()

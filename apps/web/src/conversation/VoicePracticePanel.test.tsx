@@ -515,7 +515,7 @@ describe('secure voice practice consent boundary', () => {
     expect(onTranscriptSelected).not.toHaveBeenCalled()
   })
 
-  it('blocks hold-to-talk while Swathi is speaking', async () => {
+  it('disables hold-to-talk while Swathi is speaking', async () => {
     const bothGranted = listing('granted', 'granted')
     const api: ConversationJourneyApi = {
       createTurn: vi.fn(),
@@ -541,12 +541,11 @@ describe('secure voice practice consent boundary', () => {
       />,
     )
 
-    expect(
-      await screen.findByText('conversation.loop.speaking'),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'learner.recording.hold' }),
-    ).not.toBeInTheDocument()
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    expect(hold).toBeDisabled()
+    expect(screen.getByText('conversation.loop.speaking')).toBeInTheDocument()
   })
 
   it('restores the record control with a fresh command after an upload rejection', async () => {

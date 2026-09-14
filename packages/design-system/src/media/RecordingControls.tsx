@@ -36,6 +36,8 @@ export interface RecordingControlsProps {
   labels: RecordingControlLabels
   state: RecordingControlState
   captureMode?: RecordingCaptureMode
+  interactionDisabled?: boolean
+  statusOverride?: string
   onRequestCancel: () => void
   onRequestPause: () => void
   onRequestResume: () => void
@@ -47,13 +49,15 @@ export function RecordingControls({
   labels,
   state,
   captureMode = 'tap',
+  interactionDisabled = false,
+  statusOverride,
   onRequestCancel,
   onRequestPause,
   onRequestResume,
   onRequestStart,
   onRequestStop,
 }: RecordingControlsProps) {
-  const statusLabel = {
+  const statusLabel = statusOverride ?? {
     idle: labels.idle,
     ready: labels.ready,
     'requesting-permission': labels.requestingPermission,
@@ -65,9 +69,10 @@ export function RecordingControls({
   }[state]
 
   const canStart =
-    state === 'idle' ||
-    state === 'ready' ||
-    (captureMode === 'hold' && (state === 'error' || state === 'blocked'))
+    !interactionDisabled &&
+    (state === 'idle' ||
+      state === 'ready' ||
+      (captureMode === 'hold' && (state === 'error' || state === 'blocked')))
   const isRecording = state === 'recording'
   const isPaused = state === 'paused'
   const holdActive = useRef(false)
@@ -91,7 +96,7 @@ export function RecordingControls({
   }
 
   const beginHold = () => {
-    if (state === 'processing') {
+    if (interactionDisabled || state === 'processing') {
       return
     }
 
@@ -166,7 +171,8 @@ export function RecordingControls({
               aria-pressed={holdPressed}
               className="ge-button ge-button--primary ge-button--speak ge-button--hold-to-talk"
               data-hold-state={state}
-              disabled={state === 'processing'}
+              aria-disabled={interactionDisabled || undefined}
+              disabled={interactionDisabled || state === 'processing'}
               onContextMenu={(event) => {
                 event.preventDefault()
               }}
@@ -198,7 +204,7 @@ export function RecordingControls({
                 endHold()
               }}
               onPointerDown={(event) => {
-                if (event.button !== 0) {
+                if (event.button !== 0 || interactionDisabled) {
                   return
                 }
 

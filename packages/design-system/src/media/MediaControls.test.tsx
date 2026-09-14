@@ -82,6 +82,35 @@ describe('media presentation controls', () => {
     expect(onRequestStop).toHaveBeenCalledOnce()
   })
 
+  it('disables hold-to-talk when interaction is locked', async () => {
+    const onRequestStart = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        interactionDisabled
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={vi.fn()}
+        state="ready"
+        statusOverride="Teacher is speaking"
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    expect(button).toBeDisabled()
+    expect(screen.getByText('Teacher is speaking')).toBeVisible()
+    await user.pointer({ keys: '[MouseLeft>]', target: button })
+    expect(onRequestStart).not.toHaveBeenCalled()
+  })
+
   it('starts on a quick tap and stops on the next tap in hold-to-talk mode', async () => {
     const onRequestStart = vi.fn()
     const onRequestStop = vi.fn()

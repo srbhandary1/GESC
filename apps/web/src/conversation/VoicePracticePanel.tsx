@@ -517,16 +517,6 @@ export function VoicePracticePanel({
           {uploadError !== null ? (
             <p role="alert">{text(uploadError)}</p>
           ) : null}
-          {recordingLocked ? (
-            <p role="status">
-              {text(
-                speakLoopPhase === 'preparing'
-                  ? 'conversation.loop.preparing'
-                  : 'conversation.loop.speaking',
-              )}
-            </p>
-          ) : null}
-          {recordingLocked ? null : (
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
             captureMode="hold"
@@ -572,6 +562,12 @@ export function VoicePracticePanel({
               tooShort: text('conversation.voice.too_short'),
             }}
             minimumDurationMs={1_000}
+            recordingDisabled={recordingLocked}
+            recordingDisabledStatus={text(
+              speakLoopPhase === 'preparing'
+                ? 'conversation.loop.preparing'
+                : 'conversation.loop.speaking',
+            )}
             onAudioCaptureChange={(capture) => {
               if (capture === null) {
                 return
@@ -594,7 +590,6 @@ export function VoicePracticePanel({
             recorder={recorder}
             skipReviewPlayback
           />
-          )}
           <details className="conversation-journey__consent-details">
             <summary>{text('conversation.voice.manage_consent')}</summary>
             {purposeButtons(state.listing)}
