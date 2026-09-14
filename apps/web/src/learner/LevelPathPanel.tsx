@@ -1443,7 +1443,9 @@ function LevelSessionJourney({
                   onEnded={handleLessonAudioEnded}
                   onPause={() => setLessonPlaying(false)}
                   onPlaying={markLessonAudioHeard}
+                  seekLabel={message('learner.audio.seek').text}
                   slowLabel={message('learner.audio.slow').text}
+                  stopLabel={message('learner.audio.stop').text}
                   source={visibleDetail.audio_stream_path}
                 />
               )}

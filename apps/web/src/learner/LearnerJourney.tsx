@@ -1351,7 +1351,9 @@ function MissionExperience({
               }}
               loadSource={api.downloadModelAudio}
               mimeType={mission.model_audio.mime_type}
+              seekLabel={text('learner.audio.seek')}
               slowLabel={text('learner.audio.slow')}
+              stopLabel={text('learner.audio.stop')}
               source={mission.model_audio.stream_url}
             />
           )}

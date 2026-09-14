@@ -8,6 +8,10 @@
 - On-screen AI teacher is **Swathi** everywhere in learner UI copy
   (`shell.mira.*`, `tutor.name`, conversation strings). Illustration
   filenames may remain `tutor-maya.png` (D-0218).
+- Level Introduction listen audio adds **Stop** and a seek **slider**
+  beside Play/Pause/Resume and Slow. Introduction grammar drills require
+  transcript confirmation and block hold-to-talk while Swathi speaks, so
+  TTS cannot auto-submit the next pattern early.
 - Learner chrome on web and the production Capacitor APK
   (`com.globalenglish.app`) uses design-audit Variant C jezweb-ux:
   professional light product shell, Continue Learning flow, and an

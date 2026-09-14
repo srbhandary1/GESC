@@ -433,6 +433,122 @@ describe('secure voice practice consent boundary', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('asks for confirmation on grammar-drill clips even when confidence is high', async () => {
+    vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
+      new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
+    )
+    const bothGranted = listing('granted', 'granted')
+    const onTranscriptSelected = vi.fn()
+    const recording = {
+      byte_size: 128,
+      codec: 'pcm_s16le',
+      created_at: '2026-07-31T12:00:00Z',
+      deletion_url:
+        '/api/v1/voice-recordings/01JRECORDING000000000000001/deletion',
+      duration_ms: 250,
+      id: '01JRECORDING000000000000001',
+      mime_type: 'audio/wav',
+      replayed: false,
+      source_deleted: true,
+      status: 'awaiting_learner_confirmation',
+      transcript: 'I can drink water.',
+      transcript_confidence: 0.92,
+      transcript_review_url:
+        '/api/v1/voice-recordings/01JRECORDING000000000000001/transcript-review',
+    } as const satisfies SecureVoiceRecording
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(async () => recording),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+    const session = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/webm' }),
+        durationMs: 1_250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={onTranscriptSelected}
+        recorder={recorder}
+        requireTranscriptConfirmation
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await user.pointer({ keys: '[/MouseLeft]', target: hold })
+    const send = screen.getByRole('button', {
+      name: 'learner.recording.release',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: send })
+    await user.pointer({ keys: '[/MouseLeft]', target: send })
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'conversation.voice.use_transcript',
+      }),
+    ).toBeInTheDocument()
+    expect(onTranscriptSelected).not.toHaveBeenCalled()
+  })
+
+  it('blocks hold-to-talk while Swathi is speaking', async () => {
+    const bothGranted = listing('granted', 'granted')
+    const api: ConversationJourneyApi = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => bothGranted),
+      withdrawVoiceConsent: vi.fn(),
+    }
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        sessionId="01J00000000000000000000001"
+        speakLoopPhase="speaking"
+        text={(key) => key}
+      />,
+    )
+
+    expect(
+      await screen.findByText('conversation.loop.speaking'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'learner.recording.hold' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('restores the record control with a fresh command after an upload rejection', async () => {
     vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
       new Blob([encodeMonoPcmWav(new Float32Array(4_000))], {

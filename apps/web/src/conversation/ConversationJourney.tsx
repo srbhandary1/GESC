@@ -1042,8 +1042,10 @@ export function ConversationJourney({
                 }}
                 onLoopPhase={setLoopPhase}
                 onCancelInFlight={abortInFlight}
+                requireTranscriptConfirmation={grammarDrill}
                 resetEpoch={holdResetEpoch}
                 sessionId={session.id}
+                speakLoopPhase={loopPhase}
                 text={text}
                 unavailableMessageKey={voiceUnavailableMessageKey}
               />

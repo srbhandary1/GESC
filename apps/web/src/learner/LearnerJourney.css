@@ -21,6 +21,17 @@
   background: color-mix(in srgb, var(--ge-color-accent, #3ddc97) 16%, transparent);
 }
 
+.model-audio-player__stop {
+  min-block-size: var(--ge-target-minimum);
+}
+
+.model-audio-player__seek {
+  flex: 1 1 12rem;
+  min-inline-size: 8rem;
+  max-inline-size: 100%;
+  accent-color: var(--ge-color-accent, #006b3f);
+}
+
 .learner-stack {
   display: grid;
   min-width: 0;

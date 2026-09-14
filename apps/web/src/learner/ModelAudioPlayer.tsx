@@ -16,8 +16,10 @@ interface ModelAudioPlayerProps {
   readonly onEnded?: () => void
   readonly onPause?: () => void
   readonly onPlaying?: () => void
+  readonly seekLabel: string
   readonly slowLabel: string
   readonly source: string
+  readonly stopLabel: string
 }
 
 const SLOW_RATE = 0.75
@@ -30,8 +32,10 @@ export function ModelAudioPlayer({
   onEnded,
   onPause,
   onPlaying,
+  seekLabel,
   slowLabel,
   source,
+  stopLabel,
 }: ModelAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const onEndedRef = useRef(onEnded)
@@ -42,6 +46,8 @@ export function ModelAudioPlayer({
   const [state, setState] = useState<AudioControlState>(
     loadSource === undefined ? 'ready' : 'loading',
   )
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [loadedSource, setLoadedSource] = useState<{
     readonly loader: NonNullable<ModelAudioPlayerProps['loadSource']>
     readonly mimeType: string
@@ -123,7 +129,12 @@ export function ModelAudioPlayer({
     const handleCanPlay = () => {
       restorePosition()
       audio.playbackRate = slowRef.current ? SLOW_RATE : 1
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+      setCurrentTime(audio.currentTime)
       setState('ready')
+    }
+    const handleLoadedMetadata = () => {
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
     }
     const handleEnded = () => {
       positionsBySource.delete(source)
@@ -145,10 +156,15 @@ export function ModelAudioPlayer({
     }
     const handleTimeUpdate = () => {
       positionsBySource.set(source, audio.currentTime)
+      setCurrentTime(audio.currentTime)
+      if (Number.isFinite(audio.duration)) {
+        setDuration(audio.duration)
+      }
     }
     const handleWaiting = () => setState('loading')
 
     audio.addEventListener('canplay', handleCanPlay)
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
     audio.addEventListener('pause', handlePause)
@@ -161,6 +177,7 @@ export function ModelAudioPlayer({
 
     return () => {
       audio.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
       audio.removeEventListener('pause', handlePause)
@@ -210,8 +227,39 @@ export function ModelAudioPlayer({
 
     positionsBySource.delete(source)
     audio.currentTime = 0
+    setCurrentTime(0)
     await play()
   }
+
+  const stop = () => {
+    const audio = audioRef.current
+
+    if (audio === null) {
+      return
+    }
+
+    audio.pause()
+    audio.currentTime = 0
+    positionsBySource.delete(source)
+    setCurrentTime(0)
+    setState('ready')
+    onPauseRef.current?.()
+  }
+
+  const seek = (nextTime: number) => {
+    const audio = audioRef.current
+
+    if (audio === null) {
+      return
+    }
+
+    audio.currentTime = nextTime
+    positionsBySource.set(source, nextTime)
+    setCurrentTime(nextTime)
+  }
+
+  const showStop = state === 'playing' || state === 'paused'
+  const showSeek = duration > 0 && playableSource !== null
 
   return (
     <div className="model-audio-player">
@@ -236,6 +284,29 @@ export function ModelAudioPlayer({
         onRequestReplay={() => void replay()}
         state={visibleState}
       />
+      {showStop ? (
+        <button
+          className="model-audio-player__stop ge-button"
+          onClick={stop}
+          type="button"
+        >
+          {stopLabel}
+        </button>
+      ) : null}
+      {showSeek ? (
+        <input
+          aria-label={seekLabel}
+          className="model-audio-player__seek"
+          max={duration}
+          min={0}
+          onChange={(event) => {
+            seek(Number(event.currentTarget.value))
+          }}
+          step={0.1}
+          type="range"
+          value={Math.min(currentTime, duration)}
+        />
+      ) : null}
       <button
         aria-pressed={slow}
         className="model-audio-player__slow"

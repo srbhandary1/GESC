@@ -3,7 +3,7 @@ import type {
   MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   defaultAudioRecorder,
   type AudioRecorder,
@@ -35,7 +35,9 @@ interface VoicePracticePanelProps {
   readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
   readonly onCancelInFlight?: () => void
   readonly recorder?: AudioRecorder
+  readonly requireTranscriptConfirmation?: boolean
   readonly resetEpoch?: number
+  readonly speakLoopPhase?: SpeakLoopPhase
   readonly sessionId: string
   readonly text: (key: MessageKey, parameters?: MessageParameters) => string
   readonly unavailableMessageKey?: MessageKey
@@ -74,7 +76,9 @@ export function VoicePracticePanel({
   onLoopPhase,
   onCancelInFlight,
   recorder = defaultAudioRecorder,
+  requireTranscriptConfirmation = false,
   resetEpoch = 0,
+  speakLoopPhase = 'waiting',
   sessionId,
   text,
   unavailableMessageKey,
@@ -99,13 +103,22 @@ export function VoicePracticePanel({
     setPhase('waiting')
   }
 
-  const cancelInFlight = () => {
+  const cancelInFlight = useCallback(() => {
     uploadAbort.current?.abort()
     uploadAbort.current = null
     abandonSpeakLoop()
     onCancelInFlight?.()
     releaseHold()
-  }
+  }, [onCancelInFlight])
+
+  const recordingLocked =
+    speakLoopPhase === 'speaking' || speakLoopPhase === 'preparing'
+
+  useEffect(() => {
+    if (recordingLocked) {
+      cancelInFlight()
+    }
+  }, [cancelInFlight, recordingLocked])
 
   useEffect(() => {
     if (api.voiceConsents === undefined) {
@@ -271,7 +284,11 @@ export function VoicePracticePanel({
       }
 
       const confidence = recording.transcript_confidence
-      if (confidence !== null && confidence >= AUTO_ACCEPT_MIN_CONFIDENCE) {
+      if (
+        !requireTranscriptConfirmation &&
+        confidence !== null &&
+        confidence >= AUTO_ACCEPT_MIN_CONFIDENCE
+      ) {
         await acceptTranscript(listing, recording, 'accept', controller.signal)
         return
       }
@@ -500,6 +517,16 @@ export function VoicePracticePanel({
           {uploadError !== null ? (
             <p role="alert">{text(uploadError)}</p>
           ) : null}
+          {recordingLocked ? (
+            <p role="status">
+              {text(
+                speakLoopPhase === 'preparing'
+                  ? 'conversation.loop.preparing'
+                  : 'conversation.loop.speaking',
+              )}
+            </p>
+          ) : null}
+          {recordingLocked ? null : (
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
             captureMode="hold"
@@ -567,6 +594,7 @@ export function VoicePracticePanel({
             recorder={recorder}
             skipReviewPlayback
           />
+          )}
           <details className="conversation-journey__consent-details">
             <summary>{text('conversation.voice.manage_consent')}</summary>
             {purposeButtons(state.listing)}
