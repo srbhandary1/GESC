@@ -277,22 +277,40 @@ export function ModelAudioPlayer({
           />
         </audio>
       )}
-      <AudioControls
-        labels={labels}
-        onRequestPause={() => audioRef.current?.pause()}
-        onRequestPlay={() => void play()}
-        onRequestReplay={() => void replay()}
-        state={visibleState}
-      />
-      {showStop ? (
+      <div className="model-audio-player__toolbar">
+        <AudioControls
+          labels={labels}
+          onRequestPause={() => audioRef.current?.pause()}
+          onRequestPlay={() => void play()}
+          onRequestReplay={() => void replay()}
+          state={visibleState}
+        />
+        {showStop ? (
+          <button
+            className="model-audio-player__stop ge-button ge-button--ghost"
+            onClick={stop}
+            type="button"
+          >
+            {stopLabel}
+          </button>
+        ) : null}
         <button
-          className="model-audio-player__stop ge-button"
-          onClick={stop}
+          aria-pressed={slow}
+          className="model-audio-player__slow ge-button ge-button--ghost"
+          onClick={() => {
+            setSlow((current) => {
+              const next = !current
+              if (audioRef.current !== null) {
+                audioRef.current.playbackRate = next ? SLOW_RATE : 1
+              }
+              return next
+            })
+          }}
           type="button"
         >
-          {stopLabel}
+          {slowLabel}
         </button>
-      ) : null}
+      </div>
       {showSeek ? (
         <input
           aria-label={seekLabel}
@@ -307,22 +325,6 @@ export function ModelAudioPlayer({
           value={Math.min(currentTime, duration)}
         />
       ) : null}
-      <button
-        aria-pressed={slow}
-        className="model-audio-player__slow"
-        onClick={() => {
-          setSlow((current) => {
-            const next = !current
-            if (audioRef.current !== null) {
-              audioRef.current.playbackRate = next ? SLOW_RATE : 1
-            }
-            return next
-          })
-        }}
-        type="button"
-      >
-        {slowLabel}
-      </button>
     </div>
   )
 }

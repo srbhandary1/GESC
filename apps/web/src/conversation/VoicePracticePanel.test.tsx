@@ -433,7 +433,7 @@ describe('secure voice practice consent boundary', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('asks for confirmation on grammar-drill clips even when confidence is high', async () => {
+  it('auto-accepts grammar-drill clips for learners without a confirmation step', async () => {
     vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
       new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
     )
@@ -461,7 +461,10 @@ describe('secure voice practice consent boundary', () => {
       deleteVoiceRecording: vi.fn(),
       events: vi.fn(),
       grantVoiceConsent: vi.fn(),
-      reviewVoiceTranscript: vi.fn(),
+      reviewVoiceTranscript: vi.fn(async () => ({
+        ...recording,
+        status: 'confirmed' as const,
+      })),
       startSession: vi.fn(),
       uploadVoiceRecording: vi.fn(async () => recording),
       voiceConsents: vi.fn(async () => bothGranted),
@@ -490,7 +493,6 @@ describe('secure voice practice consent boundary', () => {
         locale="en-IN"
         onTranscriptSelected={onTranscriptSelected}
         recorder={recorder}
-        requireTranscriptConfirmation
         sessionId="01J00000000000000000000001"
         text={(key) => key}
       />,
@@ -507,12 +509,15 @@ describe('secure voice practice consent boundary', () => {
     await user.pointer({ keys: '[MouseLeft>]', target: send })
     await user.pointer({ keys: '[/MouseLeft]', target: send })
 
+    await waitFor(() => {
+      expect(onTranscriptSelected).toHaveBeenCalledWith('I can drink water.')
+    })
+    expect(api.reviewVoiceTranscript).toHaveBeenCalled()
     expect(
-      await screen.findByRole('button', {
+      screen.queryByRole('button', {
         name: 'conversation.voice.use_transcript',
       }),
-    ).toBeInTheDocument()
-    expect(onTranscriptSelected).not.toHaveBeenCalled()
+    ).not.toBeInTheDocument()
   })
 
   it('disables hold-to-talk while Swathi is speaking', async () => {

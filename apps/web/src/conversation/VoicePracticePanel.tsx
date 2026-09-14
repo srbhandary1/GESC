@@ -283,9 +283,13 @@ export function VoicePracticePanel({
         return
       }
 
+      if (!requireTranscriptConfirmation) {
+        await acceptTranscript(listing, recording, 'accept', controller.signal)
+        return
+      }
+
       const confidence = recording.transcript_confidence
       if (
-        !requireTranscriptConfirmation &&
         confidence !== null &&
         confidence >= AUTO_ACCEPT_MIN_CONFIDENCE
       ) {

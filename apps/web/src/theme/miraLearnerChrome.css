@@ -123,14 +123,16 @@
     border-color: transparent;
   }
 
-  .ge-primary-navigation__item--speak {
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-primary-navigation__item--speak {
     display: flex;
     align-items: flex-start;
     justify-content: center;
     width: 4.5rem;
   }
 
-  .ge-primary-navigation__link--speak {
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-primary-navigation__link--speak {
     margin-block-start: -1.75rem;
     min-block-size: auto;
     min-inline-size: auto;
@@ -146,13 +148,15 @@
     font-weight: 650;
   }
 
-  .ge-primary-navigation__link--speak[aria-current='page'] {
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-primary-navigation__link--speak[aria-current='page'] {
     background: transparent;
     color: #b8c9c0;
     box-shadow: none;
   }
 
-  .ge-application-frame--mira-learner .ge-nav-glyph,
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-nav-glyph,
   .demo-experience .ge-nav-glyph {
     display: grid;
     width: 1.375rem;
@@ -160,13 +164,15 @@
     place-items: center;
   }
 
-  .ge-application-frame--mira-learner .ge-nav-glyph svg,
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-nav-glyph svg,
   .demo-experience .ge-nav-glyph svg {
     width: 1.375rem;
     height: 1.375rem;
   }
 
-  .ge-primary-navigation__link--speak .ge-nav-glyph {
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-primary-navigation__link--speak .ge-nav-glyph {
     display: grid;
     width: 4rem;
     height: 4rem;
@@ -180,7 +186,8 @@
       0 0 24px rgb(61 220 151 / 22%);
   }
 
-  .ge-primary-navigation__link--speak .ge-nav-glyph svg {
+  .ge-application-frame--mira-learner:not(.ge-application-frame--jezweb)
+    .ge-primary-navigation__link--speak .ge-nav-glyph svg {
     width: 1.6rem;
     height: 1.6rem;
   }

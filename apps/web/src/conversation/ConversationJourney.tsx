@@ -1042,7 +1042,7 @@ export function ConversationJourney({
                 }}
                 onLoopPhase={setLoopPhase}
                 onCancelInFlight={abortInFlight}
-                requireTranscriptConfirmation={grammarDrill}
+                requireTranscriptConfirmation={false}
                 resetEpoch={holdResetEpoch}
                 sessionId={session.id}
                 speakLoopPhase={loopPhase}
