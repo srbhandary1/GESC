@@ -122,12 +122,120 @@
   font-size: 0.95rem;
 }
 
+.conversation-journey__memory--collapsible {
+  padding: 0;
+}
+
+.conversation-journey__memory-summary {
+  display: grid;
+  gap: 0.2rem;
+  padding: clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversation-journey__memory-summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-journey__memory-summary::before {
+  content: '▸';
+  float: inline-end;
+  color: var(--ge-color-text-muted);
+  font-size: 0.85rem;
+  transition: transform 160ms ease;
+}
+
+.conversation-journey__memory--collapsible[open]
+  .conversation-journey__memory-summary::before {
+  transform: rotate(90deg);
+}
+
+.conversation-journey__memory-summary-title {
+  font-family: var(--ge-font-family-display);
+  font-size: var(--ge-font-size-md);
+  font-weight: 650;
+  color: var(--ge-color-ink);
+}
+
+.conversation-journey__memory-summary-hint {
+  color: var(--ge-color-text-muted);
+  font-size: var(--ge-font-size-sm);
+  line-height: 1.4;
+}
+
+.conversation-journey__memory-body {
+  display: grid;
+  gap: var(--ge-space-3);
+  padding: 0 clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5))
+    clamp(var(--ge-space-4), 2.5vw, var(--ge-space-5));
+  border-block-start: 1px solid var(--ge-color-border);
+}
+
 .conversation-journey__memory-list {
   display: grid;
   gap: var(--ge-space-3);
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.roleplay-scenes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ge-space-3);
+  margin: 0 0 var(--ge-space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.roleplay-scenes li {
+  display: flex;
+  min-width: 0;
+}
+
+.roleplay-scenes button {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-block-size: 8.5rem;
+  padding: 0.85rem 0.6rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-roleplay-scene-bg, var(--ge-color-surface-elevated));
+  color: var(--ge-color-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--ge-shadow-panel);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.roleplay-scenes button[aria-pressed='true'] {
+  border-color: var(--ge-color-accent, var(--ge-color-action));
+  box-shadow: var(
+    --ge-roleplay-scene-selected-shadow,
+    0 8px 20px rgb(0 107 63 / 0.12)
+  );
+}
+
+.roleplay-scenes__icon {
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+@media (min-width: 40rem) {
+  .roleplay-scenes {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  }
 }
 
 .conversation-journey__memory-list li,

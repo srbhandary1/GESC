@@ -154,6 +154,11 @@ export function RecordingControls({
           ? labels.processing
           : (labels.hold ?? labels.start)
 
+    const showCancel =
+      isRecording ||
+      state === 'processing' ||
+      state === 'requesting-permission'
+
     return (
       <section
         aria-label={labels.region}
@@ -166,78 +171,85 @@ export function RecordingControls({
           {statusLabel}
         </p>
         {state === 'blocked' && captureMode !== 'hold' ? null : (
-          <div className="ge-media-controls__actions">
-            <button
-              aria-pressed={holdPressed}
-              className="ge-button ge-button--primary ge-button--speak ge-button--hold-to-talk"
-              data-hold-state={state}
-              aria-disabled={interactionDisabled || undefined}
-              disabled={interactionDisabled || state === 'processing'}
-              onContextMenu={(event) => {
-                event.preventDefault()
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== ' ' && event.key !== 'Enter') {
-                  return
-                }
-
-                if (event.repeat) {
-                  return
-                }
-
-                event.preventDefault()
-                beginHold()
-              }}
-              onKeyUp={(event) => {
-                if (event.key !== ' ' && event.key !== 'Enter') {
-                  return
-                }
-
-                event.preventDefault()
-                endHold()
-              }}
-              onLostPointerCapture={endHold}
-              onPointerCancel={() => {
-                pointerStartedAt.current = null
-                pointerStartedWhileRecording.current = false
-                tapLatched.current = false
-                endHold()
-              }}
-              onPointerDown={(event) => {
-                if (event.button !== 0 || interactionDisabled) {
-                  return
-                }
-
-                event.preventDefault()
-                if (typeof event.currentTarget.setPointerCapture === 'function') {
-                  try {
-                    event.currentTarget.setPointerCapture(event.pointerId)
-                  } catch {
-                    // jsdom and some WebViews omit pointer capture.
-                  }
-                }
-                pointerStartedAt.current = performance.now()
-                pointerStartedWhileRecording.current =
-                  isRecording || state === 'requesting-permission'
-                beginHold()
-              }}
-              onPointerUp={endPointerHold}
-              type="button"
-            >
-              <span aria-hidden="true" className="ge-button__record-dot" />
-              <span>{holdLabel}</span>
-            </button>
-            {isRecording ||
-            state === 'processing' ||
-            state === 'requesting-permission' ? (
+          <div className="ge-media-controls__hold-stage">
+            {showCancel ? (
               <button
-                className="ge-button ge-button--quiet"
+                className="ge-button ge-button--quiet ge-media-controls__cancel"
                 onClick={onRequestCancel}
                 type="button"
               >
                 {labels.cancel}
               </button>
-            ) : null}
+            ) : (
+              <span
+                aria-hidden="true"
+                className="ge-media-controls__cancel-slot"
+              />
+            )}
+            <div className="ge-media-controls__actions">
+              <button
+                aria-pressed={holdPressed}
+                className="ge-button ge-button--primary ge-button--speak ge-button--hold-to-talk"
+                data-hold-state={state}
+                aria-disabled={interactionDisabled || undefined}
+                disabled={interactionDisabled || state === 'processing'}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== ' ' && event.key !== 'Enter') {
+                    return
+                  }
+
+                  if (event.repeat) {
+                    return
+                  }
+
+                  event.preventDefault()
+                  beginHold()
+                }}
+                onKeyUp={(event) => {
+                  if (event.key !== ' ' && event.key !== 'Enter') {
+                    return
+                  }
+
+                  event.preventDefault()
+                  endHold()
+                }}
+                onLostPointerCapture={endHold}
+                onPointerCancel={() => {
+                  pointerStartedAt.current = null
+                  pointerStartedWhileRecording.current = false
+                  tapLatched.current = false
+                  endHold()
+                }}
+                onPointerDown={(event) => {
+                  if (event.button !== 0 || interactionDisabled) {
+                    return
+                  }
+
+                  event.preventDefault()
+                  if (
+                    typeof event.currentTarget.setPointerCapture === 'function'
+                  ) {
+                    try {
+                      event.currentTarget.setPointerCapture(event.pointerId)
+                    } catch {
+                      // jsdom and some WebViews omit pointer capture.
+                    }
+                  }
+                  pointerStartedAt.current = performance.now()
+                  pointerStartedWhileRecording.current =
+                    isRecording || state === 'requesting-permission'
+                  beginHold()
+                }}
+                onPointerUp={endPointerHold}
+                type="button"
+              >
+                <span aria-hidden="true" className="ge-button__record-dot" />
+                <span>{holdLabel}</span>
+              </button>
+            </div>
           </div>
         )}
       </section>

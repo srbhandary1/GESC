@@ -147,11 +147,22 @@ export function AiMemoryPanel({
   }
 
   return (
-    <aside
-      className="conversation-journey__memory"
-      aria-labelledby="ai-memory-title"
-    >
-      <h3 id="ai-memory-title">
+    <details className="conversation-journey__memory conversation-journey__memory--collapsible">
+      <summary className="conversation-journey__memory-summary">
+        <span className="conversation-journey__memory-summary-title">
+          <LocalizedMessage resolution={message('conversation.memory.title')} />
+        </span>
+        <span className="conversation-journey__memory-summary-hint">
+          <LocalizedMessage
+            resolution={message('conversation.memory.summary_hint')}
+          />
+        </span>
+      </summary>
+      <div
+        aria-labelledby="ai-memory-title"
+        className="conversation-journey__memory-body"
+      >
+      <h3 className="visually-hidden" id="ai-memory-title">
         <LocalizedMessage resolution={message('conversation.memory.title')} />
       </h3>
       <p>
@@ -258,6 +269,7 @@ export function AiMemoryPanel({
           />
         </p>
       ) : null}
-    </aside>
+      </div>
+    </details>
   )
 }

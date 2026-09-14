@@ -27,6 +27,9 @@ describe('AI memory panel', () => {
       />,
     )
 
+    await userEvent.setup().click(
+      screen.getByText('Optional notes Swathi may use in chat'),
+    )
     expect(
       await screen.findByText('No saved AI memory facts yet.'),
     ).toBeInTheDocument()
@@ -90,6 +93,9 @@ describe('AI memory panel', () => {
       />,
     )
 
+    await user.click(
+      screen.getByText('Optional notes Swathi may use in chat'),
+    )
     expect(
       await screen.findByText('I practise English after work.'),
     ).toBeInTheDocument()

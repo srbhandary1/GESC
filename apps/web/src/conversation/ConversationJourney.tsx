@@ -1049,15 +1049,6 @@ export function ConversationJourney({
                 text={text}
                 unavailableMessageKey={voiceUnavailableMessageKey}
               />
-              {embedded ? null : (
-              <AiMemoryPanel
-                api={api}
-                createClientId={createClientId}
-                locale={locale}
-                localizationPolicy={localizationPolicy}
-                text={text}
-              />
-              )}
             </>
           )}
           <SpeakChatLog
@@ -1065,6 +1056,15 @@ export function ConversationJourney({
             message={message}
             openingLine={openingLine}
           />
+          {embedded || demoMode ? null : (
+            <AiMemoryPanel
+              api={api}
+              createClientId={createClientId}
+              locale={locale}
+              localizationPolicy={localizationPolicy}
+              text={text}
+            />
+          )}
 
           <div
             className="conversation-journey__controls"

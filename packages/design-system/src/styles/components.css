@@ -246,10 +246,34 @@
   gap: var(--ge-space-2);
 }
 
+.ge-media-controls__hold-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--ge-space-2);
+  width: 100%;
+  min-block-size: 11.5rem;
+}
+
 .ge-media-controls--hold .ge-media-controls__actions {
   justify-content: center;
   align-items: center;
-  flex-direction: column;
+  flex-direction: row;
+}
+
+.ge-media-controls--hold .ge-media-controls__cancel,
+.ge-media-controls--hold .ge-media-controls__cancel-slot {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  z-index: 1;
+}
+
+.ge-media-controls--hold .ge-media-controls__cancel-slot {
+  inline-size: 4.5rem;
+  block-size: var(--ge-target-minimum);
+  pointer-events: none;
 }
 
 .ge-button--hold-to-talk {
