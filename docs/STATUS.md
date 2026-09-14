@@ -18,18 +18,23 @@
   professional light product shell, Continue Learning flow, and an
   Android-first bottom tab bar (Home · Learn · Speak · Progress · 1:1).
   Speak is an equal tab, not a raised FAB.
-- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c2`.
-  Staff LAN download:
-  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c2`.
+- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c3`.
+  Staff LAN download (requires Real-Studioz deploy):
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c3`.
+  **Until Real-Studioz runs `bash scripts/deploy-jezweb-c2-apk.sh`, the live
+  server still serves the 13 Sep build (~55 MB) with Mira strings.** Install
+  the jezweb-c3 release instead:
+  https://github.com/srbhandary1/GESC/releases/tag/jezweb-c3-closed-beta-20260914
+  (15,497,406 bytes, SHA-256
+  `2664adc7d65a1eb70213a796d9061872174c0c1974d5f45ba239cf021d23bf18`).
   Rebuild on Real-Studioz after merge:
   `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080 make android-closed-beta`
   then `make soft-launch-refresh-web`.
-- Closed-beta APK rebuilt on Real-Studioz with
-  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080`. Package
-  `com.globalenglish.app` 1.0 (1), targetSdk 36, 55,616,920 bytes,
-  SHA-256 `bd8422d9499ac10bad1807a97ec657137b29383644a34844e319026ae2e519d3`.
-  Artifact: `~/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c-20260913T191151Z.apk`.
-  Live `HEAD` of the download URL returned `content-length: 55616920`.
+- jezweb-c3 closed-beta APK (agent build, 14 Sep 2026): Swathi naming,
+  listen stop/slider, disabled hold-to-talk while Swathi speaks. Package
+  `com.globalenglish.app` 1.0 (1), targetSdk 36, 15,497,406 bytes. Live
+  `HEAD` of the LAN download URL still returned `content-length: 55616920`
+  until Real-Studioz publish completes.
 - Routes, APIs, room types, auth, LessonPractice, audio curriculum,
   ConversationOrchestrator and TTS adapters are unchanged.
 - This does not authorize Play, production, or marketing cutover.
