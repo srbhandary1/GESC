@@ -172,7 +172,7 @@ test('student click-through exercises every demo page and control', async ({
     await expect(send).toBeEnabled({ timeout: 5_000 })
     await send.click()
     await expect(
-      page.getByRole('heading', { name: 'Maya' }),
+      page.getByRole('heading', { name: 'Swathi' }),
     ).toBeVisible({ timeout: 15_000 })
   }
 

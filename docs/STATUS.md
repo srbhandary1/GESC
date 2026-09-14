@@ -5,6 +5,9 @@
 - Visible product name is **Global Spoken English App** (`app.name`,
   shell header, `document.title`, `index.html` title, Capacitor `appName`,
   Android `strings.xml`, and static auth/privacy pages).
+- On-screen AI teacher is **Swathi** everywhere in learner UI copy
+  (`shell.mira.*`, `tutor.name`, conversation strings). Illustration
+  filenames may remain `tutor-maya.png` (D-0218).
 - Learner chrome on web and the production Capacitor APK
   (`com.globalenglish.app`) uses design-audit Variant C jezweb-ux:
   professional light product shell, Continue Learning flow, and an

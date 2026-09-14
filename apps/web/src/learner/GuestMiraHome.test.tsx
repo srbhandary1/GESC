@@ -15,7 +15,7 @@ describe('GuestMiraHome', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Today' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Mira' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Swathi' })).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Speak now' }),
     ).toHaveAttribute('href', '#sign-in')

@@ -34,7 +34,7 @@ describe('DemoPhase1Shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('img', { name: 'Mira' }),
+      screen.getByRole('img', { name: 'Swathi' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Skip and open My Levels' }),
