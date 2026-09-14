@@ -3,7 +3,8 @@
 ## Variant C jezweb-ux Android learner chrome — 13 September 2026
 
 - Visible product name is **Global Spoken English App** (`app.name`,
-  `index.html` title, Capacitor `appName`, Android `strings.xml`).
+  shell header, `document.title`, `index.html` title, Capacitor `appName`,
+  Android `strings.xml`, and static auth/privacy pages).
 - Learner chrome on web and the production Capacitor APK
   (`com.globalenglish.app`) uses design-audit Variant C jezweb-ux:
   professional light product shell, Continue Learning flow, and an

@@ -34,7 +34,9 @@ describe('OnboardingStepper', () => {
       screen.getByRole('heading', { name: 'Are you 18 or older?' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Global English is for learners aged 18 and over.'),
+      screen.getByText(
+        'Global Spoken English App is for learners aged 18 and over.',
+      ),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Save and continue' }),

@@ -435,6 +435,9 @@ function App({
   }, [locationHash, session.status])
 
   const brand = message('app.name')
+  useEffect(() => {
+    document.title = brand.text
+  }, [brand.text])
   const navigationLabel = message('shell.navigation_label')
   const skipToContent = message('shell.skip_to_content')
   const fallbackLabel = message('localization.fallback_label')
@@ -754,7 +757,7 @@ function App({
                 <i />
               </span>
               <span className="shell-studio-brand__name">
-                Global <b>English</b>
+                <LocalizedMessage resolution={brand} />
               </span>
             </span>
           ) : (
