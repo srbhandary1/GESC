@@ -47,6 +47,7 @@ import {
   FRIEND_SESSION_CONTENT,
   type FriendSessionType,
 } from './confidenceContent'
+import { lessonDrillDisplayLine } from './lessonDrillStepper'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -302,47 +303,76 @@ export function ConversationJourney({
     const modelStream = speech?.model_audio_stream_path
     const guidanceAudio = speech?.guidance_audio_base64
     const guidanceStream = speech?.guidance_audio_stream_path
+    const coachText = turn.assistant_reply ?? ''
+    const modelLine = grammarDrill
+      ? lessonDrillDisplayLine(coachText)
+      : coachText
+    const guidanceText = turn.priority_correction?.explanation_l1?.trim() ?? ''
+    const guidanceLocale =
+      turn.priority_correction?.explanation_locale ?? locale
 
     setSpeechError(false)
     setSpeakingReply(true)
     const hasModelAudio =
       (typeof modelAudio === 'string' && modelAudio !== '') ||
       (typeof modelStream === 'string' && modelStream !== '')
-    if (hasModelAudio || (demoMode && turn.assistant_reply !== null)) {
+    const hasGuidanceAudio =
+      (typeof guidanceAudio === 'string' && guidanceAudio !== '') ||
+      (typeof guidanceStream === 'string' && guidanceStream !== '')
+    if (
+      hasModelAudio ||
+      hasGuidanceAudio ||
+      modelLine.trim() !== '' ||
+      guidanceText !== ''
+    ) {
       setLoopPhase('speaking')
     }
 
     try {
+      let playedModel = false
       if (hasModelAudio && speech !== undefined && speech !== null) {
-        await playConversationSpeechResult({
-          onPlaybackChange: setAvatarPlayback,
-          onPlaybackStarted: () => {
-            const snapshot = markSpeakLoop('first_audio')
-            if (snapshot !== null && api.recordSpeechLatency !== undefined) {
-              void api.recordSpeechLatency(
-                turn.id,
-                speechLatencySample(snapshot, 'started'),
-                createClientId(),
-              ).catch(() => undefined)
-            }
-          },
-          purpose: 'model_en',
-          signal,
-          speech,
-          text: turn.assistant_reply,
-        })
-      } else if (turn.assistant_reply !== null && demoMode) {
+        try {
+          await playConversationSpeechResult({
+            onPlaybackChange: setAvatarPlayback,
+            onPlaybackStarted: () => {
+              const snapshot = markSpeakLoop('first_audio')
+              if (snapshot !== null && api.recordSpeechLatency !== undefined) {
+                void api.recordSpeechLatency(
+                  turn.id,
+                  speechLatencySample(snapshot, 'started'),
+                  createClientId(),
+                ).catch(() => undefined)
+              }
+            },
+            purpose: 'model_en',
+            signal,
+            speech,
+            text: grammarDrill ? modelLine : turn.assistant_reply,
+          })
+          playedModel = true
+        } catch (error) {
+          if (isAbortError(error) || signal?.aborted) {
+            throw error
+          }
+        }
+      }
+
+      if (!playedModel && modelLine.trim() !== '') {
         markSpeakLoop('first_audio')
         await speakSessionSpeech({
           api,
-          demoMode: true,
+          demoMode,
           grammarDrill,
           locale: 'en-IN',
+          onPlaybackChange: setAvatarPlayback,
           purpose: 'model_en',
           sessionId: turn.conversation_session_id,
-          text: turn.assistant_reply,
+          text: modelLine,
         })
-      } else {
+        playedModel = true
+      }
+
+      if (!playedModel) {
         const snapshot = completeSpeakLoop()
         if (snapshot !== null && api.recordSpeechLatency !== undefined) {
           void api.recordSpeechLatency(
@@ -357,41 +387,32 @@ export function ConversationJourney({
         return
       }
 
-      if (
-        speech !== undefined &&
-        speech !== null &&
-        ((typeof guidanceAudio === 'string' && guidanceAudio !== '') ||
-          (typeof guidanceStream === 'string' && guidanceStream !== ''))
-      ) {
+      let playedGuidance = false
+      if (hasGuidanceAudio && speech !== undefined && speech !== null) {
         try {
           await playConversationSpeechResult({
             onPlaybackChange: setAvatarPlayback,
             purpose: 'guidance_l1',
             signal,
             speech,
-            text: turn.priority_correction?.explanation_l1,
+            text: guidanceText,
           })
+          playedGuidance = true
         } catch {
-          // Deferred guidance may not be ready yet; skip without failing the turn.
+          // Deferred guidance may not be ready yet; fall back to live TTS.
         }
-      } else {
-        const guidance = turn.priority_correction?.explanation_l1
-        const guidanceLocale =
-          turn.priority_correction?.explanation_locale ?? locale
-        if (
-          typeof guidance === 'string' &&
-          guidance.trim() !== '' &&
-          demoMode
-        ) {
-          await speakSessionSpeech({
-            api,
-            demoMode: true,
-            locale: guidanceLocale,
-            purpose: 'guidance_l1',
-            sessionId: turn.conversation_session_id,
-            text: guidance,
-          })
-        }
+      }
+
+      if (!playedGuidance && guidanceText !== '') {
+        await speakSessionSpeech({
+          api,
+          demoMode,
+          locale: guidanceLocale,
+          onPlaybackChange: setAvatarPlayback,
+          purpose: 'guidance_l1',
+          sessionId: turn.conversation_session_id,
+          text: guidanceText,
+        })
       }
     } catch (error) {
       if (isAbortError(error)) {
@@ -709,6 +730,12 @@ export function ConversationJourney({
   const drillRoom =
     lessonRoom === 'introduction' || lessonRoom === 'practice'
   const hideSpeakStages = lessonRoom !== undefined
+  const drillPrompt =
+    drillRoom
+      ? lessonDrillDisplayLine(
+          lastTurn?.assistant_reply ?? openingLine ?? '',
+        )
+      : null
   const lessonTitleKey: MessageKey | undefined =
     lessonRoom === 'introduction'
       ? 'level.path.part.introduction'
@@ -755,6 +782,16 @@ export function ConversationJourney({
           avatarPlayback={avatarPlayback}
         />
         <SpeakLoopTimingOverlay />
+        {drillRoom ? (
+          <h2 id="conversation-title" className="visually-hidden">
+            <LocalizedMessage
+              resolution={message(
+                lessonTitleKey ?? 'conversation.title',
+              )}
+            />
+          </h2>
+        ) : (
+          <>
         <p className="conversation-journey__eyebrow">
           <LocalizedMessage
             resolution={message(
@@ -773,8 +810,11 @@ export function ConversationJourney({
             )}
           />
         </h2>
+          </>
+        )}
       </div>
 
+      {embedded ? null : (
       <aside
         className="conversation-journey__notice"
         aria-labelledby="conversation-disclosure"
@@ -841,6 +881,7 @@ export function ConversationJourney({
           </>
         )}
       </aside>
+      )}
 
       {state.kind === 'idle' || state.kind === 'starting' ? (
         <div className="conversation-journey__start">
@@ -923,7 +964,7 @@ export function ConversationJourney({
         </p>
       ) : null}
 
-      {session === undefined ? null : (
+      {session === undefined || embedded ? null : (
         <p className="conversation-journey__identity" lang="en-IN">
           <LocalizedMessage
             resolution={message('conversation.persona_disclosure')}
@@ -1033,6 +1074,7 @@ export function ConversationJourney({
             <>
               <VoicePracticePanel
                 api={api}
+                compact={drillRoom || embedded}
                 createClientId={createClientId}
                 locale={locale}
                 onPreferTyping={typeInstead}
@@ -1051,8 +1093,14 @@ export function ConversationJourney({
               />
             </>
           )}
+          {drillPrompt !== null && drillPrompt !== '' ? (
+            <p className="conversation-journey__drill-prompt" lang="en-IN">
+              {drillPrompt}
+            </p>
+          ) : null}
           <SpeakChatLog
             chatTurns={chatTurns}
+            drillMode={drillRoom}
             message={message}
             openingLine={openingLine}
           />
@@ -1066,6 +1114,17 @@ export function ConversationJourney({
             />
           )}
 
+          {drillRoom ? (
+            <button
+              className="ge-button ge-button--ghost"
+              type="button"
+              onClick={typeInstead}
+            >
+              <LocalizedMessage
+                resolution={message('conversation.confidence.type_instead')}
+              />
+            </button>
+          ) : (
           <div
             className="conversation-journey__controls"
             role="group"
@@ -1117,6 +1176,7 @@ export function ConversationJourney({
             </>
             )}
           </div>
+          )}
 
           {showHint ? (
             <p lang={locale} role="status">
@@ -1212,7 +1272,7 @@ export function ConversationJourney({
         </>
       ) : null}
 
-      {state.kind === 'result' && stage === 'talk' ? (
+      {state.kind === 'result' && stage === 'talk' && !drillRoom ? (
         <article
           className="conversation-journey__result"
           aria-labelledby="conversation-reply"
@@ -1334,6 +1394,7 @@ function tutorMood(
 
 type SpeakChatLogProps = {
   readonly chatTurns: readonly FriendTurn[]
+  readonly drillMode?: boolean
   readonly message: (
     key: MessageKey,
     parameters?: MessageParameters,
@@ -1343,11 +1404,15 @@ type SpeakChatLogProps = {
 
 function SpeakChatLog({
   chatTurns,
+  drillMode = false,
   message,
   openingLine,
 }: SpeakChatLogProps) {
   const hasOpening =
-    openingLine !== undefined && openingLine.trim() !== ''
+    !drillMode &&
+    openingLine !== undefined &&
+    openingLine.trim() !== ''
+  const openingDisplay = openingLine
 
   if (!hasOpening && chatTurns.length === 0) {
     return null
@@ -1357,11 +1422,16 @@ function SpeakChatLog({
     <div className="conversation-journey__chat" role="log">
       {hasOpening ? (
         <ChatBubble role="teacher" message={message}>
-          {openingLine}
+          {openingDisplay}
         </ChatBubble>
       ) : null}
       {chatTurns.map((turn) => (
-        <SpeakChatTurn key={turn.id} message={message} turn={turn} />
+        <SpeakChatTurn
+          drillMode={drillMode}
+          key={turn.id}
+          message={message}
+          turn={turn}
+        />
       ))}
     </div>
   )
@@ -1401,27 +1471,41 @@ function ChatBubble({ after, children, message, role }: ChatBubbleProps) {
 }
 
 type SpeakChatTurnProps = {
+  readonly drillMode?: boolean
   readonly message: SpeakChatLogProps['message']
   readonly turn: FriendTurn
 }
 
-function SpeakChatTurn({ message, turn }: SpeakChatTurnProps) {
+function SpeakChatTurn({ drillMode = false, message, turn }: SpeakChatTurnProps) {
   const correction = turn.priority_correction
   const explanation =
     correction?.explanation_l1?.trim() ??
     correction?.encouragement_l1?.trim() ??
     ''
   const showExplanation = correction !== undefined && explanation !== ''
+  const teacherLine =
+    turn.assistant_reply !== null && turn.assistant_reply.trim() !== ''
+      ? drillMode
+        ? lessonDrillDisplayLine(turn.assistant_reply)
+        : turn.assistant_reply
+      : null
 
   return (
     <>
       {turn.transcript !== null && turn.transcript.trim() !== '' ? (
-        <ChatBubble message={message} role="you">
+        <ChatBubble
+          after={
+            drillMode && showExplanation ? (
+              <TurnExplanationAside correction={correction!} message={message} />
+            ) : null
+          }
+          message={message}
+          role="you"
+        >
           {turn.transcript}
         </ChatBubble>
       ) : null}
-      {turn.assistant_reply !== null &&
-      turn.assistant_reply.trim() !== '' ? (
+      {drillMode ? null : teacherLine !== null ? (
         <ChatBubble
           after={
             showExplanation ? (
@@ -1431,7 +1515,7 @@ function SpeakChatTurn({ message, turn }: SpeakChatTurnProps) {
           message={message}
           role="teacher"
         >
-          {turn.assistant_reply}
+          {teacherLine}
         </ChatBubble>
       ) : null}
     </>

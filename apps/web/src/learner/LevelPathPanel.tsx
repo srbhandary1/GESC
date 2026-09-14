@@ -6,7 +6,7 @@ import {
 } from '@global-english/localization'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConversationJourney } from '../conversation/ConversationJourney'
-import { lessonDrillOpening } from '../conversation/lessonDrillStepper'
+import { lessonDrillModels, lessonDrillOpening } from '../conversation/lessonDrillStepper'
 import type {
   ConversationJourneyApi,
   FriendSession,
@@ -1151,14 +1151,13 @@ function LevelSessionJourney({
       setSpeakingOpened(true)
       setBoundSession(session)
       setConversationNote(
-        visibleDetail?.part_id === 'introduction'
-          ? message('level.path.part.introduction.hint').text
-          : visibleDetail?.part_id === 'practice'
-            ? message('level.path.part.practice.hint').text
-            : visibleDetail?.part_id === 'conversation' ||
-                visibleDetail?.part_id === 'interaction'
-              ? message('level.path.free_speech_ready_note').text
-              : message('level.path.tutor_ready_note').text,
+        visibleDetail?.part_id === 'introduction' ||
+          visibleDetail?.part_id === 'practice'
+          ? null
+          : visibleDetail?.part_id === 'conversation' ||
+              visibleDetail?.part_id === 'interaction'
+            ? message('level.path.free_speech_ready_note').text
+            : message('level.path.tutor_ready_note').text,
       )
       onOpenSpeakingPractice?.(session)
     } catch {
@@ -1371,18 +1370,18 @@ function LevelSessionJourney({
               ) : (
                 <>
                   {visibleDetail.target_patterns.length > 0 ? (
-                    <>
-                      <p className="level-session__focus-label">
+                    <details className="level-session__patterns-help">
+                      <summary>
                         <LocalizedMessage
                           resolution={message('level.path.part.patterns_label')}
                         />
-                      </p>
+                      </summary>
                       <ul className="level-session__patterns">
                         {visibleDetail.target_patterns.map((pattern) => (
                           <li key={pattern}>{pattern}</li>
                         ))}
                       </ul>
-                    </>
+                    </details>
                   ) : null}
                   {visibleDetail.kannada_guidance.summary ? (
                     <details className="level-session__kannada-help">
@@ -1427,6 +1426,20 @@ function LevelSessionJourney({
                   )}
                 />
               </p>
+              {boundSession
+                ? null
+                : (() => {
+                    const spoken =
+                      lessonDrillModels(
+                        visibleDetail.target_patterns,
+                        visibleDetail.talk?.fallback_turns,
+                      )[0]
+                    return spoken === undefined ? null : (
+                      <p className="level-session__model-line" lang="en-IN">
+                        {spoken}
+                      </p>
+                    )
+                  })()}
               {isDemoSpeechUrl(visibleDetail.audio_stream_path) ? (
                 <DemoSpeechPlayer
                   labels={lessonAudioLabels(message)}
@@ -1458,14 +1471,16 @@ function LevelSessionJourney({
             <div
               className={`level-session__panel level-session__panel--activities level-session__panel--activities-${visibleDetail.part_id}`}
             >
-              <h3>
-                <LocalizedMessage resolution={message('level.path.do_this')} />
-              </h3>
+              <details>
+                <summary>
+                  <LocalizedMessage resolution={message('level.path.do_this')} />
+                </summary>
               <ul className="level-session__activities">
                 {visibleDetail.activities.map((activity) => (
                   <li key={activity.id}>{activity.prompt}</li>
                 ))}
               </ul>
+              </details>
             </div>
           ) : null}
 
@@ -1535,7 +1550,7 @@ function LevelSessionJourney({
           <div
             className={`level-session__panel level-session__teacher-stage level-session__teacher-stage--${visibleDetail.part_id}`}
           >
-            <p className="level-session__teacher-stage-label">
+            <p className="level-session__teacher-stage-label visually-hidden">
               <LocalizedMessage
                 resolution={message(PART_TUTOR_STAGE_KEYS[visibleDetail.part_id])}
               />

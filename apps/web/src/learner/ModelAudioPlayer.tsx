@@ -279,6 +279,7 @@ export function ModelAudioPlayer({
       )}
       <div className="model-audio-player__toolbar">
         <AudioControls
+          hideStatus
           labels={labels}
           onRequestPause={() => audioRef.current?.pause()}
           onRequestPlay={() => void play()}

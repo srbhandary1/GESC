@@ -364,6 +364,43 @@
   margin: 0;
 }
 
+.conversation-journey__drill-prompt {
+  margin: 0;
+  padding: var(--ge-space-4);
+  border: 1px solid var(--ge-panel-border);
+  border-radius: var(--ge-radius-lg);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-ink);
+  font-family: var(--ge-font-family-display);
+  font-size: clamp(1.35rem, 4.2vw, 1.85rem);
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.conversation-journey__voice--compact,
+.learner-recording--compact {
+  padding: var(--ge-space-3);
+  box-shadow: none;
+}
+
+.conversation-journey__voice--compact .ge-media-controls__status,
+.learner-recording--compact .ge-media-controls__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.conversation-journey--embedded .conversation-journey__heading {
+  padding-block: var(--ge-space-3);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

@@ -136,35 +136,35 @@
   order: 1;
 }
 
-.level-session--introduction .level-session__part-focus {
+.level-session--introduction .level-session__teacher-stage {
   order: 2;
+}
+
+.level-session--introduction .level-session__part-focus {
+  order: 3;
 }
 
 .level-session--introduction .level-session__panel--activities {
-  order: 3;
-}
-
-.level-session--introduction .level-session__teacher-stage {
   order: 4;
-}
-
-.level-session--practice .level-session__panel--check {
-  order: 1;
-}
-
-.level-session--practice .level-session__part-focus {
-  order: 2;
 }
 
 .level-session--practice .level-session__audio {
-  order: 3;
-}
-
-.level-session--practice .level-session__panel--activities {
-  order: 4;
+  order: 1;
 }
 
 .level-session--practice .level-session__teacher-stage {
+  order: 2;
+}
+
+.level-session--practice .level-session__panel--check {
+  order: 3;
+}
+
+.level-session--practice .level-session__part-focus {
+  order: 4;
+}
+
+.level-session--practice .level-session__panel--activities {
   order: 5;
 }
 
@@ -701,4 +701,30 @@
     animation: none;
     transition: none;
   }
+}
+
+.level-session__model-line {
+  margin: 0;
+  padding: var(--ge-space-3) var(--ge-space-4);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-ink);
+  font-family: var(--ge-font-family-display);
+  font-size: clamp(1.25rem, 3.8vw, 1.7rem);
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.level-session .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

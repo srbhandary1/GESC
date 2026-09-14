@@ -1,5 +1,17 @@
 # Repository status
 
+## Introduction drill UX — 14 September 2026
+
+- Play model audio no longer shows on-screen “Model audio is playing / paused”
+  (status stays for assistive tech only).
+- Introduction/Practice show the current spoken sentence (for example
+  `I can drink water.`) next to audio and Hold to talk.
+- After a try, Swathi speaks the next English model and the L1 correction
+  in the selected language even when the turn payload has no audio.
+- Extra chrome (notices, pattern lists, activity copy, voice intros) is
+  collapsed or hidden on the drill so the next turn can start automatically.
+- Homepage APK cache-buster is `?v=jezweb-c6`.
+
 ## Staff LAN login + jezweb-c4 closed-beta — 14 September 2026
 
 - `northstar` password sign-in is valid. Earlier “credentials not accepted”

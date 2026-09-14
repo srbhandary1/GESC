@@ -28,6 +28,7 @@ export interface AudioControlLabels {
 export interface AudioControlsProps {
   labels: AudioControlLabels
   state: AudioControlState
+  hideStatus?: boolean
   onRequestPause: () => void
   onRequestPlay: () => void
   onRequestReplay: () => void
@@ -42,6 +43,7 @@ interface AudioAction {
 export function AudioControls({
   labels,
   state,
+  hideStatus = false,
   onRequestPause,
   onRequestPlay,
   onRequestReplay,
@@ -118,7 +120,11 @@ export function AudioControls({
       </button>
       <p
         aria-live="polite"
-        className="ge-media-controls__status"
+        className={
+          hideStatus
+            ? 'ge-media-controls__status ge-visually-hidden'
+            : 'ge-media-controls__status'
+        }
       >
         {statusLabel}
       </p>

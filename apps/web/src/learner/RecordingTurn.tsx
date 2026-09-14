@@ -34,6 +34,7 @@ export type HoldPhase = 'idle' | 'listening' | 'processing'
 
 interface RecordingTurnProps {
   readonly captureMode?: RecordingCaptureMode
+  readonly compact?: boolean
   readonly createClientId: () => string
   readonly labels: RecordingTurnLabels
   readonly onAudioCaptureChange?: (audio: CapturedAudio | null) => void
@@ -58,6 +59,7 @@ interface LocalCapture {
 
 export function RecordingTurn({
   captureMode = 'tap',
+  compact = false,
   createClientId,
   labels,
   onAudioCaptureChange,
@@ -314,15 +316,17 @@ export function RecordingTurn({
   return (
     <section
       aria-labelledby="recording-turn-title"
-      className={`learner-card learner-recording${captureMode === 'hold' ? ' learner-recording--hold' : ''}`}
+      className={`learner-card learner-recording${captureMode === 'hold' ? ' learner-recording--hold' : ''}${compact ? ' learner-recording--compact' : ''}`}
     >
       <h3
-        className="learner-card__title"
+        className={
+          compact ? 'learner-card__title ge-visually-hidden' : 'learner-card__title'
+        }
         id="recording-turn-title"
       >
         {labels.controls.region}
       </h3>
-      <p>{labels.permissionExplanation}</p>
+      {compact ? null : <p>{labels.permissionExplanation}</p>}
       <RecordingControls
         captureMode={captureMode}
         interactionDisabled={recordingDisabled}
@@ -352,7 +356,8 @@ export function RecordingTurn({
       ) : null}
       {state === 'recording' &&
       captureMode === 'hold' &&
-      holdRemainingText !== null ? (
+      holdRemainingText !== null &&
+      !compact ? (
         <p role="status">{holdRemainingText}</p>
       ) : null}
 

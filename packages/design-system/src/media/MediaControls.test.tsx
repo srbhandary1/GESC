@@ -61,6 +61,39 @@ describe('media presentation controls', () => {
     expect(onRequestPause).toHaveBeenCalledOnce()
   })
 
+  it('can keep playback status for assistive tech without showing it', () => {
+    render(
+      <AudioControls
+        hideStatus
+        labels={{
+          region: 'Lesson audio',
+          play: 'Play',
+          pause: 'Pause',
+          resume: 'Resume',
+          replay: 'Replay',
+          loading: 'Loading audio',
+          unavailable: 'Audio unavailable',
+          error: 'Audio failed',
+          readyStatus: 'Audio ready',
+          loadingStatus: 'Audio loading',
+          playingStatus: 'Audio playing',
+          pausedStatus: 'Audio paused',
+          endedStatus: 'Audio finished',
+          unavailableStatus: 'Audio unavailable',
+          errorStatus: 'Audio failed',
+        }}
+        onRequestPause={vi.fn()}
+        onRequestPlay={vi.fn()}
+        onRequestReplay={vi.fn()}
+        state="playing"
+      />,
+    )
+
+    expect(screen.getByText('Audio playing').className).toContain(
+      'ge-visually-hidden',
+    )
+  })
+
   it('exposes recording requests and visible state without capturing media', async () => {
     const onRequestStop = vi.fn()
     const user = userEvent.setup()

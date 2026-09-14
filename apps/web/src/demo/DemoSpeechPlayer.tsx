@@ -45,6 +45,7 @@ export function DemoSpeechPlayer({
   if (utterance === null) {
     return (
       <AudioControls
+        hideStatus
         labels={labels}
         onRequestPause={() => undefined}
         onRequestPlay={() => undefined}
@@ -82,6 +83,7 @@ export function DemoSpeechPlayer({
         {utterance.text}
       </p>
       <AudioControls
+        hideStatus
         labels={labels}
         onRequestPause={() => {
           playing.current = false

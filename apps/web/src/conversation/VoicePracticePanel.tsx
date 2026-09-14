@@ -28,6 +28,7 @@ import { preconnectRealtimeSpeechAfterConsent } from './preconnectRealtimeSpeech
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
+  readonly compact?: boolean
   readonly createClientId: () => string
   readonly locale: SupportedLocale
   readonly onPreferTyping?: () => void
@@ -69,6 +70,7 @@ const AUTO_ACCEPT_MIN_CONFIDENCE = 0.6
 
 export function VoicePracticePanel({
   api,
+  compact = false,
   createClientId,
   locale,
   onPreferTyping,
@@ -115,10 +117,14 @@ export function VoicePracticePanel({
     speakLoopPhase === 'speaking' || speakLoopPhase === 'preparing'
 
   useEffect(() => {
-    if (recordingLocked) {
-      cancelInFlight()
+    if (!recordingLocked) {
+      return
     }
-  }, [cancelInFlight, recordingLocked])
+
+    uploadAbort.current?.abort()
+    uploadAbort.current = null
+    releaseHold()
+  }, [recordingLocked])
 
   useEffect(() => {
     if (api.voiceConsents === undefined) {
@@ -457,18 +463,33 @@ export function VoicePracticePanel({
   return (
     <section
       aria-labelledby="secure-voice-title"
-      className="conversation-journey__voice"
+      className={
+        compact
+          ? 'conversation-journey__voice conversation-journey__voice--compact'
+          : 'conversation-journey__voice'
+      }
       data-voice-panel-state={state.kind}
     >
-      <h3 className="conversation-journey__voice-title" id="secure-voice-title">
+      <h3
+        className={
+          compact
+            ? 'conversation-journey__voice-title ge-visually-hidden'
+            : 'conversation-journey__voice-title'
+        }
+        id="secure-voice-title"
+      >
         {text('conversation.voice.title')}
       </h3>
+      {compact ? null : (
+        <>
       <p className="conversation-journey__voice-intro">
         {text('conversation.voice.optional')}
       </p>
       <p className="conversation-journey__voice-intro">
         {text('conversation.voice.hold_help')}
       </p>
+        </>
+      )}
 
       {state.kind === 'idle' ? (
         <button onClick={() => void loadConsent()} type="button">
@@ -524,6 +545,7 @@ export function VoicePracticePanel({
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
             captureMode="hold"
+            compact={compact}
             createClientId={createClientId}
             labels={{
               controls: {
@@ -594,10 +616,12 @@ export function VoicePracticePanel({
             recorder={recorder}
             skipReviewPlayback
           />
+          {compact ? null : (
           <details className="conversation-journey__consent-details">
             <summary>{text('conversation.voice.manage_consent')}</summary>
             {purposeButtons(state.listing)}
           </details>
+          )}
         </>
       ) : null}
 

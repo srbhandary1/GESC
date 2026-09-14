@@ -123,3 +123,28 @@ export function lessonDrillReply(
 
   return `Good. Now listen. Say: ${next} Your turn.`
 }
+
+export function lessonDrillSpokenPrompt(coachText: string): string | null {
+  const trimmed = coachText.trim()
+  if (trimmed === '') {
+    return null
+  }
+
+  const nowSay = trimmed.match(/Now say:\s*(.+)$/iu)
+  if (nowSay?.[1] !== undefined) {
+    return nowSay[1].replace(/\s+Your turn\.?$/iu, '').trim()
+  }
+
+  const say = trimmed.match(
+    /Say:\s*(.+?)(?:\s+(?:Now you try|Your turn)\.?$|$)/iu,
+  )
+  if (say?.[1] !== undefined) {
+    return say[1].trim().replace(/\s+Your turn\.?$/iu, '').trim()
+  }
+
+  return null
+}
+
+export function lessonDrillDisplayLine(coachText: string): string {
+  return lessonDrillSpokenPrompt(coachText) ?? coachText.trim()
+}
