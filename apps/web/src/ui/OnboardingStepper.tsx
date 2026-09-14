@@ -152,7 +152,7 @@ export function OnboardingStepper({
       </div>
       <div className="ge-onboarding__presence">
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="sm"
           slot="home-teacher"
         />

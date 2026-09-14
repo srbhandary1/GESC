@@ -216,7 +216,7 @@ describe('localized application shell', () => {
     expect(document.querySelector('.marketing-landing')).toBeNull()
 
     expect(screen.getAllByText(text('app.name')).length).toBeGreaterThan(0)
-    expect(screen.getByRole('img', { name: text('shell.mira.name') })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: text('tutor.name') })).toBeInTheDocument()
     const header = document.querySelector('header')
     expect(header).not.toBeNull()
     expect(

@@ -730,7 +730,7 @@ export function LearnerJourney({
           />
         </aside>
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="md"
           slot="home-teacher"
         />
@@ -1045,7 +1045,7 @@ function OnboardingForm({
     >
       <div className="ge-onboarding__presence">
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="sm"
           slot="home-teacher"
         />

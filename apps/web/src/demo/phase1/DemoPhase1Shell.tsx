@@ -350,7 +350,7 @@ export function DemoPhase1Shell({
               />
             </p>
             <AvatarSlot
-              label={message('shell.mira.name').text}
+              label={message('tutor.name').text}
               size="lg"
               slot="home-teacher"
             />

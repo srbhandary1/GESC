@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run on Real-Studioz only. Builds and publishes the closed-beta APK with
-# jezweb-c2 fixes (listen stop/slider, disabled hold-to-talk while Swathi speaks).
+# jezweb-c3 fixes (Swathi naming, listen stop/slider, disabled hold-to-talk).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -16,7 +16,7 @@ cp apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk \
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$HOME/ge-soft-launch/artifacts/closed-group"
 cp apps/web/public/downloads/global-spoken-english-android.apk \
-  "$HOME/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c2-${STAMP}.apk"
+  "$HOME/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c3-${STAMP}.apk"
 make soft-launch-refresh-web
-echo "Published: http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c2"
+echo "Published: http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c3"
 sha256sum apps/web/public/downloads/global-spoken-english-android.apk

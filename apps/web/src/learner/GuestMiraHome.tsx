@@ -41,7 +41,7 @@ export function GuestMiraHome({
           </p>
         </div>
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="lg"
           slot="home-teacher"
         />
