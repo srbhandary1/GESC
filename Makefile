@@ -264,6 +264,10 @@ soft-launch-restart:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh restart
 
+soft-launch-reload-public-http:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh reload-public-http
+
 soft-launch-refresh-web:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh refresh-web
