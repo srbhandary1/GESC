@@ -14,7 +14,7 @@ const isProductionAndroid = process.env.CAPACITOR_APP === 'production'
 
 const demoConfig: CapacitorConfig = {
   appId: 'com.globalenglish.demo',
-  appName: 'Global spoken English Course',
+  appName: 'Global Spoken English App',
   webDir: 'dist-demo',
   android: {
     path: 'android',
@@ -30,7 +30,7 @@ const demoConfig: CapacitorConfig = {
 
 const productionConfig: CapacitorConfig = {
   appId: 'com.globalenglish.app',
-  appName: 'Global spoken English Course',
+  appName: 'Global Spoken English App',
   webDir: 'dist',
   android: {
     path: 'android-app',
