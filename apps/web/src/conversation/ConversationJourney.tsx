@@ -275,9 +275,12 @@ export function ConversationJourney({
     }
 
     openingSpoken.current = true
-    speakModel(initialSession.id, openingLine, false)
+    const spokenOpening = grammarDrill
+      ? lessonDrillDisplayLine(openingLine)
+      : openingLine
+    speakModel(initialSession.id, spokenOpening, false)
     // The openingSpoken ref keeps this idempotent even if dependencies change.
-  }, [initialSession, openingLine, speakModel])
+  }, [grammarDrill, initialSession, openingLine, speakModel])
 
   const settleHold = useCallback(() => {
     setLoopPhase('waiting')
@@ -1070,6 +1073,11 @@ export function ConversationJourney({
 
       {session !== undefined && stage === 'talk' ? (
         <>
+          {drillPrompt !== null && drillPrompt !== '' ? (
+            <p className="conversation-journey__drill-prompt" lang="en-IN">
+              {drillPrompt}
+            </p>
+          ) : null}
           {demoMode ? null : (
             <>
               <VoicePracticePanel
@@ -1093,17 +1101,14 @@ export function ConversationJourney({
               />
             </>
           )}
-          {drillPrompt !== null && drillPrompt !== '' ? (
-            <p className="conversation-journey__drill-prompt" lang="en-IN">
-              {drillPrompt}
-            </p>
-          ) : null}
-          <SpeakChatLog
-            chatTurns={chatTurns}
-            drillMode={drillRoom}
-            message={message}
-            openingLine={openingLine}
-          />
+          {drillRoom ? null : (
+            <SpeakChatLog
+              chatTurns={chatTurns}
+              drillMode={drillRoom}
+              message={message}
+              openingLine={openingLine}
+            />
+          )}
           {embedded || demoMode ? null : (
             <AiMemoryPanel
               api={api}

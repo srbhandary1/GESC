@@ -89,9 +89,7 @@ describe('media presentation controls', () => {
       />,
     )
 
-    expect(screen.getByText('Audio playing').className).toContain(
-      'ge-visually-hidden',
-    )
+    expect(screen.queryByText('Audio playing')).toBeNull()
   })
 
   it('exposes recording requests and visible state without capturing media', async () => {

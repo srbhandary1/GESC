@@ -2,6 +2,10 @@ import type {
   ConversationSpeechResult,
   SynthesizeConversationSpeechRequest,
 } from '@global-english/contracts'
+import {
+  browserSpeechSynthesisAvailable,
+  speakWithBrowserSpeech,
+} from '../demo/browserSpeech'
 import { speakDemoText } from '../demo/demoTts'
 import { createClientId } from '../shared/createClientId'
 import {
@@ -50,19 +54,51 @@ export async function speakSessionSpeech(options: {
       : splitSpeechChunks(trimmed)
 
   for (const chunk of chunks) {
-    const speech = await options.api.synthesizeSpeech(
-      options.sessionId,
-      { purpose: options.purpose, text: chunk },
-      createClientId(),
-    )
-    await playConversationSpeechResult({
-      onPlaybackChange: options.onPlaybackChange,
-      onPlaybackStarted: options.onPlaybackStarted,
-      purpose: options.purpose,
-      speech,
-      text: chunk,
-    })
+    try {
+      const speech = await options.api.synthesizeSpeech(
+        options.sessionId,
+        { purpose: options.purpose, text: chunk },
+        createClientId(),
+      )
+      const streamPath =
+        options.purpose === 'guidance_l1'
+          ? speech.guidance_audio_stream_path
+          : speech.model_audio_stream_path
+      const audio =
+        options.purpose === 'guidance_l1'
+          ? speech.guidance_audio_base64
+          : speech.model_audio_base64
+      const hasAudio =
+        (typeof streamPath === 'string' && streamPath !== '') ||
+        (typeof audio === 'string' && audio !== '')
+
+      if (!hasAudio) {
+        await speakWithBrowserSpeechFallback(chunk, options.locale)
+        continue
+      }
+
+      await playConversationSpeechResult({
+        onPlaybackChange: options.onPlaybackChange,
+        onPlaybackStarted: options.onPlaybackStarted,
+        purpose: options.purpose,
+        speech,
+        text: chunk,
+      })
+    } catch {
+      await speakWithBrowserSpeechFallback(chunk, options.locale)
+    }
   }
+}
+
+async function speakWithBrowserSpeechFallback(
+  text: string,
+  locale: string,
+): Promise<void> {
+  if (!browserSpeechSynthesisAvailable()) {
+    return
+  }
+
+  await speakWithBrowserSpeech(text, locale)
 }
 
 export async function playConversationSpeechResult(options: {

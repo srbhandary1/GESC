@@ -501,7 +501,7 @@ export function VoicePracticePanel({
         <p role="status">{text('conversation.voice.processing')}</p>
       ) : null}
 
-      {state.kind === 'recording' && loopPhase !== 'waiting' ? (
+      {!compact && state.kind === 'recording' && loopPhase !== 'waiting' ? (
         <p role="status" data-speak-loop-phase={loopPhase}>
           {text(
             loopPhase === 'listening'

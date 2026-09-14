@@ -329,6 +329,7 @@ export function RecordingTurn({
       {compact ? null : <p>{labels.permissionExplanation}</p>}
       <RecordingControls
         captureMode={captureMode}
+        hideStatus={compact || captureMode === 'hold'}
         interactionDisabled={recordingDisabled}
         labels={labels.controls}
         statusOverride={recordingDisabled ? recordingDisabledStatus : undefined}

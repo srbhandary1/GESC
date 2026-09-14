@@ -36,6 +36,7 @@ export interface RecordingControlsProps {
   labels: RecordingControlLabels
   state: RecordingControlState
   captureMode?: RecordingCaptureMode
+  hideStatus?: boolean
   interactionDisabled?: boolean
   statusOverride?: string
   onRequestCancel: () => void
@@ -49,6 +50,7 @@ export function RecordingControls({
   labels,
   state,
   captureMode = 'tap',
+  hideStatus = false,
   interactionDisabled = false,
   statusOverride,
   onRequestCancel,
@@ -164,12 +166,14 @@ export function RecordingControls({
         aria-label={labels.region}
         className="ge-media-controls ge-media-controls--hold"
       >
-        <p
-          aria-live="polite"
-          className="ge-media-controls__status"
-        >
-          {statusLabel}
-        </p>
+        {hideStatus ? null : (
+          <p
+            aria-live="polite"
+            className="ge-media-controls__status"
+          >
+            {statusLabel}
+          </p>
+        )}
         {state === 'blocked' && captureMode !== 'hold' ? null : (
           <div className="ge-media-controls__hold-stage">
             {showCancel ? (

@@ -401,6 +401,23 @@
   padding-block: var(--ge-space-3);
 }
 
+.conversation-journey--embedded[data-lesson-room='introduction']
+  .conversation-journey__heading,
+.conversation-journey--embedded[data-lesson-room='practice']
+  .conversation-journey__heading {
+  padding: var(--ge-space-3);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.conversation-journey--embedded[data-lesson-room='introduction']
+  .conversation-journey__drill-prompt,
+.conversation-journey--embedded[data-lesson-room='practice']
+  .conversation-journey__drill-prompt {
+  order: -1;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

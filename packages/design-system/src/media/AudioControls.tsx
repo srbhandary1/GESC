@@ -111,6 +111,7 @@ export function AudioControls({
       className="ge-media-controls"
     >
       <button
+        aria-describedby={hideStatus ? undefined : 'ge-audio-controls-status'}
         className="ge-button ge-button--primary"
         disabled={action.disabled}
         onClick={action.request}
@@ -118,16 +119,15 @@ export function AudioControls({
       >
         {action.label}
       </button>
-      <p
-        aria-live="polite"
-        className={
-          hideStatus
-            ? 'ge-media-controls__status ge-visually-hidden'
-            : 'ge-media-controls__status'
-        }
-      >
-        {statusLabel}
-      </p>
+      {hideStatus ? null : (
+        <p
+          aria-live="polite"
+          className="ge-media-controls__status"
+          id="ge-audio-controls-status"
+        >
+          {statusLabel}
+        </p>
+      )}
     </section>
   )
 }

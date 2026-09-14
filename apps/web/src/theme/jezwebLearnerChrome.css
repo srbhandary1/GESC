@@ -286,6 +286,24 @@
   content: none !important;
 }
 
+/* Speak / roleplay surfaces must stay readable on Android dark-mode WebViews. */
+.ge-application-frame--jezweb .conversation-journey__heading,
+.ge-application-frame--jezweb .conversation-journey__voice,
+.ge-application-frame--jezweb .conversation-journey__memory,
+.ge-application-frame--jezweb .conversation-journey__stage,
+.ge-application-frame--jezweb .conversation-journey__start,
+.ge-application-frame--jezweb .roleplay-scenes button {
+  background: #ffffff;
+  color: var(--ge-color-text, #1a1a1a);
+  border-color: var(--ge-color-border, #e2e8e5);
+}
+
+.ge-application-frame--jezweb .conversation-journey__heading h2,
+.ge-application-frame--jezweb .conversation-journey__memory h3,
+.ge-application-frame--jezweb .roleplay-scenes button {
+  color: var(--ge-color-ink, #1a1a1a);
+}
+
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .conversation-journey__heading,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
