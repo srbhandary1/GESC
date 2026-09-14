@@ -10,7 +10,7 @@
   in the selected language even when the turn payload has no audio.
 - Extra chrome (notices, pattern lists, activity copy, voice intros) is
   collapsed or hidden on the drill so the next turn can start automatically.
-- Homepage APK cache-buster is `?v=jezweb-c6`.
+- Homepage APK cache-buster is `?v=jezweb-c7` (c7 removes leaked audio status text on Android WebView, stabilizes hold-to-talk layout, shows drill prompt above hold button, browser-TTS fallback when server audio is empty).
 
 ## Staff LAN login + jezweb-c4 closed-beta — 14 September 2026
 
