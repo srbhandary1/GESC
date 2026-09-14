@@ -18,9 +18,12 @@
   professional light product shell, Continue Learning flow, and an
   Android-first bottom tab bar (Home · Learn · Speak · Progress · 1:1).
   Speak is an equal tab, not a raised FAB.
-- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c`.
+- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c2`.
   Staff LAN download:
-  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c`.
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c2`.
+  Rebuild on Real-Studioz after merge:
+  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080 make android-closed-beta`
+  then `make soft-launch-refresh-web`.
 - Closed-beta APK rebuilt on Real-Studioz with
   `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080`. Package
   `com.globalenglish.app` 1.0 (1), targetSdk 36, 55,616,920 bytes,
