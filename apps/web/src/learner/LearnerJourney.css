@@ -23,10 +23,6 @@
   margin: 0;
 }
 
-.model-audio-player__toolbar .ge-media-controls__status {
-  display: none;
-}
-
 .model-audio-player__toolbar .ge-button,
 .model-audio-player__toolbar .ge-media-controls button {
   min-block-size: 2.5rem;

@@ -479,6 +479,8 @@
   "learner.recording.retry": "மீண்டும் பதிவு செய்க",
   "learner.recording.start": "பதிவைத் தொடங்கு",
   "learner.recording.stop": "பதிவை நிறுத்து",
+  "learner.recording.tap_send": "தட்டி அனுப்புங்கள்",
+  "learner.recording.tap_speak": "தட்டிப் பேசுங்கள்",
   "learner.result.attempt_number": "முயற்சி {number}",
   "learner.result.best": "சிறந்த முயற்சி",
   "learner.result.check_correct": "சரி",

@@ -45,6 +45,7 @@ export async function speakSessionSpeech(options: {
   }
 
   if (options.api.synthesizeSpeech === undefined) {
+    await speakWithBrowserSpeechFallback(trimmed, options.locale)
     return
   }
 
@@ -98,7 +99,11 @@ async function speakWithBrowserSpeechFallback(
     return
   }
 
-  await speakWithBrowserSpeech(text, locale)
+  try {
+    await speakWithBrowserSpeech(text, locale)
+  } catch {
+    // Android WebView often reports speechSynthesis without playing audio.
+  }
 }
 
 export async function playConversationSpeechResult(options: {
@@ -108,7 +113,7 @@ export async function playConversationSpeechResult(options: {
   readonly signal?: AbortSignal
   readonly speech: ConversationSpeechResult
   readonly text?: string | null
-}): Promise<void> {
+}): Promise<boolean> {
   const { purpose, speech } = options
   const streamPath =
     purpose === 'guidance_l1'
@@ -127,7 +132,7 @@ export async function playConversationSpeechResult(options: {
     (typeof streamPath !== 'string' || streamPath === '') &&
     (typeof audio !== 'string' || audio === '')
   ) {
-    return
+    return false
   }
 
   const timeline =
@@ -182,6 +187,8 @@ export async function playConversationSpeechResult(options: {
   } finally {
     options.onPlaybackChange?.(null)
   }
+
+  return true
 }
 
 async function estimatePlaybackTimeline(

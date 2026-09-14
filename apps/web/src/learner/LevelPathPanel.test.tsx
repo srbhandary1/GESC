@@ -215,6 +215,7 @@ describe('LevelPathPanel', () => {
     expect(
       screen.getByRole('button', { name: 'Play model audio' }),
     ).toBeEnabled()
+    expect(screen.queryByText('I can drink water.')).not.toBeInTheDocument()
     expect(screen.getByText('Do this')).toBeInTheDocument()
     unmount()
   })

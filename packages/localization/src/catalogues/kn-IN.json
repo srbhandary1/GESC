@@ -479,6 +479,8 @@
   "learner.recording.retry": "ಮತ್ತೆ ರೆಕಾರ್ಡ್ ಮಾಡಿ",
   "learner.recording.start": "ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭಿಸಿ",
   "learner.recording.stop": "ರೆಕಾರ್ಡಿಂಗ್ ನಿಲ್ಲಿಸಿ",
+  "learner.recording.tap_send": "ಟ್ಯಾಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ",
+  "learner.recording.tap_speak": "ಟ್ಯಾಪ್ ಮಾಡಿ ಮಾತನಾಡಿ",
   "learner.result.attempt_number": "ಪ್ರಯತ್ನ {number}",
   "learner.result.best": "ಅತ್ಯುತ್ತಮ ಪ್ರಯತ್ನ",
   "learner.result.check_correct": "ಸರಿಯಾಗಿದೆ",

@@ -10,7 +10,7 @@ export type RecordingControlState =
   | 'blocked'
   | 'error'
 
-export type RecordingCaptureMode = 'tap' | 'hold'
+export type RecordingCaptureMode = 'tap' | 'hold' | 'toggle'
 
 export interface RecordingControlLabels {
   region: string
@@ -74,7 +74,8 @@ export function RecordingControls({
     !interactionDisabled &&
     (state === 'idle' ||
       state === 'ready' ||
-      (captureMode === 'hold' && (state === 'error' || state === 'blocked')))
+      ((captureMode === 'hold' || captureMode === 'toggle') &&
+        (state === 'error' || state === 'blocked')))
   const isRecording = state === 'recording'
   const isPaused = state === 'paused'
   const holdActive = useRef(false)
@@ -145,7 +146,7 @@ export function RecordingControls({
     endHold()
   }
 
-  if (captureMode === 'hold') {
+  if (captureMode === 'hold' || captureMode === 'toggle') {
     const holdPressed =
       isRecording || state === 'requesting-permission'
     const holdLabel = isRecording
@@ -157,25 +158,43 @@ export function RecordingControls({
           : (labels.hold ?? labels.start)
 
     const showCancel =
-      isRecording ||
-      state === 'processing' ||
-      state === 'requesting-permission'
+      captureMode === 'hold' &&
+      (isRecording ||
+        state === 'processing' ||
+        state === 'requesting-permission')
+
+    const toggleSpeak = () => {
+      if (interactionDisabled || state === 'processing') {
+        return
+      }
+
+      if (isRecording) {
+        onRequestStop()
+        return
+      }
+
+      if (state === 'requesting-permission') {
+        return
+      }
+
+      if (canStart) {
+        onRequestStart()
+      }
+    }
 
     return (
       <section
         aria-label={labels.region}
         className="ge-media-controls ge-media-controls--hold"
       >
-        {hideStatus ? null : (
-          <p
-            aria-live="polite"
-            className="ge-media-controls__status"
-          >
-            {statusLabel}
-          </p>
-        )}
-        {state === 'blocked' && captureMode !== 'hold' ? null : (
-          <div className="ge-media-controls__hold-stage">
+        <p
+          aria-hidden={hideStatus || undefined}
+          aria-live={hideStatus ? undefined : 'polite'}
+          className="ge-media-controls__status"
+        >
+          {hideStatus ? '\u00a0' : statusLabel}
+        </p>
+        <div className="ge-media-controls__hold-stage">
             {showCancel ? (
               <button
                 className="ge-button ge-button--quiet ge-media-controls__cancel"
@@ -210,9 +229,16 @@ export function RecordingControls({
                   }
 
                   event.preventDefault()
+                  if (captureMode === 'toggle') {
+                    toggleSpeak()
+                    return
+                  }
                   beginHold()
                 }}
                 onKeyUp={(event) => {
+                  if (captureMode === 'toggle') {
+                    return
+                  }
                   if (event.key !== ' ' && event.key !== 'Enter') {
                     return
                   }
@@ -220,19 +246,28 @@ export function RecordingControls({
                   event.preventDefault()
                   endHold()
                 }}
-                onLostPointerCapture={endHold}
-                onPointerCancel={() => {
-                  pointerStartedAt.current = null
-                  pointerStartedWhileRecording.current = false
-                  tapLatched.current = false
-                  endHold()
-                }}
+                onLostPointerCapture={
+                  captureMode === 'toggle' ? undefined : endHold
+                }
+                onPointerCancel={
+                  captureMode === 'toggle'
+                    ? undefined
+                    : () => {
+                        pointerStartedAt.current = null
+                        pointerStartedWhileRecording.current = false
+                        tapLatched.current = false
+                        endHold()
+                      }
+                }
                 onPointerDown={(event) => {
                   if (event.button !== 0 || interactionDisabled) {
                     return
                   }
 
                   event.preventDefault()
+                  if (captureMode === 'toggle') {
+                    return
+                  }
                   if (
                     typeof event.currentTarget.setPointerCapture === 'function'
                   ) {
@@ -247,7 +282,9 @@ export function RecordingControls({
                     isRecording || state === 'requesting-permission'
                   beginHold()
                 }}
-                onPointerUp={endPointerHold}
+                onPointerUp={
+                  captureMode === 'toggle' ? toggleSpeak : endPointerHold
+                }
                 type="button"
               >
                 <span aria-hidden="true" className="ge-button__record-dot" />
@@ -255,7 +292,6 @@ export function RecordingControls({
               </button>
             </div>
           </div>
-        )}
       </section>
     )
   }

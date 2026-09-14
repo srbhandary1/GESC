@@ -17,9 +17,9 @@ bash scripts/verify-android-apk.sh apps/web/public/downloads/global-spoken-engli
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$HOME/ge-soft-launch/artifacts/closed-group"
 cp apps/web/public/downloads/global-spoken-english-android.apk \
-  "$HOME/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c7-${STAMP}.apk"
+  "$HOME/ge-soft-launch/artifacts/closed-group/global-spoken-english-jezweb-c8-${STAMP}.apk"
 make soft-launch-refresh-web
 make soft-launch-reload-public-http 2>/dev/null || make soft-launch-restart
-echo "Published: http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c7"
+echo "Published: http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c8"
 echo "Web + APK refreshed. Ask testers to hard-reload (Ctrl+Shift+R) once."
 sha256sum apps/web/public/downloads/global-spoken-english-android.apk

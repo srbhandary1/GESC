@@ -6,7 +6,7 @@ import {
 } from '@global-english/localization'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConversationJourney } from '../conversation/ConversationJourney'
-import { lessonDrillModels, lessonDrillOpening } from '../conversation/lessonDrillStepper'
+import { lessonDrillOpening } from '../conversation/lessonDrillStepper'
 import type {
   ConversationJourneyApi,
   FriendSession,
@@ -1426,20 +1426,6 @@ function LevelSessionJourney({
                   )}
                 />
               </p>
-              {boundSession
-                ? null
-                : (() => {
-                    const spoken =
-                      lessonDrillModels(
-                        visibleDetail.target_patterns,
-                        visibleDetail.talk?.fallback_turns,
-                      )[0]
-                    return spoken === undefined ? null : (
-                      <p className="level-session__model-line" lang="en-IN">
-                        {spoken}
-                      </p>
-                    )
-                  })()}
               {isDemoSpeechUrl(visibleDetail.audio_stream_path) ? (
                 <DemoSpeechPlayer
                   labels={lessonAudioLabels(message)}

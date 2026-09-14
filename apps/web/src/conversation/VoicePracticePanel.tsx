@@ -121,8 +121,6 @@ export function VoicePracticePanel({
       return
     }
 
-    uploadAbort.current?.abort()
-    uploadAbort.current = null
     releaseHold()
   }, [recordingLocked])
 
@@ -544,7 +542,7 @@ export function VoicePracticePanel({
           ) : null}
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
-            captureMode="hold"
+            captureMode={compact ? 'toggle' : 'hold'}
             compact={compact}
             createClientId={createClientId}
             labels={{
@@ -555,7 +553,9 @@ export function VoicePracticePanel({
                     : text('learner.recording.blocked'),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
-                hold: text('learner.recording.hold'),
+                hold: compact
+                  ? text('learner.recording.tap_speak')
+                  : text('learner.recording.hold'),
                 holding: text('learner.recording.holding'),
                 idle: text('learner.recording.idle'),
                 pause: text('learner.recording.pause'),
@@ -564,7 +564,9 @@ export function VoicePracticePanel({
                 ready: text('learner.recording.ready'),
                 recording: text('learner.recording.recording'),
                 region: text('learner.recording.region'),
-                release: text('learner.recording.release'),
+                release: compact
+                  ? text('learner.recording.tap_send')
+                  : text('learner.recording.release'),
                 requestingPermission: text(
                   'learner.recording.requesting_permission',
                 ),
@@ -587,7 +589,7 @@ export function VoicePracticePanel({
               }),
               tooShort: text('conversation.voice.too_short'),
             }}
-            minimumDurationMs={1_000}
+            minimumDurationMs={compact ? 400 : 1_000}
             recordingDisabled={recordingLocked}
             recordingDisabledStatus={text(
               speakLoopPhase === 'preparing'

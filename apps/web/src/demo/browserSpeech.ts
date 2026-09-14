@@ -108,12 +108,14 @@ export async function speakWithBrowserSpeech(
     utterance.pitch = 1
 
     let settled = false
+    let startTimer = 0
     const finish = (action: () => void) => {
       if (settled) {
         return
       }
       settled = true
       globalThis.clearTimeout(timer)
+      globalThis.clearTimeout(startTimer)
       action()
     }
 
@@ -135,11 +137,21 @@ export async function speakWithBrowserSpeech(
         reject(new Error(`Browser speech synthesis failed: ${event.error}`)),
       )
     }
+    utterance.onstart = () => {
+      globalThis.clearTimeout(startTimer)
+    }
 
     const preferred = pickVoice(locale, voices)
     if (preferred !== null) {
       utterance.voice = preferred
     }
+
+    startTimer = globalThis.setTimeout(() => {
+      stopBrowserSpeech()
+      finish(() =>
+        reject(new Error('Browser speech synthesis did not start.')),
+      )
+    }, 900)
 
     globalThis.speechSynthesis.speak(utterance)
     // Chromium sometimes leaves the queue paused after cancel().

@@ -658,25 +658,18 @@ describe('Friend practice journey', () => {
     await user.click(screen.getByRole('button', { name: 'Send turn' }))
 
     await vi.waitFor(() => {
-      expect(api.synthesizeSpeech).toHaveBeenCalledWith(
-        session.id,
-        {
-          purpose: 'model_en',
-          text: 'I cannot drink water.',
-        },
-        expect.any(String),
-      )
+      expect(api.synthesizeSpeech).toHaveBeenCalledTimes(2)
     })
-    await vi.waitFor(() => {
-      expect(api.synthesizeSpeech).toHaveBeenCalledWith(
-        session.id,
-        {
-          purpose: 'guidance_l1',
-          text: 'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
-        },
-        expect.any(String),
-      )
-    })
+    expect(api.synthesizeSpeech.mock.calls.map((call) => call[1])).toEqual([
+      {
+        purpose: 'guidance_l1',
+        text: 'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      },
+      {
+        purpose: 'model_en',
+        text: 'I cannot drink water.',
+      },
+    ])
     expect(play).toHaveBeenCalled()
     expect(screen.getByText('I cannot drink water.')).toBeInTheDocument()
   })

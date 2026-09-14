@@ -479,6 +479,8 @@
   "learner.recording.retry": "మళ్లీ రికార్డ్ చేయండి",
   "learner.recording.start": "రికార్డింగ్‌ను ప్రారంభించండి",
   "learner.recording.stop": "రికార్డింగ్‌ను ఆపండి",
+  "learner.recording.tap_send": "ట్యాప్ చేసి పంపండి",
+  "learner.recording.tap_speak": "ట్యాప్ చేసి మాట్లాడండి",
   "learner.result.attempt_number": "ప్రయత్నం {number}",
   "learner.result.best": "ఉత్తమ ప్రయత్నం",
   "learner.result.check_correct": "సరైనది",

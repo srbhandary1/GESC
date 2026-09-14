@@ -351,4 +351,60 @@ describe('media presentation controls', () => {
       screen.getByRole('button', { name: 'Cancel recording' }),
     ).toBeVisible()
   })
+
+  it('toggles recording with tap-to-speak instead of hold', async () => {
+    const onRequestStart = vi.fn()
+    const onRequestStop = vi.fn()
+    const user = userEvent.setup()
+
+    const { rerender } = render(
+      <RecordingControls
+        captureMode="toggle"
+        labels={{
+          ...recordingLabels,
+          hold: 'Tap to speak',
+          release: 'Tap to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="ready"
+      />,
+    )
+
+    await user.pointer({
+      keys: '[MouseLeft]',
+      target: screen.getByRole('button', { name: 'Tap to speak' }),
+    })
+    expect(onRequestStart).toHaveBeenCalledOnce()
+    expect(onRequestStop).not.toHaveBeenCalled()
+
+    rerender(
+      <RecordingControls
+        captureMode="toggle"
+        labels={{
+          ...recordingLabels,
+          hold: 'Tap to speak',
+          release: 'Tap to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="recording"
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', { name: 'Cancel recording' }),
+    ).not.toBeInTheDocument()
+    await user.pointer({
+      keys: '[MouseLeft]',
+      target: screen.getByRole('button', { name: 'Tap to send' }),
+    })
+    expect(onRequestStop).toHaveBeenCalledOnce()
+  })
 })

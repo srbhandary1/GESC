@@ -253,6 +253,11 @@
   color: var(--ge-color-text-muted);
 }
 
+.ge-media-controls--hold .ge-media-controls__status {
+  min-block-size: 1.4rem;
+  text-align: center;
+}
+
 .ge-media-controls__actions {
   display: flex;
   flex-wrap: wrap;

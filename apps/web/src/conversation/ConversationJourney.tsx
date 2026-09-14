@@ -265,6 +265,11 @@ export function ConversationJourney({
   )
 
   useEffect(() => {
+    if (grammarDrill) {
+      openingSpoken.current = true
+      return
+    }
+
     if (
       openingSpoken.current ||
       initialSession === undefined ||
@@ -275,11 +280,8 @@ export function ConversationJourney({
     }
 
     openingSpoken.current = true
-    const spokenOpening = grammarDrill
-      ? lessonDrillDisplayLine(openingLine)
-      : openingLine
-    speakModel(initialSession.id, spokenOpening, false)
-    // The openingSpoken ref keeps this idempotent even if dependencies change.
+    speakModel(initialSession.id, openingLine, false)
+    // Lesson drills speak after the learner's try, not over the model audio.
   }, [grammarDrill, initialSession, openingLine, speakModel])
 
   const settleHold = useCallback(() => {
@@ -332,47 +334,104 @@ export function ConversationJourney({
     }
 
     try {
-      let playedModel = false
-      if (hasModelAudio && speech !== undefined && speech !== null) {
-        try {
-          await playConversationSpeechResult({
-            onPlaybackChange: setAvatarPlayback,
-            onPlaybackStarted: () => {
-              const snapshot = markSpeakLoop('first_audio')
-              if (snapshot !== null && api.recordSpeechLatency !== undefined) {
-                void api.recordSpeechLatency(
-                  turn.id,
-                  speechLatencySample(snapshot, 'started'),
-                  createClientId(),
-                ).catch(() => undefined)
-              }
-            },
-            purpose: 'model_en',
-            signal,
-            speech,
-            text: grammarDrill ? modelLine : turn.assistant_reply,
-          })
-          playedModel = true
-        } catch (error) {
-          if (isAbortError(error) || signal?.aborted) {
-            throw error
+      const playClip = async (
+        purpose: 'model_en' | 'guidance_l1',
+        text: string,
+        hasClip: boolean,
+      ): Promise<boolean> => {
+        if (hasClip && speech !== undefined && speech !== null) {
+          try {
+            const played = await playConversationSpeechResult({
+              onPlaybackChange: setAvatarPlayback,
+              onPlaybackStarted:
+                purpose === 'model_en'
+                  ? () => {
+                      const snapshot = markSpeakLoop('first_audio')
+                      if (
+                        snapshot !== null &&
+                        api.recordSpeechLatency !== undefined
+                      ) {
+                        void api
+                          .recordSpeechLatency(
+                            turn.id,
+                            speechLatencySample(snapshot, 'started'),
+                            createClientId(),
+                          )
+                          .catch(() => undefined)
+                      }
+                    }
+                  : undefined,
+              purpose,
+              signal,
+              speech,
+              text,
+            })
+            if (played) {
+              return true
+            }
+          } catch (error) {
+            if (isAbortError(error) || signal?.aborted) {
+              throw error
+            }
           }
         }
-      }
 
-      if (!playedModel && modelLine.trim() !== '') {
+        if (text.trim() === '') {
+          return false
+        }
+
         markSpeakLoop('first_audio')
         await speakSessionSpeech({
           api,
           demoMode,
-          grammarDrill,
-          locale: 'en-IN',
+          grammarDrill: purpose === 'model_en' ? grammarDrill : undefined,
+          locale: purpose === 'guidance_l1' ? guidanceLocale : 'en-IN',
           onPlaybackChange: setAvatarPlayback,
-          purpose: 'model_en',
+          purpose,
           sessionId: turn.conversation_session_id,
-          text: modelLine,
+          text,
         })
-        playedModel = true
+        return true
+      }
+
+      if (grammarDrill) {
+        if (guidanceText !== '') {
+          await playClip('guidance_l1', guidanceText, hasGuidanceAudio)
+        }
+        if (signal?.aborted) {
+          return
+        }
+        const playedModel = await playClip(
+          'model_en',
+          modelLine,
+          false,
+        )
+        if (!playedModel && guidanceText === '') {
+          const snapshot = completeSpeakLoop()
+          if (snapshot !== null && api.recordSpeechLatency !== undefined) {
+            void api
+              .recordSpeechLatency(
+                turn.id,
+                speechLatencySample(snapshot, 'unavailable'),
+                createClientId(),
+              )
+              .catch(() => undefined)
+          }
+        }
+        return
+      }
+
+      let playedModel = false
+      if (hasModelAudio && speech !== undefined && speech !== null) {
+        playedModel = await playClip(
+          'model_en',
+          turn.assistant_reply ?? modelLine,
+          true,
+        )
+      }
+
+      if (!playedModel && modelLine.trim() !== '') {
+        playedModel = await playClip('model_en', modelLine, false)
       }
 
       if (!playedModel) {
@@ -390,32 +449,8 @@ export function ConversationJourney({
         return
       }
 
-      let playedGuidance = false
-      if (hasGuidanceAudio && speech !== undefined && speech !== null) {
-        try {
-          await playConversationSpeechResult({
-            onPlaybackChange: setAvatarPlayback,
-            purpose: 'guidance_l1',
-            signal,
-            speech,
-            text: guidanceText,
-          })
-          playedGuidance = true
-        } catch {
-          // Deferred guidance may not be ready yet; fall back to live TTS.
-        }
-      }
-
-      if (!playedGuidance && guidanceText !== '') {
-        await speakSessionSpeech({
-          api,
-          demoMode,
-          locale: guidanceLocale,
-          onPlaybackChange: setAvatarPlayback,
-          purpose: 'guidance_l1',
-          sessionId: turn.conversation_session_id,
-          text: guidanceText,
-        })
+      if (guidanceText !== '') {
+        await playClip('guidance_l1', guidanceText, hasGuidanceAudio)
       }
     } catch (error) {
       if (isAbortError(error)) {
@@ -1076,6 +1111,11 @@ export function ConversationJourney({
           {drillPrompt !== null && drillPrompt !== '' ? (
             <p className="conversation-journey__drill-prompt" lang="en-IN">
               {drillPrompt}
+            </p>
+          ) : null}
+          {drillRoom && lastTurn?.transcript ? (
+            <p className="conversation-journey__you-said" lang="en-IN">
+              {lastTurn.transcript}
             </p>
           ) : null}
           {demoMode ? null : (

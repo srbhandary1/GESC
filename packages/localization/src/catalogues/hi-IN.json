@@ -479,6 +479,8 @@
   "learner.recording.retry": "फिर से रिकॉर्ड करें",
   "learner.recording.start": "रिकॉर्डिंग शुरू करें",
   "learner.recording.stop": "रिकॉर्डिंग बंद करें",
+  "learner.recording.tap_send": "टैप करके भेजें",
+  "learner.recording.tap_speak": "टैप करके बोलें",
   "learner.result.attempt_number": "प्रयास {number}",
   "learner.result.best": "सबसे अच्छा प्रयास",
   "learner.result.check_correct": "सही",

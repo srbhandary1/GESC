@@ -479,6 +479,8 @@
   "learner.recording.retry": "വീണ്ടും റെക്കോർഡ് ചെയ്യുക",
   "learner.recording.start": "റെക്കോർഡിംഗ് ആരംഭിക്കുക",
   "learner.recording.stop": "റെക്കോർഡിംഗ് നിർത്തുക",
+  "learner.recording.tap_send": "ടാപ്പ് ചെയ്ത് അയയ്ക്കുക",
+  "learner.recording.tap_speak": "ടാപ്പ് ചെയ്ത് സംസാരിക്കുക",
   "learner.result.attempt_number": "ശ്രമം {number}",
   "learner.result.best": "മികച്ച ശ്രമം",
   "learner.result.check_correct": "ശരി",
