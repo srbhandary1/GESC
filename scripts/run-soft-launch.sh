@@ -104,6 +104,31 @@ stop_pidfile() {
   rm -f "${pid_file}"
 }
 
+# Kill leftover listeners on a TCP port (stale Caddy on :8080 is the usual case).
+release_listen_port() {
+  local port="$1"
+  local pid
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    pid="$(ss -ltnp "sport = :${port}" 2>/dev/null \
+      | sed -n 's/.*pid=\([0-9][0-9]*\).*/\1/p' \
+      | sort -u \
+      | head -1 || true)"
+    if [[ -z "${pid}" ]]; then
+      return 0
+    fi
+    kill "${pid}" 2>/dev/null || true
+    sleep 0.3
+    if kill -0 "${pid}" 2>/dev/null; then
+      kill -9 "${pid}" 2>/dev/null || true
+      sleep 0.2
+    fi
+  done
+  if ss -ltn "sport = :${port}" 2>/dev/null | grep -q ":${port}"; then
+    die "Port ${port} is still in use after releasing leftover listeners."
+  fi
+}
+
 ensure_services() {
   (cd "${ROOT_DIR}" && docker compose up -d --wait postgres redis object-storage mail otp-stub)
 }
@@ -321,8 +346,13 @@ start_public_http() {
   # /api and /oauth reverse-proxy for the Android HTTP origin.
   require_caddy
   stop_pidfile public-http
+  release_listen_port "${PUBLIC_HTTP_PORT}"
   ensure_web_dist
   source_soft_launch_env
+  local api_port="${GE_SOFT_LAUNCH_API_PORT:-${API_PORT}}"
+  if ! api_health_ok "${api_port}"; then
+    die "Laravel API is not healthy on 127.0.0.1:${api_port}; public HTTP would 502 Android login."
+  fi
   local stable_host="${GE_SOFT_LAUNCH_STABLE_HOST:-}"
   local public_https_port="${GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT:-${PUBLIC_HTTPS_PORT}}"
   if [[ -n "${stable_host}" ]]; then
@@ -335,15 +365,27 @@ start_public_http() {
   write_soft_launch_public_http_config \
     "${RUNTIME_DIR}/env/Caddyfile.public" \
     "${PUBLIC_HTTP_PORT}" \
-    "${GE_SOFT_LAUNCH_API_PORT:-${API_PORT}}" \
+    "${api_port}" \
     "${WEB_DIST}" \
     "${APP_URL:-}" \
     "${stable_host}" \
     "${public_https_port}" \
     "${PROXY_PORT}"
+  if grep -Fq 'encode off' "${RUNTIME_DIR}/env/Caddyfile.public"; then
+    die "Caddyfile.public contains unsupported 'encode off' and would fail to start."
+  fi
   nohup "${CADDY_BIN}" run --config "${RUNTIME_DIR}/env/Caddyfile.public" --adapter caddyfile \
     >"${LOG_DIR}/public-http.log" 2>&1 &
   echo $! >"${PID_DIR}/public-http.pid"
+  local deadline=$(($(date +%s) + 8))
+  while (( $(date +%s) < deadline )); do
+    if curl --silent --fail --max-time 2 \
+      "http://127.0.0.1:${PUBLIC_HTTP_PORT}/api/v1/health/live" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.3
+  done
+  die "Public HTTP :${PUBLIC_HTTP_PORT} did not proxy /api/v1/health/live; see ${LOG_DIR}/public-http.log"
 }
 
 start_tunnel() {
@@ -372,6 +414,11 @@ start_tunnel() {
     url="$(grep -oE 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' "${LOG_DIR}/tunnel.log" | head -1 || true)"
     if [[ -n "${url}" ]]; then
       printf '%s\n' "${url}" >"${RUNTIME_DIR}/tunnel.url"
+      if [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" ]]; then
+        printf 'HTTPS soft-launch URL: %s\n' "${url}"
+        printf 'APP_URL left on the staff static-IP origin so Android login on :8080 keeps working.\n'
+        return 0
+      fi
       apply_public_origin "${url}"
       printf 'HTTPS soft-launch URL: %s\n' "${url}"
       printf 'Session/APP_URL updated for this tunnel; API/worker restarted.\n'
@@ -397,20 +444,22 @@ apply_public_origin() {
 persist_public_origin() {
   local origin="$1"
   local stable_host="${2:-}"
-  local host
-  host="$(printf '%s' "${origin}" | sed -E 's#https://##' | sed -E 's#/.*##')"
-  python3 - "${ENV_FILE}" "${origin}" "${host}" "${stable_host}" \
+  python3 - "${ENV_FILE}" "${origin}" "${stable_host}" \
     "${PROXY_PORT}" "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}" <<'PY'
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 path = Path(sys.argv[1])
 origin = sys.argv[2]
-host = sys.argv[3]
-stable_host = sys.argv[4]
-proxy_port = sys.argv[5]
-public_http_port = sys.argv[6]
-public_https_port = sys.argv[7]
+stable_host = sys.argv[3]
+proxy_port = sys.argv[4]
+public_http_port = sys.argv[5]
+public_https_port = sys.argv[6]
+parsed = urlparse(origin)
+host = parsed.netloc
+if not host:
+    raise SystemExit(f"APP_URL origin has no host: {origin}")
 text = path.read_text(encoding="utf-8") if path.exists() else ""
 overrides = {
     "APP_URL": origin,
@@ -554,6 +603,12 @@ case "${MODE}" in
   start)
     ensure_services
     source_soft_launch_env
+    if [[ "${GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP:-}" == "true" \
+      && -z "${GE_SOFT_LAUNCH_STABLE_HOST:-}" ]]; then
+      persist_public_origin \
+        "${GE_SOFT_LAUNCH_PUBLIC_ORIGIN:-http://117.254.108.143:8080}"
+      source_soft_launch_env
+    fi
     ensure_api_listen_port
     ensure_web_dist
     start_api
@@ -569,9 +624,9 @@ case "${MODE}" in
       printf 'Router mapping: WAN 80 -> this host:%s; WAN 443 -> this host:%s\n' \
         "${PUBLIC_HTTP_PORT}" "${PUBLIC_HTTPS_PORT}"
     else
-      printf '\nPrimary HTTPS entry: make soft-launch-tunnel\n'
-      printf 'Static-IP entry: http://127.0.0.1:%s (HTML redirects to HTTPS; /api and /oauth reverse-proxy)\n' \
+      printf '\nStaff Android/API entry: http://117.254.108.143:%s\n' \
         "${PUBLIC_HTTP_PORT}"
+      printf 'Primary HTTPS entry: make soft-launch-tunnel\n'
     fi
     ;;
   stop)

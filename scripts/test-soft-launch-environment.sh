@@ -166,6 +166,8 @@ grep -Fq 'Web inputs changed during the build' "$soft_launch_runner"
 grep -Fq 'refresh-web)' "$soft_launch_runner"
 grep -Fq 'reload-public-http)' "$soft_launch_runner"
 grep -Fq 'reload-api)' "$soft_launch_runner"
+grep -Fq 'release_listen_port' "$soft_launch_runner"
+grep -Fq 'Staff Android/API entry' "$soft_launch_runner"
 if grep -Fq 'artisan serve' "$soft_launch_runner"; then
   printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
   exit 1

@@ -1,10 +1,27 @@
 export interface PasswordSignInLocation {
   readonly hostname: string
   readonly protocol: string
+  readonly port?: string
 }
 
 function isLoopbackHost(host: string): boolean {
   return host === '127.0.0.1' || host === 'localhost' || host === '::1'
+}
+
+function effectivePort(location: PasswordSignInLocation): string {
+  if (location.port !== undefined && location.port !== '') {
+    return location.port
+  }
+
+  return location.protocol === 'https:' ? '443' : '80'
+}
+
+function isStaffClosedBetaHttp(location: PasswordSignInLocation): boolean {
+  return (
+    location.protocol === 'http:' &&
+    location.hostname === '117.254.108.143' &&
+    effectivePort(location) === '8080'
+  )
 }
 
 function isPrivateIpv4Host(host: string): boolean {
@@ -49,6 +66,10 @@ export function isPasswordSignInSecureContext(
   location: PasswordSignInLocation = window.location,
 ): boolean {
   if (location.protocol === 'https:') {
+    return true
+  }
+
+  if (isStaffClosedBetaHttp(location)) {
     return true
   }
 
