@@ -1,5 +1,24 @@
 # Repository status
 
+## Staff LAN login + jezweb-c4 closed-beta — 14 September 2026
+
+- `northstar` password sign-in is valid. Earlier “credentials not accepted”
+  on Android/web against `http://117.254.108.143:8080` was a **502** from a
+  stale `:8080` Caddy proxying `/api` and `/oauth` to a dead Laravel port,
+  plus password-sign-in **429** after repeated staff attempts (5 / 15 min
+  per username).
+- Public HTTP now kills leftover `:8080` listeners, proxies the live API
+  port, and keeps `APP_URL=http://117.254.108.143:8080` when
+  `GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true`. Staff password sign-in is allowed
+  on that origin (port 8080 only).
+- Verified live: Android mobile password grant **200**, `GET /me`, 17-level
+  catalogue, Level 1 introduction audio **200**; browser sign-in + Home /
+  Learn / Speak / Progress / 1:1 + Level 1 audio toolbar.
+- Homepage APK cache-buster is `?v=jezweb-c4`.
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c4`
+- Introduction grammar drills auto-accept transcripts for learners (no
+  confirmation step). Audio pause/stop/slow stay on one toolbar row.
+
 ## Variant C jezweb-ux Android learner chrome — 13 September 2026
 
 - Visible product name is **Global Spoken English App** (`app.name`,
@@ -9,8 +28,8 @@
   (`shell.mira.*`, `tutor.name`, conversation strings). Illustration
   filenames may remain `tutor-maya.png` (D-0218).
 - Level Introduction listen audio adds **Stop** and a seek **slider**
-  beside Play/Pause/Resume and Slow. Introduction grammar drills require
-  transcript confirmation; the hold-to-talk button stays visible but
+  beside Play/Pause/Resume and Slow. Introduction grammar drills auto-accept
+  the transcript for learners. The hold-to-talk button stays visible but
   **disabled** while Swathi speaks, so TTS cannot auto-submit the next
   pattern early on Android APK.
 - Learner chrome on web and the production Capacitor APK

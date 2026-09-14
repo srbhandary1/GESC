@@ -6,18 +6,25 @@
 
 .model-audio-player__toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--ge-space-2);
   width: 100%;
+  overflow-x: auto;
 }
 
 .model-audio-player__toolbar .ge-media-controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--ge-space-2);
   margin: 0;
+}
+
+.model-audio-player__toolbar .ge-button,
+.model-audio-player__toolbar .ge-media-controls button {
+  min-block-size: 2.5rem;
+  flex: 0 0 auto;
 }
 
 .model-audio-player__toolbar .ge-media-controls__status {

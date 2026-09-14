@@ -118,6 +118,8 @@ print('PASS level catalogue count', len(levels))
 PY
 
 auth_get 'GET /me/levels/1/sessions' '/api/v1/me/levels/1/sessions'
+auth_get 'GET /me/entitlement' '/api/v1/me/entitlement'
+auth_get 'GET /me/progress-dashboard' '/api/v1/me/progress-dashboard'
 audio_code="$(curl -sS -o /dev/null -w '%{http_code}' \
   -H "Authorization: Bearer ${access_token}" \
   -I "${ORIGIN}/api/v1/me/levels/1/sessions/introduction/audio")"

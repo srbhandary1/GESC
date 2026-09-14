@@ -50,7 +50,7 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(chromeImport).toBeGreaterThan(-1)
     expect(jezwebImport).toBeGreaterThan(chromeImport)
 
-    expect(androidDownload).toContain('?v=jezweb-c3')
+    expect(androidDownload).toContain('?v=jezweb-c4')
     expect(colors).toContain('#FAFBFA')
     expect(colors).toContain('#006B3F')
     expect(styles).toContain('windowLightStatusBar')
