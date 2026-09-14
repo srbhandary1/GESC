@@ -435,12 +435,17 @@ describe('Friend practice journey', () => {
     )
 
     expect(
-      screen.getByText('Listen. Say: I can drink water. Now you try.'),
+      screen.getByText('I can drink water.'),
     ).toBeInTheDocument()
-    expect(document.querySelector('[data-lesson-room="introduction"]')).not.toBeNull()
+    expect(
+      document.querySelector('[data-lesson-room="introduction"]'),
+    ).not.toBeNull()
     expect(screen.queryByText('Stage')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Skip this turn' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Listen. Say: I can drink water. Now you try.'),
     ).not.toBeInTheDocument()
 
     rerender(
@@ -591,6 +596,83 @@ describe('Friend practice journey', () => {
         onStarted: expect.any(Function),
       }),
     )
+  })
+
+  it('speaks the next model and L1 correction when turn audio is missing', async () => {
+    const session = fakeSession()
+    const turn: FriendTurn = {
+      ...fakeTurn(session.id),
+      assistant_reply:
+        'Good. Now listen. Say: I cannot drink water. Your turn.',
+      transcript: 'I can drink water.',
+      understood_intent: 'lesson_drill_pattern_accepted',
+      speech: {
+        playback_available: false,
+        rendering_mode: 'deterministic-fake-text-only',
+      },
+    }
+    const play = vi
+      .spyOn(playBase64AudioModule, 'playBase64Audio')
+      .mockResolvedValue(undefined)
+    const synthesizeSpeech = vi.fn(async (_sessionId, request) => ({
+      playback_available: true,
+      rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+      ...(request.purpose === 'guidance_l1'
+        ? {
+            guidance_audio_base64: 'Qg==',
+            guidance_audio_mime_type: 'audio/wav' as const,
+          }
+        : {
+            model_audio_base64: 'QQ==',
+            model_audio_mime_type: 'audio/wav' as const,
+          }),
+    }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn: vi.fn(async () => turn),
+      events: vi.fn(async () => fakeEvents()),
+      synthesizeSpeech,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => 'command'}
+        embedded
+        grammarDrill
+        initialSession={session}
+        lessonRoom="introduction"
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        openingLine="Listen. Say: I can drink water. Now you try."
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Type instead' }))
+    await user.type(
+      screen.getByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+      'I can drink water.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+
+    await vi.waitFor(() => {
+      expect(synthesizeSpeech).toHaveBeenCalledTimes(2)
+    })
+    expect(synthesizeSpeech.mock.calls.map((call) => call[1])).toEqual([
+      {
+        purpose: 'guidance_l1',
+        text: 'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
+      },
+      {
+        purpose: 'model_en',
+        text: 'I cannot drink water.',
+      },
+    ])
+    expect(play).toHaveBeenCalled()
+    expect(screen.getByText('I cannot drink water.')).toBeInTheDocument()
   })
 })
 

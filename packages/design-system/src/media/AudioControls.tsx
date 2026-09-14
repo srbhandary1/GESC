@@ -28,6 +28,7 @@ export interface AudioControlLabels {
 export interface AudioControlsProps {
   labels: AudioControlLabels
   state: AudioControlState
+  hideStatus?: boolean
   onRequestPause: () => void
   onRequestPlay: () => void
   onRequestReplay: () => void
@@ -42,6 +43,7 @@ interface AudioAction {
 export function AudioControls({
   labels,
   state,
+  hideStatus = false,
   onRequestPause,
   onRequestPlay,
   onRequestReplay,
@@ -109,6 +111,7 @@ export function AudioControls({
       className="ge-media-controls"
     >
       <button
+        aria-describedby={hideStatus ? undefined : 'ge-audio-controls-status'}
         className="ge-button ge-button--primary"
         disabled={action.disabled}
         onClick={action.request}
@@ -116,12 +119,15 @@ export function AudioControls({
       >
         {action.label}
       </button>
-      <p
-        aria-live="polite"
-        className="ge-media-controls__status"
-      >
-        {statusLabel}
-      </p>
+      {hideStatus ? null : (
+        <p
+          aria-live="polite"
+          className="ge-media-controls__status"
+          id="ge-audio-controls-status"
+        >
+          {statusLabel}
+        </p>
+      )}
     </section>
   )
 }

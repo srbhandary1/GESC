@@ -3,6 +3,7 @@ import { playwrightOutputDir } from './playwrightOutput'
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: 'staff-closed-beta-live.spec.ts',
   outputDir: playwrightOutputDir('web'),
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),

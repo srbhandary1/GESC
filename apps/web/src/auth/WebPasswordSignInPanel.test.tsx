@@ -228,7 +228,8 @@ describe('web password sign-in panel', () => {
 
   it('explains that plain HTTP cannot complete sign-in', () => {
     vi.stubGlobal('location', {
-      hostname: '117.254.108.143',
+      hostname: 'example.com',
+      port: '',
       protocol: 'http:',
     })
 

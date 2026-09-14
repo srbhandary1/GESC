@@ -730,7 +730,7 @@ describe('deterministic learner journey', () => {
     expect(
       screen.getByRole('link', { name: t('demo.phase1.home.speak') }),
     ).toHaveAttribute('href', '#speak')
-    expect(screen.getByRole('img', { name: t('shell.mira.name') })).toBeVisible()
+    expect(screen.getByRole('img', { name: t('tutor.name') })).toBeVisible()
     expect(
       screen.queryByText(
         resolveMessage('learner.home.estimated_minutes', {

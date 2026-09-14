@@ -55,8 +55,16 @@ android {
         buildConfig = true
     }
     signingConfigs {
+        debug {
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
         if (releaseSigningPresent) {
             release {
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
                 storeFile file(releaseSigningValues.storeFile)
                 storePassword releaseSigningValues.storePassword
                 keyAlias releaseSigningValues.keyAlias
@@ -65,6 +73,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             if (releaseSigningPresent) {
                 signingConfig signingConfigs.release

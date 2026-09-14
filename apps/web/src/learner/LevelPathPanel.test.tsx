@@ -215,7 +215,8 @@ describe('LevelPathPanel', () => {
     expect(
       screen.getByRole('button', { name: 'Play model audio' }),
     ).toBeEnabled()
-    expect(screen.getByRole('heading', { name: 'Do this' })).toBeInTheDocument()
+    expect(screen.queryByText('I can drink water.')).not.toBeInTheDocument()
+    expect(screen.getByText('Do this')).toBeInTheDocument()
     unmount()
   })
 
@@ -931,7 +932,7 @@ describe('LevelPathPanel', () => {
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
     expect(api.startConversation).toHaveBeenCalled()
     expect(
-      await screen.findByText('Listen. Say: I can drink water. Now you try.'),
+      await screen.findByText('I can drink water.'),
     ).toBeInTheDocument()
     expect(
       document.querySelector('[data-lesson-room="introduction"]'),
@@ -1082,9 +1083,7 @@ describe('LevelPathPanel', () => {
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
 
     expect(screen.getByText('I can + base verb.')).toBeInTheDocument()
-    expect(
-      screen.getByText('Listen. Say: I can drink water. Now you try.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('I can drink water.')).toBeInTheDocument()
     expect(screen.queryByText('Stage')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Skip this turn' }),
@@ -1112,7 +1111,7 @@ describe('LevelPathPanel', () => {
       expect.any(AbortSignal),
     )
     expect(await screen.findByText('I can use a pen.')).toBeInTheDocument()
-    expect(screen.getByText(nextModel)).toBeInTheDocument()
+    expect(screen.getByText('I cannot drink water.')).toBeInTheDocument()
     expect(
       screen.queryByText(/Do not start a free conversation/u),
     ).not.toBeInTheDocument()

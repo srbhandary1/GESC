@@ -152,16 +152,16 @@ export function OnboardingStepper({
       </div>
       <div className="ge-onboarding__presence">
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="sm"
           slot="home-teacher"
         />
         <div className="ge-onboarding__coach">
           <p className="ge-onboarding__coach-role">
-            <LocalizedMessage resolution={message('shell.mira.role')} />
+            <LocalizedMessage resolution={message('tutor.role')} />
           </p>
           <p className="ge-onboarding__coach-line">
-            <LocalizedMessage resolution={message('shell.mira.intro')} />
+            <LocalizedMessage resolution={message('tutor.intro')} />
           </p>
         </div>
       </div>

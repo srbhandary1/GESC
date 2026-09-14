@@ -1,3 +1,16 @@
+.ge-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ge-skip-link {
   position: absolute;
   z-index: 100;
@@ -240,16 +253,45 @@
   color: var(--ge-color-text-muted);
 }
 
+.ge-media-controls--hold .ge-media-controls__status {
+  min-block-size: 1.4rem;
+  text-align: center;
+}
+
 .ge-media-controls__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ge-space-2);
 }
 
+.ge-media-controls__hold-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--ge-space-2);
+  width: 100%;
+  min-block-size: 11.5rem;
+}
+
 .ge-media-controls--hold .ge-media-controls__actions {
   justify-content: center;
   align-items: center;
-  flex-direction: column;
+  flex-direction: row;
+}
+
+.ge-media-controls--hold .ge-media-controls__cancel,
+.ge-media-controls--hold .ge-media-controls__cancel-slot {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 1;
+}
+
+.ge-media-controls--hold .ge-media-controls__cancel-slot {
+  inline-size: 4.5rem;
+  block-size: var(--ge-target-minimum);
+  pointer-events: none;
 }
 
 .ge-button--hold-to-talk {

@@ -3,6 +3,7 @@ import {
   lessonDrillModelUtterance,
   lessonDrillOpening,
   lessonDrillReply,
+  lessonDrillSpokenPrompt,
   lessonDrillUtteranceMatchesModel,
 } from './lessonDrillStepper'
 
@@ -70,5 +71,26 @@ describe('lessonDrillStepper', () => {
         'I cannot + base verb.',
       ]),
     ).toBe('Practice time. I can drink water. Now say: I cannot drink water.')
+  })
+
+  it('extracts the spoken model sentence from coach lines', () => {
+    expect(
+      lessonDrillSpokenPrompt('Listen. Say: I can drink water. Now you try.'),
+    ).toBe('I can drink water.')
+    expect(
+      lessonDrillSpokenPrompt(
+        'Good. Now listen. Say: I cannot drink water. Your turn.',
+      ),
+    ).toBe('I cannot drink water.')
+    expect(
+      lessonDrillSpokenPrompt(
+        'Practice time. I can drink water. Now say: Can I drink water?',
+      ),
+    ).toBe('Can I drink water?')
+    expect(
+      lessonDrillSpokenPrompt(
+        'Good. You practised each pattern. You can mark Introduction complete.',
+      ),
+    ).toBeNull()
   })
 })

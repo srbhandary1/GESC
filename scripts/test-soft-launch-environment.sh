@@ -114,6 +114,8 @@ GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true bash -c '
 ' _ "$root_dir/scripts/lib/soft-launch-public-http.sh" "$serve_http_config"
 grep -Fq 'root * /srv/web' "$serve_http_config"
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$serve_http_config"
+grep -Fq '@androidApk path /downloads/*.apk' "$serve_http_config"
+grep -Fq '/downloads/*.apk' "$serve_http_config"
 if grep -Fq 'redir * https://soft-launch.example.test{uri} 307' "$serve_http_config"; then
   printf '%s\n' 'GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP must serve the SPA instead of redirecting' >&2
   exit 1
@@ -164,6 +166,8 @@ grep -Fq 'Web inputs changed during the build' "$soft_launch_runner"
 grep -Fq 'refresh-web)' "$soft_launch_runner"
 grep -Fq 'reload-public-http)' "$soft_launch_runner"
 grep -Fq 'reload-api)' "$soft_launch_runner"
+grep -Fq 'release_listen_port' "$soft_launch_runner"
+grep -Fq 'Staff Android/API entry' "$soft_launch_runner"
 if grep -Fq 'artisan serve' "$soft_launch_runner"; then
   printf '%s\n' 'soft-launch API must own the actual PHP server PID directly' >&2
   exit 1

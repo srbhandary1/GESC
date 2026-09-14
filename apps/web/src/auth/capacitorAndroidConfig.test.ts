@@ -19,6 +19,7 @@ describe('Capacitor Android dual-tree configuration', () => {
     expect(source).toContain("path: 'android-app'")
     expect(source).toContain("webDir: 'dist-demo'")
     expect(source).toContain("webDir: 'dist'")
+    expect(source).toContain("appName: 'Global Spoken English App'")
     expect(source).toContain("CAPACITOR_APP === 'production'")
     expect(source).toContain("androidScheme: 'https'")
     expect(source).toContain("hostname: 'localhost'")

@@ -3,7 +3,7 @@ import type {
   MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   defaultAudioRecorder,
   type AudioRecorder,
@@ -28,6 +28,7 @@ import { preconnectRealtimeSpeechAfterConsent } from './preconnectRealtimeSpeech
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
+  readonly compact?: boolean
   readonly createClientId: () => string
   readonly locale: SupportedLocale
   readonly onPreferTyping?: () => void
@@ -35,7 +36,9 @@ interface VoicePracticePanelProps {
   readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
   readonly onCancelInFlight?: () => void
   readonly recorder?: AudioRecorder
+  readonly requireTranscriptConfirmation?: boolean
   readonly resetEpoch?: number
+  readonly speakLoopPhase?: SpeakLoopPhase
   readonly sessionId: string
   readonly text: (key: MessageKey, parameters?: MessageParameters) => string
   readonly unavailableMessageKey?: MessageKey
@@ -67,6 +70,7 @@ const AUTO_ACCEPT_MIN_CONFIDENCE = 0.6
 
 export function VoicePracticePanel({
   api,
+  compact = false,
   createClientId,
   locale,
   onPreferTyping,
@@ -74,7 +78,9 @@ export function VoicePracticePanel({
   onLoopPhase,
   onCancelInFlight,
   recorder = defaultAudioRecorder,
+  requireTranscriptConfirmation = false,
   resetEpoch = 0,
+  speakLoopPhase = 'waiting',
   sessionId,
   text,
   unavailableMessageKey,
@@ -99,13 +105,24 @@ export function VoicePracticePanel({
     setPhase('waiting')
   }
 
-  const cancelInFlight = () => {
+  const cancelInFlight = useCallback(() => {
     uploadAbort.current?.abort()
     uploadAbort.current = null
     abandonSpeakLoop()
     onCancelInFlight?.()
     releaseHold()
-  }
+  }, [onCancelInFlight])
+
+  const recordingLocked =
+    speakLoopPhase === 'speaking' || speakLoopPhase === 'preparing'
+
+  useEffect(() => {
+    if (!recordingLocked) {
+      return
+    }
+
+    releaseHold()
+  }, [recordingLocked])
 
   useEffect(() => {
     if (api.voiceConsents === undefined) {
@@ -270,8 +287,16 @@ export function VoicePracticePanel({
         return
       }
 
+      if (!requireTranscriptConfirmation) {
+        await acceptTranscript(listing, recording, 'accept', controller.signal)
+        return
+      }
+
       const confidence = recording.transcript_confidence
-      if (confidence !== null && confidence >= AUTO_ACCEPT_MIN_CONFIDENCE) {
+      if (
+        confidence !== null &&
+        confidence >= AUTO_ACCEPT_MIN_CONFIDENCE
+      ) {
         await acceptTranscript(listing, recording, 'accept', controller.signal)
         return
       }
@@ -436,18 +461,33 @@ export function VoicePracticePanel({
   return (
     <section
       aria-labelledby="secure-voice-title"
-      className="conversation-journey__voice"
+      className={
+        compact
+          ? 'conversation-journey__voice conversation-journey__voice--compact'
+          : 'conversation-journey__voice'
+      }
       data-voice-panel-state={state.kind}
     >
-      <h3 className="conversation-journey__voice-title" id="secure-voice-title">
+      <h3
+        className={
+          compact
+            ? 'conversation-journey__voice-title ge-visually-hidden'
+            : 'conversation-journey__voice-title'
+        }
+        id="secure-voice-title"
+      >
         {text('conversation.voice.title')}
       </h3>
+      {compact ? null : (
+        <>
       <p className="conversation-journey__voice-intro">
         {text('conversation.voice.optional')}
       </p>
       <p className="conversation-journey__voice-intro">
         {text('conversation.voice.hold_help')}
       </p>
+        </>
+      )}
 
       {state.kind === 'idle' ? (
         <button onClick={() => void loadConsent()} type="button">
@@ -459,7 +499,7 @@ export function VoicePracticePanel({
         <p role="status">{text('conversation.voice.processing')}</p>
       ) : null}
 
-      {state.kind === 'recording' && loopPhase !== 'waiting' ? (
+      {!compact && state.kind === 'recording' && loopPhase !== 'waiting' ? (
         <p role="status" data-speak-loop-phase={loopPhase}>
           {text(
             loopPhase === 'listening'
@@ -502,7 +542,8 @@ export function VoicePracticePanel({
           ) : null}
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}`}
-            captureMode="hold"
+            captureMode={compact ? 'toggle' : 'hold'}
+            compact={compact}
             createClientId={createClientId}
             labels={{
               controls: {
@@ -512,7 +553,9 @@ export function VoicePracticePanel({
                     : text('learner.recording.blocked'),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
-                hold: text('learner.recording.hold'),
+                hold: compact
+                  ? text('learner.recording.tap_speak')
+                  : text('learner.recording.hold'),
                 holding: text('learner.recording.holding'),
                 idle: text('learner.recording.idle'),
                 pause: text('learner.recording.pause'),
@@ -521,7 +564,9 @@ export function VoicePracticePanel({
                 ready: text('learner.recording.ready'),
                 recording: text('learner.recording.recording'),
                 region: text('learner.recording.region'),
-                release: text('learner.recording.release'),
+                release: compact
+                  ? text('learner.recording.tap_send')
+                  : text('learner.recording.release'),
                 requestingPermission: text(
                   'learner.recording.requesting_permission',
                 ),
@@ -544,7 +589,13 @@ export function VoicePracticePanel({
               }),
               tooShort: text('conversation.voice.too_short'),
             }}
-            minimumDurationMs={1_000}
+            minimumDurationMs={compact ? 400 : 1_000}
+            recordingDisabled={recordingLocked}
+            recordingDisabledStatus={text(
+              speakLoopPhase === 'preparing'
+                ? 'conversation.loop.preparing'
+                : 'conversation.loop.speaking',
+            )}
             onAudioCaptureChange={(capture) => {
               if (capture === null) {
                 return
@@ -567,10 +618,12 @@ export function VoicePracticePanel({
             recorder={recorder}
             skipReviewPlayback
           />
+          {compact ? null : (
           <details className="conversation-journey__consent-details">
             <summary>{text('conversation.voice.manage_consent')}</summary>
             {purposeButtons(state.listing)}
           </details>
+          )}
         </>
       ) : null}
 

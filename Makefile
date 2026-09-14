@@ -13,7 +13,7 @@ PHPUNIT_STORAGE_DIR ?= /tmp/global-spoken-english-phpunit-$(shell id -u)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight lpl-07-rollout-gate import-tutor-glb verify-tutor-glb
+.PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-reload-public-http soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight lpl-07-rollout-gate import-tutor-glb verify-tutor-glb staff-closed-beta-smoke
 
 help:
 	@printf '%s\n' \
@@ -29,7 +29,8 @@ help:
 		'make android-release-bundle Build a signed production-path Android App Bundle' \
 		'make soft-launch-setup   Create APP-0053 outside-repo soft-launch + Azure evidence scaffolds' \
 		'make soft-launch-start   Start real product soft-launch stack (API/web/queue/Caddy)' \
-		'make soft-launch-refresh-web  Rebuild served web only when inputs changed' \
+		'make soft-launch-reload-public-http  Reload :8080 Caddy onto the live API port' \
+		'make staff-closed-beta-smoke  Android-origin login + Level 1 API smoke (needs GE_STAFF_PASSWORD)' \
 		'make import-tutor-glb       Copy GLB files from SOURCE into public/tutor/avatars' \
 		'make soft-launch-tunnel  Cloudflare HTTPS tunnel for soft-launch mic/remote access' \
 		'make soft-launch-configure-stable HOST=ai.example.com  Configure stable direct HTTPS' \
@@ -263,6 +264,14 @@ soft-launch-stop:
 soft-launch-restart:
 	@chmod +x scripts/run-soft-launch.sh
 	@bash scripts/run-soft-launch.sh restart
+
+soft-launch-reload-public-http:
+	@chmod +x scripts/run-soft-launch.sh
+	@bash scripts/run-soft-launch.sh reload-public-http
+
+staff-closed-beta-smoke:
+	@chmod +x scripts/staff-closed-beta-smoke.sh
+	@bash scripts/staff-closed-beta-smoke.sh
 
 soft-launch-refresh-web:
 	@chmod +x scripts/run-soft-launch.sh

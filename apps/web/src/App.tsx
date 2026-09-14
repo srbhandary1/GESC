@@ -51,6 +51,7 @@ import { LocalizedMessage } from './localization/LocalizedMessage'
 import './theme/studioExperience.css'
 import './theme/miraGescGreenPin.css'
 import './theme/miraLearnerChrome.css'
+import './theme/jezwebLearnerChrome.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'
@@ -434,6 +435,9 @@ function App({
   }, [locationHash, session.status])
 
   const brand = message('app.name')
+  useEffect(() => {
+    document.title = brand.text
+  }, [brand.text])
   const navigationLabel = message('shell.navigation_label')
   const skipToContent = message('shell.skip_to_content')
   const fallbackLabel = message('localization.fallback_label')
@@ -721,6 +725,11 @@ function App({
     <div
       className={demoMode ? 'demo-experience' : undefined}
       data-demo-mode={demoMode ? 'synthetic-local' : undefined}
+      data-ge-ux={
+        isOperatorSession
+          ? undefined
+          : 'variant-c-jezweb'
+      }
     >
     <ApplicationFrame
       className={
@@ -731,10 +740,10 @@ function App({
             }${isNativeAndroid ? ' ge-application-frame--native-android' : ''}${
               isGuestSession
                 ? showGuestMiraHome
-                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner ge-application-frame--jezweb'
                   : ' ge-application-frame--studio'
                 : isLearnerSession || demoMode
-                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner'
+                  ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner ge-application-frame--jezweb'
                   : ''
             }`
       }
@@ -748,7 +757,7 @@ function App({
                 <i />
               </span>
               <span className="shell-studio-brand__name">
-                Global <b>English</b>
+                <LocalizedMessage resolution={brand} />
               </span>
             </span>
           ) : (

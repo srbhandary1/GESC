@@ -61,6 +61,37 @@ describe('media presentation controls', () => {
     expect(onRequestPause).toHaveBeenCalledOnce()
   })
 
+  it('can keep playback status for assistive tech without showing it', () => {
+    render(
+      <AudioControls
+        hideStatus
+        labels={{
+          region: 'Lesson audio',
+          play: 'Play',
+          pause: 'Pause',
+          resume: 'Resume',
+          replay: 'Replay',
+          loading: 'Loading audio',
+          unavailable: 'Audio unavailable',
+          error: 'Audio failed',
+          readyStatus: 'Audio ready',
+          loadingStatus: 'Audio loading',
+          playingStatus: 'Audio playing',
+          pausedStatus: 'Audio paused',
+          endedStatus: 'Audio finished',
+          unavailableStatus: 'Audio unavailable',
+          errorStatus: 'Audio failed',
+        }}
+        onRequestPause={vi.fn()}
+        onRequestPlay={vi.fn()}
+        onRequestReplay={vi.fn()}
+        state="playing"
+      />,
+    )
+
+    expect(screen.queryByText('Audio playing')).toBeNull()
+  })
+
   it('exposes recording requests and visible state without capturing media', async () => {
     const onRequestStop = vi.fn()
     const user = userEvent.setup()
@@ -80,6 +111,35 @@ describe('media presentation controls', () => {
     expect(screen.getByText('Recording')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Stop recording' }))
     expect(onRequestStop).toHaveBeenCalledOnce()
+  })
+
+  it('disables hold-to-talk when interaction is locked', async () => {
+    const onRequestStart = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <RecordingControls
+        captureMode="hold"
+        interactionDisabled
+        labels={{
+          ...recordingLabels,
+          hold: 'Hold to talk',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={vi.fn()}
+        state="ready"
+        statusOverride="Teacher is speaking"
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Hold to talk' })
+    expect(button).toBeDisabled()
+    expect(screen.getByText('Teacher is speaking')).toBeVisible()
+    await user.pointer({ keys: '[MouseLeft>]', target: button })
+    expect(onRequestStart).not.toHaveBeenCalled()
   })
 
   it('starts on a quick tap and stops on the next tap in hold-to-talk mode', async () => {
@@ -290,5 +350,61 @@ describe('media presentation controls', () => {
     expect(
       screen.getByRole('button', { name: 'Cancel recording' }),
     ).toBeVisible()
+  })
+
+  it('toggles recording with tap-to-speak instead of hold', async () => {
+    const onRequestStart = vi.fn()
+    const onRequestStop = vi.fn()
+    const user = userEvent.setup()
+
+    const { rerender } = render(
+      <RecordingControls
+        captureMode="toggle"
+        labels={{
+          ...recordingLabels,
+          hold: 'Tap to speak',
+          release: 'Tap to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="ready"
+      />,
+    )
+
+    await user.pointer({
+      keys: '[MouseLeft]',
+      target: screen.getByRole('button', { name: 'Tap to speak' }),
+    })
+    expect(onRequestStart).toHaveBeenCalledOnce()
+    expect(onRequestStop).not.toHaveBeenCalled()
+
+    rerender(
+      <RecordingControls
+        captureMode="toggle"
+        labels={{
+          ...recordingLabels,
+          hold: 'Tap to speak',
+          release: 'Tap to send',
+        }}
+        onRequestCancel={vi.fn()}
+        onRequestPause={vi.fn()}
+        onRequestResume={vi.fn()}
+        onRequestStart={onRequestStart}
+        onRequestStop={onRequestStop}
+        state="recording"
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', { name: 'Cancel recording' }),
+    ).not.toBeInTheDocument()
+    await user.pointer({
+      keys: '[MouseLeft]',
+      target: screen.getByRole('button', { name: 'Tap to send' }),
+    })
+    expect(onRequestStop).toHaveBeenCalledOnce()
   })
 })

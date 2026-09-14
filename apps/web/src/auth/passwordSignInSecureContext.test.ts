@@ -38,6 +38,16 @@ describe('password sign-in secure context', () => {
     ).toBe(true)
   })
 
+  it('allows the staff closed-beta static IP on port 8080', () => {
+    expect(
+      isPasswordSignInSecureContext({
+        hostname: '117.254.108.143',
+        port: '8080',
+        protocol: 'http:',
+      }),
+    ).toBe(true)
+  })
+
   it('blocks plain HTTP on public hosts', () => {
     expect(
       isPasswordSignInSecureContext({

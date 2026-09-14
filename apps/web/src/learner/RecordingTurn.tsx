@@ -34,6 +34,7 @@ export type HoldPhase = 'idle' | 'listening' | 'processing'
 
 interface RecordingTurnProps {
   readonly captureMode?: RecordingCaptureMode
+  readonly compact?: boolean
   readonly createClientId: () => string
   readonly labels: RecordingTurnLabels
   readonly onAudioCaptureChange?: (audio: CapturedAudio | null) => void
@@ -44,6 +45,8 @@ interface RecordingTurnProps {
   readonly onCancelInFlight?: () => void
   readonly onHoldPhaseChange?: (phase: HoldPhase) => void
   readonly recorder: AudioRecorder
+  readonly recordingDisabled?: boolean
+  readonly recordingDisabledStatus?: string
   readonly skipReviewPlayback?: boolean
   readonly minimumDurationMs?: number
 }
@@ -56,6 +59,7 @@ interface LocalCapture {
 
 export function RecordingTurn({
   captureMode = 'tap',
+  compact = false,
   createClientId,
   labels,
   onAudioCaptureChange,
@@ -64,6 +68,8 @@ export function RecordingTurn({
   onCancelInFlight,
   onHoldPhaseChange,
   recorder,
+  recordingDisabled = false,
+  recordingDisabledStatus,
   skipReviewPlayback = false,
   minimumDurationMs = 250,
 }: RecordingTurnProps) {
@@ -84,6 +90,20 @@ export function RecordingTurn({
   const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!recordingDisabled) {
+      return
+    }
+
+    holdIntent.current = false
+    requestGeneration.current += 1
+    sessionRef.current?.cancel()
+    sessionRef.current = null
+    setLiveSession(null)
+    setState(recorder.isSupported() ? 'ready' : 'blocked')
+    onHoldPhaseChange?.('idle')
+  }, [onHoldPhaseChange, recorder, recordingDisabled])
+
+  useEffect(() => {
     active.current = true
 
     return () => {
@@ -100,7 +120,10 @@ export function RecordingTurn({
   }, [])
 
   useEffect(() => {
-    if (captureMode !== 'hold' || state !== 'recording') {
+    if (
+      (captureMode !== 'hold' && captureMode !== 'toggle') ||
+      state !== 'recording'
+    ) {
       return
     }
 
@@ -296,18 +319,23 @@ export function RecordingTurn({
   return (
     <section
       aria-labelledby="recording-turn-title"
-      className={`learner-card learner-recording${captureMode === 'hold' ? ' learner-recording--hold' : ''}`}
+      className={`learner-card learner-recording${captureMode === 'hold' ? ' learner-recording--hold' : ''}${compact ? ' learner-recording--compact' : ''}`}
     >
       <h3
-        className="learner-card__title"
+        className={
+          compact ? 'learner-card__title ge-visually-hidden' : 'learner-card__title'
+        }
         id="recording-turn-title"
       >
         {labels.controls.region}
       </h3>
-      <p>{labels.permissionExplanation}</p>
+      {compact ? null : <p>{labels.permissionExplanation}</p>}
       <RecordingControls
         captureMode={captureMode}
+        hideStatus={false}
+        interactionDisabled={recordingDisabled}
         labels={labels.controls}
+        statusOverride={recordingDisabled ? recordingDisabledStatus : undefined}
         onRequestCancel={cancel}
         onRequestPause={() => {
           sessionRef.current?.pause()
@@ -332,7 +360,8 @@ export function RecordingTurn({
       ) : null}
       {state === 'recording' &&
       captureMode === 'hold' &&
-      holdRemainingText !== null ? (
+      holdRemainingText !== null &&
+      !compact ? (
         <p role="status">{holdRemainingText}</p>
       ) : null}
 

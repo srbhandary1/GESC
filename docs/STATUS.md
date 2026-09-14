@@ -1,5 +1,79 @@
 # Repository status
 
+## Introduction drill UX — 14 September 2026
+
+- Play model audio no longer shows on-screen “Model audio is playing / paused”
+  (status stays for assistive tech only).
+- Introduction/Practice show the current spoken sentence (for example
+  `I can drink water.`) next to audio and Hold to talk.
+- After a try, Swathi speaks the next English model and the L1 correction
+  in the selected language even when the turn payload has no audio.
+- Extra chrome (notices, pattern lists, activity copy, voice intros) is
+  collapsed or hidden on the drill so the next turn can start automatically.
+- Homepage APK cache-buster is `?v=jezweb-c8`. Listen panel no longer
+  spoils the model sentence before audio downloads. Introduction drill
+  uses tap-to-speak / tap-to-send. After a try, Swathi speaks the L1
+  correction or praise in the selected language, then the English model
+  to say next.
+
+## Staff LAN login + jezweb-c4 closed-beta — 14 September 2026
+
+- `northstar` password sign-in is valid. Earlier “credentials not accepted”
+  on Android/web against `http://117.254.108.143:8080` was a **502** from a
+  stale `:8080` Caddy proxying `/api` and `/oauth` to a dead Laravel port,
+  plus password-sign-in **429** after repeated staff attempts (5 / 15 min
+  per username).
+- Public HTTP now kills leftover `:8080` listeners, proxies the live API
+  port, and keeps `APP_URL=http://117.254.108.143:8080` when
+  `GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true`. Staff password sign-in is allowed
+  on that origin (port 8080 only).
+- Verified live: Android mobile password grant **200**, `GET /me`, 17-level
+  catalogue, Level 1 introduction audio **200**; browser sign-in + Home /
+  Learn / Speak / Progress / 1:1 + Level 1 audio toolbar.
+- Homepage APK cache-buster is `?v=jezweb-c4`.
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c4`
+- Introduction grammar drills auto-accept transcripts for learners (no
+  confirmation step). Audio pause/stop/slow stay on one toolbar row.
+
+## Variant C jezweb-ux Android learner chrome — 13 September 2026
+
+- Visible product name is **Global Spoken English App** (`app.name`,
+  shell header, `document.title`, `index.html` title, Capacitor `appName`,
+  Android `strings.xml`, and static auth/privacy pages).
+- On-screen AI teacher is **Swathi** everywhere in learner UI copy
+  (`shell.mira.*`, `tutor.name`, conversation strings). Illustration
+  filenames may remain `tutor-maya.png` (D-0218).
+- Level Introduction listen audio adds **Stop** and a seek **slider**
+  beside Play/Pause/Resume and Slow. Introduction grammar drills auto-accept
+  the transcript for learners. The hold-to-talk button stays visible but
+  **disabled** while Swathi speaks, so TTS cannot auto-submit the next
+  pattern early on Android APK.
+- Learner chrome on web and the production Capacitor APK
+  (`com.globalenglish.app`) uses design-audit Variant C jezweb-ux:
+  professional light product shell, Continue Learning flow, and an
+  Android-first bottom tab bar (Home · Learn · Speak · Progress · 1:1).
+  Speak is an equal tab, not a raised FAB.
+- Homepage APK link is `/downloads/global-spoken-english-android.apk?v=jezweb-c3`.
+  Staff LAN download (requires Real-Studioz deploy):
+  `http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c3`.
+  **Until Real-Studioz runs `bash scripts/deploy-jezweb-c2-apk.sh`, the live
+  server still serves the 13 Sep build (~55 MB) with Mira strings.** Install
+  the jezweb-c3 release instead:
+  https://github.com/srbhandary1/GESC/releases/tag/jezweb-c3-closed-beta-20260914
+  (15,497,406 bytes, SHA-256
+  `2664adc7d65a1eb70213a796d9061872174c0c1974d5f45ba239cf021d23bf18`).
+  Rebuild on Real-Studioz after merge:
+  `VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080 make android-closed-beta`
+  then `make soft-launch-refresh-web`.
+- jezweb-c3 closed-beta APK (agent build, 14 Sep 2026): Swathi naming,
+  listen stop/slider, disabled hold-to-talk while Swathi speaks. Package
+  `com.globalenglish.app` 1.0 (1), targetSdk 36, 15,497,406 bytes. Live
+  `HEAD` of the LAN download URL still returned `content-length: 55616920`
+  until Real-Studioz publish completes.
+- Routes, APIs, room types, auth, LessonPractice, audio curriculum,
+  ConversationOrchestrator and TTS adapters are unchanged.
+- This does not authorize Play, production, or marketing cutover.
+
 ## Variant A learner chrome (design-audit) — 13 September 2026
 
 - Learner Learn / demo My Levels now uses the locked Variant A pattern:

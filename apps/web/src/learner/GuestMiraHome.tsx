@@ -37,11 +37,11 @@ export function GuestMiraHome({
             <LocalizedMessage resolution={message('demo.phase1.home.title')} />
           </h1>
           <p>
-            <LocalizedMessage resolution={message('shell.mira.role')} />
+            <LocalizedMessage resolution={message('tutor.role')} />
           </p>
         </div>
         <AvatarSlot
-          label={message('shell.mira.name').text}
+          label={message('tutor.name').text}
           size="lg"
           slot="home-teacher"
         />

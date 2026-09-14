@@ -1,5 +1,5 @@
 import type { AudioControlLabels } from '@global-english/design-system'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
@@ -42,8 +42,10 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        seekLabel="Seek"
         slowLabel="Slow"
         source="/first.wav"
+        stopLabel="Stop"
       />,
     )
     const firstAudio = screen.getByTestId('model-audio-element')
@@ -57,8 +59,10 @@ describe('ModelAudioPlayer', () => {
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        seekLabel="Seek"
         slowLabel="Slow"
         source="/second.wav"
+        stopLabel="Stop"
       />,
     )
 
@@ -90,8 +94,10 @@ describe('ModelAudioPlayer', () => {
         labels={labels}
         loadSource={loadSource}
         mimeType="audio/mpeg"
+        seekLabel="Seek"
         slowLabel="Slow"
         source="/api/v1/me/levels/1/sessions/introduction/audio"
+        stopLabel="Stop"
       />,
     )
 
@@ -120,8 +126,10 @@ describe('ModelAudioPlayer', () => {
         labels={labels}
         loadSource={loadSource}
         mimeType="audio/wav"
+        seekLabel="Seek"
         slowLabel="Slow"
         source="https://api.example.test/api/v1/media/model-audio"
+        stopLabel="Stop"
       />,
     )
 
@@ -144,14 +152,55 @@ describe('ModelAudioPlayer', () => {
     )
   })
 
+  it('exposes stop and seek controls while audio is playing', async () => {
+    const user = userEvent.setup()
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined)
+    Object.defineProperty(HTMLMediaElement.prototype, 'duration', {
+      configurable: true,
+      get: () => 12,
+    })
+    Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+      configurable: true,
+      get: () => 4,
+      set: () => undefined,
+    })
+
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        mimeType="audio/wav"
+        seekLabel="Seek"
+        slowLabel="Slow"
+        source="/first.wav"
+        stopLabel="Stop"
+      />,
+    )
+
+    const audio = screen.getByTestId('model-audio-element')
+    audio.dispatchEvent(new Event('loadedmetadata'))
+    audio.dispatchEvent(new Event('canplay'))
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    audio.dispatchEvent(new Event('playing'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument()
+    })
+    expect(screen.getByRole('slider', { name: 'Seek' })).toBeInTheDocument()
+    play.mockRestore()
+  })
+
   it('exposes a slow-speed toggle without resetting resume position', async () => {
     const user = userEvent.setup()
     render(
       <ModelAudioPlayer
         labels={labels}
         mimeType="audio/wav"
+        seekLabel="Seek"
         slowLabel="Slow"
         source="/first.wav"
+        stopLabel="Stop"
       />,
     )
 
