@@ -93,6 +93,15 @@ EOF
 	handle /oauth/* {
 		reverse_proxy 127.0.0.1:${api_port}
 	}
+	@androidApk path /downloads/*.apk
+	handle @androidApk {
+		encode off
+		header Cache-Control "public, max-age=300"
+		header Content-Type "application/vnd.android.package-archive"
+		header Content-Disposition "attachment; filename=global-spoken-english-android.apk"
+		root * ${web_dist}
+		file_server
+	}
 	handle {
 		root * ${web_dist}
 		try_files {path} /index.html

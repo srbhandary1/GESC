@@ -13,6 +13,7 @@ git pull origin cursor/learner-variant-c-jezweb-3f88
 VITE_MOBILE_API_ORIGIN=http://117.254.108.143:8080 make android-closed-beta
 cp apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk \
   apps/web/public/downloads/global-spoken-english-android.apk
+bash scripts/verify-android-apk.sh apps/web/public/downloads/global-spoken-english-android.apk
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$HOME/ge-soft-launch/artifacts/closed-group"
 cp apps/web/public/downloads/global-spoken-english-android.apk \
