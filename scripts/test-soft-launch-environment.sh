@@ -115,7 +115,7 @@ GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP=true bash -c '
 grep -Fq 'root * /srv/web' "$serve_http_config"
 grep -Fq 'reverse_proxy 127.0.0.1:8000' "$serve_http_config"
 grep -Fq '@androidApk path /downloads/*.apk' "$serve_http_config"
-grep -Fq 'encode off' "$serve_http_config"
+grep -Fq '/downloads/*.apk' "$serve_http_config"
 if grep -Fq 'redir * https://soft-launch.example.test{uri} 307' "$serve_http_config"; then
   printf '%s\n' 'GE_SOFT_LAUNCH_SERVE_PUBLIC_HTTP must serve the SPA instead of redirecting' >&2
   exit 1

@@ -417,7 +417,7 @@ overrides = {
     "SESSION_SECURE_COOKIE": "false",
     "SESSION_COOKIE": "global_english_session",
     "SESSION_SAME_SITE": "lax",
-    "SANCTUM_STATEFUL_DOMAINS": f"{host},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174,100.89.51.18:{public_http_port},real-studioz.taila69adf.ts.net:{public_http_port},real-studioz.taila69adf.ts.net",
+    "SANCTUM_STATEFUL_DOMAINS": f"{host},117.254.108.143:{public_http_port},127.0.0.1:{proxy_port},127.0.0.1:{public_http_port},localhost:{proxy_port},127.0.0.1:5173,localhost:5173,127.0.0.1:5174,localhost:5174,100.89.51.18:{public_http_port},real-studioz.taila69adf.ts.net:{public_http_port},real-studioz.taila69adf.ts.net",
 }
 if stable_host:
     overrides["SESSION_SECURE_COOKIE"] = "true"

@@ -95,7 +95,6 @@ EOF
 	}
 	@androidApk path /downloads/*.apk
 	handle @androidApk {
-		encode off
 		header Cache-Control "public, max-age=300"
 		header Content-Type "application/vnd.android.package-archive"
 		header Content-Disposition "attachment; filename=global-spoken-english-android.apk"
