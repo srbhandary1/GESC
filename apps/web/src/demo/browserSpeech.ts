@@ -108,7 +108,7 @@ export async function speakWithBrowserSpeech(
     utterance.pitch = 1
 
     let settled = false
-    let startTimer = 0
+    let startTimer: ReturnType<typeof globalThis.setTimeout> | undefined
     const finish = (action: () => void) => {
       if (settled) {
         return

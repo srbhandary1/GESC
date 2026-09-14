@@ -614,23 +614,24 @@ describe('Friend practice journey', () => {
     const play = vi
       .spyOn(playBase64AudioModule, 'playBase64Audio')
       .mockResolvedValue(undefined)
+    const synthesizeSpeech = vi.fn(async (_sessionId, request) => ({
+      playback_available: true,
+      rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+      ...(request.purpose === 'guidance_l1'
+        ? {
+            guidance_audio_base64: 'Qg==',
+            guidance_audio_mime_type: 'audio/wav' as const,
+          }
+        : {
+            model_audio_base64: 'QQ==',
+            model_audio_mime_type: 'audio/wav' as const,
+          }),
+    }))
     const api: ConversationJourneyApi = {
       startSession: vi.fn(),
       createTurn: vi.fn(async () => turn),
       events: vi.fn(async () => fakeEvents()),
-      synthesizeSpeech: vi.fn(async (_sessionId, request) => ({
-        playback_available: true,
-        rendering_mode: 'azure-soft-launch-guidance-wav' as const,
-        ...(request.purpose === 'guidance_l1'
-          ? {
-              guidance_audio_base64: 'Qg==',
-              guidance_audio_mime_type: 'audio/wav' as const,
-            }
-          : {
-              model_audio_base64: 'QQ==',
-              model_audio_mime_type: 'audio/wav' as const,
-            }),
-      })),
+      synthesizeSpeech,
     }
     const user = userEvent.setup()
 
@@ -658,9 +659,9 @@ describe('Friend practice journey', () => {
     await user.click(screen.getByRole('button', { name: 'Send turn' }))
 
     await vi.waitFor(() => {
-      expect(api.synthesizeSpeech).toHaveBeenCalledTimes(2)
+      expect(synthesizeSpeech).toHaveBeenCalledTimes(2)
     })
-    expect(api.synthesizeSpeech.mock.calls.map((call) => call[1])).toEqual([
+    expect(synthesizeSpeech.mock.calls.map((call) => call[1])).toEqual([
       {
         purpose: 'guidance_l1',
         text: 'ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುವುದಾದರೆ: "I enjoy learning English after work."',
