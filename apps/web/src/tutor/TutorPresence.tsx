@@ -102,7 +102,7 @@ export function TutorHomeHero({
           <LocalizedMessage resolution={message('demo.phase1.home.title')} />
         </h2>
         <p>
-          <LocalizedMessage resolution={message('shell.mira.role')} />
+          <LocalizedMessage resolution={message('tutor.role')} />
         </p>
         <div className="mira-home-hero__actions">
           <a className="mira-home-hero__speak" href="#speak">

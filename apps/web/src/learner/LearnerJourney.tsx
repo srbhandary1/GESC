@@ -705,7 +705,7 @@ export function LearnerJourney({
       <header className="learner-home__header mira-learner-home__hello">
         <div className="mira-learner-home__hello-copy">
           <p className="phase1-home__greeting">
-            <LocalizedMessage resolution={message('shell.mira.role')} />
+            <LocalizedMessage resolution={message('tutor.role')} />
           </p>
           <h2
             className="learner-home__title"
@@ -1051,10 +1051,10 @@ function OnboardingForm({
         />
         <div className="ge-onboarding__coach">
           <p className="ge-onboarding__coach-role">
-            <LocalizedMessage resolution={message('shell.mira.role')} />
+            <LocalizedMessage resolution={message('tutor.role')} />
           </p>
           <p className="ge-onboarding__coach-line">
-            <LocalizedMessage resolution={message('shell.mira.intro')} />
+            <LocalizedMessage resolution={message('tutor.intro')} />
           </p>
         </div>
       </div>

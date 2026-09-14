@@ -102,7 +102,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
       name: message('demo.phase1.home.title'),
     }),
   ).toBeVisible()
-  await expect(page.getByRole('img', { name: message('shell.mira.name') })).toBeVisible()
+  await expect(page.getByRole('img', { name: message('tutor.name') })).toBeVisible()
   await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
   await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
   await expect(page.locator('.marketing-landing')).toHaveCount(0)

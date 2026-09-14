@@ -158,10 +158,10 @@ export function OnboardingStepper({
         />
         <div className="ge-onboarding__coach">
           <p className="ge-onboarding__coach-role">
-            <LocalizedMessage resolution={message('shell.mira.role')} />
+            <LocalizedMessage resolution={message('tutor.role')} />
           </p>
           <p className="ge-onboarding__coach-line">
-            <LocalizedMessage resolution={message('shell.mira.intro')} />
+            <LocalizedMessage resolution={message('tutor.intro')} />
           </p>
         </div>
       </div>

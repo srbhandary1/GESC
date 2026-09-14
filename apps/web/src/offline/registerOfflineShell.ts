@@ -23,6 +23,8 @@ export async function registerOfflineShell(): Promise<void> {
       return
     }
 
+    await retireLegacyOfflineShellWorkers()
+
     const registration =
       await navigator.serviceWorker.register(serviceWorkerPath(), {
         scope: '/',
@@ -76,22 +78,42 @@ export function serviceWorkerPath(
 }
 
 async function disableDevelopmentOfflineShell(): Promise<void> {
-  const registrations = await navigator.serviceWorker.getRegistrations()
-  await Promise.all(
-    registrations
-      .filter((registration) => {
-        const worker =
-          registration.active ??
-          registration.waiting ??
-          registration.installing
+  await unregisterOfflineShellWorkers(() => true)
+}
 
-        return (
-          worker !== null &&
-          new URL(worker.scriptURL).pathname === SERVICE_WORKER_PATH
-        )
-      })
-      .map((registration) => registration.unregister()),
-  )
+async function retireLegacyOfflineShellWorkers(): Promise<void> {
+  await unregisterOfflineShellWorkers((scriptUrl) => {
+    const release = scriptUrl.searchParams.get('release')
+
+    return release === null || !/^[a-f0-9]{64}$/.test(release)
+  })
+}
+
+async function unregisterOfflineShellWorkers(
+  shouldUnregister: (scriptUrl: URL) => boolean,
+): Promise<void> {
+  const registrations = await navigator.serviceWorker.getRegistrations()
+  const retired = registrations.filter((registration) => {
+    const worker =
+      registration.active ?? registration.waiting ?? registration.installing
+
+    if (worker === null) {
+      return false
+    }
+
+    const scriptUrl = new URL(worker.scriptURL)
+
+    return (
+      scriptUrl.pathname === SERVICE_WORKER_PATH &&
+      shouldUnregister(scriptUrl)
+    )
+  })
+
+  if (retired.length === 0) {
+    return
+  }
+
+  await Promise.all(retired.map((registration) => registration.unregister()))
 
   if (!('caches' in globalThis)) {
     return
