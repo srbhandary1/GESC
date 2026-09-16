@@ -44,7 +44,7 @@
 .phase1-shell__nav-link {
   display: inline-flex;
   align-items: center;
-  min-block-size: 2.5rem;
+  min-block-size: var(--ge-target-minimum);
   padding: 0.45rem 0.95rem;
   border: 1px solid var(--ge-color-border, #c5d2cb);
   border-radius: 999px;
@@ -165,7 +165,7 @@
 
 .phase1-ai-lang button,
 .phase1-ai-topics button {
-  min-block-size: 2.4rem;
+  min-block-size: var(--ge-target-minimum);
   padding: 0.4rem 0.85rem;
   border: 1px solid var(--ge-color-border, #c5d2cb);
   border-radius: 999px;

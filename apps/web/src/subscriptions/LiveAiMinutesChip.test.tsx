@@ -53,7 +53,7 @@ describe('LiveAiMinutesChip', () => {
 
     expect(
       screen.getByRole('button', { name: 'View plan and billing' }),
-    ).toHaveTextContent('89 min left')
+    ).toHaveTextContent('89 live-AI minutes available')
 
     await user.click(
       screen.getByRole('button', { name: 'View plan and billing' }),
@@ -79,7 +79,7 @@ describe('LiveAiMinutesChip', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('shows demo seconds and hides when entitlement does not apply', () => {
+  it('hides demo seconds in global chrome and shows them only in Speak context', () => {
     const { rerender } = render(
       <LiveAiMinutesChip
         entitlement={entitlement({
@@ -92,13 +92,14 @@ describe('LiveAiMinutesChip', () => {
       />,
     )
 
-    expect(screen.getByRole('button')).toHaveTextContent('240s left')
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
 
     rerender(
       <LiveAiMinutesChip
+        context="speak"
         entitlement={entitlement({
           is_demo: true,
-          live_ai_seconds_remaining: 1,
+          live_ai_seconds_remaining: 240,
         })}
         locale="en-IN"
         localizationPolicy={INTERFACE_RESOLUTION_POLICY}
@@ -106,10 +107,13 @@ describe('LiveAiMinutesChip', () => {
       />,
     )
 
-    expect(screen.getByRole('button')).toHaveTextContent('Demo ended')
+    expect(screen.getByRole('button')).toHaveTextContent(
+      'Demo use: 240s available',
+    )
 
     rerender(
       <LiveAiMinutesChip
+        context="speak"
         entitlement={entitlement({ applies: false })}
         locale="en-IN"
         localizationPolicy={INTERFACE_RESOLUTION_POLICY}

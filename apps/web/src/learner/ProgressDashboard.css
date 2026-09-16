@@ -91,7 +91,7 @@
   min-block-size: 6.5rem;
 }
 
-.progress-dashboard__stat--missed {
+.progress-dashboard__stat--ready {
   border-color: color-mix(in srgb, var(--ge-color-accent) 45%, var(--ge-color-border));
 }
 

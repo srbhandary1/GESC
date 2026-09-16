@@ -8,6 +8,7 @@ import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import type { LearnerEntitlement } from './LearnerSubscriptionApi'
 
 export interface LiveAiMinutesChipProps {
+  readonly context?: 'global' | 'speak'
   readonly entitlement: LearnerEntitlement | null
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
@@ -15,6 +16,7 @@ export interface LiveAiMinutesChipProps {
 }
 
 export function LiveAiMinutesChip({
+  context = 'global',
   entitlement,
   locale,
   localizationPolicy,
@@ -33,6 +35,10 @@ export function LiveAiMinutesChip({
   }
 
   const openAccountLabel = message('subscription.chip_open_account').text
+
+  if (entitlement.is_demo && context === 'global') {
+    return null
+  }
 
   if (entitlement.is_demo) {
     const resolution =

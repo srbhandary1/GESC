@@ -13,6 +13,7 @@ import {
 } from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import type { ConversationJourneyApi } from '../conversation/ConversationJourneyApi'
 import type {
   OfflineLearningStore,
   OfflineProfileBinding,
@@ -26,7 +27,6 @@ import {
 import type {
   AttemptResponseInput,
   GovernedContent,
-  LearnerGoal,
   LearnerHome,
   LearnerJourneyApi,
   LearnerMission,
@@ -35,26 +35,29 @@ import type {
   MissionResult,
   OfflineBundle,
   OfflineCompletionInput,
-  OnboardingInput,
 } from './LearnerJourneyApi'
-import {
-  LEARNER_GOALS,
-  LearnerJourneyUnavailableError,
-} from './LearnerJourneyApi'
+import { LearnerJourneyUnavailableError } from './LearnerJourneyApi'
 import { DemoSpeechPlayer } from '../demo/DemoSpeechPlayer'
 import { isDemoSpeechUrl } from '../demo/browserSpeech'
 import { createClientId as createRandomClientId } from '../shared/createClientId'
 import { AvatarSlot } from '../ui/AvatarSlot'
 import { TutorPresence } from '../tutor/TutorPresence'
 import { LevelVideosPanel } from './LevelVideosPanel'
+import { FirstUseOnboarding } from './FirstUseOnboarding'
+import { hasFirstUseResume } from './FirstUseOnboardingResume'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
 import { RecordingTurn } from './RecordingTurn'
 import './LearnerJourney.css'
 
 export interface LearnerJourneyProps {
   readonly api: LearnerJourneyApi
+  readonly conversationApi?: Pick<
+    ConversationJourneyApi,
+    'voiceConsents' | 'grantVoiceConsent'
+  >
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
+  readonly onLocaleChange?: (locale: SupportedLocale) => void
   readonly audioRecorder?: AudioRecorder
   readonly createClientId?: () => string
   readonly offlineBinding?: OfflineProfileBinding | null
@@ -105,8 +108,10 @@ type OfflineStatus =
 
 export function LearnerJourney({
   api,
+  conversationApi,
   locale,
   localizationPolicy,
+  onLocaleChange,
   audioRecorder = defaultAudioRecorder,
   createClientId = createRandomClientId,
   offlineBinding = null,
@@ -658,6 +663,7 @@ export function LearnerJourney({
       <MissionResultView
         locale={locale}
         localizationPolicy={localizationPolicy}
+        onContinue={loadHome}
         onRetry={() => {
           if (state.home === null) {
             loadHome()
@@ -673,14 +679,18 @@ export function LearnerJourney({
     )
   }
 
-  if (!state.home.onboarding.completed) {
+  if (!state.home.onboarding.completed || hasFirstUseResume()) {
     return (
-      <OnboardingForm
+      <FirstUseOnboarding
         api={api}
+        audioRecorder={audioRecorder}
+        conversationApi={conversationApi}
         createClientId={createClientId}
+        initialHome={state.home}
         locale={locale}
         localizationPolicy={localizationPolicy}
         onComplete={(home) => setState({ home, kind: 'ready' })}
+        onLocaleChange={onLocaleChange}
         titleRef={stateTitle}
       />
     )
@@ -807,11 +817,6 @@ export function LearnerJourney({
               </p>
             ) : null}
             <div className="learner-home__action-footer">
-              <a className="learner-home__speak" href="#speak">
-                <LocalizedMessage
-                  resolution={message('demo.phase1.home.speak')}
-                />
-              </a>
               <button
                 className="ge-button ge-button--primary learner-home__continue"
                 disabled={busy}
@@ -972,173 +977,6 @@ export function LearnerJourney({
           localizationPolicy={localizationPolicy}
         />
       )}
-    </section>
-  )
-}
-
-interface OnboardingFormProps {
-  readonly api: LearnerJourneyApi
-  readonly createClientId: () => string
-  readonly locale: SupportedLocale
-  readonly localizationPolicy: ResolutionPolicy
-  readonly onComplete: (home: LearnerHome) => void
-  readonly titleRef: React.RefObject<HTMLHeadingElement | null>
-}
-
-function OnboardingForm({
-  api,
-  createClientId,
-  locale,
-  localizationPolicy,
-  onComplete,
-  titleRef,
-}: OnboardingFormProps) {
-  const [adultConfirmed, setAdultConfirmed] = useState(false)
-  const [goal, setGoal] = useState<LearnerGoal | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [commandLocked, setCommandLocked] = useState(false)
-  const [error, setError] = useState(false)
-  const commandId = useRef(createClientId())
-  const pendingInput = useRef<OnboardingInput | null>(null)
-  const message = (key: MessageKey) =>
-    resolveInterfaceMessage(key, locale, localizationPolicy)
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    let input = pendingInput.current
-
-    if (input === null) {
-      if (!adultConfirmed || goal === null) {
-        setError(true)
-        return
-      }
-
-      input = {
-        adult_confirmed: true,
-        goal_key: goal,
-      } satisfies OnboardingInput
-      pendingInput.current = input
-      setCommandLocked(true)
-    }
-    setBusy(true)
-    setError(false)
-
-    try {
-      onComplete(
-        await api.updateOnboarding(input, commandId.current),
-      )
-      pendingInput.current = null
-      setCommandLocked(false)
-      commandId.current = createClientId()
-    } catch {
-      setError(true)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <section
-      aria-labelledby="onboarding-title"
-      className="learner-card learner-onboarding ge-onboarding"
-    >
-      <div className="ge-onboarding__presence">
-        <AvatarSlot
-          label={message('tutor.name').text}
-          size="sm"
-          slot="home-teacher"
-        />
-        <div className="ge-onboarding__coach">
-          <p className="ge-onboarding__coach-role">
-            <LocalizedMessage resolution={message('tutor.role')} />
-          </p>
-          <p className="ge-onboarding__coach-line">
-            <LocalizedMessage resolution={message('tutor.intro')} />
-          </p>
-        </div>
-      </div>
-      <h2
-        id="onboarding-title"
-        ref={titleRef}
-        tabIndex={-1}
-      >
-        <LocalizedMessage
-          resolution={message('learner.onboarding.title')}
-        />
-      </h2>
-      <p>
-        <LocalizedMessage
-          resolution={message('learner.onboarding.introduction')}
-        />
-      </p>
-      <p>
-        <LocalizedMessage
-          resolution={message('learner.onboarding.orientation')}
-        />
-      </p>
-      <form onSubmit={(event) => void submit(event)}>
-        <label className="learner-choice learner-choice--confirmation">
-          <input
-            checked={adultConfirmed}
-            disabled={busy || commandLocked}
-            onChange={(event) =>
-              setAdultConfirmed(event.currentTarget.checked)
-            }
-            type="checkbox"
-          />
-          <LocalizedMessage
-            resolution={message('learner.onboarding.adult_confirmation')}
-          />
-        </label>
-
-        <fieldset className="learner-fieldset">
-          <legend>
-            <LocalizedMessage
-              resolution={message('learner.onboarding.goal_legend')}
-            />
-          </legend>
-          {LEARNER_GOALS.map((candidate) => (
-            <label
-              className="learner-choice"
-              key={candidate}
-            >
-              <input
-                checked={goal === candidate}
-                disabled={busy || commandLocked}
-                name="learner-goal"
-                onChange={() => setGoal(candidate)}
-                type="radio"
-                value={candidate}
-              />
-              <LocalizedMessage
-                resolution={message(goalMessageKey(candidate))}
-              />
-            </label>
-          ))}
-        </fieldset>
-
-        {error ? (
-          <p role="alert">
-            <LocalizedMessage
-              resolution={message('learner.onboarding.error')}
-            />
-          </p>
-        ) : null}
-        <button
-          className="ge-button ge-button--primary"
-          disabled={busy}
-          type="submit"
-        >
-          <LocalizedMessage
-            resolution={message(
-              busy
-                ? 'learner.onboarding.saving'
-                : 'learner.onboarding.continue',
-            )}
-          />
-        </button>
-      </form>
     </section>
   )
 }
@@ -1404,6 +1242,7 @@ function MissionExperience({
           <RecordingTurn
             createClientId={createClientId}
             labels={{
+              backCancelled: text('learner.recording.back_cancelled'),
               controls: {
                 region: text('learner.recording.region'),
                 start: text('learner.recording.start'),
@@ -1427,6 +1266,15 @@ function MissionExperience({
               retry: text('learner.recording.retry'),
               permissionExplanation: text(
                 'learner.recording.permission_explanation',
+              ),
+              permissionContinue: text(
+                'learner.recording.permission_continue',
+              ),
+              permissionDeniedOnce: text(
+                'learner.recording.permission_denied_once',
+              ),
+              permissionDeniedPermanently: text(
+                'learner.recording.permission_denied_permanently',
               ),
               continueWithout: text(
                 'learner.recording.continue_without',
@@ -1531,6 +1379,7 @@ function MissionExperience({
 interface MissionResultViewProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
+  readonly onContinue: () => void
   readonly onRetry: () => void
   readonly progress: LearnerProgress | null
   readonly result: MissionResult
@@ -1540,6 +1389,7 @@ interface MissionResultViewProps {
 function MissionResultView({
   locale,
   localizationPolicy,
+  onContinue,
   onRetry,
   progress,
   result,
@@ -1547,6 +1397,11 @@ function MissionResultView({
 }: MissionResultViewProps) {
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+  const capabilityTotal = progress?.objectives.length ?? 0
+  const capabilitiesReady =
+    progress?.objectives.filter(
+      (objective) => objective.knowledge_state === 'mastered',
+    ).length ?? 0
 
   return (
     <section
@@ -1668,19 +1523,45 @@ function MissionResultView({
       </section>
 
       {progress === null ? null : (
-        <ProgressSummary
-          locale={locale}
-          localizationPolicy={localizationPolicy}
-          progress={progress}
-        />
+        <>
+          {capabilityTotal > 0 ? (
+            <p className="learner-result__capability-progress" role="status">
+              <LocalizedMessage
+                resolution={resolveInterfaceMessage(
+                  'learner.result.capability_progress',
+                  locale,
+                  localizationPolicy,
+                  {
+                    completed: String(capabilitiesReady),
+                    total: String(capabilityTotal),
+                  },
+                )}
+              />
+            </p>
+          ) : null}
+          <ProgressSummary
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            progress={progress}
+          />
+        </>
       )}
-      <button
-        className="ge-button"
-        onClick={onRetry}
-        type="button"
-      >
-        <LocalizedMessage resolution={message('learner.result.retry')} />
-      </button>
+      <div className="learner-result__actions">
+        <button
+          className="ge-button ge-button--primary"
+          onClick={onContinue}
+          type="button"
+        >
+          <LocalizedMessage resolution={message('learner.result.continue')} />
+        </button>
+        <button
+          className="ge-button"
+          onClick={onRetry}
+          type="button"
+        >
+          <LocalizedMessage resolution={message('learner.result.retry')} />
+        </button>
+      </div>
     </section>
   )
 }
@@ -1823,14 +1704,6 @@ function homeStreakMessageKey(count: number): MessageKey {
   }
 
   return 'learner.home.streak_many'
-}
-
-function goalMessageKey(goal: LearnerGoal): MessageKey {
-  return {
-    'everyday-conversation': 'learner.onboarding.goal_everyday',
-    'travel-confidence': 'learner.onboarding.goal_travel',
-    'workplace-confidence': 'learner.onboarding.goal_workplace',
-  }[goal] as MessageKey
 }
 
 function offlineStatusMessageKey(

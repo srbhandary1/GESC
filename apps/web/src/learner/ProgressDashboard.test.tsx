@@ -44,9 +44,9 @@ describe('ProgressDashboard', () => {
           scheduled_count: 0,
           due_count: 0,
           pending_count: 0,
-          completed_count: 0,
-          completed_on_time_count: 0,
-          completed_late_count: 0,
+          reviewed_count: 0,
+          reviewed_on_time_count: 0,
+          reviewed_late_count: 0,
         },
         actionable_due_review: null,
         recurring_errors: { patterns: [] },
@@ -106,9 +106,9 @@ describe('ProgressDashboard', () => {
           scheduled_count: 1,
           due_count: 1,
           pending_count: 0,
-          completed_count: 0,
-          completed_on_time_count: 0,
-          completed_late_count: 0,
+          reviewed_count: 3,
+          reviewed_on_time_count: 2,
+          reviewed_late_count: 1,
         },
         actionable_due_review: {
           id: '01J00000000000000000000061',
@@ -146,7 +146,11 @@ describe('ProgressDashboard', () => {
 
     const summarySection = screen.getByLabelText('Summary statistics')
     expect(summarySection).toHaveTextContent('5')
-    expect(summarySection).toHaveTextContent('1') // due count missed
+    expect(summarySection).toHaveTextContent('1 reviews ready or overdue')
+    expect(summarySection).toHaveTextContent('2 reviewed on time')
+    expect(summarySection).toHaveTextContent('1 reviewed late')
+    expect(summarySection).not.toHaveTextContent(/missed/i)
+    expect(summarySection).not.toHaveTextContent(/reviews completed/i)
 
     const improvementList = screen.getByLabelText('Improvement highlights')
     expect(improvementList).toHaveTextContent('passed on first attempt')
@@ -192,9 +196,9 @@ describe('ProgressDashboard', () => {
           scheduled_count: 1,
           due_count: 1,
           pending_count: 0,
-          completed_count: 0,
-          completed_on_time_count: 0,
-          completed_late_count: 0,
+          reviewed_count: 0,
+          reviewed_on_time_count: 0,
+          reviewed_late_count: 0,
         },
         actionable_due_review: {
           id: '01J00000000000000000000061',
@@ -244,9 +248,9 @@ describe('ProgressDashboard', () => {
           scheduled_count: 0,
           due_count: 0,
           pending_count: 0,
-          completed_count: 0,
-          completed_on_time_count: 0,
-          completed_late_count: 0,
+          reviewed_count: 0,
+          reviewed_on_time_count: 0,
+          reviewed_late_count: 0,
         },
         actionable_due_review: null,
         recurring_errors: { patterns: [] },

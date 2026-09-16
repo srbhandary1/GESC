@@ -19,6 +19,8 @@ import type {
   MissionResult,
   OfflineBundle,
 } from './LearnerJourneyApi'
+import { LearnerJourneyUnavailableError } from './LearnerJourneyApi'
+import { FIRST_USE_RESUME_STORAGE_KEY } from './FirstUseOnboardingResume'
 import type {
   OfflineLearningStore,
   OfflineProfileBinding,
@@ -37,6 +39,7 @@ const ids = {
 } as const
 
 beforeEach(() => {
+  window.localStorage.removeItem(FIRST_USE_RESUME_STORAGE_KEY)
   Object.defineProperty(globalThis.navigator, 'onLine', {
     configurable: true,
     value: true,
@@ -80,20 +83,11 @@ describe('deterministic learner journey', () => {
     )
 
     const onboardingTitle = await screen.findByRole('heading', {
-      name: t('learner.onboarding.title'),
+      name: t('learner.onboarding.welcome_title'),
     })
     await waitFor(() => expect(onboardingTitle).toHaveFocus())
 
-    await user.click(
-      screen.getByRole('checkbox', {
-        name: t('learner.onboarding.adult_confirmation'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
-      }),
-    )
+    await chooseOnboardingGoal(user)
     await user.click(
       screen.getByRole('button', {
         name: t('learner.onboarding.continue'),
@@ -106,7 +100,9 @@ describe('deterministic learner journey', () => {
         goal_key: 'workplace-confidence',
       },
       ids.capture,
+      expect.any(AbortSignal),
     )
+    await finishOnboardingAfterGoal(user)
     await user.click(
       await screen.findByRole('button', {
         name: t('learner.home.continue'),
@@ -199,6 +195,21 @@ describe('deterministic learner journey', () => {
         t('learner.result.local_capture_completed'),
       ),
     ).not.toHaveLength(0)
+    expect(
+      await screen.findByText(
+        resolveMessage('learner.result.capability_progress', {
+          policy: 'development-preview',
+          requestedLocale: DEFAULT_LOCALE,
+          parameters: { completed: '1', total: '1' },
+        }).text,
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: t('learner.result.continue') }),
+    ).toHaveClass('ge-button--primary')
+    expect(
+      screen.getByRole('button', { name: t('learner.result.retry') }),
+    ).not.toHaveClass('ge-button--primary')
     expect(api.recordResponse).toHaveBeenCalledWith(
       ids.attempt,
       expect.objectContaining({
@@ -268,6 +279,13 @@ describe('deterministic learner journey', () => {
       expect.objectContaining({ local_recording: null }),
       expect.any(String),
     )
+    await user.click(
+      screen.getByRole('button', { name: t('learner.result.continue') }),
+    )
+    expect(
+      await screen.findByRole('heading', { name: t('learner.home.title') }),
+    ).toBeVisible()
+    expect(api.home).toHaveBeenCalledTimes(2)
   })
 
   it('retries onboarding with the same frozen payload and command id', async () => {
@@ -275,7 +293,9 @@ describe('deterministic learner journey', () => {
     const updateOnboarding = vi
       .fn()
       .mockRejectedValueOnce(new TypeError('ambiguous network loss'))
+      .mockRejectedValueOnce(new TypeError('ambiguous network loss'))
       .mockResolvedValueOnce(completeHome())
+    let commandSequence = 0
     const api = {
       ...fakeApi(incompleteHome()),
       updateOnboarding,
@@ -284,29 +304,21 @@ describe('deterministic learner journey', () => {
     render(
       <LearnerJourney
         api={api}
+        createClientId={() => `command-${commandSequence += 1}`}
         locale={DEFAULT_LOCALE}
         localizationPolicy="development-preview"
       />,
     )
 
-    await user.click(
-      await screen.findByRole('checkbox', {
-        name: t('learner.onboarding.adult_confirmation'),
-      }),
-    )
-    await user.click(
-      screen.getByRole('radio', {
-        name: t('learner.onboarding.goal_workplace'),
-      }),
-    )
+    await chooseOnboardingGoal(user)
     const submit = screen.getByRole('button', {
       name: t('learner.onboarding.continue'),
     })
     await user.click(submit)
 
-    expect(
-      await screen.findByText(t('learner.onboarding.error')),
-    ).toBeVisible()
+    expect(await screen.findByText(
+      t('learner.onboarding.error_server'),
+    )).toBeVisible()
     const travelGoal = screen.getByRole('radio', {
       name: t('learner.onboarding.goal_travel'),
     })
@@ -318,18 +330,131 @@ describe('deterministic learner journey', () => {
       }),
     ).toBeChecked()
 
-    await user.click(submit)
-    await screen.findByRole('heading', {
-      name: t('learner.home.title'),
-    })
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.retry_same'),
+    }))
+    expect(await screen.findByText(
+      t('learner.onboarding.error_server'),
+    )).toBeVisible()
 
-    expect(updateOnboarding).toHaveBeenCalledTimes(2)
     expect(updateOnboarding.mock.calls[1]?.[0]).toEqual(
       updateOnboarding.mock.calls[0]?.[0],
     )
     expect(updateOnboarding.mock.calls[1]?.[1]).toBe(
       updateOnboarding.mock.calls[0]?.[1],
     )
+
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.edit_choices'),
+    }))
+    expect(travelGoal).toBeEnabled()
+    await user.click(travelGoal)
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    await finishOnboardingAfterGoal(user)
+    await screen.findByRole('heading', {
+      name: t('learner.home.title'),
+    })
+
+    expect(updateOnboarding).toHaveBeenCalledTimes(3)
+    expect(updateOnboarding.mock.calls[2]?.[0]).toEqual(
+      expect.objectContaining({ goal_key: 'travel-confidence' }),
+    )
+    expect(updateOnboarding.mock.calls[2]?.[1]).not.toBe(
+      updateOnboarding.mock.calls[0]?.[1],
+    )
+  })
+
+  it('separates onboarding validation, offline, timeout and server errors', async () => {
+    const user = userEvent.setup()
+    const api = fakeApi(incompleteHome())
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    expect(screen.getByText(
+      t('learner.onboarding.error_validation'),
+    )).toBeVisible()
+
+    await user.click(screen.getByRole('checkbox', {
+      name: t('learner.onboarding.adult_confirmation'),
+    }))
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    await user.click(screen.getByRole('radio', {
+      name: t('learner.onboarding.goal_workplace'),
+    }))
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    })
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+    expect(screen.getByText(t('learner.onboarding.error_offline'))).toBeVisible()
+    expect(api.updateOnboarding).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [
+      'timeout',
+      new DOMException('Timed out', 'TimeoutError'),
+      'learner.onboarding.error_timeout',
+    ],
+    [
+      'server',
+      new LearnerJourneyUnavailableError(503),
+      'learner.onboarding.error_server',
+    ],
+  ] as const)('shows a distinct onboarding %s recovery', async (
+    _kind,
+    failure,
+    messageKey,
+  ) => {
+    const user = userEvent.setup()
+    const api = {
+      ...fakeApi(incompleteHome()),
+      updateOnboarding: vi.fn(async () => {
+        throw failure
+      }),
+    } satisfies LearnerJourneyApi
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await chooseOnboardingGoal(user)
+    await user.click(screen.getByRole('button', {
+      name: t('learner.onboarding.continue'),
+    }))
+
+    expect(await screen.findByText(t(messageKey))).toBeVisible()
+    expect(screen.getByRole('button', {
+      name: t('learner.onboarding.retry_same'),
+    })).toBeVisible()
+    expect(screen.getByRole('button', {
+      name: t('learner.onboarding.edit_choices'),
+    })).toBeVisible()
   })
 
   it('retries an attempt response with the same frozen payload and command id', async () => {
@@ -728,8 +853,8 @@ describe('deterministic learner journey', () => {
       screen.getByRole('button', { name: t('learner.home.continue') }),
     ).toHaveClass('learner-home__continue')
     expect(
-      screen.getByRole('link', { name: t('demo.phase1.home.speak') }),
-    ).toHaveAttribute('href', '#speak')
+      screen.queryByRole('link', { name: t('demo.phase1.home.speak') }),
+    ).not.toBeInTheDocument()
     expect(screen.getByRole('img', { name: t('tutor.name') })).toBeVisible()
     expect(
       screen.queryByText(
@@ -1066,4 +1191,66 @@ function t(key: MessageKey): string {
     policy: 'development-preview',
     requestedLocale: DEFAULT_LOCALE,
   }).text
+}
+
+async function chooseOnboardingGoal(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(await screen.findByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(await screen.findByRole('checkbox', {
+    name: t('learner.onboarding.adult_confirmation'),
+  }))
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(screen.getByRole('radio', {
+    name: t('learner.onboarding.goal_workplace'),
+  }))
+}
+
+async function finishOnboardingAfterGoal(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(await screen.findByRole('radio', {
+    name: new RegExp(t('learner.onboarding.placement_beginning')),
+  }))
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.audio_defer'),
+  }))
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await screen.findByRole('heading', {
+    name: t('learner.onboarding.consent_title'),
+  })
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  const typeInstead = await screen.findAllByRole('button', {
+    name: t('learner.onboarding.microphone_type_instead'),
+  })
+  await user.click(typeInstead[0]!)
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(await screen.findByRole('radio', {
+    name: t('learner.onboarding.practice_typed'),
+  }))
+  await user.type(screen.getByRole('textbox', {
+    name: t('learner.onboarding.practice_typed_label'),
+  }), 'Good morning.')
+  await user.click(screen.getByRole('button', {
+    name: t('learner.onboarding.continue'),
+  }))
+  await user.click(await screen.findByRole('button', {
+    name: t('learner.onboarding.open_home'),
+  }))
 }

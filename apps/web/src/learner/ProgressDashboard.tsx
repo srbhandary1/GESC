@@ -158,22 +158,22 @@ export function ProgressDashboard({
           </span>
         </div>
         <div className="progress-dashboard__stat">
-          <span className="progress-dashboard__stat-value">{data.delayed_review.completed_on_time_count}</span>
+          <span className="progress-dashboard__stat-value">{data.delayed_review.reviewed_on_time_count}</span>
           <span className="progress-dashboard__stat-label">
-            <LocalizedMessage resolution={msg('learner.progress.delayed_review_ontime', { count: String(data.delayed_review.completed_on_time_count) })} />
+            <LocalizedMessage resolution={msg('learner.progress.delayed_review_ontime', { count: String(data.delayed_review.reviewed_on_time_count) })} />
           </span>
         </div>
         <div className="progress-dashboard__stat">
-          <span className="progress-dashboard__stat-value">{data.delayed_review.completed_late_count}</span>
+          <span className="progress-dashboard__stat-value">{data.delayed_review.reviewed_late_count}</span>
           <span className="progress-dashboard__stat-label">
-            <LocalizedMessage resolution={msg('learner.progress.delayed_review_late', { count: String(data.delayed_review.completed_late_count) })} />
+            <LocalizedMessage resolution={msg('learner.progress.delayed_review_late', { count: String(data.delayed_review.reviewed_late_count) })} />
           </span>
         </div>
         {(data.delayed_review.due_count > 0 || data.delayed_review.pending_count > 0) && (
-          <div className="progress-dashboard__stat progress-dashboard__stat--missed">
+          <div className="progress-dashboard__stat progress-dashboard__stat--ready">
             <span className="progress-dashboard__stat-value">{data.delayed_review.due_count}</span>
             <span className="progress-dashboard__stat-label">
-              <LocalizedMessage resolution={msg('learner.progress.delayed_review_missed', { count: String(data.delayed_review.due_count) })} />
+              <LocalizedMessage resolution={msg('learner.progress.delayed_review_ready', { count: String(data.delayed_review.due_count) })} />
             </span>
           </div>
         )}
