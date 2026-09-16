@@ -7,6 +7,7 @@ namespace App\Learning\Progress;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
+use App\Learning\Review\DelayedReviewAttemptWindow;
 use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -20,6 +21,7 @@ final readonly class LearnerProgressDashboardService
         private LearnerAuthority $authority,
         private MeaningfulSpeakingDayProjector $speakingDayProjector,
         private ReviewDueBlockingService $reviewDue,
+        private DelayedReviewAttemptWindow $reviewAttemptWindow,
     ) {}
 
     /**
@@ -342,15 +344,15 @@ final readonly class LearnerProgressDashboardService
             ->where('organization_id', $organizationId)
             ->where('enrollment_id', $enrollmentId)
             ->where('learner_membership_id', $membershipId)
-            ->get(['due_at', 'completed_at']);
+            ->get(['due_at', 'completed_at', 'timezone']);
 
         $now = Date::now();
         $scheduledCount = $rows->count();
         $dueCount = 0;
         $pendingCount = 0;
-        $completedCount = 0;
-        $completedOnTimeCount = 0;
-        $completedLateCount = 0;
+        $reviewedCount = 0;
+        $reviewedOnTimeCount = 0;
+        $reviewedLateCount = 0;
 
         foreach ($rows as $row) {
             $dueAt = CarbonImmutable::parse($this->string($row, 'due_at'));
@@ -365,25 +367,37 @@ final readonly class LearnerProgressDashboardService
                 continue;
             }
 
-            $completedCount++;
-            $completedAt = CarbonImmutable::parse(
+            $attemptedAt = CarbonImmutable::parse(
                 $this->string($row, 'completed_at'),
             );
+            $classification = $this->reviewAttemptWindow->classify(
+                $dueAt,
+                $attemptedAt,
+                $this->string($row, 'timezone'),
+            );
 
-            if ($completedAt->lte($dueAt)) {
-                $completedOnTimeCount++;
-            } else {
-                $completedLateCount++;
+            if ($classification === DelayedReviewAttemptWindow::NOT_ELIGIBLE) {
+                throw new LearningOperationRejected;
             }
+
+            $reviewedCount++;
+
+            if ($classification === DelayedReviewAttemptWindow::REVIEWED_ON_TIME) {
+                $reviewedOnTimeCount++;
+
+                continue;
+            }
+
+            $reviewedLateCount++;
         }
 
         return [
             'scheduled_count' => $scheduledCount,
             'due_count' => $dueCount,
             'pending_count' => $pendingCount,
-            'completed_count' => $completedCount,
-            'completed_on_time_count' => $completedOnTimeCount,
-            'completed_late_count' => $completedLateCount,
+            'reviewed_count' => $reviewedCount,
+            'reviewed_on_time_count' => $reviewedOnTimeCount,
+            'reviewed_late_count' => $reviewedLateCount,
         ];
     }
 
@@ -396,9 +410,9 @@ final readonly class LearnerProgressDashboardService
             'scheduled_count' => 0,
             'due_count' => 0,
             'pending_count' => 0,
-            'completed_count' => 0,
-            'completed_on_time_count' => 0,
-            'completed_late_count' => 0,
+            'reviewed_count' => 0,
+            'reviewed_on_time_count' => 0,
+            'reviewed_late_count' => 0,
         ];
     }
 

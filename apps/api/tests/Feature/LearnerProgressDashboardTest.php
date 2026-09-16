@@ -9,6 +9,7 @@ use App\Learning\Home\MeaningfulSpeakingDayPredicate;
 use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
 use App\Learning\Progress\LearnerProgressDashboardService;
+use App\Learning\Review\DelayedReviewAttemptWindow;
 use App\Learning\Review\ReviewDueBlockingService;
 use App\Models\Membership;
 use App\Models\Organization;
@@ -18,10 +19,12 @@ use App\Tenancy\OrganizationAuthorization;
 use App\Tenancy\OrganizationContext;
 use App\Tenancy\OrganizationContextManager;
 use App\Tenancy\OrganizationContextSource;
+use Carbon\CarbonImmutable;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class LearnerProgressDashboardTest extends TestCase
@@ -87,9 +90,9 @@ final class LearnerProgressDashboardTest extends TestCase
                 'scheduled_count',
                 'due_count',
                 'pending_count',
-                'completed_count',
-                'completed_on_time_count',
-                'completed_late_count',
+                'reviewed_count',
+                'reviewed_on_time_count',
+                'reviewed_late_count',
             ],
             array_keys($payload['delayed_review']),
         );
@@ -167,6 +170,66 @@ final class LearnerProgressDashboardTest extends TestCase
         }
     }
 
+    #[DataProvider('reviewAttemptBoundaries')]
+    public function test_review_attempt_window_uses_exact_persisted_timezone_boundaries(
+        string $dueAt,
+        string $attemptedAt,
+        string $expected,
+    ): void {
+        self::assertSame(
+            $expected,
+            app(DelayedReviewAttemptWindow::class)->classify(
+                CarbonImmutable::parse($dueAt),
+                CarbonImmutable::parse($attemptedAt),
+                'Asia/Kolkata',
+            ),
+        );
+    }
+
+    /**
+     * @return array<string, array{string, string, string}>
+     */
+    public static function reviewAttemptBoundaries(): array
+    {
+        return [
+            'one second before due is not eligible' => [
+                '2026-09-15T03:30:00Z',
+                '2026-09-15T03:29:59Z',
+                DelayedReviewAttemptWindow::NOT_ELIGIBLE,
+            ],
+            'exactly due is reviewed on time' => [
+                '2026-09-15T03:30:00Z',
+                '2026-09-15T03:30:00Z',
+                DelayedReviewAttemptWindow::REVIEWED_ON_TIME,
+            ],
+            'one second before the exclusive window end is reviewed on time' => [
+                '2026-09-15T03:30:00Z',
+                '2026-09-15T18:29:59Z',
+                DelayedReviewAttemptWindow::REVIEWED_ON_TIME,
+            ],
+            'the exclusive window end is reviewed late' => [
+                '2026-09-15T03:30:00Z',
+                '2026-09-15T18:30:00Z',
+                DelayedReviewAttemptWindow::REVIEWED_LATE,
+            ],
+            'one second after the exclusive window end is reviewed late' => [
+                '2026-09-15T03:30:00Z',
+                '2026-09-15T18:30:01Z',
+                DelayedReviewAttemptWindow::REVIEWED_LATE,
+            ],
+            'UTC date rollover remains on time on the persisted local date' => [
+                '2026-09-15T23:30:00Z',
+                '2026-09-16T18:29:59Z',
+                DelayedReviewAttemptWindow::REVIEWED_ON_TIME,
+            ],
+            'UTC rollover window end is late on the next persisted local date' => [
+                '2026-09-15T23:30:00Z',
+                '2026-09-16T18:30:00Z',
+                DelayedReviewAttemptWindow::REVIEWED_LATE,
+            ],
+        ];
+    }
+
     /**
      * @return array{User, OrganizationContext}
      */
@@ -241,6 +304,7 @@ final class LearnerProgressDashboardTest extends TestCase
                 new MeaningfulSpeakingDayPredicate,
             ),
             app(ReviewDueBlockingService::class),
+            app(DelayedReviewAttemptWindow::class),
         );
     }
 }

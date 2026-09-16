@@ -147,7 +147,7 @@ export interface OperatorPilotAnalyticsSummary {
     readonly speaking_turn_count: number
     readonly quiz_retry_count: number
     readonly review_return_due_count: number
-    readonly review_return_completed_count: number
+    readonly review_return_attempted_count: number
     readonly ai_fallback_count: number
     readonly latency_sample_count: number
     readonly session_cost_microunits_total: number

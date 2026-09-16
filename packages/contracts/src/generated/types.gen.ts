@@ -949,9 +949,18 @@ export type ProgressDelayedReviewPerformance = {
     scheduled_count: number;
     due_count: number;
     pending_count: number;
-    completed_count: number;
-    completed_on_time_count: number;
-    completed_late_count: number;
+    /**
+     * Eligible delayed-review occurrences cleared by an attempt, regardless of correctness.
+     */
+    reviewed_count: number;
+    /**
+     * Reviews attempted at or after due_at on the due date in the occurrence's persisted timezone.
+     */
+    reviewed_on_time_count: number;
+    /**
+     * Reviews attempted after the due date in the occurrence's persisted timezone.
+     */
+    reviewed_late_count: number;
 };
 
 export type ProgressRecurringErrors = {
@@ -2780,7 +2789,22 @@ export type OperatorPilotAnalyticsSummary = {
         };
         review_schedule_count: number;
     };
+    learning_metrics: OperatorLearningMetrics;
     distinction_note: 'usage_counts_are_not_demonstrated_learning';
+};
+
+export type OperatorLearningMetrics = {
+    stage_completion_count: number;
+    speaking_turn_count: number;
+    quiz_retry_count: number;
+    review_return_due_count: number;
+    /**
+     * Delayed-review occurrences cleared by an eligible attempt, regardless of correctness.
+     */
+    review_return_attempted_count: number;
+    ai_fallback_count: number;
+    latency_sample_count: number;
+    session_cost_microunits_total: number;
 };
 
 export type OperatorSpeechEconomicsSummary = {

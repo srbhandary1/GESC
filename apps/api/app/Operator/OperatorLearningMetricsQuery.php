@@ -17,7 +17,7 @@ final readonly class OperatorLearningMetricsQuery
      *   speaking_turn_count: int,
      *   quiz_retry_count: int,
      *   review_return_due_count: int,
-     *   review_return_completed_count: int,
+     *   review_return_attempted_count: int,
      *   ai_fallback_count: int,
      *   latency_sample_count: int,
      *   session_cost_microunits_total: int
@@ -49,7 +49,7 @@ final readonly class OperatorLearningMetricsQuery
             ->where('due_at', '<=', now())
             ->count();
 
-        $reviewCompletedCount = (int) DB::table('delayed_review_occurrences')
+        $reviewAttemptedCount = (int) DB::table('delayed_review_occurrences')
             ->where('organization_id', $organizationId)
             ->whereNotNull('completed_at')
             ->count();
@@ -74,7 +74,7 @@ final readonly class OperatorLearningMetricsQuery
             'speaking_turn_count' => $speakingTurnCount,
             'quiz_retry_count' => $quizRetryCount,
             'review_return_due_count' => $reviewDueCount,
-            'review_return_completed_count' => $reviewCompletedCount,
+            'review_return_attempted_count' => $reviewAttemptedCount,
             'ai_fallback_count' => $aiFallbackCount,
             'latency_sample_count' => $latencySampleCount,
             'session_cost_microunits_total' => $sessionCostTotal,

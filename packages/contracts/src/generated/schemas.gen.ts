@@ -4320,9 +4320,9 @@ export const ProgressDelayedReviewPerformanceSchema = {
         'scheduled_count',
         'due_count',
         'pending_count',
-        'completed_count',
-        'completed_on_time_count',
-        'completed_late_count'
+        'reviewed_count',
+        'reviewed_on_time_count',
+        'reviewed_late_count'
     ],
     properties: {
         scheduled_count: {
@@ -4337,17 +4337,20 @@ export const ProgressDelayedReviewPerformanceSchema = {
             type: 'integer',
             minimum: 0
         },
-        completed_count: {
+        reviewed_count: {
             type: 'integer',
-            minimum: 0
+            minimum: 0,
+            description: 'Eligible delayed-review occurrences cleared by an attempt, regardless of correctness.'
         },
-        completed_on_time_count: {
+        reviewed_on_time_count: {
             type: 'integer',
-            minimum: 0
+            minimum: 0,
+            description: 'Reviews attempted at or after due_at on the due date in the occurrence\'s persisted timezone.'
         },
-        completed_late_count: {
+        reviewed_late_count: {
             type: 'integer',
-            minimum: 0
+            minimum: 0,
+            description: 'Reviews attempted after the due date in the occurrence\'s persisted timezone.'
         }
     }
 } as const;
@@ -12515,6 +12518,7 @@ export const OperatorPilotAnalyticsSummarySchema = {
         'generated_at',
         'usage',
         'demonstrated_learning',
+        'learning_metrics',
         'distinction_note'
     ],
     properties: {
@@ -12587,9 +12591,62 @@ export const OperatorPilotAnalyticsSummarySchema = {
                 }
             }
         },
+        learning_metrics: {
+            $ref: '#/components/schemas/OperatorLearningMetrics'
+        },
         distinction_note: {
             type: 'string',
             const: 'usage_counts_are_not_demonstrated_learning'
+        }
+    }
+} as const;
+
+export const OperatorLearningMetricsSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'stage_completion_count',
+        'speaking_turn_count',
+        'quiz_retry_count',
+        'review_return_due_count',
+        'review_return_attempted_count',
+        'ai_fallback_count',
+        'latency_sample_count',
+        'session_cost_microunits_total'
+    ],
+    properties: {
+        stage_completion_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        speaking_turn_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        quiz_retry_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        review_return_due_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        review_return_attempted_count: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Delayed-review occurrences cleared by an eligible attempt, regardless of correctness.'
+        },
+        ai_fallback_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        latency_sample_count: {
+            type: 'integer',
+            minimum: 0
+        },
+        session_cost_microunits_total: {
+            type: 'integer',
+            minimum: 0
         }
     }
 } as const;

@@ -76,15 +76,18 @@ final class DelayedReviewScheduler
         }
     }
 
-    public function completeDue(stdClass $attempt, CarbonImmutable $completedAt): void
-    {
+    public function recordEligibleAttempt(
+        stdClass $attempt,
+        CarbonImmutable $attemptedAt,
+    ): void {
         $organizationId = $this->string($attempt, 'organization_id');
         $occurrence = DB::table('delayed_review_occurrences')
             ->where('organization_id', $organizationId)
+            ->where('enrollment_id', $this->string($attempt, 'enrollment_id'))
             ->where('learner_membership_id', $this->string($attempt, 'learner_membership_id'))
             ->where('learning_objective_id', $this->string($attempt, 'learning_objective_id'))
             ->whereNull('completed_at')
-            ->where('due_at', '<=', $completedAt)
+            ->where('due_at', '<=', $attemptedAt)
             ->orderBy('due_at')
             ->lockForUpdate()
             ->first(['id']);
@@ -95,9 +98,9 @@ final class DelayedReviewScheduler
                 ->where('id', $this->string($occurrence, 'id'))
                 ->whereNull('completed_at')
                 ->update([
-                    'completed_at' => $completedAt,
+                    'completed_at' => $attemptedAt,
                     'completion_attempt_id' => $this->string($attempt, 'id'),
-                    'updated_at' => $completedAt,
+                    'updated_at' => $attemptedAt,
                 ]);
         }
     }

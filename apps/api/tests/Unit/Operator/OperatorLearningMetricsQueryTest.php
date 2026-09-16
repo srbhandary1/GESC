@@ -48,6 +48,8 @@ final class OperatorLearningMetricsQueryTest extends TenancyIntegrationTestCase
             ->summarize($organizationId);
 
         self::assertSame(1, $metrics['stage_completion_count']);
+        self::assertSame(0, $metrics['review_return_attempted_count']);
+        self::assertArrayNotHasKey('review_return_completed_count', $metrics);
         self::assertArrayNotHasKey('transcript', $metrics);
         self::assertArrayNotHasKey('learner_membership_id', $metrics);
     }

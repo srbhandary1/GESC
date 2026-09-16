@@ -464,7 +464,7 @@ final readonly class DailyMissionAttemptService
                 submittedAt: $now,
                 policy: $policy,
             );
-            $this->delayedReviews->completeDue($attempt, $now);
+            $this->delayedReviews->recordEligibleAttempt($attempt, $now);
             $this->delayedReviews->reconcile($attempt, $now);
             $review = $this->scheduleReview(
                 attempt: $attempt,

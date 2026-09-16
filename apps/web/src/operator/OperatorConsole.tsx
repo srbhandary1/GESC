@@ -731,8 +731,8 @@ function PilotAnalytics({
           <dd>{analytics.learning_metrics.review_return_due_count}</dd>
         </div>
         <div>
-          <dt>Reviews completed</dt>
-          <dd>{analytics.learning_metrics.review_return_completed_count}</dd>
+          <dt>Reviews attempted</dt>
+          <dd>{analytics.learning_metrics.review_return_attempted_count}</dd>
         </div>
         <div>
           <dt>AI fallbacks</dt>

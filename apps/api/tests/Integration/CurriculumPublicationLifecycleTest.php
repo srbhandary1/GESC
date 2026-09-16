@@ -1332,6 +1332,128 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             'replayed' => true,
         ], $delayedFirstStartReplay);
 
+        $firstDueOccurrence = DB::table('delayed_review_occurrences')
+            ->where('organization_id', $organization->getKey())
+            ->where('source_attempt_id', $second['id'])
+            ->orderBy('due_at')
+            ->firstOrFail();
+        $firstDueAt = CarbonImmutable::parse(
+            (string) $firstDueOccurrence->due_at,
+        );
+        $fourthAttempt = DB::table('learner_attempts')
+            ->where('organization_id', $organization->getKey())
+            ->where('id', $fourth['id'])
+            ->firstOrFail();
+        $scheduler->recordEligibleAttempt(
+            $fourthAttempt,
+            $firstDueAt->subSecond(),
+        );
+        $this->assertDatabaseHas('delayed_review_occurrences', [
+            'organization_id' => $organization->getKey(),
+            'id' => $firstDueOccurrence->id,
+            'completed_at' => null,
+            'completion_attempt_id' => null,
+        ]);
+
+        $occurrenceCountBeforeReview = DB::table('delayed_review_occurrences')
+            ->where('organization_id', $organization->getKey())
+            ->count();
+        CarbonImmutable::setTestNow($firstDueAt);
+        $reviewAttempt = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->start(
+                $learner,
+                $enrollmentId,
+                $mission->missionId,
+                (string) Str::uuid(),
+            ),
+        );
+        $this->contexts()->run(
+            $learnerContext,
+            fn (): bool => $attempts->respond(
+                $learner,
+                $reviewAttempt['id'],
+                $mission->checkId,
+                'not-a-greeting',
+                null,
+                (string) Str::uuid(),
+            ),
+        );
+        $reviewSubmitKey = (string) Str::uuid();
+        $reviewResult = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $reviewAttempt['id'],
+                $reviewSubmitKey,
+            ),
+        );
+        $reviewReplay = $this->contexts()->run(
+            $learnerContext,
+            fn (): array => $attempts->submit(
+                $learner,
+                $reviewAttempt['id'],
+                $reviewSubmitKey,
+            ),
+        );
+
+        self::assertSame(
+            $reviewResult,
+            $reviewReplay,
+            'The exact submission command replay must return the original result.',
+        );
+        self::assertSame('incorrect', $reviewResult['check_state']);
+        self::assertSame(
+            $occurrenceCountBeforeReview,
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', $organization->getKey())
+                ->count(),
+            'An exact submission replay must not duplicate a review occurrence.',
+        );
+        self::assertSame(
+            1,
+            DB::table('delayed_review_occurrences')
+                ->where('organization_id', $organization->getKey())
+                ->where('id', $firstDueOccurrence->id)
+                ->where('completion_attempt_id', $reviewAttempt['id'])
+                ->where('completed_at', $firstDueAt)
+                ->count(),
+            'The eligible incorrect attempt must clear the due occurrence once.',
+        );
+        self::assertSame(
+            1,
+            DB::table('learning_commands')
+                ->where('organization_id', $organization->getKey())
+                ->where('operation', 'learner.attempt.submit')
+                ->where('aggregate_id', $reviewAttempt['id'])
+                ->where('idempotency_key', $reviewSubmitKey)
+                ->count(),
+        );
+        $remediation = DB::table('review_schedules')
+            ->where('organization_id', $organization->getKey())
+            ->where('source_attempt_id', $reviewAttempt['id'])
+            ->sole();
+        self::assertSame('immediate_retry', $remediation->schedule_kind);
+        self::assertTrue(
+            CarbonImmutable::parse((string) $remediation->due_at)
+                ->equalTo($firstDueAt),
+            'Incorrect review attempts must retain deterministic immediate remediation.',
+        );
+        $masteryAfterIncorrectReview = DB::table('mastery_states')
+            ->where('organization_id', $organization->getKey())
+            ->where('enrollment_id', $enrollmentId)
+            ->where('learning_objective_id', $mission->objectiveId)
+            ->sole();
+        self::assertSame(
+            $second['id'],
+            $masteryAfterIncorrectReview->evidence_attempt_id,
+            sprintf(
+                'An incorrect review attempt must not become mastery evidence; review attempt %s.',
+                $reviewAttempt['id'],
+            ),
+        );
+        CarbonImmutable::setTestNow('2026-07-30T10:15:00+00:00');
+
         $poisonedAttemptId = (string) Str::ulid();
         DB::table('learner_attempts')->insert([
             'id' => $poisonedAttemptId,
@@ -1350,7 +1472,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
                 'poisoned-open-attempt-definition',
             ),
             'rule_version' => 'daily-speaking-v1',
-            'attempt_number' => 6,
+            'attempt_number' => 7,
             'status' => 'in_progress',
             'started_at' => now(),
             'submitted_at' => null,
@@ -1385,7 +1507,7 @@ final class CurriculumPublicationLifecycleTest extends TenancyIntegrationTestCas
             $progress['objectives'][0]['evidence']['best_attempt_id'],
         );
         self::assertSame(
-            $offlineResult['attempt_id'],
+            $reviewAttempt['id'],
             $progress['objectives'][0]['evidence']['latest_attempt_id'],
         );
         $this->assertLearningRejected(

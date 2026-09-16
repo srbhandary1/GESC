@@ -2,9 +2,12 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.46.0
+  version: 0.47.0
   description: |
-    Canonical API contract for the Global English platform. SPEECH-RT-01
+    Canonical API contract for the Global English platform. UX-07A
+    applies the accepted persisted-timezone delayed-review window and replaces
+    completion-labelled review-attempt metrics with reviewed/attempted terms.
+    SPEECH-RT-01
     adds a consent-gated first-party realtime STT ticket that fail-closes
     to recorded upload. SPEECH-LAT-01
     streams conversation reply audio from a private no-store path instead of
@@ -12435,9 +12438,9 @@ components:
         - scheduled_count
         - due_count
         - pending_count
-        - completed_count
-        - completed_on_time_count
-        - completed_late_count
+        - reviewed_count
+        - reviewed_on_time_count
+        - reviewed_late_count
       properties:
         scheduled_count:
           type: integer
@@ -12448,15 +12451,18 @@ components:
         pending_count:
           type: integer
           minimum: 0
-        completed_count:
+        reviewed_count:
           type: integer
           minimum: 0
-        completed_on_time_count:
+          description: Eligible delayed-review occurrences cleared by an attempt, regardless of correctness.
+        reviewed_on_time_count:
           type: integer
           minimum: 0
-        completed_late_count:
+          description: Reviews attempted at or after due_at on the due date in the occurrence's persisted timezone.
+        reviewed_late_count:
           type: integer
           minimum: 0
+          description: Reviews attempted after the due date in the occurrence's persisted timezone.
     ProgressRecurringErrors:
       type: object
       additionalProperties: false
@@ -18055,6 +18061,7 @@ components:
         - generated_at
         - usage
         - demonstrated_learning
+        - learning_metrics
         - distinction_note
       properties:
         generated_at:
@@ -18108,9 +18115,49 @@ components:
             review_schedule_count:
               type: integer
               minimum: 0
+        learning_metrics:
+          $ref: "#/components/schemas/OperatorLearningMetrics"
         distinction_note:
           type: string
           const: usage_counts_are_not_demonstrated_learning
+    OperatorLearningMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - stage_completion_count
+        - speaking_turn_count
+        - quiz_retry_count
+        - review_return_due_count
+        - review_return_attempted_count
+        - ai_fallback_count
+        - latency_sample_count
+        - session_cost_microunits_total
+      properties:
+        stage_completion_count:
+          type: integer
+          minimum: 0
+        speaking_turn_count:
+          type: integer
+          minimum: 0
+        quiz_retry_count:
+          type: integer
+          minimum: 0
+        review_return_due_count:
+          type: integer
+          minimum: 0
+        review_return_attempted_count:
+          type: integer
+          minimum: 0
+          description: Delayed-review occurrences cleared by an eligible attempt, regardless of correctness.
+        ai_fallback_count:
+          type: integer
+          minimum: 0
+        latency_sample_count:
+          type: integer
+          minimum: 0
+        session_cost_microunits_total:
+          type: integer
+          minimum: 0
     OperatorSpeechEconomicsSummary:
       type: object
       additionalProperties: false

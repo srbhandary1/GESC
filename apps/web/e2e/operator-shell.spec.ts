@@ -2001,7 +2001,7 @@ async function mockOperatorApi(page: Page): Promise<MockOperatorState> {
           ai_fallback_count: 0,
           latency_sample_count: 0,
           quiz_retry_count: 0,
-          review_return_completed_count: 0,
+          review_return_attempted_count: 0,
           review_return_due_count: 0,
           session_cost_microunits_total: 0,
           speaking_turn_count: 0,

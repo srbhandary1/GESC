@@ -619,6 +619,23 @@ describe('operator console', () => {
     expect(getOverview).toHaveBeenCalledTimes(2)
     expect(listDrafts).not.toHaveBeenCalled()
   })
+
+  it('labels cleared review occurrences as attempted rather than completed', async () => {
+    const api = operatorApi({
+      getOverview: vi.fn(async () => ({
+        generated_at: '2026-08-09T10:00:00+00:00',
+        navigation: ['overview'] as const,
+        organization: organization(),
+        panels: ['pilot_analytics'] as const,
+        search_available: false,
+      })),
+    })
+
+    renderConsole(api)
+
+    expect(await screen.findByText('Reviews attempted')).toBeInTheDocument()
+    expect(screen.queryByText('Reviews completed')).not.toBeInTheDocument()
+  })
 })
 
 function renderConsole(api: OperatorConsoleApi) {
@@ -741,7 +758,7 @@ function pilotAnalytics() {
       ai_fallback_count: 0,
       latency_sample_count: 0,
       quiz_retry_count: 1,
-      review_return_completed_count: 2,
+      review_return_attempted_count: 2,
       review_return_due_count: 0,
       session_cost_microunits_total: 0,
       speaking_turn_count: 6,
