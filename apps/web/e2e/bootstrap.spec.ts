@@ -157,10 +157,11 @@ test('supports skip-link and sign-in from the keyboard', async ({
 }) => {
   await page.goto('/')
 
-  await page.keyboard.press('Tab')
   const skipLink = page.getByRole('link', {
     name: message('shell.skip_to_content'),
   })
+  await expect(skipLink).toBeAttached()
+  await page.keyboard.press('Tab')
 
   await expect(skipLink).toBeFocused()
   await expect(skipLink).toBeVisible()

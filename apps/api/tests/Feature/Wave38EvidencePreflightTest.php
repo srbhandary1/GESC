@@ -36,6 +36,7 @@ final class Wave38EvidencePreflightTest extends TestCase
     public function test_unconfigured_preflight_fails_closed_without_http(): void
     {
         Http::preventStrayRequests();
+        config()->set('speech_routing.wave38.status_file', '');
 
         $result = $this->app->make(Wave38EvidencePreflight::class)->evaluate();
 

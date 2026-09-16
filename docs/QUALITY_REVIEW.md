@@ -1,5 +1,63 @@
 # Quality review
 
+## DEVICE-GATE-FIX-02 deterministic Android gate repair — 16 September 2026
+
+### Scope reviewed
+
+- Preserve the localized explanation when Android Back cancels an active
+  recording, without changing capture, upload or typed-fallback behavior.
+- Repair both wrappers' invalid DOM route helper so connected smoke journeys
+  can reach their asserted destinations.
+- Fix only deterministic test/lifecycle failures reproduced at current HEAD:
+  first-Tab skip-link timing, configured-host Wave 3.8 test isolation and late
+  guidance callbacks after component unmount.
+- No device-matrix cell, feature, API/OpenAPI, schema, storage, entitlement,
+  payment, production or Play authorization change.
+
+### Review result
+
+The targeted pre-fix RMX3085 session at source HEAD `8f79fc3` verified the
+contextual rationale, denied-once and denied-permanently results, retained
+**Type instead**, and actual recording after permission was granted through
+Android App Info. It did not exercise choosing **Allow** in the contextual
+system prompt, so UX10-DEV-01 remains narrowly open. Back during active capture
+cancelled without upload, but the explanatory status disappeared; that exact
+source defect is the repair below. No learner audio or transcript is retained
+as evidence.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Recording Back status | Pass in component evidence | `VoicePracticePanel` resets its parent loop without changing the child key; the new integration regression starts capture, dispatches the Android Back event, verifies cancellation, retained `learner.recording.back_cancelled`, ready hold control and no upload |
+| Native route helper | Pass in source/compile evidence | Production and demo suites use a valid JavaScript IIFE and assert the resulting hash before continuing; both Android-test source sets compile |
+| Async lifecycle | Pass | Guidance callbacks are guarded after unmount; the focused Conversation/Voice suites pass 24/24 and the full web suite passes 466/466 without unhandled rejection |
+| Skip-link race | Pass | The E2E waits for the rendered skip link before pressing Tab; Playwright 29/29 passes |
+| Wave 3.8 test isolation | Pass | The unconfigured test explicitly sets an empty `speech_routing.wave38.status_file`; focused test passes 4/4 and full SQLite suite passes 316/316 |
+| Scope boundary | Pass | No authoritative record, API, schema, storage, entitlement, review interval, payment, production or release change |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| Focused Vitest (`ConversationJourney`, `VoicePracticePanel`, then `RecordingTurn`) | Passed: 24/24 and 37/37 |
+| Focused `Wave38EvidencePreflightTest` | Passed: 4 tests, 31 assertions |
+| Production wrapper Gradle compile/instrumentation compile/unit test | `BUILD SUCCESSFUL`; 62 tasks executed |
+| Demo wrapper Gradle compile/instrumentation compile/unit test | `BUILD SUCCESSFUL`; 60 tasks executed |
+| Pinned `make verify` | Passed: Composer/Pint/PHPStan; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,225 assertions); lint/typecheck/contracts; web 101 files / 466 tests. Two moderate pnpm advisories remain below the high-severity gate; five locale-review warnings remain. The first attempt exposed the configured-host Wave 3.8 precondition; the second exposed two late guidance callbacks; both were repaired and the final command exited 0. |
+| Pinned `make e2e` | Passed: reconciliation API 4/4 (103 assertions), Playwright 29/29 |
+| Pinned `make build` | Passed; production web bundle built and unlicensed tutor-avatar models remained excluded |
+
+### Residuals
+
+- The pre-fix RMX3085 walk proved safe cancellation but did not retain the
+  explanatory status. The source regression is fixed; a rebuilt APK must prove
+  the announcement on-device before that UX-10A exit criterion can pass.
+- Connected production/demo instrumentation was not rerun because no device is
+  attached to this Linux host. A documented seeded signed-in profile remains a
+  precondition for the production suite.
+- Gesture predictive Back, TalkBack, font/320px, split-screen/offline and
+  remaining §10 columns remain open exactly as recorded. No matrix cell changed.
+- Production, Play release and live payment remain unauthorized.
+
 ## APP-0064 renewal and Wave 3.8 reclose — 16 September 2026
 
 ### Scope reviewed

@@ -3311,6 +3311,42 @@ I accept.
 - Connected instrumentation, dashboard fail-close on a pre-due stored
   completion (defect 6), and API 36 predictive-Back defaults remain residual.
 
+<a id="app-0094"></a>
+
+## APP-0094 — DEVICE-GATE-FIX-02 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for DEVICE-GATE-FIX-02 only |
+| Decision date | 2026-09-16 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation after signing in for the bounded device-gate continuation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#device-gate-fix-02--deterministic-android-gate-repair) |
+| Related decision | [D-0302](DECISIONS.md) |
+| Related ADRs | None; no product or architecture contract changes |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA unavailable while authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Compleete the required next checkpoint
+```
+
+### Accepted scope and limitations
+
+- Complete only the bounded next source/gate checkpoint identified in the
+  preceding device session: retain the recording-Back explanation, repair the
+  native smoke route helper, and clear deterministic repository-test drift.
+- Do not infer a physical-device Pass from source or browser tests. A rebuilt
+  APK must still be rerun for the Back announcement and connected smoke suite.
+- Do not change APIs, schemas, persistence, review semantics, quiz behavior,
+  subscriptions, production configuration or release authority.
+- Production, Play release and live payment remain unauthorized.
+
 <a id="app-0092"></a>
 
 ## APP-0092 — Bounded GATE-FIX-01 authorization

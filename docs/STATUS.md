@@ -1,5 +1,29 @@
 # Repository status
 
+## DEVICE-GATE-FIX-02 deterministic Android gate repair — 16 September 2026
+
+- APP-0094/D-0302 authorize the bounded follow-up requested after the RMX3085
+  session: preserve the spoken-recording Back explanation and repair only the
+  deterministic test defects exposed while collecting device evidence.
+- Android Back during active capture still cancels the recording and returns
+  the Speak loop to waiting, but no longer remounts `RecordingTurn` before its
+  localized `learner.recording.back_cancelled` status can be announced. A
+  parent/child regression test passes.
+- Both Android smoke suites now change routes with valid, asserted JavaScript;
+  their app, instrumentation and JVM-test source sets compile. Connected
+  execution remains open because the phone is no longer attached to this host.
+- The keyboard skip-link check now waits for the application link before its
+  first Tab. The Wave 3.8 unconfigured test explicitly clears its config
+  precondition, and guidance playback ignores late state callbacks after
+  unmount. These are deterministic test/lifecycle repairs, not feature changes.
+- Final pinned gates pass: `make verify` (SQLite 316/316, PostgreSQL 360/360,
+  web 466/466), `make e2e` (API 4/4, Playwright 29/29), `make build`, and both
+  wrapper Gradle compile/unit-test commands.
+- UX-10A remains open for the repaired APK's physical Back announcement,
+  connected seeded smoke journeys, predictive gesture Back, accessibility and
+  the other recorded device/human gates. Production, Play and live payment
+  remain unauthorized.
+
 ## APP-0064 renewal and Wave 3.8 reclose — 16 September 2026
 
 - APP-0064 outside-Git vendor and spend approvals were renewed:

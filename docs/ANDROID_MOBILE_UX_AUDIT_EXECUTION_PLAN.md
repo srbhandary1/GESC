@@ -1,10 +1,9 @@
 # Android Mobile UX Audit and Execution Plan
 
 **Status:** Historical closure recorded under APP-0093/D-0300 on 16 September
-2026; implementation checkpoints UX-AUDIT-00 through UX-10A, AUDIT-FIX-01 and
-GATE-FIX-01 remain as recorded; the superseding UX-10A device run leaves its
-device/accessibility gates open; UX-EXP-01/02/03 Deferred; production, Play and
-live payment unauthorized
+2026; DEVICE-GATE-FIX-02 source/gate repair complete under APP-0094/D-0302;
+the superseding UX-10A device run and repaired-APK rerun remain open;
+UX-EXP-01/02/03 Deferred; production, Play and live payment unauthorized
 **Created:** 15 September 2026  
 **Audited commit:** `ce305bd`  
 **Product:** Global Spoken English App  
@@ -51,7 +50,9 @@ Two ledger conditions affect how this plan may be sequenced:
    revision of [`DECISIONS.md`](DECISIONS.md). The same was true of progress-log
    references D-0294–D-0296. That is an audit-time statement about the removed
    legacy references; the now-recorded D-0294–D-0296 were assigned later to
-   APP-0087/APP-0088/APP-0089's unrelated UX-03A/UX-04A/UX-08A decisions. The
+   APP-0087/APP-0088/APP-0089's unrelated UX-03A/UX-04A/UX-08A decisions, and
+   the now-recorded D-0302 was assigned later to APP-0094's unrelated bounded
+   device-gate repair. The
    non-authoritative companion was corrected on
    15 September 2026 rather than granting retroactive approval. UX-00 and UX-01
    are complete; APP-0085 authorized UX-02A, APP-0086 authorized UX-02B and
@@ -957,9 +958,10 @@ repository gates green at `179b534`
       API 35/36 predictive-Back defaults remain APP-0093 residuals.
       [Device evidence](QUALITY_REVIEW.md#102-current-phone-rerun--16-september-2026).
 - [ ] Back during recording cancels safely and explains the result on a
-      physical device. Focused component evidence passes, but the superseding
-      §10.2 rerun did not report this physical result.
-      [Device evidence](QUALITY_REVIEW.md#102-current-phone-rerun--16-september-2026).
+      physical device. The pre-fix targeted run cancelled safely but exposed a
+      remount that removed the explanation; DEVICE-GATE-FIX-02 fixes and tests
+      that source path. Rebuilt-APK confirmation remains open.
+      [Repair evidence](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026).
 - [x] Low-memory relaunch returns to the last safe recoverable state on the
       current-phone column (§10.2 rerun PASS: Recents after force-stop landed
       Home; no durable draft with ADR-0006 persistence off). Additional device
@@ -1103,6 +1105,36 @@ APP-0093/D-0300. No feature work.
       [Evidence](#15-definition-of-audit-closure).
 - [x] Production, Play and live payment remain unauthorized.
       [APP-0093](APPROVALS.md#app-0093).
+
+### DEVICE-GATE-FIX-02 — Deterministic Android gate repair
+
+**Status:** Source and repository gates complete on 16 September 2026 under
+APP-0094/D-0302; repaired-APK physical evidence remains open.
+
+#### Scope
+
+- [x] Preserve the localized cancellation explanation when Android Back safely
+      cancels an active recording. Evidence: [component regression](../apps/web/src/conversation/VoicePracticePanel.test.tsx)
+      and [quality review](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026).
+- [x] Replace the invalid route expression in both native smoke suites with an
+      asserted JavaScript route transition. Evidence: [production suite](../apps/web/android-app/app/src/androidTest/java/com/globalenglish/app/CriticalLearnerJourneyTest.java)
+      and [demo suite](../apps/web/android/app/src/androidTest/java/com/globalenglish/demo/CriticalLearnerJourneyTest.java).
+- [x] Remove the reproduced skip-link, configured-host preflight and late
+      guidance-callback nondeterminism without changing product contracts.
+      Evidence: [quality review](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026).
+
+#### Exit criteria
+
+- [x] Focused web/API tests and both wrapper compile/unit gates pass. Evidence:
+      [command record](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026).
+- [x] Pinned `make verify`, `make e2e` and `make build` pass. Evidence:
+      [§13.4](#134-device-gate-fix-02-gates--16-september-2026).
+- [ ] Rebuilt APK retains and announces the Back-cancellation explanation on a
+      physical device. Source is fixed; device rerun remains open.
+- [ ] Connected production and demo smoke journeys pass. Both suites compile;
+      no device is attached to this host.
+- [x] Production, Play release and live payment remain unauthorized.
+      [APP-0094](APPROVALS.md#app-0094).
 
 ## 9. Measurement contract
 
@@ -1265,7 +1297,7 @@ promoted to a current-phone PASS.
 
 | ID | Failed row | Bounded defect / missing evidence | Status |
 |---|---|---|---|
-| UX10-DEV-01 | Contextual grant/deny/permanent deny | Grant and permanent-denial branches were not completed on API 33; only rationale, ordinary denial and typed fallback were evidenced. | Open; evidence/fix not authorized in this session |
+| UX10-DEV-01 | Contextual grant/deny/permanent deny | DEVICE-GATE-FIX-02's targeted same-phone session verified rationale, denied-once, denied-permanently, Type instead and actual recording after an App Info grant. Selecting Allow in the contextual system prompt was not exercised. | Open, narrowed to the contextual grant branch; rebuilt-APK evidence required |
 | UX10-DEV-02 | Rotation and split-screen | Rotation remained usable but header chips crowded; split-screen was not entered, so the combined pass condition was not met. | Open; evidence/fix not authorized in this session |
 | UX10-DEV-03 | TalkBack critical journey | Named controls were observed, but the complete first-use/quiz/result journey and gesture focus behavior were not completed. | Open; evidence/fix not authorized in this session |
 | UX10-DEV-04 | 200% font scale, English | At the available 1.6 scale, Progress and the live-AI chip clipped; 2.0/320px was not exercised. | Open; evidence/fix not authorized in this session |
@@ -1506,7 +1538,10 @@ inline without rewriting the original finding):
    `androidBackNavigation.test.ts` hard-codes the pnpm store path.
    **AUDIT-FIX-01 partial resolution:** both stale template tests are removed
    and Capacitor source resolution is package-based. Instrumented-journey
-   realism and connected execution remain open.
+   realism and connected execution remain open. **DEVICE-GATE-FIX-02:** the
+   invalid `window.location.hash='#…';true` expression is replaced in both
+   suites by a valid asserted IIFE, so route changes no longer fail silently;
+   seeded connected execution and the Speak-denial interaction remain open.
 8. OpenAPI 0.47.0 documents the whole operator `learning_metrics` object
    (previously undocumented) alongside the one required rename; correct, but
    beyond UX-07A's stated scope. `LearnerSubscriptionService` changes belong to
@@ -1525,6 +1560,19 @@ candidate HEAD rather than the earlier GATE-FIX-01 commit.
 | `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed (exit 0). Composer audit found no advisories; Pint passed; PHPStan 0 errors; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,226 assertions); frozen install; two moderate pnpm advisories below `--audit-level=high`; locale check passed with five pending-independent-review warnings; OpenAPI/contracts, release and soft-launch contracts passed; lint `--max-warnings=0`; typecheck passed; web Vitest 101 files / 465 tests passed. The first sandboxed attempt stopped at Composer audit because Packagist DNS was unavailable; the exact command then passed with network access. |
 | `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0). Reconciliation API 4/4 (103 assertions); Playwright 29/29 passed (22.8s). The first sandboxed attempt could not start Playwright's local web server; the exact command then passed with host execution. |
 | `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0). Production web bundle built in 189ms; tutor-avatar licence enforcement excluded models because no completed public licence grant exists. |
+
+### 13.4 DEVICE-GATE-FIX-02 gates — 16 September 2026
+
+Pinned Node.js 24.18.1, pnpm 11.18.0, PHP 8.4.23 and JDK 21 were used from
+`tmp/toolchain`. The candidate commit is the commit containing this checkpoint.
+
+| Command | Result |
+|---|---|
+| `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed (exit 0): SQLite 316/316 (3,087 assertions), PostgreSQL 360/360 (5,225 assertions), web 101 files / 466 tests, lint/typecheck/contracts green. The final run followed and resolved two deterministic failures exposed by earlier attempts. |
+| `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0): reconciliation API 4/4 (103 assertions), Playwright 29/29. |
+| `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0): production web bundle built; unlicensed tutor-avatar models excluded. |
+| Production wrapper Gradle gate | `BUILD SUCCESSFUL`; application, Android-test and JVM-test source sets compiled/executed (62 tasks). |
+| Demo wrapper Gradle gate | `BUILD SUCCESSFUL`; application, Android-test and JVM-test source sets compiled/executed (60 tasks). |
 
 ## 14. Completion ledger
 
@@ -1548,6 +1596,7 @@ device exit gate into a pass.
 | 11 | UX-EXP-02 Plans experiment | Deferred | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md) | |
 | 12 | UX-EXP-03 Quiz experiment | Deferred | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md) | |
 | 13 | AUDIT-CLOSE-01 Plan §15 closure | Historical closure record; superseding §10.2 evidence reopens UX-10A device/accessibility gates; repository gates green at `179b534` | Accountable Product Owner | Closure commit `d62a25a`; [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-close-01-plan-15-closure--16-september-2026) | 2026-09-16 |
+| 14 | DEVICE-GATE-FIX-02 Deterministic Android gate repair | Source/repository gates complete; repaired-APK and connected-device evidence open | Accountable Product Owner | Commit containing this row; [APP-0094](APPROVALS.md#app-0094); [D-0302](DECISIONS.md); [quality review](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026) | 2026-09-16 |
 
 ## 15. Definition of audit closure
 
@@ -1616,7 +1665,7 @@ This audit is complete only when all of the following are true:
 | §13.2 defect 4 Back timeout / startup | Partial | `a628edd` guards and 1,500 ms fall-through; [evidence](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | Predictive back-to-launcher animation: residual APP-0093 |
 | §13.2 defect 5 pending checkout | Complete | `a628edd`; D-0298; [evidence](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | None |
 | §13.2 defect 6 dashboard fail-close | Residual | [Audit evidence](#132-independent-post-implementation-audit--16-september-2026): unreachable via current writers; still throws on `completed_at < due_at` | Technical Decision Owner; not authorized in this pass |
-| §13.2 defect 7 instrumentation | Partial | Template tests removed; package-based Capacitor resolve; [evidence](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | Seeded connected journeys: residual APP-0093 |
+| §13.2 defect 7 instrumentation | Partial | Template tests removed; package-based Capacitor resolve; both invalid route expressions repaired under APP-0094/D-0302; [evidence](QUALITY_REVIEW.md#device-gate-fix-02-deterministic-android-gate-repair--16-september-2026) | Seeded connected journeys and deliberate Speak-denial interaction: residual APP-0093/APP-0094 |
 | §13.2 defect 8 OpenAPI/service scope | Residual (documentation) | [Audit evidence](#132-independent-post-implementation-audit--16-september-2026); accepted as extra-scope in the 16 September snapshot | None required; not a product defect |
 | UX-EXP-01/02/03 | Deferred | APP-0093/D-0300 | Independent privacy review then live traffic: APO |
 | Independent privacy/security/tenancy review | Open human gate | Funnel contract exists; no emission | Named specialist before analytics |

@@ -147,7 +147,11 @@ public class CriticalLearnerJourneyTest {
     }
 
     private void setHash(String hash) {
-        evaluate("window.location.hash='#" + hash + "';true");
+        assertDom(
+            "(()=>{window.location.hash='#" + hash + "';return true;})()",
+            "route #" + hash
+        );
+        assertDom("window.location.hash==='#" + hash + "'", "active route #" + hash);
         SystemClock.sleep(350L);
     }
 

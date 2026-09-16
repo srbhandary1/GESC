@@ -214,6 +214,7 @@ export function ConversationJourney({
   const openingSpoken = useRef(false)
   const inFlightAbort = useRef<AbortController | null>(null)
   const stateRef = useRef(state)
+  const mounted = useRef(true)
   const message = (
     key: MessageKey,
     parameters: MessageParameters = {},
@@ -227,7 +228,9 @@ export function ConversationJourney({
   }, [state])
 
   useEffect(() => {
+    mounted.current = true
     return () => {
+      mounted.current = false
       stopRecognition.current?.()
       stopDemoSpeech()
       inFlightAbort.current?.abort()
@@ -250,23 +253,34 @@ export function ConversationJourney({
         demoMode,
         grammarDrill,
         locale: 'en-IN',
-        onPlaybackChange: setAvatarPlayback,
+        onPlaybackChange: (playback) => {
+          if (mounted.current) {
+            setAvatarPlayback(playback)
+          }
+        },
         purpose: 'model_en',
         sessionId,
         text: trimmed,
       })
         .then((played) => {
+          if (!mounted.current) {
+            return
+          }
           if (!played) {
             setVoiceUnavailable(true)
           }
           onLiveAiUsageChanged?.()
         })
         .catch(() => {
-          if (reportError) {
+          if (mounted.current && reportError) {
             setSpeechError(true)
           }
         })
-        .finally(() => setSpeakingReply(false))
+        .finally(() => {
+          if (mounted.current) {
+            setSpeakingReply(false)
+          }
+        })
     },
     [api, demoMode, grammarDrill, onLiveAiUsageChanged],
   )

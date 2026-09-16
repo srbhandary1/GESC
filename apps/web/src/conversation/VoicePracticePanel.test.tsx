@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
@@ -10,6 +10,7 @@ import type {
 import { VoicePracticePanel } from './VoicePracticePanel'
 import * as audioToPcmWav from './audioToPcmWav'
 import { encodeMonoPcmWav } from '../shared/pcmWav'
+import { ANDROID_BACK_REQUEST_EVENT } from '../learner/LearnerNavigationHistory'
 
 afterEach(() => {
   cleanup()
@@ -333,6 +334,66 @@ describe('secure voice practice consent boundary', () => {
       screen.getByRole('button', { name: 'learner.recording.cancel' }),
     )
     expect(uploadSignal?.aborted).toBe(true)
+  })
+
+  it('keeps the Android Back cancellation explanation after resetting the parent loop', async () => {
+    const api = {
+      createTurn: vi.fn(),
+      deleteVoiceRecording: vi.fn(),
+      events: vi.fn(),
+      grantVoiceConsent: vi.fn(),
+      reviewVoiceTranscript: vi.fn(),
+      startSession: vi.fn(),
+      uploadVoiceRecording: vi.fn(),
+      voiceConsents: vi.fn(async () => listing('granted', 'granted')),
+      withdrawVoiceConsent: vi.fn(),
+    } satisfies ConversationJourneyApi
+    const session = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(),
+    }
+    const recorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <VoicePracticePanel
+        api={api}
+        createClientId={() => 'voice-command'}
+        locale="en-IN"
+        onTranscriptSelected={vi.fn()}
+        recorder={recorder}
+        sessionId="01J00000000000000000000001"
+        text={(key) => key}
+      />,
+    )
+
+    const hold = await screen.findByRole('button', {
+      name: 'learner.recording.hold',
+    })
+    await user.pointer({ keys: '[MouseLeft>]', target: hold })
+    await screen.findByRole('button', {
+      name: 'learner.recording.release',
+    })
+
+    act(() => {
+      globalThis.dispatchEvent(
+        new CustomEvent(ANDROID_BACK_REQUEST_EVENT, { cancelable: true }),
+      )
+    })
+
+    expect(session.cancel).toHaveBeenCalledOnce()
+    expect(
+      screen.getByText('learner.recording.back_cancelled'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'learner.recording.hold' }),
+    ).toBeEnabled()
+    expect(api.uploadVoiceRecording).not.toHaveBeenCalled()
   })
 
   it('accepts a high-confidence clip and hands the transcript to the journey', async () => {

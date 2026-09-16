@@ -110,8 +110,8 @@ export function VoicePracticePanel({
     uploadAbort.current = null
     abandonSpeakLoop()
     onCancelInFlight?.()
-    releaseHold()
-  }, [onCancelInFlight, releaseHold])
+    setPhase('waiting')
+  }, [onCancelInFlight, setPhase])
 
   const recordingLocked =
     speakLoopPhase === 'speaking' || speakLoopPhase === 'preparing'
