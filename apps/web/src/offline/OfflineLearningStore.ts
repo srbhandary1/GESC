@@ -82,6 +82,33 @@ export interface PendingLevelCheckpointCommand {
   readonly state: 'pending' | 'needs-attention'
 }
 
+export type LevelQuizDraftPart =
+  | 'introduction'
+  | 'practice'
+  | 'conversation'
+  | 'interaction'
+  | 'checkpoint'
+
+/**
+ * A privacy-minimized, server-identifier-only draft for a level check.
+ * Prompts, option copy and learner-authored content must never be added here.
+ */
+export interface LevelQuizDraft {
+  readonly levelNumber: number
+  readonly partId: LevelQuizDraftPart
+  readonly blueprintContentHash: string
+  readonly attemptId: string
+  readonly itemIds: readonly string[]
+  readonly activeItemIds: readonly string[]
+  readonly currentItemIndex: number
+  readonly selectedOptionIds: Readonly<Record<string, number>>
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly expiresAt: string
+}
+
+export const LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS = 24 * 60 * 60 * 1000
+
 export interface OfflineLearningStore {
   available(): boolean
 
@@ -169,6 +196,24 @@ export interface OfflineLearningStore {
     levelNumber: number,
     blueprintContentHash: string,
   ): Promise<StoredOfflineLevelBundle | null>
+
+  saveLevelQuizDraft?(
+    binding: OfflineProfileBinding,
+    draft: LevelQuizDraft,
+  ): Promise<void>
+
+  loadLevelQuizDraft?(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    partId: LevelQuizDraftPart,
+  ): Promise<LevelQuizDraft | null>
+
+  deleteLevelQuizDraft?(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    partId: LevelQuizDraftPart,
+    attemptId: string,
+  ): Promise<void>
 }
 
 export function offlineLevelBundleRecordId(levelNumber: number): string {
@@ -184,4 +229,11 @@ export function offlineBundleRecordId(
 
 export function offlineCheckpointDetailRecordId(levelNumber: number): string {
   return `checkpoint-detail:${levelNumber}`
+}
+
+export function offlineLevelQuizDraftRecordId(
+  levelNumber: number,
+  partId: LevelQuizDraftPart,
+): string {
+  return `level-quiz-draft:${levelNumber}:${partId}`
 }

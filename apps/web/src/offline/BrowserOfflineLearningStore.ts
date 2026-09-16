@@ -7,6 +7,8 @@ import {
   offlineBundleRecordId,
   offlineCheckpointDetailRecordId,
   offlineLevelBundleRecordId,
+  offlineLevelQuizDraftRecordId,
+  LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS,
   type CachedLevelCheckpointDetail,
   type OfflineLevelBundle,
   type StoredOfflineLevelBundle,
@@ -15,6 +17,8 @@ import {
   type OfflineProfileBinding,
   type PendingLevelCheckpointCommand,
   type PendingOfflineCommand,
+  type LevelQuizDraft,
+  type LevelQuizDraftPart,
   type StoredOfflineBundle,
 } from './OfflineLearningStore'
 
@@ -47,6 +51,7 @@ interface StoredRecord {
     | 'checkpoint-detail'
     | 'level-bundle'
     | 'checkpoint-command'
+    | 'level-quiz-draft'
   readonly state: 'stored' | 'pending' | 'needs-attention' | 'accepted'
   readonly iv: ArrayBuffer
   readonly ciphertext: ArrayBuffer
@@ -83,6 +88,10 @@ interface StoredCheckpointCommandPayload {
 
 interface StoredLevelBundlePayload {
   readonly bundle: OfflineLevelBundle
+}
+
+interface StoredLevelQuizDraftPayload {
+  readonly draft: LevelQuizDraft
 }
 
 export class BrowserOfflineLearningStore
@@ -762,6 +771,121 @@ export class BrowserOfflineLearningStore
     }
   }
 
+  async saveLevelQuizDraft(
+    binding: OfflineProfileBinding,
+    draft: LevelQuizDraft,
+  ): Promise<void> {
+    assertLevelQuizDraft(draft)
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      await this.putEncrypted(
+        database,
+        profile,
+        'level-quiz-draft',
+        offlineLevelQuizDraftRecordId(draft.levelNumber, draft.partId),
+        { draft } satisfies StoredLevelQuizDraftPayload,
+        'stored',
+      )
+    } finally {
+      database.close()
+    }
+  }
+
+  async loadLevelQuizDraft(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    partId: LevelQuizDraftPart,
+  ): Promise<LevelQuizDraft | null> {
+    if (!this.available() || !(await databaseExists())) {
+      return null
+    }
+
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.profile(database, binding)
+
+      if (profile === null) {
+        return null
+      }
+
+      await this.assertBinding(database, profile, binding)
+      const id = offlineLevelQuizDraftRecordId(levelNumber, partId)
+      const payload = await this.readEncrypted<StoredLevelQuizDraftPayload>(
+        database,
+        profile,
+        'level-quiz-draft',
+        id,
+      )
+
+      if (payload === null) {
+        return null
+      }
+
+      try {
+        assertLevelQuizDraft(payload.draft)
+      } catch {
+        await deleteValue(
+          database,
+          RECORD_STORE,
+          storageKey(profile.partitionId, 'level-quiz-draft', id),
+        )
+        return null
+      }
+
+      if (
+        payload.draft.levelNumber !== levelNumber ||
+        payload.draft.partId !== partId ||
+        new Date(payload.draft.expiresAt).getTime() <= Date.now()
+      ) {
+        await deleteValue(
+          database,
+          RECORD_STORE,
+          storageKey(profile.partitionId, 'level-quiz-draft', id),
+        )
+        return null
+      }
+
+      return payload.draft
+    } finally {
+      database.close()
+    }
+  }
+
+  async deleteLevelQuizDraft(
+    binding: OfflineProfileBinding,
+    levelNumber: number,
+    partId: LevelQuizDraftPart,
+    attemptId: string,
+  ): Promise<void> {
+    const database = await openDatabase()
+
+    try {
+      const profile = await this.requireProfile(database, binding)
+      const id = offlineLevelQuizDraftRecordId(levelNumber, partId)
+      const payload = await this.readEncrypted<StoredLevelQuizDraftPayload>(
+        database,
+        profile,
+        'level-quiz-draft',
+        id,
+      )
+
+      if (payload?.draft.attemptId !== attemptId) {
+        return
+      }
+
+      await deleteValue(
+        database,
+        RECORD_STORE,
+        storageKey(profile.partitionId, 'level-quiz-draft', id),
+      )
+    } finally {
+      database.close()
+    }
+  }
+
   async acceptReceipt(
     binding: OfflineProfileBinding,
     commandId: string,
@@ -1101,6 +1225,71 @@ function rejectForbiddenOfflineFields(value: unknown): void {
     if (serialized.includes(forbidden)) {
       throw new OfflineStorageError()
     }
+  }
+}
+
+function assertLevelQuizDraft(draft: LevelQuizDraft): void {
+  rejectForbiddenOfflineFields(draft)
+
+  const allowedParts = new Set<LevelQuizDraftPart>([
+    'introduction',
+    'practice',
+    'conversation',
+    'interaction',
+    'checkpoint',
+  ])
+  const allowedFields = new Set([
+    'activeItemIds',
+    'attemptId',
+    'blueprintContentHash',
+    'createdAt',
+    'currentItemIndex',
+    'expiresAt',
+    'itemIds',
+    'levelNumber',
+    'partId',
+    'selectedOptionIds',
+    'updatedAt',
+  ])
+
+  if (
+    Object.keys(draft).some((field) => !allowedFields.has(field)) ||
+    !Number.isInteger(draft.levelNumber) ||
+    draft.levelNumber < 1 ||
+    draft.attemptId.trim() === '' ||
+    draft.blueprintContentHash.trim() === '' ||
+    !allowedParts.has(draft.partId) ||
+    draft.itemIds.length === 0 ||
+    draft.activeItemIds.length === 0 ||
+    !Number.isInteger(draft.currentItemIndex) ||
+    draft.currentItemIndex < 0 ||
+    draft.currentItemIndex >= draft.activeItemIds.length ||
+    !Number.isFinite(new Date(draft.createdAt).getTime()) ||
+    !Number.isFinite(new Date(draft.updatedAt).getTime()) ||
+    !Number.isFinite(new Date(draft.expiresAt).getTime()) ||
+    new Date(draft.expiresAt).getTime() <=
+      new Date(draft.createdAt).getTime() ||
+    new Date(draft.expiresAt).getTime() -
+      new Date(draft.createdAt).getTime() >
+      LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS
+  ) {
+    throw new OfflineStorageError()
+  }
+
+  const itemIds = new Set(draft.itemIds)
+  if (
+    itemIds.size !== draft.itemIds.length ||
+    new Set(draft.activeItemIds).size !== draft.activeItemIds.length ||
+    draft.itemIds.some((itemId) => itemId.trim() === '') ||
+    draft.activeItemIds.some((itemId) => !itemIds.has(itemId)) ||
+    Object.entries(draft.selectedOptionIds).some(
+      ([itemId, optionId]) =>
+        !itemIds.has(itemId) ||
+        !Number.isInteger(optionId) ||
+        optionId < 0,
+    )
+  ) {
+    throw new OfflineStorageError()
   }
 }
 
