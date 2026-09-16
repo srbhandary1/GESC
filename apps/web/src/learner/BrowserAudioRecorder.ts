@@ -1,6 +1,12 @@
 import { markSpeakLoop } from '../conversation/speakLoopTimings'
 import { concatenateFloat32 } from '../shared/pcmWav'
 import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
+import {
+  globalEnglishMicrophonePermission,
+  isNativeAndroid,
+  type AndroidMicrophonePermissionStatus,
+  type GlobalEnglishMicrophonePermissionPlugin,
+} from '../auth/nativeMicrophonePermissionPlugin'
 import { encodeAudiblePcmCapture } from './encodeAudiblePcmCapture'
 import { canonicalCaptureMimeType } from './LocalCaptureReceipt'
 
@@ -22,13 +28,23 @@ export interface AudioRecordingSession {
 
 export interface AudioRecorder {
   isSupported(): boolean
+  requiresContextualPermissionRationale?(): boolean
   start(): Promise<AudioRecordingSession>
 }
 
 export class RecordingPermissionDeniedError extends Error {
-  constructor() {
+  readonly status: Exclude<
+    AndroidMicrophonePermissionStatus,
+    'granted'
+  > | null
+
+  constructor(
+    status: Exclude<AndroidMicrophonePermissionStatus, 'granted'> | null =
+      null,
+  ) {
     super('Microphone permission was denied.')
     this.name = 'RecordingPermissionDeniedError'
+    this.status = status
   }
 }
 
@@ -40,6 +56,18 @@ export class RecordingUnavailableError extends Error {
 }
 
 export class BrowserAudioRecorder implements AudioRecorder {
+  readonly #nativePermission: GlobalEnglishMicrophonePermissionPlugin
+  readonly #nativeAndroid: () => boolean
+
+  constructor(
+    nativePermission: GlobalEnglishMicrophonePermissionPlugin =
+      globalEnglishMicrophonePermission,
+    nativeAndroid: () => boolean = isNativeAndroid,
+  ) {
+    this.#nativePermission = nativePermission
+    this.#nativeAndroid = nativeAndroid
+  }
+
   isSupported(): boolean {
     return (
       typeof window !== 'undefined' &&
@@ -50,12 +78,32 @@ export class BrowserAudioRecorder implements AudioRecorder {
     )
   }
 
+  requiresContextualPermissionRationale(): boolean {
+    return this.#nativeAndroid()
+  }
+
   async start(): Promise<AudioRecordingSession> {
     if (!this.isSupported()) {
       throw new RecordingUnavailableError()
     }
 
     stopSpeechPlayback()
+
+    if (this.#nativeAndroid()) {
+      let permission: AndroidMicrophonePermissionStatus
+
+      try {
+        permission = (
+          await this.#nativePermission.requestAfterSpeakingAction()
+        ).status
+      } catch {
+        throw new RecordingUnavailableError()
+      }
+
+      if (permission !== 'granted') {
+        throw new RecordingPermissionDeniedError(permission)
+      }
+    }
 
     let stream: MediaStream
 
