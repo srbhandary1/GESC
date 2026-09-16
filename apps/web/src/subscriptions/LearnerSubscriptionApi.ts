@@ -30,6 +30,7 @@ export interface SubscriptionPlanOffer {
   readonly total_paise: number
   readonly billing_period: string
   readonly allows_roleplay: boolean
+  readonly max_level_number: number | null
   readonly live_ai_cap_seconds: number | null
   readonly is_demo: boolean
   readonly is_talk_pack: boolean
@@ -53,6 +54,18 @@ export interface LearnerSubscriptionApiOptions {
   readonly readCookie?: () => string
 }
 
+export class LearnerSubscriptionHttpError extends Error {
+  readonly definitiveFailure: boolean
+  readonly status: number
+
+  constructor(status: number) {
+    super('subscription_unavailable')
+    this.name = 'LearnerSubscriptionHttpError'
+    this.status = status
+    this.definitiveFailure = status >= 400 && status < 500 && status !== 408
+  }
+}
+
 function joinUrl(baseUrl: string, path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path
@@ -71,7 +84,7 @@ function csrfTokenFromCookie(readCookie: () => string): string {
 
 async function parseJson(response: Response): Promise<unknown> {
   if (!response.ok) {
-    throw new Error('subscription_unavailable')
+    throw new LearnerSubscriptionHttpError(response.status)
   }
 
   return response.json()

@@ -2,10 +2,11 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SubscriptionPanel } from './SubscriptionPanel'
-import type {
-  LearnerEntitlement,
-  LearnerSubscriptionApi,
-  SubscriptionPlanOffer,
+import {
+  LearnerSubscriptionHttpError,
+  type LearnerEntitlement,
+  type LearnerSubscriptionApi,
+  type SubscriptionPlanOffer,
 } from './LearnerSubscriptionApi'
 
 afterEach(() => {
@@ -45,6 +46,7 @@ function plan(overrides: Partial<SubscriptionPlanOffer> = {}): SubscriptionPlanO
     total_paise: 35400,
     billing_period: 'calendar_month',
     allows_roleplay: false,
+    max_level_number: 17,
     live_ai_cap_seconds: 7200,
     is_demo: false,
     is_talk_pack: false,
@@ -54,14 +56,42 @@ function plan(overrides: Partial<SubscriptionPlanOffer> = {}): SubscriptionPlanO
   }
 }
 
+function membershipPlans(): readonly SubscriptionPlanOffer[] {
+  return [
+    plan(),
+    plan({
+      id: '01JPLAN00000000000000000003',
+      code: 'monthly_modules_roleplay',
+      name: 'Premium with Role-play',
+      amount_ex_gst_paise: 50000,
+      gst_paise: 9000,
+      total_paise: 59000,
+      allows_roleplay: true,
+      recommended: true,
+    }),
+  ]
+}
+
 describe('subscription panel', () => {
   it('shows the 5-day start expiry and completes dummy checkout', async () => {
     const checkout = vi.fn(async () => ({ status: 'completed' }))
     const api: LearnerSubscriptionApi = {
-      entitlement: vi.fn(async () => entitlement()),
+      entitlement: vi.fn(async () => entitlement({
+        live_ai_seconds_remaining: 240,
+        live_ai_cap_seconds: 300,
+      })),
       plans: vi.fn(async () => ({
         gstin_is_placeholder: true,
         plans: [plan(), plan({
+          id: '01JPLAN00000000000000000003',
+          code: 'monthly_modules_roleplay',
+          name: 'Premium with Role-play',
+          amount_ex_gst_paise: 50000,
+          gst_paise: 9000,
+          total_paise: 59000,
+          allows_roleplay: true,
+          recommended: true,
+        }), plan({
           id: '01JPLAN00000000000000000002',
           code: 'demo',
           name: '5-day start',
@@ -99,13 +129,12 @@ describe('subscription panel', () => {
       />,
     )
 
-    expect(await screen.findByText(/5-day start active until/)).toBeInTheDocument()
-    expect(screen.getByText(/Prices exclude GST/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Buy talk time' })).toBeDisabled()
-    expect(
-      screen.getByText(/Subscribe to Premium features or Premium with Role-play before buying talk time/),
-    ).toBeInTheDocument()
-    await user.click(screen.getAllByRole('button', { name: 'Pay now' })[0]!)
+    expect(await screen.findByText('5-day start')).toBeInTheDocument()
+    expect(screen.getByText('4 live-AI minutes available')).toBeInTheDocument()
+    expect(screen.getByText('Current entitlement')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Talk time' })).not.toBeInTheDocument()
+    expect(screen.getByText(/₹354\.00 payable/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Choose Premium features' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
 
@@ -116,6 +145,7 @@ describe('subscription panel', () => {
       plans: vi.fn(async () => ({
         gstin_is_placeholder: true,
         plans: [
+          plan(),
           plan({
             id: '01JPLAN00000000000000000003',
             code: 'monthly_modules_roleplay',
@@ -140,8 +170,9 @@ describe('subscription panel', () => {
       />,
     )
 
-    expect(await screen.findByText(/Recommended/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Start Premium' }))
+    expect(await screen.findByText('Premium membership')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Choose Premium with Role-play' })).not.toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Choose Premium with Role-play' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
 
@@ -177,7 +208,16 @@ describe('subscription panel', () => {
       ),
       plans: vi.fn(async () => ({
         gstin_is_placeholder: false,
-        plans: [plan(), talk],
+        plans: [plan(), plan({
+          id: '01JPLAN00000000000000000003',
+          code: 'monthly_modules_roleplay',
+          name: 'Premium with Role-play',
+          amount_ex_gst_paise: 50000,
+          gst_paise: 9000,
+          total_paise: 59000,
+          allows_roleplay: true,
+          recommended: true,
+        }), talk],
       })),
       checkout,
     }
@@ -191,13 +231,116 @@ describe('subscription panel', () => {
       />,
     )
 
-    expect(await screen.findByText(/Live-AI minutes left/)).toBeInTheDocument()
-    expect(screen.getByText(/^60$/)).toBeInTheDocument()
+    expect(await screen.findByText('60 live-AI minutes available')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Buy talk time' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
 
+  it('distinguishes loading, unavailable and disabled-provider failure states', async () => {
+    let rejectEntitlement: ((reason?: unknown) => void) | undefined
+    const entitlementRequest = new Promise<LearnerEntitlement>((_resolve, reject) => {
+      rejectEntitlement = reject
+    })
+    const api: LearnerSubscriptionApi = {
+      entitlement: vi.fn(() => entitlementRequest),
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: membershipPlans() })),
+      checkout: vi.fn(),
+    }
+    const { rerender } = render(
+      <SubscriptionPanel api={api} locale="en-IN" localizationPolicy="development-preview" />,
+    )
+
+    expect(screen.getByText(/Loading current entitlement/)).toBeInTheDocument()
+    rejectEntitlement?.(new Error('offline'))
+    expect(await screen.findByText(/Plan details are unavailable/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Choose/ })).not.toBeInTheDocument()
+
+    const disabledApi: LearnerSubscriptionApi = {
+      entitlement: vi.fn(async () => entitlement({ status: 'expired' })),
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: membershipPlans() })),
+      checkout: vi.fn(async () => {
+        throw new LearnerSubscriptionHttpError(409)
+      }),
+    }
+    rerender(
+      <SubscriptionPanel api={disabledApi} locale="en-IN" localizationPolicy="development-preview" />,
+    )
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Choose Premium features' }))
+    expect(await screen.findByText(/Checkout was not accepted/)).toBeInTheDocument()
+    expect(screen.queryByText(/Access confirmed/)).not.toBeInTheDocument()
+  })
+
+  it('keeps checkout pending, marks unknown outcomes ambiguous, and reconciles only server-confirmed access', async () => {
+    let resolveCheckout: ((value: { status: string }) => void) | undefined
+    const checkoutRequest = new Promise<{ status: string }>((resolve) => {
+      resolveCheckout = resolve
+    })
+    const current = entitlement({ status: 'expired', plan_code: null, plan_name: null })
+    const entitlementApi = vi.fn(async () => current)
+    const api: LearnerSubscriptionApi = {
+      entitlement: entitlementApi,
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: membershipPlans() })),
+      checkout: vi.fn(() => checkoutRequest),
+    }
+    const user = userEvent.setup()
+    const { unmount } = render(
+      <SubscriptionPanel api={api} locale="en-IN" localizationPolicy="development-preview" />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Choose Premium features' }))
+    expect(screen.getByText(/Checkout request pending/)).toBeInTheDocument()
+    resolveCheckout?.({ status: 'unknown' })
+    expect(await screen.findByText(/could not confirm whether access changed/)).toBeInTheDocument()
+    unmount()
+
+    const reconciledEntitlement = vi
+      .fn()
+      .mockResolvedValueOnce(current)
+      .mockResolvedValueOnce(entitlement({
+        is_demo: false,
+        plan_code: 'monthly_modules',
+        plan_name: 'Premium features',
+        status: 'active',
+      }))
+    const reconciledApi: LearnerSubscriptionApi = {
+      entitlement: reconciledEntitlement,
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: membershipPlans() })),
+      checkout: vi.fn(async () => ({ status: 'completed' })),
+    }
+    render(
+      <SubscriptionPanel api={reconciledApi} locale="en-IN" localizationPolicy="development-preview" />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Choose Premium features' }))
+    expect(await screen.findByText(/Access confirmed from the authoritative/)).toBeInTheDocument()
+    expect(screen.getByText('Active access')).toBeInTheDocument()
+  })
+
+  it('preserves the locked-level accomplishment and provides a recoverable close action', async () => {
+    const onClose = vi.fn()
+    const api: LearnerSubscriptionApi = {
+      entitlement: vi.fn(async () => entitlement()),
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: membershipPlans() })),
+      checkout: vi.fn(),
+    }
+    const user = userEvent.setup()
+    render(
+      <SubscriptionPanel
+        api={api}
+        context={{ completedLevelNumber: 2, lockedLevelNumber: 3, returnTargetId: 'level-upgrade-3' }}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onClose={onClose}
+      />,
+    )
+
+    expect(await screen.findByText(/You completed Level 2/)).toHaveTextContent('Level 3')
+    await user.click(screen.getByRole('button', { name: 'Close plans' }))
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(screen.getByRole('link', { name: 'Continue free / review prior lessons' })).toHaveAttribute('href', '#learn')
+  })
+
   it('hides itself for institutional learners', async () => {
+    const plans = vi.fn(async () => ({ gstin_is_placeholder: false, plans: [] }))
     const api: LearnerSubscriptionApi = {
       entitlement: vi.fn(async () =>
         entitlement({
@@ -206,7 +349,7 @@ describe('subscription panel', () => {
           live_ai_seconds_remaining: null,
         }),
       ),
-      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: [] })),
+      plans,
       checkout: vi.fn(),
     }
 
@@ -221,5 +364,7 @@ describe('subscription panel', () => {
     await waitFor(() => {
       expect(container).toBeEmptyDOMElement()
     })
+    expect(plans).not.toHaveBeenCalled()
+    expect(api.checkout).not.toHaveBeenCalled()
   })
 })

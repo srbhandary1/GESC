@@ -50,6 +50,13 @@ final readonly class LearnerSubscriptionService
     public function catalogue(User $learner): array
     {
         $context = $this->authority->require($learner);
+        if (! $this->access->applies($context->organizationId)) {
+            return [
+                'gstin_is_placeholder' => false,
+                'gst_registered' => false,
+                'plans' => [],
+            ];
+        }
         $this->catalog->seed($context->organizationId, Date::now()->toIso8601String());
         $tax = $this->tax($context->organizationId);
         $plans = DB::table('entitlement_plans')
@@ -104,6 +111,10 @@ final readonly class LearnerSubscriptionService
         $context = $this->authority->require($learner);
         $organizationId = $context->organizationId;
         $membershipId = (string) $context->membershipId;
+
+        if (! $this->access->applies($organizationId)) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
 
         return DB::transaction(function () use (
 

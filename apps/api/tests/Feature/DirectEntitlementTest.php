@@ -291,6 +291,28 @@ final class DirectEntitlementTest extends TestCase
             self::assertFalse($snapshot['applies']);
             $this->app->make(EntitlementAccess::class)->assertLevel($learner, 17);
             $this->app->make(EntitlementAccess::class)->assertRoleplay($learner);
+
+            $subscriptions = $this->app->make(LearnerSubscriptionService::class);
+            self::assertSame([], $subscriptions->catalogue($learner)['plans']);
+
+            $directPlanId = DB::table('entitlement_plans')
+                ->where('organization_id', Organization::query()
+                    ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+                    ->value('id'))
+                ->value('id');
+            self::assertIsString($directPlanId);
+            try {
+                $subscriptions->checkout($learner, $directPlanId, (string) Str::ulid());
+                self::fail('Institutional learners must not enter Direct checkout.');
+            } catch (EntitlementDenied $denied) {
+                self::assertSame(EntitlementDenied::CHECKOUT_UNAVAILABLE, $denied->messageKey);
+            }
+            self::assertSame(
+                0,
+                DB::table('subscription_checkouts')
+                    ->where('organization_id', $context->organizationId)
+                    ->count(),
+            );
         } finally {
             $manager->clear();
         }
