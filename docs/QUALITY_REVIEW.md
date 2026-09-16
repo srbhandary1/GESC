@@ -70,23 +70,25 @@ the current-phone result.
 | Check | Result | Evidence |
 |---|---|---|
 | Authorization | Pass | Exact APO reply `I accept.` after remaining §10 cells were offered as residual so §15 could close. Experiments follow Prompt 9's Deferred default. [APP-0093](APPROVALS.md#app-0093) |
-| Repository gates at HEAD `7746a96` | Pass | Pinned `make verify`, `make e2e` and `make build` all exit 0. Exact summaries in §13.3 of the audit plan |
+| Repository gates at HEAD `179b534` | Pass | Pinned `make verify`, `make e2e` and `make build` all exit 0. Exact summaries in §13.3 of the audit plan |
 | MUX-001–016 | Pass with residuals | Each finding has a resolving commit or an APP-0093 residual. Walk table in the audit plan §15.1 |
 | §13.2 defects 1–8 | Pass with residuals | Defects 1–5 and 7 (authorized parts) resolved by later commits; defects 4/7 remainders, 6 and 8 are residuals. Walk table in §15.1 |
+| §8 checkbox evidence | Pass | All 145 checkbox records carry an explicit link; every local linked file exists. Open/failed human and device rows remain unchecked and point to their residual evidence. |
 | Experiments | Deferred | No analytics emission, no independent privacy review, no live traffic. Not used as correctness evidence |
 | Production / Play / live payment | Still blocked | No authorization was granted or implied |
 
 ### Commands and results
 
 Pinned toolchain: Node.js 24.18.1, pnpm 11.18.0, PHP 8.4.23, JDK 21 under
-`tmp/toolchain`. Working tree at HEAD `7746a96` (GATE-FIX-01) plus
-documentation-only uncommitted edits from §10.2 recording.
+`tmp/toolchain`. Re-run at candidate HEAD
+`179b534801a6457bf493e6da2f24f1d8f6ec1c37` after the committed UX-10A
+device-evidence update.
 
 | Command | Result |
 |---|---|
-| `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed (`VERIFY_EXIT=0`). Composer audit clean; Pint passed; PHPStan 0 errors; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,224 assertions); frozen install; `pnpm audit --audit-level=high` reported 2 moderate advisories below the failure threshold; locale check passed with 5 pending-independent-review warnings; OpenAPI/contracts, release and soft-launch contracts passed; lint `--max-warnings=0`; typecheck; web Vitest 101 files / 465 tests |
-| `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed (`E2E_EXIT=0`). Reconciliation API 4/4 (103 assertions); Playwright 29 passed (21.7s) |
-| `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed (`BUILD_EXIT=0`). Production web bundle built in 228ms; tutor-avatar licence enforcement excluded models because no completed public licence grant exists |
+| `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed (exit 0). Composer audit clean; Pint passed; PHPStan 0 errors; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,226 assertions); frozen install; `pnpm audit --audit-level=high` reported 2 moderate advisories below the failure threshold; locale check passed with 5 pending-independent-review warnings; OpenAPI/contracts, release and soft-launch contracts passed; lint `--max-warnings=0`; typecheck; web Vitest 101 files / 465 tests. The initial sandbox attempt stopped because Packagist DNS was unavailable; the exact rerun with network access passed. |
+| `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0). Reconciliation API 4/4 (103 assertions); Playwright 29/29 passed (22.8s). The initial sandbox attempt could not start Playwright's local web server; the exact host rerun passed. |
+| `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed (exit 0). Production web bundle built in 189ms; tutor-avatar licence enforcement excluded models because no completed public licence grant exists. |
 
 ### Conclusion and retained gates
 

@@ -4,7 +4,9 @@
 
 - Same attached realme RMX3085 (`J7GUXWEENBNZTW85`, API 33, WebView
   151.0.7922.199, three-button). Not a new device.
-- Documentation HEAD `d62a25a`; product gates remain `7746a96`. Installed
+- Device-walk documentation HEAD `d62a25a`; its installed product build was
+  based on the earlier green GATE-FIX-01 candidate `7746a96`. Closure gates
+  were subsequently refreshed green at `179b534`. Installed
   `com.globalenglish.app` SHA-256
   `0409e52835b41271fca5e4bdb82da7d2c2598926cfdb11cd0acc6bc62ed493b3`
   (28,307,558 bytes). The previously recorded `779b5b90…` hash is stale.
@@ -35,9 +37,12 @@
   not implemented, independent privacy/security/tenancy review has not run,
   and no live traffic exists. Experiments are not used as correctness
   evidence.
-- Pinned gates at HEAD `7746a96`: `make verify` (SQLite 316/316, PostgreSQL
-  360/360, web Vitest 465/465), `make e2e` (API 4/4, Playwright 29/29) and
-  `make build` all passed.
+- Closure gates were re-run at actual candidate HEAD `179b534`: `make verify`
+  (SQLite 316/316, PostgreSQL 360/360, web Vitest 465/465), `make e2e` (API
+  4/4, Playwright 29/29) and `make build` all passed. Initial sandbox attempts
+  were not counted: Composer audit required Packagist network access and
+  Playwright required its local web server; each exact command subsequently
+  exited 0 with the required host access.
 - Production, Play release and live payment remain unauthorized.
 
 ## §10.2 current-phone device session — 16 September 2026
@@ -709,8 +714,8 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | UX-10A device evidence rerun — implementation complete; exit criteria open |
-| Status | AUDIT-CLOSE-01 remains the historical APP-0093/D-0300 closure record, but the superseding RMX3085 §10.2 rerun at `d62a25a` / APK `0409e528…` leaves 6 current-phone PASS, 6 FAIL and 1 NOT RUN. UX10-DEV-01–06 are open and 58 of 64 device cells are unmarked. Repository gates remain green at `7746a96`; experiments are Deferred. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | AUDIT-CLOSE-01 documentation closure reconciled at `179b534`; UX-10A device/accessibility gates remain open |
+| Status | APP-0093/D-0300 remain the historical closure authority and defer UX-EXP-01/02/03. The superseding RMX3085 §10.2 rerun at `d62a25a` / APK `0409e528…` leaves 6 current-phone PASS, 6 FAIL and 1 NOT RUN. UX10-DEV-01–06 are open and 58 of 64 device cells are unmarked. Pinned verify/E2E/build gates are green at `179b534`; this does not close the human/device gates. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 16 September 2026 |
 | Git branch | `cursor/learner-variant-c-jezweb-3f88` |

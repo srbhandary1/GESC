@@ -3265,7 +3265,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Related decision | [D-0300](DECISIONS.md) |
 | Related ADRs | None; this pass changes no product or architecture decision |
 | Recorder | Cursor agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; gates were measured at `7746a96` |
+| Repository revision | Original closure commit `d62a25a`; gates refreshed at candidate HEAD `179b534` after the committed UX-10A device evidence |
 | Master-plan amendment | None |
 
 ### Exact human statement
@@ -3290,6 +3290,11 @@ I accept.
 
 - This is documentation closure, not feature, schema, API, provider, payment,
   production or Play authorization.
+- A later same-device §10.2 rerun at HEAD `d62a25a` with APK SHA-256
+  `0409e528…` superseded the undifferentiated current-phone Pass. Six rows
+  remain PASS; seven current-phone rows are unmarked FAIL/NOT RUN. The 51
+  other-column residuals accepted here are unchanged and still must not inherit
+  API 33 results.
 - Unchecked §15 items and listed human gates remain open; they are not
   silently completed.
 - Connected instrumentation, dashboard fail-close on a pre-due stored
