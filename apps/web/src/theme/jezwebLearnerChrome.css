@@ -322,6 +322,7 @@
   --ge-roleplay-scene-selected-shadow: 0 8px 20px rgb(0 107 63 / 0.12);
   color: var(--ge-color-text);
   background: var(--ge-color-canvas-deep);
+  color-scheme: light;
 }
 
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
@@ -352,7 +353,33 @@
 }
 
 /* Speak / roleplay surfaces must stay readable on Android dark-mode WebViews. */
+.ge-application-frame--jezweb .speak-room,
+.ge-application-frame--jezweb .conversation-journey {
+  color-scheme: light;
+}
+
+.ge-application-frame--jezweb .shell-practice-switch,
+.ge-application-frame--jezweb .speak-room__modes {
+  background: #ffffff;
+  border-color: var(--ge-color-border, #e2e8e5);
+  color-scheme: light;
+}
+
+.ge-application-frame--jezweb .shell-practice-switch button,
+.ge-application-frame--jezweb .speak-room__modes button {
+  color: var(--ge-color-text-muted, #5c6670);
+}
+
+.ge-application-frame--jezweb .shell-practice-switch button[aria-selected='true'],
+.ge-application-frame--jezweb .speak-room__modes button[aria-selected='true'] {
+  background: var(--ge-color-action, #006b3f);
+  color: var(--ge-color-action-text, #ffffff);
+}
+
 .ge-application-frame--jezweb .conversation-journey__heading,
+.ge-application-frame--jezweb .conversation-journey__notice,
+.ge-application-frame--jezweb .conversation-journey__result,
+.ge-application-frame--jezweb .conversation-journey__correction,
 .ge-application-frame--jezweb .conversation-journey__voice,
 .ge-application-frame--jezweb .conversation-journey__memory,
 .ge-application-frame--jezweb .conversation-journey__stage,
@@ -361,16 +388,33 @@
   background: #ffffff;
   color: var(--ge-color-text, #1a1a1a);
   border-color: var(--ge-color-border, #e2e8e5);
+  color-scheme: light;
 }
 
 .ge-application-frame--jezweb .conversation-journey__heading h2,
+.ge-application-frame--jezweb .conversation-journey__heading h3,
+.ge-application-frame--jezweb .conversation-journey__notice h3,
+.ge-application-frame--jezweb .conversation-journey__notice p,
 .ge-application-frame--jezweb .conversation-journey__memory h3,
+.ge-application-frame--jezweb .conversation-journey__start label,
+.ge-application-frame--jezweb .conversation-journey__start select,
 .ge-application-frame--jezweb .roleplay-scenes button {
   color: var(--ge-color-ink, #1a1a1a);
 }
 
+.ge-application-frame--jezweb .conversation-journey__start select {
+  background: #ffffff;
+  border-color: var(--ge-color-border, #e2e8e5);
+}
+
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .conversation-journey__heading,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__notice,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__result,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__correction,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .conversation-journey__voice,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
@@ -391,7 +435,15 @@
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .conversation-journey__heading h3,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__notice h3,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__notice p,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
   .conversation-journey__memory h3,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__start label,
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .conversation-journey__start select,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .roleplay-scenes button {
   color: var(--ge-color-ink);

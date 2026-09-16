@@ -39,6 +39,11 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('LessonPractice / audio curriculum files stay untouched')
     expect(jezweb).toContain('grid-template-columns: repeat(5, minmax(0, 1fr))')
     expect(jezweb).toContain('No Speak FAB')
+    expect(jezweb).toContain('Speak / roleplay surfaces must stay readable on Android dark-mode WebViews.')
+    expect(jezweb).toContain('color-scheme: light')
+    expect(jezweb).toContain('.conversation-journey__notice')
+    expect(jezweb).toContain("button[aria-selected='true']")
+    expect(jezweb).toContain('var(--ge-color-action-text, #ffffff)')
     expect(jezweb).toContain('.learner-home__title:focus-visible')
     expect(jezweb).toMatch(
       /\.learner-home__title:focus-visible\s*\{\s*outline: none;/u,
