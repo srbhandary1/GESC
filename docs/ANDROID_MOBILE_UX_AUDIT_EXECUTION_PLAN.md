@@ -1159,6 +1159,65 @@ wrappers, MUX-009 SDK 36 predictive-Back escalation, MUX-015 both wrappers,
 MUX-016 CSS sources, MUX-008 added to the §7 quadrant table, and the UX-AUDIT-00,
 UX-02A and UX-10A scope additions. No application code was changed.
 
+### 13.2 Independent post-implementation audit — 16 September 2026
+
+Audited the uncommitted working tree on `cursor/learner-variant-c-jezweb-3f88`
+(HEAD `132a847` = plan commit; 76 modified and 20 new files uncommitted). Every
+MUX-001 to MUX-016 claim was re-checked against source by four independent
+reviewers plus direct command runs with the pinned toolchain
+(`tmp/toolchain`).
+
+| Command | Result |
+|---|---|
+| `make verify` | Not green. Composer, Pint, PHPStan, SQLite 316/316, PostgreSQL 360/360, install, audit, locale, OpenAPI/contracts, release contract passed; stopped at `soft-launch-contract-test` (`grep -Fq 'ai.globalspokenenglish.com,127.0.0.1:9080'` in unchanged `scripts/`) — **pre-existing at `ce305bd`** |
+| `pnpm run typecheck` | Passed |
+| `pnpm run lint` | 3 errors / 2 warnings in `VoicePracticePanel.tsx`, `browserSpeech.ts`, `RecordingTurn.tsx` — **identical at `ce305bd`** (verified in a baseline worktree) |
+| `pnpm run test` | 459/460; sole failure `jezwebLearnerChrome.test.ts` expects `?v=jezweb-c4` against `c8` — **pre-existing at `ce305bd`** |
+| `make build` | Passed |
+| `make e2e` | 22/29; all 7 failures are the axe `color-contrast` violation on the kn-IN pending-review notice (`#3d5348` on `#006b3f`, both from `miraGescGreenPin.css`, untouched; kn-IN already `pending-independent-review` at baseline) — **pre-existing** |
+| Gradle `:app:compileDebugJavaWithJavac`, `:app:compileDebugAndroidTestJavaWithJavac`, `:app:testDebugUnitTest` (production wrapper, JDK 21, `--rerun-tasks`) | BUILD SUCCESSFUL; 6 unit tests, 0 failures |
+| `adb devices -l` | No device; §10 remains 0/64 cells |
+
+Source verdicts: MUX-001–004, 006–015 resolved in source; MUX-005 resolved
+for quiz drafts; MUX-016 resolved in browser evidence only. D-0297's Capacitor
+8.5.0 `BridgeActivity` claim confirmed against installed source. No over-grant
+in `GlobalEnglishWebChromeClient`; no prohibited Back API.
+
+Defects found (not yet fixed; owner decides):
+
+1. **Uncommitted work.** All nine checkpoints are in one uncommitted tree with
+   no per-checkpoint commits; every APP-0084–0090 record says the SHA was
+   unavailable. Prompts 8b (device evidence) and 9 (closure pass) were not
+   executed: §14 has no completion dates for orders 1–7 and §15 is unchecked.
+2. **`FirstUseOnboardingResume.ts`** persists `step`, `adultConfirmed`, `goal`,
+   `placement` in plaintext `localStorage` under a fixed key with no
+   learner/organization binding and no TTL; cleared only on completion or
+   explicit logout. On a shared device a later learner inherits the prior
+   learner's adult confirmation and goal, and `onboardingSaved: true` skips
+   their authoritative goal submission. Inconsistent with the ADR-0006
+   standard applied to quiz drafts.
+3. Residual raw `location.hash = '#home' | '#sign-in'` assignments in
+   `App.tsx` create history entries with `index: 0`, so system Back from
+   `#sign-in` exits the app rather than returning through web history.
+4. `GlobalEnglishAndroidShell` keeps its callback permanently enabled and the
+   JS round-trip is asynchronous, so the system predictive back-to-launcher
+   animation never runs; if the WebView dies mid-dispatch `dispatchPending`
+   sticks and Back is swallowed until restart. `MainActivity.onCreate`
+   dereferences `bridge` without the `no_webview` guard in both wrappers.
+5. `SubscriptionPanel` `pending` checkout state disables all actions and
+   offers no reconcile/check-access action (only `ambiguous` does).
+6. `LearnerProgressDashboardService` throws `LearningOperationRejected` on any
+   row with `completed_at < due_at`; unreachable via current writers, but one
+   corrupt row would fail-close the whole dashboard for that learner.
+7. Instrumentation tests are DOM-scripted smoke tests needing seeded content;
+   the Speak-denial test never presses Speak; demo copy is weaker than
+   production; stale `ExampleUnitTest.java` remains in both wrappers.
+   `androidBackNavigation.test.ts` hard-codes the pnpm store path.
+8. OpenAPI 0.47.0 documents the whole operator `learning_metrics` object
+   (previously undocumented) alongside the one required rename; correct, but
+   beyond UX-07A's stated scope. `LearnerSubscriptionService` changes belong to
+   UX-08A, not UX-07A.
+
 ## 14. Completion ledger
 
 Update this table only after the checkpoint's exit criteria and required
