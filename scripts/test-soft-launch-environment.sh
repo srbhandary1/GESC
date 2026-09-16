@@ -187,7 +187,7 @@ grep -Fxq 'GE_SOFT_LAUNCH_STABLE_HOST=ai.globalspokenenglish.com' \
   "$configured_runtime/env/soft-launch.env"
 grep -Fxq 'GE_SOFT_LAUNCH_PUBLIC_HTTPS_PORT=8443' \
   "$configured_runtime/env/soft-launch.env"
-grep -Fq 'ai.globalspokenenglish.com,127.0.0.1:9080' \
+grep -Fq 'ai.globalspokenenglish.com,117.254.108.143:8080,127.0.0.1:9080' \
   "$configured_runtime/env/soft-launch.env"
 test "$(stat -c '%a' "$configured_runtime/env/soft-launch.env")" = 600
 

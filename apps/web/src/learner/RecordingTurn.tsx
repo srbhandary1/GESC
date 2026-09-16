@@ -103,20 +103,6 @@ export function RecordingTurn({
   const contextualRationaleAccepted = useRef(false)
 
   useEffect(() => {
-    if (!recordingDisabled) {
-      return
-    }
-
-    holdIntent.current = false
-    requestGeneration.current += 1
-    sessionRef.current?.cancel()
-    sessionRef.current = null
-    setLiveSession(null)
-    setState(recorder.isSupported() ? 'ready' : 'blocked')
-    onHoldPhaseChange?.('idle')
-  }, [onHoldPhaseChange, recorder, recordingDisabled])
-
-  useEffect(() => {
     active.current = true
 
     return () => {

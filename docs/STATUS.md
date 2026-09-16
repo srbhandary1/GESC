@@ -1,5 +1,31 @@
 # Repository status
 
+## GATE-FIX-01 repository gate repair — 16 September 2026
+
+- APP-0092/D-0299 authorize only the four pre-existing §13.2 gate failures.
+  No feature, device, experiment, API/OpenAPI, schema, provider, payment,
+  production or release work was performed.
+- The Variant-C source test now validates the release-independent
+  `jezweb-cN` cache-buster shape instead of encoding `c4`; the current product
+  value remains `c8`.
+- All five ESLint findings are resolved. Conversation recording phases use
+  the parent-controlled phase where supplied, lock transitions remount the
+  recorder so its existing unmount cleanup cancels capture, and the unchanged
+  `VoicePracticePanel`/`RecordingTurn` tests pass 37/37 with the chrome test.
+- Pending independent-review text is white only in green light-theme Studio
+  and operator headers. The learner paid-minutes chip uses dark text on its
+  existing light chip surface. D-0284/D-0288 green, the Mira white learner
+  header and the global muted-text token are unchanged.
+- Git history proves `0952364` intentionally added the staff-LAN stateful
+  domain before localhost. Only the stale shell-test expectation changed; the
+  generator, domains, ports, `APP_URL` and live soft-launch behavior did not.
+- Final pinned gates are green: `make verify` completed with SQLite 316/316,
+  PostgreSQL 360/360 and web Vitest 465/465; `make e2e` completed API 4/4
+  (103 assertions) and Playwright 29/29; `make build` completed the production
+  web bundle and tutor-avatar licence enforcement.
+- No migration or configuration was added. The existing physical-device,
+  catalogue-review, representative-user and experiment/closure gates remain.
+
 ## AUDIT-FIX-01 post-implementation audit corrections — 16 September 2026
 
 - APP-0091/D-0298 authorize and record only §13.2 defects 2, 3, 4 (partial),
@@ -627,13 +653,13 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | UX-10A: Android Back, lifecycle and accessibility hardening — implementation scope complete; repository/device gates retained (D-0297) |
-| Status | Content-free learner history, AndroidX predictive-Back integration, recording cancellation, focus/announcements, edge-to-edge/IME variables, 48px Variant C navigation and package-correct native smoke suites are implemented in both wrappers. No device was attached, so all 64 non-N/A §10 cells and every physical accessibility/lifecycle result remain open. Repository-wide soft-launch and shared contrast gates also remain. Prior UX-02/UX-03/UX-04/UX-07/UX-08 retained gates remain. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | GATE-FIX-01: repository verification and E2E gate repair — complete (D-0299) |
+| Status | The four pre-existing §13.2 repository-gate categories are resolved. Final pinned `make verify`, `make e2e` and `make build` pass. No product feature or live configuration changed. No device was attached in UX-10A, so all 64 non-N/A §10 cells and every physical accessibility/lifecycle result remain open. Prior UX-02/UX-03/UX-04/UX-07/UX-08 human/catalogue gates and the experiment/closure programme remain open. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 16 September 2026 |
 | Git branch | `cursor/learner-variant-c-jezweb-3f88` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Keep experiment work and later implementation stopped. Attach the specified API 24/35/36 and physical devices and execute audit-plan §10.1 without inferring results; all 64 non-N/A cells are open. Separately resolve the soft-launch contract assertion, stale APK cache-buster unit expectation, existing lint debt and shared color-contrast regression, then rerun `make verify` and `make e2e`. Complete prior UX-02/UX-03/UX-04/UX-07/UX-08 human and catalogue gates. Live payment, Play Billing and real capture need separate authority. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
+| Next required action | Keep experiments and closure work stopped until separately authorized. Attach the specified API 24/35/36 and physical devices and execute audit-plan §10.1 without inferring results; all 64 non-N/A cells are open. Complete prior UX-02/UX-03/UX-04/UX-07/UX-08 human and catalogue gates. Live payment, Play Billing and real capture need separate authority. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |
 | Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A fresh UX-10A production debug APK was built locally but not installed or published; the previously published closed-beta APK remains obsolete. Live payment remains disabled and unauthorized. |
 

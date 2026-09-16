@@ -36,6 +36,17 @@
   color: #ffffff;
 }
 
+[data-ge-theme='light'] .ge-application-frame--studio:not(.ge-application-frame--mira-learner) .ge-application-frame__header [data-message-review-status='pending-independent-review'],
+[data-ge-theme='light'] .ge-application-frame--studio:not(.ge-application-frame--mira-learner) .ge-application-frame__header [data-message-review-status='pending-independent-review'] > span,
+[data-ge-theme='light'] .ge-application-frame--operator .ge-application-frame__header [data-message-review-status='pending-independent-review'],
+[data-ge-theme='light'] .ge-application-frame--operator .ge-application-frame__header [data-message-review-status='pending-independent-review'] > span {
+  color: #ffffff;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .ge-application-frame__header .shell-live-ai-chip {
+  color: #0a1a14;
+}
+
 [data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__title {
   color: var(--ge-mira-green);
 }

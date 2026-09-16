@@ -108,7 +108,6 @@ export async function speakWithBrowserSpeech(
     utterance.pitch = 1
 
     let settled = false
-    let startTimer: ReturnType<typeof globalThis.setTimeout> | undefined
     const finish = (action: () => void) => {
       if (settled) {
         return
@@ -146,7 +145,7 @@ export async function speakWithBrowserSpeech(
       utterance.voice = preferred
     }
 
-    startTimer = globalThis.setTimeout(() => {
+    const startTimer = globalThis.setTimeout(() => {
       stopBrowserSpeech()
       finish(() =>
         reject(new Error('Browser speech synthesis did not start.')),

@@ -95,15 +95,15 @@ export function VoicePracticePanel({
   const reviewCommand = useRef('')
   const uploadAbort = useRef<AbortController | null>(null)
 
-  const setPhase = (phase: SpeakLoopPhase) => {
+  const setPhase = useCallback((phase: SpeakLoopPhase) => {
     setLoopPhase(phase)
     onLoopPhase?.(phase)
-  }
+  }, [onLoopPhase])
 
-  const releaseHold = () => {
+  const releaseHold = useCallback(() => {
     setLocalResetEpoch((epoch) => epoch + 1)
     setPhase('waiting')
-  }
+  }, [setPhase])
 
   const cancelInFlight = useCallback(() => {
     uploadAbort.current?.abort()
@@ -111,18 +111,12 @@ export function VoicePracticePanel({
     abandonSpeakLoop()
     onCancelInFlight?.()
     releaseHold()
-  }, [onCancelInFlight])
+  }, [onCancelInFlight, releaseHold])
 
   const recordingLocked =
     speakLoopPhase === 'speaking' || speakLoopPhase === 'preparing'
-
-  useEffect(() => {
-    if (!recordingLocked) {
-      return
-    }
-
-    releaseHold()
-  }, [recordingLocked])
+  const effectiveLoopPhase =
+    onLoopPhase === undefined ? loopPhase : speakLoopPhase
 
   useEffect(() => {
     if (api.voiceConsents === undefined) {
@@ -499,16 +493,18 @@ export function VoicePracticePanel({
         <p role="status">{text('conversation.voice.processing')}</p>
       ) : null}
 
-      {!compact && state.kind === 'recording' && loopPhase !== 'waiting' ? (
-        <p role="status" data-speak-loop-phase={loopPhase}>
+      {!compact &&
+      state.kind === 'recording' &&
+      effectiveLoopPhase !== 'waiting' ? (
+        <p role="status" data-speak-loop-phase={effectiveLoopPhase}>
           {text(
-            loopPhase === 'listening'
+            effectiveLoopPhase === 'listening'
               ? 'conversation.loop.listening'
-              : loopPhase === 'processing'
+              : effectiveLoopPhase === 'processing'
                 ? 'conversation.loop.processing'
-                : loopPhase === 'preparing'
+                : effectiveLoopPhase === 'preparing'
                   ? 'conversation.loop.preparing'
-                  : loopPhase === 'speaking'
+                  : effectiveLoopPhase === 'speaking'
                     ? 'conversation.loop.speaking'
                     : 'conversation.voice.processing',
           )}
@@ -541,7 +537,7 @@ export function VoicePracticePanel({
             <p role="alert">{text(uploadError)}</p>
           ) : null}
           <RecordingTurn
-            key={`${resetEpoch}-${localResetEpoch}`}
+            key={`${resetEpoch}-${localResetEpoch}-${recordingLocked ? 'locked' : 'ready'}`}
             captureMode={compact ? 'toggle' : 'hold'}
             compact={compact}
             createClientId={createClientId}
@@ -621,7 +617,10 @@ export function VoicePracticePanel({
                 setPhase('listening')
               } else if (phase === 'processing') {
                 setPhase('processing')
-              } else if (loopPhase !== 'preparing' && loopPhase !== 'speaking') {
+              } else if (
+                effectiveLoopPhase !== 'preparing' &&
+                effectiveLoopPhase !== 'speaking'
+              ) {
                 setPhase('waiting')
               }
             }}

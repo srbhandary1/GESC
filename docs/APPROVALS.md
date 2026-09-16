@@ -3249,6 +3249,53 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0092"></a>
+
+## APP-0092 — Bounded GATE-FIX-01 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for GATE-FIX-01 only |
+| Decision date | 2026-09-16 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#gate-fix-01--repository-gate-repair) |
+| Related decision | [D-0299](DECISIONS.md) |
+| Related ADRs | None; this checkpoint changes no product or architecture decision |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize a bounded gate-repair checkpoint GATE-FIX-01 whose only purpose is to make `make verify` and `make e2e` pass at HEAD by fixing the four pre-existing failures recorded in plan §13.2.
+```
+
+### Accepted scope
+
+- Remove the release-specific cache-buster value from the Variant-C source
+  assertion while continuing to require the `jezweb-cN` contract.
+- Repair the five recorded ESLint findings without changing recorder behavior,
+  preserving the existing recording component tests unchanged.
+- Correct only the light Studio header contrast for pending independent-review
+  notice text and the same retained header contrast gate where exercised.
+- Correct the soft-launch contract test to match the intentional stable-host LAN
+  domain ordering introduced by `0952364`; do not change the generator or live
+  soft-launch values.
+
+### Conditions and limitations
+
+- No feature, schema, API/OpenAPI, provider, payment, production, release or
+  live-host configuration change is authorized.
+- The four §13.2 repository gate failures are the complete implementation
+  scope. Prompt 8b device work, experiments and the closure pass remain out of
+  scope.
+- Existing recorder behavior and tests must remain intact. D-0284 and D-0288
+  brand colors and the global muted-text token must not change.
+
 <a id="app-0091"></a>
 
 ## APP-0091 — Bounded AUDIT-FIX-01 authorization

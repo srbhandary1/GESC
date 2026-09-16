@@ -963,6 +963,49 @@ device work and the closure pass were not started.
       explicitly excluded remainders of defects 4 and 7 and stay in Prompt 8b/
       later authorized work.
 
+### GATE-FIX-01 — Repository gate repair
+
+**Status:** Complete on 16 September 2026 under APP-0092/D-0299. No feature,
+device, experiment or closure work was included.
+
+**Failures:** §13.2 stale Variant-C assertion, five ESLint findings, seven
+header contrast failures and the soft-launch stable-host test drift.
+
+#### Scope
+
+- [x] Make the Variant-C source test validate the release-independent
+      `jezweb-cN` cache-buster contract rather than one release identifier.
+      Evidence: [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] Resolve `prefer-const`, both `react-hooks/set-state-in-effect` errors and
+      both exhaustive-dependency warnings while retaining event/unmount-driven
+      recorder cancellation and all unchanged component tests. Evidence:
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] Give the pending independent-review notice an accessible foreground only
+      within the light Studio header, and repair the same retained header
+      contrast gate for the paid-minutes chip, without changing global muted or
+      accepted brand colors. Evidence: [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] Reconcile the soft-launch assertion with history. Commit `0952364`
+      intentionally inserted `117.254.108.143:8080` before localhost for staff
+      LAN sign-in, so only the stale test expectation changes; the generator,
+      ports, stateful-domain values and `APP_URL` remain untouched. Evidence:
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+
+#### Exit criteria
+
+- [x] Pinned `make verify` passes at HEAD. Evidence:
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] Pinned `make e2e` passes at HEAD with no serious axe failure. Evidence:
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] Pinned `make build` passes at HEAD. Evidence:
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+- [x] No product feature, API/OpenAPI, schema, provider, payment or live
+      soft-launch configuration changes.
+- [x] `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/APPROVALS.md`,
+      `docs/QUALITY_REVIEW.md` and §14 record the exact verified result.
+      Evidence: [status](STATUS.md#gate-fix-01-repository-gate-repair--16-september-2026),
+      [decision](DECISIONS.md), [approval](APPROVALS.md#app-0092) and
+      [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
+
 ## 9. Measurement contract
 
 The current operator metrics are aggregate counts and do not provide the
@@ -1231,6 +1274,14 @@ reviewers plus direct command runs with the pinned toolchain
 | Gradle `:app:compileDebugJavaWithJavac`, `:app:compileDebugAndroidTestJavaWithJavac`, `:app:testDebugUnitTest` (production wrapper, JDK 21, `--rerun-tasks`) | BUILD SUCCESSFUL; 6 unit tests, 0 failures |
 | `adb devices -l` | No device; §10 remains 0/64 cells |
 
+**GATE-FIX-01 subsequent resolution:** APP-0092/D-0299 repaired only these
+four inherited gate categories. The final pinned runs pass `make verify`
+(web Vitest 465/465), `make e2e` (API 4/4 with 103 assertions; Playwright
+29/29) and `make build`. The `0952364` history proves the soft-launch failure
+was test-expectation drift; no generator, live domain, port or `APP_URL`
+changed. This updates gate status without rewriting the independent audit
+snapshot or claiming §15 audit closure.
+
 Source verdicts: MUX-001–004, 006–015 resolved in source; MUX-005 resolved
 for quiz drafts; MUX-016 resolved in browser evidence only. D-0297's Capacitor
 8.5.0 `BridgeActivity` claim confirmed against installed source. No over-grant
@@ -1303,9 +1354,10 @@ repository ledgers are complete.
 | 6 | UX-08A Contextual plans | Implementation scope complete; repository/human gates retained | Accountable Product Owner | Commit `57166d6`; [APP-0089](APPROVALS.md#app-0089); [D-0296](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
 | 7 | UX-10A Android hardening | Implementation scope complete; repository/device gates retained | Accountable Product Owner | Commit `42e8393`; [APP-0090](APPROVALS.md#app-0090); [D-0297](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026) | |
 | 8 | AUDIT-FIX-01 Post-implementation audit corrections | Complete; inherited repository/device baselines retained | Accountable Product Owner | [APP-0091](APPROVALS.md#app-0091); [D-0298](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | 2026-09-16 |
-| 9 | UX-EXP-01 Onboarding experiment | Blocked | Unassigned | | |
-| 10 | UX-EXP-02 Plans experiment | Protocol ready; activation blocked | Accountable Product Owner | [UX-08A evidence](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
-| 11 | UX-EXP-03 Quiz experiment | Blocked | Unassigned | | |
+| 9 | GATE-FIX-01 Repository gate repair | Complete | Accountable Product Owner | [APP-0092](APPROVALS.md#app-0092); [D-0299](DECISIONS.md); [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026) | 2026-09-16 |
+| 10 | UX-EXP-01 Onboarding experiment | Blocked | Unassigned | | |
+| 11 | UX-EXP-02 Plans experiment | Protocol ready; activation blocked | Accountable Product Owner | [UX-08A evidence](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
+| 12 | UX-EXP-03 Quiz experiment | Blocked | Unassigned | | |
 
 ## 15. Definition of audit closure
 

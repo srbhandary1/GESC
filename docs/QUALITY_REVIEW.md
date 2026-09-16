@@ -1,5 +1,47 @@
 # Quality review
 
+## GATE-FIX-01 repository gate repair — 16 September 2026
+
+### Scope reviewed
+
+- APP-0092/D-0299 authorize only the stale Variant-C cache-buster assertion,
+  five recorded ESLint findings, retained header contrast failures and the
+  soft-launch contract-test drift proven pre-existing at `ce305bd`.
+- Existing voice-recorder behavior/tests, light Studio/operator/Mira header
+  contrast, and the generated soft-launch environment contract/history.
+- No feature, device, experiment, closure, API/OpenAPI, schema, provider,
+  payment, production or release configuration is in scope.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Authorization and boundary | Pass | APP-0092/D-0299 limit the checkpoint to repository gate repair. No application capability, contract, schema, migration or live configuration changed |
+| Variant-C assertion | Pass | `jezwebLearnerChrome.test.ts` requires the current source to contain a `?v=jezweb-cN` value and no longer couples the test to one release number; current product source remains `jezweb-c8` |
+| Recorder lint and behavior | Pass | `browserSpeech.ts` uses an immutable start timer. `VoicePracticePanel` uses stable callbacks and the supplied parent phase; lock transitions change the `RecordingTurn` key and invoke its pre-existing unmount cancellation rather than writing state in an effect. The second state-reset effect was removed. Unchanged focused tests pass 37/37 and full web tests pass 465/465 |
+| Header contrast | Pass | Pending-review text and its localized child are white only within green light-theme non-Mira Studio/operator headers. The learner paid-minutes chip uses `#0a1a14` on its existing light surface. The global muted token, `#006b3f` green and Mira learner white header are unchanged; final axe journeys pass 29/29 |
+| Soft-launch history | Pass | `git show 0952364` proves the generator intentionally changed `SANCTUM_STATEFUL_DOMAINS` to `ai.globalspokenenglish.com,117.254.108.143:8080,127.0.0.1:9080,...` for staff-LAN sign-in while the older test string remained. Only `scripts/test-soft-launch-environment.sh` changed; generator, ports, domains and `APP_URL` are untouched, so no DR was needed |
+| Privacy, security and tenancy | Pass | No persisted content, credential, learner data, tenant query or authorization path changed. Recorder cleanup remains fail-safe on unmount and no analytics emission was added |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| focused `pnpm run lint` | Passed with zero warnings |
+| focused unchanged chrome/voice/recording Vitest | Passed: 3 files, 37 tests |
+| `bash scripts/test-soft-launch-environment.sh` | Passed: `Soft-launch environment contract passed.` |
+| pinned `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed. Final summary: `Test Files 101 passed (101)`; `Tests 465 passed (465)`; earlier stages passed Composer advisory audit, Pint, PHPStan, SQLite 316/316 (3,087 assertions), PostgreSQL 360/360 (5,223 assertions), frozen install, high-severity dependency audit, locale, OpenAPI/generated contracts, release and soft-launch contracts, lint and typecheck. Two moderate pnpm advisories remain below the configured high-severity failure threshold |
+| pinned `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed. Final summaries: reconciliation API `tests: 4, passed: 4, assertions: 103`; Playwright `29 passed (23.0s)`. The first diagnostic rerun exposed three operator locale-note descendants still inheriting muted text; the header-only descendant selector corrected them before this final full run |
+| pinned `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed. Final summaries: `✓ built in 184ms`; `Tutor avatar bundle: excluded models because no completed public license grant exists.` |
+
+### Conclusion and retained gates
+
+GATE-FIX-01 is complete: the exact repository verification, browser and build
+gates pass at the candidate state. No product or live-host behavior changed.
+The audit itself is not closed: the §10 physical-device matrix, human
+accessibility/comprehension checks, independent catalogue reviews, experiments
+and the separately authorized closure decision remain open.
+
 ## AUDIT-FIX-01 post-implementation audit corrections — 16 September 2026
 
 ### Scope reviewed
