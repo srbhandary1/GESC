@@ -80,6 +80,64 @@ the DM-01/DM-02 physical lifecycle and negative-storage checks below.
 | DM-03 | | | | | |
 | DM-04 | | | | | |
 
+## UX-10A current-phone rerun (2026-09-16)
+
+This is documentation evidence for the Android mobile UX audit §10 matrix,
+not a new PR-014 DM device assignment and not evidence for unreported PR-014
+authentication journeys or credential-storage inspection.
+
+| Field | Value |
+|---|---|
+| Repository | HEAD `d62a25a` |
+| APK | `com.globalenglish.app` 1.0; targetSdk 36; 28,307,558 bytes |
+| APK SHA-256 | `0409e52835b41271fca5e4bdb82da7d2c2598926cfdb11cd0acc6bc62ed493b3` |
+| Device | realme RMX3085 (`RMX3085L1`), serial `J7GUXWEENBNZTW85` |
+| Android / API | 13 / 33 |
+| WebView | `com.google.android.webview` 151.0.7922.199 |
+| Navigation | Three-button (`navigation_mode=0`) |
+| Identity capture | Font scale `1.0`; locale `en-GB`; `MainActivity` focused; `RECORD_AUDIO granted=false` |
+| Demo wrapper | Not installed |
+| Tester | Accountable Product Owner |
+
+The earlier undifferentiated current-phone Pass is superseded. Only the six
+rows explicitly reported PASS are marked in the audit plan; API 33 is not
+copied into API 24/35/36 or the physical low-cost-phone column.
+
+| Audit §10 row | Result | Evidence note |
+|---|---|---|
+| Fresh install; no launch mic prompt | **PASS** | Same 13:16 install; cold start stayed on `MainActivity`; microphone denied; no launch dialog; `pm clear` denied this rerun |
+| Contextual grant/deny/permanent deny | **FAIL** | Rationale and ordinary denial were seen; Type instead remained; grant was not completed and permanent deny was not offered |
+| Gesture predictive Back | **NOT RUN** | Device remained in three-button mode |
+| Three-button Back | **PASS** | Question → practice → extra introduction hop → Learn → Home → launcher |
+| Quiz resume after app switch | **PASS** | After about 30 seconds, Recents restored question 0/3 with the first option selected |
+| Low-memory/process recreation | **PASS** | Force-stop/Recents restored safe Home; no durable draft with ADR-0006 persistence off; Don't keep activities not enabled |
+| Rotation and split-screen | **FAIL** | Rotation usable with crowded header chips; split-screen not entered |
+| IME does not obscure primary action | **PASS** | Native IME inset 331.76px; action remained above keyboard; measured CSS width 423 |
+| TalkBack critical journey | **FAIL** | Named controls observed; the full critical journey and TalkBack gesture completion were not finished |
+| 200% font scale, English | **FAIL** | OEM capped at 1.6; Progress and live-AI chip clipped |
+| 200% font scale, Kannada | **FAIL** | OEM capped at 1.6; Kannada navigation labels clipped; linguistic review remains pending |
+| Slow/offline transition and recovery | **FAIL** | Local feedback appeared offline, without pending/reconciled or idempotency-key evidence |
+| Light/dark/high-contrast evaluation | **PASS** | Accepted light Variant C remained; no dark product theme; Home glyphs became faint under high contrast |
+
+Back during recording and physical 48×48 target measurements were not reported
+in this rerun. Existing component/browser evidence is not device evidence.
+
+### Bounded defects — no fixes in this evidence session
+
+| ID | Scope | Status |
+|---|---|---|
+| UX10-DEV-01 | Complete grant and permanent-denial permission evidence | Open |
+| UX10-DEV-02 | Split-screen evidence and crowded rotated header chips | Open |
+| UX10-DEV-03 | Complete TalkBack critical journey and gesture/focus evidence | Open |
+| UX10-DEV-04 | English enlarged-text clipping and unexecuted 2.0/320px condition | Open |
+| UX10-DEV-05 | Kannada enlarged-text clipping and unexecuted 2.0/320px condition | Open |
+| UX10-DEV-06 | Offline checkpoint pending/reconciliation/idempotency evidence | Open |
+
+Six current-phone rows are PASS. Six are FAIL and one is NOT RUN, leaving
+seven current-phone rows and 58 of 64 audit §10 non-N/A cells unmarked. No
+application fix, production release, Play release or live payment was
+authorized or performed.
+
 ### Emulator substitute note (2026-08-07)
 
 | Field | Value |

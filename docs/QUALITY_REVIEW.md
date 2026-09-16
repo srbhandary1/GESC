@@ -1,5 +1,59 @@
 # Quality review
 
+## §10.2 current-phone rerun — 16 September 2026
+
+### Scope reviewed
+
+- Rerun the existing RMX3085 current-phone column at documentation HEAD
+  `d62a25a` with the installed APK hash `0409e528…`. Record per-row PASS/FAIL
+  against plan §10.1. Do not treat this as a new device. Do not copy API 33
+  into API 24/35/36 or the low-cost column. Open a bounded defect for each
+  FAIL, but make no fix. No Play/production/payment claim.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Device identity | Same phone | Serial `J7GUXWEENBNZTW85`, realme RMX3085 (`RMX3085L1`), Android 13/API 33, WebView 151.0.7922.199, three-button `navigation_mode=0`, identity-capture locale `en-GB` and font scale `1.0` |
+| APK | Hash replaced | On-device `base.apk` SHA-256 `0409e52835b41271fca5e4bdb82da7d2c2598926cfdb11cd0acc6bc62ed493b3` (28,307,558 bytes). Stale `779b5b90…` does not match |
+| Fresh install / no launch mic | PASS | Same 13:16 install; cold start `MainActivity`; `RECORD_AUDIO` denied; no launch prompt |
+| Grant/deny/permanent deny | FAIL | Rationale + system dialog + Don't allow + Type instead. Grant not completed. Permanent deny not offered |
+| Gesture predictive Back | NOT RUN | Could not leave three-button mode |
+| Three-button Back | PASS | Question → practice → extra introduction hop → Learn → Home → launcher |
+| Quiz resume after app switch | PASS | 30s Home; Recents restored question 0/3 with first option still checked |
+| Process recreation | PASS | Force-stop Recents → Home; radios unchecked; no ADR-0006 durable draft |
+| Rotation and split-screen | FAIL | Landscape no overflowX; split-screen not entered |
+| IME | PASS | `--ge-native-ime-inset-bottom` 331.76px; primary action above IME |
+| TalkBack critical journey | FAIL | Named controls on main destinations; full 10.1 journey not completed |
+| 200% English | FAIL | OEM max `font_scale=1.6`; Progress/chip clipping; 320 CSS width not applied |
+| 200% Kannada | FAIL | Same 1.6 cap; Kannada nav labels truncate |
+| Offline recovery | FAIL | Local quiz continue/submit while airplane on; no pending/idempotency UI |
+| Light/dark/high-contrast | PASS | Night and high-contrast kept accepted light Variant C; no unapproved dark theme |
+| Other columns | Unchanged residual | APP-0093 51 other-column cells plus 7 unmarked current-phone rows = 58/64 unmarked |
+
+No physical result was supplied for Back during recording or 48×48 target
+measurement. Existing component/browser evidence is retained without inferring
+a current-phone PASS.
+
+### Bounded defect list
+
+| ID | FAIL | Residual |
+|---|---|---|
+| UX10-DEV-01 | Contextual permission | Grant and permanent denial were not completed; ordinary denial and Type instead were evidenced |
+| UX10-DEV-02 | Rotation/split-screen | Rotation remained usable with crowded header chips; split-screen was not entered |
+| UX10-DEV-03 | TalkBack | Named controls were observed, but the complete critical journey and gesture focus behavior were not completed |
+| UX10-DEV-04 | English enlarged text | OEM capped at 1.6; Progress and the live-AI chip clipped; 2.0/320px was not exercised |
+| UX10-DEV-05 | Kannada enlarged text | OEM capped at 1.6; navigation labels clipped; 2.0/320px was not exercised |
+| UX10-DEV-06 | Offline recovery | Local feedback appeared, but pending/reconciled state, idempotency-key reuse and one authoritative submission were not evidenced |
+
+All six are open and bounded to later evidence or separately authorized fixes.
+No fix was made in this session. TalkBack, font scale, night mode and high
+contrast were restored after the walk. Production, Play and live payment
+remain unauthorized.
+
+The earlier single tester Pass in the section below is historical and is not
+the current-phone result.
+
 ## AUDIT-CLOSE-01 plan §15 closure — 16 September 2026
 
 ### Scope reviewed
@@ -36,8 +90,10 @@ documentation-only uncommitted edits from §10.2 recording.
 
 ### Conclusion and retained gates
 
-The audit programme is **closed with accepted residuals**. It is not a
-production, Play or live-payment authorization. Open human gates remain:
+This section records the historical APP-0093/D-0300 closure. The superseding
+§10.2 rerun above reopens UX-10A's device/accessibility evidence gate; its six
+FAIL rows were not newly accepted as resolved. This remains neither production,
+Play nor live-payment authorization. Open human gates remain:
 
 - independent privacy/security/tenancy review before any funnel-event emission;
 - academic review of review intervals (ADR-0028);
@@ -45,7 +101,10 @@ production, Play or live-payment authorization. Open human gates remain:
 - representative casual/student/business comprehension studies (Home Continue,
   first-use, quiz clutter, paywall/Continue-free);
 - API 24, API 35, API 36 and physical low-cost-phone §10 cells (accepted
-  residual; do not copy the RMX3085 API 33 Pass);
+  residual; do not copy RMX3085 API 33 results);
+- current-phone FAIL/NOT RUN rows from the §10.2 rerun (permission grant/
+  permanent-deny, gesture Back, rotation/split-screen, TalkBack journey, 200%
+  English/Kannada, offline checkpoint evidence);
 - connected instrumentation on a seeded signed-in profile;
 - dashboard fail-close if a stored review row has `completed_at < due_at`
   (§13.2 defect 6).
@@ -65,7 +124,7 @@ production, Play or live-payment authorization. Open human gates remain:
 |---|---|---|
 | Device identity | Pass | `adb devices -l` showed `J7GUXWEENBNZTW85` / `model:RMX3085`; `ro.build.version.sdk=33`; WebView 151.0.7922.199 |
 | Fresh install microphone | Pass (agent) | After uninstall/install, cold start focus stayed on `MainActivity`; `RECORD_AUDIO` remained `granted=false`; no permission dialog; guest Home visible |
-| Remaining current-phone rows | Pass (tester assertion) | Single **Pass** report covering grant/deny, Back, quiz resume, process recreation, rotation/split-screen, IME, TalkBack, 200% English/Kannada, offline recovery and appearance. No per-row FAIL notes were supplied |
+| Remaining current-phone rows | Superseded | The single tester **Pass** below is historical. Current results are in [§10.2 current-phone rerun](#102-current-phone-rerun--16-september-2026) |
 | Other matrix columns | Open | 51 of 64 non-N/A cells remain unmarked. API 33 evidence is not copied to API 35/36 |
 | Connected instrumentation | Failed as recorded | Default `connectedDebugAndroidTest` failed on Capacitor cordova-plugin Kotlin duplicate classes. `:app:connectedDebugAndroidTest` was 6/6 failed looking for `.level-path__item` on unsigned guest Home |
 | Demo wrapper | Not run | `com.globalenglish.demo` was not installed |
@@ -80,9 +139,8 @@ production, Play or live-payment authorization. Open human gates remain:
 
 ### Conclusion and retained gates
 
-The current-phone column may be treated as exercised. APP-0093 later accepted
-the remaining 51 non-N/A cells as residual for this audit programme; API 33
-evidence was not copied into API 35/36. Kannada 200% is layout evidence only.
+The current-phone column was treated as exercised on a single tester Pass.
+That assertion is superseded by the per-row rerun at the top of this file.
 
 ## GATE-FIX-01 repository gate repair — 16 September 2026
 
@@ -210,7 +268,7 @@ remain open. Prompt 8b device work and the closure pass were not started.
 | Targets and Variant C identity | Pass in browser; device open | The five narrow-screen destinations are equal tabs with at least 48×48 CSS-pixel geometry and labels of at least 12px, with green tint, weight and inset indicator. Browser dark-preference evaluation retains the accepted light `#FAFBFA` canvas and `#006B3F` action; forced-colors evaluation adds a 3px system-color edge. No dark product theme was added |
 | Native smoke coverage | Pass compilation; connected execution open | Both placeholder `ExampleInstrumentedTest.java` files are removed. Package-correct Espresso/UiAutomator suites for `com.globalenglish.app` and `com.globalenglish.demo` cover first use, lesson/Back, quiz resume, Speak denial/typed fallback, plans return and question/focus Back. Both application and androidTest source sets compile |
 | Privacy, credentials and tenancy | Pass | History contains route ordinals/identifiers and focus IDs only. It stores no learner text, audio, transcript or credential; no new persistence mechanism exists. Existing option-only draft scoping is unchanged and no tenant-owned query was added or modified |
-| Device matrix | Open | All 64 non-N/A §10 cells remain open because no device was attached. The plan now contains an exact per-device preparation sequence and row-by-row human pass checklist |
+| Device matrix | Open with superseding physical evidence | The later RMX3085 rerun records six current-phone PASS cells, six FAIL rows and one NOT RUN row; 58/64 non-N/A cells remain unmarked. See [§10.2 rerun](#102-current-phone-rerun--16-september-2026). No result is copied into API 24/35/36 or low-cost-phone columns |
 
 ### Commands and results
 
@@ -230,14 +288,13 @@ remain open. Prompt 8b device work and the closure pass were not started.
 
 ### Conclusion and retained gates
 
-UX-10A's bounded implementation scope is complete. Checkpoint closure remains
-open on the pre-existing repository soft-launch/contrast failures and every
-connected-device cell: predictive and three-button Back, recording Back,
-fresh-install permission behavior, low-memory/recreation, rotation/split
-screen, real IME/safe-area behavior, TalkBack, English/Kannada 200% font,
-offline recovery and system light/dark/high-contrast evaluation. The exact
-human sequence is in the audit plan §10.1. No experiment was started, no dark
-theme was introduced and no APK was installed, deployed or published.
+UX-10A's bounded implementation scope is complete, and the repository gates
+were later repaired by GATE-FIX-01. Checkpoint device/accessibility closure is
+not complete after the superseding RMX3085 rerun: UX10-DEV-01 through
+UX10-DEV-06 remain open, gesture predictive Back was not run, physical
+48×48 target measurement and Back-during-recording behavior were not reported,
+and 58/64 non-N/A matrix cells remain unmarked. No experiment or dark theme
+was introduced; the sideloaded debug APK is not a production or Play release.
 
 ## UX-08A contextual plans and recoverable checkout presentation — 15 September 2026
 

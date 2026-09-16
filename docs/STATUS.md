@@ -1,13 +1,36 @@
 # Repository status
 
+## §10.2 current-phone rerun — 16 September 2026
+
+- Same attached realme RMX3085 (`J7GUXWEENBNZTW85`, API 33, WebView
+  151.0.7922.199, three-button). Not a new device.
+- Documentation HEAD `d62a25a`; product gates remain `7746a96`. Installed
+  `com.globalenglish.app` SHA-256
+  `0409e52835b41271fca5e4bdb82da7d2c2598926cfdb11cd0acc6bc62ed493b3`
+  (28,307,558 bytes). The previously recorded `779b5b90…` hash is stale.
+- Per-row walk superseded the earlier undifferentiated tester Pass. **PASS:**
+  fresh-install no launch mic, three-button Back, quiz resume, process
+  recreation, IME, light/dark/high-contrast. **FAIL:** permission
+  grant/permanent-deny, combined rotation/split-screen, TalkBack critical
+  journey, 200% English, 200% Kannada, offline checkpoint recovery.
+  **NOT RUN:** gesture predictive Back.
+- Six current-phone rows stay marked. 58 of 64 non-N/A cells are unmarked.
+  API 33 is not copied into API 24/35/36 or the low-cost column.
+- Bounded defects UX10-DEV-01 through UX10-DEV-06 cover the six FAIL rows:
+  permission branch coverage, rotation/split-screen, TalkBack journey, English
+  and Kannada enlarged text, and offline checkpoint recovery. Gesture Back is
+  NOT RUN, not a FAIL. No fix was made.
+- Production, Play release and live payment remain unauthorized.
+
 ## AUDIT-CLOSE-01 plan §15 closure — 16 September 2026
 
 - APP-0093/D-0300 close the Android mobile UX audit programme with accepted
   residuals. No application code, schema, API/OpenAPI, provider or payment
   behaviour changed in this pass.
 - Remaining 51 non-N/A §10 cells (API 24, API 35, API 36, physical low-cost
-  phone) are residual. The RMX3085 API 33 current-phone Pass is not copied
-  into those columns.
+  phone) are residual. RMX3085 API 33 results are not copied into those
+  columns. The later same-device rerun unmarked seven current-phone rows; that
+  superseding evidence is not converted to Pass by the earlier closure record.
 - UX-EXP-01, UX-EXP-02 and UX-EXP-03 are Deferred: funnel-event emission is
   not implemented, independent privacy/security/tenancy review has not run,
   and no live traffic exists. Experiments are not used as correctness
@@ -27,9 +50,8 @@
 - Agent-verified: fresh install did not show a launch-time microphone
   prompt; `RECORD_AUDIO` remained denied.
 - The Accountable Product Owner reported **Pass** for the remaining
-  current-phone §10 rows. Only that column is marked. API 24/35/36 and
-  low-cost-phone cells were later accepted as residual under APP-0093
-  (51 of 64 non-N/A cells remain unmarked; API 33 is not copied into them).
+  current-phone §10 rows. That undifferentiated Pass is **superseded** by the
+  §10.2 rerun at the top of this file.
 - `:app:connectedDebugAndroidTest` ran 6/6 failed on unsigned guest Home;
   that is recorded and is not used to fail the manual rows. Demo APK was
   not installed.
@@ -687,13 +709,13 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | AUDIT-CLOSE-01 (plan §15) closed with residuals under APP-0093/D-0300 |
-| Status | Android mobile UX audit programme closed with accepted residuals. Repository gates are green at HEAD `7746a96`. Current-phone §10 PASS on realme RMX3085 (API 33). 51 remaining device cells are residual. Experiments are Deferred. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | UX-10A device evidence rerun — implementation complete; exit criteria open |
+| Status | AUDIT-CLOSE-01 remains the historical APP-0093/D-0300 closure record, but the superseding RMX3085 §10.2 rerun at `d62a25a` / APK `0409e528…` leaves 6 current-phone PASS, 6 FAIL and 1 NOT RUN. UX10-DEV-01–06 are open and 58 of 64 device cells are unmarked. Repository gates remain green at `7746a96`; experiments are Deferred. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 16 September 2026 |
 | Git branch | `cursor/learner-variant-c-jezweb-3f88` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Do not treat this closure as production, Play or live-payment authorization. Independent privacy/security/tenancy review is required before funnel-event emission. Academic review of review intervals remains under ADR-0028. Independent review of the five non-English catalogues, representative comprehension studies, seeded connected instrumentation and optional later API 24/35/36 and low-cost-phone coverage remain open human gates. Defect 6 (dashboard fail-close on `completed_at < due_at`) remains a residual. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
+| Next required action | Do not treat the historical closure as production, Play or live-payment authorization. UX10-DEV-01–06, gesture predictive Back, physical target measurement and physical Back-during-recording evidence require later authorization/evidence; no fix is authorized here. Independent privacy/security/tenancy review is required before funnel-event emission. Academic review of review intervals remains under ADR-0028. Independent review of the five non-English catalogues, representative comprehension studies, seeded connected instrumentation and optional later API 24/35/36 and low-cost-phone coverage remain open. Defect 6 (dashboard fail-close on `completed_at < due_at`) remains a residual. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |
 | Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A GATE-FIX-01 production debug APK was sideloaded to the attached RMX3085 for §10.2; it is not a published closed-beta artifact. Live payment remains disabled and unauthorized. |
 
