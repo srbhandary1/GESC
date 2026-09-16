@@ -3,7 +3,13 @@ import type {
   MessageParameters,
   SupportedLocale,
 } from '@global-english/localization'
-import { useState, type FormEvent, type ReactNode, type RefObject } from 'react'
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import type { LearnerGoal } from '../learner/LearnerJourneyApi'
@@ -18,7 +24,19 @@ export const SPEAKING_COMFORT_LEVELS = [ // eslint-disable-line react-refresh/on
 
 export type SpeakingComfort = (typeof SPEAKING_COMFORT_LEVELS)[number]
 
-export type OnboardingStepId = 'language' | 'adult' | 'goal' | 'level'
+export type OnboardingStepId =
+  | 'welcome'
+  | 'adult'
+  | 'preferences'
+  | 'goal'
+  | 'placement'
+  | 'audio-output'
+  | 'consent'
+  | 'microphone'
+  | 'practice'
+  | 'acknowledgement'
+  | 'language'
+  | 'level'
 
 export interface OnboardingSelection {
   readonly adultConfirmed: boolean
@@ -27,8 +45,14 @@ export interface OnboardingSelection {
 }
 
 interface OnboardingStepperProps {
+  readonly activeStep?: OnboardingStepId
   readonly busy?: boolean
+  readonly backAvailable?: boolean
+  readonly canAdvance?: boolean
   readonly commandLocked?: boolean
+  readonly continueLabel?: InterfaceMessageResolution
+  readonly content?: ReactNode
+  readonly description?: InterfaceMessageResolution
   readonly error?: ReactNode
   readonly locale: SupportedLocale
   readonly locales?: readonly SupportedLocale[]
@@ -36,11 +60,16 @@ interface OnboardingStepperProps {
     key: MessageKey,
     parameters?: MessageParameters,
   ) => InterfaceMessageResolution
+  readonly onBack?: () => void
+  readonly onContinue?: (selection: OnboardingSelection) => void
   readonly onLocaleChange?: (locale: SupportedLocale) => void
   readonly onSkip?: () => void
-  readonly onSubmit: (selection: OnboardingSelection) => void
+  readonly onSubmit?: (selection: OnboardingSelection) => void
+  readonly selection?: OnboardingSelection
+  readonly showCoach?: boolean
   readonly skipLabel?: InterfaceMessageResolution
   readonly steps: readonly OnboardingStepId[]
+  readonly title?: InterfaceMessageResolution
   readonly titleRef: RefObject<HTMLHeadingElement | null>
 }
 
@@ -88,41 +117,77 @@ const localeKeys: Readonly<Record<SupportedLocale, MessageKey>> = {
 }
 
 const stepTitles: Readonly<Record<OnboardingStepId, MessageKey>> = {
+  acknowledgement: 'learner.onboarding.acknowledgement_title',
   adult: 'learner.onboarding.adult_title',
+  'audio-output': 'learner.onboarding.audio_title',
+  consent: 'learner.onboarding.consent_title',
   goal: 'learner.onboarding.goal_title',
   language: 'shell.locale_label',
   level: 'learner.onboarding.level_title',
+  microphone: 'learner.onboarding.microphone_title',
+  placement: 'learner.onboarding.placement_title',
+  practice: 'learner.onboarding.practice_title',
+  preferences: 'learner.onboarding.preferences_title',
+  welcome: 'learner.onboarding.welcome_title',
 }
 
 export function OnboardingStepper({
+  activeStep,
+  backAvailable = true,
   busy = false,
+  canAdvance: controlledCanAdvance,
   commandLocked = false,
+  continueLabel,
+  content,
+  description,
   error,
   locale,
   locales = [],
   message,
+  onBack,
+  onContinue,
   onLocaleChange,
   onSkip,
   onSubmit,
+  selection,
+  showCoach = true,
   skipLabel,
   steps,
+  title,
   titleRef,
 }: OnboardingStepperProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [adultConfirmed, setAdultConfirmed] = useState(false)
-  const [goal, setGoal] = useState<LearnerGoal | null>(null)
-  const [level, setLevel] = useState<SpeakingComfort | null>(null)
+  const [internalAdultConfirmed, setInternalAdultConfirmed] = useState(false)
+  const [internalGoal, setInternalGoal] = useState<LearnerGoal | null>(null)
+  const [internalLevel, setInternalLevel] = useState<SpeakingComfort | null>(null)
 
-  const step = steps[stepIndex] ?? steps[0]!
-  const isLast = stepIndex === steps.length - 1
-  const canAdvance = canContinue(step, {
-    adultConfirmed,
-    goal,
-    level,
-  })
+  const controlledIndex =
+    activeStep === undefined ? -1 : steps.indexOf(activeStep)
+  const currentIndex = controlledIndex >= 0 ? controlledIndex : stepIndex
+  const step = steps[currentIndex] ?? steps[0]!
+  const isControlled = activeStep !== undefined
+  const isLast = currentIndex === steps.length - 1
+  const currentSelection = selection ?? {
+    adultConfirmed: internalAdultConfirmed,
+    goal: internalGoal,
+    level: internalLevel,
+  }
+  const canAdvance =
+    controlledCanAdvance ?? canContinue(step, currentSelection)
+
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [currentIndex, titleRef])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (isControlled) {
+      if (canAdvance) {
+        onContinue?.(currentSelection)
+      }
+      return
+    }
 
     if (!isLast) {
       if (!canAdvance) {
@@ -133,7 +198,7 @@ export function OnboardingStepper({
       return
     }
 
-    onSubmit({ adultConfirmed, goal, level })
+    onSubmit?.(currentSelection)
   }
 
   return (
@@ -145,12 +210,12 @@ export function OnboardingStepper({
         {steps.map((candidate, index) => (
           <span
             className="ge-onboarding__dot"
-            data-active={index === stepIndex ? 'true' : undefined}
+            data-active={index === currentIndex ? 'true' : undefined}
             key={candidate}
           />
         ))}
       </div>
-      <div className="ge-onboarding__presence">
+      {showCoach ? <div className="ge-onboarding__presence">
         <AvatarSlot
           label={message('tutor.name').text}
           size="sm"
@@ -164,21 +229,21 @@ export function OnboardingStepper({
             <LocalizedMessage resolution={message('tutor.intro')} />
           </p>
         </div>
-      </div>
-      <p className="ge-onboarding__step visually-hidden" role="status">
+      </div> : null}
+      <p className="ge-onboarding__step" role="status">
         <LocalizedMessage
           resolution={message('learner.onboarding.step', {
-            current: String(stepIndex + 1),
+            current: String(currentIndex + 1),
             total: String(steps.length),
           })}
         />
       </p>
       <h2 id="onboarding-title" ref={titleRef} tabIndex={-1}>
-        <LocalizedMessage resolution={message(stepTitles[step])} />
+        <LocalizedMessage resolution={title ?? message(stepTitles[step])} />
       </h2>
       <p>
         <LocalizedMessage
-          resolution={message(
+          resolution={description ?? message(
             step === 'adult'
               ? 'learner.onboarding.adult_hint'
               : step === 'language'
@@ -189,6 +254,7 @@ export function OnboardingStepper({
       </p>
 
       <form className="ge-onboarding__form" onSubmit={submit}>
+        {content ?? <>
         {step === 'language' ? (
           <fieldset className="ge-select-grid">
             <legend className="ge-visually-hidden">
@@ -219,13 +285,13 @@ export function OnboardingStepper({
         {step === 'adult' ? (
           <label
             className="ge-select-card ge-select-card--confirm"
-            data-selected={adultConfirmed ? 'true' : undefined}
+            data-selected={currentSelection.adultConfirmed ? 'true' : undefined}
           >
             <input
-              checked={adultConfirmed}
+              checked={currentSelection.adultConfirmed}
               disabled={busy || commandLocked}
               onChange={(event) =>
-                setAdultConfirmed(event.currentTarget.checked)
+                setInternalAdultConfirmed(event.currentTarget.checked)
               }
               type="checkbox"
             />
@@ -245,7 +311,7 @@ export function OnboardingStepper({
             {LEARNER_GOALS.map((candidate) => (
               <label
                 className="ge-select-card"
-                data-selected={goal === candidate ? 'true' : undefined}
+                data-selected={currentSelection.goal === candidate ? 'true' : undefined}
                 key={candidate}
               >
                 <span aria-hidden="true" className="ge-select-card__icon">
@@ -264,10 +330,10 @@ export function OnboardingStepper({
                   </span>
                 </span>
                 <input
-                  checked={goal === candidate}
+                  checked={currentSelection.goal === candidate}
                   disabled={busy || commandLocked}
                   name="learner-goal"
-                  onChange={() => setGoal(candidate)}
+                  onChange={() => setInternalGoal(candidate)}
                   type="radio"
                   value={candidate}
                 />
@@ -286,7 +352,7 @@ export function OnboardingStepper({
             {SPEAKING_COMFORT_LEVELS.map((candidate) => (
               <label
                 className="ge-select-card"
-                data-selected={level === candidate ? 'true' : undefined}
+                data-selected={currentSelection.level === candidate ? 'true' : undefined}
                 key={candidate}
               >
                 <span>
@@ -302,10 +368,10 @@ export function OnboardingStepper({
                   </span>
                 </span>
                 <input
-                  checked={level === candidate}
+                  checked={currentSelection.level === candidate}
                   disabled={busy || commandLocked}
                   name="speaking-comfort"
-                  onChange={() => setLevel(candidate)}
+                  onChange={() => setInternalLevel(candidate)}
                   type="radio"
                   value={candidate}
                 />
@@ -313,6 +379,7 @@ export function OnboardingStepper({
             ))}
           </fieldset>
         ) : null}
+        </>}
 
         {error === undefined || error === null ? null : (
           <p role="alert">{error}</p>
@@ -329,11 +396,17 @@ export function OnboardingStepper({
               <LocalizedMessage resolution={skipLabel} />
             </button>
           ) : null}
-          {stepIndex > 0 && !commandLocked ? (
+          {currentIndex > 0 && backAvailable && !commandLocked ? (
             <button
               className="ge-button"
               disabled={busy}
-              onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
+              onClick={() => {
+                if (isControlled) {
+                  onBack?.()
+                } else {
+                  setStepIndex((current) => Math.max(0, current - 1))
+                }
+              }}
               type="button"
             >
               <LocalizedMessage
@@ -347,11 +420,11 @@ export function OnboardingStepper({
             type="submit"
           >
             <LocalizedMessage
-              resolution={message(
+              resolution={
                 busy
-                  ? 'learner.onboarding.saving'
-                  : 'learner.onboarding.continue',
-              )}
+                  ? message('learner.onboarding.saving')
+                  : continueLabel ?? message('learner.onboarding.continue')
+              }
             />
             {busy ? null : (
               <span aria-hidden="true" className="ge-onboarding__continue-arrow">

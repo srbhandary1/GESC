@@ -3,6 +3,7 @@ import {
   DEFAULT_LOCALE,
   resolveMessage,
   type MessageKey,
+  type SupportedLocale,
 } from '@global-english/localization'
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
@@ -58,7 +59,10 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
   await expect(action.locator('.tutor-presence__face')).toBeVisible()
   await expect(action.getByText(message('tutor.name'))).toBeVisible()
   await expect(home.locator('.ge-button--primary')).toHaveCount(1)
-  await expect(page.locator('.tutor-home-hero')).toHaveCount(1)
+  await expect(home.getByRole('link', {
+    name: message('demo.phase1.home.speak'),
+  })).toHaveCount(0)
+  await expect(page.locator('.tutor-home-hero')).toHaveCount(0)
 
   const metrics = await page.evaluate(() => {
     const button = document.querySelector<HTMLElement>(
@@ -106,6 +110,84 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
   expect(accessibility.violations).toEqual([])
 })
 
+for (const locale of ['en-IN', 'kn-IN'] as const) {
+  test(`completes first-use onboarding in ${locale}`, async ({ page }) => {
+    const api = await mockLearnerApi(page, false)
+    await page.goto('/#home')
+
+    await page.locator('#interface-locale').selectOption(locale)
+    await expect(page.locator('html')).toHaveAttribute('lang', locale)
+    await expect(page.getByRole('heading', {
+      name: localizedMessage('learner.onboarding.welcome_title', locale),
+    })).toBeFocused()
+
+    await advanceFirstUseToGoal(page, locale)
+    await continueFirstUse(page, locale)
+    if (locale === 'kn-IN') {
+      await expect.poll(() => page.evaluate(() =>
+        localStorage.getItem('global-english:first-use-onboarding:v1'),
+      )).toContain('"step":"placement"')
+      await page.reload()
+      await expect(page.getByRole('heading', {
+        name: localizedMessage('learner.onboarding.placement_title', locale),
+      })).toBeFocused()
+    }
+    await finishFirstUseAfterGoal(page, locale)
+
+    await expect(page.getByRole('heading', {
+      name: localizedMessage('learner.home.title', locale),
+    })).toBeVisible()
+    expect(api.commandIds).toHaveLength(1)
+    expect(api.commandIds[0]).not.toBeNull()
+  })
+}
+
+test('recovers onboarding with same-command retry and new-command edit', async ({
+  page,
+}) => {
+  const api = await mockLearnerApi(page, false, {
+    onboardingFailureStatuses: [503, 503],
+  })
+  await page.goto('/#home')
+
+  await advanceFirstUseToGoal(page, DEFAULT_LOCALE)
+  await continueFirstUse(page, DEFAULT_LOCALE)
+
+  await expect(page.getByText(
+    message('learner.onboarding.error_server'),
+  )).toBeVisible()
+  await expect(page.getByRole('radio', {
+    name: message('learner.onboarding.goal_travel'),
+  })).toBeDisabled()
+  await page.getByRole('button', {
+    name: message('learner.onboarding.retry_same'),
+  }).click()
+  await expect(page.getByText(
+    message('learner.onboarding.error_server'),
+  )).toBeVisible()
+
+  expect(api.commandIds[1]).toBe(api.commandIds[0])
+
+  await page.getByRole('button', {
+    name: message('learner.onboarding.edit_choices'),
+  }).click()
+  const travel = page.getByRole('radio', {
+    name: message('learner.onboarding.goal_travel'),
+  })
+  await expect(travel).toBeEnabled()
+  await travel.check()
+  await page.getByRole('button', {
+    name: message('learner.onboarding.continue'),
+  }).click()
+
+  await finishFirstUseAfterGoal(page, DEFAULT_LOCALE)
+  await expect(page.getByRole('heading', {
+    name: message('learner.home.title'),
+  })).toBeVisible()
+  expect(api.commandIds).toHaveLength(3)
+  expect(api.commandIds[2]).not.toBe(api.commandIds[0])
+})
+
 test('completes the contract-stubbed online no-AI learner journey', async ({
   page,
 }) => {
@@ -118,24 +200,12 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
 
   await expect(
     page.getByRole('heading', {
-      name: message('learner.onboarding.title'),
+      name: message('learner.onboarding.welcome_title'),
     }),
   ).toBeFocused()
-  await page
-    .getByRole('checkbox', {
-      name: message('learner.onboarding.adult_confirmation'),
-    })
-    .check()
-  await page
-    .getByRole('radio', {
-      name: message('learner.onboarding.goal_workplace'),
-    })
-    .check()
-  await page
-    .getByRole('button', {
-      name: message('learner.onboarding.continue'),
-    })
-    .click()
+  await advanceFirstUseToGoal(page, DEFAULT_LOCALE)
+  await continueFirstUse(page, DEFAULT_LOCALE)
+  await finishFirstUseAfterGoal(page, DEFAULT_LOCALE)
 
   await page
     .getByRole('button', {
@@ -236,6 +306,20 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
   await expect(page.getByText('ಪ್ರಯತ್ನ 1')).toBeVisible()
   await expect(page.getByText('ಪ್ರಯತ್ನ 2').first()).toBeVisible()
   await expect(page.getByText(ids.first)).toHaveCount(0)
+  await expect(
+    page.getByText(
+      localizedMessage('learner.result.capability_progress', DEFAULT_LOCALE, {
+        completed: '1',
+        total: '1',
+      }),
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: message('learner.result.continue') }),
+  ).toHaveClass(/ge-button--primary/u)
+  await expect(
+    page.getByRole('button', { name: message('learner.result.retry') }),
+  ).not.toHaveClass(/ge-button--primary/u)
 
   expect(api.lastResponse?.local_recording).toMatchObject({
     captured: true,
@@ -588,6 +672,87 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   ).toHaveCount(0)
 })
 
+async function advanceFirstUseToGoal(
+  page: Page,
+  locale: SupportedLocale,
+): Promise<void> {
+  await continueFirstUse(page, locale)
+  await page.getByRole('checkbox', {
+    name: localizedMessage('learner.onboarding.adult_confirmation', locale),
+  }).check()
+  await continueFirstUse(page, locale)
+  await expect(page.getByRole('heading', {
+    name: localizedMessage('learner.onboarding.preferences_title', locale),
+  })).toBeFocused()
+  await continueFirstUse(page, locale)
+  await page.getByRole('radio', {
+    name: localizedMessage('learner.onboarding.goal_workplace', locale),
+  }).check()
+}
+
+async function finishFirstUseAfterGoal(
+  page: Page,
+  locale: SupportedLocale,
+): Promise<void> {
+  await expect(page.getByRole('heading', {
+    name: localizedMessage('learner.onboarding.placement_title', locale),
+  })).toBeFocused()
+  await page.getByRole('radio', {
+    name: new RegExp(
+      localizedMessage('learner.onboarding.placement_beginning', locale),
+    ),
+  }).check()
+  await continueFirstUse(page, locale)
+  await page.getByRole('button', {
+    name: localizedMessage('learner.onboarding.audio_defer', locale),
+  }).click()
+  await continueFirstUse(page, locale)
+
+  await expect(page.getByRole('heading', {
+    name: localizedMessage('learner.onboarding.consent_title', locale),
+  })).toBeFocused()
+  const recordingConsent = page.getByRole('checkbox', {
+    name: new RegExp(
+      localizedMessage('learner.onboarding.consent_recording_title', locale),
+    ),
+  })
+  const processingConsent = page.getByRole('checkbox', {
+    name: new RegExp(
+      localizedMessage('learner.onboarding.consent_ai_title', locale),
+    ),
+  })
+  await expect(recordingConsent).not.toBeChecked()
+  await expect(processingConsent).not.toBeChecked()
+  await continueFirstUse(page, locale)
+
+  await expect(page.getByRole('heading', {
+    name: localizedMessage('learner.onboarding.microphone_title', locale),
+  })).toBeFocused()
+  await page.getByRole('button', {
+    name: localizedMessage('learner.onboarding.microphone_type_instead', locale),
+  }).last().click()
+  await continueFirstUse(page, locale)
+  await page.getByRole('radio', {
+    name: localizedMessage('learner.onboarding.practice_typed', locale),
+  }).check()
+  await page.getByRole('textbox', {
+    name: localizedMessage('learner.onboarding.practice_typed_label', locale),
+  }).fill('Good morning.')
+  await continueFirstUse(page, locale)
+  await page.getByRole('button', {
+    name: localizedMessage('learner.onboarding.open_home', locale),
+  }).click()
+}
+
+async function continueFirstUse(
+  page: Page,
+  locale: SupportedLocale,
+): Promise<void> {
+  await page.getByRole('button', {
+    name: localizedMessage('learner.onboarding.continue', locale),
+  }).click()
+}
+
 interface MockApiState {
   commandIds: Array<string | null>
   modelAudioRequests: Array<{
@@ -611,8 +776,14 @@ interface MockApiState {
 async function mockLearnerApi(
   page: Page,
   initiallyOnboarded: boolean,
+  options: {
+    onboardingFailureStatuses?: number[]
+  } = {},
 ): Promise<MockApiState> {
   let onboarded = initiallyOnboarded
+  const onboardingFailureStatuses = [
+    ...(options.onboardingFailureStatuses ?? []),
+  ]
   const state: MockApiState = {
     commandIds: [],
     lastResponse: null,
@@ -669,8 +840,18 @@ async function mockLearnerApi(
 
     if (path === '/api/v1/me/onboarding') {
       state.commandIds.push(request.headers()['idempotency-key'] ?? null)
+      const failureStatus = onboardingFailureStatuses.shift()
+      if (failureStatus !== undefined) {
+        await json(route, { message: 'synthetic onboarding failure' }, failureStatus)
+        return
+      }
       onboarded = true
       await json(route, home(true))
+      return
+    }
+
+    if (path === '/api/v1/voice-consents' && request.method() === 'GET') {
+      await json(route, voiceConsentListing())
       return
     }
 
@@ -848,6 +1029,44 @@ async function installDeniedMicrophone(page: Page): Promise<void> {
       value: SupportedMediaRecorder,
     })
   })
+}
+
+function voiceConsentListing() {
+  return {
+    consents: [
+      {
+        effective_at: null,
+        purpose: 'voice_upload_and_transcription',
+        state: 'not_granted',
+      },
+      {
+        effective_at: null,
+        purpose: 'conversation_provider_processing',
+        state: 'not_granted',
+      },
+      {
+        effective_at: null,
+        purpose: 'transcript_history',
+        state: 'not_granted',
+      },
+    ],
+    notice: {
+      history_optional: true,
+      notice:
+        'Audio is used only for purposes you select. Refusal preserves typed learning.',
+      notice_revision: 'voice-notice-v1',
+      notice_sha256: 'a'.repeat(64),
+      policy_version: 'voice-policy-v1',
+      purposes: [
+        'voice_upload_and_transcription',
+        'conversation_provider_processing',
+        'transcript_history',
+      ],
+      requested_locale: 'en-IN',
+      resolved_locale: 'en-IN',
+      review_status: 'implementation_draft',
+    },
+  }
 }
 
 function home(onboarded: boolean) {
@@ -1041,5 +1260,17 @@ function message(key: MessageKey): string {
   return resolveMessage(key, {
     policy: 'development-preview',
     requestedLocale: DEFAULT_LOCALE,
+  }).text
+}
+
+function localizedMessage(
+  key: MessageKey,
+  locale: SupportedLocale,
+  parameters?: Record<string, string>,
+): string {
+  return resolveMessage(key, {
+    parameters,
+    policy: 'development-preview',
+    requestedLocale: locale,
   }).text
 }
