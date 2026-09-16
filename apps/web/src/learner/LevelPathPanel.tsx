@@ -32,10 +32,24 @@ import type {
 import { browserOfflineLearningStore } from '../offline/BrowserOfflineLearningStore'
 import {
   type CachedLevelCheckpointDetail,
+  LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS,
+  type LevelQuizDraft,
+  type LevelQuizDraftPart,
   type OfflineLearningStore,
   type OfflineProfileBinding,
+  type StoredOfflineLevelBundle,
 } from '../offline/OfflineLearningStore'
 import { ModelAudioPlayer } from './ModelAudioPlayer'
+import type { SubscriptionEntryContext } from '../subscriptions/SubscriptionPanel'
+import {
+  openLearnerLevel,
+  openLearnerLevelList,
+  openLearnerQuestion,
+  openLearnerSessionPart,
+  readLearnerNavigationState,
+  subscribeToLearnerNavigation,
+  type LearnerAssessmentKind,
+} from './LearnerNavigationHistory'
 import './LevelSessionJourney.css'
 
 const PARTS: SessionPartId[] = [
@@ -224,6 +238,506 @@ function lessonAudioLabels(
   }
 }
 
+type AssessmentItem = LevelCheckpointDetail['items'][number]
+const EMPTY_ASSESSMENT_ITEMS: readonly AssessmentItem[] = []
+type InterfaceMessageResolver = (
+  key: MessageKey,
+  parameters?: Record<string, string>,
+) => ReturnType<typeof resolveInterfaceMessage>
+
+function newLevelQuizDraft(
+  levelNumber: number,
+  partId: LevelQuizDraftPart,
+  blueprintContentHash: string,
+  itemIds: readonly string[],
+  attemptId: string,
+  activeItemIds: readonly string[] = itemIds,
+  selectedOptionIds: Readonly<Record<string, number>> = {},
+): LevelQuizDraft {
+  const createdAt = new Date()
+
+  return {
+    activeItemIds: [...activeItemIds],
+    attemptId,
+    blueprintContentHash,
+    createdAt: createdAt.toISOString(),
+    currentItemIndex: 0,
+    expiresAt: new Date(
+      createdAt.getTime() + LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS,
+    ).toISOString(),
+    itemIds: [...itemIds],
+    levelNumber,
+    partId,
+    selectedOptionIds: { ...selectedOptionIds },
+    updatedAt: createdAt.toISOString(),
+  }
+}
+
+function validRestoredLevelQuizDraft(
+  draft: LevelQuizDraft,
+  levelNumber: number,
+  partId: LevelQuizDraftPart,
+  blueprintContentHash: string,
+  items: readonly AssessmentItem[],
+): boolean {
+  const expectedIds = new Set(items.map(({ id }) => id))
+  const storedIds = new Set(draft.itemIds)
+  const optionsByItem = new Map(
+    items.map((item) => [item.id, item.options.length]),
+  )
+
+  return (
+    draft.levelNumber === levelNumber &&
+    draft.partId === partId &&
+    draft.blueprintContentHash === blueprintContentHash &&
+    draft.attemptId !== '' &&
+    new Date(draft.expiresAt).getTime() > Date.now() &&
+    expectedIds.size === storedIds.size &&
+    [...expectedIds].every((itemId) => storedIds.has(itemId)) &&
+    draft.activeItemIds.length > 0 &&
+    draft.activeItemIds.every((itemId) => expectedIds.has(itemId)) &&
+    draft.currentItemIndex >= 0 &&
+    draft.currentItemIndex < draft.activeItemIds.length &&
+    Object.entries(draft.selectedOptionIds).every(
+      ([itemId, optionId]) =>
+        expectedIds.has(itemId) &&
+        Number.isInteger(optionId) &&
+        optionId >= 0 &&
+        optionId < (optionsByItem.get(itemId) ?? 0),
+    )
+  )
+}
+
+interface LevelQuizDraftController {
+  readonly draft: LevelQuizDraft | null
+  clear(attemptId: string): Promise<void>
+  moveTo(currentItemIndex: number): void
+  restart(
+    activeItemIds: readonly string[],
+    selectedOptionIds?: Readonly<Record<string, number>>,
+  ): void
+  select(itemId: string, optionId: number): void
+}
+
+function useLevelQuizDraft({
+  active,
+  binding,
+  blueprintContentHash,
+  createClientId,
+  items,
+  levelNumber,
+  partId,
+  store,
+}: {
+  readonly active: boolean
+  readonly binding: OfflineProfileBinding | null
+  readonly blueprintContentHash: string | null
+  readonly createClientId: () => string
+  readonly items: readonly AssessmentItem[]
+  readonly levelNumber: number
+  readonly partId: LevelQuizDraftPart
+  readonly store: OfflineLearningStore
+}): LevelQuizDraftController {
+  const [draft, setDraft] = useState<LevelQuizDraft | null>(null)
+  const loadedScope = useRef<string | null>(null)
+  const persistenceEnabled = useRef(false)
+  const saveQueue = useRef<Promise<void>>(Promise.resolve())
+  const itemSignature = items.map(({ id }) => id).join('\u0000')
+  const scope = `${levelNumber}:${partId}:${blueprintContentHash ?? ''}:${itemSignature}`
+
+  const persist = useCallback(
+    (next: LevelQuizDraft) => {
+      if (
+        !persistenceEnabled.current ||
+        binding === null ||
+        store.saveLevelQuizDraft === undefined
+      ) {
+        return
+      }
+
+      saveQueue.current = saveQueue.current
+        .catch(() => undefined)
+        .then(() => store.saveLevelQuizDraft!(binding, next))
+    },
+    [binding, store],
+  )
+
+  useEffect(() => {
+    const contentRevision = blueprintContentHash
+    if (
+      !active ||
+      contentRevision === null ||
+      items.length === 0 ||
+      loadedScope.current === scope
+    ) {
+      return
+    }
+
+    const activeContentRevision: string = contentRevision
+    loadedScope.current = scope
+    persistenceEnabled.current = false
+    let cancelled = false
+    let initialized = false
+
+    async function restore() {
+      let restored: LevelQuizDraft | null = null
+      let canPersist = false
+
+      if (
+        binding !== null &&
+        store.loadLevelQuizDraft !== undefined &&
+        store.saveLevelQuizDraft !== undefined
+      ) {
+        try {
+          canPersist = await store.hasProfile(binding)
+          if (canPersist) {
+            restored = await store.loadLevelQuizDraft(
+              binding,
+              levelNumber,
+              partId,
+            )
+          }
+        } catch {
+          canPersist = false
+        }
+      }
+
+      if (cancelled) {
+        return
+      }
+
+      initialized = true
+      persistenceEnabled.current = canPersist
+      const next =
+        restored !== null &&
+        validRestoredLevelQuizDraft(
+          restored,
+          levelNumber,
+          partId,
+          activeContentRevision,
+          items,
+        )
+          ? restored
+          : newLevelQuizDraft(
+              levelNumber,
+              partId,
+              activeContentRevision,
+              items.map(({ id }) => id),
+              createClientId(),
+            )
+      setDraft(next)
+      persist(next)
+    }
+
+    void restore()
+
+    return () => {
+      cancelled = true
+      if (!initialized && loadedScope.current === scope) {
+        loadedScope.current = null
+      }
+    }
+  }, [
+    active,
+    binding,
+    blueprintContentHash,
+    createClientId,
+    itemSignature,
+    items,
+    levelNumber,
+    partId,
+    persist,
+    scope,
+    store,
+  ])
+
+  const update = useCallback(
+    (transform: (current: LevelQuizDraft) => LevelQuizDraft) => {
+      setDraft((current) => {
+        if (
+          current === null ||
+          current.levelNumber !== levelNumber ||
+          current.partId !== partId
+        ) {
+          return current
+        }
+
+        const next = transform(current)
+        persist(next)
+        return next
+      })
+    },
+    [levelNumber, partId, persist],
+  )
+
+  return {
+    draft,
+    async clear(attemptId) {
+      await saveQueue.current.catch(() => undefined)
+      if (
+        persistenceEnabled.current &&
+        binding !== null &&
+        store.deleteLevelQuizDraft !== undefined
+      ) {
+        await store.deleteLevelQuizDraft(
+          binding,
+          levelNumber,
+          partId,
+          attemptId,
+        )
+      }
+    },
+    moveTo(currentItemIndex) {
+      update((current) => ({
+        ...current,
+        currentItemIndex,
+        updatedAt: new Date().toISOString(),
+      }))
+    },
+    restart(activeItemIds, selectedOptionIds = {}) {
+      const next = newLevelQuizDraft(
+        levelNumber,
+        partId,
+        blueprintContentHash ?? '',
+        items.map(({ id }) => id),
+        createClientId(),
+        activeItemIds,
+        selectedOptionIds,
+      )
+      setDraft(next)
+      persist(next)
+    },
+    select(itemId, optionId) {
+      update((current) => ({
+        ...current,
+        selectedOptionIds: {
+          ...current.selectedOptionIds,
+          [itemId]: optionId,
+        },
+        updatedAt: new Date().toISOString(),
+      }))
+    },
+  }
+}
+
+function OneQuestionAssessment({
+  busy,
+  canRetry,
+  draft,
+  feedbackIndex,
+  items,
+  message,
+  onDone,
+  onFeedbackIndexChange,
+  onItemIndexChange,
+  onRetryIncorrect,
+  onSelect,
+  onSubmit,
+  result,
+  submitLabel,
+  assessmentKind,
+}: {
+  readonly assessmentKind: LearnerAssessmentKind
+  readonly busy: boolean
+  readonly canRetry: boolean
+  readonly draft: LevelQuizDraft
+  readonly feedbackIndex: number
+  readonly items: readonly AssessmentItem[]
+  readonly message: InterfaceMessageResolver
+  readonly onDone: () => void
+  readonly onFeedbackIndexChange: (index: number) => void
+  readonly onItemIndexChange: (index: number) => void
+  readonly onRetryIncorrect: () => void
+  readonly onSelect: (itemId: string, optionId: number) => void
+  readonly onSubmit: () => void
+  readonly result: CheckSubmissionResult | null
+  readonly submitLabel: MessageKey
+}) {
+  const itemById = new Map(items.map((item) => [item.id, item]))
+
+  if (result !== null) {
+    const itemResult = result.item_results[feedbackIndex]
+    const item = itemResult === undefined ? undefined : itemById.get(itemResult.id)
+
+    if (item === undefined || itemResult === undefined) {
+      return null
+    }
+
+    const hasMoreFeedback = feedbackIndex < result.item_results.length - 1
+    const hasIncorrect = result.item_results.some(({ correct }) => !correct)
+
+    return (
+      <div
+        className={`level-session__assessment-feedback ${
+          itemResult.correct ? 'is-correct' : 'is-not-yet'
+        }`}
+        id={`level-${draft.levelNumber}-${assessmentKind}-feedback-${feedbackIndex}`}
+        role="status"
+        tabIndex={-1}
+      >
+        <p className="level-session__question-progress">
+          <LocalizedMessage
+            resolution={message('level.path.question_progress', {
+              current: String(feedbackIndex + 1),
+              total: String(result.item_results.length),
+            })}
+          />
+        </p>
+        <h4>{item.prompt}</h4>
+        <p className="level-session__feedback-state">
+          <span aria-hidden="true">{itemResult.correct ? '✓' : '!'}</span>
+          <LocalizedMessage
+            resolution={message(
+              itemResult.correct
+                ? 'level.path.answer_correct'
+                : 'level.path.answer_not_yet',
+            )}
+          />
+        </p>
+        <p>
+          <LocalizedMessage
+            resolution={message('level.path.selected_answer', {
+              answer: item.options[itemResult.selected_option] ?? '',
+            })}
+          />
+        </p>
+        {itemResult.rationale ? (
+          <p className="level-session__rationale">
+            <LocalizedMessage
+              resolution={message('level.path.answer_rationale', {
+                rationale: itemResult.rationale,
+              })}
+            />
+          </p>
+        ) : null}
+        <div className="level-session__assessment-actions">
+          <button
+            className="level-session__primary"
+            disabled={busy}
+            id={`level-${draft.levelNumber}-${assessmentKind}-feedback-${feedbackIndex}-continue`}
+            onClick={() => {
+              if (hasMoreFeedback) {
+                onFeedbackIndexChange(feedbackIndex + 1)
+              } else if (hasIncorrect && canRetry) {
+                onRetryIncorrect()
+              } else {
+                onDone()
+              }
+            }}
+            type="button"
+          >
+            <LocalizedMessage
+              resolution={message(
+                hasMoreFeedback
+                  ? 'level.path.next_result'
+                  : hasIncorrect && canRetry
+                    ? 'level.path.retry_incorrect'
+                    : 'level.path.done',
+              )}
+            />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const itemId = draft.activeItemIds[draft.currentItemIndex]
+  const item = itemId === undefined ? undefined : itemById.get(itemId)
+  if (item === undefined) {
+    return null
+  }
+
+  const selectedOptionId = draft.selectedOptionIds[item.id]
+  const isLast = draft.currentItemIndex === draft.activeItemIds.length - 1
+
+  return (
+    <form
+      className="level-session__check level-session__assessment"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (isLast) {
+          onSubmit()
+        } else {
+          onItemIndexChange(draft.currentItemIndex + 1)
+        }
+      }}
+    >
+      <p
+        className="level-session__question-progress"
+        id={`level-${draft.levelNumber}-${assessmentKind}-question-${draft.currentItemIndex}`}
+        tabIndex={-1}
+      >
+        <LocalizedMessage
+          resolution={message('level.path.question_progress', {
+            current: String(draft.currentItemIndex + 1),
+            total: String(draft.activeItemIds.length),
+          })}
+        />
+      </p>
+      <fieldset>
+        <legend>{item.prompt}</legend>
+        <div className="level-session__answer-list">
+          {item.options.map((option, optionId) => {
+            const selected = selectedOptionId === optionId
+
+            return (
+              <label
+                className={selected ? 'is-selected' : undefined}
+                key={`${item.id}-${optionId}`}
+              >
+                <input
+                  checked={selected}
+                  name={item.id}
+                  onChange={() => onSelect(item.id, optionId)}
+                  type="radio"
+                />
+                <span className="level-session__answer-icon" aria-hidden="true">
+                  {selected ? '✓' : ''}
+                </span>
+                <span className="level-session__answer-copy">{option}</span>
+                {selected ? (
+                  <span
+                    aria-hidden="true"
+                    className="level-session__answer-selected"
+                  >
+                    <LocalizedMessage
+                      resolution={message('level.path.answer_selected')}
+                    />
+                  </span>
+                ) : null}
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+      <div className="level-session__assessment-actions">
+        {draft.currentItemIndex > 0 ? (
+          <button
+            className="level-session__secondary"
+            disabled={busy}
+            onClick={() => onItemIndexChange(draft.currentItemIndex - 1)}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('level.path.previous_question')} />
+          </button>
+        ) : null}
+        <button
+          className="level-session__primary"
+          disabled={busy || selectedOptionId === undefined}
+          id={`level-${draft.levelNumber}-${assessmentKind}-question-${draft.currentItemIndex}-continue`}
+          type="submit"
+        >
+          <LocalizedMessage
+            resolution={message(
+              isLast ? submitLabel : 'level.path.continue_question',
+            )}
+          />
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export interface LevelPathPanelProps {
   api: LevelSessionsApi
   locale?: SupportedLocale
@@ -231,6 +745,7 @@ export interface LevelPathPanelProps {
   onBack?: () => void
   onOpenSpeakingPractice?: (session: FriendSession) => void
   onOpenRoleplay?: () => void
+  onOpenPlans?: (context: SubscriptionEntryContext) => void
   conversationApi?: ConversationJourneyApi
   createClientId?: () => string
   demoMode?: boolean
@@ -246,6 +761,7 @@ export function LevelPathPanel({
   onBack,
   onOpenSpeakingPractice,
   onOpenRoleplay,
+  onOpenPlans,
   conversationApi,
   createClientId = createRandomClientId,
   demoMode = false,
@@ -253,11 +769,29 @@ export function LevelPathPanel({
   offlineBinding = null,
   offlineStore = browserOfflineLearningStore,
 }: LevelPathPanelProps) {
-  const message = (key: MessageKey, parameters = {}) =>
-    resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
+  const message = useCallback(
+    (key: MessageKey, parameters = {}) =>
+      resolveInterfaceMessage(key, locale, localizationPolicy, parameters),
+    [locale, localizationPolicy],
+  )
   const [levels, setLevels] = useState<LevelSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(() => {
+    const navigation = readLearnerNavigationState()
+    return navigation?.destination === 'learn'
+      ? navigation.levelNumber ?? null
+      : null
+  })
+
+  useEffect(
+    () =>
+      subscribeToLearnerNavigation((navigation) => {
+        if (navigation.destination === 'learn') {
+          setSelectedLevel(navigation.levelNumber ?? null)
+        }
+      }),
+    [],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -287,7 +821,9 @@ export function LevelPathPanel({
         levelNumber={selectedLevel}
         locale={locale}
         localizationPolicy={localizationPolicy}
-        onBack={() => setSelectedLevel(null)}
+        onBack={() => {
+          openLearnerLevelList('level-session-all-levels')
+        }}
         onOpenSpeakingPractice={onOpenSpeakingPractice}
         onOpenRoleplay={onOpenRoleplay}
         conversationApi={conversationApi}
@@ -389,7 +925,13 @@ export function LevelPathPanel({
                   <button
                     type="button"
                     className="level-path__item"
-                    onClick={() => setSelectedLevel(level.level_number)}
+                    id={`level-path-level-${level.level_number}`}
+                    onClick={() =>
+                      openLearnerLevel(
+                        level.level_number,
+                        `level-path-level-${level.level_number}`,
+                      )
+                    }
                   >
                     <span className="level-path__item-index" aria-hidden="true">
                       {level.level_number}
@@ -433,6 +975,11 @@ export function LevelPathPanel({
               resolution={message('level.path.review_due_blocked_body')}
             />
           </p>
+          <a className="ge-button ge-button--primary" href="#home">
+            <LocalizedMessage
+              resolution={message('level.path.review_due_blocked_action')}
+            />
+          </a>
         </div>
       ) : null}
 
@@ -454,7 +1001,13 @@ export function LevelPathPanel({
                 <button
                   type="button"
                   className="level-path__item"
-                  onClick={() => setSelectedLevel(level.level_number)}
+                  id={`level-path-checkpoint-${level.level_number}`}
+                  onClick={() =>
+                    openLearnerLevel(
+                      level.level_number,
+                      `level-path-checkpoint-${level.level_number}`,
+                    )
+                  }
                 >
                   <span className="level-path__item-index" aria-hidden="true">
                     {level.level_number}
@@ -541,6 +1094,39 @@ export function LevelPathPanel({
                     number: String(level.level_number),
                   })}
                 />
+                {onOpenPlans ? (
+                  <button
+                    className="ge-button ge-button--primary level-path__upgrade"
+                    id={`level-upgrade-${level.level_number}`}
+                    onClick={() => {
+                      const completedLevelNumber = (levels ?? [])
+                        .filter(
+                          (candidate) =>
+                            candidate.level_number < level.level_number &&
+                            candidate.checkpoint_status === 'passed',
+                        )
+                        .reduce<number | null>(
+                          (highest, candidate) =>
+                            highest === null || candidate.level_number > highest
+                              ? candidate.level_number
+                              : highest,
+                          null,
+                        )
+                      onOpenPlans({
+                        completedLevelNumber,
+                        lockedLevelNumber: level.level_number,
+                        returnTargetId: `level-upgrade-${level.level_number}`,
+                      })
+                    }}
+                    type="button"
+                  >
+                    <LocalizedMessage
+                      resolution={message('subscription.view_plans_for_level', {
+                        level: String(level.level_number),
+                      })}
+                    />
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -614,9 +1200,20 @@ function LevelSessionJourney({
   offlineBinding = null,
   offlineStore = browserOfflineLearningStore,
 }: LevelSessionJourneyProps) {
-  const message = (key: MessageKey, parameters = {}) =>
-    resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
-  const [partId, setPartId] = useState<SessionPartId>('introduction')
+  const message = useCallback(
+    (key: MessageKey, parameters = {}) =>
+      resolveInterfaceMessage(key, locale, localizationPolicy, parameters),
+    [locale, localizationPolicy],
+  )
+  const [partId, setPartId] = useState<SessionPartId>(() => {
+    const navigation = readLearnerNavigationState()
+    return navigation?.destination === 'learn' &&
+      navigation.levelNumber === levelNumber &&
+      navigation.partId !== undefined
+      ? navigation.partId
+      : 'introduction'
+  })
+  const [navigationAnnouncement, setNavigationAnnouncement] = useState('')
   const [detail, setDetail] = useState<LevelSessionDetail | null>(null)
   const [completions, setCompletions] = useState<Record<SessionPartId, boolean>>(
     {
@@ -630,7 +1227,8 @@ function LevelSessionJourney({
   const [checkResult, setCheckResult] = useState<CheckSubmissionResult | null>(
     null,
   )
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [checkFeedbackIndex, setCheckFeedbackIndex] = useState(0)
+  const [checkFeedbackDone, setCheckFeedbackDone] = useState(false)
   const [busy, setBusy] = useState(false)
   const [conversationNote, setConversationNote] = useState<string | null>(null)
   const [audioHeard, setAudioHeard] = useState(false)
@@ -641,9 +1239,8 @@ function LevelSessionJourney({
     useState<LevelCheckpointDetail | null>(null)
   const [checkpointResult, setCheckpointResult] =
     useState<LevelCheckpointSubmissionResult | null>(null)
-  const [checkpointAnswers, setCheckpointAnswers] = useState<
-    Record<string, number>
-  >({})
+  const [checkpointFeedbackIndex, setCheckpointFeedbackIndex] = useState(0)
+  const [checkpointFeedbackDone, setCheckpointFeedbackDone] = useState(false)
   const [checkpointOfflinePending, setCheckpointOfflinePending] = useState<{
     readonly commandId: string
   } | null>(null)
@@ -808,9 +1405,40 @@ function LevelSessionJourney({
           )
 
           if (command.levelNumber === levelNumber) {
+            let storedLevel: StoredOfflineLevelBundle | null = null
+            try {
+              storedLevel =
+                offlineStore.loadLevelBundle === undefined
+                  ? null
+                  : await offlineStore.loadLevelBundle(
+                      offlineBinding,
+                      command.levelNumber,
+                      command.blueprintContentHash,
+                    )
+            } catch {
+              // The accepted server receipt remains authoritative even if the
+              // optional local feedback source can no longer be decrypted.
+            }
             setCheckpointResult(result)
+            setCheckpointFeedbackIndex(0)
+            setCheckpointFeedbackDone(false)
             setCheckpointOfflinePending(null)
-            setCheckpointDetail(null)
+            setCheckpointDetail((current) => {
+              const base =
+                current ??
+                (storedLevel === null
+                  ? null
+                  : checkpointDetailFromCache(
+                      storedLevel.bundle.manifest.checkpoint,
+                    ))
+
+              return base === null
+                ? null
+                : {
+                    ...base,
+                    attempts_remaining: result.attempts_remaining,
+                  }
+            })
           }
         } catch (error) {
           if (
@@ -986,6 +1614,111 @@ function LevelSessionJourney({
   ])
 
   const visibleDetail = detail?.part_id === partId ? detail : null
+  const checkItems = visibleDetail?.check?.items ?? EMPTY_ASSESSMENT_ITEMS
+  const checkpointItems =
+    checkpointDetail?.items ?? EMPTY_ASSESSMENT_ITEMS
+  const checkDraftController = useLevelQuizDraft({
+    active: visibleDetail?.check !== null && visibleDetail?.check !== undefined,
+    binding: offlineBinding,
+    blueprintContentHash,
+    createClientId,
+    items: checkItems,
+    levelNumber,
+    partId,
+    store: offlineStore,
+  })
+  const checkpointDraftController = useLevelQuizDraft({
+    active: checkpointDetail !== null,
+    binding: offlineBinding,
+    blueprintContentHash:
+      checkpointDetail?.blueprint_content_hash ?? null,
+    createClientId,
+    items: checkpointItems,
+    levelNumber,
+    partId: 'checkpoint',
+    store: offlineStore,
+  })
+  const activeNavigation = readLearnerNavigationState()
+  const checkDraftForView =
+    checkDraftController.draft !== null &&
+    activeNavigation?.destination === 'learn' &&
+    activeNavigation.levelNumber === levelNumber &&
+    activeNavigation.assessment?.kind === 'quick-check' &&
+    activeNavigation.assessment.phase === 'question'
+      ? {
+          ...checkDraftController.draft,
+          currentItemIndex: activeNavigation.assessment.questionIndex,
+        }
+      : checkDraftController.draft
+  const checkpointDraftForView =
+    checkpointDraftController.draft !== null &&
+    activeNavigation?.destination === 'learn' &&
+    activeNavigation.levelNumber === levelNumber &&
+    activeNavigation.assessment?.kind === 'checkpoint' &&
+    activeNavigation.assessment.phase === 'question'
+      ? {
+          ...checkpointDraftController.draft,
+          currentItemIndex: activeNavigation.assessment.questionIndex,
+        }
+      : checkpointDraftController.draft
+
+  useEffect(
+    () =>
+      subscribeToLearnerNavigation((navigation) => {
+        if (
+          navigation.destination !== 'learn' ||
+          navigation.levelNumber !== levelNumber
+        ) {
+          return
+        }
+
+        const nextPart = navigation.partId ?? 'introduction'
+        setPartId(nextPart)
+
+        const assessment = navigation.assessment
+        if (assessment?.kind === 'quick-check') {
+          if (assessment.phase === 'feedback') {
+            setCheckFeedbackIndex(assessment.questionIndex)
+          } else {
+            checkDraftController.moveTo(assessment.questionIndex)
+          }
+        }
+        if (assessment?.kind === 'checkpoint') {
+          if (assessment.phase === 'feedback') {
+            setCheckpointFeedbackIndex(assessment.questionIndex)
+          } else {
+            checkpointDraftController.moveTo(assessment.questionIndex)
+          }
+        }
+
+        const partLabel = message(PART_MESSAGE_KEYS[nextPart]).text
+        const announcement =
+          assessment === undefined
+            ? `${message('level.path.level_label', { number: String(levelNumber) }).text}. ${partLabel}.`
+            : `${message('level.path.level_label', { number: String(levelNumber) }).text}. ${partLabel}. ${message('level.path.question_progress', {
+                current: String(assessment.questionIndex + 1),
+                total: String(assessment.totalQuestions),
+              }).text}`
+        setNavigationAnnouncement(announcement)
+
+        if (navigation.restoreFocusId !== null) {
+          return
+        }
+        globalThis.requestAnimationFrame(() => {
+          const targetId =
+            assessment === undefined
+              ? 'level-session-title'
+              : `level-${levelNumber}-${assessment.kind}-${assessment.phase}-${assessment.questionIndex}`
+          document.getElementById(targetId)?.focus()
+        })
+      }),
+    [
+      checkDraftController,
+      checkpointDraftController,
+      levelNumber,
+      message,
+    ],
+  )
 
   function selectPart(part: SessionPartId) {
     if (
@@ -999,10 +1732,13 @@ function LevelSessionJourney({
       setError('session_locked')
       return
     }
+    openLearnerSessionPart(
+      levelNumber,
+      part,
+      `level-${levelNumber}-part-${partId}`,
+    )
     setPartId(part)
-    setCheckResult(null)
     setConversationNote(null)
-    setAnswers({})
     setError(null)
     setAudioHeard(false)
     setSpeakingOpened(false)
@@ -1048,15 +1784,39 @@ function LevelSessionJourney({
   }
 
   async function submitCheck() {
+    const draft = checkDraftController.draft
+    if (
+      draft === null ||
+      checkItems.some(
+        (item) => draft.selectedOptionIds[item.id] === undefined,
+      )
+    ) {
+      setError('check_required')
+      return
+    }
+
     setBusy(true)
     try {
       const result = await api.submitCheck(
         levelNumber,
         partId,
-        answers,
-        createClientId(),
+        { ...draft.selectedOptionIds },
+        draft.attemptId,
       )
+      await checkDraftController.clear(draft.attemptId)
       setCheckResult(result)
+      setCheckFeedbackIndex(0)
+      setCheckFeedbackDone(false)
+      setError(null)
+      openLearnerQuestion(
+        levelNumber,
+        partId,
+        'quick-check',
+        'feedback',
+        0,
+        result.item_results.length,
+        `level-${levelNumber}-quick-check-question-${draft.currentItemIndex}-continue`,
+      )
     } catch {
       setError('check_failed')
     } finally {
@@ -1065,12 +1825,17 @@ function LevelSessionJourney({
   }
 
   async function submitCheckpoint() {
-    if (api.submitCheckpoint === undefined || checkpointDetail === null) {
+    const draft = checkpointDraftController.draft
+    if (
+      api.submitCheckpoint === undefined ||
+      checkpointDetail === null ||
+      draft === null
+    ) {
       return
     }
 
     const unanswered = checkpointDetail.items.some(
-      (item) => checkpointAnswers[item.id] === undefined,
+      (item) => draft.selectedOptionIds[item.id] === undefined,
     )
 
     if (unanswered) {
@@ -1083,12 +1848,32 @@ function LevelSessionJourney({
       if (globalThis.navigator?.onLine !== false) {
         const result = await api.submitCheckpoint(
           levelNumber,
-          checkpointAnswers,
-          createClientId(),
+          { ...draft.selectedOptionIds },
+          draft.attemptId,
         )
+        await checkpointDraftController.clear(draft.attemptId)
         setCheckpointResult(result)
-        setCheckpointDetail(null)
+        setCheckpointDetail((current) =>
+          current === null
+            ? current
+            : {
+                ...current,
+                attempts_remaining: result.attempts_remaining,
+              },
+        )
+        setCheckpointFeedbackIndex(0)
+        setCheckpointFeedbackDone(false)
         setCheckpointOfflinePending(null)
+        setError(null)
+        openLearnerQuestion(
+          levelNumber,
+          partId,
+          'checkpoint',
+          'feedback',
+          0,
+          result.item_results.length,
+          `level-${levelNumber}-checkpoint-question-${draft.currentItemIndex}-continue`,
+        )
         return
       }
 
@@ -1116,7 +1901,6 @@ function LevelSessionJourney({
       }
 
       const commandId = createClientId()
-      const idempotencyKey = createClientId()
 
       await offlineStore.queueCheckpointSubmission(offlineBinding, {
         commandId,
@@ -1124,19 +1908,75 @@ function LevelSessionJourney({
         blueprintContentHash: checkpointDetail.blueprint_content_hash,
         bundleId: storedBundle.bundle.manifest.bundle_id,
         lease: storedBundle.bundle.lease,
-        answers: checkpointAnswers,
-        idempotencyKey,
+        answers: { ...draft.selectedOptionIds },
+        idempotencyKey: draft.attemptId,
         createdAt: new Date().toISOString(),
         state: 'pending',
       })
+      await checkpointDraftController.clear(draft.attemptId)
       setCheckpointOfflinePending({ commandId })
-      setCheckpointDetail(null)
-      setCheckpointAnswers({})
+      setError(null)
     } catch {
       setError('check_failed')
     } finally {
       setBusy(false)
     }
+  }
+
+  function retryIncorrectCheckItems() {
+    if (checkResult === null) {
+      return
+    }
+
+    const incorrectItemIds = checkResult.item_results
+      .filter(({ correct }) => !correct)
+      .map(({ id }) => id)
+    const retainedOptionIds = Object.fromEntries(
+      checkResult.item_results
+        .filter(({ correct }) => correct)
+        .map(({ id, selected_option }) => [id, selected_option]),
+    )
+
+    if (incorrectItemIds.length === 0) {
+      return
+    }
+
+    checkDraftController.restart(incorrectItemIds, retainedOptionIds)
+    setCheckResult(null)
+    setCheckFeedbackIndex(0)
+    setCheckFeedbackDone(false)
+    setError(null)
+  }
+
+  function retryIncorrectCheckpointItems() {
+    if (
+      checkpointResult === null ||
+      (checkpointResult.attempts_remaining ?? 0) <= 0
+    ) {
+      return
+    }
+
+    const incorrectItemIds = checkpointResult.item_results
+      .filter(({ correct }) => !correct)
+      .map(({ id }) => id)
+    const retainedOptionIds = Object.fromEntries(
+      checkpointResult.item_results
+        .filter(({ correct }) => correct)
+        .map(({ id, selected_option }) => [id, selected_option]),
+    )
+
+    if (incorrectItemIds.length === 0) {
+      return
+    }
+
+    checkpointDraftController.restart(
+      incorrectItemIds,
+      retainedOptionIds,
+    )
+    setCheckpointResult(null)
+    setCheckpointFeedbackIndex(0)
+    setCheckpointFeedbackDone(false)
+    setError(null)
   }
 
   async function startTalk() {
@@ -1189,7 +2029,12 @@ function LevelSessionJourney({
       lang={locale}
     >
       <header className={`level-session__hero level-session__hero--${partId}`}>
-        <button type="button" className="level-session__back" onClick={onBack}>
+        <button
+          type="button"
+          className="level-session__back"
+          id="level-session-all-levels"
+          onClick={onBack}
+        >
           <LocalizedMessage resolution={message('level.path.all_levels')} />
         </button>
         <p className="level-session__eyebrow">
@@ -1211,6 +2056,10 @@ function LevelSessionJourney({
           <LocalizedMessage resolution={message(PART_LEAD_KEYS[partId])} />
         </p>
       </header>
+
+      <p aria-live="polite" className="visually-hidden" role="status">
+        {navigationAnnouncement}
+      </p>
 
       <nav
         aria-label={message('level.path.sessions_nav').text}
@@ -1235,6 +2084,7 @@ function LevelSessionJourney({
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => selectPart(part)}
+              id={`level-${levelNumber}-part-${part}`}
             >
               <span aria-hidden className="level-session__tab-step">
                 {PART_STEP[part]}
@@ -1480,44 +2330,61 @@ function LevelSessionJourney({
                   resolution={message('level.path.quick_check')}
                 />
               </p>
-              <form
-                className="level-session__check"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  void submitCheck()
-                }}
-              >
-                {visibleDetail.check.items.map((item) => (
-                  <fieldset key={item.id}>
-                    <legend>{item.prompt}</legend>
-                    {item.options.map((option, index) => (
-                      <label key={`${item.id}-${index}`}>
-                        <input
-                          type="radio"
-                          name={item.id}
-                          checked={answers[item.id] === index}
-                          onChange={() =>
-                            setAnswers((current) => ({
-                              ...current,
-                              [item.id]: index,
-                            }))
-                          }
-                        />
-                        <span>{option}</span>
-                      </label>
-                    ))}
-                  </fieldset>
-                ))}
-                <button
-                  type="submit"
-                  className="level-session__primary"
-                  disabled={busy}
-                >
-                  <LocalizedMessage
-                    resolution={message('level.path.submit_check')}
-                  />
-                </button>
-              </form>
+              {checkDraftForView !== null && !checkFeedbackDone ? (
+                <OneQuestionAssessment
+                  assessmentKind="quick-check"
+                  busy={busy}
+                  canRetry
+                  draft={checkDraftForView}
+                  feedbackIndex={checkFeedbackIndex}
+                  items={visibleDetail.check.items}
+                  message={message}
+                  onDone={() => setCheckFeedbackDone(true)}
+                  onFeedbackIndexChange={(index) => {
+                    setCheckFeedbackIndex(index)
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'quick-check',
+                      'feedback',
+                      index,
+                      checkResult?.item_results.length ?? 0,
+                      `level-${levelNumber}-quick-check-feedback-${checkFeedbackIndex}-continue`,
+                    )
+                  }}
+                  onItemIndexChange={(index) => {
+                    checkDraftController.moveTo(index)
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'quick-check',
+                      'question',
+                      index,
+                      checkDraftForView.activeItemIds.length,
+                      `level-${levelNumber}-quick-check-question-${checkDraftForView.currentItemIndex}-continue`,
+                    )
+                  }}
+                  onRetryIncorrect={retryIncorrectCheckItems}
+                  onSelect={(itemId, optionId) => {
+                    const questionIndex =
+                      checkDraftForView.currentItemIndex
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'quick-check',
+                      'question',
+                      questionIndex,
+                      checkDraftForView.activeItemIds.length,
+                      `level-${levelNumber}-quick-check-question-${questionIndex}`,
+                    )
+                    checkDraftController.select(itemId, optionId)
+                    setError(null)
+                  }}
+                  onSubmit={() => void submitCheck()}
+                  result={checkResult}
+                  submitLabel="level.path.submit_check"
+                />
+              ) : null}
               {checkResult ? (
                 <p className="level-session__score">
                   <LocalizedMessage
@@ -1643,8 +2510,7 @@ function LevelSessionJourney({
 
           {allSessionsComplete &&
           checkpointDetail &&
-          checkpointOfflinePending === null &&
-          checkpointResult?.passed !== true ? (
+          checkpointOfflinePending === null ? (
             <div className="level-session__panel level-session__checkpoint">
               <h3>
                 <LocalizedMessage
@@ -1660,44 +2526,66 @@ function LevelSessionJourney({
                   })}
                 />
               </p>
-              <form
-                className="level-session__check"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  void submitCheckpoint()
-                }}
-              >
-                {checkpointDetail.items.map((item) => (
-                  <fieldset key={item.id}>
-                    <legend>{item.prompt}</legend>
-                    {item.options.map((option, index) => (
-                      <label key={`${item.id}-${index}`}>
-                        <input
-                          type="radio"
-                          name={item.id}
-                          checked={checkpointAnswers[item.id] === index}
-                          onChange={() =>
-                            setCheckpointAnswers((current) => ({
-                              ...current,
-                              [item.id]: index,
-                            }))
-                          }
-                        />
-                        <span>{option}</span>
-                      </label>
-                    ))}
-                  </fieldset>
-                ))}
-                <button
-                  type="submit"
-                  className="level-session__primary"
-                  disabled={busy}
-                >
-                  <LocalizedMessage
-                    resolution={message('level.path.checkpoint_submit')}
-                  />
-                </button>
-              </form>
+              {checkpointDraftForView !== null &&
+              !checkpointFeedbackDone ? (
+                <OneQuestionAssessment
+                  assessmentKind="checkpoint"
+                  busy={busy}
+                  canRetry={
+                    (checkpointResult?.attempts_remaining ??
+                      checkpointDetail.attempts_remaining ??
+                      0) > 0
+                  }
+                  draft={checkpointDraftForView}
+                  feedbackIndex={checkpointFeedbackIndex}
+                  items={checkpointDetail.items}
+                  message={message}
+                  onDone={() => setCheckpointFeedbackDone(true)}
+                  onFeedbackIndexChange={(index) => {
+                    setCheckpointFeedbackIndex(index)
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'checkpoint',
+                      'feedback',
+                      index,
+                      checkpointResult?.item_results.length ?? 0,
+                      `level-${levelNumber}-checkpoint-feedback-${checkpointFeedbackIndex}-continue`,
+                    )
+                  }}
+                  onItemIndexChange={(index) => {
+                    checkpointDraftController.moveTo(index)
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'checkpoint',
+                      'question',
+                      index,
+                      checkpointDraftForView.activeItemIds.length,
+                      `level-${levelNumber}-checkpoint-question-${checkpointDraftForView.currentItemIndex}-continue`,
+                    )
+                  }}
+                  onRetryIncorrect={retryIncorrectCheckpointItems}
+                  onSelect={(itemId, optionId) => {
+                    const questionIndex =
+                      checkpointDraftForView.currentItemIndex
+                    openLearnerQuestion(
+                      levelNumber,
+                      partId,
+                      'checkpoint',
+                      'question',
+                      questionIndex,
+                      checkpointDraftForView.activeItemIds.length,
+                      `level-${levelNumber}-checkpoint-question-${questionIndex}`,
+                    )
+                    checkpointDraftController.select(itemId, optionId)
+                    setError(null)
+                  }}
+                  onSubmit={() => void submitCheckpoint()}
+                  result={checkpointResult}
+                  submitLabel="level.path.checkpoint_submit"
+                />
+              ) : null}
               {checkpointResult ? (
                 <>
                   <p className="level-session__score">
@@ -1755,11 +2643,18 @@ function LevelSessionJourney({
 
           {allSessionsComplete &&
           checkpointStatus === 'review_due_blocked' ? (
-            <p className="level-session__status" role="status">
-              <LocalizedMessage
-                resolution={message('level.path.review_due_blocked_body')}
-              />
-            </p>
+            <div className="level-session__status" role="status">
+              <p>
+                <LocalizedMessage
+                  resolution={message('level.path.review_due_blocked_body')}
+                />
+              </p>
+              <a className="ge-button ge-button--primary" href="#home">
+                <LocalizedMessage
+                  resolution={message('level.path.review_due_blocked_action')}
+                />
+              </a>
+            </div>
           ) : null}
 
           {allSessionsComplete &&

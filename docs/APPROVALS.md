@@ -3249,6 +3249,362 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0090"></a>
+
+## APP-0090 — UX-10 programme authorization limited to UX-10A
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-10A only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-10a--android-back-lifecycle-and-accessibility-hardening) |
+| Related decision | [D-0297](DECISIONS.md) |
+| Related ADR | [ADR-0026](adr/0026-five-destination-learner-navigation.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None; the accepted five equal learner destinations and Variant C identity remain unchanged |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize UX-10 beginning with UX-10A; record it in docs/APPROVALS.md and docs/DECISIONS.md. Execute only UX-10A (findings MUX-005, MUX-009, MUX-015, MUX-016). Do not start any experiment work.
+```
+
+### Accepted scope
+
+- Represent primary destination, selected level, session part and quiz question
+  in content-free web history and integrate Android 16 Back through supported
+  AndroidX callbacks in both target-SDK-36 wrappers.
+- Preserve an in-flight recording safely on Back by cancelling it before route
+  navigation and explaining the result; restore focus and announce content
+  transitions.
+- Harden edge-to-edge, cutout, safe-area and IME behavior, 48 CSS-pixel targets,
+  bottom-navigation labels and active-state treatment without changing D-0288.
+- Replace both placeholder instrumented tests with Espresso/UiAutomator smoke
+  journeys and record only device evidence actually observed.
+
+### Conditions and limitations
+
+- UX-10A only is authorized. No UX experiment is activated or implemented.
+- `android:enableOnBackInvokedCallback="false"`, legacy `onBackPressed` activity
+  overrides and `KEYCODE_BACK` handling are prohibited.
+- No dark product theme is authorized. System dark and contrast preferences are
+  evaluated against the accepted light Variant C surface.
+- Physical-device, TalkBack, enlarged-text, predictive-preview and process-death
+  claims remain open until executed on the §10 matrix; automated and compile
+  evidence does not substitute for them.
+- No API, schema, migration, credential, learner-content persistence, provider,
+  payment or production-release authority is granted.
+
+<a id="app-0089"></a>
+
+## APP-0089 — UX-08 programme authorization limited to UX-08A
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-08A only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-08a--contextual-plans-and-recoverable-checkout-presentation) |
+| Related decision | [D-0296](DECISIONS.md) |
+| Related ADRs | [ADR-0035](adr/0035-direct-learner-subscriptions.md); [ADR-0036](adr/0036-premium-courtesy-month.md); [ADR-0037](adr/0037-paid-live-ai-caps-and-talk-packs.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None; the accepted Direct subscription and fail-closed provider boundaries remain unchanged |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize UX-08 beginning with UX-08A; record it in docs/APPROVALS.md and docs/DECISIONS.md. Live payment, Play Billing and any real capture remain NOT authorized. Execute only UX-08A (finding MUX-011). Do not start UX-10A.
+```
+
+### Accepted scope
+
+- Give every entitlement-locked level a contextual plans action while keeping
+  the Learn surface and completed-level context intact and recoverable.
+- Present current entitlement first, exactly two API-catalogued membership
+  cards, expandable exact tax totals, eligible-only talk packs and a
+  Continue-free/prior-review route.
+- Distinguish loading, unavailable, pending, ambiguous, failed, reconciled and
+  active access without claiming provider success before the authoritative
+  entitlement read reflects it.
+- Preserve the Direct-only boundary in service, UI, tenancy and browser tests.
+
+### Conditions and limitations
+
+- Live payment, Play Billing, real capture, production enablement and provider
+  credentials remain expressly unauthorized. The existing dummy and disabled
+  adapters are the only permitted checkout behavior.
+- Premium may be visually distinctive from API metadata but is never selected
+  for the learner. Prices, tax, totals, periods and offer names remain
+  catalogue-derived.
+- UX-10A and every later checkpoint remain outside this authorization. No
+  Android, navigation-history, schema, migration or checkout API-contract
+  change is authorized.
+- Independent review remains required for the five non-English catalogue
+  drafts and any experiment activation/analytics emission.
+
+<a id="app-0088"></a>
+
+## APP-0088 — UX-04 programme authorization limited to UX-04A
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-04A only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-04a--one-question-quiz-and-useful-feedback) |
+| Related decision | [D-0295](DECISIONS.md) |
+| Related ADRs | [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md); [ADR-0025](adr/0025-all-levels-four-session-learner-journey.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None; the accepted offline, checkpoint and four-session rules remain unchanged |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize UX-04 beginning with UX-04A; record it in docs/APPROVALS.md and docs/DECISIONS.md. Execute only UX-04A (findings MUX-003, MUX-004, MUX-005, MUX-014). Do not start UX-08A or the Back/history work in UX-10A.
+```
+
+### Accepted scope
+
+- Render quick checks and level checkpoints one question per view with visible
+  position, accessible answer targets, non-colour selection and one sticky
+  IME-safe primary action.
+- Autosave privacy-minimized option-ID drafts through the existing protected
+  offline store, bound to tenant, learner, level, part and attempt with a TTL,
+  and restore eligible drafts after interruption.
+- Add item-level correct/not-yet feedback with the existing server rationale
+  and a focused incorrect-item retry without changing authoritative scoring.
+- Preserve exact checkpoint idempotency, bounded attempts, signed offline
+  queue semantics and the synthetic demo path.
+- Run repository verification and the critical level-path browser journey and
+  record retained automated and human gates honestly.
+
+### Conditions and limitations
+
+- UX-08A, UX-10A Back/history work and every later checkpoint remain outside
+  this authorization.
+- ADR-0006 still forbids silent persistent learner-data storage: durable quiz
+  drafts require an existing explicit personal-device opt-in and encrypted
+  partition. No second browser or native persistence mechanism is authorized.
+- No authoritative API, scoring rule, attempt limit, offline review lease,
+  sound, haptic, Android, migration, production deployment or Play publication
+  change is authorized.
+- New catalogue revisions and the final TalkBack, 200% font and 320 CSS-pixel
+  device/IME checks retain their independent or human review gates.
+
+<a id="app-0087"></a>
+
+## APP-0087 — UX-03 programme authorization limited to UX-03A
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-03A only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-03a--one-action-home-and-retention-semantics) |
+| Related decision | [D-0294](DECISIONS.md) |
+| Related ADR | [ADR-0028](adr/0028-meaningful-speaking-streak-and-delayed-review.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No; ADR-0028's deterministic selection and advisory streak rules remain unchanged |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize UX-03 beginning with UX-03A; record it in docs/APPROVALS.md and docs/DECISIONS.md. Execute only UX-03A (findings MUX-010, MUX-012, MUX-013). Do not start UX-04A.
+```
+
+### Accepted scope
+
+- Execute and document only UX-03A/MUX-010, MUX-012 and MUX-013.
+- Make authenticated Home's deterministic mission-card Continue the only
+  dominant action above the fold; guest Home is unchanged.
+- Preserve ADR-0028's due-review-first selection and secondary, non-gating
+  meaningful-speaking streak.
+- Replace punitive review wording, make every review blocker actionable, add
+  compact capability progress and one dominant mission-result next action.
+- Move demo seconds from global chrome to the relevant Speak/plan context while
+  retaining non-countdown paid usage information.
+- Run repository verification and the critical Home/review browser journey and
+  record retained gates honestly.
+
+### Conditions and limitations
+
+- UX-04A and every later UI/UX checkpoint remain unauthorized in this task.
+- No onboarding, quiz, Android, review-interval, API, schema, provider,
+  entitlement or authoritative-learning-rule change is authorized.
+- Guest `#home`, production deployment and Google Play publication are out of
+  scope.
+- New catalogue revisions remain pending independent language review.
+
+<a id="app-0086"></a>
+
+## APP-0086 — UX-02 programme authorization limited to UX-02B
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-02B only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-02b--progressive-first-use-and-first-success) |
+| Related decision | [D-0293](DECISIONS.md) |
+| Related ADRs | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md); [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No; the authoritative onboarding payload and ADR-0005/ADR-0007 boundaries are unchanged |
+
+### Exact human statement
+
+```text
+UX-02A is complete. Execute only UX-02B from docs/ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md §8 (finding MUX-006). Do not start UX-03A.
+
+Promote apps/web/src/ui/OnboardingStepper.tsx into the production LearnerJourney first-use flow; the synthetic demo must keep working. Implement the §6.2 stage order. Adult confirmation and goal remain the only fields in the authoritative onboarding payload unless the API already accepts more; do not add schema for preferences that ADR-0005 says are ephemeral. Placement is "start from the beginning" plus a defer path; do not infer level from accent, location or L1.
+
+Recording consent and AI-processing consent are separate, purpose-specific, never preselected, and use the copy discipline of ADR-0007. Audio output check must not touch the microphone. The optional microphone try uses the UX-02A bridge only after a deliberate tap.
+
+Persist onboarding step position in a resumable way without storing learner text or credentials; process recreation must restore the last safe step. Keep adult, professional tone for casual, student and business learners; no gamified mascot copy. Every step: visible progress, Back where safe, distinct error states with explicit recovery, sticky Continue that the IME does not cover.
+```
+
+### Accepted scope
+
+- Execute and document only UX-02B/MUX-006.
+- Promote the shared stepper into the production first-use route while retaining
+  the synthetic demo contract.
+- Implement the ordered first-use sequence and one private spoken or typed turn
+  without expanding the authoritative onboarding schema.
+- Keep interface/accessibility and placement choices ephemeral; persist only an
+  allowlisted, non-text resume cursor and already-authoritative adult/goal state.
+- Keep recording-upload and automated-provider consent independent, optional
+  and unselected; preserve microphone-free learning.
+- Run the repository and critical first-use browser gates and record all
+  remaining human accessibility gates honestly.
+
+### Conditions and limitations
+
+- UX-03A and every later UI/UX checkpoint remain unauthorized in this task.
+- No production deployment, Google Play publication, new preference schema,
+  learner-text persistence or credential-storage change is authorized.
+- One human exercised the two recorded roles. Independent privacy,
+  accessibility and catalogue review remain release gates.
+
+<a id="app-0085"></a>
+
+## APP-0085 — UX-02 programme authorization limited to UX-02A
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-02A only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-02a--safe-first-use-baseline) |
+| Related decision | [D-0292](DECISIONS.md) |
+| Related ADRs | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md); [ADR-0012](adr/0012-android-native-secure-credential-store.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No; D-0284's bundled `https://localhost` origin remains in force |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner and Technical Decision Owner I authorize checkpoint UX-02 in the UI/UX programme, beginning with sub-checkpoint UX-02A only. Record the authorization as the next APP entry in docs/APPROVALS.md and record a decision in docs/DECISIONS.md that supersedes the launch-time RECORD_AUDIO clause of D-0284 (the https://localhost WebView origin clause of D-0284 stays in force).
+
+Execute only UX-02A from docs/ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md §8 (findings MUX-007 and MUX-008). Do not start UX-02B.
+```
+
+### Accepted scope
+
+- Replace launch-time microphone prompting in `com.globalenglish.app` and
+  `com.globalenglish.demo` with an app-owned contextual Capacitor bridge.
+- Grant WebView audio capture for the bundled `https://localhost` origin only
+  after Android runtime permission is granted, while exposing granted,
+  denied-once and denied-permanently outcomes to the web layer.
+- Keep **Type instead** and every non-recording path available after refusal.
+- Separate onboarding validation, offline, timeout and server failures and add
+  explicit same-command retry versus edit-and-create-new-command recovery.
+- Execute and document only UX-02A findings MUX-007 and MUX-008.
+
+### Conditions and limitations
+
+- UX-02B and every later UI/UX checkpoint remain unauthorized in this task.
+- Android origin pinning, recording consent, retention, deletion, provider
+  processing and secure-credential rules remain unchanged.
+- No production deployment, Google Play publication or real learner-data use
+  is authorized.
+- One human exercised the two recorded roles; independent security, privacy,
+  accessibility and tenancy review remain release gates.
+
+<a id="app-0084"></a>
+
+## APP-0084 — UX-AUDIT-00 review semantics and measurement-contract authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for UX-AUDIT-00 decisions and documentation only |
+| Decision date | 2026-09-15 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#ux-audit-00--metric-taxonomy-and-review-decision-packet) |
+| Related decisions | [D-0289 and D-0290](DECISIONS.md) |
+| Related evidence | [UX-AUDIT-00 decision packet](UX_AUDIT_00_DECISION_PACKET.md); [UX funnel event contract](UX_FUNNEL_EVENT_CONTRACT.md) |
+| Related ADR | [ADR-0028](adr/0028-meaningful-speaking-streak-and-delayed-review.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+I am the Accountable Product Owner and Technical Decision Owner (roles recorded under APP-0069). Record the following as accepted decisions in docs/DECISIONS.md using the next free D-number after D-0288, and record this authorization as the next APP entry in docs/APPROVALS.md after APP-0083:
+
+DECISION 1 (MUX-001, on-time window): A delayed-review occurrence is "on time" when due_at <= completed_at AND completed_at falls on the same local calendar date as due_at in the occurrence's persisted timezone. Completion after that local date is "late". Completion before due_at remains not eligible (unchanged). Produce boundary examples in the packet for: due_at minus 1 second, due_at exactly, 23:59:59 local on the due date, 00:00:00 local the next day, and a UTC-vs-Asia/Kolkata date-rollover case.
+
+DECISION 2 (MUX-002, completion versus attempt): An attempt clears the due occurrence regardless of correctness. The surfaced metric and every UI label must say "reviewed"/"attempted", never "completed"/"mastered", for a review attempt. An incorrect attempt must not set knowledge_state to mastered and must schedule the existing deterministic remediation review. Confirm in the packet that DailyMissionAttemptService::scheduleReview already does this for correct=false and state exactly what UX-07A must change.
+```
+
+### Accepted scope
+
+- Record D-0289 (MUX-001) with the required time-boundary examples.
+- Record D-0290 (MUX-002), confirm the existing correctness-independent
+  clearing and incorrect-result remediation behavior, and specify UX-07A's
+  later implementation obligations.
+- Reconcile the unsupported UX programme ledger references, map the supplied
+  35% claim, and define the content-free event contract.
+- Complete only UX-AUDIT-00 as a ledger, decision and measurement-contract
+  checkpoint.
+
+### Conditions and limitations
+
+- No application-code, schema, API or event-emission change is authorized.
+- UX-07A and every other later checkpoint remain unstarted and require their
+  own bounded execution.
+- No production, Google Play, external analytics vendor or cross-organization
+  export is authorized.
+- Independent privacy, security and tenancy review remains mandatory before
+  event emission.
+
 <a id="app-0083"></a>
 
 ## APP-0083 — SPEECH-RT-01 authorization

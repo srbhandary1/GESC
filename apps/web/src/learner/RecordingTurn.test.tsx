@@ -14,6 +14,7 @@ import {
 import { isValidLocalCapture } from './LocalCaptureReceipt'
 
 const labels: RecordingTurnLabels = {
+  backCancelled: 'Recording cancelled because you went back.',
   continueWithout: 'Continue without recording',
   continueWithoutExplanation: 'Speaking remains unassessed.',
   controls: {
@@ -155,6 +156,37 @@ describe('RecordingTurn privacy boundaries', () => {
 
     await waitFor(() => expect(session.cancel).toHaveBeenCalledOnce())
     expect(URL.createObjectURL).not.toHaveBeenCalled()
+  })
+
+  it('consumes Android Back while recording and explains the cancellation', async () => {
+    const session: AudioRecordingSession = {
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      stop: vi.fn(async () => ({
+        blob: new Blob(['x'.repeat(128)], { type: 'audio/webm' }),
+        durationMs: 250,
+        mimeType: 'audio/webm',
+      })),
+    }
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      start: vi.fn(async () => session),
+    }
+    const user = userEvent.setup()
+
+    renderTurn(recorder)
+    await user.click(screen.getByRole('button', { name: labels.controls.start }))
+    await screen.findByText(labels.controls.recording)
+
+    const request = new CustomEvent('ge:android-back-request', {
+      cancelable: true,
+    })
+    expect(window.dispatchEvent(request)).toBe(false)
+    expect(session.cancel).toHaveBeenCalledOnce()
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      labels.backCancelled,
+    )
   })
 
   it('rejects out-of-contract capture metadata without creating a receipt', async () => {
@@ -540,6 +572,68 @@ describe('RecordingTurn privacy boundaries', () => {
       screen.getByRole('button', { name: 'Hold to talk' }),
     ).toBeEnabled()
   })
+
+  it.each([
+    {
+      denial: 'denied_once' as const,
+      message: 'Permission denied once',
+      retryVisible: true,
+    },
+    {
+      denial: 'denied_permanently' as const,
+      message: 'Permission denied permanently',
+      retryVisible: false,
+    },
+  ])(
+    'shows a rationale and exposes the $denial Android recovery branch',
+    async ({ denial, message, retryVisible }) => {
+      const onContinueWithoutRecording = vi.fn()
+      const recorder: AudioRecorder = {
+        isSupported: () => true,
+        requiresContextualPermissionRationale: () => true,
+        start: vi.fn(async () => {
+          throw new RecordingPermissionDeniedError(denial)
+        }),
+      }
+      const user = userEvent.setup()
+
+      render(
+        <RecordingTurn
+          createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
+          labels={{
+            ...labels,
+            continueWithout: 'Type instead',
+            permissionContinue: 'Continue to microphone',
+            permissionDeniedOnce: 'Permission denied once',
+            permissionDeniedPermanently: 'Permission denied permanently',
+          }}
+          onCaptureChange={vi.fn()}
+          onContinueWithoutRecording={onContinueWithoutRecording}
+          recorder={recorder}
+        />,
+      )
+
+      await user.click(screen.getByRole('button', { name: 'Start' }))
+      expect(recorder.start).not.toHaveBeenCalled()
+      expect(screen.getByText(labels.permissionExplanation)).toBeVisible()
+      expect(screen.getByRole('button', {
+        name: 'Type instead',
+      })).toBeVisible()
+
+      await user.click(screen.getByRole('button', {
+        name: 'Continue to microphone',
+      }))
+
+      expect(await screen.findByText(message)).toBeVisible()
+      expect(recorder.start).toHaveBeenCalledOnce()
+      expect(screen.getByRole('button', {
+        name: 'Type instead',
+      })).toBeVisible()
+      expect(screen.queryByRole('button', {
+        name: labels.retry,
+      }) !== null).toBe(retryVisible)
+    },
+  )
 })
 
 function renderTurn(

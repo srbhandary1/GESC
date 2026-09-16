@@ -546,6 +546,7 @@ export function VoicePracticePanel({
             compact={compact}
             createClientId={createClientId}
             labels={{
+              backCancelled: text('learner.recording.back_cancelled'),
               controls: {
                 blocked:
                   typeof window !== 'undefined' && !window.isSecureContext
@@ -580,6 +581,15 @@ export function VoicePracticePanel({
               ),
               permissionExplanation: text(
                 'conversation.voice.permission',
+              ),
+              permissionContinue: text(
+                'learner.recording.permission_continue',
+              ),
+              permissionDeniedOnce: text(
+                'learner.recording.permission_denied_once',
+              ),
+              permissionDeniedPermanently: text(
+                'learner.recording.permission_denied_permanently',
               ),
               playbackHelp: text('conversation.voice.playback_help'),
               playbackLabel: text('learner.recording.playback_label'),

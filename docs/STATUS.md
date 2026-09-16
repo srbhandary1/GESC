@@ -1,5 +1,269 @@
 # Repository status
 
+## UX-10A Android Back, lifecycle and accessibility hardening — 16 September 2026
+
+- APP-0090/D-0297 authorize and record only UX-10A findings MUX-005,
+  MUX-009, MUX-015 and MUX-016. The installed Capacitor 8.5.0
+  `BridgeActivity` has no Back policy, so both target-SDK-36 wrappers now own
+  AndroidX `OnBackPressedCallback` integration without a predictive-Back
+  manifest opt-out or legacy Back/key override.
+- Content-free browser history represents primary destination, selected level,
+  session part, assessment phase and question ordinal. Back follows question
+  → session → level list → prior primary destination, restores focus to the
+  originating control and exposes the true prior route to the predictive
+  progress label. Level/part/question changes are announced politely.
+- Back during permission, recording, pause or processing cancels the in-flight
+  recording before navigation and explains the outcome; the existing typed
+  fallback remains available. No audio, transcript, learner text or credential
+  is added to history or ordinary storage.
+- Both wrappers enable edge-to-edge and translate system-bar, display-cutout
+  and IME insets into density-correct CSS variables. The UX-04A sticky action
+  accounts for the native IME inset. Reload resumes the exact nested question
+  route while the existing tenant/member-bound option-only draft preserves the
+  stable attempt and signed offline submission.
+- Variant C remains light and professional. Narrow navigation now has equal
+  48×48-or-larger targets, 12px-or-larger labels and a tint/weight/edge active
+  indicator; forced colors uses a 3px system-color edge. Browser dark
+  preference retains D-0288's `#FAFBFA` canvas and `#006B3F` action. No dark
+  theme was introduced.
+- Placeholder native tests are replaced in both packages by compiling
+  Espresso/UiAutomator suites for first use, lesson/Back, quiz resume, Speak
+  denial/typed fallback, plans return and question/focus Back.
+- `adb devices -l` found no device or emulator. All 64 non-N/A device-matrix
+  cells remain open; the audit plan §10.1 now gives the exact human execution
+  sequence. No connected, predictive-preview, TalkBack, 200% font,
+  low-memory, physical IME or physical appearance result is claimed.
+- Focused evidence is green: 70 Vitest tests, both UX-10A/offline Playwright
+  journeys, application/androidTest compilation for both wrappers, web build
+  and production debug APK build. The current debug APK is 28,307,558 bytes
+  with SHA-256
+  `1dead3e63353f62c6681bd9722ac835e75b35ac7f15270ced7028d13d4c30a39`;
+  it was not installed or published.
+- UX-10A implementation scope is complete, but checkpoint closure remains
+  open. `make verify` reaches only the pre-existing soft-launch fixed-string
+  failure after all prior gates pass. `make e2e` passes 22/29, including both
+  Level-path journeys; seven retained shared-header/live-minutes contrast
+  failures remain. Full web Vitest retains the stale `c4`/`c8` test and scoped
+  lint retains the existing RecordingTurn effect error.
+- No experiment, API/OpenAPI, schema, migration, authoritative progression,
+  payment, provider, dark-theme, production or release action was performed.
+
+## UX-08A contextual plans and recoverable checkout presentation — 15 September 2026
+
+- APP-0089/D-0296 authorize and record only UX-08A/MUX-011. Every
+  entitlement-locked level now has a contextual **View plans for Level N**
+  action. The Learn tree stays mounted; only a genuinely passed earlier level
+  is recapped, and Close or Continue free returns focus to the same locked
+  level without changing progress. UX-10A was not started.
+- The account surface now presents current entitlement first, then exactly two
+  non-demo API-catalogued membership cards. Benefits, plan names, period,
+  ex-GST amount, GST and one exact payable total are catalogue-derived.
+  Premium receives a visual badge/border only and is never preselected.
+- Talk packs are absent until an active non-demo paid entitlement exists. The
+  free path remains explicit as **Continue free / review prior lessons**.
+- Checkout presentation distinguishes loading, unavailable, pending,
+  ambiguous, failed, reconciled and active states. A dummy-provider
+  `completed` response is reconciled only after the refreshed authoritative
+  entitlement reflects the selected offer; disabled or uncertain behavior
+  never produces a success claim.
+- Institutional organizations now receive an empty Direct plan catalogue and
+  checkout rejection before any row is written. The UI first reads
+  `applies=false`, requests no catalogue and renders no Direct checkout.
+  Focused service and component tenancy tests pass.
+- Focused evidence is green: 45 application/component tests, 11 service tests/85
+  assertions, scoped lint, web typecheck/build, six-catalogue validation and
+  the contextual plans Chromium journey including exact tax values, scoped
+  axe, 320-pixel reflow and focus/route recovery.
+- UX-08A implementation scope is complete, but its checkpoint remains open.
+  `make verify` again stops only at the pre-existing soft-launch fixed-string
+  assertion after both full API suites and all contract gates pass. `make e2e`
+  passes 20/28 including UX-08A; eight retained shared-chrome contrast failures
+  remain. Representative tier/price comprehension and independent review of
+  five non-English `ui-*-2026-09-15.10` catalogues are also open.
+- UX-EXP-02 is protocol-ready only for plan-selection intent and the existing
+  dummy/disabled provider behavior; it was not activated. Live payment, Play
+  Billing, real capture, provider credentials and production remain
+  unauthorized. No OpenAPI, migration, Android or persistence change was made.
+
+## UX-04A one-question quiz and resumable drafts — 15 September 2026
+
+- APP-0088/D-0295 authorize and record only UX-04A findings MUX-003,
+  MUX-004, MUX-005 and MUX-014. Quick checks and checkpoints now share one
+  one-question surface with explicit position, 48 CSS-pixel answer cards,
+  visible check-and-text selection state, previous-question restoration and
+  one sticky safe-area action. No UX-08A or UX-10A history work was started.
+- Every selection is autosaved against organization, learner membership,
+  level, part and a stable attempt identifier. The 24-hour allowlisted draft
+  stores only blueprint/item identifiers, numeric option identifiers and
+  navigation metadata in the existing ADR-0006 encrypted personal-device
+  partition. Without that prior opt-in, the draft remains memory-only. No
+  learner-authored text, audio, transcript or credential is stored.
+- The stable attempt identifier is reused through an uncertain submission and
+  handed to the unchanged signed offline checkpoint queue. A draft is cleared
+  only after authoritative acceptance or durable queue handoff. Existing
+  scoring, attempt limits, lease checks, APIs and idempotency remain unchanged.
+- Results show one item at a time with icon, **Correct**/**Not yet**, color,
+  the selected answer and the existing server rationale. Retry focuses on
+  incorrect items while resubmitting the required full answer map under a new
+  attempt identifier. Motion is 180 ms, non-blocking and removed under
+  `prefers-reduced-motion`; no sound or haptic was added.
+- Focused evidence is green: Level-path Vitest 14/14, web typecheck, scoped
+  lint, locale validation, production web build and the UX-04A Chromium
+  offline journey. That browser journey covers 48-pixel targets, non-color
+  selection, axe, reduced motion, 320-pixel reflow, encrypted reload restore,
+  exact offline handoff and item rationale.
+- UX-04A implementation scope is complete, but its exit gate is **open**.
+  Pinned `make verify` passed both full API suites and contract generation,
+  then stopped at the separately owned soft-launch fixed-string assertion.
+  Pinned `make e2e` passed 19/27 journeys, including UX-04A; the eight failures
+  are the retained serious shared-chrome contrast defects. Physical TalkBack,
+  real 200% font, 320-pixel IME/safe-area, assistive keyboard/Switch Access and
+  Android lifecycle restoration checks remain human gates. Five non-English
+  `ui-*-2026-09-15.8` catalogues remain pending independent review.
+- No API, OpenAPI, schema, migration, Android source, scoring, attempt bound or
+  offline queue contract changed, and no additional decision request was
+  needed.
+
+## UX-03A one-action Home and retention semantics — 15 September 2026
+
+- APP-0087/D-0294 authorize and record only UX-03A findings MUX-010,
+  MUX-012 and MUX-013. Authenticated `#home` no longer renders the duplicate
+  Tutor hero above `LearnerJourney`; the deterministic mission card's Continue
+  is the only primary learning action above the fold. Guest Home is unchanged.
+- ADR-0028 selection is unchanged: a due review is still selected before the
+  next mission. Meaningful-speaking streak remains a small, neutral,
+  non-gating status.
+- Review UI now says **ready/overdue**, **reviewed on time** and **reviewed
+  late**. The former `learner.progress.delayed_review_missed` key and modifier
+  are removed from all catalogues. Progress and both Level-path blocking
+  placements provide one-tap routes to the blocking review on Home.
+- Mission results now show compact capability progress and one primary
+  **Continue from Home** action, with Retry secondary. No XP, hearts or reward
+  currency was introduced.
+- Demo live-AI seconds are absent from global chrome and appear only on Speak
+  and plan/account surfaces. Paid minutes remain globally available using
+  non-countdown availability wording.
+- Focused evidence is green: 60/60 Vitest tests, web typecheck, production web
+  build and locale validation. All seven learner Playwright journeys pass,
+  including Kannada Home and the online mission/result journey.
+- UX-03A implementation scope is complete, but its exit gate is **open**.
+  Pinned `make verify` passes through both full API suites and contract
+  generation, then stops at the existing soft-launch contract assertion.
+  Pinned `make e2e` passes 18/27; the nine failures are the existing serious
+  contrast defect on the Kannada pending-review note in shared header chrome.
+  Representative-learner Continue comprehension and independent review of the
+  five non-English `ui-*-2026-09-15.7` catalogues also remain open.
+- No API, schema, migration, authoritative review rule/interval, onboarding,
+  quiz, Android or provider behavior changed in UX-03A. UX-04A was not started.
+
+## UX-02A contextual microphone permission and onboarding recovery — 15 September 2026
+
+This is the historical UX-02A checkpoint record. The current UX-02B state is
+recorded under D-0293 below.
+
+- APP-0085 authorizes UX-02 beginning with UX-02A only. D-0292 supersedes
+  D-0284's launch-time `RECORD_AUDIO` clause while retaining its bundled
+  `https://localhost` WebView origin.
+- Production `com.globalenglish.app` and demo `com.globalenglish.demo` now
+  register app-owned contextual microphone plugins. Neither `MainActivity`
+  requests permission during launch. Their WebChrome clients grant only
+  already-authorized audio capture from HTTPS localhost and deny every other
+  origin/resource/permission combination.
+- The shared speaking path shows localized rationale after deliberate intent,
+  then calls Android before `getUserMedia`. Granted, denied-once and
+  denied-permanently states are surfaced; **Type instead** remains available
+  and the non-spoken path remains unassessed.
+- LearnerJourney now distinguishes validation, offline, 15-second timeout and
+  server onboarding failures. **Retry same submission** retains the frozen
+  payload and command id; **Edit choices** discards it, unlocks the fields and
+  allocates a new command id. All six catalogues carry the new copy at
+  `ui-*-2026-09-15.4`; five non-English catalogues remain pending independent
+  review.
+- Focused web tests pass 45/45; focused Chromium first-use/recovery passes 3/3;
+  production and demo Android unit suites pass 6/6 each. `make build` and the
+  production `make android-closed-beta` target pass. The synced local debug APK
+  is 28,287,126 bytes, SHA-256
+  `4fba09d802a0c7e862a32257e99bda5d784428375968281b2cd03c33cf66164f`;
+  it was not published.
+- UX-02A implementation scope is complete, but its exit gate is **open**.
+  `make verify` still stops at the pre-existing soft-launch fixed-string
+  contract after 316 SQLite and 360 PostgreSQL tests pass. `make e2e` passes
+  17/27 Chromium journeys; all three UX-02A additions pass and all ten failures
+  are the existing theme contrast debt. No Android device is attached, so the
+  fresh-install/system-dialog and TalkBack checks remain open. UX-02B was not
+  started in this UX-02A slice and was subsequently implemented under D-0293.
+  No API, schema, migration, credential storage or learner-text persistence
+  changed in UX-02A, and no additional DR was required.
+
+## UX-07A accepted review semantics implementation — 15 September 2026
+
+- D-0289's on-time rule is implemented by a single classifier: an attempt
+  before `due_at` is ineligible; an eligible attempt on the same local date as
+  `due_at` in the occurrence's persisted timezone is reviewed on time; an
+  eligible attempt on a later local date is reviewed late. Server and sync
+  timezones are not inputs.
+- D-0290's existing write behavior is now explicit in method and product
+  vocabulary. An eligible attempt clears one open due occurrence regardless of
+  correctness. An incorrect attempt remains non-mastering and schedules the
+  unchanged deterministic `immediate_retry` remediation review.
+- OpenAPI 0.47.0, generated contracts and all repository consumers atomically
+  replace delayed-review `completed_*` metrics with `reviewed_*` and operator
+  `review_return_completed_count` with `review_return_attempted_count`. All six
+  UI catalogues and visible labels say reviewed/attempted. The internal
+  `completed_at` storage column remains; no migration or review-interval change
+  was needed.
+- Exact persisted-timezone edge tests, exact-command replay/no-duplicate proof,
+  incorrect-attempt mastery/remediation proof and cross-tenant read/write
+  tests pass. Focused API tests passed 14 tests / 143 assertions across SQLite
+  and PostgreSQL; focused web tests passed 17/17. OpenAPI generation check,
+  locale validation, typecheck and PHPStan pass.
+- UX-07A application scope is complete, but its repository-wide exit gate is
+  **open**. Literal `make verify` encounters ambient Node 22.22.1 instead of the
+  pinned 24.18.1; the pinned rerun passes both full API suites (316 SQLite,
+  360 PostgreSQL) and then fails a pre-existing soft-launch fixed-substring
+  assertion. Full web Vitest passes 432/433 and fails the pre-existing APK
+  cache-buster `c4`/`c8` assertion; lint retains three unrelated existing
+  errors. `make e2e` reaches Playwright with the pinned toolchain and passes
+  13/24, with all 11 failures from pre-existing color-contrast violations.
+  These out-of-scope failures were not repaired.
+- No Home layout, onboarding, quiz rendering or Android code changed. No
+  ADR-0028 or master-plan amendment is required because this implements its
+  previously accepted clarification without changing deterministic authority.
+  No DR was opened because no additional authority is needed.
+
+## UX-AUDIT-00 metric taxonomy and review decisions — 15 September 2026
+
+- UX-AUDIT-00's documentation scope is complete under APP-0084. D-0289
+  accepts the persisted-timezone local-date definition of reviewed on time;
+  D-0290 accepts correctness-independent clearing and reviewed/attempted UX
+  vocabulary.
+- Required boundaries, existing service behavior and UX-07A's exact future
+  obligations are recorded in
+  [UX_AUDIT_00_DECISION_PACKET.md](UX_AUDIT_00_DECISION_PACKET.md).
+- [UX_FUNNEL_EVENT_CONTRACT.md](UX_FUNNEL_EVENT_CONTRACT.md) defines versioned,
+  allowlisted events, forbidden content, reproducible denominators, 30-day raw
+  retention, 365-day aggregate retention, organization scoping, access and
+  deletion behavior. No events are emitted by this checkpoint.
+- The supplied 35% “profile creation” claim maps only to the authenticated
+  `#home` LearnerJourney onboarding card while
+  `onboarding.completed=false`. Its external source was left as an unfilled
+  placeholder and is therefore **unverified**. The supplied paywall-abandonment
+  claim is also unverified.
+- At UX-AUDIT-00 reconciliation time, Git history contained no decision-ledger
+  revision for the legacy D-0294–D-0297, D-0300 or D-0302 progress-log
+  references. The non-authoritative UI/UX companion was corrected rather than
+  retroactively approved. D-0294 was subsequently assigned to the unrelated,
+  properly authorized UX-03A decision under APP-0087.
+- UX-07A subsequently closed the completion-labelled delayed-review API/UI
+  gate under D-0291. Independent privacy/security/tenancy review remains the
+  sole pre-emission gate; no funnel event emission was implemented.
+- Pinned-toolchain `make verify` passed Composer/Pint/PHPStan, 309 SQLite and
+  359 PostgreSQL tests, locale, OpenAPI/generated-contract and release-contract
+  stages, then failed on pre-existing soft-launch test drift. Supplemental
+  typecheck passed; lint has three existing errors/two warnings and web Vitest
+  has one stale cache-buster expectation (`c4` versus current `c8`). No
+  out-of-scope repair was made; exact evidence is in `docs/QUALITY_REVIEW.md`.
+
 ## Introduction drill UX — 14 September 2026
 
 - Play model audio no longer shows on-screen “Model audio is playing / paused”
@@ -291,19 +555,51 @@
   legacy implementation remains in the current build only until UX-01B replaces
   it; it is not the target template.
 
+## UX-02B — Progressive first use and first success — 15 September 2026
+
+This is the historical UX-02B checkpoint record. UX-03A was not part of this
+slice and was subsequently implemented under APP-0087/D-0294.
+
+- APP-0086/D-0293 authorize and record only UX-02B/MUX-006.
+- Production `LearnerJourney` now uses the shared `OnboardingStepper` for the
+  §6.2 order: value, adult confirmation, ephemeral language/accessibility,
+  goal, beginning/defer placement, microphone-free output check, two separate
+  optional consent purposes, contextual mic try, one private spoken/typed turn
+  and acknowledgement before Home. The synthetic demo remains covered.
+- The authoritative onboarding command is unchanged and contains only
+  `adult_confirmed` and `goal_key`. No API, OpenAPI, schema or migration was
+  added. Placement does not infer ability from accent, location or first
+  language.
+- A strict versioned resume record stores only the safe step, authoritative
+  adult/goal values, placement enum and saved marker. Locale/accessibility,
+  consent choices, credentials, audio, transcripts and learner-authored text
+  are not persisted; completion and logout clear the record.
+- Recording-upload/transcription and automated provider processing remain
+  distinct, unselected ADR-0007 purposes. The audio-output check does not touch
+  the mic; optional recording still enters through UX-02A only after a
+  deliberate action; typed/non-AI learning remains available.
+- Focused evidence is green: 5 Vitest files / 48 tests, web typecheck, scoped
+  lint, locale validation, diff check, and 3/3 Chromium first-use/recovery
+  journeys (English plus Kannada preview with process-reload restoration).
+- Pinned `make verify` reached the retained pre-existing soft-launch contract
+  failure after all earlier stages passed. Pinned `make e2e` passed 18/27;
+  every UX-02B journey passed and the nine failures are the retained shared
+  contrast defects. TalkBack, real 200% font, 320px/IME, representative-adult
+  comprehension and independent catalogue review remain human gates.
+
 ## Current checkpoint
 
 | Field | Value |
 |---|---|
-| Checkpoint | UX-01: Futuristic Learning Studio — complete (D-0283) |
-| Status | D-0283 closes UX-01B visual review by Accountable Product Owner instruction and records UX-01C–G complete. Studio landing, sign-in, learner frame and route splitting are served. D-0284 pins Mira GESC-green on that chrome and adds Android runtime `RECORD_AUDIO`. D-0285 ports PR #6 Mira/Wonder learner chrome onto that pin. D-0286 makes unsigned `#home` use GuestMiraHome instead of MarketingLanding (`#about` / `#marketing` keep the studio landing). UX-02–10 remain proposed. Android TalkBack remains a release gate. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
-| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.14 |
-| Updated date | 13 September 2026 |
-| Git branch | `cursor/guest-mira-home-e8fa` |
+| Checkpoint | UX-10A: Android Back, lifecycle and accessibility hardening — implementation scope complete; repository/device gates retained (D-0297) |
+| Status | Content-free learner history, AndroidX predictive-Back integration, recording cancellation, focus/announcements, edge-to-edge/IME variables, 48px Variant C navigation and package-correct native smoke suites are implemented in both wrappers. No device was attached, so all 64 non-N/A §10 cells and every physical accessibility/lifecycle result remain open. Repository-wide soft-launch and shared contrast gates also remain. Prior UX-02/UX-03/UX-04/UX-07/UX-08 retained gates remain. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
+| Updated date | 16 September 2026 |
+| Git branch | `cursor/learner-variant-c-jezweb-3f88` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | UX-02 (first-use) is the next UI programme checkpoint when authorized. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
+| Next required action | Keep experiment work and later implementation stopped. Attach the specified API 24/35/36 and physical devices and execute audit-plan §10.1 without inferring results; all 64 non-N/A cells are open. Separately resolve the soft-launch contract assertion, stale APK cache-buster unit expectation, existing lint debt and shared color-contrast regression, then rerun `make verify` and `make e2e`. Complete prior UX-02/UX-03/UX-04/UX-07/UX-08 human and catalogue gates. Live payment, Play Billing and real capture need separate authority. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |
-| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. Non-English UI catalogues `ui-*-2026-09-06.1` are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. The previously published closed-beta APK targets an obsolete tunnel origin and is not current. |
+| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A fresh UX-10A production debug APK was built locally but not installed or published; the previously published closed-beta APK remains obsolete. Live payment remains disabled and unauthorized. |
 
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 

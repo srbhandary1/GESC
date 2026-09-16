@@ -18,6 +18,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
 } from 'react'
 import './App.css'
 import './demo/demoExperience.css'
@@ -59,15 +60,30 @@ import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import { LiveAiMinutesChip } from './subscriptions/LiveAiMinutesChip'
 import { InterfaceThemeControl } from './theme/InterfaceThemeControl'
 import { useInterfaceTheme } from './theme/useInterfaceTheme'
-import type { LearnerEntitlement } from './subscriptions/LearnerSubscriptionApi'
+import type {
+  LearnerEntitlement,
+  LearnerSubscriptionApi,
+} from './subscriptions/LearnerSubscriptionApi'
+import type { SubscriptionEntryContext } from './subscriptions/SubscriptionPanel'
 import { useLearnerEntitlement } from './subscriptions/useLearnerEntitlement'
-import { TutorHomeHero, TutorPresence } from './tutor/TutorPresence'
+import { TutorPresence } from './tutor/TutorPresence'
 import type {
   LevelSessionsApi,
   SessionPartId,
 } from './learner/LevelSessionsApi'
 import { DEMO_SESSION_PARTS } from './demo/demoLevelFixtures'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
+import { clearFirstUseResume } from './learner/FirstUseOnboardingResume'
+import {
+  handleAndroidBack,
+  initializeLearnerNavigation,
+  navigateToLearnerDestination,
+  readLearnerNavigationState,
+  restoreLearnerNavigationFocus,
+  subscribeToLearnerNavigation,
+  synchronizeLearnerNavigationFromLocation,
+  type LearnerNavigationTarget,
+} from './learner/LearnerNavigationHistory'
 import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import {
   ANDROID_APK_FILENAME,
@@ -99,6 +115,7 @@ interface AppProps {
   createClientId?: () => string
   demoMode?: boolean
   learnerJourneyApi?: LearnerJourneyApi
+  learnerSubscriptionApi?: LearnerSubscriptionApi
   levelSessionsApi?: LevelSessionsApi
   localizationPolicy?: ResolutionPolicy
   offlineStore?: OfflineLearningStore
@@ -243,6 +260,7 @@ function App({
   createClientId,
   demoMode = false,
   learnerJourneyApi = defaultLearnerJourneyApi,
+  learnerSubscriptionApi,
   levelSessionsApi = defaultLevelSessionsApi,
   localizationPolicy = INTERFACE_RESOLUTION_POLICY,
   offlineStore = browserOfflineLearningStore,
@@ -278,6 +296,8 @@ function App({
   const [boundConversation, setBoundConversation] =
     useState<FriendSession | null>(null)
   const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
+  const [subscriptionContext, setSubscriptionContext] =
+    useState<SubscriptionEntryContext | null>(null)
   const [operatorUsernameResource, setOperatorUsernameResource] =
     useState<OperatorUsernameResource | null>(null)
   const [locationHash, setLocationHash] = useState(
@@ -288,6 +308,10 @@ function App({
   const [destination, setDestination] = useState<PrimaryDestination>(
     () => destinationFromHash(globalThis.location?.hash) ?? 'home',
   )
+  const [androidBackPreview, setAndroidBackPreview] = useState<{
+    readonly progress: number
+    readonly target: LearnerNavigationTarget
+  } | null>(null)
   const isNativeAndroid =
     Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const destinationTitle = useRef<HTMLHeadingElement>(null)
@@ -415,6 +439,7 @@ function App({
 
       if (nextDestination !== null) {
         setDestination(nextDestination)
+        synchronizeLearnerNavigationFromLocation(nextDestination)
       }
     }
 
@@ -423,6 +448,52 @@ function App({
 
     return () => {
       globalThis.removeEventListener('hashchange', updateDestination)
+    }
+  }, [])
+
+  useEffect(() => {
+    initializeLearnerNavigation(destination)
+
+    return subscribeToLearnerNavigation((state) => {
+      setDestination(state.destination)
+      setLocationHash(globalThis.location.hash)
+      restoreLearnerNavigationFocus(state)
+    })
+  }, [destination])
+
+  useEffect(() => {
+    const bridgeWindow = window as Window & {
+      __globalEnglishCancelAndroidBackPreview?: () => void
+      __globalEnglishHandleAndroidBack?: () => boolean
+      __globalEnglishProgressAndroidBackPreview?: (progress: number) => void
+      __globalEnglishStartAndroidBackPreview?: () => boolean
+    }
+
+    bridgeWindow.__globalEnglishHandleAndroidBack = handleAndroidBack
+    bridgeWindow.__globalEnglishStartAndroidBackPreview = () => {
+      const target = readLearnerNavigationState()?.previous ?? null
+      if (target === null) {
+        return false
+      }
+      setAndroidBackPreview({ progress: 0, target })
+      return true
+    }
+    bridgeWindow.__globalEnglishProgressAndroidBackPreview = (progress) => {
+      setAndroidBackPreview((current) =>
+        current === null
+          ? null
+          : { ...current, progress: Math.min(1, Math.max(0, progress)) },
+      )
+    }
+    bridgeWindow.__globalEnglishCancelAndroidBackPreview = () => {
+      setAndroidBackPreview(null)
+    }
+
+    return () => {
+      delete bridgeWindow.__globalEnglishCancelAndroidBackPreview
+      delete bridgeWindow.__globalEnglishHandleAndroidBack
+      delete bridgeWindow.__globalEnglishProgressAndroidBackPreview
+      delete bridgeWindow.__globalEnglishStartAndroidBackPreview
     }
   }, [])
 
@@ -447,6 +518,10 @@ function App({
   const routeMessages = (
     demoMode ? demoDestinationMessages : destinationMessages
   )[destination]
+  const androidBackPreviewLabel =
+    androidBackPreview === null
+      ? null
+      : learnerNavigationTargetLabel(androidBackPreview.target, message)
   const demoOrganization =
     demoMode && session.status === 'authenticated'
       ? session.identity.current_membership?.organization.name
@@ -599,13 +674,24 @@ function App({
     accountSecurityVisible &&
     (authentication.transport === 'sanctum-cookie' ||
       androidAuthentication !== null)
-  const openAccountBilling = () => {
+  const openAccountBilling = (context: SubscriptionEntryContext | null = null) => {
+    setSubscriptionContext(context)
     setAccountSecurityOpen(true)
     window.setTimeout(() => {
       document
         .getElementById('subscription-panel')
         ?.scrollIntoView({ block: 'nearest' })
     }, 0)
+  }
+  const closeContextualPlans = () => {
+    const returnTargetId = subscriptionContext?.returnTargetId ?? null
+    setAccountSecurityOpen(false)
+    setSubscriptionContext(null)
+    if (returnTargetId !== null) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(returnTargetId)?.focus()
+      })
+    }
   }
   const suppressVisibleHero =
     showDemoMission ||
@@ -731,6 +817,18 @@ function App({
           : 'variant-c-jezweb'
       }
     >
+    {androidBackPreview === null || androidBackPreviewLabel === null ? null : (
+      <aside
+        aria-hidden="true"
+        className="ge-android-back-preview"
+        style={{
+          '--ge-android-back-progress': androidBackPreview.progress,
+        } as CSSProperties}
+      >
+        <span aria-hidden="true">←</span>
+        <strong>{androidBackPreviewLabel}</strong>
+      </aside>
+    )}
     <ApplicationFrame
       className={
         isOperatorSession
@@ -786,6 +884,10 @@ function App({
       brandLabelLocale={brand.resolvedLocale}
       currentDestination={destination}
       hidePrimaryNavigation={isOperatorSession || isGuestSession}
+      onNavigate={(nextDestination) => {
+        setAndroidBackPreview(null)
+        navigateToLearnerDestination(nextDestination)
+      }}
       headerActions={
         <div className="shell-header-actions">
           {session.status === 'authenticated' && isOperatorSession ? (
@@ -857,6 +959,7 @@ function App({
                     void androidAuthentication
                       .logout()
                       .then(() => {
+                        clearFirstUseResume()
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
                         globalThis.location.hash = '#home'
@@ -962,6 +1065,7 @@ function App({
                     void webAuth
                       .logout()
                       .then(() => {
+                        clearFirstUseResume()
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
                         globalThis.location.hash = '#home'
@@ -1227,9 +1331,14 @@ function App({
           <LearnerJourney
             api={learnerJourneyApi}
             audioRecorder={audioRecorder}
+            conversationApi={conversationApi}
             createClientId={createClientId}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onLocaleChange={(nextLocale) => {
+              setLocale(nextLocale)
+              setAnnouncedLocale(nextLocale)
+            }}
             offlineBinding={offlineBinding}
             offlineStore={offlineStore}
             resumeBundle={offlineResume?.storedBundle}
@@ -1240,22 +1349,21 @@ function App({
             localizationPolicy={localizationPolicy}
           />
         ) : canHomeLearner ? (
-          <div className="learner-stack">
-            <TutorHomeHero
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-            />
-            <LearnerJourney
-              api={learnerJourneyApi}
-              audioRecorder={audioRecorder}
-              createClientId={createClientId}
-              locale={locale}
-              localizationPolicy={localizationPolicy}
-              offlineBinding={offlineBinding}
-              offlineStore={offlineStore}
-              resumeBundle={offlineResume?.storedBundle}
-            />
-          </div>
+          <LearnerJourney
+            api={learnerJourneyApi}
+            audioRecorder={audioRecorder}
+            conversationApi={conversationApi}
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onLocaleChange={(nextLocale) => {
+              setLocale(nextLocale)
+              setAnnouncedLocale(nextLocale)
+            }}
+            offlineBinding={offlineBinding}
+            offlineStore={offlineStore}
+            resumeBundle={offlineResume?.storedBundle}
+          />
         ) : canLearnPath ? (
           <LevelPathPanel
               allowedSessionParts={learnAllowedSessionParts}
@@ -1267,14 +1375,27 @@ function App({
               localizationPolicy={localizationPolicy}
               offlineBinding={offlineBinding}
               offlineStore={offlineStore}
+              onOpenPlans={demoMode ? undefined : openAccountBilling}
               onOpenRoleplay={() => {
                 setBoundConversation(null)
                 setSpeakMode('situation')
-                globalThis.location.hash = '#speak'
+                navigateToLearnerDestination('speak')
               }}
             />
         ) : canSpeak ? (
-          <SpeakRoom
+          <div className="learner-stack">
+            {entitlement?.is_demo === true ? (
+              <div className="speak-room__usage">
+                <LiveAiMinutesChip
+                  context="speak"
+                  entitlement={entitlement}
+                  locale={locale}
+                  localizationPolicy={localizationPolicy}
+                  onOpenAccount={openAccountBilling}
+                />
+              </div>
+            ) : null}
+            <SpeakRoom
               allowsRoleplay={
                 demoMode ||
                 directEntitlementScope === null ||
@@ -1312,6 +1433,7 @@ function App({
                   : undefined
               }
             />
+          </div>
         ) : canTuition ? (
           <TuitionRequestPanel
             api={
@@ -1400,6 +1522,9 @@ function App({
                   onSessionChange={setSession}
                   session={session}
                   showSubscriptionPanel={isLearnerSession}
+                  subscriptionContext={subscriptionContext}
+                  onSubscriptionClose={closeContextualPlans}
+                  subscriptionApi={learnerSubscriptionApi}
                 />
               )
             : null}
@@ -1423,8 +1548,11 @@ interface SessionSummaryProps {
   message: (key: MessageKey) => InterfaceMessageResolution
   onAccountSecurityOpenChange: (open: boolean) => void
   onSessionChange: (session: SessionState) => void
+  onSubscriptionClose?: () => void
   session: SessionState
   showSubscriptionPanel?: boolean
+  subscriptionApi?: LearnerSubscriptionApi
+  subscriptionContext?: SubscriptionEntryContext | null
 }
 
 function SessionSummary({
@@ -1437,8 +1565,11 @@ function SessionSummary({
   message,
   onAccountSecurityOpenChange,
   onSessionChange,
+  onSubscriptionClose,
   session,
   showSubscriptionPanel = false,
+  subscriptionApi,
+  subscriptionContext = null,
 }: SessionSummaryProps) {
   useEffect(() => {
     if (
@@ -1525,9 +1656,12 @@ function SessionSummary({
       ) : null}
       {showSubscriptionPanel && isAuthenticated && accountSecurityOpen ? (
         <SubscriptionPanel
+          api={subscriptionApi}
+          context={subscriptionContext}
           locale={locale}
           localizationPolicy={localizationPolicy}
           onChange={applyEntitlement}
+          onClose={subscriptionContext === null ? undefined : onSubscriptionClose}
         />
       ) : null}
       {webAuth !== null && isAuthenticated && accountSecurityOpen ? (
@@ -1615,8 +1749,12 @@ function destinationFromHash(
     return 'speak'
   }
 
-  if (candidate === 'home' || candidate === 'learn' || candidate === 'progress') {
+  if (candidate === 'home' || candidate === 'progress') {
     return candidate
+  }
+
+  if (candidate === 'learn' || candidate?.startsWith('learn/')) {
+    return 'learn'
   }
 
   if (candidate === 'tuition' || candidate === 'one-to-one') {
@@ -1624,6 +1762,42 @@ function destinationFromHash(
   }
 
   return null
+}
+
+function learnerNavigationTargetLabel(
+  target: LearnerNavigationTarget,
+  message: (key: MessageKey) => InterfaceMessageResolution,
+): string {
+  if (target.assessment !== undefined) {
+    const partKey: Record<SessionPartId, MessageKey> = {
+      conversation: 'level.path.part.conversation',
+      interaction: 'level.path.part.interaction',
+      introduction: 'level.path.part.introduction',
+      practice: 'level.path.part.practice',
+    }
+    const part =
+      target.partId === undefined
+        ? message('nav.learn').text
+        : message(partKey[target.partId]).text
+
+    return `${part} · ${target.assessment.questionIndex + 1}/${target.assessment.totalQuestions}`
+  }
+
+  if (target.partId !== undefined) {
+    const partKey: Record<SessionPartId, MessageKey> = {
+      conversation: 'level.path.part.conversation',
+      interaction: 'level.path.part.interaction',
+      introduction: 'level.path.part.introduction',
+      practice: 'level.path.part.practice',
+    }
+    return message(partKey[target.partId]).text
+  }
+
+  if (target.levelNumber !== undefined) {
+    return `${message('nav.learn').text} · ${target.levelNumber}`
+  }
+
+  return message(destinationMessages[target.destination].title).text
 }
 
 function sessionMessageKey(session: SessionState): MessageKey {

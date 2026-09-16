@@ -1,15 +1,9 @@
 package com.globalenglish.app;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.webkit.WebView;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -21,7 +15,6 @@ import org.json.JSONObject;
  * forwards OAuth deep-link returns into the WebView bridge.
  */
 public class MainActivity extends BridgeActivity {
-    private static final int REQUEST_RECORD_AUDIO = 7101;
     private static final long[] OAUTH_DISPATCH_DELAYS_MS = new long[] {0L, 500L, 1500L};
 
     private String pendingOauthCallbackUrl;
@@ -30,8 +23,11 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(GlobalEnglishSecureCredentialsPlugin.class);
         registerPlugin(GlobalEnglishSystemBrowserPlugin.class);
+        registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
+        GlobalEnglishAndroidShell.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
-        requestMicrophonePermission();
+        bridge.getWebView().setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
+        GlobalEnglishAndroidShell.install(this, bridge.getWebView());
         handleOauthIntent(getIntent());
     }
 
@@ -47,20 +43,6 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleOauthIntent(intent);
-    }
-
-    private void requestMicrophonePermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return;
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[] {Manifest.permission.RECORD_AUDIO},
-                    REQUEST_RECORD_AUDIO);
-        }
     }
 
     private void handleOauthIntent(Intent intent) {

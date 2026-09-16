@@ -15,6 +15,7 @@ export interface ApplicationFrameProps {
   navigationLabel: string
   navigationLabelLocale: SupportedLanguage
   navigationLinks: PrimaryNavigationLinks
+  onNavigate?: (destination: PrimaryDestination) => void
   skipToContentLabel: ReactNode
   headerActions?: ReactNode
   /**
@@ -34,6 +35,7 @@ export function ApplicationFrame({
   navigationLabel,
   navigationLabelLocale,
   navigationLinks,
+  onNavigate,
   skipToContentLabel,
   headerActions,
   hidePrimaryNavigation = false,
@@ -79,6 +81,7 @@ export function ApplicationFrame({
           ariaLabelLocale={navigationLabelLocale}
           currentDestination={currentDestination}
           links={navigationLinks}
+          onNavigate={onNavigate}
         />
       )}
       <main

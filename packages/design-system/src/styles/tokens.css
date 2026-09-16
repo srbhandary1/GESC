@@ -72,7 +72,7 @@
   --ge-radius-sm: 0.5rem;
   --ge-radius-md: 1rem;
   --ge-radius-lg: 1.65rem;
-  --ge-target-minimum: max(2.75rem, 44px);
+  --ge-target-minimum: max(3rem, 48px);
   --ge-content-width: 72rem;
   --ge-gate-width: 28rem;
 }

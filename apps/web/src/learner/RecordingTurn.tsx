@@ -4,7 +4,7 @@ import {
   type RecordingControlLabels,
   type RecordingControlState,
 } from '@global-english/design-system'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HOLD_MAXIMUM_DURATION_MS } from '../conversation/holdToTalkLimit'
 import { beginSpeakLoop } from '../conversation/speakLoopTimings'
 import { audioToPcmWav } from '../conversation/audioToPcmWav'
@@ -17,6 +17,7 @@ import {
 import type { LocalRecordingMetadata } from './LearnerJourneyApi'
 import { isValidLocalCapture, canonicalCaptureMimeType } from './LocalCaptureReceipt'
 import { LiveLevelMeter } from './LiveLevelMeter'
+import { ANDROID_BACK_REQUEST_EVENT } from './LearnerNavigationHistory'
 
 export interface RecordingTurnLabels {
   readonly controls: RecordingControlLabels
@@ -24,10 +25,14 @@ export interface RecordingTurnLabels {
   readonly playbackHelp: string
   readonly retry: string
   readonly permissionExplanation: string
+  readonly permissionContinue?: string
+  readonly permissionDeniedOnce?: string
+  readonly permissionDeniedPermanently?: string
   readonly continueWithout: string
   readonly continueWithoutExplanation: string
   readonly holdRemaining?: string
   readonly tooShort?: string
+  readonly backCancelled: string
 }
 
 export type HoldPhase = 'idle' | 'listening' | 'processing'
@@ -88,6 +93,14 @@ export function RecordingTurn({
   const stopRef = useRef<() => Promise<void>>(async () => undefined)
   const [holdElapsedMs, setHoldElapsedMs] = useState(0)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [permissionRationale, setPermissionRationale] = useState(false)
+  const [backCancellationStatus, setBackCancellationStatus] = useState<
+    string | null
+  >(null)
+  const [permissionDenial, setPermissionDenial] = useState<
+    'denied_once' | 'denied_permanently' | null
+  >(null)
+  const contextualRationaleAccepted = useRef(false)
 
   useEffect(() => {
     if (!recordingDisabled) {
@@ -141,13 +154,29 @@ export function RecordingTurn({
     }
   }, [captureMode, state])
 
-  const start = async () => {
+  const start = async (rationaleAccepted = false) => {
     if (sessionRef.current !== null) {
       return
     }
 
+    if (
+      recorder.requiresContextualPermissionRationale?.() === true &&
+      !contextualRationaleAccepted.current &&
+      !rationaleAccepted
+    ) {
+      setPermissionRationale(true)
+      setPermissionDenial(null)
+      return
+    }
+
+    if (rationaleAccepted) {
+      contextualRationaleAccepted.current = true
+      setPermissionRationale(false)
+    }
+
     holdIntent.current = true
     clearCapture()
+    setBackCancellationStatus(null)
     setValidationError(null)
     setState('requesting-permission')
     const generation = requestGeneration.current + 1
@@ -182,11 +211,15 @@ export function RecordingTurn({
 
       holdIntent.current = false
       setLiveSession(null)
-      setState(
-        error instanceof RecordingPermissionDeniedError
-          ? 'blocked'
-          : 'error',
-      )
+      if (error instanceof RecordingPermissionDeniedError) {
+        setPermissionDenial(error.status)
+        if (error.status === 'denied_once') {
+          contextualRationaleAccepted.current = false
+        }
+        setState('blocked')
+      } else {
+        setState('error')
+      }
       onHoldPhaseChange?.('idle')
     }
   }
@@ -277,7 +310,7 @@ export function RecordingTurn({
     stopRef.current = stop
   })
 
-  const cancel = () => {
+  const cancel = useCallback(() => {
     holdIntent.current = false
     requestGeneration.current += 1
     sessionRef.current?.cancel()
@@ -286,11 +319,35 @@ export function RecordingTurn({
     setState('ready')
     onHoldPhaseChange?.('idle')
     onCancelInFlight?.()
-  }
+  }, [onCancelInFlight, onHoldPhaseChange])
+
+  useEffect(() => {
+    const handleBack = (event: Event) => {
+      if (
+        state !== 'requesting-permission' &&
+        state !== 'recording' &&
+        state !== 'paused' &&
+        state !== 'processing'
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      cancel()
+      setBackCancellationStatus(labels.backCancelled)
+    }
+
+    globalThis.addEventListener(ANDROID_BACK_REQUEST_EVENT, handleBack)
+    return () => {
+      globalThis.removeEventListener(ANDROID_BACK_REQUEST_EVENT, handleBack)
+    }
+  }, [cancel, labels.backCancelled, state])
 
   const retry = () => {
     clearCapture()
+    setBackCancellationStatus(null)
     setValidationError(null)
+    setPermissionDenial(null)
     setState('ready')
   }
 
@@ -330,29 +387,54 @@ export function RecordingTurn({
         {labels.controls.region}
       </h3>
       {compact ? null : <p>{labels.permissionExplanation}</p>}
-      <RecordingControls
-        captureMode={captureMode}
-        hideStatus={false}
-        interactionDisabled={recordingDisabled}
-        labels={labels.controls}
-        statusOverride={recordingDisabled ? recordingDisabledStatus : undefined}
-        onRequestCancel={cancel}
-        onRequestPause={() => {
-          sessionRef.current?.pause()
-          setState('paused')
-        }}
-        onRequestResume={() => {
-          sessionRef.current?.resume()
-          setState('recording')
-          onHoldPhaseChange?.('listening')
-        }}
-        onRequestStart={() => void start()}
-        onRequestStop={() => void stop()}
-        state={state}
-      />
+      {permissionRationale ? (
+        <div className="learner-recording__permission" role="group">
+          {compact ? <p>{labels.permissionExplanation}</p> : null}
+          <button
+            className="ge-button ge-button--primary"
+            onClick={() => void start(true)}
+            type="button"
+          >
+            {labels.permissionContinue ?? labels.controls.start}
+          </button>
+          <button
+            className="ge-button"
+            onClick={onContinueWithoutRecording}
+            type="button"
+          >
+            {labels.continueWithout}
+          </button>
+        </div>
+      ) : (
+        <RecordingControls
+          captureMode={captureMode}
+          hideStatus={false}
+          interactionDisabled={recordingDisabled}
+          labels={labels.controls}
+          statusOverride={recordingDisabled ? recordingDisabledStatus : undefined}
+          onRequestCancel={cancel}
+          onRequestPause={() => {
+            sessionRef.current?.pause()
+            setState('paused')
+          }}
+          onRequestResume={() => {
+            sessionRef.current?.resume()
+            setState('recording')
+            onHoldPhaseChange?.('listening')
+          }}
+          onRequestStart={() => void start()}
+          onRequestStop={() => void stop()}
+          state={state}
+        />
+      )}
       {validationError === null ? null : (
         <p className="learner-recording__validation" role="alert">
           {validationError}
+        </p>
+      )}
+      {backCancellationStatus === null ? null : (
+        <p className="learner-recording__back-status" role="status">
+          {backCancellationStatus}
         </p>
       )}
       {state === 'recording' ? (
@@ -388,8 +470,25 @@ export function RecordingTurn({
 
       {state === 'blocked' || state === 'error' ? (
         <div className="learner-recording__alternative">
-          {(state === 'blocked' && captureMode === 'hold') ||
+          {permissionDenial === null &&
+          ((state === 'blocked' && captureMode === 'hold') ||
           (state === 'error' && captureMode !== 'hold') ? (
+            <button
+              className="ge-button"
+              onClick={retry}
+              type="button"
+            >
+              {labels.retry}
+            </button>
+          ) : null)}
+          {permissionDenial === null ? null : (
+            <p role="alert">
+              {permissionDenial === 'denied_permanently'
+                ? labels.permissionDeniedPermanently ?? labels.controls.blocked
+                : labels.permissionDeniedOnce ?? labels.controls.blocked}
+            </p>
+          )}
+          {permissionDenial === 'denied_once' ? (
             <button
               className="ge-button"
               onClick={retry}

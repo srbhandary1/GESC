@@ -1,33 +1,15 @@
 package com.globalenglish.demo;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    private static final int REQUEST_RECORD_AUDIO = 7101;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
+        GlobalEnglishAndroidShell.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
-        this.requestMicrophonePermission();
-    }
-
-    private void requestMicrophonePermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return;
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[] {Manifest.permission.RECORD_AUDIO},
-                    REQUEST_RECORD_AUDIO);
-        }
+        bridge.getWebView().setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
+        GlobalEnglishAndroidShell.install(this, bridge.getWebView());
     }
 }

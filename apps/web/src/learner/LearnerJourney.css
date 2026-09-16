@@ -25,7 +25,7 @@
 
 .model-audio-player__toolbar .ge-button,
 .model-audio-player__toolbar .ge-media-controls button {
-  min-block-size: 2.5rem;
+  min-block-size: var(--ge-target-minimum);
   flex: 0 0 auto;
 }
 
@@ -357,6 +357,14 @@
   gap: var(--ge-space-3);
 }
 
+.ge-onboarding__recovery,
+.learner-recording__permission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ge-space-3);
+}
+
 .learner-fieldset {
   padding: var(--ge-space-3);
   border: 1px solid var(--ge-panel-border);
@@ -502,6 +510,27 @@
   font-size: var(--ge-font-size-lg);
   font-weight: 750;
   color: var(--ge-color-action);
+}
+
+.learner-result__capability-progress {
+  margin: 0;
+  padding: var(--ge-space-3) var(--ge-space-4);
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-pill);
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-ink);
+  font-weight: 750;
+  justify-self: start;
+}
+
+.learner-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-3);
+}
+
+.learner-result__actions .ge-button--primary {
+  flex: 1 1 14rem;
 }
 
 .learner-definition-list {

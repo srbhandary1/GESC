@@ -27,6 +27,7 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
   document.documentElement.lang = DEFAULT_LOCALE
   window.localStorage.removeItem('ge-ui-grove-welcome-dismissed')
+  window.localStorage.removeItem('global-english:first-use-onboarding:v1')
   vi.restoreAllMocks()
 })
 
@@ -636,10 +637,11 @@ describe('localized application shell', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: text('learner.onboarding.title'),
+        name: text('learner.onboarding.welcome_title'),
       }),
     ).toBeInTheDocument()
     expect(document.querySelector('.ge-application-frame--studio-learner')).not.toBeNull()
+    expect(document.querySelector('.tutor-home-hero')).toBeNull()
     expect(home).toHaveBeenCalledOnce()
   })
 
@@ -1184,7 +1186,7 @@ function operatorApi(
         ai_fallback_count: 0,
         latency_sample_count: 0,
         quiz_retry_count: 0,
-        review_return_completed_count: 0,
+        review_return_attempted_count: 0,
         review_return_due_count: 0,
         session_cost_microunits_total: 0,
         speaking_turn_count: 0,

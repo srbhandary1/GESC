@@ -3,6 +3,7 @@ import {
   resolveMessage,
   type MessageKey,
 } from '@global-english/localization'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
 
@@ -24,6 +25,63 @@ const ids = {
 
 const blueprintContentHash = 'a'.repeat(64)
 const checkpointRuleHash = 'b'.repeat(64)
+
+test('opens contextual plans from a locked level and returns without losing level context', async ({
+  page,
+}) => {
+  await mockLevelPathLearnerApi(page, true)
+  await page.goto('/#learn')
+
+  const upgrade = page.getByRole('button', {
+    name: message('subscription.view_plans_for_level', { level: '3' }),
+  })
+  await expect(upgrade).toBeVisible()
+  await upgrade.click()
+
+  const panel = page.locator('#subscription-panel')
+  await expect(panel.getByRole('heading', {
+    name: message('subscription.current_title'),
+  })).toBeVisible()
+  await expect(panel.getByText(message('subscription.context_locked', {
+    completed: '',
+    locked: '3',
+  }))).toBeVisible()
+  await expect(panel.locator('.subscription-panel__plan')).toHaveCount(2)
+  await expect(panel.getByText(message('subscription.premium'))).toBeVisible()
+  await expect(panel.getByRole('heading', {
+    name: message('subscription.talk_packs'),
+  })).toHaveCount(0)
+
+  const priceDetails = panel.locator('.subscription-panel__tax').first()
+  await priceDetails.locator('summary').click()
+  await expect(priceDetails.getByText('₹300.00', { exact: true })).toBeVisible()
+  await expect(priceDetails.getByText('₹54.00', { exact: true })).toBeVisible()
+  await expect(priceDetails.getByText('₹354.00', { exact: true })).toBeVisible()
+  await page.setViewportSize({ height: 800, width: 320 })
+  await expect.poll(() => panel.evaluate((element) =>
+    element.scrollWidth <= element.clientWidth,
+  )).toBe(true)
+  const accessibility = await new AxeBuilder({ page })
+    .include('#subscription-panel')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+
+  await panel.getByRole('button', {
+    name: message('subscription.close'),
+  }).click()
+  await expect(panel).toHaveCount(0)
+  await expect(upgrade).toBeFocused()
+  await expect(page).toHaveURL(/#learn$/u)
+
+  await upgrade.click()
+  await panel.getByRole('link', {
+    name: message('subscription.continue_free'),
+  }).click()
+  await expect(page.getByRole('heading', {
+    name: message('level.path.title'),
+  })).toBeVisible()
+  await expect(upgrade).toBeFocused()
+})
 
 test('queues a level checkpoint offline and syncs through the signed submission route on reconnect', async ({
   context,
@@ -69,9 +127,125 @@ test('queues a level checkpoint offline and syncs through the signed submission 
     .poll(() => api.offlineLevelBundleRequests)
     .toBe(1)
 
-  await context.setOffline(true)
+  await expect(
+    page.getByText(
+      message('level.path.question_progress', { current: '1', total: '2' }),
+      { exact: true },
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Which sentence asks permission correctly?'),
+  ).toHaveCount(0)
+  const accessibility = await new AxeBuilder({ page })
+    .include('.level-session__checkpoint')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect
+    .poll(() =>
+      page
+        .locator('.level-session__checkpoint')
+        .evaluate((element) => getComputedStyle(element).animationName),
+    )
+    .toBe('none')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.setViewportSize({ height: 800, width: 320 })
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= globalThis.innerWidth,
+      ),
+    )
+    .toBe(true)
 
-  await page.getByRole('radio', { name: 'I can swim.' }).check()
+  const firstAnswer = page.getByRole('radio', { name: 'I can swim.' })
+  const answerCard = firstAnswer.locator('xpath=ancestor::label')
+  expect((await answerCard.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(48)
+  await firstAnswer.check()
+  await expect(answerCard).toContainText(message('level.path.answer_selected'))
+  await expect
+    .poll(async () =>
+      page.evaluate(async () => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('global-english-offline-v1')
+          request.onsuccess = () => resolve(request.result)
+          request.onerror = () => reject(request.error)
+        })
+        try {
+          const transaction = database.transaction('records', 'readonly')
+          const records = await new Promise<Array<{ type?: string }>>(
+            (resolve, reject) => {
+              const request = transaction.objectStore('records').getAll()
+              request.onsuccess = () =>
+                resolve(request.result as Array<{ type?: string }>)
+              request.onerror = () => reject(request.error)
+            },
+          )
+          return records.filter(({ type }) => type === 'level-quiz-draft').length
+        } finally {
+          database.close()
+        }
+      }),
+    )
+    .toBe(1)
+  const encryptedDraftMetadata = await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('global-english-offline-v1')
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    try {
+      const transaction = database.transaction('records', 'readonly')
+      const records = await new Promise<Array<Record<string, unknown>>>(
+        (resolve, reject) => {
+          const request = transaction.objectStore('records').getAll()
+          request.onsuccess = () =>
+            resolve(request.result as Array<Record<string, unknown>>)
+          request.onerror = () => reject(request.error)
+        },
+      )
+      return JSON.stringify(
+        records.filter(({ type }) => type === 'level-quiz-draft'),
+      )
+    } finally {
+      database.close()
+    }
+  })
+  expect(encryptedDraftMetadata).not.toContain(ids.organization)
+  expect(encryptedDraftMetadata).not.toContain(ids.user)
+  expect(encryptedDraftMetadata).not.toContain('I can swim.')
+
+  await page.reload()
+  await expect(page).toHaveURL(
+    /#learn\/levels\/1\/introduction\/checkpoint\/question\/0\/2$/u,
+  )
+  await expect(
+    page.getByRole('heading', {
+      name: message('level.path.checkpoint_heading'),
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      message('level.path.question_progress', { current: '1', total: '2' }),
+      { exact: true },
+    ),
+  ).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'I can swim.' })).toBeChecked()
+  await page
+    .getByRole('button', { name: message('level.path.continue_question') })
+    .click()
+  await expect(
+    page.getByText(
+      message('level.path.question_progress', { current: '2', total: '2' }),
+      { exact: true },
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Which sentence uses can correctly?'),
+  ).toHaveCount(0)
+  await page.getByRole('radio', { name: 'Can I sit here?' }).check()
+
+  await context.setOffline(true)
   await page
     .getByRole('button', {
       name: message('level.path.checkpoint_submit'),
@@ -86,6 +260,31 @@ test('queues a level checkpoint offline and syncs through the signed submission 
   await expect(
     page.getByText(message('learner.offline.pending_authority')),
   ).toBeVisible()
+  await expect
+    .poll(async () =>
+      page.evaluate(async () => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('global-english-offline-v1')
+          request.onsuccess = () => resolve(request.result)
+          request.onerror = () => reject(request.error)
+        })
+        try {
+          const transaction = database.transaction('records', 'readonly')
+          const records = await new Promise<Array<{ type?: string }>>(
+            (resolve, reject) => {
+              const request = transaction.objectStore('records').getAll()
+              request.onsuccess = () =>
+                resolve(request.result as Array<{ type?: string }>)
+              request.onerror = () => reject(request.error)
+            },
+          )
+          return records.filter(({ type }) => type === 'level-quiz-draft').length
+        } finally {
+          database.close()
+        }
+      }),
+    )
+    .toBe(0)
   expect(api.offlineCheckpointBodies).toHaveLength(0)
   expect(api.onlineCheckpointBodies).toHaveLength(0)
 
@@ -96,15 +295,119 @@ test('queues a level checkpoint offline and syncs through the signed submission 
       message('level.path.checkpoint_unlocked', { number: '2' }),
     ),
   ).toBeVisible()
+  await expect(
+    page.getByText(message('level.path.answer_correct')),
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      message('level.path.answer_rationale', {
+        rationale: 'Use can + base verb.',
+      }),
+    ),
+  ).toBeVisible()
   expect(api.offlineCheckpointBodies).toHaveLength(1)
   expect(api.offlineCheckpointBodies[0]).toMatchObject({
-    answers: { 'can-cp-01': 0 },
+    answers: { 'can-cp-01': 0, 'can-cp-02': 0 },
     bundle_id: ids.levelBundle,
     lease: 'signed-level-offline-lease',
     level_number: 1,
   })
   expect(api.onlineCheckpointBodies).toHaveLength(0)
   expect(JSON.stringify(api.offlineCheckpointBodies[0])).not.toContain('audio')
+})
+
+test('keeps Android-style Back, focus, targets, IME inset and Variant C contrast aligned', async ({
+  page,
+}) => {
+  await mockLevelPathLearnerApi(page, true)
+  await page.setViewportSize({ height: 800, width: 320 })
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/#learn')
+
+  const levelControl = page.getByRole('button', {
+    name: message('level.path.checkpoint_open', { number: '1' }),
+  })
+  await levelControl.click()
+  const firstAnswer = page.getByRole('radio', { name: 'I can swim.' })
+  await firstAnswer.check()
+  await expect(page).toHaveURL(/#learn\/levels\/1\/introduction\/checkpoint\/question\/0\/2$/u)
+  await page.getByRole('button', {
+    name: message('level.path.continue_question'),
+  }).click()
+  await expect(page).toHaveURL(/\/question\/1\/2$/u)
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/question\/0\/2$/u)
+  await expect(page.getByText(message('level.path.question_progress', {
+    current: '1',
+    total: '2',
+  }), { exact: true })).toBeVisible()
+  await expect(page.locator('#level-1-checkpoint-question-0-continue')).toBeFocused()
+
+  await page.goBack()
+  await expect(page.getByRole('heading', {
+    name: message('level.path.checkpoint_heading'),
+  })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading', {
+    name: message('level.path.title'),
+  })).toBeVisible()
+  await expect(levelControl).toBeFocused()
+
+  const navigationTargets = await page.locator('.ge-primary-navigation__link').evaluateAll(
+    (links) => links.map((link) => {
+      const rectangle = link.getBoundingClientRect()
+      const style = getComputedStyle(link)
+      return {
+        fontSize: Number.parseFloat(style.fontSize),
+        height: rectangle.height,
+        minHeight: style.minHeight,
+        transform: style.transform,
+        width: rectangle.width,
+      }
+    }),
+  )
+  expect(navigationTargets).toHaveLength(5)
+  for (const target of navigationTargets) {
+    expect(target.height, JSON.stringify(target)).toBeGreaterThanOrEqual(48)
+    expect(target.width).toBeGreaterThanOrEqual(48)
+    expect(target.fontSize).toBeGreaterThanOrEqual(12)
+  }
+  const activeNavigation = page.locator('.ge-primary-navigation__link[aria-current=page]')
+  await expect.poll(() => activeNavigation.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.boxShadow !== 'none'
+  })).toBe(true)
+
+  await levelControl.click()
+  await firstAnswer.check()
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--ge-native-ime-inset-bottom', '220px')
+  })
+  const stickyAction = page.locator('.level-session__assessment-actions')
+  await stickyAction.scrollIntoViewIfNeeded()
+  await expect.poll(async () => {
+    const box = await stickyAction.boundingBox()
+    return box === null ? 801 : box.y + box.height
+  }).toBeLessThanOrEqual(580)
+
+  const variantColors = await page.locator('.ge-application-frame--studio-learner').evaluate(
+    (element) => {
+      const style = getComputedStyle(element)
+      return { background: style.backgroundColor }
+    },
+  )
+  expect(variantColors.background).toBe('rgb(250, 251, 250)')
+  await expect(activeNavigation).toHaveCSS('color', 'rgb(0, 107, 63)')
+  const accessibility = await new AxeBuilder({ page })
+    .include('.level-session__assessment')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+
+  await page.emulateMedia({ colorScheme: 'dark', forcedColors: 'active' })
+  await expect.poll(() => activeNavigation.evaluate((element) => (
+    getComputedStyle(element).borderBlockStartWidth
+  ))).toBe('3px')
 })
 
 interface MockLevelPathApiState {
@@ -167,6 +470,31 @@ async function mockLevelPathLearnerApi(
 
     if (path === '/api/v1/home') {
       await json(route, home(onboarded))
+      return
+    }
+
+    if (path === '/api/v1/me/entitlement') {
+      await json(route, {
+        allowed_session_parts: ['introduction', 'practice'],
+        allows_free_speech: false,
+        allows_roleplay: false,
+        applies: true,
+        entitlement_id: null,
+        expires_at: null,
+        gstin_is_placeholder: true,
+        is_demo: false,
+        live_ai_cap_seconds: null,
+        live_ai_seconds_remaining: null,
+        max_level_number: 2,
+        plan_code: null,
+        plan_name: null,
+        status: 'expired',
+      })
+      return
+    }
+
+    if (path === '/api/v1/me/subscription-plans') {
+      await json(route, { gstin_is_placeholder: true, plans: subscriptionPlans() })
       return
     }
 
@@ -363,6 +691,58 @@ function levelSummaries() {
       ],
       unlock_after_level_number: 1,
     },
+    {
+      availability: 'available',
+      blueprint_id: '01TESTBLUEPRINT000000000003',
+      checkpoint_status: 'not_ready',
+      concept_key: 'do_does',
+      entitlement_access: 'upgrade_required',
+      level_number: 3,
+      progress_access: 'not_applicable',
+      session_part_ids: [
+        'introduction',
+        'practice',
+        'conversation',
+        'interaction',
+      ],
+    },
+  ]
+}
+
+function subscriptionPlans() {
+  return [
+    {
+      allows_roleplay: false,
+      amount_ex_gst_paise: 30000,
+      billing_period: 'calendar_month',
+      checkout_required: true,
+      code: 'monthly_modules',
+      gst_paise: 5400,
+      id: '01JPLAN00000000000000000001',
+      is_demo: false,
+      is_talk_pack: false,
+      live_ai_cap_seconds: 7200,
+      max_level_number: 17,
+      name: 'Premium features',
+      recommended: false,
+      total_paise: 35400,
+    },
+    {
+      allows_roleplay: true,
+      amount_ex_gst_paise: 50000,
+      billing_period: 'calendar_month',
+      checkout_required: true,
+      code: 'monthly_modules_roleplay',
+      gst_paise: 9000,
+      id: '01JPLAN00000000000000000002',
+      is_demo: false,
+      is_talk_pack: false,
+      live_ai_cap_seconds: 7200,
+      max_level_number: 17,
+      name: 'Premium with Role-play',
+      recommended: true,
+      total_paise: 59000,
+    },
   ]
 }
 
@@ -443,6 +823,12 @@ function checkpointDetail() {
         prompt: 'Which sentence uses can correctly?',
         weight: 1,
       },
+      {
+        id: 'can-cp-02',
+        options: ['Can I sit here?', 'I can to sit here?', 'Can I sat here?'],
+        prompt: 'Which sentence asks permission correctly?',
+        weight: 1,
+      },
     ],
     level_number: 1,
     max_attempts: 3,
@@ -490,7 +876,13 @@ function checkpointSubmissionResult() {
       {
         correct: true,
         id: 'can-cp-01',
-        rationale: null,
+        rationale: 'Use can + base verb.',
+        selected_option: 0,
+      },
+      {
+        correct: true,
+        id: 'can-cp-02',
+        rationale: 'Use can + subject + base verb for permission.',
         selected_option: 0,
       },
     ],

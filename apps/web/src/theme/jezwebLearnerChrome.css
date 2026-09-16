@@ -128,12 +128,16 @@
   .demo-experience .ge-application-frame--jezweb,
   .demo-experience .ge-application-frame--jezweb .ge-application-frame__main {
     padding-block-end: calc(
-      4.25rem + env(safe-area-inset-bottom, 0px)
+      4.5rem + max(
+        env(safe-area-inset-bottom, 0px),
+        var(--ge-native-safe-area-bottom, 0px)
+      )
     );
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation,
   .ge-application-frame--jezweb.ge-application-frame--native-android .ge-primary-navigation,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation {
     position: fixed;
     z-index: 30;
@@ -142,11 +146,15 @@
     border: 0;
     border-block-start: 1px solid var(--ge-color-border);
     background: var(--ge-color-surface);
-    padding-block-end: env(safe-area-inset-bottom, 0px);
+    padding-block-end: max(
+      env(safe-area-inset-bottom, 0px),
+      var(--ge-native-safe-area-bottom, 0px)
+    );
     box-shadow: 0 -8px 24px rgb(26 26 26 / 0.04);
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation__list,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__list,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__list {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -164,6 +172,8 @@
 
   .ge-application-frame--jezweb .ge-primary-navigation__item,
   .ge-application-frame--jezweb .ge-primary-navigation__item--speak,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__item,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__item--speak,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__item,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__item--speak {
     width: auto;
@@ -173,9 +183,12 @@
 
   .ge-application-frame--jezweb .ge-primary-navigation__link,
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link--speak,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link--speak {
-    min-block-size: 3.15rem;
+    min-block-size: 52px;
+    min-height: 52px;
     min-inline-size: 0;
     width: 100%;
     margin: 0;
@@ -183,13 +196,14 @@
     flex-direction: column;
     gap: 0.15rem;
     border-radius: 0.5rem;
-    font-size: 0.625rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 650;
     letter-spacing: 0.01em;
     box-shadow: none;
   }
 
   .ge-application-frame--jezweb .ge-nav-glyph,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-nav-glyph,
   .demo-experience .ge-application-frame--jezweb .ge-nav-glyph,
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak .ge-nav-glyph,
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link--speak .ge-nav-glyph {
@@ -205,6 +219,7 @@
 
   .ge-application-frame--jezweb .ge-nav-glyph svg,
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak .ge-nav-glyph svg,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-nav-glyph svg,
   .demo-experience .ge-application-frame--jezweb .ge-nav-glyph svg {
     width: 1.35rem;
     height: 1.35rem;
@@ -212,11 +227,61 @@
 
   .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak[aria-current='page'],
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
-    background: transparent;
+    background: color-mix(in srgb, var(--ge-color-action) 10%, transparent);
     color: var(--ge-color-action);
-    box-shadow: inset 0 2px 0 var(--ge-color-action);
-    font-weight: 700;
+    box-shadow: inset 0 3px 0 var(--ge-color-action);
+    font-weight: 750;
+  }
+}
+
+.ge-android-back-preview {
+  position: fixed;
+  z-index: 100;
+  inset-block-start: max(
+    0.75rem,
+    env(safe-area-inset-top, 0px),
+    var(--ge-native-safe-area-top, 0px)
+  );
+  inset-inline-start: max(
+    0.75rem,
+    env(safe-area-inset-left, 0px),
+    var(--ge-native-safe-area-left, 0px)
+  );
+  display: flex;
+  max-inline-size: calc(100vw - 1.5rem);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-control);
+  background: var(--ge-color-surface);
+  color: var(--ge-color-ink);
+  box-shadow: var(--ge-elevation-1);
+  opacity: calc(0.7 + var(--ge-android-back-progress) * 0.3);
+  pointer-events: none;
+  transform: translateX(calc((1 - var(--ge-android-back-progress)) * -0.75rem));
+  transition: none;
+}
+
+@media (prefers-contrast: more) {
+  .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
+  .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+  }
+}
+
+@media (forced-colors: active) {
+  .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
+  .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
+    border-block-start: 3px solid Highlight;
+    background: Canvas;
+    color: Highlight;
+    forced-color-adjust: auto;
   }
 }
 

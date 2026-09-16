@@ -61,15 +61,32 @@
 }
 
 .ge-application-frame--native-android .ge-application-frame__header {
-  padding-block-start: max(env(safe-area-inset-top), 0px);
+  padding-block-start: max(
+    env(safe-area-inset-top, 0px),
+    var(--ge-native-safe-area-top, 0px)
+  );
+  padding-inline: max(
+    env(safe-area-inset-left, 0px),
+    var(--ge-native-safe-area-left, 0px)
+  ) max(
+    env(safe-area-inset-right, 0px),
+    var(--ge-native-safe-area-right, 0px)
+  );
 }
 
 .ge-application-frame--native-android .ge-primary-navigation {
-  padding-block-end: max(env(safe-area-inset-bottom), 0px);
+  padding-block-end: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--ge-native-safe-area-bottom, 0px)
+  );
 }
 
 .ge-application-frame--native-android .shell-content {
-  padding-block-end: max(env(safe-area-inset-bottom), var(--ge-space-3));
+  padding-block-end: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--ge-native-safe-area-bottom, 0px),
+    var(--ge-space-3)
+  );
 }
 
 .ge-application-frame--native-android .marketing-hero__banner {
@@ -1022,8 +1039,8 @@
 }
 
 .web-otp-sign-in__form input[type='checkbox'] {
-  inline-size: min(var(--ge-target-minimum), 44px);
-  block-size: min(var(--ge-target-minimum), 44px);
+  inline-size: var(--ge-target-minimum);
+  block-size: var(--ge-target-minimum);
   margin: 0;
 }
 
@@ -1136,7 +1153,7 @@
 }
 
 .shell-practice-switch button {
-  min-block-size: calc(var(--ge-target-minimum) - 0.15rem);
+  min-block-size: var(--ge-target-minimum);
   padding-inline: var(--ge-space-4);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -3118,7 +3135,7 @@
 
 .subscription-panel {
   display: grid;
-  gap: var(--ge-space-3);
+  gap: var(--ge-space-4);
   margin-block-end: var(--ge-space-5);
   padding: var(--ge-space-4);
   border: 1px solid color-mix(in srgb, var(--ge-color-brass) 35%, white);
@@ -3126,27 +3143,148 @@
   background: color-mix(in srgb, var(--ge-color-brass-soft) 18%, white);
 }
 
-.subscription-panel h2 {
+.subscription-panel h2,
+.subscription-panel h3,
+.subscription-panel h4,
+.subscription-panel p {
   margin: 0;
+}
+
+.subscription-panel h2,
+.subscription-panel h3,
+.subscription-panel h4 {
   font-family: var(--ge-font-family-display);
+}
+
+.subscription-panel__header,
+.subscription-panel__state,
+.subscription-panel__talk-packs > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ge-space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subscription-panel__eyebrow,
+.subscription-panel__flag {
+  color: var(--ge-color-action);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subscription-panel__current,
+.subscription-panel__context,
+.subscription-panel__state {
+  display: grid;
+  gap: var(--ge-space-2);
+  padding: var(--ge-space-3);
+  border: 1px solid color-mix(in srgb, var(--ge-color-ink) 14%, transparent);
+  border-radius: 0.9rem;
+  background: var(--ge-color-surface);
+}
+
+.subscription-panel__state--failed,
+.subscription-panel__state--unavailable {
+  border-color: var(--ge-error-border);
+}
+
+.subscription-panel__plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ge-space-3);
+  margin-block-start: var(--ge-space-3);
+}
+
+.subscription-panel__plan {
+  display: grid;
+  gap: var(--ge-space-3);
+  align-content: start;
+  padding: var(--ge-space-4);
+  border: 1px solid color-mix(in srgb, var(--ge-color-ink) 18%, transparent);
+  border-radius: 1rem;
+  background: var(--ge-color-surface);
+}
+
+.subscription-panel__plan--premium {
+  border-width: 2px;
+  border-color: var(--ge-color-action);
+  background: color-mix(in srgb, var(--ge-color-action) 8%, var(--ge-color-surface));
+}
+
+.subscription-panel__benefits {
+  list-style: disc;
+  padding-inline-start: 1.25rem;
+}
+
+.subscription-panel__tax summary {
+  min-block-size: 3rem;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.subscription-panel__tax dl {
+  display: grid;
+  gap: var(--ge-space-2);
+  margin: var(--ge-space-2) 0 0;
+}
+
+.subscription-panel__tax dl > div {
+  display: flex;
+  gap: var(--ge-space-3);
+  justify-content: space-between;
+}
+
+.subscription-panel__tax dd {
+  margin: 0;
+  text-align: end;
+}
+
+.subscription-panel__total {
+  padding-block-start: var(--ge-space-2);
+  border-block-start: 1px solid currentColor;
+  font-weight: 800;
+}
+
+.subscription-panel__continue-free {
+  justify-self: start;
+}
+
+.subscription-panel__tax-notice {
+  font-size: 0.875rem;
 }
 
 .subscription-panel ul,
 .operator-task-group ul {
-  display: grid;
-  gap: var(--ge-space-3);
   margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-.subscription-panel li,
 .operator-task-group li {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ge-space-2);
   align-items: center;
   justify-content: space-between;
+}
+
+.subscription-panel__plans,
+.subscription-panel__talk-packs {
+  padding: 0;
+  list-style: none;
+}
+
+.subscription-panel__talk-packs {
+  display: grid;
+  gap: var(--ge-space-3);
+  margin-block-start: var(--ge-space-3) !important;
+}
+
+@media (max-width: 42rem) {
+  .subscription-panel__plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .speak-room__upgrade {

@@ -25,6 +25,7 @@ export interface PrimaryNavigationProps {
   ariaLabelLocale: SupportedLanguage
   currentDestination: PrimaryDestination
   links: PrimaryNavigationLinks
+  onNavigate?: (destination: PrimaryDestination) => void
 }
 
 export function PrimaryNavigation({
@@ -32,6 +33,7 @@ export function PrimaryNavigation({
   ariaLabelLocale,
   currentDestination,
   links,
+  onNavigate,
 }: PrimaryNavigationProps) {
   return (
     <nav
@@ -64,6 +66,15 @@ export function PrimaryNavigation({
                 }
                 data-destination={destination}
                 href={link.href}
+                id={`primary-navigation-${destination}`}
+                onClick={
+                  onNavigate === undefined
+                    ? undefined
+                    : (event) => {
+                        event.preventDefault()
+                        onNavigate(destination)
+                      }
+                }
               >
                 <span aria-hidden="true" className="ge-nav-glyph">
                   <DestinationGlyph destination={destination} />

@@ -2,15 +2,18 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
+  LevelQuizDraft,
   OfflineLearningStore,
   OfflineProfileBinding,
   PendingLevelCheckpointCommand,
 } from '../offline/OfflineLearningStore'
+import { LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS } from '../offline/OfflineLearningStore'
 import { LevelPathPanel } from './LevelPathPanel'
 import type {
   LevelCheckpointDetail,
   LevelCheckpointSubmissionResult,
   LevelSessionsApi,
+  SessionPartId,
 } from './LevelSessionsApi'
 
 const offlineBinding: OfflineProfileBinding = {
@@ -35,6 +38,12 @@ const checkpointDetail: LevelCheckpointDetail = {
       weight: 1,
       prompt: 'Which sentence uses can correctly?',
       options: ['I can swim.', 'I cans swim.', 'Can I swam?'],
+    },
+    {
+      id: 'can-cp-02',
+      weight: 1,
+      prompt: 'Which sentence asks permission correctly?',
+      options: ['Can I sit here?', 'I can to sit here?', 'Can I sat here?'],
     },
   ],
 }
@@ -72,7 +81,83 @@ const completedSessionsList = {
   ],
 }
 
+const quickCheckItems = [
+  {
+    id: 'can-check-01',
+    weight: 1,
+    prompt: 'Choose the sentence that uses can correctly.',
+    options: ['I cans swim.', 'I can swim.'],
+  },
+  {
+    id: 'can-check-02',
+    weight: 1,
+    prompt: 'Choose the correct permission question.',
+    options: ['Can I sit here?', 'Can I sat here?'],
+  },
+] as const
+
+function apiWithQuickCheck(
+  submitCheck: LevelSessionsApi['submitCheck'],
+): LevelSessionsApi {
+  return {
+    listLevels: vi.fn(async () => ({
+      levels: [
+        {
+          level_number: 1,
+          concept_key: 'can',
+          availability: 'available' as const,
+          blueprint_id: '01TESTBLUEPRINT000000000001',
+          session_part_ids: [
+            'introduction',
+            'practice',
+            'conversation',
+            'interaction',
+          ],
+        },
+      ],
+    })),
+    listSessions: vi.fn(async () => ({
+      ...completedSessionsList,
+      sessions: completedSessionsList.sessions.map((session) => ({
+        ...session,
+        completed:
+          session.part_id === 'introduction' ||
+          session.part_id === 'practice',
+      })),
+    })),
+    sessionDetail: vi.fn(async (_levelNumber: number, partId: SessionPartId) => ({
+      level_number: 1,
+      part_id: partId,
+      part_order: partId === 'practice' ? 2 : 1,
+      completed: partId === 'introduction',
+      media_asset_id: '01TESTMEDIA0000000000000001',
+      audio_stream_path: '/api/v1/me/levels/1/sessions/practice/audio',
+      objective: 'Use can and cannot.',
+      target_patterns: ['I can + base verb.'],
+      kannada_guidance: { summary: 'ಕನ್ನಡ ವಿವರಣೆ' },
+      talk: null,
+      apply: null,
+      check:
+        partId === 'practice'
+          ? {
+              pass_threshold: 0.8,
+              items: quickCheckItems.map((item) => ({
+                ...item,
+                options: [...item.options],
+              })),
+            }
+          : null,
+      activities: [],
+      conversation_binding: null,
+    })),
+    completeSession: vi.fn(),
+    submitCheck,
+    startConversation: vi.fn(),
+  }
+}
+
 beforeEach(() => {
+  window.history.replaceState(null, '', '/#learn')
   Object.defineProperty(globalThis.navigator, 'onLine', {
     configurable: true,
     value: true,
@@ -85,6 +170,75 @@ afterEach(() => {
 })
 
 describe('LevelPathPanel', () => {
+  it('opens plans from every entitlement-locked level with completed-level context', async () => {
+    const user = userEvent.setup()
+    const onOpenPlans = vi.fn()
+    const api: LevelSessionsApi = {
+      listLevels: vi.fn(async () => ({
+        levels: [
+          {
+            level_number: 2,
+            concept_key: 'should',
+            availability: 'available' as const,
+            entitlement_access: 'allowed' as const,
+            checkpoint_status: 'passed' as const,
+            blueprint_id: '01TESTBLUEPRINT000000000002',
+            session_part_ids: ['introduction', 'practice'],
+          },
+          {
+            level_number: 3,
+            concept_key: 'do_does',
+            availability: 'available' as const,
+            entitlement_access: 'upgrade_required' as const,
+            checkpoint_status: 'not_ready' as const,
+            blueprint_id: '01TESTBLUEPRINT000000000003',
+            session_part_ids: ['introduction', 'practice'],
+          },
+          {
+            level_number: 4,
+            concept_key: 'is_are_ing',
+            availability: 'available' as const,
+            entitlement_access: 'upgrade_required' as const,
+            checkpoint_status: 'not_ready' as const,
+            blueprint_id: '01TESTBLUEPRINT000000000004',
+            session_part_ids: ['introduction', 'practice'],
+          },
+        ],
+      })),
+      listSessions: vi.fn(),
+      sessionDetail: vi.fn(),
+      completeSession: vi.fn(),
+      submitCheck: vi.fn(),
+      startConversation: vi.fn(),
+    }
+
+    render(
+      <LevelPathPanel
+        api={api}
+        locale="en-IN"
+        onOpenPlans={onOpenPlans}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', { name: 'View plans for Level 3' }),
+    )
+    expect(onOpenPlans).toHaveBeenLastCalledWith({
+      completedLevelNumber: 2,
+      lockedLevelNumber: 3,
+      returnTargetId: 'level-upgrade-3',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'View plans for Level 4' }),
+    )
+    expect(onOpenPlans).toHaveBeenLastCalledWith({
+      completedLevelNumber: 2,
+      lockedLevelNumber: 4,
+      returnTargetId: 'level-upgrade-4',
+    })
+  })
+
   it('lists ready levels separately and opens an available level session', async () => {
     const user = userEvent.setup()
     const api: LevelSessionsApi = {
@@ -357,6 +511,7 @@ describe('LevelPathPanel', () => {
   })
 
   it('shows review-due blocking before checkpoint-ready levels', async () => {
+    const user = userEvent.setup()
     const api: LevelSessionsApi = {
       listLevels: vi.fn(async () => ({
         levels: [
@@ -377,8 +532,23 @@ describe('LevelPathPanel', () => {
           },
         ],
       })),
-      listSessions: vi.fn(),
-      sessionDetail: vi.fn(),
+      listSessions: vi.fn(async () => completedSessionsList),
+      sessionDetail: vi.fn(async (_levelNumber, partId) => ({
+        level_number: 1,
+        part_id: partId,
+        part_order: 1,
+        completed: true,
+        media_asset_id: '01TESTMEDIA0000000000000001',
+        audio_stream_path: '/api/v1/me/levels/1/sessions/introduction/audio',
+        objective: 'Use can and cannot.',
+        target_patterns: ['I can + base verb.'],
+        kannada_guidance: { summary: 'ಕನ್ನಡ ವಿವರಣೆ' },
+        talk: null,
+        apply: null,
+        check: null,
+        activities: [],
+        conversation_binding: null,
+      })),
       completeSession: vi.fn(),
       submitCheck: vi.fn(),
       startConversation: vi.fn(),
@@ -389,10 +559,21 @@ describe('LevelPathPanel', () => {
     expect(await screen.findByText('Review due first')).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Complete your due review on Home before taking the level checkpoint.',
+        'A review is ready or overdue. Review it from Home before taking the level checkpoint.',
       ),
     ).toBeInTheDocument()
+    const reviewAction = screen.getByRole('link', { name: 'Go to review' })
+    expect(reviewAction).toHaveAttribute('href', '#home')
+    await user.click(reviewAction)
+    expect(globalThis.location.hash).toBe('#home')
+    window.history.replaceState(null, '', '/')
     expect(screen.queryByText('Checkpoint ready')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Level 1/i }))
+    const inLevelReviewAction = await screen.findByRole('link', {
+      name: 'Go to review',
+    })
+    expect(inLevelReviewAction).toHaveAttribute('href', '#home')
   })
 
   it('keeps Conversation and Interaction locked until earlier sessions are complete', async () => {
@@ -1122,11 +1303,304 @@ describe('LevelPathPanel', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows one quick-check question at a time, item feedback, and a focused retry', async () => {
+    const user = userEvent.setup()
+    const firstResult = {
+      replayed: false,
+      score: 0.5,
+      threshold: 0.8,
+      passed: false,
+      item_results: [
+        {
+          id: 'can-check-01',
+          selected_option: 0,
+          correct: false,
+          rationale: 'Use can without adding s.',
+        },
+        {
+          id: 'can-check-02',
+          selected_option: 0,
+          correct: true,
+          rationale: 'Use can + subject + base verb.',
+        },
+      ],
+    }
+    const secondResult = {
+      ...firstResult,
+      score: 1,
+      passed: true,
+      item_results: [
+        {
+          id: 'can-check-01',
+          selected_option: 1,
+          correct: true,
+          rationale: 'Use can without adding s.',
+        },
+        firstResult.item_results[1]!,
+      ],
+    }
+    const submitCheck = vi
+      .fn()
+      .mockResolvedValueOnce(firstResult)
+      .mockResolvedValueOnce(secondResult)
+    const attemptIds = ['quick-attempt-1', 'quick-attempt-2']
+
+    render(
+      <LevelPathPanel
+        api={apiWithQuickCheck(submitCheck)}
+        createClientId={() => attemptIds.shift() ?? 'unused-attempt'}
+        locale="en-IN"
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(
+      await screen.findByRole('button', { name: /Practice/i }),
+    )
+
+    expect(await screen.findByText('Question 1 of 2')).toBeInTheDocument()
+    expect(
+      screen.getByText('Choose the sentence that uses can correctly.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Choose the correct permission question.'),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'I cans swim.' }))
+    expect(
+      screen.getByRole('radio', { name: 'I cans swim.' }).closest('label'),
+    ).toHaveTextContent('Selected')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(screen.getByText('Question 2 of 2')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Choose the sentence that uses can correctly.'),
+    ).not.toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Previous question' }),
+    )
+    expect(screen.getByText('Question 1 of 2')).toBeInTheDocument()
+    expect(
+      screen.getByRole('radio', { name: 'I cans swim.' }),
+    ).toBeChecked()
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(screen.getByRole('radio', { name: 'Can I sit here?' }))
+    await user.click(screen.getByRole('button', { name: 'Submit check' }))
+
+    expect(await screen.findByText('Not yet')).toBeInTheDocument()
+    expect(screen.getByText('Why: Use can without adding s.')).toBeInTheDocument()
+    expect(screen.getByText('Your answer: I cans swim.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Next result' }))
+    expect(screen.getByText('Correct')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Retry incorrect answers' }),
+    )
+
+    expect(screen.getByText('Question 1 of 1')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Choose the correct permission question.'),
+    ).not.toBeInTheDocument()
+    await user.click(
+      await screen.findByRole('radio', { name: 'I can swim.' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Submit check' }))
+
+    expect(submitCheck).toHaveBeenNthCalledWith(
+      1,
+      1,
+      'practice',
+      { 'can-check-01': 0, 'can-check-02': 0 },
+      'quick-attempt-1',
+    )
+    expect(submitCheck).toHaveBeenNthCalledWith(
+      2,
+      1,
+      'practice',
+      { 'can-check-01': 1, 'can-check-02': 0 },
+      'quick-attempt-2',
+    )
+  })
+
+  it('restores a tenant-bound option-only draft after recreation and replays an uncertain submission with the same attempt id', async () => {
+    const user = userEvent.setup()
+    let storedDraft: LevelQuizDraft | null = null
+    const saveLevelQuizDraft = vi.fn(async (
+      _binding: OfflineProfileBinding,
+      draft: LevelQuizDraft,
+    ) => {
+      storedDraft = structuredClone(draft)
+    })
+    const store: OfflineLearningStore = {
+      acceptReceipt: vi.fn(async () => undefined),
+      available: () => true,
+      deleteLevelQuizDraft: vi.fn(async () => undefined),
+      enablePersonalDevice: vi.fn(async () => undefined),
+      hasProfile: vi.fn(async () => true),
+      loadBundle: vi.fn(async () => null),
+      loadLevelQuizDraft: vi.fn(async () => storedDraft),
+      markNeedsAttention: vi.fn(async () => undefined),
+      pendingCommands: vi.fn(async () => []),
+      prepareLogout: vi.fn(async () => undefined),
+      purge: vi.fn(async () => undefined),
+      purgeAll: vi.fn(async () => undefined),
+      queueCompletion: vi.fn(async () => undefined),
+      resumePersonalDevice: vi.fn(async () => null),
+      saveBundle: vi.fn(async () => undefined),
+      saveLevelQuizDraft,
+    }
+    const result = {
+      replayed: true,
+      score: 1,
+      threshold: 0.8,
+      passed: true,
+      item_results: quickCheckItems.map((item, index) => ({
+        id: item.id,
+        selected_option: index === 0 ? 1 : 0,
+        correct: true,
+        rationale: 'Deterministic rationale.',
+      })),
+    }
+    const submitCheck = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('response_lost'))
+      .mockResolvedValueOnce(result)
+    const firstRender = render(
+      <LevelPathPanel
+        api={apiWithQuickCheck(submitCheck)}
+        createClientId={() => 'stable-quick-attempt'}
+        locale="en-IN"
+        offlineBinding={offlineBinding}
+        offlineStore={store}
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Practice/i }))
+    await user.click(
+      await screen.findByRole('radio', { name: 'I can swim.' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => {
+      expect(storedDraft?.currentItemIndex).toBe(1)
+    })
+    await user.click(screen.getByRole('button', { name: 'Introduction' }))
+    await user.click(await screen.findByRole('button', { name: 'Practice' }))
+    expect(await screen.findByText('Question 2 of 2')).toBeInTheDocument()
+    expect(JSON.stringify(storedDraft)).not.toContain('I can swim.')
+    expect(JSON.stringify(storedDraft)).not.toContain('prompt')
+    expect(saveLevelQuizDraft).toHaveBeenLastCalledWith(
+      offlineBinding,
+      expect.objectContaining({
+        attemptId: 'stable-quick-attempt',
+        blueprintContentHash: 'a'.repeat(64),
+        levelNumber: 1,
+        partId: 'practice',
+        selectedOptionIds: { 'can-check-01': 1 },
+      }),
+    )
+    expect(
+      new Date(storedDraft!.expiresAt).getTime() -
+        new Date(storedDraft!.createdAt).getTime(),
+    ).toBe(LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS)
+
+    firstRender.unmount()
+    render(
+      <LevelPathPanel
+        api={apiWithQuickCheck(submitCheck)}
+        createClientId={() => 'must-not-replace-restored-attempt'}
+        locale="en-IN"
+        offlineBinding={offlineBinding}
+        offlineStore={store}
+      />,
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Practice' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Question 2 of 2')).toBeInTheDocument()
+    expect(store.loadLevelQuizDraft).toHaveBeenLastCalledWith(
+      offlineBinding,
+      1,
+      'practice',
+    )
+    await user.click(screen.getByRole('radio', { name: 'Can I sit here?' }))
+    await user.click(screen.getByRole('button', { name: 'Submit check' }))
+    expect(
+      await screen.findByText('That action could not be saved. Try again.'),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Submit check' }))
+
+    expect(submitCheck).toHaveBeenCalledTimes(2)
+    expect(submitCheck.mock.calls[0]?.[3]).toBe('stable-quick-attempt')
+    expect(submitCheck.mock.calls[1]?.[3]).toBe('stable-quick-attempt')
+    expect(submitCheck.mock.calls[1]?.[2]).toEqual({
+      'can-check-01': 1,
+      'can-check-02': 0,
+    })
+  })
+
+  it('discards an expired draft instead of restoring stale answer state', async () => {
+    const user = userEvent.setup()
+    const expiredDraft: LevelQuizDraft = {
+      activeItemIds: quickCheckItems.map(({ id }) => id),
+      attemptId: 'expired-attempt',
+      blueprintContentHash: 'a'.repeat(64),
+      createdAt: '2000-01-01T00:00:00.000Z',
+      currentItemIndex: 1,
+      expiresAt: '2000-01-02T00:00:00.000Z',
+      itemIds: quickCheckItems.map(({ id }) => id),
+      levelNumber: 1,
+      partId: 'practice',
+      selectedOptionIds: { 'can-check-01': 1 },
+      updatedAt: '2000-01-01T00:00:00.000Z',
+    }
+    const saveLevelQuizDraft = vi.fn(async () => undefined)
+    const store: OfflineLearningStore = {
+      acceptReceipt: vi.fn(async () => undefined),
+      available: () => true,
+      enablePersonalDevice: vi.fn(async () => undefined),
+      hasProfile: vi.fn(async () => true),
+      loadBundle: vi.fn(async () => null),
+      loadLevelQuizDraft: vi.fn(async () => expiredDraft),
+      markNeedsAttention: vi.fn(async () => undefined),
+      pendingCommands: vi.fn(async () => []),
+      prepareLogout: vi.fn(async () => undefined),
+      purge: vi.fn(async () => undefined),
+      purgeAll: vi.fn(async () => undefined),
+      queueCompletion: vi.fn(async () => undefined),
+      resumePersonalDevice: vi.fn(async () => null),
+      saveBundle: vi.fn(async () => undefined),
+      saveLevelQuizDraft,
+    }
+
+    render(
+      <LevelPathPanel
+        api={apiWithQuickCheck(vi.fn())}
+        createClientId={() => 'fresh-attempt'}
+        locale="en-IN"
+        offlineBinding={offlineBinding}
+        offlineStore={store}
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /Practice/i }))
+
+    expect(await screen.findByText('Question 1 of 2')).toBeInTheDocument()
+    expect(
+      screen.getByRole('radio', { name: 'I can swim.' }),
+    ).not.toBeChecked()
+    await waitFor(() => {
+      expect(saveLevelQuizDraft).toHaveBeenCalledWith(
+        offlineBinding,
+        expect.objectContaining({ attemptId: 'fresh-attempt' }),
+      )
+    })
+  })
+
   it('queues checkpoint answers offline and syncs authoritative results on reconnect', async () => {
     const user = userEvent.setup()
     const ids = {
-      command: '018f4f82-6400-7a12-8f4b-20b12bf6b6f4',
-      idempotency: '018f4f82-6400-7a12-8f4b-20b12bf6b6f5',
+      attempt: '018f4f82-6400-7a12-8f4b-20b12bf6b6f4',
+      command: '018f4f82-6400-7a12-8f4b-20b12bf6b6f5',
     }
     let queued: PendingLevelCheckpointCommand[] = []
     const checkpointResult: LevelCheckpointSubmissionResult = {
@@ -1138,6 +1612,12 @@ describe('LevelPathPanel', () => {
           correct: true,
           id: 'can-cp-01',
           rationale: 'Use can + base verb.',
+          selected_option: 0,
+        },
+        {
+          correct: true,
+          id: 'can-cp-02',
+          rationale: 'Use can + subject + base verb for permission.',
           selected_option: 0,
         },
       ],
@@ -1158,6 +1638,7 @@ describe('LevelPathPanel', () => {
     }
     const submitCheckpoint = vi.fn(async () => checkpointResult)
     const submitOfflineLevelCheckpoint = vi.fn(async () => checkpointResult)
+    let savedDraft: LevelQuizDraft | null = null
     const storedLevelBundle = {
       bundle: {
         lease: 'signed-lease-token',
@@ -1242,7 +1723,16 @@ describe('LevelPathPanel', () => {
       loadBundle: vi.fn(async () => null),
       loadCheckpointDetail: vi.fn(async () => checkpointDetail),
       loadLevelBundle: vi.fn(async () => storedLevelBundle),
+      loadLevelQuizDraft: vi.fn(async () => savedDraft),
       saveLevelBundle: vi.fn(async () => undefined),
+      saveLevelQuizDraft: vi.fn(async (_binding, draft) => {
+        savedDraft = draft
+      }),
+      deleteLevelQuizDraft: vi.fn(async (_binding, _level, _part, attemptId) => {
+        if (savedDraft?.attemptId === attemptId) {
+          savedDraft = null
+        }
+      }),
       markCheckpointNeedsAttention: vi.fn(async () => undefined),
       markNeedsAttention: vi.fn(async () => undefined),
       pendingCheckpointCommands: vi.fn(async () => queued),
@@ -1266,7 +1756,7 @@ describe('LevelPathPanel', () => {
         api={api}
         createClientId={() => {
           createIdCall += 1
-          return createIdCall === 1 ? ids.command : ids.idempotency
+          return createIdCall === 1 ? ids.attempt : ids.command
         }}
         locale="en-IN"
         offlineBinding={offlineBinding}
@@ -1289,7 +1779,20 @@ describe('LevelPathPanel', () => {
     })
     globalThis.dispatchEvent(new Event('offline'))
 
-    await user.click(screen.getByRole('radio', { name: 'I can swim.' }))
+    await user.click(
+      await screen.findByRole('radio', { name: 'I can swim.' }),
+    )
+    expect(
+      screen.queryByText('Which sentence asks permission correctly?'),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(
+      screen.getByText('Which sentence asks permission correctly?'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Which sentence uses can correctly?'),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Can I sit here?' }))
     await user.click(screen.getByRole('button', { name: 'Submit checkpoint' }))
 
     expect(
@@ -1306,10 +1809,11 @@ describe('LevelPathPanel', () => {
     expect(store.queueCheckpointSubmission).toHaveBeenCalledWith(
       offlineBinding,
       expect.objectContaining({
-        answers: { 'can-cp-01': 0 },
+        answers: { 'can-cp-01': 0, 'can-cp-02': 0 },
         blueprintContentHash: checkpointDetail.blueprint_content_hash,
         bundleId: storedLevelBundle.bundle.manifest.bundle_id,
         commandId: ids.command,
+        idempotencyKey: ids.attempt,
         lease: storedLevelBundle.bundle.lease,
         levelNumber: 1,
         state: 'pending',
@@ -1328,8 +1832,8 @@ describe('LevelPathPanel', () => {
         storedLevelBundle.bundle.manifest.bundle_id,
         storedLevelBundle.bundle.lease,
         1,
-        { 'can-cp-01': 0 },
-        ids.idempotency,
+        { 'can-cp-01': 0, 'can-cp-02': 0 },
+        ids.attempt,
       )
     })
     expect(submitCheckpoint).not.toHaveBeenCalled()
