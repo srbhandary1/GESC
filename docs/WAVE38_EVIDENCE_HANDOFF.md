@@ -49,8 +49,8 @@ Azure Speech current evidence is referenced from
 `inherited_azure.speech_vendor_evidence`. Wave 3.8 inherits the live APP-0064
 soft-launch packet
 (`$HOME/ge-speech-benchmark/evidence/soft-launch-guidance-tts-vendor-evidence.json`,
-`valid_until` **2026-09-14T13:15:00Z**), not the expired PR-009 benchmark
-packet. Renew APP-0064 before that instant.
+`valid_until` **2026-12-14T13:15:00Z** as renewed 16 September 2026), not the
+expired PR-009 benchmark packet.
 
 ## India residency and Zero Retention
 

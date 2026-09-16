@@ -194,6 +194,7 @@
   "conversation.voice.title": "அழுத்திப் பேசுங்கள்",
   "conversation.voice.too_short": "That recording was too short. Tap once, speak your full sentence, then tap again to send — or hold while you speak.",
   "conversation.voice.transcript_label": "Type a correction only if the heard English is wrong",
+  "conversation.voice.unavailable": "Swathi-யின் குரல் கிடைக்கவில்லை. திரையில் உள்ள பதிலைப் படியுங்கள்.",
   "conversation.voice.upload": "எழுத்தாக்கத்திற்காகப் பாதுகாப்பாகப் பதிவேற்றவும்",
   "conversation.voice.use_transcript": "Use this English",
   "conversation.voice.withdraw_provider": "தானியங்கி செயலாக்க ஒப்புதலைத் திரும்பப் பெறவும்",

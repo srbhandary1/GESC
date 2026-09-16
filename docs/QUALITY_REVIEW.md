@@ -1,5 +1,38 @@
 # Quality review
 
+## APP-0064 renewal and Wave 3.8 reclose — 16 September 2026
+
+### Scope reviewed
+
+- Renew inherited APP-0064 Azure Speech vendor and spend evidence after
+  `valid_until` **2026-09-14T13:15:00Z** blocked guidance TTS and Wave 3.8
+  preflight (`azure_speech_vendor_evidence_expired`).
+- Re-run fail-closed `speech-wave38:preflight` and bind
+  `SPEECH_WAVE38_STATUS_FILE` in soft-launch/API env. No provider HTTP, no
+  challenger dispatch, no code change.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| APP-0064 vendor `valid_until` | Pass | **2026-12-14T13:15:00Z**; `reviewed_at` **2026-09-16T13:15:00Z** |
+| APP-0064 spend `valid_until` | Pass | Same dates; `cap_inr` **500** |
+| Wave 3.8 preflight | Pass | `status: ready`, `checkpoint_closed: true`, `dispatch_authorized: false` |
+| Live-deployment deferrals | Recorded | `elevenlabs_key_not_rotated`, `elevenlabs_deletion_test_missing` (APP-0081) |
+| Soft-launch health | Pass | `make soft-launch-health` live ok / ready ok after restart |
+
+Preflight JSON (16 September 2026):
+
+```json
+{"status":"ready","checkpoint_closed":true,"dispatch_authorized":false,"safe_error_codes":[],"deferred_until_live_deployment":["elevenlabs_key_not_rotated","elevenlabs_deletion_test_missing"],"recorded_assertions":{"india_residency_asserted":true,"zero_retention_asserted":true,"elevenlabs_cap_inr":500,"sarvam_cap_inr":500}}
+```
+
+### Known limitations
+
+- ElevenLabs rotation and deletion test remain deferred until live deployment.
+- Sarvam/ElevenLabs challenger HTTP enablement still requires separate approval.
+- Production, Play and live payment remain unauthorized.
+
 ## §10.2 current-phone rerun — 16 September 2026
 
 ### Scope reviewed
@@ -1547,7 +1580,7 @@ would violate UX-07A's scope boundaries.
 
 ### Known limitations
 
-- APP-0064 speech spend-approval `valid_until` is 2026-09-14.
+- APP-0064 speech spend-approval `valid_until` renewed to 2026-12-14 (16 September 2026).
 - HTTP 200 on the Azure resource URL is not a token/deployment smoke test.
 - `make verify` still blocked on this host (PHP 8.5.4 vs 8.4.23; no system `pdo_pgsql`; Node v22 vs 24.18.1).
 

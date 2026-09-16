@@ -83,11 +83,6 @@ final readonly class GuidanceSpeechService
                     sessionId: $sessionId,
                 ),
         );
-        $this->entitlements->consumeLiveAi(
-            $learner,
-            hash('sha256', $sessionId."\0".$purpose."\0".$utterance),
-            (int) config('billing.live_ai_speech_seconds', 5),
-        );
         $result = $this->textToSpeech->synthesize(new TextToSpeechRequest(
             interactionId: (string) Str::ulid(),
             text: $utterance,
@@ -99,6 +94,14 @@ final readonly class GuidanceSpeechService
             uiLocale: $this->string($session, 'ui_locale'),
         ));
         $this->usagePolicy->assertAllowed('tts', $result->usage());
+
+        if ($result->playbackAvailable) {
+            $this->entitlements->consumeLiveAi(
+                $learner,
+                hash('sha256', $sessionId."\0".$purpose."\0".$utterance),
+                (int) config('billing.live_ai_speech_seconds', 5),
+            );
+        }
 
         return $this->speechPayloadBuilder->buildForPurpose(
             result: $result,

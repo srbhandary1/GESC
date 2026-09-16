@@ -30,29 +30,30 @@ export async function speakSessionSpeech(options: {
   readonly text: string
   readonly onPlaybackChange?: (playback: AvatarPlaybackState | null) => void
   readonly onPlaybackStarted?: () => void
-}): Promise<void> {
+}): Promise<boolean> {
   const trimmed = spokenGrammarNotation(
     options.text.trim(),
     options.grammarDrill === true && options.purpose === 'model_en',
   )
   if (trimmed === '') {
-    return
+    return false
   }
 
   if (options.demoMode === true) {
     await speakDemoText(trimmed, options.locale)
-    return
+    return true
   }
 
   if (options.api.synthesizeSpeech === undefined) {
-    await speakWithBrowserSpeechFallback(trimmed, options.locale)
-    return
+    return speakWithBrowserSpeechFallback(trimmed, options.locale)
   }
 
   const chunks =
     trimmed.length <= MAXIMUM_SPEECH_CHARACTERS
       ? [trimmed]
       : splitSpeechChunks(trimmed)
+
+  let playedAny = false
 
   for (const chunk of chunks) {
     try {
@@ -74,7 +75,13 @@ export async function speakSessionSpeech(options: {
         (typeof audio === 'string' && audio !== '')
 
       if (!hasAudio) {
-        await speakWithBrowserSpeechFallback(chunk, options.locale)
+        if (speech.playback_available === false) {
+          continue
+        }
+
+        if (await speakWithBrowserSpeechFallback(chunk, options.locale)) {
+          playedAny = true
+        }
         continue
       }
 
@@ -85,24 +92,31 @@ export async function speakSessionSpeech(options: {
         speech,
         text: chunk,
       })
+      playedAny = true
     } catch {
-      await speakWithBrowserSpeechFallback(chunk, options.locale)
+      if (await speakWithBrowserSpeechFallback(chunk, options.locale)) {
+        playedAny = true
+      }
     }
   }
+
+  return playedAny
 }
 
 async function speakWithBrowserSpeechFallback(
   text: string,
   locale: string,
-): Promise<void> {
+): Promise<boolean> {
   if (!browserSpeechSynthesisAvailable()) {
-    return
+    return false
   }
 
   try {
     await speakWithBrowserSpeech(text, locale)
+    return true
   } catch {
     // Android WebView often reports speechSynthesis without playing audio.
+    return false
   }
 }
 

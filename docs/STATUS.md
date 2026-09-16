@@ -1,5 +1,22 @@
 # Repository status
 
+## APP-0064 renewal and Wave 3.8 reclose — 16 September 2026
+
+- APP-0064 outside-Git vendor and spend approvals were renewed:
+  `reviewed_at` **2026-09-16T13:15:00Z**, `valid_until`
+  **2026-12-14T13:15:00Z**, `cap_inr` **500** unchanged.
+- `bash scripts/run-speech-wave38-preflight.sh` returned development
+  **`ready`**, **`checkpoint_closed`: true**, **`dispatch_authorized`: false**,
+  with `deferred_until_live_deployment`:
+  `elevenlabs_key_not_rotated`, `elevenlabs_deletion_test_missing` (APP-0081).
+- `SPEECH_WAVE38_STATUS_FILE` bound to
+  `/home/srbhandary/ge-speech-benchmark/evidence/wave38/wave38-status.json` in
+  soft-launch and API env. Soft-launch health live/ready ok after restart.
+- Guidance TTS should speak again in Speak/Learn; text-first fallback no longer
+  triggered solely by expired APP-0064 evidence.
+- Challenger dispatch, ElevenLabs HTTP, Sarvam router enablement and production
+  remain unauthorized.
+
 ## §10.2 current-phone rerun — 16 September 2026
 
 - Same attached realme RMX3085 (`J7GUXWEENBNZTW85`, API 33, WebView
@@ -930,7 +947,7 @@ slice and was subsequently implemented under APP-0087/D-0294.
 ## Wave 3: vendor host inventory — 1 September 2026
 
 - Azure OpenAI: `$HOME/ge-conversation-model/secrets/azure-openai.secret` mode 0600; kill switch `CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED`; cap ₹500 (APP-0022).
-- Azure Speech: `$HOME/ge-speech-benchmark/secrets/azure-speech.secret` mode 0600; voices Neerja + Sapna; cap ₹500 (APP-0064) until 2026-09-14.
+- Azure Speech: `$HOME/ge-speech-benchmark/secrets/azure-speech.secret` mode 0600; voices Neerja + Sapna; cap ₹500 (APP-0064) until **2026-12-14** (renewed 16 September 2026).
 - Sarvam: `$HOME/ge-indic-stt/secrets/sarvam.secret` mode 0600. Driver not flipped. Rotate + DPA + monthly cap still open.
 - Payments dummy. Google/Facebook unset until Wave 5. Play Console not opened (`com.globalenglish.app`).
 

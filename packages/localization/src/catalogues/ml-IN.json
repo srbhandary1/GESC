@@ -194,6 +194,7 @@
   "conversation.voice.title": "അമർത്തി സംസാരിക്കുക",
   "conversation.voice.too_short": "That recording was too short. Tap once, speak your full sentence, then tap again to send — or hold while you speak.",
   "conversation.voice.transcript_label": "Type a correction only if the heard English is wrong",
+  "conversation.voice.unavailable": "Swathi-യുടെ ശബ്ദം ലഭ്യമല്ല. സ്ക്രീനിലെ ഉത്തരം വായിക്കുക.",
   "conversation.voice.upload": "ലിപ്യന്തരണത്തിനായി സുരക്ഷിതമായി അപ്‌ലോഡ് ചെയ്യുക",
   "conversation.voice.use_transcript": "Use this English",
   "conversation.voice.withdraw_provider": "ഓട്ടോമേറ്റഡ് പ്രോസസ്സിംഗ് സമ്മതം പിൻവലിക്കുക",

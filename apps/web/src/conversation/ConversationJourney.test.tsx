@@ -508,6 +508,12 @@ describe('Friend practice journey', () => {
         expect.any(String),
       )
     })
+
+    expect(
+      screen.getAllByText(
+        "Swathi's voice is unavailable. Read the reply on screen.",
+      ).length,
+    ).toBeGreaterThan(0)
   })
 
   it('starts reply audio before the events stream resolves', async () => {

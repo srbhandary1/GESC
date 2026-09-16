@@ -194,6 +194,7 @@
   "conversation.voice.title": "నొక్కి మాట్లాడండి",
   "conversation.voice.too_short": "That recording was too short. Tap once, speak your full sentence, then tap again to send — or hold while you speak.",
   "conversation.voice.transcript_label": "Type a correction only if the heard English is wrong",
+  "conversation.voice.unavailable": "Swathi గొంతు అందుబాటులో లేదు. స్క్రీన్‌పై ఉన్న సమాధానాన్ని చదవండి.",
   "conversation.voice.upload": "లిప్యంతరీకరణ కోసం సురక్షితంగా అప్‌లోడ్ చేయండి",
   "conversation.voice.use_transcript": "Use this English",
   "conversation.voice.withdraw_provider": "స్వయంచాలక ప్రాసెసింగ్ సమ్మతిని ఉపసంహరించండి",

@@ -3157,6 +3157,17 @@ Accepted interpretation for this approval only:
 - Credentials and spend evidence stay outside the repository.
 - Not production promote, not Google Play, not live STT DI.
 
+### Renewal — 16 September 2026
+
+- Accountable Product Owner renewed the outside-Git APP-0064 vendor evidence and
+  spend approval files after `valid_until` **2026-09-14T13:15:00Z** lapsed.
+  New `reviewed_at`: **2026-09-16T13:15:00Z**; new `valid_until`:
+  **2026-12-14T13:15:00Z**; `cap_inr` remains **500**.
+- `speech-wave38:preflight` returned development **`ready`** /
+  **`checkpoint_closed`: true** with inherited Azure Speech current again.
+  ElevenLabs key rotation and deletion test remain deferred under
+  [APP-0081](APPROVALS.md#app-0081). Challenger dispatch stays unauthorized.
+
 <a id="app-0070"></a>
 
 ## APP-0070 — DR-0043 Option B: in-app Android username/password sign-in
@@ -3929,14 +3940,14 @@ Treat the public ElevenLabs DPA page and Sarvam Trust Center as executed contrac
 
 | Field | Evidence |
 |---|---|
-| Status | Recorded; Wave 3.8 remains open |
+| Status | Recorded; development-phase Wave 3.8 closed again after APP-0064 renewal (16 September 2026) |
 | Decision date | 2026-09-09 |
 | Time zone | Asia/Kolkata |
 | Human approver identifier | Accountable Product Owner in the active Cursor conversation; personal name not restated in this approval |
 | Roles exercised for development | Accountable Product Owner |
 | Evidence source | Exact human answers in the active Cursor conversation |
 | Related request | [DR-0048](DR-0048_MULTIPROVIDER_SPEECH_OBSERVABILITY_AND_LATENCY_REQUEST.md) |
-| Related decision | [D-0309](DECISIONS.md) |
+| Related decision | [D-0309](DECISIONS.md); [D-0301](DECISIONS.md) |
 | Related ADR | [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
 | Recorder | Cursor agent, acting only as author and evidence recorder |
 | Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
@@ -3966,9 +3977,12 @@ ElevenLabs benchmark ₹500; Sarvam monthly ₹500; alerts stay on Azure/Sarvam 
 
 - These statements are Accountable Product Owner assertions, not independent
   console or DPA evidence.
-- Wave 3.8 stays open until the key is rotated, a deletion-test receipt exists,
-  executed ElevenLabs and Sarvam DPA hashes are supplied, and Azure Speech
-  vendor evidence is current.
+- Development-phase Wave 3.8 may close while ElevenLabs key rotation and the
+  deletion test remain deferred under [APP-0081](APPROVALS.md#app-0081).
+  HTTP enablement and live-deployment rotation remain blocked until those
+  receipts exist and a separate approval is recorded.
+- Inherited APP-0064 Azure Speech evidence must stay current; it was renewed
+  on **16 September 2026** through **2026-12-14T13:15:00Z** ([D-0301](DECISIONS.md)).
 - Content dispatch, secret binding and vendor HTTP remain unauthorized.
 - Cursor is the recorder only and is not an approver.
 

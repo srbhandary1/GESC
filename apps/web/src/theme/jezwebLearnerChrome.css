@@ -403,3 +403,397 @@
     transition: none;
   }
 }
+
+/* Professional Path — selected 16 September 2026 design direction.
+   This layer modernises the shared learner shell without changing journey,
+   entitlement, review, recording, or navigation semantics. */
+.ge-application-frame--jezweb.ge-application-frame--studio-learner,
+.demo-experience .ge-application-frame--jezweb.ge-application-frame--studio-learner {
+  --ge-color-canvas: #fafbfa;
+  --ge-color-canvas-deep: #fafbfa;
+  --ge-color-ink: #102019;
+  --ge-color-text: #102019;
+  --ge-color-text-muted: #58665f;
+  --ge-color-border: #dce4df;
+  --ge-color-soft-brand: #e9f4ee;
+  --ge-panel-border: #dce4df;
+  --ge-radius-control: 0.875rem;
+  --ge-radius-hero: 1.25rem;
+  --ge-shadow-panel: 0 1px 2px rgb(16 32 25 / 0.04);
+  background: #fafbfa;
+}
+
+.ge-application-frame--jezweb .ge-application-frame__header {
+  border-block-end: 1px solid var(--ge-color-border);
+  background: rgb(255 255 255 / 0.96);
+  color: var(--ge-color-ink);
+  box-shadow: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ge-application-frame--jezweb .shell-studio-brand__name,
+.ge-application-frame--jezweb .ge-application-frame__header a,
+.ge-application-frame--jezweb .ge-application-frame__header button {
+  color: var(--ge-color-ink);
+}
+
+.ge-application-frame--jezweb .ge-application-frame__header
+  .shell-android-download,
+.ge-application-frame--jezweb .ge-application-frame__header
+  .shell-android-download * {
+  color: #ffffff;
+}
+
+.ge-application-frame--jezweb .shell-content {
+  width: min(100%, 80rem);
+  margin-inline: auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.ge-application-frame--jezweb .learner-stack {
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.ge-application-frame--jezweb .learner-home__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding-inline: 0.25rem;
+}
+
+.ge-application-frame--jezweb .phase1-home__greeting {
+  margin: 0 0 0.2rem;
+  color: var(--ge-color-text-muted);
+  font-size: 0.9375rem;
+  font-weight: 550;
+}
+
+.ge-application-frame--jezweb .learner-home__title,
+[data-ge-theme='light']
+  .ge-application-frame--studio.ge-application-frame--studio-learner.ge-application-frame--jezweb
+  .learner-home__title {
+  color: var(--ge-color-ink);
+  font-size: clamp(2rem, 7vw, 2.85rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+/* This heading receives programmatic focus after navigation so assistive
+   technology announces the destination. It is not a keyboard control, so the
+   generic rectangular focus ring adds noise without improving operability. */
+.ge-application-frame--jezweb .learner-home__title:focus,
+.ge-application-frame--jezweb .learner-home__title:focus-visible {
+  outline: none;
+}
+
+.ge-application-frame--jezweb .learner-home__streak {
+  max-width: 14rem;
+  padding: 0.55rem 0.8rem;
+  border-color: var(--ge-color-border);
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--ge-color-text-muted);
+  font-size: 0.8125rem;
+  text-align: start;
+}
+
+.ge-application-frame--jezweb .learner-home__action,
+.ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb
+  .learner-home__action {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.5rem, 5vw, 2.25rem);
+  border: 0;
+  border-radius: 1.25rem;
+  background: #006b3f;
+  color: #fff;
+  box-shadow: 0 16px 36px rgb(0 76 45 / 0.14);
+}
+
+.ge-application-frame--jezweb .learner-home__action::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: min(38%, 18rem);
+  background: rgb(255 255 255 / 0.055);
+  border-start-start-radius: 100%;
+  content: '';
+  pointer-events: none;
+}
+
+.ge-application-frame--jezweb .learner-home__action-body {
+  gap: 1rem;
+  max-width: 46rem;
+}
+
+.ge-application-frame--jezweb .learner-home__eyebrow {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #d9f3e5;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+}
+
+.ge-application-frame--jezweb .learner-home__action-title {
+  max-width: 18ch;
+  color: #fff;
+  font-size: clamp(2rem, 8vw, 3.6rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.ge-application-frame--jezweb .learner-home__guidance,
+.ge-application-frame--jezweb .learner-home__meta {
+  max-width: 40rem;
+  color: #e4f3eb;
+}
+
+.ge-application-frame--jezweb .learner-home__meta {
+  padding-block-start: 0.25rem;
+  border-block-start: 1px solid rgb(255 255 255 / 0.28);
+}
+
+.ge-application-frame--jezweb .learner-home__action-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ge-application-frame--jezweb .learner-home__continue,
+.ge-application-frame--jezweb .learner-home__continue.ge-button--primary {
+  width: fit-content;
+  min-width: min(100%, 15rem);
+  min-height: 3.5rem;
+  justify-content: space-between;
+  padding-inline: 1.25rem;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: #fff;
+  color: #005c36;
+  font-weight: 750;
+}
+
+.ge-application-frame--jezweb .learner-home__continue:hover,
+.ge-application-frame--jezweb .learner-home__continue:focus-visible {
+  border-color: #d9f3e5;
+  background: #edf8f2;
+  color: #004c2d;
+}
+
+.ge-application-frame--jezweb .learner-home__coach {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 1.25rem;
+  inset-inline-end: 1.25rem;
+  display: block;
+  width: 8.5rem;
+}
+
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence {
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence__caption {
+  z-index: 2;
+  display: grid;
+  color: #fff;
+  font-size: 0.6875rem;
+  line-height: 1.15;
+}
+
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence__caption *,
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence__caption {
+  color: #ffffff;
+}
+
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence__orbit {
+  display: none;
+}
+
+.ge-application-frame--jezweb .learner-home__coach .tutor-presence__face {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  border: 2px solid rgb(255 255 255 / 0.82);
+}
+
+.ge-application-frame--jezweb .learner-card {
+  border-radius: 1rem;
+  box-shadow: var(--ge-shadow-panel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ge-application-frame--jezweb .learner-home__upcoming-reviews {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ge-application-frame--jezweb .learner-home__upcoming-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.ge-application-frame--jezweb .learner-home__upcoming-item {
+  padding: 1rem 1.1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.ge-application-frame--jezweb .learner-home__upcoming-item +
+  .learner-home__upcoming-item {
+  border-block-start: 1px solid var(--ge-color-border);
+}
+
+.ge-application-frame--jezweb .learner-home__sync
+  [data-message-review-status='pending-independent-review'],
+.ge-application-frame--jezweb .learner-home__sync
+  [data-message-review-status='pending-independent-review'] > span {
+  color: #ffffff;
+}
+
+@media (max-width: 40rem) {
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__header-inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.75rem;
+    padding: 0.45rem 1rem;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__brand {
+    width: auto;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__header-actions,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-actions {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.4rem;
+    overflow: visible;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar > * {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-studio-brand__name,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-actions__notice,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-locale-note {
+    display: none;
+  }
+
+  .ge-application-frame--jezweb .shell-content {
+    padding: 20px 16px 32px;
+  }
+
+  .ge-application-frame--jezweb .shell-content--gate {
+    padding-inline: 0;
+  }
+
+  .ge-application-frame--jezweb .learner-home__header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-inline: 0;
+  }
+
+  .ge-application-frame--jezweb .learner-home__title,
+  [data-ge-theme='light']
+    .ge-application-frame--studio.ge-application-frame--studio-learner.ge-application-frame--jezweb
+    .learner-home__title {
+    font-size: 1.75rem;
+  }
+
+  .ge-application-frame--jezweb .learner-home__header .avatar-slot {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ge-application-frame--jezweb .learner-home__streak {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: fit-content;
+  }
+
+  .ge-application-frame--jezweb .learner-home__action {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .ge-application-frame--jezweb .learner-home__guidance {
+    font-size: 0.9375rem;
+  }
+
+  .ge-application-frame--jezweb .learner-home__action-title {
+    font-size: 1.75rem;
+    line-height: 1.08;
+  }
+
+  .ge-application-frame--jezweb .learner-home__action-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ge-application-frame--jezweb .learner-home__continue,
+  .ge-application-frame--jezweb .learner-home__continue.ge-button--primary {
+    width: 100%;
+  }
+
+  .ge-application-frame--jezweb .learner-home__coach {
+    position: static;
+    width: auto;
+    justify-self: start;
+  }
+
+  .ge-application-frame--jezweb .ge-primary-navigation,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-primary-navigation {
+    background: rgb(255 255 255 / 0.98);
+    box-shadow: 0 -10px 30px rgb(16 32 25 / 0.07);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .ge-application-frame--jezweb .ge-primary-navigation__link,
+  .ge-application-frame--jezweb .ge-primary-navigation__link--speak {
+    color: #52625a;
+    font-size: 0.75rem;
+  }
+
+  .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
+  .ge-application-frame--jezweb .ge-primary-navigation__link--speak[aria-current='page'] {
+    background: #e8f4ed;
+    color: #006b3f;
+    box-shadow: inset 0 3px 0 #006b3f;
+  }
+}

@@ -7,6 +7,11 @@ vi.mock('./playBase64Audio', () => ({
   playBase64Audio: vi.fn(async () => undefined),
 }))
 
+vi.mock('../demo/browserSpeech', () => ({
+  browserSpeechSynthesisAvailable: vi.fn(() => false),
+  speakWithBrowserSpeech: vi.fn(async () => undefined),
+}))
+
 describe('speakSessionSpeech', () => {
   beforeEach(() => {
     vi.mocked(playBase64Audio).mockClear()
@@ -26,13 +31,15 @@ describe('speakSessionSpeech', () => {
       synthesizeSpeech,
     } as unknown as ConversationJourneyApi
 
-    await speakSessionSpeech({
-      api,
-      locale: 'en-IN',
-      purpose: 'model_en',
-      sessionId: '01J00000000000000000000001',
-      text: 'I went to the market this morning.',
-    })
+    await expect(
+      speakSessionSpeech({
+        api,
+        locale: 'en-IN',
+        purpose: 'model_en',
+        sessionId: '01J00000000000000000000001',
+        text: 'I went to the market this morning.',
+      }),
+    ).resolves.toBe(true)
 
     expect(synthesizeSpeech).toHaveBeenCalledWith(
       '01J00000000000000000000001',
@@ -117,13 +124,15 @@ describe('speakSessionSpeech', () => {
       })),
     } as unknown as ConversationJourneyApi
 
-    await speakSessionSpeech({
-      api,
-      locale: 'en-IN',
-      purpose: 'model_en',
-      sessionId: '01J00000000000000000000001',
-      text: 'I went to the market this morning.',
-    })
+    await expect(
+      speakSessionSpeech({
+        api,
+        locale: 'en-IN',
+        purpose: 'model_en',
+        sessionId: '01J00000000000000000000001',
+        text: 'I went to the market this morning.',
+      }),
+    ).resolves.toBe(false)
 
     expect(playBase64Audio).not.toHaveBeenCalled()
   })

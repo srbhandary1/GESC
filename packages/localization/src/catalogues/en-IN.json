@@ -194,6 +194,7 @@
   "conversation.voice.title": "Hold to talk",
   "conversation.voice.too_short": "That was too short. Tap to speak, say the full sentence, then tap to send.",
   "conversation.voice.transcript_label": "Type a correction only if the heard English is wrong",
+  "conversation.voice.unavailable": "Swathi's voice is unavailable. Read the reply on screen.",
   "conversation.voice.upload": "Upload securely for transcription",
   "conversation.voice.use_transcript": "Use this English",
   "conversation.voice.withdraw_provider": "Withdraw automated processing consent",

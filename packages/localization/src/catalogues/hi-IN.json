@@ -194,6 +194,7 @@
   "conversation.voice.title": "दबाकर बोलें",
   "conversation.voice.too_short": "That recording was too short. Tap once, speak your full sentence, then tap again to send — or hold while you speak.",
   "conversation.voice.transcript_label": "Type a correction only if the heard English is wrong",
+  "conversation.voice.unavailable": "Swathi की आवाज़ उपलब्ध नहीं है। स्क्रीन पर दिया उत्तर पढ़ें।",
   "conversation.voice.upload": "प्रतिलेखन के लिए सुरक्षित रूप से अपलोड करें",
   "conversation.voice.use_transcript": "Use this English",
   "conversation.voice.withdraw_provider": "स्वचालित प्रसंस्करण सहमति वापस लें",

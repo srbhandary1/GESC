@@ -614,6 +614,26 @@ final class ConversationFakeProviderTest extends TenancyIntegrationTestCase
         $this->assertNull($result['model_audio_base64']);
         $this->assertNull($result['guidance_audio_base64']);
 
+        $access = $this->app->make(EntitlementAccess::class);
+        $remainingBefore = $this->contexts()->run(
+            $context,
+            fn (): int => (int) $access->snapshot($learner)['live_ai_seconds_remaining'],
+        );
+        $this->contexts()->run(
+            $context,
+            fn (): array => $speech->synthesize(
+                learner: $learner,
+                sessionId: (string) $session['id'],
+                text: 'Another line without playback.',
+                purpose: 'model_en',
+            ),
+        );
+        $remainingAfter = $this->contexts()->run(
+            $context,
+            fn (): int => (int) $access->snapshot($learner)['live_ai_seconds_remaining'],
+        );
+        $this->assertSame($remainingBefore, $remainingAfter);
+
         $otherOrganization = $this->createOrganization('Other speech tenant');
         [$otherLearner, , $otherContext] = $this->learner(
             organization: $otherOrganization,

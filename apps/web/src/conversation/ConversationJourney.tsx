@@ -201,6 +201,7 @@ export function ConversationJourney({
     readonly timeMs: number
   } | null>(null)
   const [speechError, setSpeechError] = useState(false)
+  const [voiceUnavailable, setVoiceUnavailable] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('speak')
   const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
@@ -241,6 +242,7 @@ export function ConversationJourney({
       }
 
       setSpeechError(false)
+      setVoiceUnavailable(false)
       setSpeakingReply(true)
 
       void speakSessionSpeech({
@@ -253,7 +255,12 @@ export function ConversationJourney({
         sessionId,
         text: trimmed,
       })
-        .then(() => onLiveAiUsageChanged?.())
+        .then((played) => {
+          if (!played) {
+            setVoiceUnavailable(true)
+          }
+          onLiveAiUsageChanged?.()
+        })
         .catch(() => {
           if (reportError) {
             setSpeechError(true)
@@ -317,6 +324,7 @@ export function ConversationJourney({
       turn.priority_correction?.explanation_locale ?? locale
 
     setSpeechError(false)
+    setVoiceUnavailable(false)
     setSpeakingReply(true)
     const hasModelAudio =
       (typeof modelAudio === 'string' && modelAudio !== '') ||
@@ -381,7 +389,7 @@ export function ConversationJourney({
         }
 
         markSpeakLoop('first_audio')
-        await speakSessionSpeech({
+        return speakSessionSpeech({
           api,
           demoMode,
           grammarDrill: purpose === 'model_en' ? grammarDrill : undefined,
@@ -391,7 +399,6 @@ export function ConversationJourney({
           sessionId: turn.conversation_session_id,
           text,
         })
-        return true
       }
 
       if (grammarDrill) {
@@ -407,6 +414,7 @@ export function ConversationJourney({
           false,
         )
         if (!playedModel && guidanceText === '') {
+          setVoiceUnavailable(true)
           const snapshot = completeSpeakLoop()
           if (snapshot !== null && api.recordSpeechLatency !== undefined) {
             void api
@@ -435,6 +443,7 @@ export function ConversationJourney({
       }
 
       if (!playedModel) {
+        setVoiceUnavailable(true)
         const snapshot = completeSpeakLoop()
         if (snapshot !== null && api.recordSpeechLatency !== undefined) {
           void api.recordSpeechLatency(
@@ -1054,7 +1063,13 @@ export function ConversationJourney({
               resolution={message('conversation.confidence.listen_play')}
             />
           </button>
-          {speechError ? (
+          {voiceUnavailable ? (
+            <p role="status" lang={locale}>
+              <LocalizedMessage
+                resolution={message('conversation.voice.unavailable')}
+              />
+            </p>
+          ) : speechError ? (
             <p role="status" lang={locale}>
               <LocalizedMessage
                 resolution={message(
@@ -1353,7 +1368,13 @@ export function ConversationJourney({
                     )}
                   />
                 </button>
-                {speechError ? (
+                {voiceUnavailable ? (
+                  <p role="status" lang={locale}>
+                    <LocalizedMessage
+                      resolution={message('conversation.voice.unavailable')}
+                    />
+                  </p>
+                ) : speechError ? (
                   <p role="status" lang={locale}>
                     <LocalizedMessage
                       resolution={message(
@@ -1396,6 +1417,12 @@ export function ConversationJourney({
         <p role="alert">
           <LocalizedMessage
             resolution={message(state.messageKey ?? 'conversation.error')}
+          />
+        </p>
+      ) : voiceUnavailable ? (
+        <p role="alert">
+          <LocalizedMessage
+            resolution={message('conversation.voice.unavailable')}
           />
         </p>
       ) : speechError ? (

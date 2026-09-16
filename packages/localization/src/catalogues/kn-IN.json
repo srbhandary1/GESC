@@ -194,6 +194,7 @@
   "conversation.voice.title": "ಒತ್ತಿ ಮಾತನಾಡಿ",
   "conversation.voice.too_short": "ಧ್ವನಿಮುದ್ರಣ ತುಂಬಾ ಚಿಕ್ಕದಾಗಿದೆ. ಒಮ್ಮೆ ಟ್ಯಾಪ್ ಮಾಡಿ, ಪೂರ್ಣ ವಾಕ್ಯ ಹೇಳಿ, ಕಳುಹಿಸಲು ಮತ್ತೆ ಟ್ಯಾಪ್ ಮಾಡಿ — ಅಥವಾ ಮಾತನಾಡುವಾಗ ಒತ್ತಿಹಿಡಿಯಿರಿ.",
   "conversation.voice.transcript_label": "ಕೇಳಿದ ಇಂಗ್ಲಿಷ್ ತಪ್ಪಿದ್ದರೆ ಮಾತ್ರ ಟೈಪ್ ಮಾಡಿ ಸರಿಪಡಿಸಿ",
+  "conversation.voice.unavailable": "Swathi ಯ ಧ್ವನಿ ಲಭ್ಯವಿಲ್ಲ. ಪರದೆಯಲ್ಲಿರುವ ಉತ್ತರವನ್ನು ಓದಿ.",
   "conversation.voice.upload": "ಲಿಪ್ಯಂತರಕ್ಕಾಗಿ ಸುರಕ್ಷಿತವಾಗಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
   "conversation.voice.use_transcript": "ಈ ಇಂಗ್ಲಿಷ್ ಬಳಸಿ",
   "conversation.voice.withdraw_provider": "ಸ್ವಯಂಚಾಲಿತ ಪ್ರಕ್ರಿಯೆ ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಿರಿ",
