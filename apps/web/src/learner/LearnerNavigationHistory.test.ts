@@ -4,6 +4,7 @@ import {
   handleAndroidBack,
   initializeLearnerNavigation,
   navigateToLearnerDestination,
+  navigateToLearnerSignIn,
   openLearnerLevel,
   openLearnerQuestion,
   openLearnerSessionPart,
@@ -57,6 +58,22 @@ describe('learner navigation history', () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
     back.mockClear()
 
+    expect(handleAndroidBack()).toBe(true)
+    expect(back).toHaveBeenCalledOnce()
+  })
+
+  it('pushes sign-in through learner history so system Back returns to Home', () => {
+    initializeLearnerNavigation('home')
+    navigateToLearnerSignIn()
+
+    expect(globalThis.location.hash).toBe('#sign-in')
+    expect(readLearnerNavigationState()).toMatchObject({
+      destination: 'home',
+      index: 1,
+      previous: { destination: 'home' },
+    })
+
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
     expect(handleAndroidBack()).toBe(true)
     expect(back).toHaveBeenCalledOnce()
   })

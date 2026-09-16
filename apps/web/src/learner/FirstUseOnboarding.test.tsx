@@ -7,11 +7,27 @@ import type { AudioRecorder, AudioRecordingSession } from './BrowserAudioRecorde
 import {
   FirstUseOnboarding,
 } from './FirstUseOnboarding'
-import { FIRST_USE_RESUME_STORAGE_KEY } from './FirstUseOnboardingResume'
+import {
+  FIRST_USE_RESUME_TTL_MILLISECONDS,
+  firstUseResumeStorageKey,
+  writeFirstUseResume,
+} from './FirstUseOnboardingResume'
 import type { LearnerHome, LearnerJourneyApi } from './LearnerJourneyApi'
+import type { OfflineProfileBinding } from '../offline/OfflineLearningStore'
+
+const learnerA: OfflineProfileBinding = {
+  membershipId: 'membership-a',
+  organizationId: 'organization-a',
+  userId: 'user-a',
+}
+const learnerB: OfflineProfileBinding = {
+  membershipId: 'membership-b',
+  organizationId: 'organization-a',
+  userId: 'user-b',
+}
 
 beforeEach(() => {
-  window.localStorage.removeItem(FIRST_USE_RESUME_STORAGE_KEY)
+  window.localStorage.clear()
   Object.defineProperty(globalThis.navigator, 'onLine', {
     configurable: true,
     value: true,
@@ -20,7 +36,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
-  window.localStorage.removeItem(FIRST_USE_RESUME_STORAGE_KEY)
+  window.localStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -47,6 +63,7 @@ describe('production first-use onboarding', () => {
         localizationPolicy="development-preview"
         onComplete={onComplete}
         playAudioOutput={playAudioOutput}
+        resumeBinding={learnerA}
         titleRef={createRef<HTMLHeadingElement>()}
       />,
     )
@@ -113,25 +130,23 @@ describe('production first-use onboarding', () => {
     await user.click(screen.getByRole('radio', { name: 'Type a reply' }))
     const reply = screen.getByRole('textbox', { name: 'Your short English reply' })
     await user.type(reply, 'Good morning from a private draft.')
-    expect(window.localStorage.getItem(FIRST_USE_RESUME_STORAGE_KEY)).not.toContain(
+    const storageKey = await firstUseResumeStorageKey(learnerA)
+    expect(window.localStorage.getItem(storageKey)).not.toContain(
       'Good morning from a private draft.',
     )
     await continueFlow(user)
     await expectHeading('Your learning setup is ready')
     await user.click(screen.getByRole('button', { name: 'Open Home' }))
     expect(onComplete).toHaveBeenCalledWith(completeHome())
-    expect(window.localStorage.getItem(FIRST_USE_RESUME_STORAGE_KEY)).toBeNull()
+    await waitFor(() => expect(window.localStorage.getItem(storageKey)).toBeNull())
   })
 
   it('restores the last safe step without restoring learner text, locale, or consent choices', async () => {
-    window.localStorage.setItem(FIRST_USE_RESUME_STORAGE_KEY, JSON.stringify({
-      adultConfirmed: true,
+    await writeFirstUseResume(learnerA, {
       goal: 'workplace-confidence',
-      onboardingSaved: true,
       placement: 'deferred',
       step: 'practice',
-      version: 1,
-    }))
+    })
 
     render(
       <FirstUseOnboarding
@@ -142,28 +157,30 @@ describe('production first-use onboarding', () => {
         locale="kn-IN"
         localizationPolicy="development-preview"
         onComplete={vi.fn()}
+        resumeBinding={learnerA}
         titleRef={createRef<HTMLHeadingElement>()}
       />,
     )
 
     await expectHeading('Make one short English turn')
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    const stored = window.localStorage.getItem(FIRST_USE_RESUME_STORAGE_KEY) ?? ''
+    const stored = window.localStorage.getItem(
+      await firstUseResumeStorageKey(learnerA),
+    ) ?? ''
     expect(stored).not.toContain('locale')
     expect(stored).not.toContain('consent')
     expect(stored).not.toContain('text')
+    expect(stored).not.toContain('adultConfirmed')
+    expect(stored).not.toContain('onboardingSaved')
   })
 
   it('uses the contextual recorder only after the deliberate microphone action', async () => {
     const user = userEvent.setup()
-    window.localStorage.setItem(FIRST_USE_RESUME_STORAGE_KEY, JSON.stringify({
-      adultConfirmed: true,
+    await writeFirstUseResume(learnerA, {
       goal: 'workplace-confidence',
-      onboardingSaved: true,
       placement: 'beginning',
       step: 'microphone',
-      version: 1,
-    }))
+    })
     const recorder = recorderStub(true)
 
     render(
@@ -175,6 +192,7 @@ describe('production first-use onboarding', () => {
         locale="en-IN"
         localizationPolicy="development-preview"
         onComplete={vi.fn()}
+        resumeBinding={learnerA}
         titleRef={createRef<HTMLHeadingElement>()}
       />,
     )
@@ -184,6 +202,100 @@ describe('production first-use onboarding', () => {
     expect(recorder.start).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Continue to microphone' }))
     expect(recorder.start).toHaveBeenCalledOnce()
+  })
+
+  it('does not read learner A resume state under learner B binding', async () => {
+    await writeFirstUseResume(learnerA, {
+      goal: 'workplace-confidence',
+      placement: 'deferred',
+      step: 'practice',
+    })
+
+    render(
+      <FirstUseOnboarding
+        api={apiStub()}
+        audioRecorder={recorderStub(false)}
+        createClientId={() => 'command-id'}
+        initialHome={incompleteHome()}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onComplete={vi.fn()}
+        resumeBinding={learnerB}
+        titleRef={createRef<HTMLHeadingElement>()}
+      />,
+    )
+
+    await expectHeading('Set up English learning for your goals')
+    expect(screen.queryByText('Make one short English turn')).not.toBeInTheDocument()
+  })
+
+  it('discards an expired resume record', async () => {
+    await writeFirstUseResume(
+      learnerA,
+      {
+        goal: 'workplace-confidence',
+        placement: 'deferred',
+        step: 'practice',
+      },
+      Date.now() - FIRST_USE_RESUME_TTL_MILLISECONDS - 1,
+    )
+
+    render(
+      <FirstUseOnboarding
+        api={apiStub()}
+        audioRecorder={recorderStub(false)}
+        createClientId={() => 'command-id'}
+        initialHome={incompleteHome()}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onComplete={vi.fn()}
+        resumeBinding={learnerA}
+        titleRef={createRef<HTMLHeadingElement>()}
+      />,
+    )
+
+    await expectHeading('Set up English learning for your goals')
+    expect(screen.queryByText('Make one short English turn')).not.toBeInTheDocument()
+  })
+
+  it('never restores the adult confirmation from resume storage', async () => {
+    const user = userEvent.setup()
+    await writeFirstUseResume(learnerA, {
+      goal: 'workplace-confidence',
+      placement: 'deferred',
+      step: 'practice',
+    })
+    const storageKey = await firstUseResumeStorageKey(learnerA)
+    const stored = JSON.parse(
+      window.localStorage.getItem(storageKey) ?? '{}',
+    ) as Record<string, unknown>
+    window.localStorage.setItem(storageKey, JSON.stringify({
+      ...stored,
+      adultConfirmed: true,
+      onboardingSaved: true,
+    }))
+
+    render(
+      <FirstUseOnboarding
+        api={apiStub()}
+        audioRecorder={recorderStub(false)}
+        createClientId={() => 'command-id'}
+        initialHome={incompleteHome()}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onComplete={vi.fn()}
+        resumeBinding={learnerA}
+        titleRef={createRef<HTMLHeadingElement>()}
+      />,
+    )
+
+    await expectHeading('Are you 18 or older?')
+    const adult = screen.getByRole('checkbox', {
+      name: 'I confirm that I am 18 years old or older.',
+    })
+    expect(adult).not.toBeChecked()
+    await user.click(adult)
+    expect(adult).toBeChecked()
   })
 })
 

@@ -26,8 +26,7 @@ afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   document.documentElement.lang = DEFAULT_LOCALE
-  window.localStorage.removeItem('ge-ui-grove-welcome-dismissed')
-  window.localStorage.removeItem('global-english:first-use-onboarding:v1')
+  window.localStorage.clear()
   vi.restoreAllMocks()
 })
 

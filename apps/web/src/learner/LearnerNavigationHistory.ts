@@ -209,6 +209,7 @@ export function initializeLearnerNavigation(
 function pushTarget(
   target: LearnerNavigationTarget,
   restoreFocusId: string | null,
+  url = urlForTarget(target),
 ): LearnerNavigationState {
   const current =
     readLearnerNavigationState() ??
@@ -236,7 +237,7 @@ function pushTarget(
   globalThis.history.pushState(
     mergedBrowserState(state),
     '',
-    urlForTarget(target),
+    url,
   )
   announceNavigationState(state)
   return state
@@ -268,6 +269,10 @@ export function navigateToLearnerDestination(
   restoreFocusId: string | null = `primary-navigation-${destination}`,
 ): LearnerNavigationState {
   return pushTarget({ destination }, restoreFocusId)
+}
+
+export function navigateToLearnerSignIn(): LearnerNavigationState {
+  return pushTarget({ destination: 'home' }, null, '#sign-in')
 }
 
 export function openLearnerLevel(

@@ -1,5 +1,58 @@
 # Quality review
 
+## AUDIT-FIX-01 post-implementation audit corrections — 16 September 2026
+
+### Scope reviewed
+
+- APP-0091/D-0298 authorize only §13.2 defects 2, 3, 4 (partial), 5 and
+  7 (partial). Prompt 8b, closure, experiments, defect 6, APIs/OpenAPI,
+  schemas, review intervals/semantics, quiz drafts and plans structure are
+  outside this checkpoint.
+- First-use resume privacy and authority, remaining Home/sign-in navigation,
+  pending-checkout recovery, and both production/demo wrapper startup and
+  asynchronous Back failure paths.
+- The existing §13.2 repository baselines are comparison evidence, not passing
+  results: five lint findings, one stale Variant-C unit assertion and seven
+  browser contrast failures.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Authorization and boundary | Pass | APP-0091/D-0298 bind the change to the five enumerated defect slices. No Prompt 8b/device execution, closure, experiment, API/OpenAPI, schema, migration, payment/provider, review, interval, quiz-draft or plans-structure change was made |
+| Resume learner isolation | Pass | First-use resume uses the exported SHA-256 hash of the existing organization/user/membership offline binding as its storage-key suffix and embedded binding check. The raw identifiers are never written to the key or record; a learner-A record is not read for learner B |
+| Resume expiry/version | Pass | Version 2 records carry issued/expiry instants, accept no interval over 24 hours and remove invalid/expired records. Storage access and hashing failures are caught so first use remains available without persistence |
+| Adult and authoritative onboarding | Pass | `adultConfirmed` and `onboardingSaved` are absent from the record contract. The checkbox initializes false on every mount. If the server still reports onboarding incomplete, a restored cursor after the goal boundary returns to adult confirmation, so storage cannot skip the authoritative goal command |
+| Completion/logout cleanup | Pass | Completion and both authenticated logout paths remove the bound record. Per-binding storage mutations are serialized so a preceding best-effort write cannot recreate the record after its clear operation |
+| Navigation history | Pass | No raw Home/sign-in hash assignment remains. The sign-in helper pushes `#sign-in` with a prior Home target and Android Back delegates to browser history; focused history coverage proves the prior entry |
+| Pending checkout recovery | Pass | A provider `pending` result retains the pending message, disables duplicate purchase submission and exposes **Check access**. The existing authoritative entitlement refresh either reconciles or truthfully becomes ambiguous; no success is inferred |
+| Native startup and dependency | Pass | Both `MainActivity` implementations guard `bridge` and its WebView before installing clients/shell behavior. Both apps explicitly depend on AndroidX Activity 1.11.0, the version already pinned by the Capacitor 8.5 wrapper variables |
+| Native Back timeout | Pass in isolated unit/compile evidence; device gate retained | Both shells post a 1,500 ms timeout. Whichever of timeout or JavaScript callback wins releases the generation guard; timeout cancels preview and falls through the supported dispatcher, while a late callback is ignored. Package-correct JVM tests prove release, late-finish rejection and subsequent dispatch. Connected predictive behavior remains open |
+| Template/path cleanup | Pass for authorized partial scope | Both stale `com/getcapacitor/myapp/ExampleUnitTest.java` files are deleted. The web source-policy test resolves `@capacitor/android` from the installed package rather than a pnpm-store layout. Instrumented-journey realism remains outside this partial fix |
+| Privacy, tenancy and contracts | Pass | The resume allowlist contains only step, goal, placement, binding hash and timestamps. It contains no credential, learner text, audio, transcript, consent or adult-confirmation state. No tenant query, API/OpenAPI, schema, migration or second storage mechanism changed |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| focused Vitest for first use, learner history, pending checkout and Android source policy | Passed: 4 files, 22 tests |
+| pinned `pnpm run typecheck` | Passed all five participating workspaces |
+| pinned `pnpm run lint` | Not green: exactly the §13.2 baseline of 5 problems (3 errors, 2 warnings) in unchanged `VoicePracticePanel.tsx`, `browserSpeech.ts` and `RecordingTurn.tsx`; AUDIT-FIX-01 delta is zero |
+| pinned `pnpm run test` plus JSON web report | Not green: web 464/465 tests passed; the sole failure remains the §13.2 `jezwebLearnerChrome.test.ts` expectation for `?v=jezweb-c4` against current `c8`. All new/changed tests pass |
+| pinned `make e2e` after updating the existing v1-key journey | Not green: reconciliation API 4/4 (103 assertions) and Chromium 22/29 passed, including English and Kannada first use. The seven failures are exactly the §13.2 contrast baseline on the Kannada pending-review notice or paid-minutes chip; delta is zero |
+| production wrapper `./gradlew --rerun-tasks :app:compileDebugJavaWithJavac :app:compileDebugAndroidTestJavaWithJavac :app:testDebugUnitTest` with pinned JDK 21 | Passed: BUILD SUCCESSFUL, 62 tasks; 6 unit tests, 0 failures |
+| demo wrapper same Gradle command with pinned JDK 21 | Passed: BUILD SUCCESSFUL, 60 tasks; 6 unit tests, 0 failures |
+
+### Conclusion and retained gates
+
+AUDIT-FIX-01's authorized implementation and evidence scope is complete.
+Defects 2, 3 and 5 are resolved; the authorized null-guard/timeout portion of
+defect 4 and stale-test/package-resolution portion of defect 7 are resolved.
+The predictive back-to-launcher animation/device behavior remainder of defect
+4, instrumented-journey realism remainder of defect 7, all §10 device cells,
+the five lint findings, stale Variant-C assertion and seven contrast failures
+remain open. Prompt 8b device work and the closure pass were not started.
+
 ## UX-10A Android Back, lifecycle and accessibility hardening — 16 September 2026
 
 ### Scope reviewed

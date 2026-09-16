@@ -14,6 +14,8 @@ import com.getcapacitor.BridgeActivity;
 
 /** Android-owned edge-to-edge, IME and predictive-Back integration. */
 final class GlobalEnglishAndroidShell {
+    static final long BACK_DISPATCH_TIMEOUT_MS = 1500L;
+
     private GlobalEnglishAndroidShell() {}
 
     static void enableEdgeToEdge(BridgeActivity activity) {
@@ -27,7 +29,7 @@ final class GlobalEnglishAndroidShell {
 
     private static void installBack(BridgeActivity activity, WebView webView) {
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
-            private boolean dispatchPending = false;
+            private final BackDispatchGuard dispatchGuard = new BackDispatchGuard();
 
             @Override
             public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
@@ -51,24 +53,38 @@ final class GlobalEnglishAndroidShell {
 
             @Override
             public void handleOnBackPressed() {
-                if (dispatchPending) {
+                int dispatchToken = dispatchGuard.begin();
+                if (dispatchToken < 0) {
                     return;
                 }
-                dispatchPending = true;
+                Runnable timeout = () -> {
+                    if (!dispatchGuard.finish(dispatchToken)) {
+                        return;
+                    }
+                    evaluate(webView, "window.__globalEnglishCancelAndroidBackPreview?.()");
+                    fallThroughToDispatcher();
+                };
+                webView.postDelayed(timeout, BACK_DISPATCH_TIMEOUT_MS);
                 webView.evaluateJavascript(
                     "(function(){try{return window.__globalEnglishHandleAndroidBack?.()===true;}catch(e){return false;}})()",
                     handled -> {
-                        dispatchPending = false;
+                        if (!dispatchGuard.finish(dispatchToken)) {
+                            return;
+                        }
+                        webView.removeCallbacks(timeout);
                         evaluate(webView, "window.__globalEnglishCancelAndroidBackPreview?.()");
                         if ("true".equals(handled)) {
                             return;
                         }
-
-                        setEnabled(false);
-                        activity.getOnBackPressedDispatcher().onBackPressed();
-                        setEnabled(true);
+                        fallThroughToDispatcher();
                     }
                 );
+            }
+
+            private void fallThroughToDispatcher() {
+                setEnabled(false);
+                activity.getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
             }
         };
 
@@ -110,5 +126,27 @@ final class GlobalEnglishAndroidShell {
             "(function(){try{" + expression + ";}catch(e){}})()",
             null
         );
+    }
+
+    static final class BackDispatchGuard {
+        private int generation = 0;
+        private boolean pending = false;
+
+        synchronized int begin() {
+            if (pending) {
+                return -1;
+            }
+            pending = true;
+            generation += 1;
+            return generation;
+        }
+
+        synchronized boolean finish(int dispatchToken) {
+            if (!pending || generation != dispatchToken) {
+                return false;
+            }
+            pending = false;
+            return true;
+        }
     }
 }

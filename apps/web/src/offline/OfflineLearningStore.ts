@@ -10,6 +10,26 @@ export interface OfflineProfileBinding {
   readonly membershipId: string
 }
 
+export async function hashOfflineProfileBinding(
+  binding: OfflineProfileBinding,
+): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(
+      [
+        'global-english.offline-binding.v1',
+        binding.userId,
+        binding.organizationId,
+        binding.membershipId,
+      ].join('\u0000'),
+    ),
+  )
+
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
 export interface StoredOfflineBundle {
   readonly bundle: OfflineMissionBundle
   readonly audio: Uint8Array

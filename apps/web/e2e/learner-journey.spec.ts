@@ -124,9 +124,12 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     await advanceFirstUseToGoal(page, locale)
     await continueFirstUse(page, locale)
     if (locale === 'kn-IN') {
-      await expect.poll(() => page.evaluate(() =>
-        localStorage.getItem('global-english:first-use-onboarding:v1'),
-      )).toContain('"step":"placement"')
+      await expect.poll(() => page.evaluate(() => {
+        const resumeKey = Object.keys(localStorage).find((key) =>
+          key.startsWith('global-english:first-use-onboarding:v2:'),
+        )
+        return resumeKey === undefined ? null : localStorage.getItem(resumeKey)
+      })).toContain('"step":"placement"')
       await page.reload()
       await expect(page.getByRole('heading', {
         name: localizedMessage('learner.onboarding.placement_title', locale),

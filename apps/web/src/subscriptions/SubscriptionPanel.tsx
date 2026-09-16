@@ -31,7 +31,13 @@ export interface SubscriptionPanelProps {
 }
 
 type LoadState = 'loading' | 'ready' | 'unavailable'
-type CheckoutState = 'idle' | 'pending' | 'ambiguous' | 'failed' | 'reconciled'
+type CheckoutState =
+  | 'idle'
+  | 'submitting'
+  | 'pending'
+  | 'ambiguous'
+  | 'failed'
+  | 'reconciled'
 
 function currency(locale: SupportedLocale, paise: number): string {
   return new Intl.NumberFormat(locale, {
@@ -138,7 +144,7 @@ export function SubscriptionPanel({
 
   const reconcile = useCallback(async () => {
     if (selectedPlan === null) return
-    setCheckoutState('pending')
+    setCheckoutState('submitting')
     try {
       const current = await api.entitlement()
       if (!current.applies) {
@@ -161,7 +167,7 @@ export function SubscriptionPanel({
     const baseline = entitlement?.live_ai_seconds_remaining ?? null
     setSelectedPlan(plan)
     setCheckoutBaselineSeconds(baseline)
-    setCheckoutState('pending')
+    setCheckoutState('submitting')
     void api.checkout(plan.id, createClientId())
       .then(async (result) => {
         if (result.status === 'pending') {
@@ -210,7 +216,7 @@ export function SubscriptionPanel({
       ? 'subscription.state.loading'
       : loadState === 'unavailable'
         ? 'subscription.state.unavailable'
-        : checkoutState === 'pending'
+        : checkoutState === 'pending' || checkoutState === 'submitting'
           ? 'subscription.state.pending'
           : checkoutState === 'ambiguous'
             ? 'subscription.state.ambiguous'
@@ -242,7 +248,7 @@ export function SubscriptionPanel({
           <LocalizedMessage resolution={message(stateKey)} />
           {loadState === 'unavailable' ? (
             <button onClick={() => void load()} type="button"><LocalizedMessage resolution={message('subscription.retry_load')} /></button>
-          ) : checkoutState === 'ambiguous' ? (
+          ) : checkoutState === 'ambiguous' || checkoutState === 'pending' ? (
             <button onClick={() => void reconcile()} type="button"><LocalizedMessage resolution={message('subscription.check_access')} /></button>
           ) : null}
         </div>
@@ -296,7 +302,7 @@ export function SubscriptionPanel({
                           <div className="subscription-panel__total"><dt><LocalizedMessage resolution={message('subscription.total')} /></dt><dd>{currency(locale, plan.total_paise)}</dd></div>
                         </dl>
                       </details>
-                      <button className="ge-button ge-button--primary" disabled={checkoutState === 'pending'} onClick={() => pay(plan)} type="button">
+                      <button className="ge-button ge-button--primary" disabled={checkoutState === 'pending' || checkoutState === 'submitting'} onClick={() => pay(plan)} type="button">
                         <LocalizedMessage resolution={message('subscription.choose_plan', { plan: plan.name })} />
                       </button>
                     </li>
@@ -325,7 +331,7 @@ export function SubscriptionPanel({
                         <div className="subscription-panel__total"><dt><LocalizedMessage resolution={message('subscription.total')} /></dt><dd>{currency(locale, plan.total_paise)}</dd></div>
                       </dl>
                     </details>
-                    <button disabled={checkoutState === 'pending'} onClick={() => pay(plan)} type="button"><LocalizedMessage resolution={message('subscription.pay_talk')} /></button>
+                    <button disabled={checkoutState === 'pending' || checkoutState === 'submitting'} onClick={() => pay(plan)} type="button"><LocalizedMessage resolution={message('subscription.pay_talk')} /></button>
                   </li>
                 ))}
               </ul>

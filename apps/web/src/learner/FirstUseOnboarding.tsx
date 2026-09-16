@@ -14,6 +14,7 @@ import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { OnboardingStepper } from '../ui/OnboardingStepper'
 import type { AudioRecorder } from './BrowserAudioRecorder'
+import type { OfflineProfileBinding } from '../offline/OfflineLearningStore'
 import type {
   LearnerGoal,
   LearnerHome,
@@ -88,6 +89,7 @@ export interface FirstUseOnboardingProps {
   readonly onComplete: (home: LearnerHome) => void
   readonly onLocaleChange?: (locale: SupportedLocale) => void
   readonly playAudioOutput?: () => Promise<void>
+  readonly resumeBinding: OfflineProfileBinding | null
   readonly titleRef: React.RefObject<HTMLHeadingElement | null>
 }
 
@@ -102,30 +104,23 @@ export function FirstUseOnboarding({
   onComplete,
   onLocaleChange,
   playAudioOutput = playOutputTone,
+  resumeBinding,
   titleRef,
 }: FirstUseOnboardingProps) {
-  const restored = useRef(readFirstUseResume()).current
-  const [step, setStep] = useState<FirstUseStep>(
-    restored?.step ?? 'welcome',
-  )
-  const [adultConfirmed, setAdultConfirmed] = useState(
-    restored?.adultConfirmed ?? initialHome.onboarding.adult_confirmed,
-  )
+  const [resumeReady, setResumeReady] = useState(resumeBinding === null)
+  const [step, setStep] = useState<FirstUseStep>('welcome')
+  const [adultConfirmed, setAdultConfirmed] = useState(false)
   const [goal, setGoal] = useState<LearnerGoal | null>(
-    restored?.goal ?? initialHome.onboarding.goal_key,
+    initialHome.onboarding.goal_key,
   )
-  const [placement, setPlacement] = useState<PlacementChoice | null>(
-    restored?.placement ?? null,
-  )
+  const [placement, setPlacement] = useState<PlacementChoice | null>(null)
   const [largerText, setLargerText] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [busy, setBusy] = useState(false)
   const [commandLocked, setCommandLocked] = useState(false)
   const [error, setError] = useState<MessageKey | null>(null)
   const [savedHome, setSavedHome] = useState<LearnerHome | null>(
-    initialHome.onboarding.completed || restored?.onboardingSaved === true
-      ? initialHome
-      : null,
+    initialHome.onboarding.completed ? initialHome : null,
   )
   const [audioState, setAudioState] = useState<
     'idle' | 'playing' | 'heard' | 'deferred' | 'error'
@@ -154,15 +149,56 @@ export function FirstUseOnboarding({
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
 
   useEffect(() => {
-    writeFirstUseResume({
-      adultConfirmed,
+    let active = true
+    queueMicrotask(() => {
+      if (active) {
+        setResumeReady(resumeBinding === null)
+        setAdultConfirmed(false)
+      }
+    })
+
+    if (resumeBinding === null) {
+      return () => {
+        active = false
+      }
+    }
+
+    void readFirstUseResume(resumeBinding).then((restored) => {
+      if (!active) return
+
+      if (restored !== null) {
+        const restoredPastGoal =
+          FIRST_USE_STEPS.indexOf(restored.step) >
+          FIRST_USE_STEPS.indexOf('goal')
+        setStep(
+          !initialHome.onboarding.completed && restoredPastGoal
+            ? 'adult'
+            : restored.step,
+        )
+        setGoal(restored.goal ?? initialHome.onboarding.goal_key)
+        setPlacement(restored.placement)
+      }
+      setResumeReady(true)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [
+    initialHome.onboarding.completed,
+    initialHome.onboarding.goal_key,
+    resumeBinding,
+  ])
+
+  useEffect(() => {
+    if (!resumeReady) return
+
+    void writeFirstUseResume(resumeBinding, {
       goal,
-      onboardingSaved: savedHome !== null,
       placement,
       step,
-      version: 1,
     })
-  }, [adultConfirmed, goal, placement, savedHome, step])
+  }, [goal, placement, resumeBinding, resumeReady, step])
 
   useEffect(() => {
     if (step !== 'consent') {
@@ -333,7 +369,7 @@ export function FirstUseOnboarding({
         setError('learner.onboarding.practice_error')
       }
     } else {
-      clearFirstUseResume()
+      void clearFirstUseResume(resumeBinding)
       onComplete(savedHome ?? initialHome)
     }
   }

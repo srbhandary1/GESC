@@ -1,5 +1,41 @@
 # Repository status
 
+## AUDIT-FIX-01 post-implementation audit corrections — 16 September 2026
+
+- APP-0091/D-0298 authorize and record only §13.2 defects 2, 3, 4 (partial),
+  5 and 7 (partial). Defects 2, 3 and 5 are resolved; the authorized portions
+  of defects 4 and 7 are resolved. Prompt 8b, the closure pass and experiments
+  were not started.
+- First-use resume is now version 2 and keyed by the same SHA-256
+  organization/user/membership binding as the offline store, without raw IDs.
+  It expires within 24 hours, rejects mismatched/invalid records and remains
+  best effort when storage is unavailable. Stored state contains only the
+  cursor, goal, placement, binding hash and timestamps.
+- Adult confirmation always starts unchecked. Neither adult confirmation nor
+  an onboarding-saved shortcut is persisted; an incomplete authoritative
+  Home response forces a resumed post-goal cursor back before submission.
+  Focused tests cover learner switching, expiry and the unchecked adult state.
+- Remaining direct Home/sign-in hash mutations now use learner history, so
+  sign-in has Home as its prior entry. Provider-pending checkout retains its
+  pending message and now offers the existing **Check access** reconciliation
+  action without claiming success.
+- Both wrappers guard the absent bridge/WebView startup path, explicitly pin
+  the already-resolved AndroidX Activity 1.11.0 dependency, remove stale
+  template unit tests and resolve installed Capacitor source independently of
+  pnpm's store layout.
+- Both native shells release a pending JavaScript Back request after 1,500 ms,
+  cancel its preview and fall through the AndroidX dispatcher; late callbacks
+  are ignored. New package-correct JVM tests pass in both wrappers. Connected
+  predictive back-to-launcher behavior remains a device gate.
+- Focused Vitest passes 22/22 and typecheck passes. Both Gradle commands pass
+  (production 62 tasks, demo 60; 6/6 unit tests in each). Full lint, unit and
+  E2E retain exactly their §13.2 baselines: five lint findings, the stale
+  `jezweb-c4`/`c8` assertion, and seven contrast failures respectively. No new
+  failure was introduced.
+- No API/OpenAPI, schema, migration, credentials, learner text, quiz-draft,
+  review semantics/interval, plans structure, payment provider, production or
+  release behavior changed.
+
 ## UX-10A Android Back, lifecycle and accessibility hardening — 16 September 2026
 
 - APP-0090/D-0297 authorize and record only UX-10A findings MUX-005,

@@ -6,6 +6,7 @@ import { createClientId } from '../shared/createClientId'
 import {
   offlineBundleRecordId,
   offlineCheckpointDetailRecordId,
+  hashOfflineProfileBinding,
   offlineLevelBundleRecordId,
   offlineLevelQuizDraftRecordId,
   LEVEL_QUIZ_DRAFT_TTL_MILLISECONDS,
@@ -181,7 +182,7 @@ export class BrowserOfflineLearningStore
         return
       }
 
-      const bindingHash = await hashBinding(binding)
+      const bindingHash = await hashOfflineProfileBinding(binding)
       const profile: StoredProfile = {
         bindingHash,
         partitionId: createClientId(),
@@ -965,7 +966,7 @@ export class BrowserOfflineLearningStore
     const value = await getValue<StoredProfile>(
       database,
       PROFILE_STORE,
-      await hashBinding(binding),
+      await hashOfflineProfileBinding(binding),
     )
 
     return value ?? null
@@ -1157,24 +1158,6 @@ export class OfflinePendingWorkError extends Error {
     super('Protected offline work must be synchronized or explicitly discarded.')
     this.name = 'OfflinePendingWorkError'
   }
-}
-
-async function hashBinding(
-  binding: OfflineProfileBinding,
-): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    encoder.encode(
-      [
-        'global-english.offline-binding.v1',
-        binding.userId,
-        binding.organizationId,
-        binding.membershipId,
-      ].join('\u0000'),
-    ),
-  )
-
-  return hex(new Uint8Array(digest))
 }
 
 async function verifyAudio(

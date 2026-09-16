@@ -20,7 +20,6 @@ import type {
   OfflineBundle,
 } from './LearnerJourneyApi'
 import { LearnerJourneyUnavailableError } from './LearnerJourneyApi'
-import { FIRST_USE_RESUME_STORAGE_KEY } from './FirstUseOnboardingResume'
 import type {
   OfflineLearningStore,
   OfflineProfileBinding,
@@ -39,7 +38,7 @@ const ids = {
 } as const
 
 beforeEach(() => {
-  window.localStorage.removeItem(FIRST_USE_RESUME_STORAGE_KEY)
+  window.localStorage.clear()
   Object.defineProperty(globalThis.navigator, 'onLine', {
     configurable: true,
     value: true,

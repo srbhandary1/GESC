@@ -315,6 +315,44 @@ describe('subscription panel', () => {
     expect(screen.getByText('Active access')).toBeInTheDocument()
   })
 
+  it('offers Check access after the provider returns pending', async () => {
+    const current = entitlement({
+      plan_code: null,
+      plan_name: null,
+      status: 'expired',
+    })
+    const entitlementApi = vi.fn(async () => current)
+    const api: LearnerSubscriptionApi = {
+      entitlement: entitlementApi,
+      plans: vi.fn(async () => ({
+        gstin_is_placeholder: false,
+        plans: membershipPlans(),
+      })),
+      checkout: vi.fn(async () => ({ status: 'pending' })),
+    }
+    const user = userEvent.setup()
+
+    render(
+      <SubscriptionPanel
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Choose Premium features' }),
+    )
+    expect(await screen.findByText(/Checkout request pending/)).toBeInTheDocument()
+    const checkAccess = screen.getByRole('button', { name: 'Check access' })
+    await user.click(checkAccess)
+
+    expect(entitlementApi).toHaveBeenCalledTimes(2)
+    expect(
+      await screen.findByText(/could not confirm whether access changed/),
+    ).toBeInTheDocument()
+  })
+
   it('preserves the locked-level accomplishment and provides a recoverable close action', async () => {
     const onClose = vi.fn()
     const api: LearnerSubscriptionApi = {

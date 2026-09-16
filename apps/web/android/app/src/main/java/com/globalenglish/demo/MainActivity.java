@@ -1,6 +1,7 @@
 package com.globalenglish.demo;
 
 import android.os.Bundle;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -9,7 +10,10 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
         GlobalEnglishAndroidShell.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
-        bridge.getWebView().setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
-        GlobalEnglishAndroidShell.install(this, bridge.getWebView());
+        if (bridge != null && bridge.getWebView() != null) {
+            WebView webView = bridge.getWebView();
+            webView.setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
+            GlobalEnglishAndroidShell.install(this, webView);
+        }
     }
 }

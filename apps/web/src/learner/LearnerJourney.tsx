@@ -126,6 +126,9 @@ export function LearnerJourney({
   const [personalDeviceConfirmed, setPersonalDeviceConfirmed] =
     useState(false)
   const [profileEnabled, setProfileEnabled] = useState(false)
+  const [firstUseResumeStatus, setFirstUseResumeStatus] = useState<
+    'checking' | 'available' | 'absent'
+  >(offlineBinding === null ? 'absent' : 'checking')
   const [online, setOnline] = useState(
     () => globalThis.navigator?.onLine !== false,
   )
@@ -135,6 +138,35 @@ export function LearnerJourney({
   const offlineAudioUrl = useRef<string | null>(null)
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
+
+  useEffect(() => {
+    let active = true
+    if (offlineBinding === null) {
+      queueMicrotask(() => {
+        if (active) {
+          setFirstUseResumeStatus('absent')
+        }
+      })
+      return () => {
+        active = false
+      }
+    }
+
+    queueMicrotask(() => {
+      if (active) {
+        setFirstUseResumeStatus('checking')
+      }
+    })
+    void hasFirstUseResume(offlineBinding).then((available) => {
+      if (active) {
+        setFirstUseResumeStatus(available ? 'available' : 'absent')
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [offlineBinding])
 
   const activateOfflineBundle = useCallback(
     (
@@ -679,7 +711,21 @@ export function LearnerJourney({
     )
   }
 
-  if (!state.home.onboarding.completed || hasFirstUseResume()) {
+  if (
+    state.home.onboarding.completed &&
+    firstUseResumeStatus === 'checking'
+  ) {
+    return (
+      <p className="learner-status" role="status">
+        <LocalizedMessage resolution={message('learner.loading')} />
+      </p>
+    )
+  }
+
+  if (
+    !state.home.onboarding.completed ||
+    firstUseResumeStatus === 'available'
+  ) {
     return (
       <FirstUseOnboarding
         api={api}
@@ -689,8 +735,12 @@ export function LearnerJourney({
         initialHome={state.home}
         locale={locale}
         localizationPolicy={localizationPolicy}
-        onComplete={(home) => setState({ home, kind: 'ready' })}
+        onComplete={(home) => {
+          setFirstUseResumeStatus('absent')
+          setState({ home, kind: 'ready' })
+        }}
         onLocaleChange={onLocaleChange}
+        resumeBinding={offlineBinding}
         titleRef={stateTitle}
       />
     )

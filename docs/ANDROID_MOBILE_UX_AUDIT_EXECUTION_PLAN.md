@@ -8,7 +8,8 @@ complete with repository/human gates retained; UX-03A implementation scope
 complete with repository/human gates retained; UX-04A implementation scope
 complete with repository/device/human gates retained; UX-08A implementation
 scope complete with repository/human gates retained; UX-10A implementation
-scope complete with repository/device gates retained; experiments not started
+scope complete with repository/device gates retained; AUDIT-FIX-01 complete
+with the inherited repository/device baselines retained; experiments not started
 **Created:** 15 September 2026  
 **Audited commit:** `ce305bd`  
 **Product:** Global Spoken English App  
@@ -910,6 +911,58 @@ repository gates retained
 - [ ] Physical TalkBack and device evidence is recorded.
 - [ ] `make verify`, critical `make e2e` and `make build` pass.
 
+### AUDIT-FIX-01 — Post-implementation audit corrections
+
+**Status:** Complete on 16 September 2026 under APP-0091/D-0298; seven
+pre-existing contrast failures, the stale Variant-C cache-buster assertion and
+the five pre-existing lint findings remain outside this checkpoint. Prompt 8b
+device work and the closure pass were not started.
+
+**Defects:** §13.2 defects 2, 3, 4 (partial), 5 and 7 (partial)
+
+#### Scope
+
+- [x] Bind the first-use resume record to the signed-in learner's existing
+      organization/member/user offline profile using a non-reversible SHA-256
+      key, reject version/binding/expiry mismatches and enforce a maximum
+      24-hour TTL. Evidence: [focused review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026).
+- [x] Never persist or restore `adultConfirmed` or `onboardingSaved`; adult
+      confirmation starts unchecked and incomplete authoritative onboarding
+      returns before the goal boundary. Evidence: learner A/B, expiry and
+      unchecked-adult component tests in the [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026).
+- [x] Replace the remaining direct Home/sign-in hash assignments with learner
+      history helpers and prove that sign-in has Home as its prior entry.
+      Evidence: [history tests](../apps/web/src/learner/LearnerNavigationHistory.test.ts).
+- [x] Keep the provider-pending message while exposing **Check access**, using
+      the existing entitlement reconciliation path. Evidence:
+      [subscription test](../apps/web/src/subscriptions/SubscriptionPanel.test.tsx).
+- [x] Guard missing bridge/WebView startup, explicitly declare AndroidX
+      Activity 1.11.0 in both wrappers, remove both stale template unit tests
+      and resolve the installed Capacitor source through `require.resolve`.
+      Evidence: [Android source-policy test](../apps/web/src/auth/androidBackNavigation.test.ts).
+- [x] Release and safely fall through a pending WebView Back dispatch after
+      1,500 ms; ignore its late callback and allow the next dispatch. Evidence:
+      package-correct JVM tests and both Gradle results in the
+      [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026).
+
+#### Exit criteria
+
+- [x] Resume records are learner-bound, versioned, time-bounded and contain no
+      credential, learner text, audio, transcript, consent or adult-confirmed
+      state.
+- [x] Learner switching, expiry and adult-checkbox regression tests pass.
+- [x] Sign-in Back history and pending-checkout reconciliation tests pass.
+- [x] Both wrapper application, Android-test and unit-test source sets compile;
+      both unit suites pass with the pinned JDK/toolchain.
+- [x] Typecheck passes and lint/test/E2E introduce no failure beyond the exact
+      §13.2 pre-existing baselines. Evidence: [command table](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026).
+- [x] `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/APPROVALS.md`,
+      `docs/QUALITY_REVIEW.md` and this §14 ledger record the bounded result.
+- [ ] Connected-device predictive back-to-launcher behavior and the existing
+      instrumented journey realism are corrected and executed. These are the
+      explicitly excluded remainders of defects 4 and 7 and stay in Prompt 8b/
+      later authorized work.
+
 ## 9. Measurement contract
 
 The current operator metrics are aggregate counts and do not provide the
@@ -1183,7 +1236,8 @@ for quiz drafts; MUX-016 resolved in browser evidence only. D-0297's Capacitor
 8.5.0 `BridgeActivity` claim confirmed against installed source. No over-grant
 in `GlobalEnglishWebChromeClient`; no prohibited Back API.
 
-Defects found (not yet fixed; owner decides):
+Defects found (the 16 September audit snapshot; subsequent status is noted
+inline without rewriting the original finding):
 
 1. **Uncommitted work.** All nine checkpoints are in one uncommitted tree with
    no per-checkpoint commits; every APP-0084–0090 record says the SHA was
@@ -1196,16 +1250,28 @@ Defects found (not yet fixed; owner decides):
    learner's adult confirmation and goal, and `onboardingSaved: true` skips
    their authoritative goal submission. Inconsistent with the ADR-0006
    standard applied to quiz drafts.
+   **AUDIT-FIX-01:** resolved under APP-0091/D-0298 with a version-2,
+   learner-bound SHA-256 storage key, maximum 24-hour TTL, fail-closed
+   validation and no persisted/restored adult-confirmation or saved-submission
+   flag.
 3. Residual raw `location.hash = '#home' | '#sign-in'` assignments in
    `App.tsx` create history entries with `index: 0`, so system Back from
    `#sign-in` exits the app rather than returning through web history.
+   **AUDIT-FIX-01:** resolved; all such assignments use the learner-navigation
+   helpers and the sign-in entry retains Home as its prior history target.
 4. `GlobalEnglishAndroidShell` keeps its callback permanently enabled and the
    JS round-trip is asynchronous, so the system predictive back-to-launcher
    animation never runs; if the WebView dies mid-dispatch `dispatchPending`
    sticks and Back is swallowed until restart. `MainActivity.onCreate`
    dereferences `bridge` without the `no_webview` guard in both wrappers.
+   **AUDIT-FIX-01 partial resolution:** both startup dereferences are guarded;
+   a 1,500 ms timeout releases the pending dispatch, cancels the preview and
+   falls through the dispatcher, with isolated JVM coverage. The connected-
+   device predictive back-to-launcher animation question remains open.
 5. `SubscriptionPanel` `pending` checkout state disables all actions and
    offers no reconcile/check-access action (only `ambiguous` does).
+   **AUDIT-FIX-01:** resolved; provider-pending retains its status message and
+   exposes the same **Check access** reconciliation action.
 6. `LearnerProgressDashboardService` throws `LearningOperationRejected` on any
    row with `completed_at < due_at`; unreachable via current writers, but one
    corrupt row would fail-close the whole dashboard for that learner.
@@ -1213,6 +1279,9 @@ Defects found (not yet fixed; owner decides):
    the Speak-denial test never presses Speak; demo copy is weaker than
    production; stale `ExampleUnitTest.java` remains in both wrappers.
    `androidBackNavigation.test.ts` hard-codes the pnpm store path.
+   **AUDIT-FIX-01 partial resolution:** both stale template tests are removed
+   and Capacitor source resolution is package-based. Instrumented-journey
+   realism and connected execution remain open.
 8. OpenAPI 0.47.0 documents the whole operator `learning_metrics` object
    (previously undocumented) alongside the one required rename; correct, but
    beyond UX-07A's stated scope. `LearnerSubscriptionService` changes belong to
@@ -1233,9 +1302,10 @@ repository ledgers are complete.
 | 5 | UX-04A One-question quiz | Implementation scope complete; repository/device/human gates retained | Accountable Product Owner | Commit `7145e89`; [APP-0088](APPROVALS.md#app-0088); [D-0295](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026) | |
 | 6 | UX-08A Contextual plans | Implementation scope complete; repository/human gates retained | Accountable Product Owner | Commit `57166d6`; [APP-0089](APPROVALS.md#app-0089); [D-0296](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
 | 7 | UX-10A Android hardening | Implementation scope complete; repository/device gates retained | Accountable Product Owner | Commit `42e8393`; [APP-0090](APPROVALS.md#app-0090); [D-0297](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026) | |
-| 8 | UX-EXP-01 Onboarding experiment | Blocked | Unassigned | | |
-| 9 | UX-EXP-02 Plans experiment | Protocol ready; activation blocked | Accountable Product Owner | [UX-08A evidence](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
-| 10 | UX-EXP-03 Quiz experiment | Blocked | Unassigned | | |
+| 8 | AUDIT-FIX-01 Post-implementation audit corrections | Complete; inherited repository/device baselines retained | Accountable Product Owner | [APP-0091](APPROVALS.md#app-0091); [D-0298](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | 2026-09-16 |
+| 9 | UX-EXP-01 Onboarding experiment | Blocked | Unassigned | | |
+| 10 | UX-EXP-02 Plans experiment | Protocol ready; activation blocked | Accountable Product Owner | [UX-08A evidence](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
+| 11 | UX-EXP-03 Quiz experiment | Blocked | Unassigned | | |
 
 ## 15. Definition of audit closure
 

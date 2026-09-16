@@ -3249,6 +3249,57 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0091"></a>
+
+## APP-0091 — Bounded AUDIT-FIX-01 authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for AUDIT-FIX-01 only |
+| Decision date | 2026-09-16 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related plan | [Android Mobile UX Audit Execution Plan §8](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#audit-fix-01--post-implementation-audit-corrections) |
+| Related decision | [D-0298](DECISIONS.md) |
+| Related ADRs | [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md); [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+As Accountable Product Owner I authorize a bounded fix checkpoint AUDIT-FIX-01 covering §13.2 defects 2, 3, 4 (partial), 5 and 7 (partial) only.
+```
+
+### Accepted scope
+
+- Bind the first-use resume cursor to the signed-in organization/member/user
+  profile through the existing offline binding hash, cap it at 24 hours and
+  remove stored adult-confirmation and authoritative-submission shortcuts.
+- Route the remaining Home/sign-in transitions through learner history and
+  expose entitlement reconciliation while checkout remains pending.
+- In both Android wrappers, guard the absent-WebView path, declare the
+  already-resolved AndroidX Activity dependency, remove stale template unit
+  tests, resolve Capacitor source portably and release a pending Back dispatch
+  after 1,500 milliseconds.
+
+### Conditions and limitations
+
+- This authorization does not include defect 1, defect 6, defect 8, the
+  instrumentation-realism remainder of defect 7, or the predictive
+  back-to-launcher animation remainder of defect 4.
+- No Prompt 8b device work, closure pass, experiment, schema/API/OpenAPI,
+  review-semantics, quiz-draft, plans-structure, payment-provider, production
+  or release work is authorized.
+- Resume persistence remains best effort and content-minimized. It must store
+  no credential, learner-authored text, recording, transcript, consent choice
+  or adult-confirmation state.
+- Automated timeout/compilation evidence does not replace connected-device
+  predictive-Back validation; that device gate remains open.
+
 <a id="app-0090"></a>
 
 ## APP-0090 — UX-10 programme authorization limited to UX-10A

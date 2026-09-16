@@ -78,6 +78,7 @@ import {
   handleAndroidBack,
   initializeLearnerNavigation,
   navigateToLearnerDestination,
+  navigateToLearnerSignIn,
   readLearnerNavigationState,
   restoreLearnerNavigationFocus,
   subscribeToLearnerNavigation,
@@ -379,9 +380,7 @@ function App({
       if (!cancelled) {
         setOfflineResume(null)
         setSession({ status: 'anonymous' })
-        globalThis.location.hash = '#home'
-        setDestination('home')
-        setLocationHash('#home')
+        navigateToLearnerDestination('home')
       }
     })
 
@@ -502,7 +501,7 @@ function App({
       return
     }
 
-    globalThis.location.hash = '#home'
+    navigateToLearnerDestination('home')
   }, [locationHash, session.status])
 
   const brand = message('app.name')
@@ -959,12 +958,10 @@ function App({
                     void androidAuthentication
                       .logout()
                       .then(() => {
-                        clearFirstUseResume()
+                        void clearFirstUseResume(authenticatedOfflineBinding)
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
-                        globalThis.location.hash = '#home'
-                        setDestination('home')
-                        setLocationHash('#home')
+                        navigateToLearnerDestination('home')
                       })
                       .catch(() => setSession({ status: 'unavailable' }))
                   }}
@@ -993,15 +990,11 @@ function App({
                     event.preventDefault()
 
                     if (showDedicatedSignIn) {
-                      globalThis.location.hash = '#home'
-                      setDestination('home')
-                      setLocationHash('#home')
+                      navigateToLearnerDestination('home')
                       return
                     }
 
-                    globalThis.location.hash = '#sign-in'
-                    setDestination('home')
-                    setLocationHash('#sign-in')
+                    navigateToLearnerSignIn()
                   }}
                 >
                   <LocalizedMessage
@@ -1016,9 +1009,7 @@ function App({
                     href="#sign-in"
                     onClick={(event) => {
                       event.preventDefault()
-                      globalThis.location.hash = '#sign-in'
-                      setDestination('home')
-                      setLocationHash('#sign-in')
+                      navigateToLearnerSignIn()
                     }}
                   >
                     <LocalizedMessage
@@ -1065,12 +1056,10 @@ function App({
                     void webAuth
                       .logout()
                       .then(() => {
-                        clearFirstUseResume()
+                        void clearFirstUseResume(authenticatedOfflineBinding)
                         setAccountSecurityOpen(false)
                         setSession({ status: 'anonymous' })
-                        globalThis.location.hash = '#home'
-                        setDestination('home')
-                        setLocationHash('#home')
+                        navigateToLearnerDestination('home')
                       })
                       .catch(() => {
                         setAccountSecurityOpen(false)
@@ -1457,7 +1446,7 @@ function App({
             locale={locale}
             localizationPolicy={localizationPolicy}
             onMissionRequested={() => {
-              window.location.hash = '#home'
+              navigateToLearnerDestination('home')
             }}
           />
         ) : canShowOperatorConsole ? (
@@ -1475,9 +1464,7 @@ function App({
             onCredentialsRevoked={() => {
               setOfflineResume(null)
               setSession({ status: 'anonymous' })
-              globalThis.location.hash = '#home'
-              setDestination('home')
-              setLocationHash('#home')
+              navigateToLearnerDestination('home')
             }}
             organizationApi={operatorOrganizationApi}
           />
@@ -1489,9 +1476,9 @@ function App({
             <LocalizedMessage resolution={message('session.sign_in_hint')} />{' '}
             <a
               href="#sign-in"
-              onClick={() => {
-                setDestination('home')
-                setLocationHash('#sign-in')
+              onClick={(event) => {
+                event.preventDefault()
+                navigateToLearnerSignIn()
               }}
             >
               <LocalizedMessage
