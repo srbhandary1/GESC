@@ -3265,7 +3265,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Related decision | [D-0297](DECISIONS.md) |
 | Related ADR | [ADR-0026](adr/0026-five-destination-learner-navigation.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `42e8393` (`UX-10A: harden Android Back and lifecycle UX`) |
 | Master-plan amendment | None; the accepted five equal learner destinations and Variant C identity remain unchanged |
 
 ### Exact human statement
@@ -3316,7 +3316,7 @@ As Accountable Product Owner I authorize UX-10 beginning with UX-10A; record it 
 | Related decision | [D-0296](DECISIONS.md) |
 | Related ADRs | [ADR-0035](adr/0035-direct-learner-subscriptions.md); [ADR-0036](adr/0036-premium-courtesy-month.md); [ADR-0037](adr/0037-paid-live-ai-caps-and-talk-packs.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `57166d6` (`UX-08A: add contextual recoverable plans`) |
 | Master-plan amendment | None; the accepted Direct subscription and fail-closed provider boundaries remain unchanged |
 
 ### Exact human statement
@@ -3367,7 +3367,7 @@ As Accountable Product Owner I authorize UX-08 beginning with UX-08A; record it 
 | Related decision | [D-0295](DECISIONS.md) |
 | Related ADRs | [ADR-0006](adr/0006-offline-retention-isolation-and-conflict-policy.md); [ADR-0025](adr/0025-all-levels-four-session-learner-journey.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `7145e89` (`UX-04A: persist privacy-scoped quiz drafts`) |
 | Master-plan amendment | None; the accepted offline, checkpoint and four-session rules remain unchanged |
 
 ### Exact human statement
@@ -3420,7 +3420,7 @@ As Accountable Product Owner I authorize UX-04 beginning with UX-04A; record it 
 | Related decision | [D-0294](DECISIONS.md) |
 | Related ADR | [ADR-0028](adr/0028-meaningful-speaking-streak-and-delayed-review.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `406fe21` (`UX-03A: focus Home and clarify review progress`) |
 | Master-plan amendment | No; ADR-0028's deterministic selection and advisory streak rules remain unchanged |
 
 ### Exact human statement
@@ -3468,7 +3468,7 @@ As Accountable Product Owner I authorize UX-03 beginning with UX-03A; record it 
 | Related decision | [D-0293](DECISIONS.md) |
 | Related ADRs | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md); [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `67c16f9` (`UX-02B: promote resumable progressive first use`) |
 | Master-plan amendment | No; the authoritative onboarding payload and ADR-0005/ADR-0007 boundaries are unchanged |
 
 ### Exact human statement
@@ -3521,7 +3521,7 @@ Persist onboarding step position in a resumable way without storing learner text
 | Related decision | [D-0292](DECISIONS.md) |
 | Related ADRs | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md); [ADR-0012](adr/0012-android-native-secure-credential-store.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `7b7afb2` (`UX-02A: add contextual Android microphone permission`) |
 | Master-plan amendment | No; D-0284's bundled `https://localhost` origin remains in force |
 
 ### Exact human statement
@@ -3571,7 +3571,7 @@ Execute only UX-02A from docs/ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md §8 (fin
 | Related evidence | [UX-AUDIT-00 decision packet](UX_AUDIT_00_DECISION_PACKET.md); [UX funnel event contract](UX_FUNNEL_EVENT_CONTRACT.md) |
 | Related ADR | [ADR-0028](adr/0028-meaningful-speaking-streak-and-delayed-review.md) |
 | Recorder | Codex agent, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `afc5b2d` (`UX-AUDIT-00: define review semantics and funnel contract`) |
 | Master-plan amendment | No |
 
 ### Exact human statement
