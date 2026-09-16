@@ -3249,6 +3249,52 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0093"></a>
+
+## APP-0093 — Plan §15 closure with accepted residuals
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for AUDIT-CLOSE-01 / plan §15 only |
+| Decision date | 2026-09-16 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text reply in the active Cursor conversation after remaining §10 cells were offered as residual so plan §15 closure could run |
+| Related plan | [Android Mobile UX Audit Execution Plan §15](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#15-definition-of-audit-closure) |
+| Related decision | [D-0300](DECISIONS.md) |
+| Related ADRs | None; this pass changes no product or architecture decision |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; gates were measured at `7746a96` |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I accept.
+```
+
+### Accepted scope
+
+- Treat the remaining 51 non-N/A §10 device-matrix cells (API 24, API 35,
+  API 36, physical low-cost phone) as residual for this audit programme.
+  Do not copy the RMX3085 API 33 current-phone Pass into those cells.
+- Close plan §15 with those residuals, with UX-EXP-01/02/03 Deferred because
+  analytics emission is unimplemented and no live traffic exists, and with
+  production, Play release and live payment still unauthorized.
+- Record the walk of MUX-001–016 and §13.2 defects 1–8, the pinned
+  `make verify` / `make e2e` / `make build` results at HEAD `7746a96`, and
+  the remaining human gates as open items.
+
+### Conditions and limitations
+
+- This is documentation closure, not feature, schema, API, provider, payment,
+  production or Play authorization.
+- Unchecked §15 items and listed human gates remain open; they are not
+  silently completed.
+- Connected instrumentation, dashboard fail-close on a pre-due stored
+  completion (defect 6), and API 36 predictive-Back defaults remain residual.
+
 <a id="app-0092"></a>
 
 ## APP-0092 — Bounded GATE-FIX-01 authorization

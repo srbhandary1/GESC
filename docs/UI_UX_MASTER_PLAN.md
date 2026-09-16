@@ -1,9 +1,9 @@
 ---
 title: "Global English — UI/UX Product Architecture and Execution Plan"
-status: "Accepted implementation companion; UX-00/UX-01 complete; UX-02/UX-03/UX-04/UX-07/UX-08 retain gates; UX-10 active through UX-10A only with repository/device gates; UX-05/UX-06/UX-09 proposed"
+status: "Accepted implementation companion; UX-00/UX-01 complete; Android mobile UX audit programme closed with residuals under APP-0093/D-0300; UX-02–UX-04/UX-07/UX-08/UX-10 retain listed human gates; experiments Deferred; UX-05/UX-06/UX-09 proposed"
 prepared: "5 September 2026"
 canonical_baseline: "ENTERPRISE_PRODUCT_MASTER_PLAN.md version 3.15"
-current_product_checkpoint: "UX-10A implementation scope complete under APP-0090/D-0297 with repository/device gates retained; experiments not started"
+current_product_checkpoint: "AUDIT-CLOSE-01 plan §15 closed with residuals under APP-0093/D-0300; experiments Deferred; production/Play/live payment unauthorized"
 ---
 
 # Global English — UI/UX Product Architecture and Execution Plan
@@ -793,34 +793,37 @@ Owner's successful 320-pixel keyboard smoke and closes UX-00. D-0279 accepts
 the Futuristic Learning Studio direction; D-0281–D-0283 complete UX-01A→G.
 The UX-AUDIT-00 reconciliation found that the former D-0297/D-0300/D-0302
 references were never recorded in `DECISIONS.md`; they therefore cannot
-authorize an in-progress checkpoint. APP-0085 authorized UX-02A and APP-0086
+authorize an in-progress checkpoint. Those identifiers were later assigned to
+unrelated recorded decisions: D-0297 to APP-0090/UX-10A and D-0300 to
+APP-0093/AUDIT-CLOSE-01. APP-0085 authorized UX-02A and APP-0086
 subsequently authorized UX-02B. D-0292 and D-0293 record those implementation
-scopes complete with retained repository/device/human gates. APP-0087/D-0294
+scopes complete. APP-0087/D-0294
 authorize and record UX-03A only; its implementation scope is complete with
-repository and representative-learner comprehension gates retained.
+representative-learner comprehension retained as a human gate.
 APP-0088/D-0295 now authorize and record UX-04A only; its implementation scope
-is complete with repository, physical accessibility and lifecycle gates
-retained. D-0291 separately records UX-07A's accepted review semantics as
-implementation-complete with repository gates retained. APP-0089/D-0296 now
+is complete with representative quiz-clutter retest retained as a human gate.
+D-0291 separately records UX-07A's accepted review semantics as
+implementation-complete; repository gates are green at `7746a96`. APP-0089/D-0296 now
 authorize and record UX-08A only; its contextual, catalogue-authoritative plans
-scope is implementation-complete with repository and human-comprehension gates
-retained. APP-0090/D-0297 authorize and record UX-10A only; its Back/history,
+scope is implementation-complete with representative plan-comprehension
+retained as a human gate. APP-0090/D-0297 authorize and record UX-10A only; its Back/history,
 lifecycle/insets, target and native-smoke implementation scope is complete with
-repository and all connected-device gates retained. No experiment is active.
+the current-phone §10 column Pass and 51 remaining device cells accepted as
+residual under APP-0093/D-0300. UX-EXP-01/02/03 are Deferred. No experiment is active.
 
 | ID | Checkpoint | Status | User outcome | Exit gate |
 |---|---|---|---|---|
 | UX-00 | Restore UX quality baseline | **Complete** | Current journeys are accessible, honest and testable again | Automated gates and the human 320-pixel keyboard smoke passed; Android TalkBack remains a release gate |
 | UX-01 | Futuristic Learning Studio design language and shell | **Complete** | A genuinely new, coherent and fast learner frame replaces the legacy Academy template across web/PWA | UX-01A→G completed; token/component tests, all locale fonts, route splitting and bilingual 320/1280 evidence |
-| UX-02 | Acquisition, sign-in and first spoken success | **In progress — UX-02A/UX-02B implementation scopes complete; repository/device/human gates retained** | An adult reaches a safe useful turn within minutes | First-use usability gate; permission/consent/auth recovery tests |
-| UX-03 | Daily Home and return loop | **In progress — UX-03A implementation scope complete; repository/human gates retained** | One clear next action with due review, sync and secondary streak | Home comprehension test; deterministic API contract and E2E |
-| UX-04 | Four-session Learn journey | **In progress — UX-04A implementation scope complete; repository/device/human gates retained** | Learner always understands current session, lock reason and next action | One-question/offline automated evidence passes; repository-wide contrast plus physical TalkBack, text/reflow/IME, assistive-input and lifecycle gates remain |
+| UX-02 | Acquisition, sign-in and first spoken success | **Implementation complete — representative-adult comprehension residual** | An adult reaches a safe useful turn within minutes | First-use usability gate; permission/consent/auth recovery tests |
+| UX-03 | Daily Home and return loop | **Implementation complete — Home comprehension residual** | One clear next action with due review, sync and secondary streak | Home comprehension test; deterministic API contract and E2E |
+| UX-04 | Four-session Learn journey | **Implementation complete — quiz-clutter retest residual** | Learner always understands current session, lock reason and next action | One-question/offline automated evidence passes; representative retest remains |
 | UX-05 | Speak and correction loop | Proposed | Fast, calm conversation with explicit state and a useful retry | Automated flow passes; physical Android ergonomics, real-provider latency and TalkBack remain |
 | UX-06 | Role-play Studio | Proposed | Observe, rehearse, perform and reflect in a real-life situation | Scenario usability, version pin, safety and completion E2E |
-| UX-07 | Progress and delayed review | **In progress — UX-07A implementation scope complete; repository gates retained** | Learner sees capability, improvement and the right review—not vanity stats | Accepted semantics, boundary/idempotency/tenancy evidence complete; repository-wide gates remain |
-| UX-08 | Plans, 1:1, account, privacy and offline controls | **In progress — UX-08A implementation scope complete; repository/human gates retained** | Commercial and trust choices are accurate and recoverable | Contextual catalogue and failure-safety evidence passes; repository contrast/soft-launch and representative plan-comprehension gates remain |
+| UX-07 | Progress and delayed review | **Implementation complete — academic interval review residual** | Learner sees capability, improvement and the right review—not vanity stats | Accepted semantics and repository gates green at `7746a96`; ADR-0028 interval review remains |
+| UX-08 | Plans, 1:1, account, privacy and offline controls | **Implementation complete — plan comprehension residual** | Commercial and trust choices are accurate and recoverable | Contextual catalogue and failure-safety evidence passes; representative plan-comprehension and live payment remain |
 | UX-09 | Operator task architecture | Proposed | Staff complete authorized work without direct DB access or screen overload | Per-role task studies, keyboard/axe/reflow and tenancy tests |
-| UX-10 | Android/device and release hardening | **In progress — UX-10A implementation scope complete; repository/device gates retained** | The approved experience works on target phones and poor networks | Back/history/native-smoke automated evidence passes; all 64 non-N/A device-matrix cells, TalkBack, lifecycle and repository-wide gates remain |
+| UX-10 | Android/device and release hardening | **Implementation complete — 51 device cells residual under APP-0093** | The approved experience works on target phones and poor networks | Current-phone Pass on RMX3085 API 33; API 24/35/36 and low-cost cells residual; connected instrumentation open |
 
 ### 11.1 UX-00 — exact first checkpoint
 
@@ -1074,7 +1077,8 @@ may change.
 
 | Date | Update | Evidence/status |
 |---|---|---|
-| 2026-09-16 | APP-0090/D-0297 activate and implement UX-10A only | Both SDK-36 wrappers now use app-owned AndroidX Back callbacks after Capacitor 8.5 source inspection. Content-free destination/level/part/question history, safe recording cancellation, focus/live announcements, edge-to-edge/IME variables, 48px Variant C bottom tabs and package-correct native smoke suites have focused evidence. No device was attached, so all 64 non-N/A matrix cells and physical accessibility/lifecycle gates remain open; repository soft-launch/contrast debt also remains. No experiment or dark theme was started. [Quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026). |
+| 2026-09-16 | APP-0093/D-0300 close the Android mobile UX audit programme with accepted residuals | Remaining 51 §10 cells residual; UX-EXP-01/02/03 Deferred; pinned `make verify`/`e2e`/`build` green at `7746a96`. Production, Play and live payment remain unauthorized. [Quality review](QUALITY_REVIEW.md#audit-close-01-plan-15-closure--16-september-2026). |
+| 2026-09-16 | APP-0090/D-0297 activate and implement UX-10A only | Both SDK-36 wrappers now use app-owned AndroidX Back callbacks after Capacitor 8.5 source inspection. Content-free destination/level/part/question history, safe recording cancellation, focus/live announcements, edge-to-edge/IME variables, 48px Variant C bottom tabs and package-correct native smoke suites have focused evidence. Current-phone Pass later recorded in §10.2; 51 remaining matrix cells were accepted residual under APP-0093. No experiment or dark theme was started. [Quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026). |
 | 2026-09-15 | APP-0089/D-0296 activate and implement UX-08A only | Every locked level now opens the entitlement-first plans surface with recoverable context. Two API-catalogued benefit cards, expandable exact GST totals, eligible-only talk packs, Continue free, honest checkout states and institutional exclusion have focused unit/service/browser evidence. Repository-wide soft-launch/contrast and human comprehension/catalogue-review gates remain; live payment and UX-10A were not started. [Quality review](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026). |
 | 2026-09-15 | APP-0088/D-0295 activate and implement UX-04A only | Quick checks and checkpoints now show one question at a time, autosave option-only drafts in the existing encrypted personal-device partition, preserve stable idempotent/offline submission, and show item rationale with focused incorrect-item retry. Focused tests and the complete UX-04A browser journey pass; repository-wide soft-launch/contrast, physical accessibility/lifecycle and independent catalogue-review gates remain. UX-08A and UX-10A were not started. [Quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026). |
 | 2026-09-15 | APP-0087/D-0294 activate and implement UX-03A only | Authenticated Home now has one dominant deterministic Continue; due-review-first and secondary non-gating streak remain unchanged. Ready/overdue review vocabulary, direct blocking-review routes, compact result capability progress and contextual demo usage are covered across all catalogues and learner journeys. Focused gates and all seven learner browser journeys pass; repository-wide soft-launch/contrast, representative-learner comprehension and independent catalogue-review gates remain. UX-04A is unstarted. [Quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026). |

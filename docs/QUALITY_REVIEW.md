@@ -1,5 +1,89 @@
 # Quality review
 
+## AUDIT-CLOSE-01 plan §15 closure — 16 September 2026
+
+### Scope reviewed
+
+- Perform the Android mobile UX audit closure pass defined in
+  [`ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md` §15](ANDROID_MOBILE_UX_AUDIT_EXECUTION_PLAN.md#15-definition-of-audit-closure).
+- Record APP-0093/D-0300: remaining 51 non-N/A §10 cells accepted as residual;
+  UX-EXP-01/02/03 Deferred; production, Play and live payment remain unauthorized.
+- No application, schema, API/OpenAPI, provider, payment or device-matrix cell
+  was changed in this pass.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Authorization | Pass | Exact APO reply `I accept.` after remaining §10 cells were offered as residual so §15 could close. Experiments follow Prompt 9's Deferred default. [APP-0093](APPROVALS.md#app-0093) |
+| Repository gates at HEAD `7746a96` | Pass | Pinned `make verify`, `make e2e` and `make build` all exit 0. Exact summaries in §13.3 of the audit plan |
+| MUX-001–016 | Pass with residuals | Each finding has a resolving commit or an APP-0093 residual. Walk table in the audit plan §15.1 |
+| §13.2 defects 1–8 | Pass with residuals | Defects 1–5 and 7 (authorized parts) resolved by later commits; defects 4/7 remainders, 6 and 8 are residuals. Walk table in §15.1 |
+| Experiments | Deferred | No analytics emission, no independent privacy review, no live traffic. Not used as correctness evidence |
+| Production / Play / live payment | Still blocked | No authorization was granted or implied |
+
+### Commands and results
+
+Pinned toolchain: Node.js 24.18.1, pnpm 11.18.0, PHP 8.4.23, JDK 21 under
+`tmp/toolchain`. Working tree at HEAD `7746a96` (GATE-FIX-01) plus
+documentation-only uncommitted edits from §10.2 recording.
+
+| Command | Result |
+|---|---|
+| `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | Passed (`VERIFY_EXIT=0`). Composer audit clean; Pint passed; PHPStan 0 errors; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,224 assertions); frozen install; `pnpm audit --audit-level=high` reported 2 moderate advisories below the failure threshold; locale check passed with 5 pending-independent-review warnings; OpenAPI/contracts, release and soft-launch contracts passed; lint `--max-warnings=0`; typecheck; web Vitest 101 files / 465 tests |
+| `make e2e PHP="$PWD/tmp/toolchain/php/php"` | Passed (`E2E_EXIT=0`). Reconciliation API 4/4 (103 assertions); Playwright 29 passed (21.7s) |
+| `make build PHP="$PWD/tmp/toolchain/php/php"` | Passed (`BUILD_EXIT=0`). Production web bundle built in 228ms; tutor-avatar licence enforcement excluded models because no completed public licence grant exists |
+
+### Conclusion and retained gates
+
+The audit programme is **closed with accepted residuals**. It is not a
+production, Play or live-payment authorization. Open human gates remain:
+
+- independent privacy/security/tenancy review before any funnel-event emission;
+- academic review of review intervals (ADR-0028);
+- independent review of the five non-English UI catalogues;
+- representative casual/student/business comprehension studies (Home Continue,
+  first-use, quiz clutter, paywall/Continue-free);
+- API 24, API 35, API 36 and physical low-cost-phone §10 cells (accepted
+  residual; do not copy the RMX3085 API 33 Pass);
+- connected instrumentation on a seeded signed-in profile;
+- dashboard fail-close if a stored review row has `completed_at < due_at`
+  (§13.2 defect 6).
+
+## §10.2 current-phone device session — 16 September 2026
+
+### Scope reviewed
+
+- Record the Accountable Product Owner's **Pass** result for audit-plan §10
+  current-phone rows after attaching realme RMX3085 (API 33).
+- Do not mark API 24, API 35, API 36 or physical low-cost-phone cells.
+- Do not start Prompt 9, experiments, or a new implementation checkpoint.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Device identity | Pass | `adb devices -l` showed `J7GUXWEENBNZTW85` / `model:RMX3085`; `ro.build.version.sdk=33`; WebView 151.0.7922.199 |
+| Fresh install microphone | Pass (agent) | After uninstall/install, cold start focus stayed on `MainActivity`; `RECORD_AUDIO` remained `granted=false`; no permission dialog; guest Home visible |
+| Remaining current-phone rows | Pass (tester assertion) | Single **Pass** report covering grant/deny, Back, quiz resume, process recreation, rotation/split-screen, IME, TalkBack, 200% English/Kannada, offline recovery and appearance. No per-row FAIL notes were supplied |
+| Other matrix columns | Open | 51 of 64 non-N/A cells remain unmarked. API 33 evidence is not copied to API 35/36 |
+| Connected instrumentation | Failed as recorded | Default `connectedDebugAndroidTest` failed on Capacitor cordova-plugin Kotlin duplicate classes. `:app:connectedDebugAndroidTest` was 6/6 failed looking for `.level-path__item` on unsigned guest Home |
+| Demo wrapper | Not run | `com.globalenglish.demo` was not installed |
+
+### Commands and results
+
+| Command | Result |
+|---|---|
+| `VITE_MOBILE_API_ORIGIN=http://127.0.0.1:8080 make android-closed-beta` | Passed; APK SHA-256 `779b5b904a3b8f0a29d2661269993b74fc33a056e1395781005d0b31268e18b0` |
+| `adb install` of that APK | Passed |
+| `:app:connectedDebugAndroidTest` | Failed 6/6 on guest Home (expected until a seeded signed-in profile exists) |
+
+### Conclusion and retained gates
+
+The current-phone column may be treated as exercised. APP-0093 later accepted
+the remaining 51 non-N/A cells as residual for this audit programme; API 33
+evidence was not copied into API 35/36. Kannada 200% is layout evidence only.
+
 ## GATE-FIX-01 repository gate repair — 16 September 2026
 
 ### Scope reviewed

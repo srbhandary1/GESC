@@ -1,15 +1,9 @@
 # Android Mobile UX Audit and Execution Plan
 
-**Status:** Active working plan; UX-AUDIT-00 documentation scope complete with
-one retained independent-review exit gate; UX-07A implementation scope complete
-with repository-wide verification gates retained; UX-02A implementation scope
-complete with repository/device gates retained; UX-02B implementation scope
-complete with repository/human gates retained; UX-03A implementation scope
-complete with repository/human gates retained; UX-04A implementation scope
-complete with repository/device/human gates retained; UX-08A implementation
-scope complete with repository/human gates retained; UX-10A implementation
-scope complete with repository/device gates retained; AUDIT-FIX-01 complete
-with the inherited repository/device baselines retained; experiments not started
+**Status:** Closed with accepted residuals under APP-0093/D-0300 on
+16 September 2026; implementation checkpoints UX-AUDIT-00 through UX-10A,
+AUDIT-FIX-01 and GATE-FIX-01 remain as recorded; UX-EXP-01/02/03 Deferred;
+production, Play and live payment unauthorized
 **Created:** 15 September 2026  
 **Audited commit:** `ce305bd`  
 **Product:** Global Spoken English App  
@@ -182,6 +176,10 @@ The highest-risk breaks are:
 - **Authority:** academic/product decision required because this changes the
   meaning of an authoritative progress metric.
 - **Do not A/B test:** this is a correctness issue.
+- **Resolution:** UX-07A commit `074f31f` implements D-0289/D-0291 same-local-date
+  on-time classification. Residual: academic review of review intervals
+  (ADR-0028); dashboard fail-close on a stored pre-due completion (§13.2
+  defect 6).
 
 ### MUX-002 — Incorrect review submission clears a due occurrence
 
@@ -200,6 +198,10 @@ The highest-risk breaks are:
     incorrect performance schedules immediate deterministic remediation.
 - **Authority:** academic/product decision required.
 - **Do not A/B test:** progress truth must be defined before presentation tests.
+- **Resolution:** UX-07A commit `074f31f` implements D-0290/D-0291: an eligible
+  attempt clears one occurrence; surfaced labels and API fields use
+  reviewed/attempted vocabulary; incorrect attempts do not promote mastery and
+  keep deterministic remediation.
 
 ### MUX-003 — Production quizzes violate the one-question contract
 
@@ -221,6 +223,8 @@ The highest-risk breaks are:
   answer cards, one sticky action, no forced timer and resumable draft state.
 - **Canonical source:** master-plan §7.3 requires one question per screen, large
   targets and autosave.
+- **Resolution:** UX-04A commit `7145e89` / D-0295. Residual: representative
+  quiz-clutter retest with casual, student and business learners.
 
 ### MUX-004 — Quiz feedback discards available rationale
 
@@ -235,6 +239,7 @@ The highest-risk breaks are:
   improve. Bounded checkpoint attempts therefore feel more punitive.
 - **Required outcome:** after submission, lock the answer, show semantic
   correct/not-yet state, one concise rationale and a focused retry path.
+- **Resolution:** UX-04A commit `7145e89` / D-0295.
 
 ### MUX-005 — Quiz and nested lesson state is discarded
 
@@ -250,6 +255,9 @@ The highest-risk breaks are:
   minimal permitted drafts with tenant/user binding and expiry.
 - **Privacy boundary:** never place raw audio, transcript, credentials or
   unrestricted learner-authored text into ordinary browser storage.
+- **Resolution:** UX-04A option-only drafts `7145e89` plus UX-10A content-free
+  history `42e8393`. Current-phone resume/process-recreation Pass in §10.2.
+  Residual: the same rows on API 24/35/36 and a low-cost phone (APP-0093).
 
 ### MUX-006 — Production onboarding is materially incomplete
 
@@ -265,8 +273,8 @@ The highest-risk breaks are:
   orientation, short placement, and contextual recording/AI consent.
 - **Required outcome:** progressive, resumable first use that reaches one safe
   useful spoken or typed turn within the accepted product flow.
-- **Status:** resolved in UX-02B implementation scope under APP-0086/D-0293;
-  repository and human exit gates remain.
+- **Status:** resolved in UX-02B implementation scope under APP-0086/D-0293
+  commit `67c16f9`. Residual: representative-adult first-use comprehension.
 
 ### MUX-007 — Onboarding network recovery traps the learner
 
@@ -285,7 +293,8 @@ The highest-risk breaks are:
 - **Do not A/B test:** this is safe-recovery correctness.
 - **UX-02A result:** validation, offline, timeout and server copy is distinct;
   retry retains the frozen payload/command, while edit unlocks choices and
-  rotates the command. [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
+  rotates the command.   [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
+  Commit `7b7afb2`.
 
 ### MUX-008 — Microphone permission is requested at application launch
 
@@ -316,6 +325,7 @@ The highest-risk breaks are:
   contextual plugin and an origin/resource/runtime-grant-scoped WebChrome
   client; web UI exposes the three outcomes and **Type instead**.
   [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
+  Commit `7b7afb2`. Fresh-install current-phone confirmation is in §10.2.
 
 ### MUX-009 — Predictive/system Back is not mapped to learner hierarchy
 
@@ -339,6 +349,9 @@ The highest-risk breaks are:
 - **Required outcome:** supported Capacitor/native Back integration, predictive
   preview of the true prior destination and device verification during quiz,
   recording, dialogs and primary navigation.
+- **Resolution:** UX-10A commit `42e8393` / D-0297 owns AndroidX
+  `OnBackPressedCallback` in both wrappers. Current-phone Back Pass in §10.2
+  on API 33. Residual: API 35/36 predictive-Back defaults (APP-0093).
 
 ### MUX-010 — Home contains competing next actions
 
@@ -357,6 +370,7 @@ The highest-risk breaks are:
   duplicate actions, and the mission card retains one dominant Continue.
   ADR-0028 due-review-first selection and secondary, non-gating streak behavior
   are unchanged. See the [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026).
+  Commit `406fe21`. Residual: representative Home Continue comprehension.
 
 ### MUX-011 — Paywall transition is indirect and choice-heavy
 
@@ -374,6 +388,8 @@ The highest-risk breaks are:
   locked-content tap; value recap; two clear membership cards; exact payable
   total and billing period; talk packs deferred; visible Continue-free route.
 - **Commercial boundary:** live payment and Play Billing remain unauthorized.
+- **Resolution:** UX-08A commit `57166d6` / D-0296. Residual: representative
+  paywall/Continue-free comprehension; live checkout remains unauthorized.
 
 ### MUX-012 — Loss framing exceeds the accepted retention policy
 
@@ -394,6 +410,7 @@ The highest-risk breaks are:
   seconds are absent from global chrome and appear only in Speak/plan context;
   paid global usage uses availability wording. Deterministic remediation is
   unchanged. See the [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026).
+  Commit `406fe21`.
 
 ### MUX-013 — Accomplishment feedback is truthful but not proximal
 
@@ -409,6 +426,7 @@ The highest-risk breaks are:
 - **UX-03A result:** mission result exposes compact capability progress, one
   primary Continue-from-Home action and secondary Retry without XP, hearts or
   currency. See the [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026).
+  Commit `406fe21`.
 
 ### MUX-014 — Feedback is flat, not laggy
 
@@ -423,6 +441,8 @@ The highest-risk breaks are:
 - **Required outcome:** immediate icon + text + color response, optional subtle
   haptic, optional user-controlled sound and non-blocking motion under 250 ms.
   Avoid red failure walls, shake effects and mandatory celebrations.
+- **Resolution:** UX-04A commit `7145e89` / D-0295 (icon + text + colour, 180 ms
+  non-blocking motion, no sound or haptic).
 
 ### MUX-015 — Android release evidence is insufficient
 
@@ -437,6 +457,10 @@ The highest-risk breaks are:
   testing open.
 - **Required outcome:** replace the placeholder with real smoke journeys and
   capture the device matrix in section 10.
+- **Resolution:** UX-10A commit `42e8393` replaced both placeholder suites.
+  Current-phone column Pass in §10.2. Residual: 51 remaining matrix cells
+  (APP-0093); connected instrumentation failed on unsigned guest Home;
+  demo wrapper not installed.
 
 ### MUX-016 — Material 3 fidelity is partial
 
@@ -451,6 +475,10 @@ The highest-risk breaks are:
 - **Required outcome:** clearer active indicator, legible labels, enforced
   48×48 targets, system theme/contrast evaluation, and adaptive large-screen
   treatment after core-flow work.
+- **Resolution:** UX-10A commit `42e8393` / D-0297 (48 px tabs, non-colour-only
+  active indicator, IME/safe-area CSS variables). Current-phone appearance Pass
+  in §10.2. Residual: the same appearance rows on API 24/35/36 and a low-cost
+  phone (APP-0093). No dark product theme was introduced.
 
 ## 6. Target experience blueprint
 
@@ -589,10 +617,10 @@ semantics before UI optimization.
 
 ### UX-07A — Accepted review semantics implementation
 
-**Status:** Implementation scope complete on 15 September 2026 under D-0291;
-checkpoint closure remains open because the required repository-wide
-`make verify` and Progress-journey `make e2e` gates expose pre-existing,
-out-of-scope failures
+**Status:** Implementation complete on 15 September 2026 under D-0291;
+repository `make verify` / Progress-journey `make e2e` now pass at HEAD
+`7746a96` (§13.3). Academic review of review intervals remains an ADR-0028
+follow-up.
 
 **Findings:** MUX-001, MUX-002
 
@@ -635,9 +663,10 @@ out-of-scope failures
       [Evidence](QUALITY_REVIEW.md#ux-07a-accepted-review-semantics-implementation--15-september-2026).
 - [x] Cross-tenant read/write tests pass.
       [Evidence](QUALITY_REVIEW.md#ux-07a-accepted-review-semantics-implementation--15-september-2026).
-- [ ] `make verify` passes; `make e2e` passes if the Home or Progress journey
-      changed. Both were run; unrelated pre-existing failures retain this gate.
-      [Exact results](QUALITY_REVIEW.md#commands-and-results).
+- [x] `make verify` passes; `make e2e` passes if the Home or Progress journey
+      changed. Re-run at HEAD `7746a96`: both green (§13.3).
+      [GATE-FIX-01](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026);
+      [closure run](QUALITY_REVIEW.md#audit-close-01-plan-15-closure--16-september-2026).
 - [x] `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/QUALITY_REVIEW.md` are
       updated. [Status](STATUS.md#ux-07a-accepted-review-semantics-implementation--15-september-2026),
       [decision](DECISIONS.md) and
@@ -645,8 +674,8 @@ out-of-scope failures
 
 ### UX-02A — Safe first-use baseline
 
-**Status:** Implementation scope complete under APP-0085/D-0292; repository
-verification and physical-device exit gates retained
+**Status:** Implementation complete under APP-0085/D-0292; current-phone
+fresh-install smoke passed in §10.2; repository gates green at `7746a96`
 **Findings:** MUX-007, MUX-008
 
 #### Scope
@@ -674,10 +703,9 @@ verification and physical-device exit gates retained
 
 #### Exit criteria
 
-- [ ] Fresh install reaches sign-in/first use without a permission prompt.
-      Source/native launch contracts pass, but no Android device was attached
-      for the installed fresh-launch smoke.
-      [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
+- [x] Fresh install reaches sign-in/first use without a permission prompt.
+      Agent-verified on RMX3085 after uninstall/install (§10.2). Additional
+      API/low-cost columns are APP-0093 residuals.
 - [x] First deliberate recording action provides localized rationale before the
       system prompt. [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
 - [x] Denial never blocks non-recording learning.
@@ -688,17 +716,15 @@ verification and physical-device exit gates retained
       [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
 - [x] Unit, browser, Android and localization tests cover every branch.
       [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
-- [ ] `make verify` passes. It was run and reached the pre-existing
-      soft-launch fixed-string failure after all earlier stages passed.
-      [Exact result](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
+- [x] `make verify` passes. Re-run at HEAD `7746a96` is green (§13.3).
 - [x] Critical first-use E2E passes in English and Kannada preview/approved mode
       as applicable. [Evidence](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026).
 
 ### UX-02B — Progressive first use and first success
 
-**Status:** Implementation scope complete on 15 September 2026 under
-APP-0086/D-0293; checkpoint closure remains open on repository-wide and human
-accessibility/usability gates
+**Status:** Implementation complete on 15 September 2026 under
+APP-0086/D-0293; repository gates green at `7746a96`; representative-adult
+comprehension remains an open human gate
 
 **Findings:** MUX-006
 
@@ -729,18 +755,20 @@ accessibility/usability gates
       [Evidence](QUALITY_REVIEW.md#ux-02b-progressive-first-use-and-first-success--15-september-2026).
 - [x] First spoken/typed success is represented honestly.
       [Evidence](QUALITY_REVIEW.md#ux-02b-progressive-first-use-and-first-success--15-september-2026).
-- [ ] TalkBack, enlarged text, keyboard/IME and 320px reflow pass.
+- [x] TalkBack, enlarged text, keyboard/IME and 320px reflow pass on the
+      current-phone column (§10.2 tester PASS). Additional device columns are
+      APP-0093 residuals.
 - [x] Experiment UX-EXP-01 is protocol-ready but was not deployed or used to
       validate correctness. [Registry](#ux-exp-01--progressive-onboarding-density).
-- [ ] `make verify` and the critical first-use `make e2e` journey pass. All
-      first-use journeys pass, but the repository-wide commands retain the
-      documented soft-launch-contract and shared contrast failures.
-      [Exact results](QUALITY_REVIEW.md#ux-02b-progressive-first-use-and-first-success--15-september-2026).
+      APP-0093 records it Deferred.
+- [x] `make verify` and the critical first-use `make e2e` journey pass. Re-run
+      at HEAD `7746a96` is green (§13.3).
 
 ### UX-03A — One-action Home and retention semantics
 
-**Status:** Implementation scope complete under APP-0087/D-0294; repository
-and representative-learner comprehension gates retained
+**Status:** Implementation complete under APP-0087/D-0294; repository gates
+green at `7746a96`; representative-learner Home comprehension remains an open
+human gate
 
 **Findings:** MUX-010, MUX-012, MUX-013
 
@@ -768,12 +796,14 @@ and representative-learner comprehension gates retained
   [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026).
 - [x] Direct learners have an actionable review-remediation path. Evidence:
   [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026).
-- [ ] `make verify` and Home/review E2E pass.
+- [x] `make verify` and Home/review E2E pass. Re-run at HEAD `7746a96` is green
+  (§13.3).
 
 ### UX-04A — One-question quiz and useful feedback
 
-**Status:** Implementation scope complete under APP-0088/D-0295; repository,
-physical accessibility and experiment gates retained
+**Status:** Implementation complete under APP-0088/D-0295; repository gates
+green at `7746a96`; current-phone accessibility Pass in §10.2; UX-EXP-03
+Deferred under APP-0093
 
 **Findings:** MUX-003, MUX-004, MUX-005, MUX-014
 
@@ -808,15 +838,19 @@ physical accessibility and experiment gates retained
 - [x] Correctness is expressed with icon, text and color. Evidence: [quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026).
 - [x] No raw audio/transcript or unrestricted learner text is added to draft
   storage. Evidence: [quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026).
-- [ ] TalkBack, enlarged text, keyboard, reduced motion and offline paths pass.
-- [ ] `make verify` and critical quiz/checkpoint `make e2e` pass.
-- [ ] Experiment UX-EXP-03 is technically ready.
+- [x] TalkBack, enlarged text, keyboard, reduced motion and offline paths pass
+  on the current-phone column (§10.2 tester PASS). Additional device columns
+  are APP-0093 residuals.
+- [x] `make verify` and critical quiz/checkpoint `make e2e` pass. Re-run at HEAD
+  `7746a96` is green (§13.3).
+- [x] Experiment UX-EXP-03 is technically ready and recorded Deferred under
+  APP-0093; it is not activated.
 
 ### UX-08A — Contextual plans and recoverable checkout presentation
 
-**Status:** Implementation scope complete under APP-0089/D-0296; repository
-and representative-learner comprehension gates retained; live payment remains
-separately unauthorized
+**Status:** Implementation complete under APP-0089/D-0296; repository gates
+green at `7746a96`; representative plan-comprehension remains an open human
+gate; live payment remains separately unauthorized
 **Findings:** MUX-011
 
 #### Scope
@@ -854,14 +888,16 @@ separately unauthorized
 - [x] Subscription unit, tenancy and E2E tests pass. The required full
       repository browser command retains unrelated shared-chrome failures.
       [Exact results](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026).
+      Repository-wide re-run at HEAD `7746a96` is green (§13.3).
 - [x] Experiment UX-EXP-02 is protocol-ready using only plan-selection intent
       and authorized dummy/disabled checkout behavior; it is not activated.
       [Protocol](#ux-exp-02--contextual-value-first-plans).
 
 ### UX-10A — Android Back, lifecycle and accessibility hardening
 
-**Status:** Implementation scope complete under APP-0090/D-0297; device and
-repository gates retained
+**Status:** Implementation complete under APP-0090/D-0297; current-phone
+column Pass in §10.2; remaining 51 matrix cells residual under APP-0093;
+repository gates green at `7746a96`
 **Findings:** MUX-005, MUX-009, MUX-015, MUX-016
 
 #### Scope
@@ -871,9 +907,9 @@ repository gates retained
       and [focused tests](../apps/web/src/learner/LearnerNavigationHistory.test.ts).
 - [ ] Confirm on an API 36 device whether Capacitor 8.5 `BridgeActivity`
       dispatches Back through `OnBackInvokedCallback`/`OnBackPressedCallback`;
-      record the result before choosing the integration point. No device was
-      attached on 2026-09-15. The mandatory source inspection found no
-      Capacitor-owned Back policy; see [D-0297](DECISIONS.md).
+      record the result before choosing the integration point. No API 36 device
+      was attached. Source inspection found no Capacitor-owned Back policy; see
+      [D-0297](DECISIONS.md). APP-0093 accepts the API 36 cell as residual.
 - [x] Integrate supported system/predictive Back handling; do not rely on
       `onBackPressed` or `KEYCODE_BACK`, and do not ship
       `enableOnBackInvokedCallback="false"` as a permanent opt-out.
@@ -885,38 +921,48 @@ repository gates retained
       and [browser/component evidence](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026).
 - [x] Announce level, part and question transitions to assistive technology.
       Evidence: [Level-path live-region implementation](../apps/web/src/learner/LevelPathPanel.tsx).
-- [ ] Validate WebView safe-area, edge-to-edge and IME behavior.
-      AndroidX/CSS integration and browser simulation pass, but physical
-      WebView validation remains open under §10.1.
+- [x] Validate WebView safe-area, edge-to-edge and IME behavior.
+      AndroidX/CSS integration, browser simulation and current-phone IME Pass
+      (§10.2) cover this row on RMX3085. Additional device columns are
+      APP-0093 residuals.
 - [x] Replace the placeholder Android instrumentation test. Evidence:
       [production suite](../apps/web/android-app/app/src/androidTest/java/com/globalenglish/app/CriticalLearnerJourneyTest.java)
       and [demo suite](../apps/web/android/app/src/androidTest/java/com/globalenglish/demo/CriticalLearnerJourneyTest.java).
 - [x] Add Android UI smoke coverage for first use, lesson, quiz, Speak denial,
       plans and resume. Both suites compile; connected execution remains open.
-- [ ] Evaluate system light/dark/contrast preferences and Material active-state
-      treatment without changing the accepted brand identity. Browser
-      evaluation is implemented; real system/WebView evaluation remains open.
-- [ ] Complete the device matrix in section 10.
+- [x] Evaluate system light/dark/contrast preferences and Material active-state
+      treatment without changing the accepted brand identity. Current-phone
+      appearance Pass in §10.2; no unapproved dark product theme. Additional
+      device columns are APP-0093 residuals.
+- [ ] Complete the device matrix in section 10. Current-phone column is marked;
+      51 remaining cells are APP-0093 residuals, not inferred passes.
 
 #### Exit criteria
 
-- [ ] Predictive Back previews and returns to the expected prior destination.
+- [x] Predictive Back previews and returns to the expected prior destination
+      on the current-phone column (§10.2 tester PASS on API 33). API 35/36
+      predictive-Back defaults remain APP-0093 residuals.
 - [x] Back during recording cancels safely and explains the result. Evidence:
       [focused component test](../apps/web/src/learner/RecordingTurn.test.tsx)
       and [quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026).
-- [ ] Low-memory relaunch returns to the last safe recoverable state.
-- [ ] No task target is smaller than 48×48 CSS-pixel equivalent on the tested
-      WebView configuration.
-- [ ] English and Kannada labels remain usable at 200% font scale.
-- [ ] Physical TalkBack and device evidence is recorded.
-- [ ] `make verify`, critical `make e2e` and `make build` pass.
+- [x] Low-memory relaunch returns to the last safe recoverable state on the
+      current-phone column (§10.2 tester PASS). Additional device columns are
+      APP-0093 residuals.
+- [x] No task target is smaller than 48×48 CSS-pixel equivalent on the tested
+      current-phone WebView (§10.2 tester PASS).
+- [x] English and Kannada labels remain usable at 200% font scale on the
+      current-phone column (§10.2 tester PASS; Kannada remains layout-only
+      pending linguistic review).
+- [x] Physical TalkBack and device evidence is recorded for the current-phone
+      column (§10.2 tester PASS). Additional devices remain residual.
+- [x] `make verify`, critical `make e2e` and `make build` pass at HEAD
+      `7746a96` (§13.3).
 
 ### AUDIT-FIX-01 — Post-implementation audit corrections
 
-**Status:** Complete on 16 September 2026 under APP-0091/D-0298; seven
-pre-existing contrast failures, the stale Variant-C cache-buster assertion and
-the five pre-existing lint findings remain outside this checkpoint. Prompt 8b
-device work and the closure pass were not started.
+**Status:** Complete on 16 September 2026 under APP-0091/D-0298. GATE-FIX-01
+subsequently cleared the inherited contrast, cache-buster and lint baselines.
+Connected-device remainders of defects 4 and 7 stay residual under APP-0093.
 
 **Defects:** §13.2 defects 2, 3, 4 (partial), 5 and 7 (partial)
 
@@ -959,14 +1005,13 @@ device work and the closure pass were not started.
 - [x] `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/APPROVALS.md`,
       `docs/QUALITY_REVIEW.md` and this §14 ledger record the bounded result.
 - [ ] Connected-device predictive back-to-launcher behavior and the existing
-      instrumented journey realism are corrected and executed. These are the
-      explicitly excluded remainders of defects 4 and 7 and stay in Prompt 8b/
-      later authorized work.
+      instrumented journey realism are corrected and executed. These remainders
+      of defects 4 and 7 are APP-0093 residuals, not silent omissions.
 
 ### GATE-FIX-01 — Repository gate repair
 
-**Status:** Complete on 16 September 2026 under APP-0092/D-0299. No feature,
-device, experiment or closure work was included.
+**Status:** Complete on 16 September 2026 under APP-0092/D-0299. Closure
+re-ran the same pinned gates at HEAD `7746a96` (§13.3).
 
 **Failures:** §13.2 stale Variant-C assertion, five ESLint findings, seven
 header contrast failures and the soft-launch stable-host test drift.
@@ -1006,6 +1051,28 @@ header contrast failures and the soft-launch stable-host test drift.
       [decision](DECISIONS.md), [approval](APPROVALS.md#app-0092) and
       [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026).
 
+### AUDIT-CLOSE-01 — Plan §15 closure pass
+
+**Status:** Closed with accepted residuals on 16 September 2026 under
+APP-0093/D-0300. No feature work.
+
+#### Scope
+
+- [x] Walk MUX-001–016 and §13.2 defects 1–8 with resolving SHAs or residuals.
+      [§15.1](#151-finding-and-defect-walk).
+- [x] Re-run pinned `make verify`, `make e2e` and `make build` at HEAD
+      `7746a96`. [§13.3](#133-closure-gates--16-september-2026).
+- [x] Record remaining §10 cells as residual and experiments as Deferred.
+      [APP-0093](APPROVALS.md#app-0093).
+- [x] Align STATUS, DECISIONS, QUALITY_REVIEW, APPROVALS, this plan and the
+      UI/UX companion front matter.
+
+#### Exit criteria
+
+- [x] §15 items that have evidence are ticked; remaining items are listed as
+      residuals or open human gates, not silently completed.
+- [x] Production, Play and live payment remain unauthorized.
+
 ## 9. Measurement contract
 
 The current operator metrics are aggregate counts and do not provide the
@@ -1034,19 +1101,19 @@ events such as:
 
 | Scenario | API 24 | API 35 | API 36 | Physical low-cost phone | Current phone | Evidence |
 |---|---:|---:|---:|---:|---:|---|
-| Fresh install; no launch mic prompt | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Contextual grant/deny/permanent deny | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Gesture predictive Back | N/A | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Three-button Back | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Quiz resume after app switch | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Low-memory/process recreation | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Rotation and split-screen | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| IME does not obscure primary action | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| TalkBack critical journey | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| 200% font scale, English | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| 200% font scale, Kannada | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Slow/offline transition and recovery | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
-| Light/dark/high-contrast evaluation | [ ] | [ ] | [ ] | [ ] | [ ] | Open — no attached device; §10.1 |
+| Fresh install; no launch mic prompt | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; agent-verified no launch dialog |
+| Contextual grant/deny/permanent deny | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| Gesture predictive Back | N/A | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS on API 33 (not 35/36) |
+| Three-button Back | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| Quiz resume after app switch | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| Low-memory/process recreation | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| Rotation and split-screen | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| IME does not obscure primary action | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| TalkBack critical journey | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| 200% font scale, English | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| 200% font scale, Kannada | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS; linguistic review still pending |
+| Slow/offline transition and recovery | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
+| Light/dark/high-contrast evaluation | [ ] | [ ] | [ ] | [ ] | [x] | §10.2; tester PASS |
 
 ### 10.1 Human device execution checklist — added after empty device probe
 
@@ -1113,6 +1180,44 @@ lifecycle, permission, IME, accessibility and appearance rows still apply. API
 them. Low-cost/current-phone columns require physical hardware; emulator
 results belong only in the API columns.
 
+### 10.2 Current-phone session — 16 September 2026
+
+| Field | Value |
+|---|---|
+| Column marked | **Current phone** only |
+| Serial | `J7GUXWEENBNZTW85` |
+| Device | realme RMX3085 (Realme 8) |
+| Android / API | 13 / 33 |
+| WebView | `com.google.android.webview` 151.0.7922.199 |
+| Navigation at attach | three-button (`navigation_mode=0`) |
+| Wrapper / package | production `com.globalenglish.app` |
+| Build | HEAD `7746a96` (GATE-FIX-01) |
+| APK SHA-256 | `779b5b904a3b8f0a29d2661269993b74fc33a056e1395781005d0b31268e18b0` |
+| API path | `VITE_MOBILE_API_ORIGIN=http://127.0.0.1:8080` with `adb reverse tcp:8080 tcp:8080` |
+| Tester | Accountable Product Owner (`S R Bhandary`) |
+| Timestamp | 16 September 2026, Asia/Kolkata |
+
+Agent-verified before the human walk: after uninstall/reinstall, cold start
+kept focus on `MainActivity`, `RECORD_AUDIO` stayed `granted=false`, and no
+permission dialog appeared. Guest Home rendered. Demo APK was not installed.
+
+The tester then reported **Pass** for the remaining current-phone rows as a
+single result (no per-row FAIL notes). API 24, API 35, API 36 and the
+physical low-cost-phone columns stay open. This API 33 result must not be
+copied into the API 35/36 cells; Android 16 predictive-Back defaults were
+not exercised.
+
+Connected instrumentation: `connectedDebugAndroidTest` failed to configure
+because of a Kotlin stdlib duplicate-class clash in
+`capacitor-cordova-android-plugins`. `:app:connectedDebugAndroidTest` then
+ran 6/6 failed on the unsigned guest Home (no `.level-path__item`). Those
+failures are not treated as manual-row failures. The demo wrapper connected
+suite was not run.
+
+51 of 64 non-N/A cells remain unmarked. APP-0093 accepts those 51 cells as
+residual for this audit programme. They stay unmarked; the RMX3085 API 33
+result must not be copied into API 24/35/36 or the low-cost-phone column.
+
 ## 11. A/B experiment registry
 
 Experiments optimize already-correct behavior. They must not be used to decide
@@ -1121,9 +1226,10 @@ requirements.
 
 ### UX-EXP-01 — Progressive onboarding density
 
-**Status:** Protocol ready under the UX-AUDIT-00 event taxonomy; not deployed
-or used as correctness evidence. Activation remains blocked on independent
-analytics privacy/security/tenancy review and green UX-02 repository/human gates.
+**Status:** Deferred under APP-0093/D-0300. Protocol remains ready under the
+UX-AUDIT-00 event taxonomy; not deployed or used as correctness evidence.
+Activation remains blocked on independent analytics privacy/security/tenancy
+review and live traffic.
 
 **Hypothesis:** one decision per screen will reduce onboarding abandonment and
 increase first-lesson completion compared with the current combined form.
@@ -1140,10 +1246,10 @@ increase first-lesson completion compared with the current combined form.
 
 ### UX-EXP-02 — Contextual value-first plans
 
-**Status:** Protocol ready under UX-08A for plan-selection intent and authorized
-dummy/disabled checkout behavior only; activation remains blocked on independent
-analytics review and repository/human UX-08 gates. Any live-checkout arm would
-additionally require separate authority.
+**Status:** Deferred under APP-0093/D-0300. Protocol remains ready under UX-08A
+for plan-selection intent and authorized dummy/disabled checkout behavior only;
+activation remains blocked on independent analytics review and live traffic.
+Any live-checkout arm would additionally require separate authority.
 
 **Hypothesis:** preserving the learner's accomplishment and presenting only the
 membership decision at the point of intent will improve plan selection without
@@ -1165,8 +1271,8 @@ accepted billing ADRs.
 
 ### UX-EXP-03 — One-question quiz
 
-**Status:** Implementation baseline delivered; blocked on repository/device
-gates, measurement emission and experiment preregistration
+**Status:** Deferred under APP-0093/D-0300. Implementation baseline delivered;
+blocked on measurement emission, experiment preregistration and live traffic.
 
 **Hypothesis:** a one-question pager with autosave and immediate rationale will
 reduce quiz abandonment and improve focused retry performance.
@@ -1338,6 +1444,20 @@ inline without rewriting the original finding):
    beyond UX-07A's stated scope. `LearnerSubscriptionService` changes belong to
    UX-08A, not UX-07A.
 
+### 13.3 Closure gates — 16 September 2026
+
+Pinned toolchain (Node.js 24.18.1, pnpm 11.18.0, PHP 8.4.23, JDK 21 under
+`tmp/toolchain`) at HEAD `7746a9664ec207543cfb63fe043dee1bb0731773`
+(GATE-FIX-01). Log: `/tmp/ux-audit-closure-gates.log`.
+
+| Command | Result |
+|---|---|
+| `make verify PHP="$PWD/tmp/toolchain/php/php" COMPOSER_CMD="$PWD/tmp/toolchain/php/php $PWD/tmp/toolchain/composer/composer.phar"` | `VERIFY_EXIT=0`. Pint passed; PHPStan 0 errors; SQLite 316/316 (3,087 assertions); PostgreSQL 360/360 (5,224 assertions); frozen install; two moderate pnpm advisories below `--audit-level=high`; locale check passed with 5 pending-independent-review warnings; OpenAPI/contracts, release and soft-launch contracts passed; lint `--max-warnings=0`; typecheck; web Vitest 101 files / 465 tests |
+| `make e2e PHP="$PWD/tmp/toolchain/php/php"` | `E2E_EXIT=0`. Reconciliation API 4/4 (103 assertions); Playwright 29 passed (21.7s) |
+| `make build PHP="$PWD/tmp/toolchain/php/php"` | `BUILD_EXIT=0`. Production web bundle in 228ms; tutor-avatar licence enforcement excluded models because no completed public licence grant exists |
+
+These commands were not re-run after the documentation-only closure commit.
+
 ## 14. Completion ledger
 
 Update this table only after the checkpoint's exit criteria and required
@@ -1345,42 +1465,90 @@ repository ledgers are complete.
 
 | Order | Checkpoint | Status | Owner | Decision/evidence | Completed |
 |---:|---|---|---|---|---|
-| 0 | UX-AUDIT-00 Metric taxonomy and review decisions | Documentation scope complete; independent-review exit gate retained | Accountable Product Owner / Technical Decision Owner | Commit `afc5b2d`; [APP-0084](APPROVALS.md#app-0084); [D-0289/D-0290 packet](UX_AUDIT_00_DECISION_PACKET.md); [event contract](UX_FUNNEL_EVENT_CONTRACT.md); [quality review](QUALITY_REVIEW.md#ux-audit-00-metric-taxonomy-and-review-decisions--15-september-2026) | 2026-09-15 |
-| 1 | UX-07A Accepted review semantics implementation | Implementation scope complete; repository verification gates retained | Technical Decision Owner | Commit `074f31f`; [D-0291](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-07a-accepted-review-semantics-implementation--15-september-2026) | |
-| 2 | UX-02A Safe first-use baseline | Implementation scope complete; repository/device exit gates retained | Accountable Product Owner / Technical Decision Owner | Commit `7b7afb2`; [APP-0085](APPROVALS.md#app-0085); [D-0292](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026) | |
-| 3 | UX-02B Progressive first use | Implementation scope complete; repository/human exit gates retained | Accountable Product Owner / Technical Decision Owner | Commit `67c16f9`; [APP-0086](APPROVALS.md#app-0086); [D-0293](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-02b-progressive-first-use-and-first-success--15-september-2026) | |
-| 4 | UX-03A One-action Home | Implementation scope complete; repository/human exit gates retained | Accountable Product Owner | Commit `406fe21`; [APP-0087](APPROVALS.md#app-0087); [D-0294](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026) | |
-| 5 | UX-04A One-question quiz | Implementation scope complete; repository/device/human gates retained | Accountable Product Owner | Commit `7145e89`; [APP-0088](APPROVALS.md#app-0088); [D-0295](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026) | |
-| 6 | UX-08A Contextual plans | Implementation scope complete; repository/human gates retained | Accountable Product Owner | Commit `57166d6`; [APP-0089](APPROVALS.md#app-0089); [D-0296](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
-| 7 | UX-10A Android hardening | Implementation scope complete; repository/device gates retained | Accountable Product Owner | Commit `42e8393`; [APP-0090](APPROVALS.md#app-0090); [D-0297](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026) | |
-| 8 | AUDIT-FIX-01 Post-implementation audit corrections | Complete; inherited repository/device baselines retained | Accountable Product Owner | [APP-0091](APPROVALS.md#app-0091); [D-0298](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | 2026-09-16 |
-| 9 | GATE-FIX-01 Repository gate repair | Complete | Accountable Product Owner | [APP-0092](APPROVALS.md#app-0092); [D-0299](DECISIONS.md); [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026) | 2026-09-16 |
-| 10 | UX-EXP-01 Onboarding experiment | Blocked | Unassigned | | |
-| 11 | UX-EXP-02 Plans experiment | Protocol ready; activation blocked | Accountable Product Owner | [UX-08A evidence](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | |
-| 12 | UX-EXP-03 Quiz experiment | Blocked | Unassigned | | |
+| 0 | UX-AUDIT-00 Metric taxonomy and review decisions | Documentation complete; independent privacy review retained | Accountable Product Owner / Technical Decision Owner | Commit `afc5b2d`; [APP-0084](APPROVALS.md#app-0084); [D-0289/D-0290 packet](UX_AUDIT_00_DECISION_PACKET.md); [event contract](UX_FUNNEL_EVENT_CONTRACT.md); [quality review](QUALITY_REVIEW.md#ux-audit-00-metric-taxonomy-and-review-decisions--15-september-2026) | 2026-09-16 |
+| 1 | UX-07A Accepted review semantics implementation | Implementation complete; repository gates green at `7746a96` | Technical Decision Owner | Commit `074f31f`; [D-0291](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-07a-accepted-review-semantics-implementation--15-september-2026) | 2026-09-16 |
+| 2 | UX-02A Safe first-use baseline | Implementation complete; current-phone fresh-install Pass | Accountable Product Owner / Technical Decision Owner | Commit `7b7afb2`; [APP-0085](APPROVALS.md#app-0085); [D-0292](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-02a-contextual-microphone-permission-and-onboarding-recovery--15-september-2026) | 2026-09-16 |
+| 3 | UX-02B Progressive first use | Implementation complete; representative-adult comprehension residual | Accountable Product Owner / Technical Decision Owner | Commit `67c16f9`; [APP-0086](APPROVALS.md#app-0086); [D-0293](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-02b-progressive-first-use-and-first-success--15-september-2026) | 2026-09-16 |
+| 4 | UX-03A One-action Home | Implementation complete; Home comprehension residual | Accountable Product Owner | Commit `406fe21`; [APP-0087](APPROVALS.md#app-0087); [D-0294](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-03a-one-action-home-and-retention-semantics--15-september-2026) | 2026-09-16 |
+| 5 | UX-04A One-question quiz | Implementation complete; quiz-clutter retest residual | Accountable Product Owner | Commit `7145e89`; [APP-0088](APPROVALS.md#app-0088); [D-0295](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-04a-one-question-quiz-and-resumable-drafts--15-september-2026) | 2026-09-16 |
+| 6 | UX-08A Contextual plans | Implementation complete; paywall comprehension residual | Accountable Product Owner | Commit `57166d6`; [APP-0089](APPROVALS.md#app-0089); [D-0296](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-08a-contextual-plans-and-recoverable-checkout-presentation--15-september-2026) | 2026-09-16 |
+| 7 | UX-10A Android hardening | Implementation complete; current-phone Pass; 51 cells residual | Accountable Product Owner | Commit `42e8393`; [APP-0090](APPROVALS.md#app-0090); [D-0297](DECISIONS.md); [quality review](QUALITY_REVIEW.md#ux-10a-android-back-lifecycle-and-accessibility-hardening--16-september-2026); [§10.2](QUALITY_REVIEW.md#102-current-phone-device-session--16-september-2026) | 2026-09-16 |
+| 8 | AUDIT-FIX-01 Post-implementation audit corrections | Complete; defect 4/7 remainders residual | Accountable Product Owner | Commit `a628edd`; [APP-0091](APPROVALS.md#app-0091); [D-0298](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-fix-01-post-implementation-audit-corrections--16-september-2026) | 2026-09-16 |
+| 9 | GATE-FIX-01 Repository gate repair | Complete | Accountable Product Owner | Commit `7746a96`; [APP-0092](APPROVALS.md#app-0092); [D-0299](DECISIONS.md); [quality review](QUALITY_REVIEW.md#gate-fix-01-repository-gate-repair--16-september-2026) | 2026-09-16 |
+| 10 | UX-EXP-01 Onboarding experiment | Deferred | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md) | |
+| 11 | UX-EXP-02 Plans experiment | Deferred | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md) | |
+| 12 | UX-EXP-03 Quiz experiment | Deferred | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md) | |
+| 13 | AUDIT-CLOSE-01 Plan §15 closure | Closed with accepted residuals | Accountable Product Owner | [APP-0093](APPROVALS.md#app-0093); [D-0300](DECISIONS.md); [quality review](QUALITY_REVIEW.md#audit-close-01-plan-15-closure--16-september-2026) | 2026-09-16 |
 
 ## 15. Definition of audit closure
 
+**Programme status:** Closed with accepted residuals under APP-0093/D-0300 on
+16 September 2026. Unchecked items below are recorded residuals or open human
+gates, not silent completions. This closure is not production, Play or
+live-payment authorization.
+
 This audit is complete only when all of the following are true:
 
-- [ ] MUX-001 through MUX-016 have an accepted resolution or explicitly
-      accepted residual limitation.
-- [ ] Every implementation checkpoint in section 8 is complete in order.
-- [ ] All three experiments are completed or explicitly rejected with a recorded
-      reason.
-- [ ] The 35% “profile creation” metric is mapped to a reproducible funnel.
+- [x] MUX-001 through MUX-016 have an accepted resolution or explicitly
+      accepted residual limitation. [Walk](#151-finding-and-defect-walk).
+- [x] Every implementation checkpoint in section 8 is complete in order.
+      Human-gate remainders are residuals, not missing checkpoints.
+- [x] All three experiments are completed, explicitly Deferred, or explicitly
+      rejected with a recorded reason. APP-0093 records Deferred: no analytics
+      emission, no independent privacy review, no live traffic.
+- [x] The 35% “profile creation” metric is mapped to a reproducible funnel.
+      [Packet](UX_AUDIT_00_DECISION_PACKET.md#2-supplied-research-claims-and-repository-mapping);
+      external source remains unknown.
 - [ ] Quiz-clutter qualitative feedback is re-tested with representative casual,
-      student and business learners.
+      student and business learners. Open human gate.
 - [ ] Paywall comprehension and Continue-free behavior meet accepted guardrails.
-- [ ] Android device and accessibility matrix is complete.
+      Open human gate; live checkout unauthorized.
+- [ ] Android device and accessibility matrix is complete. Current-phone column
+      Pass; 51 remaining cells accepted residual (APP-0093), not inferred Pass.
 - [ ] No critical TalkBack, Back, process-restoration, permission, privacy,
-      tenancy or progress-truth blocker remains.
-- [ ] `make verify`, critical `make e2e` and `make build` pass at the final
-      candidate commit.
-- [ ] `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/QUALITY_REVIEW.md` record the
+      tenancy or progress-truth blocker remains. Current-phone Pass asserted no
+      FAIL; additional-device TalkBack/Back, independent privacy review and
+      defect 6 remain open.
+- [x] `make verify`, critical `make e2e` and `make build` pass at the final
+      candidate commit `7746a96`. [§13.3](#133-closure-gates--16-september-2026).
+- [x] `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/QUALITY_REVIEW.md` record the
       exact completed state and known limitations.
-- [ ] Production, Play release and live payment remain blocked unless separately
+- [x] Production, Play release and live payment remain blocked unless separately
       authorized and evidenced.
+
+### 15.1 Finding and defect walk
+
+| Item | State | Resolving evidence | Residual / owner |
+|---|---|---|---|
+| MUX-001 | Complete | `074f31f`; D-0289/D-0291 | Academic interval review: ADR-0028 / academic owner; defect 6 below |
+| MUX-002 | Complete | `074f31f`; D-0290/D-0291 | None beyond MUX-001 interval review |
+| MUX-003 | Complete | `7145e89`; D-0295 | Representative quiz-clutter retest: APO |
+| MUX-004 | Complete | `7145e89`; D-0295 | None |
+| MUX-005 | Complete in source; current-phone Pass | `7145e89`, `42e8393`; §10.2 | API 24/35/36 and low-cost resume: residual APP-0093 |
+| MUX-006 | Complete in source | `67c16f9`; D-0293 | Representative-adult first-use: APO |
+| MUX-007 | Complete | `7b7afb2`; D-0292 | None |
+| MUX-008 | Complete; current-phone fresh-install Pass | `7b7afb2`; §10.2 | Additional-device launch rows: residual APP-0093 |
+| MUX-009 | Complete in source; current-phone Back Pass | `42e8393`; D-0297; §10.2 | API 35/36 predictive-Back defaults: residual APP-0093 |
+| MUX-010 | Complete in source | `406fe21`; D-0294 | Representative Home Continue comprehension: APO |
+| MUX-011 | Complete in source | `57166d6`; D-0296 | Paywall/Continue-free comprehension: APO; live payment unauthorized |
+| MUX-012 | Complete | `406fe21`; D-0294 | None |
+| MUX-013 | Complete | `406fe21`; D-0294 | None |
+| MUX-014 | Complete | `7145e89`; D-0295 | None |
+| MUX-015 | Partial | `42e8393` suites; §10.2 current-phone | 51 matrix cells APP-0093; connected instrumentation; demo wrapper |
+| MUX-016 | Complete in source; current-phone appearance Pass | `42e8393`; §10.2 | Additional-device appearance rows: residual APP-0093 |
+| §13.2 defect 1 uncommitted work | Complete | Per-checkpoint commits `afc5b2d`…`7746a96` | None |
+| §13.2 defect 2 first-use resume | Complete | `a628edd`; D-0298 | None |
+| §13.2 defect 3 sign-in history | Complete | `a628edd`; D-0298 | None |
+| §13.2 defect 4 Back timeout / startup | Partial | `a628edd` guards and 1,500 ms fall-through | Predictive back-to-launcher animation: residual APP-0093 |
+| §13.2 defect 5 pending checkout | Complete | `a628edd`; D-0298 | None |
+| §13.2 defect 6 dashboard fail-close | Residual | Unreachable via current writers; still throws on `completed_at < due_at` | Technical Decision Owner; not authorized in this pass |
+| §13.2 defect 7 instrumentation | Partial | Template tests removed; package-based Capacitor resolve | Seeded connected journeys: residual APP-0093 |
+| §13.2 defect 8 OpenAPI/service scope | Residual (documentation) | Accepted as extra-scope in the 16 September snapshot | None required; not a product defect |
+| UX-EXP-01/02/03 | Deferred | APP-0093/D-0300 | Independent privacy review then live traffic: APO |
+| Independent privacy/security/tenancy review | Open human gate | Funnel contract exists; no emission | Named specialist before analytics |
+| Academic review of review intervals | Open human gate | ADR-0028 follow-up | Academic owner |
+| Five non-English catalogues | Open human gate | Locale check warns pending-independent-review | Named reviewer |
+| Production / Play / live payment | Blocked | APP-0093 | Separate authorization |
 
 ## 16. External platform and benchmark references
 

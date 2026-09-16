@@ -1,5 +1,39 @@
 # Repository status
 
+## AUDIT-CLOSE-01 plan §15 closure — 16 September 2026
+
+- APP-0093/D-0300 close the Android mobile UX audit programme with accepted
+  residuals. No application code, schema, API/OpenAPI, provider or payment
+  behaviour changed in this pass.
+- Remaining 51 non-N/A §10 cells (API 24, API 35, API 36, physical low-cost
+  phone) are residual. The RMX3085 API 33 current-phone Pass is not copied
+  into those columns.
+- UX-EXP-01, UX-EXP-02 and UX-EXP-03 are Deferred: funnel-event emission is
+  not implemented, independent privacy/security/tenancy review has not run,
+  and no live traffic exists. Experiments are not used as correctness
+  evidence.
+- Pinned gates at HEAD `7746a96`: `make verify` (SQLite 316/316, PostgreSQL
+  360/360, web Vitest 465/465), `make e2e` (API 4/4, Playwright 29/29) and
+  `make build` all passed.
+- Production, Play release and live payment remain unauthorized.
+
+## §10.2 current-phone device session — 16 September 2026
+
+- A physical realme RMX3085 (Android 13 / API 33) was attached as
+  `J7GUXWEENBNZTW85`. Production debug APK from HEAD `7746a96` was installed
+  (`com.globalenglish.app`, SHA-256
+  `779b5b904a3b8f0a29d2661269993b74fc33a056e1395781005d0b31268e18b0`) with
+  API origin `http://127.0.0.1:8080` over `adb reverse`.
+- Agent-verified: fresh install did not show a launch-time microphone
+  prompt; `RECORD_AUDIO` remained denied.
+- The Accountable Product Owner reported **Pass** for the remaining
+  current-phone §10 rows. Only that column is marked. API 24/35/36 and
+  low-cost-phone cells were later accepted as residual under APP-0093
+  (51 of 64 non-N/A cells remain unmarked; API 33 is not copied into them).
+- `:app:connectedDebugAndroidTest` ran 6/6 failed on unsigned guest Home;
+  that is recorded and is not used to fail the manual rows. Demo APK was
+  not installed.
+
 ## GATE-FIX-01 repository gate repair — 16 September 2026
 
 - APP-0092/D-0299 authorize only the four pre-existing §13.2 gate failures.
@@ -653,15 +687,15 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | GATE-FIX-01: repository verification and E2E gate repair — complete (D-0299) |
-| Status | The four pre-existing §13.2 repository-gate categories are resolved. Final pinned `make verify`, `make e2e` and `make build` pass. No product feature or live configuration changed. No device was attached in UX-10A, so all 64 non-N/A §10 cells and every physical accessibility/lifecycle result remain open. Prior UX-02/UX-03/UX-04/UX-07/UX-08 human/catalogue gates and the experiment/closure programme remain open. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | AUDIT-CLOSE-01 (plan §15) closed with residuals under APP-0093/D-0300 |
+| Status | Android mobile UX audit programme closed with accepted residuals. Repository gates are green at HEAD `7746a96`. Current-phone §10 PASS on realme RMX3085 (API 33). 51 remaining device cells are residual. Experiments are Deferred. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 16 September 2026 |
 | Git branch | `cursor/learner-variant-c-jezweb-3f88` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Keep experiments and closure work stopped until separately authorized. Attach the specified API 24/35/36 and physical devices and execute audit-plan §10.1 without inferring results; all 64 non-N/A cells are open. Complete prior UX-02/UX-03/UX-04/UX-07/UX-08 human and catalogue gates. Live payment, Play Billing and real capture need separate authority. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
+| Next required action | Do not treat this closure as production, Play or live-payment authorization. Independent privacy/security/tenancy review is required before funnel-event emission. Academic review of review intervals remains under ADR-0028. Independent review of the five non-English catalogues, representative comprehension studies, seeded connected instrumentation and optional later API 24/35/36 and low-cost-phone coverage remain open human gates. Defect 6 (dashboard fail-close on `completed_at < due_at`) remains a residual. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
 | Production/public release | Not authorized |
-| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A fresh UX-10A production debug APK was built locally but not installed or published; the previously published closed-beta APK remains obsolete. Live payment remains disabled and unauthorized. |
+| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A GATE-FIX-01 production debug APK was sideloaded to the attached RMX3085 for §10.2; it is not a published closed-beta artifact. Live payment remains disabled and unauthorized. |
 
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 
