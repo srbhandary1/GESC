@@ -10,10 +10,35 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
         GlobalEnglishAndroidShell.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
-        if (bridge != null && bridge.getWebView() != null) {
-            WebView webView = bridge.getWebView();
-            webView.setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
-            GlobalEnglishAndroidShell.install(this, webView);
+        attachShellIfReady();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        attachShellIfReady();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        attachShellIfReady();
+    }
+
+    private void attachShellIfReady() {
+        if (bridge == null) {
+            return;
         }
+
+        WebView webView = bridge.getWebView();
+        if (webView == null) {
+            return;
+        }
+
+        if (!(webView.getWebChromeClient() instanceof GlobalEnglishWebChromeClient)) {
+            webView.setWebChromeClient(new GlobalEnglishWebChromeClient(bridge));
+        }
+
+        GlobalEnglishAndroidShell.install(this, webView);
     }
 }

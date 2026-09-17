@@ -130,7 +130,8 @@
     padding-block-end: calc(
       4.5rem + max(
         env(safe-area-inset-bottom, 0px),
-        var(--ge-native-safe-area-bottom, 0px)
+        var(--ge-native-safe-area-bottom, 0px),
+        24px
       )
     );
   }
@@ -148,7 +149,8 @@
     background: var(--ge-color-surface);
     padding-block-end: max(
       env(safe-area-inset-bottom, 0px),
-      var(--ge-native-safe-area-bottom, 0px)
+      var(--ge-native-safe-area-bottom, 0px),
+      24px
     );
     box-shadow: 0 -8px 24px rgb(26 26 26 / 0.04);
   }
@@ -293,6 +295,38 @@
 
 .ge-application-frame--jezweb.ge-application-frame--native-android .shell-android-download {
   display: none;
+}
+
+/* Native Android: lift bottom tabs above gesture/home indicators. WebView often
+   reports zero env(safe-area-inset-bottom); native insets may arrive after first paint. */
+.ge-application-frame--jezweb.ge-application-frame--native-android,
+.ge-application-frame--jezweb.ge-application-frame--native-android
+  .ge-application-frame__main {
+  padding-block-end: calc(
+    4.75rem + max(
+      env(safe-area-inset-bottom, 0px),
+      var(--ge-native-safe-area-bottom, 0px),
+      24px
+    )
+  );
+}
+
+.ge-application-frame--jezweb.ge-application-frame--native-android
+  .ge-primary-navigation {
+  position: fixed;
+  z-index: 30;
+  inset-block-end: 0;
+  inset-inline: 0;
+  border-block-start: 1px solid var(--ge-color-border);
+  background: rgb(255 255 255 / 0.98);
+  padding-block-end: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--ge-native-safe-area-bottom, 0px),
+    24px
+  );
+  box-shadow: 0 -10px 30px rgb(16 32 25 / 0.07);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 /* Variant C is a light professional shell — keep readable contrast even when

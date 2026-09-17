@@ -44,6 +44,9 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('.conversation-journey__notice')
     expect(jezweb).toContain("button[aria-selected='true']")
     expect(jezweb).toContain('var(--ge-color-action-text, #ffffff)')
+    expect(jezweb).toContain('ge-application-frame--native-android')
+    expect(jezweb).toContain('24px')
+    expect(jezweb).toContain('lift bottom tabs above gesture/home indicators')
     expect(jezweb).toContain('.learner-home__title:focus-visible')
     expect(jezweb).toMatch(
       /\.learner-home__title:focus-visible\s*\{\s*outline: none;/u,

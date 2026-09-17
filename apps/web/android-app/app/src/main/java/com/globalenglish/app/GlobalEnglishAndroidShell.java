@@ -15,6 +15,8 @@ import com.getcapacitor.BridgeActivity;
 /** Android-owned edge-to-edge, IME and predictive-Back integration. */
 final class GlobalEnglishAndroidShell {
     static final long BACK_DISPATCH_TIMEOUT_MS = 1500L;
+    private static final int TAG_BACK_INSTALLED = 0x67650001;
+    private static final int TAG_INSETS_INSTALLED = 0x67650002;
 
     private GlobalEnglishAndroidShell() {}
 
@@ -23,8 +25,18 @@ final class GlobalEnglishAndroidShell {
     }
 
     static void install(BridgeActivity activity, WebView webView) {
-        installBack(activity, webView);
-        installInsets(webView);
+        if (!Boolean.TRUE.equals(webView.getTag(TAG_BACK_INSTALLED))) {
+            installBack(activity, webView);
+            webView.setTag(TAG_BACK_INSTALLED, true);
+        }
+
+        if (!Boolean.TRUE.equals(webView.getTag(TAG_INSETS_INSTALLED))) {
+            installInsets(webView);
+            webView.setTag(TAG_INSETS_INSTALLED, true);
+            return;
+        }
+
+        ViewCompat.requestApplyInsets(webView);
     }
 
     private static void installBack(BridgeActivity activity, WebView webView) {

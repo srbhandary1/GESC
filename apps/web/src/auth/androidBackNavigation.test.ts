@@ -54,7 +54,10 @@ describe('Android 16 Back and window integration', () => {
 
       expect(variables).toContain('targetSdkVersion = 36')
       expect(activity).toContain('GlobalEnglishAndroidShell.install')
-      expect(activity).toContain('bridge != null && bridge.getWebView() != null')
+      expect(activity).toContain('attachShellIfReady')
+      expect(activity).toContain('onStart')
+      expect(shell).toContain('TAG_INSETS_INSTALLED')
+      expect(shell).toContain('requestApplyInsets')
       expect(build).toContain(
         'implementation "androidx.activity:activity:$androidxActivityVersion"',
       )
