@@ -364,3 +364,37 @@ Live collection remains blocked: separate Test/Live Dashboard webhook
 registration, matching rotated `rzp_live_` credentials, a low-value live
 canary, refund and authoritative reconciliation are still required. Production
 and Play publication are not inferred from this sandbox evidence.
+
+## Razorpay hardened follow-up deployment — 18 September 2026
+
+**Source revision:** `3fedf083b06e`
+
+The follow-up is active as immutable release
+`/srv/global-spoken-english/releases/3fedf08f6b80`. Its exact git archive
+SHA-256 is
+`8ef3619735326ba3f9c3327ab59ab32c4a8414f4b4761f86c35b23d55899b054`.
+The previous `3ab1dd5812ba` release remains intact for rollback. Existing
+external runtime configuration and Passport keys were preserved; the private
+key remains mode 0600. No credential value is recorded in Git.
+
+The atomic switch was followed by a supervised runtime restart. Public
+`/health/live` and `/health/ready` both passed. The deployed
+`make soft-launch-ready` result is **27 pass / 1 warning / 0 fail**. The added
+pass proves that a usable Passport signing-key pair exists; the only warning
+is the pre-existing absence of an active Content Studio publication head and
+enrollment pin.
+
+The rebuilt production-package debug APK is published at
+`https://ai.globalspokenenglish.com/downloads/global-spoken-english-android.apk`.
+Its local and public SHA-256 is
+`5ff51e5527e4fc3b1b81bab54e7dd351222044294985e76c69c4e944b08657fb`
+and its size is 82,981,515 bytes. `make android-closed-beta` passed, including
+Gradle unit tests and `assembleDebug`, and the APK installed over the existing
+RMX3085 test account without clearing its data. The paid-minutes callback fix
+is covered by the repository component test; the final physical tap check was
+temporarily blocked when the handset returned to its secure lock screen.
+
+This remains a debug-signed invite-only artifact. The Razorpay
+provider-controlled bottom-inset defect, Dashboard webhook registration,
+live-mode credentials, live canary/refund/reconciliation, production signing
+and Play release remain open gates.

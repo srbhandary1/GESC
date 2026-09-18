@@ -32,6 +32,8 @@
 | `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
 | Provider sandbox smoke | Pass with residual | RMX3085/API 33: paid order `order_TdZJ0LserJ8wHl`, captured payment `pay_TdZNX2YPPJEk9X`, confirm HTTP 200, checkout `01M2TP4FF5XX30W9SK9ERP94E7` completed and exactly one active entitlement granted; Dashboard webhook remains unregistered (`payment_webhook_events=0`) |
 | Android sign-in after immutable release switch | Pass after deployment repair | Initial 500 correlated to absent Passport PEM files; identical prior-release keys restored with matching SHA-256, then mobile password sign-in returned 200; readiness now fails closed when keys are absent |
+| Hardened follow-up deployment | Pass | Commit `3fedf08` active at `/srv/global-spoken-english/releases/3fedf08f6b80`; public live/ready pass; readiness 27 pass / 1 content-publication warning / 0 fail |
+| Follow-up Android artifact | Pass with manual tap pending | Local/public SHA-256 `5ff51e5527e4fc3b1b81bab54e7dd351222044294985e76c69c4e944b08657fb`, 82,981,515 bytes; Gradle tests/build passed; preserve-data install succeeded on RMX3085; paid-minutes callback unit test passes, but the final physical tap check awaits handset unlock |
 | Provider-checkout system inset | Open defect | On realme RMX3085/API 33 three-button navigation, provider-owned fixed-bottom Continue/Yes-Cancel controls extend under system navigation; keyboard focus completed the test but is not acceptable broad-release evidence |
 | Live capture | Blocked | No `rzp_live_` credential; canary/refund/reconciliation evidence absent |
 

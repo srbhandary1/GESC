@@ -16,14 +16,27 @@
 - Repository gates are green: `make verify` (SQLite 330/330, PostgreSQL
   360/360, web 467/467), `make e2e` (API 4/4; Playwright 30/30) and
   `make build` (existing large-chunk advisory only).
-- Commit `3ab1dd5` is deployed to the stable-host invite-only runtime with
+- Follow-up commit `3fedf08` is deployed as immutable release
+  `/srv/global-spoken-english/releases/3fedf08f6b80` on the stable-host
+  invite-only runtime; `3ab1dd5` remains the implementation/base rollback
+  release. Razorpay test-mode credentials remain held outside Git. The public
+  debug APK is byte-identical to the local build: SHA-256
+  `5ff51e5527e4fc3b1b81bab54e7dd351222044294985e76c69c4e944b08657fb`,
+  82,981,515 bytes.
+- The original `3ab1dd5` deployment used
   Razorpay test-mode credentials held outside Git. A real-device sandbox card
   flow completed: provider order paid, callback confirmation 200, checkout
   completed and exactly one active 120-minute entitlement granted.
 - The release switch initially omitted the existing VPS Passport key files,
   causing Android password sign-in to return 500. The identical prior-release
   keys were restored (matching hashes), sign-in then passed, and the readiness
-  gate now fails when a usable key pair is absent.
+  gate now fails when a usable key pair is absent. The deployed hardened gate
+  reports **27 pass / 1 warning / 0 fail**; the sole warning is the missing
+  active Content Studio publication head/enrollment pin.
+- The paid-minutes control no longer forwards a React click event as level
+  context. The rebuilt APK installed successfully over the paid test account
+  without clearing data; final on-device tap confirmation remains pending only
+  because the handset returned to its secure lock screen during inspection.
 - Live capture is blocked until matching `rzp_live_` credentials, separate
   live Dashboard webhook registration, low-value canary/refund and
   reconciliation evidence exist. Disclosed secrets must be rotated before
