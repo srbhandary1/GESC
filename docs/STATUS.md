@@ -1,5 +1,32 @@
 # Repository status
 
+## VPS-SOFT-LAUNCH-01 new VPS deployment — 18 September 2026
+
+- APP-0095/D-0303 authorize deployment of exact revision
+  `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` to the newly supplied Ubuntu VPS
+  as invite-only soft launch only. Production, Play, live payment and live
+  provider dispatch remain unauthorized.
+- The application runs under `globalenglish` from an immutable release with an
+  enabled user-systemd supervisor. PostgreSQL, Redis, object storage, Mailpit
+  and OTP stub are healthy; UFW permits only SSH inbound and application/data
+  services remain behind loopback plus an outbound HTTPS Quick Tunnel.
+- External live/ready, Android password-mode and APK-integrity checks pass. The
+  public PKCE client uses `com.globalenglish.app:/oauth/callback`; no client
+  secret exists. A stale-origin staged APK was rejected and rebuilt; the
+  downloadable VPS-bound debug APK SHA-256 is
+  `034fa83d724f0c31b91f73b4e7a7e0a460857c74f8c73fa12af263c57157d9e9`.
+- Encrypted database backup and an isolated four-second restore drill pass.
+  The backup/key are still same-host and therefore do not close off-box custody
+  or PITR. The pre-deployment host restore snapshot is retained.
+- Final pinned gates pass: `make verify` (SQLite 316/316, PostgreSQL 360/360,
+  web 466/466), `make e2e` (API 4/4, Playwright 29/29) and `make build`.
+  `make soft-launch-ready` reports 17 pass / 7 intentional warnings / 0 fail.
+- Immediate production residuals: rotate the disclosed root password or
+  disable password SSH, establish stable DNS/TLS, approve off-box backup/PITR,
+  provision governed human accounts, complete independent reviews and Android/
+  Play/payment release gates. See
+  [deployment evidence](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md).
+
 ## DEVICE-GATE-FIX-02 deterministic Android gate repair — 16 September 2026
 
 - APP-0094/D-0302 authorize the bounded follow-up requested after the RMX3085

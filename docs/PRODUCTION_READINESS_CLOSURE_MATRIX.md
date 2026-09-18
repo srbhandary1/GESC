@@ -1,7 +1,7 @@
 # Production readiness closure matrix
 
 **Status:** Execution matrix; production is not authorized  
-**Updated:** 12 August 2026  
+**Updated:** 18 September 2026
 **Authority:** Master plan §27, accepted ADRs, F0 gap assessment and specialist
 review packet
 
@@ -18,7 +18,7 @@ A green build cannot substitute for those external gates.
 | Independent L1 quality | **Mechanism pass; review open** | Exact catalogue revisions are approved and every locked conversation case passes `make ai-eval-human-review` with independently attributed, locale-matched, payload-bound evidence | Appoint independent `en-IN`, `kn-IN`, `hi-IN`, `ml-IN`, `ta-IN` and `te-IN` reviewers and execute the L1 runbook |
 | Reviewed learning pathway | **APP-0058 phased rollout approved; LPL-01 active** | LPL-01 has commissioned, rights-cleared, independently reviewed and published Level 1 content with remediation, delayed review and unlock evidence | Complete the exact Level 1 transcript/blueprint/review exit; do not begin LPL-02 or later waves until it passes |
 | Independent production reviews | **Open** | Security, privacy/DPDP, tenancy, accessibility, language/content and legal rows each have exact-revision APP evidence with no release-blocking finding | Appoint reviewers listed in `F0_SPECIALIST_REVIEW_PACKET.md`; APO cannot self-waive them |
-| Production operations | **Repository edge pass; external activation incomplete and deferred to 13 August 2026** | Stable product HTTPS/DNS, production secrets, alert routing, encrypted offsite backups/PITR restore evidence, authenticated capacity/soak and incident/support ownership pass | Obtain authorized Cloudflare access without sharing credentials; create/verify the `ai` A record, router mappings and public TLS, then execute the remaining operational release gates |
+| Production operations | **VPS soft-launch pass; production operations open** — exact revision `56f2caa` is supervised on the new VPS, UFW/default-deny and external health pass, and an encrypted backup restores in isolation; current HTTPS is an ephemeral Quick Tunnel and backup custody remains same-host | Stable product HTTPS/DNS, production secrets, alert routing, encrypted off-box backups/PITR restore evidence, authenticated capacity/soak and incident/support ownership pass | Rotate/disable the disclosed root password, configure stable product DNS/TLS, approve off-box custody and PITR, then execute capacity/soak, alert and incident/support gates; see [deployment evidence](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md) |
 | Android production distribution | **Open** | Protected release-key custody, signed AAB, Play App Signing/closed-track validation and physical release-candidate matrix pass | APO authorizes production signing and Play closed track only after preceding gates |
 | F0/release acceptance | **Open** | All hard blockers above are evidenced at one exact commit; remote release gate passes; APO records exact-commit acceptance | Run the F0 consideration ceremony; public/Play release remains a separate explicit decision |
 

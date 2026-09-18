@@ -3260,6 +3260,61 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0095"></a>
+
+## APP-0095 — New VPS invite-only soft-launch deployment
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for VPS-SOFT-LAUNCH-01 only |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation, accompanied by new-VPS SSH access supplied through the same private task |
+| Related evidence | [VPS soft-launch deployment evidence](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md) |
+| Related decision | [D-0303](DECISIONS.md) |
+| Related ADRs | None; the deployment retains the accepted architecture and soft-launch posture |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | Documentation commit containing this record; deployed application revision is `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Deploy everything over there now from the repository.
+```
+
+The host credential supplied immediately before that sentence is intentionally
+excluded from repository evidence and must be rotated because it crossed a chat
+channel.
+
+### Accepted scope
+
+- Deploy the complete current repository application to the supplied VPS,
+  including the web app, API, worker, scheduler and repository-defined private
+  service dependencies.
+- Create the on-host runtime configuration, database schema/foundation seed,
+  Android public PKCE client, supervised startup, temporary HTTPS entry and
+  tested backup/restore point required to make the invite-only app usable.
+- Use exact repository revision
+  `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` and preserve evidence of the
+  deployed artifact, verification and rollback position.
+
+### Conditions and limitations
+
+- The existing explicit constraints still control: production, Google Play,
+  live payment, real capture and live AI/Speech/media-provider dispatch are not
+  authorized by this instruction.
+- No password, private key, API secret, database credential or learner content
+  may enter Git or the deployment evidence.
+- Stable product DNS/TLS, off-box backup/PITR, independent specialist reviews,
+  production signing/device evidence and exact-commit release acceptance remain
+  separate gates.
+- Root/password SSH remains an owner-controlled operational residual. The
+  disclosed password must be rotated immediately or password/root login must be
+  disabled after key-based recovery access is confirmed.
+
 <a id="app-0093"></a>
 
 ## APP-0093 — Plan §15 closure with accepted residuals

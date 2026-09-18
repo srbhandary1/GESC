@@ -1,0 +1,134 @@
+# VPS soft-launch deployment evidence — 18 September 2026
+
+**Checkpoint:** `VPS-SOFT-LAUNCH-01`  
+**Authority:** APP-0095 / D-0303  
+**Deployed source revision:** `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`  
+**Posture:** Invite-only soft launch; production, Play release, live payment and
+live AI/Speech provider dispatch are not authorized.
+
+## Host and release
+
+- Ubuntu 24.04 LTS, four virtual CPUs, approximately 7.8 GiB RAM and 157 GB
+  storage.
+- Application service account: `globalenglish`; root is not used to run the
+  application.
+- Immutable release directory:
+  `/srv/global-spoken-english/releases/56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`.
+- Active symlink: `/srv/global-spoken-english/current`.
+- Release archive SHA-256:
+  `779604d0cdf3be898ad63295a60f345c7b0cb3db422f3f08882d02ee3a84cf27`.
+- Runtime secrets were generated on the VPS, remain outside Git and are
+  mode `0600`. No secret value is recorded in this evidence.
+
+## Restore points
+
+- Pre-deployment host snapshot:
+  `/root/pre-global-english-20260918T083018Z.tgz`.
+- Snapshot SHA-256:
+  `8c286601c264ccd64a128b6af00f8c1602aeb7df681f3dc7858f69ce0a370994`.
+- Encrypted database backup:
+  `/home/globalenglish/ge-offsite-backups/soft-launch-20260918T084524Z.sql.gz.enc`.
+- Encrypted backup SHA-256:
+  `fadb111c2f2ac2aed54065dbfcdcf9a8d54c773701f1442391bbc5a4a5ec8ee7`.
+- Restore drill evidence:
+  `artifacts/ops/soft-launch-restore-drill-20260918T084525Z.json` on the
+  deployed release. The isolated restore passed in four seconds, matched the
+  application schema, migrations and deletion-tombstone state, and did not
+  overwrite the live database.
+- The encrypted backup and recovery key are currently on the same VPS. This is
+  a tested restore point, not off-box custody or continuous PITR. Copying
+  either off the host requires an explicitly authorized secure destination.
+
+## Runtime and network controls
+
+- Docker Engine 29.1.3 and Compose 2.40.3 run digest-pinned PostgreSQL,
+  Redis, SeaweedFS, Mailpit and WireMock services. All five reported healthy.
+- PHP 8.4.23, Composer 2.10.2, Node.js 24.18.1 and pnpm 11.18.0 match the
+  repository toolchain.
+- A user-level `global-english-soft-launch.service` is enabled with linger and
+  supervises the API, queue worker, scheduler, Caddy and Cloudflare tunnel
+  across reboots.
+- UFW is active with default-deny inbound and only OpenSSH allowed. PostgreSQL,
+  Redis, SeaweedFS, Mailpit, the API and the primary Caddy proxy bind to
+  loopback. The legacy staff HTTP listener is firewall-blocked from the WAN.
+- fail2ban's SSH jail is active.
+- The temporary HTTPS entry at deployment completion was
+  `https://walked-agencies-toys-beside.trycloudflare.com`. It is an ephemeral
+  Quick Tunnel, not the production DNS/TLS endpoint, and may change after a
+  supervisor or tunnel restart.
+- Root/password SSH remains enabled pending owner credential rotation or an
+  explicit authorization to disable password access. Because the supplied
+  password crossed a chat channel, this is a release-blocking security
+  residual, not an accepted production configuration.
+
+## Application posture
+
+- All migrations were applied and `FoundationSeeder` completed.
+- Passport encryption keys were generated on-host.
+- Public Android PKCE client:
+  `01a0b3ae-8e76-70d1-95f9-1ed4e7ce4dad`, redirect
+  `com.globalenglish.app:/oauth/callback`; no client secret exists.
+- `APP_ENV=soft-launch`, `APP_DEBUG=false`,
+  `AUTHENTICATION_MODE=password_only`.
+- `PAYMENT_DRIVER=disabled`, `VOICE_UPLOAD_ENABLED=false`,
+  `VOICE_PROVIDER_DRIVER=disabled` and every Azure/OpenAI/Speech/media live
+  request switch is false. No live payment or provider request was made.
+- `make soft-launch-ready`: **17 pass, 7 warn, 0 fail**. Warnings are the
+  intentionally absent live-provider credentials/authorization and the lack
+  of an active publication head.
+
+## External verification
+
+- HTTPS `/api/v1/health/live`: `status=ok`.
+- HTTPS `/api/v1/health/ready`: `status=ready`.
+- Android password mode: `password_only` with the public client above.
+- The first staged APK was byte-valid but still embedded the retired static API
+  origin. It was not retained as the deployment artifact. A fresh
+  `android-closed-beta` debug build embeds the VPS Quick Tunnel origin and the
+  public PKCE client above; Gradle unit tests and `assembleDebug` passed.
+- Corrected public APK route downloaded successfully. SHA-256:
+  `034fa83d724f0c31b91f73b4e7a7e0a460857c74f8c73fa12af263c57157d9e9`
+  (82,981,461 bytes). `aapt2` confirms package `com.globalenglish.app` and
+  target SDK 36. This is debug-signed closed-beta evidence, not a Play artifact.
+
+## Repository verification at deployed revision
+
+- `make verify`: passed after the network-permitted rerun; Composer audit,
+  Pint, PHPStan, 316 SQLite tests / 3,087 assertions, 360 PostgreSQL tests /
+  5,225 assertions, locale/OpenAPI/release/soft-launch contracts, ESLint,
+  TypeScript and 466 web tests passed. Two moderate pnpm advisories remain
+  below the high-severity gate; five locale catalogues retain independent-
+  review warnings.
+- `make e2e`: passed after the local-port-permitted rerun; API reconciliation
+  4/4 (103 assertions) and Playwright 29/29.
+- `make build`: passed; the existing Vite large-chunk advisory remains and
+  unlicensed tutor-avatar models were excluded.
+- `make android-closed-beta`: the web bundle and Capacitor sync passed; the
+  first Gradle invocation could not write the sandboxed user cache, then the
+  exact Gradle `testDebugUnitTest assembleDebug` step passed with its existing
+  cache permission (103 actionable tasks).
+
+## Rollback
+
+1. Stop `global-english-soft-launch.service` as `globalenglish`.
+2. Point `/srv/global-spoken-english/current` to the previous immutable release
+   when one exists, or remove the current symlink for a full application stop.
+3. Restore the database only through the repository restore procedure, first
+   validating the encrypted backup in a temporary database. Never overwrite
+   live data merely to test a rollback.
+4. The pre-deployment host snapshot above is the system-configuration recovery
+   point; it is not an application-data substitute.
+
+## Open production gates
+
+- Rotate the disclosed root password immediately or disable password/root SSH
+  after confirming key-based break-glass access.
+- Establish stable product DNS/TLS instead of a Quick Tunnel.
+- Place encrypted backups and recovery material in approved off-box custody;
+  implement PITR and alerting.
+- Provision named operator/test accounts through the governed workflow; no
+  human credential was invented during deployment.
+- Complete independent security, privacy/DPDP, tenancy, accessibility,
+  language/content and legal review.
+- Complete remaining Android device-matrix evidence, production signing, Play
+  closed-track authorization and payment authorization.

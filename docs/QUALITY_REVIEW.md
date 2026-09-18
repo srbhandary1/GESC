@@ -1,5 +1,65 @@
 # Quality review
 
+## VPS-SOFT-LAUNCH-01 new VPS deployment — 18 September 2026
+
+### Scope reviewed
+
+- Deploy exact repository revision
+  `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` to the owner-supplied Ubuntu VPS.
+- Provision the repository-pinned runtime, private data services, migrations,
+  foundation seed, public Android PKCE client, supervised application processes,
+  temporary HTTPS entry and tested restore point.
+- Preserve the existing invite-only, no-live-payment and no-live-provider
+  posture. No application behavior, API/OpenAPI, schema or Android source
+  changes are in scope.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exact release | Pass | Immutable release and `.deployment-revision` contain `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`; archive SHA-256 `779604d0…cf27` |
+| Least-privilege runtime | Pass with SSH residual | Application runs as `globalenglish`; UFW default-deny permits only SSH; fail2ban active; root/password SSH remains owner-controlled and must be rotated/disabled before production |
+| Private dependencies | Pass | PostgreSQL, Redis, SeaweedFS, Mailpit and OTP stub healthy; stateful host bindings are loopback-only |
+| Persistence | Pass | `global-english-soft-launch.service` enabled/active with user linger; API, worker, scheduler, Caddy and tunnel supervised |
+| External app | Pass | HTTPS live=`ok`, ready=`ready`, password mode=`password_only`; corrected VPS-bound APK public-route hash `034fa83d…d9e9`, package `com.globalenglish.app`, target SDK 36 |
+| Payment/provider stop rules | Pass | Payment disabled; voice upload/driver disabled; all Azure/OpenAI/Speech/media live-request switches false |
+| Backup/restore | Pass with production residual | Encrypted backup SHA-256 `fadb111c…8ee7`; isolated restore passed in 4 seconds without live overwrite. Same-host custody is not off-box or PITR |
+| Repository gates | Pass | `make verify`; `make e2e` API 4/4 + Playwright 29/29; `make build` |
+| Runtime readiness | Pass with intentional warnings | `make soft-launch-ready`: 17 pass / 7 warn / 0 fail; warnings are absent provider credentials/authorization and no active publication head |
+
+### Security, privacy and tenancy review
+
+- Secrets were generated on the VPS and remain mode `0600` outside Git. No
+  password, API key, database credential, learner content, audio or transcript
+  is present in repository evidence.
+- The Android OAuth client is public PKCE with the exact package callback and no
+  secret. No human account or credential was invented during deployment.
+- No live AI, Speech, media-transcription or payment request was made. Existing
+  organization scoping and deterministic records were not changed.
+- The root password supplied through chat is treated as disclosed. Rotation or
+  password-auth disablement remains a production blocker; it was not silently
+  changed because the owner explicitly retained rotation for go-live.
+
+### Verification notes and residuals
+
+- The first local `make verify` invocation failed because the sandbox could not
+  resolve Packagist; the same exact gate passed with authorized network access.
+  The first `make e2e` invocation could not bind Playwright's local preview
+  server; the same exact gate passed with authorized local-port access. Neither
+  failed attempt is reported as a pass.
+- The initially copied APK was structurally valid but still embedded the
+  retired static API origin. It was rejected, rebuilt as the debug closed-beta
+  target with the active HTTPS tunnel and public PKCE client, and replaced at
+  both public download paths. The first Gradle step could not write the
+  sandboxed user cache; the same unit/assemble step then passed with approved
+  cache access. No Play or production signing is claimed.
+- A protected off-box backup copy was not taken because no approved external
+  custody destination was authorized. Stable DNS/TLS, PITR/alerts, independent
+  specialist reviews, governed operator identities, remaining device evidence,
+  production signing, Play and payment authority remain open.
+- Complete evidence and rollback instructions are in
+  [VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md).
+
 ## DEVICE-GATE-FIX-02 deterministic Android gate repair — 16 September 2026
 
 ### Scope reviewed
