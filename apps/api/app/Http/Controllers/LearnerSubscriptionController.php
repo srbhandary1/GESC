@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Authentication\AuthenticatedPrincipal;
 use App\Entitlements\EntitlementAccess;
 use App\Entitlements\LearnerSubscriptionService;
+use App\Http\Requests\Learner\ConfirmSubscriptionCheckoutRequest;
 use App\Http\Requests\Learner\CreateSubscriptionCheckoutRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,11 +44,34 @@ final class LearnerSubscriptionController extends Controller
             (string) $request->validated('plan_id'),
             (string) $request->validated('idempotency_key'),
         );
-        $created = $payload['status'] === 'completed' && $payload['replayed'] !== true;
+        $created = $payload['replayed'] !== true;
 
         return response()->json(
             $payload,
             $created ? Response::HTTP_CREATED : Response::HTTP_OK,
         )->header('Cache-Control', 'private, no-store');
+    }
+
+    public function reconcile(Request $request, string $checkout): JsonResponse
+    {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+
+        return response()->json(
+            $this->subscriptions->reconcileCheckout($principal->user, $checkout),
+        )->header('Cache-Control', 'private, no-store');
+    }
+
+    public function confirm(
+        ConfirmSubscriptionCheckoutRequest $request,
+        string $checkout,
+    ): JsonResponse {
+        $principal = AuthenticatedPrincipal::fromRequest($request);
+
+        return response()->json($this->subscriptions->confirmCheckout(
+            $principal->user,
+            $checkout,
+            (string) $request->validated('payment_id'),
+            (string) $request->validated('signature'),
+        ))->header('Cache-Control', 'private, no-store');
     }
 }

@@ -823,6 +823,11 @@ export type CreateLearnerSubscriptionCheckoutRequest = {
     plan_id: Ulid;
 };
 
+export type ConfirmLearnerSubscriptionCheckoutRequest = {
+    payment_id: string;
+    signature: string;
+};
+
 export type LearnerSubscriptionCheckout = {
     id: Ulid;
     status: 'pending' | 'completed' | 'failed';
@@ -832,6 +837,14 @@ export type LearnerSubscriptionCheckout = {
     total_paise: number;
     gstin_is_placeholder: boolean;
     entitlement_id: string | null;
+    provider: 'pending' | 'dummy' | 'razorpay';
+    provider_order_id: string | null;
+    provider_payment_id: string | null;
+    /**
+     * Publishable provider key only; never a key secret.
+     */
+    provider_public_key: string | null;
+    currency: 'INR';
     replayed: boolean;
 };
 
@@ -5203,6 +5216,137 @@ export type CreateLearnerSubscriptionCheckoutResponses = {
 };
 
 export type CreateLearnerSubscriptionCheckoutResponse = CreateLearnerSubscriptionCheckoutResponses[keyof CreateLearnerSubscriptionCheckoutResponses];
+
+export type ReconcileLearnerSubscriptionCheckoutData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        checkout: Ulid;
+    };
+    query?: never;
+    url: '/me/subscription-checkouts/{checkout}';
+};
+
+export type ReconcileLearnerSubscriptionCheckoutErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ReconcileLearnerSubscriptionCheckoutError = ReconcileLearnerSubscriptionCheckoutErrors[keyof ReconcileLearnerSubscriptionCheckoutErrors];
+
+export type ReconcileLearnerSubscriptionCheckoutResponses = {
+    /**
+     * Current authoritative checkout state.
+     */
+    200: LearnerSubscriptionCheckout;
+};
+
+export type ReconcileLearnerSubscriptionCheckoutResponse = ReconcileLearnerSubscriptionCheckoutResponses[keyof ReconcileLearnerSubscriptionCheckoutResponses];
+
+export type ConfirmLearnerSubscriptionCheckoutData = {
+    body: ConfirmLearnerSubscriptionCheckoutRequest;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        checkout: Ulid;
+    };
+    query?: never;
+    url: '/me/subscription-checkouts/{checkout}/confirm';
+};
+
+export type ConfirmLearnerSubscriptionCheckoutErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmLearnerSubscriptionCheckoutError = ConfirmLearnerSubscriptionCheckoutErrors[keyof ConfirmLearnerSubscriptionCheckoutErrors];
+
+export type ConfirmLearnerSubscriptionCheckoutResponses = {
+    /**
+     * Checkout remains pending or was authoritatively completed.
+     */
+    200: LearnerSubscriptionCheckout;
+};
+
+export type ConfirmLearnerSubscriptionCheckoutResponse = ConfirmLearnerSubscriptionCheckoutResponses[keyof ConfirmLearnerSubscriptionCheckoutResponses];
+
+export type ReceiveRazorpayPaymentWebhookData = {
+    body: {
+        [key: string]: unknown;
+    };
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        'X-Razorpay-Signature': string;
+        'X-Razorpay-Event-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/payments/razorpay/webhook';
+};
+
+export type ReceiveRazorpayPaymentWebhookErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    429: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ReceiveRazorpayPaymentWebhookError = ReceiveRazorpayPaymentWebhookErrors[keyof ReceiveRazorpayPaymentWebhookErrors];
+
+export type ReceiveRazorpayPaymentWebhookResponses = {
+    /**
+     * Event verified and processed or safely ignored.
+     */
+    204: void;
+};
+
+export type ReceiveRazorpayPaymentWebhookResponse = ReceiveRazorpayPaymentWebhookResponses[keyof ReceiveRazorpayPaymentWebhookResponses];
 
 export type CompleteLearnerOnboardingData = {
     body: CompleteLearnerOnboardingRequest;

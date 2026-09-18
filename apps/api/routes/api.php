@@ -39,6 +39,7 @@ use App\Http\Controllers\OperatorTuitionRequestController;
 use App\Http\Controllers\OtpAuthenticationController;
 use App\Http\Controllers\PasswordAuthenticationController;
 use App\Http\Controllers\PrivilegedMfaController;
+use App\Http\Controllers\RazorpayWebhookController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\RequireStatefulBrowserRequest;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,9 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.health.live');
     Route::get('/health/ready', [HealthController::class, 'ready'])
         ->name('api.v1.health.ready');
+    Route::post('/payments/razorpay/webhook', RazorpayWebhookController::class)
+        ->middleware('throttle:payment-webhooks')
+        ->name('api.v1.payments.razorpay.webhook');
 
     Route::post('/auth/otp/requests', [OtpAuthenticationController::class, 'requestChallenge'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:otp-requests'])
@@ -228,6 +232,16 @@ Route::prefix('v1')->group(function (): void {
             '/me/subscription-checkouts',
             [LearnerSubscriptionController::class, 'checkout'],
         )->name('api.v1.me.subscription-checkouts.store');
+        Route::get(
+            '/me/subscription-checkouts/{checkout}',
+            [LearnerSubscriptionController::class, 'reconcile'],
+        )->whereUlid('checkout')
+            ->name('api.v1.me.subscription-checkouts.show');
+        Route::post(
+            '/me/subscription-checkouts/{checkout}/confirm',
+            [LearnerSubscriptionController::class, 'confirm'],
+        )->whereUlid('checkout')
+            ->name('api.v1.me.subscription-checkouts.confirm');
         Route::put(
             '/me/onboarding',
             [LearnerOnboardingController::class, 'update'],

@@ -1,5 +1,126 @@
 # Quality review
 
+## PAYMENT-RAZORPAY-01 server-authoritative Direct checkout — 18 September 2026
+
+### Scope reviewed
+
+- Razorpay Orders API adapter, hosted Checkout handoff, callback confirmation,
+  raw-body webhooks and provider reconciliation.
+- Immutable checkout authority, ambiguous-response replay safety, exact-once
+  entitlement grant, talk-pack eligibility and organization/learner isolation.
+- API/OpenAPI/client contract, migration, external configuration and sandbox
+  deployment boundary.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Browser trust boundary | Pass | Callback signature is verified; provider order/payment are reread; browser callback alone cannot grant |
+| Amount and product authority | Pass | INR, amount, receipt, order/payment linkage and frozen plan snapshot must match |
+| Idempotency | Pass | Local pending record precedes provider call; ambiguous response replay performs one capture attempt and creates one checkout |
+| Exact-once grant | Pass | Checkout row is locked; callback/webhook replay produces one entitlement |
+| Webhook privacy/integrity | Pass | Exact raw-body HMAC before parse; event dedupe; digest and IDs only; malformed/oversized bodies rejected |
+| Payment retry semantics | Pass | `payment.failed` does not terminally fail an order that may receive a later valid attempt |
+| Tenant/learner isolation | Pass | Cross-learner reconcile and confirm denied without mutation/provider dispatch |
+| Talk packs | Pass | Active non-demo paid entitlement required before order and again under completion lock |
+| Secret handling | Pass | Secret/webhook values are env-only; only public key reaches client; none entered Git |
+| Focused API | Pass | 20 tests, 131 assertions |
+| Focused web | Pass | SubscriptionPanel 9/9; workspace typecheck green |
+| API contract | Pass | OpenAPI lint/policy/generation drift green |
+| `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 467/467; static/security/contract gates green (two moderate pnpm advisories below fail threshold) |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
+| `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
+| Provider sandbox smoke | Pending | Requires deployed external test credential and Razorpay Dashboard webhook registration |
+| Live capture | Blocked | No `rzp_live_` credential; canary/refund/reconciliation evidence absent |
+
+### Verdict
+
+Implementation and repository gates pass. Sandbox deployment is authorized but
+not yet evidenced in this entry. This checkpoint cannot be described as live
+payment: the supplied key is a Razorpay test key, and production DI refuses
+test mode by design. Live activation needs the APP-0100 conditions and secret
+rotation. Existing UX-REM-01 edits and open physical accessibility gates are
+independent and were preserved.
+
+## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
+
+### Scope reviewed
+
+- Five-destination enlarged-text reflow, authenticated header/paid-minutes
+  reflow and short Android landscape behavior.
+- Variant C high-contrast navigation legibility without global brand changes.
+- Onboarding and quiz safe-area/IME/bottom-navigation offsets.
+- Exact automated gates plus bounded attempts on the RMX3085 and API 36 AVD.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Scope isolation | Pass | CSS and test changes only; no history, storage, scoring, API, OpenAPI, provider or authoritative-record behavior changed |
+| 320/360/412 at 200% | Pass (browser) | English + Kannada authenticated harness; no document/control overflow; all five navigation targets ≥48×48 |
+| Header and paid-minutes | Pass (browser) | Narrow toolbar becomes one column; paid `82 live-AI minutes available` control remains bounded |
+| Landscape | Pass (browser) | 800×412 native simulation; header is non-sticky and five-destination grid remains usable |
+| High contrast / reduced motion | Pass (browser) | Forced-colour labels/glyphs opaque; active border retained; reduced-motion path exercised |
+| Onboarding insets | Pass (browser) | 320px/200% English and Kannada first screens consume all native safe-area variables and 120px IME inset |
+| Quiz action | Pass (browser) | Closed action above bottom nav; open action above 220px IME; no doubled IME padding |
+| Focused journeys | Pass | 11/11 affected Playwright journeys |
+| `make verify` | Pass | SQLite 321/321; PostgreSQL 360/360; web 466/466; all static/contract gates green |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
+| `make build` | Pass | Production Vite/Laravel build; existing chunk warning only |
+| Android package | Pass | `BUILD SUCCESSFUL in 7s`; installed/on-device SHA `e132cc26…9941db9`, 82,981,429 bytes |
+| RMX3085 exact 200%/320px | Blocked | OEM denies shell `WRITE_SETTINGS` and `WRITE_SECURE_SETTINGS`; settings remained 1.0/408 |
+| Authenticated physical journey | Not run | Installed state is public guest Home; no authenticated result inferred |
+| API 36 AVD | Blocked | No KVM; software AVD reached API 36 ADB but never `sys.boot_completed` or focused an app |
+| TalkBack / split-screen | Not run | Requires completed physical interaction; browser evidence does not replace it |
+
+### Verdict
+
+The UX-REM-01 implementation and automated acceptance are complete. The
+checkpoint remains **in progress**, not complete, because every physical
+device criterion in the remediation plan is still unchecked. No later
+checkpoint may start without passing evidence or an explicit residual decision.
+
+Detailed evidence:
+[Android Mobile UX Remediation Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-01--accessibility-reflow-and-adaptive-layout).
+
+## UX-REM-00 Android candidate and device evidence path — 18 September 2026
+
+### Scope reviewed
+
+- Establish the Mac USB ADB → Linux reverse-tunnel path without changing app
+  data or device configuration.
+- Build one exact production-package debug candidate from current HEAD against
+  the stable HTTPS origin, install it with data preservation and prove the
+  installed bytes match.
+- Capture an unlocked non-personal baseline without promoting any later device
+  or accessibility row to PASS.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Sequential scope | Pass | D-0319 records one-checkpoint-at-a-time execution and retains every stated human/release gate |
+| ADB bridge | Pass | `J7GUXWEENBNZTW85` visible through `ADB_SERVER_SOCKET=tcp:127.0.0.1:5038` |
+| Device identity | Pass | realme RMX3085 / Android 13 / API 33 / WebView 151.0.7922.199 / three-button navigation |
+| Candidate build | Pass | Exact host rerun of `make android-closed-beta`: `BUILD SUCCESSFUL in 7s`; 103 actionable Gradle tasks |
+| Candidate identity | Pass | Git `b1660dc`; APK `fffbcec64978b98eaad9658670245fa03a27acf39b64e2612dbedfd663665012`; 82,981,433 bytes; `com.globalenglish.app` 1.0 (1); target SDK 36 |
+| Installation integrity | Pass | Candidate and pulled installed `base.apk` SHA-256 and byte count match exactly |
+| Baseline privacy | Pass | Unlocked public guest Home only; no learner identity, credential, authored learner text, transcript or audio visible; artefacts remain in `/tmp` |
+| Device settings | Pass | No font, locale, navigation, contrast, permission or developer setting changed; no restoration needed |
+| Accessibility/device verdicts | Not assessed | Baseline capture is not evidence for UX-REM-01 or any open §10 matrix cell |
+
+### Residuals
+
+- The public baseline exposes only the guest surface. Authenticated critical
+  journeys require the approved test learner to sign in during their relevant
+  checkpoints.
+- The native UI Automator hierarchy identifies the WebView but does not expand
+  its DOM semantics; TalkBack/browser evidence remains required.
+- This is a debug-signed test APK, not a signed Play release artefact.
+
+Detailed evidence:
+[Android Mobile UX Remediation Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path).
+
 ## PROVIDER-LIVE-WIRING-01 Azure, Sarvam and ElevenLabs — 18 September 2026
 
 ### Scope reviewed

@@ -33,6 +33,7 @@ use App\Authentication\Sessions\PrivilegeClassifier;
 use App\Billing\DisabledPaymentProvider;
 use App\Billing\DummyPaymentProvider;
 use App\Billing\PaymentProvider;
+use App\Billing\RazorpayPaymentProvider;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
 use App\Conversation\Providers\ConfirmedTextSpeechToTextProvider;
 use App\Conversation\Providers\ConversationModelProvider;
@@ -130,6 +131,14 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind(PaymentProvider::class, function (): PaymentProvider {
             $driver = (string) config('billing.driver', 'dummy');
+
+            if (
+                $driver === 'razorpay'
+                && (! $this->app->environment('production')
+                    || config('billing.razorpay.mode') === 'live')
+            ) {
+                return $this->app->make(RazorpayPaymentProvider::class);
+            }
 
             if ($this->app->environment('production') || $driver === 'disabled') {
                 return new DisabledPaymentProvider;
@@ -513,6 +522,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by(
                 $digester->digest('oauth-token-request', $client."\0".$ip),
             );
+        });
+
+        RateLimiter::for('payment-webhooks', function (Request $request): Limit {
+            $digester = $this->app->make(AuthenticationSecretDigester::class);
+
+            return Limit::perMinute(120)->by($digester->digest(
+                'payment-webhook',
+                (string) ($request->ip() ?? 'unknown'),
+            ));
         });
 
         RateLimiter::for(

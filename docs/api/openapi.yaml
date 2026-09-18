@@ -2,9 +2,11 @@ openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Global English API
-  version: 0.47.0
+  version: 0.48.0
   description: |
-    Canonical API contract for the Global English platform. UX-07A
+    Canonical API contract for the Global English platform. Razorpay sandbox
+    checkout adds server-created orders, signed confirmation, authoritative
+    captured-payment reconciliation and replay-safe webhooks. UX-07A
     applies the accepted persisted-timezone delayed-review window and replaces
     completion-labelled review-attempt metrics with reviewed/attempted terms.
     SPEECH-RT-01
@@ -1752,9 +1754,12 @@ paths:
   /me/subscription-checkouts:
     post:
       operationId: createLearnerSubscriptionCheckout
-      summary: Complete dummy in-app checkout for a paid Direct plan or talk pack
+      summary: Create a Direct subscription checkout or payment order
       description: |
-        Completes in-process with the dummy payment driver. Talk packs require
+        Dummy mode completes in-process. Razorpay mode returns a pending,
+        server-created order for Standard Checkout and grants no access until
+        captured-payment confirmation or a signed webhook is reconciled.
+        Talk packs require
         an active Modules or Premium month and add live-AI seconds; they do
         not replace the membership or unlock Role-play. Production and
         `disabled` fail closed. Replay uses the same Idempotency-Key.
@@ -1801,6 +1806,108 @@ paths:
         "409":
           $ref: "#/components/responses/Problem"
         "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/subscription-checkouts/{checkout}:
+    get:
+      operationId: reconcileLearnerSubscriptionCheckout
+      summary: Reconcile one learner-owned checkout with its provider
+      tags: [Learning]
+      security:
+        - sanctumSession: []
+        - passportOAuth: [mobile:api]
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: checkout
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      responses:
+        "200":
+          description: Current authoritative checkout state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerSubscriptionCheckout"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/subscription-checkouts/{checkout}/confirm:
+    post:
+      operationId: confirmLearnerSubscriptionCheckout
+      summary: Verify a provider callback and reconcile captured payment
+      tags: [Learning]
+      security:
+        - sanctumSession: []
+        - passportOAuth: [mobile:api]
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: checkout
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Ulid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmLearnerSubscriptionCheckoutRequest"
+      responses:
+        "200":
+          description: Checkout remains pending or was authoritatively completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerSubscriptionCheckout"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /payments/razorpay/webhook:
+    post:
+      operationId: receiveRazorpayPaymentWebhook
+      summary: Receive a signature-verified Razorpay payment event
+      description: |
+        The server verifies X-Razorpay-Signature against the exact raw request
+        body, stores only a digest and bounded provider identifiers, and
+        reconciles captured status server-to-server before granting access.
+      tags: [Payments]
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: X-Razorpay-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-f0-9]{64}$"
+        - name: X-Razorpay-Event-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "204":
+          description: Event verified and processed or safely ignored.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "429":
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
@@ -12071,6 +12178,17 @@ components:
       properties:
         plan_id:
           $ref: "#/components/schemas/Ulid"
+    ConfirmLearnerSubscriptionCheckoutRequest:
+      type: object
+      additionalProperties: false
+      required: [payment_id, signature]
+      properties:
+        payment_id:
+          type: string
+          pattern: "^pay_[A-Za-z0-9]{8,64}$"
+        signature:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
     LearnerSubscriptionCheckout:
       type: object
       additionalProperties: false
@@ -12083,6 +12201,11 @@ components:
         - total_paise
         - gstin_is_placeholder
         - entitlement_id
+        - provider
+        - provider_order_id
+        - provider_payment_id
+        - provider_public_key
+        - currency
         - replayed
       properties:
         id:
@@ -12105,6 +12228,19 @@ components:
           type: boolean
         entitlement_id:
           type: [string, "null"]
+        provider:
+          type: string
+          enum: [pending, dummy, razorpay]
+        provider_order_id:
+          type: [string, "null"]
+        provider_payment_id:
+          type: [string, "null"]
+        provider_public_key:
+          type: [string, "null"]
+          description: Publishable provider key only; never a key secret.
+        currency:
+          type: string
+          const: INR
         replayed:
           type: boolean
     OperatorEntitlementWorkspace:

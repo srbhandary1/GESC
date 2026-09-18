@@ -14,6 +14,11 @@ import {
   type LearnerSubscriptionApi,
   type SubscriptionPlanOffer,
 } from './LearnerSubscriptionApi'
+import {
+  openRazorpayCheckout,
+  type RazorpayCheckoutRequest,
+  type RazorpayCheckoutSuccess,
+} from './RazorpayCheckout'
 
 export interface SubscriptionEntryContext {
   readonly completedLevelNumber: number | null
@@ -28,6 +33,9 @@ export interface SubscriptionPanelProps {
   readonly context?: SubscriptionEntryContext | null
   readonly onChange?: (entitlement: LearnerEntitlement) => void
   readonly onClose?: () => void
+  readonly paymentCheckout?: (
+    request: RazorpayCheckoutRequest,
+  ) => Promise<RazorpayCheckoutSuccess | null>
 }
 
 type LoadState = 'loading' | 'ready' | 'unavailable'
@@ -79,6 +87,7 @@ export function SubscriptionPanel({
   context = null,
   onChange,
   onClose,
+  paymentCheckout = openRazorpayCheckout,
 }: SubscriptionPanelProps) {
   const message = (key: MessageKey, parameters: Record<string, string> = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -88,6 +97,7 @@ export function SubscriptionPanel({
   const [checkoutState, setCheckoutState] = useState<CheckoutState>('idle')
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanOffer | null>(null)
   const [checkoutBaselineSeconds, setCheckoutBaselineSeconds] = useState<number | null>(null)
+  const [checkoutId, setCheckoutId] = useState<string | null>(null)
 
   const apply = useCallback(
     (current: LearnerEntitlement, cataloguePlans: readonly SubscriptionPlanOffer[]) => {
@@ -146,6 +156,17 @@ export function SubscriptionPanel({
     if (selectedPlan === null) return
     setCheckoutState('submitting')
     try {
+      if (checkoutId !== null && api.reconcileCheckout !== undefined) {
+        const checkout = await api.reconcileCheckout(checkoutId)
+        if (checkout.status === 'failed') {
+          setCheckoutState('failed')
+          return
+        }
+        if (checkout.status === 'pending') {
+          setCheckoutState('pending')
+          return
+        }
+      }
       const current = await api.entitlement()
       if (!current.applies) {
         apply(current, [])
@@ -161,24 +182,70 @@ export function SubscriptionPanel({
     } catch {
       setCheckoutState('ambiguous')
     }
-  }, [api, apply, checkoutBaselineSeconds, selectedPlan])
+  }, [api, apply, checkoutBaselineSeconds, checkoutId, selectedPlan])
 
   const pay = (plan: SubscriptionPlanOffer) => {
     const baseline = entitlement?.live_ai_seconds_remaining ?? null
     setSelectedPlan(plan)
+    setCheckoutId(null)
     setCheckoutBaselineSeconds(baseline)
     setCheckoutState('submitting')
     void api.checkout(plan.id, createClientId())
       .then(async (result) => {
+        let finalStatus = result.status
+        if (result.id !== undefined) setCheckoutId(result.id)
         if (result.status === 'pending') {
-          setCheckoutState('pending')
-          return
+          if (
+            result.provider === 'razorpay' &&
+            result.id !== undefined &&
+            result.provider_order_id !== null &&
+            result.provider_order_id !== undefined &&
+            result.provider_public_key !== null &&
+            result.provider_public_key !== undefined &&
+            result.total_paise !== undefined &&
+            api.confirmCheckout !== undefined
+          ) {
+            try {
+              const completed = await paymentCheckout({
+                amount: result.total_paise,
+                currency: 'INR',
+                description: plan.name,
+                key: result.provider_public_key,
+                name: 'Global Spoken English App',
+                orderId: result.provider_order_id,
+              })
+              if (completed === null) {
+                setCheckoutState('pending')
+                return
+              }
+              if (completed.orderId !== result.provider_order_id) {
+                setCheckoutState('ambiguous')
+                return
+              }
+              const confirmation = await api.confirmCheckout(
+                result.id,
+                completed.paymentId,
+                completed.signature,
+              )
+              if (confirmation.status !== 'completed') {
+                setCheckoutState('pending')
+                return
+              }
+              finalStatus = confirmation.status
+            } catch {
+              setCheckoutState('ambiguous')
+              return
+            }
+          } else {
+            setCheckoutState('pending')
+            return
+          }
         }
-        if (result.status === 'failed') {
+        if (finalStatus === 'failed') {
           setCheckoutState('failed')
           return
         }
-        if (result.status !== 'completed') {
+        if (finalStatus !== 'completed') {
           setCheckoutState('ambiguous')
           return
         }

@@ -1,6 +1,6 @@
 # Direct learner subscriptions
 
-**Status:** Advertised catalogue and live entitlement engine aligned 6 September 2026 (D-0286 / D-0288).
+**Status:** Advertised catalogue, entitlement engine and server-authoritative Razorpay integration aligned 18 September 2026 (D-0286 / D-0288 / D-0321).
 **Product:** Global Spoken English App
 **Decision request:** [DR-0045](DR-0045_LEARNER_SUBSCRIPTION_TIERS_REQUEST.md)
 Option C; [DR-0046](DR-0046_PREMIUM_COURTESY_GRANT_REQUEST.md) Option A;
@@ -8,8 +8,10 @@ superseded advertised defaults in D-0286
 **Product owner:** S R Bhandary
 **Currency:** Indian rupees (INR), **exclusive of GST**
 **Audience:** Direct consumer learners on the Global English Direct tenant
-**Does not authorize:** production, Google Play, live payment credentials, or
-a Play Billing integration
+**Payment authority:** APP-0100 authorizes the Razorpay implementation and
+sandbox deployment. Real-money capture remains technically gated until live
+credentials, webhook registration, canary/refund and reconciliation evidence
+exist. Google Play publication and a Play Billing integration remain separate.
 
 This file is the advertised Direct subscription catalogue and the **rule
 sheet** for trial caps, GST and checkout. Follow this file for new product

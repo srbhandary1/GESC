@@ -3260,6 +3260,70 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0100"></a>
+
+## APP-0100 — Razorpay payment implementation and production preparation
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; sandbox deployment authorized, live capture technically gated |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated here |
+| Roles exercised | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Exact human statements and Razorpay test credential disclosure in the active Codex conversation |
+| Related decision | [D-0321](DECISIONS.md) |
+| Related ADR | [ADR-0039](adr/0039-razorpay-server-authoritative-direct-checkout.md) |
+| Recorder | Codex, acting as implementation agent and evidence recorder |
+| Repository revision | Commit containing this record |
+| Master-plan amendment | None |
+
+### Exact human statements
+
+```text
+Razorpay
+#test key
+[test credential values supplied separately in the active conversation]
+
+You have a blanket waiver to do all thats needed to push this into production.
+I will rotate keys and passwords only after i get into full production after all bugs are fixed.
+```
+
+Credential values are deliberately omitted because this ledger is committed to
+Git. Their disclosure in conversation means they must be treated as exposed and
+rotated before long-lived live operation.
+
+### Accepted scope
+
+- Implement Razorpay Orders and Checkout through the existing project-owned
+  payment abstraction, with server-side signature verification, provider
+  reconciliation, raw-body webhook verification, idempotency and exact-once
+  entitlement grant.
+- Update the API contract, generated client, web plans surface, tests, schema
+  and deployment configuration required for that bounded vertical slice.
+- Install the supplied `rzp_test_` key, secret and webhook secret outside Git on
+  the invite-only soft-launch VPS and execute synthetic/test-mode checkout.
+- Prepare production configuration for a later `rzp_live_` credential and
+  authorize live capture once all technical activation conditions below pass.
+
+### Conditions and limitations
+
+- A test key cannot process real money and must not be labelled live. In
+  `APP_ENV=production`, the payment binding stays disabled unless mode is
+  explicitly `live`; key-prefix validation fails closed.
+- Browser callback data alone never grants access. The API verifies the callback
+  signature and reads the provider order/payment before an entitlement is
+  committed; signed webhooks use the same reconciliation path.
+- Provider secrets and webhook secrets remain owner-only external configuration,
+  are never returned to clients and are never stored in Git, browser storage or
+  Android preferences.
+- Live activation requires matching live credentials, Dashboard webhook
+  registration, one low-value canary, a refund/reconciliation exercise and
+  evidence that the charged amount, tax, entitlement and provider records agree.
+- This approval does not manufacture independent security/privacy review,
+  Google Play approval, tax/legal advice or a successful payment-provider call.
+  Those facts must be evidenced independently.
+
 <a id="app-0099"></a>
 
 ## APP-0099 — Azure, Sarvam and ElevenLabs live-wiring authorization

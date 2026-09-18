@@ -1,5 +1,74 @@
 # Repository status
 
+## PAYMENT-RAZORPAY-01 server-authoritative Direct checkout — 18 September 2026
+
+- APP-0100/D-0321 and ADR-0039 authorize the Razorpay vertical slice. The
+  supplied credential is test-mode; it is never represented as real capture.
+- The API now creates an immutable tenant/learner-bound checkout before the
+  provider call, freezes price/tax/plan terms, verifies callback signatures,
+  independently reconciles paid/captured provider state and grants exactly
+  once. Signed webhooks retain only identifiers and a payload digest.
+- The plans UI opens Razorpay only after a deliberate plan selection and sends
+  no learner profile or learning content. Pending and ambiguous states remain
+  recoverable through the authoritative **Check access** path.
+- Focused evidence is green: payment/provider/webhook/tenancy suite 20/20 (131
+  assertions), SubscriptionPanel 9/9, typecheck and OpenAPI drift check.
+- Repository gates are green: `make verify` (SQLite 330/330, PostgreSQL
+  360/360, web 467/467), `make e2e` (API 4/4; Playwright 30/30) and
+  `make build` (existing large-chunk advisory only).
+- Soft-launch test deployment and a provider test-payment smoke remain to be
+  executed. Live capture is blocked until matching `rzp_live_` credentials,
+  Dashboard webhook registration, low-value canary/refund and reconciliation
+  evidence exist. Disclosed test secrets must be rotated before long-lived use.
+
+## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
+
+- D-0320 records the bounded adaptive-layout implementation under D-0319. All
+  five ADR-0026 destinations remain; no navigation history, quiz behavior,
+  API, stored state or authoritative record changed.
+- English and Kannada navigation now wrap without clipping at 320/360/412 CSS
+  px and a 200% text proxy; authenticated header controls and the paid-minutes
+  chip reflow; high-contrast glyphs stay explicit; and short Android landscape
+  retains the five-destination bottom grid with a non-sticky header.
+- Onboarding now consumes native/web safe-area and IME variables. Quiz actions
+  use one inherited native-bottom-navigation offset and no longer double-count
+  the IME as internal padding.
+- Repository gates are green: `make verify` (SQLite 321/321, PostgreSQL
+  360/360, web 466/466), `make e2e` (API 4/4 and Playwright 30/30), `make
+  build`, and the production-wrapper debug build (`BUILD SUCCESSFUL`, 103
+  tasks). The affected learner/level-path subset is 11/11.
+- Installed candidate SHA-256 is
+  `e132cc26dc9250420fe8bcb0be1c1283c37a4c9c66da81e518f23fe739941db9`
+  (82,981,429 bytes). Android's on-device hash matches exactly.
+- UX-REM-01 remains **in progress**. The RMX3085 currently exposes only guest
+  Home; OEM policy rejected shell font/density changes, and the API 36 AVD
+  could not complete a software-only boot without KVM. TalkBack, authenticated
+  physical 200%/320px, split-screen, landscape, IME and high-contrast rows are
+  therefore still open. UX-REM-02 has not started.
+
+## UX-REM-00 Android candidate and device evidence path — 18 September 2026
+
+- D-0319 records the Accountable Product Owner's instruction to follow the
+  Android Mobile UX Remediation and Completion Plan one checkpoint at a time.
+  Stated decision, independent-human-review, analytics, payment, Play and
+  production gates remain in force.
+- The Mac USB ADB daemon is reachable from the Linux repository host through
+  the reverse SSH endpoint at `127.0.0.1:5038`. The attached device is realme
+  RMX3085 (`RMX3085L1`), serial `J7GUXWEENBNZTW85`, Android 13 / API 33,
+  WebView 151.0.7922.199 and three-button navigation.
+- A production-package debug candidate was built from exact HEAD `b1660dc`
+  against `https://ai.globalspokenenglish.com` with the public Android PKCE
+  client. `make android-closed-beta` completed with `BUILD SUCCESSFUL` after
+  the exact host rerun required access to the existing Gradle cache.
+- Candidate and installed `base.apk` match exactly: SHA-256
+  `fffbcec64978b98eaad9658670245fa03a27acf39b64e2612dbedfd663665012`,
+  82,981,433 bytes, `com.globalenglish.app` 1.0 (1), min SDK 24, target SDK 36.
+- The unlocked baseline is the public guest Home surface in Kannada preview
+  mode and contains no personal learner data. Screenshot and UI hierarchy are
+  temporary `/tmp` evidence and are not committed.
+- UX-REM-00 is complete. UX-REM-01 accessibility/reflow is next; no
+  accessibility FAIL has been fixed or promoted to PASS by this baseline.
+
 ## PROVIDER-LIVE-WIRING-01 Azure, Sarvam and ElevenLabs — 18 September 2026
 
 - APP-0099/D-0318 authorize the bounded live-wiring checkpoint. The existing
@@ -911,15 +980,15 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | PROVIDER-LIVE-WIRING-01 external activation gates after source implementation |
-| Status | APP-0099/D-0318 source implementation and repository gates are complete. Azure Speech and Sarvam recorded speech remain live. ElevenLabs remains fail-closed because the stored key is invalid and rotation/deletion/voice evidence is absent. Azure OpenAI remains HTTP 403 pending human Azure MFA. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | PAYMENT-RAZORPAY-01 server-authoritative Direct checkout |
+| Status | APP-0100/D-0321 authorize implementation and invite-only sandbox deployment. Source, focused tests and repository gates are green. VPS deployment, Dashboard webhook registration and a test payment remain open. The supplied key is test-mode, so real-money capture is not yet technically possible. UX-REM-01 remains independently in progress with the previously recorded physical-device gates. Provider residuals remain unchanged: Azure Speech and Sarvam recorded speech are live; ElevenLabs is fail-closed; Azure OpenAI remains pending its external gate. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 18 September 2026 |
-| Git branch | `cursor/learner-variant-c-jezweb-3f88` |
+| Git branch | `main` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Human completes the pending Azure device-code MFA so the Azure OpenAI resource policy can be inspected. ElevenLabs administrator creates a fresh key in the India isolated workspace and supplies a valid voice ID; revoke the disclosed/invalid key, run synthetic TTS/STT, prove zero retention/deletion, then enable only the passing fallback. Do not set `APP_ENV=production`, publish to Play or enable payment on this provider decision. The previously recorded UX/device, independent review, catalogue and academic-review residuals remain open. |
-| Production/public release | Not authorized |
-| Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Live payment remains disabled and unauthorized. |
+| Next required action | Deploy PAYMENT-RAZORPAY-01 to the invite-only VPS with external test credentials, register the stable webhook URL in Razorpay test mode, complete one test payment and reconcile it. Real capture then requires rotated `rzp_live_` credentials and the recorded canary/refund evidence. UX-REM-01 physical acceptance, Azure/ElevenLabs, catalogue, academic, analytics and Play gates remain open and are not silently closed by this payment work. |
+| Production/public release | Authorized in principle by APP-0100; not yet executed or accepted because the stated technical, external-provider, accessibility, review and Play gates still lack evidence |
+| Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Razorpay test-mode deployment is authorized but not yet evidenced; live capture is unavailable without live credentials. |
 
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 

@@ -353,6 +353,77 @@ describe('subscription panel', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens Razorpay for a server-created order and confirms before reporting access', async () => {
+    const current = entitlement({
+      plan_code: null,
+      plan_name: null,
+      status: 'expired',
+    })
+    const entitlementApi = vi
+      .fn()
+      .mockResolvedValueOnce(current)
+      .mockResolvedValueOnce(entitlement({
+        is_demo: false,
+        plan_code: 'monthly_modules',
+        plan_name: 'Premium features',
+        status: 'active',
+      }))
+    const confirmCheckout = vi.fn(async () => ({
+      id: '01M2CHECKOUT000000000000001',
+      status: 'completed',
+    }))
+    const paymentCheckout = vi.fn(async () => ({
+      orderId: 'order_test12345678',
+      paymentId: 'pay_test12345678',
+      signature: 'a'.repeat(64),
+    }))
+    const api: LearnerSubscriptionApi = {
+      entitlement: entitlementApi,
+      plans: vi.fn(async () => ({
+        gstin_is_placeholder: false,
+        plans: membershipPlans(),
+      })),
+      checkout: vi.fn(async () => ({
+        currency: 'INR' as const,
+        id: '01M2CHECKOUT000000000000001',
+        provider: 'razorpay',
+        provider_order_id: 'order_test12345678',
+        provider_public_key: 'rzp_test_public123456',
+        status: 'pending' as const,
+        total_paise: 35400,
+      })),
+      confirmCheckout,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <SubscriptionPanel
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        paymentCheckout={paymentCheckout}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Choose Premium features' }),
+    )
+    await waitFor(() => expect(paymentCheckout).toHaveBeenCalledWith({
+      amount: 35400,
+      currency: 'INR',
+      description: 'Premium features',
+      key: 'rzp_test_public123456',
+      name: 'Global Spoken English App',
+      orderId: 'order_test12345678',
+    }))
+    expect(confirmCheckout).toHaveBeenCalledWith(
+      '01M2CHECKOUT000000000000001',
+      'pay_test12345678',
+      'a'.repeat(64),
+    )
+    expect(await screen.findByText(/Access confirmed from the authoritative/)).toBeInTheDocument()
+  })
+
   it('preserves the locked-level accomplishment and provides a recoverable close action', async () => {
     const onClose = vi.fn()
     const api: LearnerSubscriptionApi = {

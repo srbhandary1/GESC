@@ -3775,6 +3775,25 @@ export const CreateLearnerSubscriptionCheckoutRequestSchema = {
     }
 } as const;
 
+export const ConfirmLearnerSubscriptionCheckoutRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'payment_id',
+        'signature'
+    ],
+    properties: {
+        payment_id: {
+            type: 'string',
+            pattern: '^pay_[A-Za-z0-9]{8,64}$'
+        },
+        signature: {
+            type: 'string',
+            pattern: '^[a-f0-9]{64}$'
+        }
+    }
+} as const;
+
 export const LearnerSubscriptionCheckoutSchema = {
     type: 'object',
     additionalProperties: false,
@@ -3787,6 +3806,11 @@ export const LearnerSubscriptionCheckoutSchema = {
         'total_paise',
         'gstin_is_placeholder',
         'entitlement_id',
+        'provider',
+        'provider_order_id',
+        'provider_payment_id',
+        'provider_public_key',
+        'currency',
         'replayed'
     ],
     properties: {
@@ -3824,6 +3848,37 @@ export const LearnerSubscriptionCheckoutSchema = {
                 'string',
                 'null'
             ]
+        },
+        provider: {
+            type: 'string',
+            enum: [
+                'pending',
+                'dummy',
+                'razorpay'
+            ]
+        },
+        provider_order_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        provider_payment_id: {
+            type: [
+                'string',
+                'null'
+            ]
+        },
+        provider_public_key: {
+            type: [
+                'string',
+                'null'
+            ],
+            description: 'Publishable provider key only; never a key secret.'
+        },
+        currency: {
+            type: 'string',
+            const: 'INR'
         },
         replayed: {
             type: 'boolean'

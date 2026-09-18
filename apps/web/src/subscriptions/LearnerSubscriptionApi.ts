@@ -44,7 +44,24 @@ export interface LearnerSubscriptionApi {
     gstin_is_placeholder: boolean
     plans: readonly SubscriptionPlanOffer[]
   }>
-  checkout(planId: string, idempotencyKey: string): Promise<{ status: string }>
+  checkout(planId: string, idempotencyKey: string): Promise<SubscriptionCheckout>
+  confirmCheckout?(
+    checkoutId: string,
+    paymentId: string,
+    signature: string,
+  ): Promise<SubscriptionCheckout>
+  reconcileCheckout?(checkoutId: string): Promise<SubscriptionCheckout>
+}
+
+export interface SubscriptionCheckout {
+  readonly id?: string
+  readonly status: string
+  readonly provider?: string
+  readonly provider_order_id?: string | null
+  readonly provider_payment_id?: string | null
+  readonly provider_public_key?: string | null
+  readonly total_paise?: number
+  readonly currency?: 'INR'
 }
 
 export interface LearnerSubscriptionApiOptions {
@@ -145,13 +162,27 @@ export function createLearnerSubscriptionApi(
       }>('/me/subscription-plans')
     },
     async checkout(planId, idempotencyKey) {
-      return jsonRequest<{ status: string }>('/me/subscription-checkouts', {
+      return jsonRequest<SubscriptionCheckout>('/me/subscription-checkouts', {
         method: 'POST',
         body: JSON.stringify({ plan_id: planId }),
         headers: {
           'Idempotency-Key': idempotencyKey,
         },
       })
+    },
+    async confirmCheckout(checkoutId, paymentId, signature) {
+      return jsonRequest<SubscriptionCheckout>(
+        `/me/subscription-checkouts/${encodeURIComponent(checkoutId)}/confirm`,
+        {
+          body: JSON.stringify({ payment_id: paymentId, signature }),
+          method: 'POST',
+        },
+      )
+    },
+    async reconcileCheckout(checkoutId) {
+      return jsonRequest<SubscriptionCheckout>(
+        `/me/subscription-checkouts/${encodeURIComponent(checkoutId)}`,
+      )
     },
   }
 }

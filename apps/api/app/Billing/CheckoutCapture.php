@@ -10,5 +10,7 @@ final readonly class CheckoutCapture
         public string $status,
         public string $provider,
         public string $providerReference,
+        public ?string $providerPaymentReference = null,
+        public ?string $publicKey = null,
     ) {}
 }
