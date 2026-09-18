@@ -2,6 +2,7 @@ import {
   DEFAULT_LOCALE,
   resolveMessage,
   type MessageKey,
+  type MessageParameters,
 } from '@global-english/localization'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -926,7 +927,17 @@ describe('deterministic learner journey', () => {
       }),
     ).toBeVisible()
     expect(screen.getByText('Workplace introductions review')).toBeVisible()
-    expect(screen.getByText(/Due /)).toBeVisible()
+    expect(
+      screen.getByText(
+        t('learner.home.upcoming_reviews.due', {
+          date: new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: 'Asia/Kolkata',
+          }).format(new Date('2026-09-01T03:30:00Z')),
+        }),
+      ),
+    ).toBeVisible()
   })
 
   it('shows neutral streak copy when the learner has not spoken yet', async () => {
@@ -1185,8 +1196,9 @@ function content(
   } as const
 }
 
-function t(key: MessageKey): string {
+function t(key: MessageKey, parameters?: MessageParameters): string {
   return resolveMessage(key, {
+    parameters,
     policy: 'development-preview',
     requestedLocale: DEFAULT_LOCALE,
   }).text

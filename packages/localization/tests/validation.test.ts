@@ -34,6 +34,30 @@ function issueCodes(
 }
 
 describe('UI catalogue validation', () => {
+  it('does not leave Kannada learner chrome as English source copy', () => {
+    const input = cloneCanonicalValidationInput()
+    const catalogues = mutableCatalogues(input)
+    const english = catalogues['en-IN']!
+    const kannada = catalogues['kn-IN']!
+    const intentionallyLanguageNeutral = new Set(['subscription.gst'])
+    const learnerChromePrefixes = [
+      'entitlement.',
+      'learner.audio.',
+      'learner.home.upcoming_reviews.',
+      'learner.progress.',
+      'subscription.',
+    ]
+
+    const untranslated = Object.keys(english).filter(
+      (key) =>
+        learnerChromePrefixes.some((prefix) => key.startsWith(prefix)) &&
+        !intentionallyLanguageNeutral.has(key) &&
+        english[key] === kannada[key],
+    )
+
+    expect(untranslated).toEqual([])
+  })
+
   it('accepts the canonical catalogues while reporting pending review honestly', () => {
     const result = validateCanonicalCatalogues()
 

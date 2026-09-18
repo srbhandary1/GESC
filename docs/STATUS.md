@@ -1,5 +1,27 @@
 # Repository status
 
+## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
+
+- APP-0102/D-0323 continue the owner-reported Kannada mixed-language defect as
+  a bounded learner-interface catalogue correction. No application logic,
+  learning content, API, storage, consent or payment semantic changed.
+- Fifty-one English-identical Kannada interface values across Plans, Progress,
+  delayed review, model-audio controls and entitlement messages now have a
+  Kannada implementation draft. Intentional English learning content,
+  authoritative API plan names and the language-neutral `GST` acronym remain
+  unchanged.
+- `kn-IN` is revision `ui-kn-IN-2026-09-18.2`, with canonical hash
+  `sha256:e2481299bf5ce15b3ef8aaa5dd5c867937e9ef315ac0d97a1426aedbbe37a463`,
+  and remains visibly `pending-independent-review` under ADR-0005.
+- A regression test now rejects future English-source copy in these learner
+  chrome namespaces except the explicit `subscription.gst` exception.
+- Gates pass: localization 36/36, LearnerJourney 14/14, `make verify` (SQLite
+  330/330; PostgreSQL 360/360; web 467/467), `make e2e` (API 4/4; Playwright
+  30/30), and `make build` (existing large-chunk advisory only).
+- Android packaging, stable-host deployment, physical-device verification and
+  deletion of any temporary captures remain to be recorded after the exact
+  implementation commit is created.
+
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 
 - APP-0101/D-0322 record the owner's physical-device defect report and bounded

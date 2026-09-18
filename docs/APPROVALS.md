@@ -3260,6 +3260,43 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0102"></a>
+
+## APP-0102 — Kannada learner-interface catalogue correction
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; bounded localization defect continuation authorized |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated here |
+| Roles exercised | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Continuation instruction following the recorded physical-device Kannada defect and the proposed next bounded correction |
+| Related decision | [D-0323](DECISIONS.md) |
+| Related ADR | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Recorder | Codex, acting as implementation agent and evidence recorder |
+| Repository revision | Pending exact implementation commit |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+conntinue
+```
+
+### Accepted scope and limits
+
+- Continue the already reported mixed Kannada/English correction only across
+  learner-facing Plans, Progress, review, audio-control and entitlement chrome.
+- Preserve intentional English exercises and examples, API-authoritative plan
+  names, language-neutral tax/product terms and all existing semantics.
+- Keep `kn-IN` visibly `pending-independent-review`; this agent-authored draft
+  is not independent linguistic approval under ADR-0005.
+- Do not change application logic, APIs, schemas, learner records, storage,
+  consent, payment/provider behavior or locale persistence.
+- Diagnostic screenshots and UI hierarchies may exist only temporarily and
+  must not enter Git, the deployed release or production data.
+
 <a id="app-0101"></a>
 
 ## APP-0101 — Kannada first-use questionnaire correction

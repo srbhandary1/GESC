@@ -1,5 +1,34 @@
 # Quality review
 
+## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
+
+### Scope reviewed
+
+- English-identical Kannada values in Plans, Progress, delayed review,
+  model-audio controls and entitlement messaging.
+- Catalogue revision/hash governance and regression coverage.
+- Repository verification, end-to-end and production-build gates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Catalogue scope | Pass with human gate | 51 English-identical learner-interface values replaced; intentional English content, authoritative plan names and `GST` retained |
+| Semantics | Pass | Interface copy only; no learning, review, entitlement, payment, consent, API or persistence behavior changed |
+| Regression coverage | Pass | Scoped test rejects Kannada values identical to English source except explicit `subscription.gst`; localization 36/36; LearnerJourney 14/14 |
+| Governance | Pass | `ui-kn-IN-2026-09-18.2`; canonical SHA-256 matches; `pending-independent-review` retained |
+| `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 467/467; five expected independent-review warnings |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 including Kannada first use |
+| `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
+| Android/deployment/device evidence | Pending | Exact commit, APK, stable-host release and RMX3085 verification not yet recorded |
+
+### Verdict
+
+Repository implementation and gates pass. Deployment/device evidence remains
+open until the exact committed candidate is packaged and verified. The Kannada
+copy remains an implementation draft pending independent human linguistic and
+accessibility review under ADR-0005.
+
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 
 ### Scope reviewed
