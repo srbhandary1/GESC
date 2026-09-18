@@ -162,7 +162,10 @@ describe('production first-use onboarding', () => {
       />,
     )
 
-    await expectHeading('Make one short English turn')
+    await expectHeading('ಒಂದು ಚಿಕ್ಕ ಇಂಗ್ಲಿಷ್ ಉತ್ತರ ನೀಡಿ')
+    expect(
+      screen.queryByText('Make one short English turn'),
+    ).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     const stored = window.localStorage.getItem(
       await firstUseResumeStorageKey(learnerA),

@@ -1,5 +1,32 @@
 # Repository status
 
+## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
+
+- APP-0101/D-0322 record the owner's physical-device defect report and bounded
+  correction authority. The app was resolving `kn-IN`; the defect was that all
+  newly appended first-use questionnaire values in the Kannada catalogue were
+  still verbatim English.
+- First-use headings, instructions, accessibility choices, adult/goal hints,
+  audio checks, separate recording/AI consent explanations, placement choices,
+  microphone fallback, private practice and acknowledgement copy now have a
+  Kannada implementation draft. The intentional English practice sentence
+  remains English.
+- `kn-IN` is revision `ui-kn-IN-2026-09-18.1` with a matching canonical hash
+  and remains visibly `pending-independent-review`; no independent linguistic
+  approval is claimed.
+- The first rebuilt follow-up APK exposed a packaging error: `/api/v1` had been
+  supplied as part of `VITE_MOBILE_API_ORIGIN`, which the Android validator
+  rejects because it requires the bare origin and appends the API prefix. A
+  corrected bare-origin build restored authentication and physically proved
+  that the 120-minute chip opens Plans without `Level undefined`.
+- Gates pass: locale validation (five expected independent-review warnings),
+  localization 35/35, focused onboarding/payment-chip 9/9, `make verify`
+  (SQLite 330/330; PostgreSQL 360/360; web 467/467), `make e2e` (API 4/4;
+  Playwright 30/30) and `make build`.
+- Device screenshots and UI hierarchy dumps are temporary `/tmp` and `/sdcard`
+  diagnostics only. They are not stored in Git, the VPS release or production
+  data and are deleted after the final visual check.
+
 ## PAYMENT-RAZORPAY-01 server-authoritative Direct checkout — 18 September 2026
 
 - APP-0100/D-0321 and ADR-0039 authorize the Razorpay vertical slice. The
@@ -34,9 +61,8 @@
   reports **27 pass / 1 warning / 0 fail**; the sole warning is the missing
   active Content Studio publication head/enrollment pin.
 - The paid-minutes control no longer forwards a React click event as level
-  context. The rebuilt APK installed successfully over the paid test account
-  without clearing data; final on-device tap confirmation remains pending only
-  because the handset returned to its secure lock screen during inspection.
+  context. On the corrected bare-origin APK it physically opened Plans over the
+  retained paid test account without `Level undefined`.
 - Live capture is blocked until matching `rzp_live_` credentials, separate
   live Dashboard webhook registration, low-value canary/refund and
   reconciliation evidence exist. Disclosed secrets must be rotated before

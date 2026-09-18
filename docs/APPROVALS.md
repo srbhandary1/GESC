@@ -3260,6 +3260,48 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0101"></a>
+
+## APP-0101 — Kannada first-use questionnaire correction
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; bounded localization defect correction authorized |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated here |
+| Roles exercised | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | First-hand Android defect report plus blanket production-fix instruction in the active conversation |
+| Related decision | [D-0322](DECISIONS.md) |
+| Related ADR | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Recorder | Codex, acting as implementation agent and evidence recorder |
+| Repository revision | Pending implementation commit |
+| Master-plan amendment | None |
+
+### Exact human statements
+
+```text
+You have a blanket waiver to do all thats needed to push this into production.
+
+When i login for the first time on the android app, i get a set of
+questionnaires. I chose the preferrd language as Kannada but i get most of the
+pages in english.
+```
+
+### Accepted scope and limits
+
+- Correct the reproduced Kannada first-use interface defect and its tests,
+  governance hash, Android artifact and deployment evidence.
+- Keep the English-learning model sentence in English; translate interface
+  instructions and privacy/consent choices without changing their meaning.
+- Preserve `pending-independent-review`; this implementation draft is not
+  independent linguistic approval and ordinary approved-only production builds
+  continue to fail closed under ADR-0005.
+- Do not add locale persistence, browser storage, API/schema changes, provider
+  behavior, learner-record mutations or new consent semantics.
+- Diagnostic screenshots and UI hierarchies may exist only temporarily on the
+  workstation or test handset and must not enter Git or the deployed release.
+
 <a id="app-0100"></a>
 
 ## APP-0100 — Razorpay payment implementation and production preparation
