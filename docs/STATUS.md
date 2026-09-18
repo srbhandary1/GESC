@@ -23,9 +23,15 @@
   localization 35/35, focused onboarding/payment-chip 9/9, `make verify`
   (SQLite 330/330; PostgreSQL 360/360; web 467/467), `make e2e` (API 4/4;
   Playwright 30/30) and `make build`.
+- Commit `4f4f4fc` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/4f4f4fcbf04f`; readiness is 27 pass / 1
+  content-publication warning / 0 fail. The stable public APK and local build
+  match at SHA-256
+  `dddd00ccd940a8d6e64864ad1bee45a57feaf82d315e38884b12b663ce5c388b`
+  (83,049,774 bytes), and its preserve-data installation succeeded.
 - Device screenshots and UI hierarchy dumps are temporary `/tmp` and `/sdcard`
   diagnostics only. They are not stored in Git, the VPS release or production
-  data and are deleted after the final visual check.
+  data; all captures from this session were deleted after inspection.
 
 ## PAYMENT-RAZORPAY-01 server-authoritative Direct checkout — 18 September 2026
 
@@ -43,13 +49,10 @@
 - Repository gates are green: `make verify` (SQLite 330/330, PostgreSQL
   360/360, web 467/467), `make e2e` (API 4/4; Playwright 30/30) and
   `make build` (existing large-chunk advisory only).
-- Follow-up commit `3fedf08` is deployed as immutable release
-  `/srv/global-spoken-english/releases/3fedf08f6b80` on the stable-host
-  invite-only runtime; `3ab1dd5` remains the implementation/base rollback
-  release. Razorpay test-mode credentials remain held outside Git. The public
-  debug APK is byte-identical to the local build: SHA-256
-  `5ff51e5527e4fc3b1b81bab54e7dd351222044294985e76c69c4e944b08657fb`,
-  82,981,515 bytes.
+- Follow-up commit `3fedf08` introduced the Passport readiness guard and
+  paid-minutes callback fix. It is retained as an immutable rollback release;
+  `4f4f4fc` is now active on the stable-host invite-only runtime. Razorpay
+  test-mode credentials remain held outside Git.
 - The original `3ab1dd5` deployment used
   Razorpay test-mode credentials held outside Git. A real-device sandbox card
   flow completed: provider order paid, callback confirmation 200, checkout

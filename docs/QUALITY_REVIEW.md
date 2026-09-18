@@ -23,7 +23,8 @@
 | `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
 | Android API origin | Pass after correction | Bare `https://ai.globalspokenenglish.com` accepted; the erroneous `/api/v1`-prefixed build failed closed and is superseded |
 | Paid-minutes regression | Pass on RMX3085 | Retained 120-minute entitlement visible; chip opened Plans; `Level undefined` absent |
-| Diagnostic images | Pass pending final cleanup | Captures exist only under temporary workstation/handset paths and are not production artifacts |
+| Deployed candidate | Pass | Commit `4f4f4fc`; release `/srv/global-spoken-english/releases/4f4f4fcbf04f`; public/local APK SHA-256 `dddd00cc…c388b`, 83,049,774 bytes; preserve-data install succeeded |
+| Diagnostic images | Pass | All session captures and UI dumps were deleted from workstation `/tmp` and handset `/sdcard`; none entered Git, the VPS release or production data |
 
 ### Verdict
 

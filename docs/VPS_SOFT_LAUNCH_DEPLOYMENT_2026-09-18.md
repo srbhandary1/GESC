@@ -398,3 +398,44 @@ This remains a debug-signed invite-only artifact. The Razorpay
 provider-controlled bottom-inset defect, Dashboard webhook registration,
 live-mode credentials, live canary/refund/reconciliation, production signing
 and Play release remain open gates.
+
+## Kannada first-use and corrected Android-origin release — 18 September 2026
+
+**Checkpoint:** `KANNADA-ONBOARDING-FIX-01`
+
+**Authority:** APP-0101 / D-0322 / ADR-0005
+
+**Source revision:** `4f4f4fcbf04f10cfd924a3a6eee631979a6ca8fd`
+
+Physical inspection proved two separate defects. First, the prior follow-up
+APK used `https://ai.globalspokenenglish.com/api/v1` as
+`VITE_MOBILE_API_ORIGIN`; the Android validator intentionally accepts only a
+bare origin and appends `/api/v1`, so authentication failed closed. Rebuilding
+with `https://ai.globalspokenenglish.com` restored the retained signed-in
+session, and tapping the 120-minute chip opened Plans without the former
+`Level undefined` context.
+
+Second, Kannada selection itself was working, but every newly appended
+first-use questionnaire value in `kn-IN` was verbatim English. The bounded
+catalogue correction translates first-use interface instructions and controls
+while retaining the English-learning model sentence in English. Kannada is
+revision `ui-kn-IN-2026-09-18.1` and remains honestly
+`pending-independent-review`.
+
+The exact git archive SHA-256 is
+`b16838ad1754b981c4c35b3d497eba1d007869479a13726aaee2e5aec19161a5`.
+The immutable active release is
+`/srv/global-spoken-english/releases/4f4f4fcbf04f`; `3fedf08f6b80` remains
+available for rollback. Runtime configuration and Passport keys were preserved
+outside the archive, with the private key still mode 0600. Public live/ready
+pass and `make soft-launch-ready` reports **27 pass / 1 warning / 0 fail**;
+the warning remains the missing active publication head/enrollment pin.
+
+The public and local production-package debug APK SHA-256 is
+`dddd00ccd940a8d6e64864ad1bee45a57feaf82d315e38884b12b663ce5c388b`
+(83,049,774 bytes). Gradle tests/assemble passed and preserve-data installation
+on the RMX3085 succeeded. This is still debug-signed and not a Play artifact.
+
+Temporary screenshots and UI hierarchy files were used only under workstation
+`/tmp` and handset `/sdcard`; all were deleted after inspection. No test image
+is stored in Git, the VPS release or production data.

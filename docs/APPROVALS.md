@@ -3275,7 +3275,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Related decision | [D-0322](DECISIONS.md) |
 | Related ADR | [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
 | Recorder | Codex, acting as implementation agent and evidence recorder |
-| Repository revision | Pending implementation commit |
+| Repository revision | `4f4f4fc` |
 | Master-plan amendment | None |
 
 ### Exact human statements
