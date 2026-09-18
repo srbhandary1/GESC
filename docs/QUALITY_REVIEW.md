@@ -1,5 +1,48 @@
 # Quality review
 
+## PROVIDER-ACTIVATION-01 bounded live-provider activation — 18 September 2026
+
+### Scope reviewed
+
+- Back up authoritative state and runtime configuration before dispatch.
+- Enable only existing Azure OpenAI, Azure Speech and Sarvam provider paths;
+  preserve consent, retention, deletion, tenancy and fail-closed controls.
+- Execute synthetic provider checks without learner audio or learner text.
+- Rebuild and externally verify the Android debug artifact after the temporary
+  HTTPS origin changed.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Pre-change database recovery | Pass | Encrypted dump `soft-launch-20260918T101853Z.sql.gz.enc`; verified ciphertext SHA-256 `08a1b5ec…f633c863` |
+| Runtime configuration rollback | Pass | Owner-only snapshot `~/ge-provider-activation-rollbacks/20260918T102300Z/` |
+| Consent/tenancy boundary | Preserved | ADR-0007 purposes and `VOICE_ALLOWED_ORGANIZATION_IDS=01KYS97G7MX374P303XJHDXT72`; no bypass added |
+| Azure guidance TTS | Pass | Synthetic text only; `azure-speech-guidance`, 722 ms, private WAV result |
+| Sarvam recorded STT | Pass | Azure-generated synthetic WAV only; `indic-http-stt`, 417 ms, transcript present |
+| Azure recorded-STT failover | Pass | Azure-generated synthetic WAV only; `azure-speech-soft-launch-stt`, 355 ms, transcript present |
+| Azure OpenAI | Blocked externally | Adapter/configuration preflight passes and switch is true; synthetic call returned HTTP 403 / `provider_authorization_failed`; Azure CLI requires interactive MFA before resource network policy can be changed |
+| ElevenLabs | Not implemented / not activated | Provider methods stop at `SpeechDispatchAuthority`; router is hard-disabled and no live HTTP response path exists |
+| Runtime health | Pass | systemd supervisor recovered after one automatic retry; live and ready endpoints returned `ok` after Quick Tunnel restart |
+| VPS readiness | Pass with one launch warning | 23 pass / 1 warn / 0 fail; no active Content Studio publication head/enrollment pin |
+| Android artifact | Pass for debug testing | `make android-closed-beta` passed; public bytes match SHA-256 `b7bd4c4b…8371fc2`, 82,981,426 bytes, `com.globalenglish.app`, target SDK 36 |
+| Repository verification | Pass | `make verify`: 316 SQLite / 360 PostgreSQL / 466 web; `make e2e`: API 4/4 + Playwright 29/29; `make ai-eval`: 15/15 deterministic; `make build`: pass |
+
+### Known limitations
+
+- The runtime remains the invite-only `APP_ENV=soft-launch` stack. Ordinary
+  `production` DI is intentionally fail-closed for these providers in the
+  deployed revision, so a production-environment promotion was not claimed.
+- Azure OpenAI needs an Azure owner to complete interactive MFA and correct or
+  confirm resource authorization for the VPS before conversation works.
+- ElevenLabs needs actual adapter/router implementation, key rotation and the
+  accepted ADR-0038 evidence path; it cannot be enabled by configuration.
+- Stable DNS/TLS, root credential rotation, off-box backup/PITR, remaining
+  independent and device/human reviews, production signing/Play and live
+  payment remain open.
+- Content Studio still needs an active publication head and the target learner
+  enrollment pinned to it before production curriculum delivery is claimed.
+
 ## VPS-TEST-SECRETS-01 testing credential sync — 18 September 2026
 
 ### Scope reviewed

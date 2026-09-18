@@ -3260,6 +3260,59 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0097"></a>
+
+## APP-0097 — Live provider calls and learner-data processing authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for bounded activation; partial execution |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related evidence | [VPS provider activation addendum](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md#provider-activation-addendum--18-september-2026) |
+| Related decision | [D-0316](DECISIONS.md) |
+| Related ADRs | ADR-0007, ADR-0008, ADR-0010, ADR-0011, ADR-0027 and ADR-0038 remain controlling; none is amended |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | Documentation commit containing this record; deployed application revision remains `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Open everything for production including Activating Azure/Sarvam/ElevenLabs calls and learner-data processing
+```
+
+### Accepted scope
+
+- Permit the configured live Azure OpenAI, Azure Speech and Sarvam provider
+  paths to be enabled and verified with synthetic calls before learner use.
+- Permit provider processing of learner data only after the existing separate,
+  purpose-specific learner consents and within the existing organization,
+  retention, deletion and spend controls.
+- Treat the instruction as superseding APP-0096's no-dispatch boundary for
+  implemented providers; it does not erase technical prerequisites or turn an
+  unimplemented adapter into an active provider.
+
+### Conditions, execution result and residuals
+
+- Azure guidance TTS, Sarvam recorded STT and Azure recorded-STT failover were
+  enabled and each passed a synthetic non-learner request.
+- Azure OpenAI's switch is enabled, but the provider returned HTTP 403. Azure
+  control-plane inspection/change is blocked on interactive MFA; no successful
+  conversation-model call is claimed.
+- ElevenLabs remains fail-closed because its current adapter/router path has no
+  live HTTP implementation and requires the remaining ADR-0038 delivery and
+  evidence sequence. Removing the guard alone would be knowingly broken.
+- Consent, deletion, retention, tenant isolation and learner non-recording
+  fallbacks remain mandatory. This approval does not authorize bypassing them.
+- The Accountable Product Owner may accept business risk but cannot create
+  evidence that independent reviewers, device testers, language reviewers or
+  platform/payment operators have not supplied. Production readiness, Play
+  publication and payment capture are therefore not recorded as complete.
+
 <a id="app-0096"></a>
 
 ## APP-0096 — VPS testing-provider credential sync

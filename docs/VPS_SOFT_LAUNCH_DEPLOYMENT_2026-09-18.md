@@ -159,3 +159,59 @@ All provider dispatch remained disabled. Post-restart evidence:
 - external live/ready: healthy;
 - `make android-closed-beta`: passed, followed by a byte-exact public-download
   verification of the current APK hash above.
+
+## Provider activation addendum — 18 September 2026
+
+**Checkpoint:** `PROVIDER-ACTIVATION-01`
+
+**Authority:** APP-0097 / D-0316
+
+**Source revision:** `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`
+
+Before activation, `make soft-launch-backup` created encrypted dump
+`soft-launch-20260918T101853Z.sql.gz.enc` (verified ciphertext SHA-256
+`08a1b5ecbb283a0cdc01f36347fe2d913d94f2599b28edf98f4cdcc3f633c863`).
+The two changed env files were preserved under
+`~/ge-provider-activation-rollbacks/20260918T102300Z/`; provider secrets were
+not copied into this document or Git.
+
+The invite-only runtime now has these existing paths enabled:
+
+- Azure guidance TTS;
+- Sarvam recorded speech-to-text with Azure recorded-STT failover;
+- Azure OpenAI configuration and live switch.
+
+Synthetic requests used only fixed test text and provider-generated audio:
+
+| Provider path | Result |
+|---|---|
+| Azure guidance TTS | Pass — `azure-speech-guidance`, 722 ms |
+| Sarvam recorded STT | Pass — `indic-http-stt`, 417 ms, transcript present |
+| Azure recorded-STT failover adapter | Pass — `azure-speech-soft-launch-stt`, 355 ms, transcript present |
+| Azure OpenAI conversation model | Fail-closed — HTTP 403 mapped to `provider_authorization_failed` |
+
+Azure CLI reports that interactive MFA is required before the resource's
+network/authorization settings can be inspected or changed. The Azure OpenAI
+switch remains on under the owner's instruction, but live conversation is not
+reported as working until a synthetic request succeeds.
+
+ElevenLabs was not activated: its current STT/TTS/realtime provider classes
+stop at `SpeechDispatchAuthority`, the live router is hard-disabled, and no
+live provider HTTP implementation exists. Bypassing the guard would cause a
+runtime failure. ADR-0038's remaining implementation, key-rotation, deletion
+and bake-off evidence remains necessary.
+
+The service is healthy at the new temporary origin
+`https://fallen-payroll-basename-mercy.trycloudflare.com`. The rebuilt debug
+APK is available at
+`/downloads/global-spoken-english-android.apk`, SHA-256
+`b7bd4c4b191ceccdcd5583cdcdc1e4bf565c41ed514b4cca311e307578371fc2`,
+82,981,426 bytes. It is debug-signed and is not a Play release artifact.
+
+Final gates: `make verify` passed (316 SQLite, 360 PostgreSQL, 466 web),
+`make e2e` passed (API 4/4, Playwright 29/29), deterministic `make ai-eval`
+passed 15/15 at zero provider spend, `make build` passed, and
+`make android-closed-beta` passed. Learner processing remains subject to the
+existing separate consent purposes, organization scope, deletion and
+retention rules. Final VPS readiness is 23 pass / 1 warning / 0 fail; the
+warning is the missing active Content Studio publication head/enrollment pin.

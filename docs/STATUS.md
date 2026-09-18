@@ -1,5 +1,45 @@
 # Repository status
 
+## PROVIDER-ACTIVATION-01 bounded live-provider activation — 18 September 2026
+
+- APP-0097/D-0316 record the Accountable Product Owner's instruction to
+  authorize live provider calls and consented learner-data processing for the
+  production launch effort. Existing purpose-specific consent, deletion,
+  retention, organization allowlist, spend-cap and fail-closed controls remain
+  in force; no consent or tenancy safeguard was bypassed.
+- A verified encrypted database backup was created before activation
+  (`soft-launch-20260918T101853Z.sql.gz.enc`, ciphertext SHA-256
+  `08a1b5ec…f633c863`) and the changed runtime env files were copied to
+  `~/ge-provider-activation-rollbacks/20260918T102300Z/` with owner-only
+  permissions.
+- The deployed revision remains `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`
+  in `APP_ENV=soft-launch`. Azure guidance TTS, Sarvam recorded STT and Azure
+  recorded-STT failover are enabled. Synthetic, non-learner calls passed:
+  Azure TTS 722 ms, Sarvam STT 417 ms and Azure STT 355 ms.
+- Azure OpenAI is configured and its live switch is enabled, but its synthetic
+  request received HTTP 403 (`provider_authorization_failed`). The Azure CLI
+  session requires interactive MFA before the new VPS egress IP can be
+  inspected/allowlisted, so end-to-end live conversation is not claimed.
+- ElevenLabs is not activated. The current ElevenLabs/Sarvam realtime and
+  ElevenLabs TTS classes are fail-closed contract scaffolds with no provider
+  HTTP implementation, and `SpeechDispatchAuthority` denies live deployment.
+  Deleting that guard would create a runtime failure, not enable a provider.
+- The public HTTPS entry is now
+  `https://fallen-payroll-basename-mercy.trycloudflare.com`. A rebuilt
+  production-package debug APK is published at `/downloads/global-spoken-english-android.apk`:
+  SHA-256 `b7bd4c4b191ceccdcd5583cdcdc1e4bf565c41ed514b4cca311e307578371fc2`,
+  82,981,426 bytes, package `com.globalenglish.app`, target SDK 36.
+- Pinned gates pass: `make verify` (316 SQLite, 360 PostgreSQL, 466 web),
+  `make e2e` (API 4/4 and Playwright 29/29), deterministic `make ai-eval`
+  (15/15, zero provider spend), `make build`, and `make android-closed-beta`.
+- Final VPS readiness is **23 pass / 1 warning / 0 fail**. The warning is that
+  Content Studio has no active publication head/enrollment pin; this remains a
+  learner-content launch action, not a provider-activation failure.
+- This activation does not manufacture production readiness. Stable DNS/TLS,
+  root-password rotation, off-box backup/PITR, independent reviews, remaining
+  device/accessibility/language evidence, Android release signing/Play
+  delivery and payment credentials/capture remain open.
+
 ## VPS-TEST-SECRETS-01 testing credential sync — 18 September 2026
 
 - APP-0096/D-0304 authorize only Global English test-provider credential
