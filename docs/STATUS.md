@@ -16,10 +16,19 @@
 - Repository gates are green: `make verify` (SQLite 330/330, PostgreSQL
   360/360, web 467/467), `make e2e` (API 4/4; Playwright 30/30) and
   `make build` (existing large-chunk advisory only).
-- Soft-launch test deployment and a provider test-payment smoke remain to be
-  executed. Live capture is blocked until matching `rzp_live_` credentials,
-  Dashboard webhook registration, low-value canary/refund and reconciliation
-  evidence exist. Disclosed test secrets must be rotated before long-lived use.
+- Commit `3ab1dd5` is deployed to the stable-host invite-only runtime with
+  Razorpay test-mode credentials held outside Git. A real-device sandbox card
+  flow completed: provider order paid, callback confirmation 200, checkout
+  completed and exactly one active 120-minute entitlement granted.
+- The release switch initially omitted the existing VPS Passport key files,
+  causing Android password sign-in to return 500. The identical prior-release
+  keys were restored (matching hashes), sign-in then passed, and the readiness
+  gate now fails when a usable key pair is absent.
+- Live capture is blocked until matching `rzp_live_` credentials, separate
+  live Dashboard webhook registration, low-value canary/refund and
+  reconciliation evidence exist. Disclosed secrets must be rotated before
+  long-lived use. The RMX3085 test also found provider-owned checkout controls
+  below the three-button navigation inset; that device defect remains open.
 
 ## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
 
@@ -981,14 +990,14 @@ slice and was subsequently implemented under APP-0087/D-0294.
 | Field | Value |
 |---|---|
 | Checkpoint | PAYMENT-RAZORPAY-01 server-authoritative Direct checkout |
-| Status | APP-0100/D-0321 authorize implementation and invite-only sandbox deployment. Source, focused tests and repository gates are green. VPS deployment, Dashboard webhook registration and a test payment remain open. The supplied key is test-mode, so real-money capture is not yet technically possible. UX-REM-01 remains independently in progress with the previously recorded physical-device gates. Provider residuals remain unchanged: Azure Speech and Sarvam recorded speech are live; ElevenLabs is fail-closed; Azure OpenAI remains pending its external gate. `APP_ENV` remains `soft-launch`. |
+| Status | APP-0100/D-0321 Razorpay implementation and invite-only sandbox deployment are complete. The RMX3085 test payment produced a paid provider order, a server-verified completed checkout and one active entitlement. The supplied key is test-mode, so real-money capture remains technically unavailable. Test-mode Dashboard webhook registration is still external and no webhook receipt was inferred. UX-REM-01 remains independently in progress. Azure Speech and Sarvam recorded speech are live; ElevenLabs remains fail-closed; Azure OpenAI remains pending its external gate. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
 | Updated date | 18 September 2026 |
 | Git branch | `main` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Deploy PAYMENT-RAZORPAY-01 to the invite-only VPS with external test credentials, register the stable webhook URL in Razorpay test mode, complete one test payment and reconcile it. Real capture then requires rotated `rzp_live_` credentials and the recorded canary/refund evidence. UX-REM-01 physical acceptance, Azure/ElevenLabs, catalogue, academic, analytics and Play gates remain open and are not silently closed by this payment work. |
+| Next required action | Register `https://ai.globalspokenenglish.com/api/v1/payments/razorpay/webhook` separately in Razorpay Test and Live modes with the required events; supply rotated `rzp_live_` credentials; run a low-value live canary, refund and reconciliation; and repair/retest the provider-checkout bottom-inset defect. UX-REM-01 physical acceptance, Azure/ElevenLabs, catalogue, academic, analytics and Play gates remain open. |
 | Production/public release | Authorized in principle by APP-0100; not yet executed or accepted because the stated technical, external-provider, accessibility, review and Play gates still lack evidence |
-| Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Razorpay test-mode deployment is authorized but not yet evidenced; live capture is unavailable without live credentials. |
+| Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Razorpay test-mode deployment and one exact-once entitlement smoke are evidenced; live capture is unavailable without live credentials. |
 
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 

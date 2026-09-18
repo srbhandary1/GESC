@@ -80,6 +80,18 @@ else
   bad "missing ${CONVERSATION_ENV} — run make soft-launch-setup"
 fi
 
+PASSPORT_PRIVATE_KEY_FILE="${ROOT_DIR}/apps/api/storage/oauth-private.key"
+PASSPORT_PUBLIC_KEY_FILE="${ROOT_DIR}/apps/api/storage/oauth-public.key"
+if [[ -n "${PASSPORT_PRIVATE_KEY:-}" && -n "${PASSPORT_PUBLIC_KEY:-}" ]]; then
+  pass "Passport signing key pair configured through the runtime environment"
+elif [[ -s "${PASSPORT_PRIVATE_KEY_FILE}" ]] \
+  && [[ -s "${PASSPORT_PUBLIC_KEY_FILE}" ]] \
+  && [[ "$(stat -c '%a' "${PASSPORT_PRIVATE_KEY_FILE}")" == "600" ]]; then
+  pass "Passport signing key pair present; private key is mode 0600"
+else
+  bad "Passport signing key pair missing or private key is not mode 0600"
+fi
+
 if [[ "${APP_ENV:-}" == "soft-launch" ]]; then
   pass "effective APP_ENV is soft-launch"
 else

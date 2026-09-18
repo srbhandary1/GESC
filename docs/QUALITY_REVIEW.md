@@ -30,17 +30,20 @@
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 467/467; static/security/contract gates green (two moderate pnpm advisories below fail threshold) |
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
 | `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
-| Provider sandbox smoke | Pending | Requires deployed external test credential and Razorpay Dashboard webhook registration |
+| Provider sandbox smoke | Pass with residual | RMX3085/API 33: paid order `order_TdZJ0LserJ8wHl`, captured payment `pay_TdZNX2YPPJEk9X`, confirm HTTP 200, checkout `01M2TP4FF5XX30W9SK9ERP94E7` completed and exactly one active entitlement granted; Dashboard webhook remains unregistered (`payment_webhook_events=0`) |
+| Android sign-in after immutable release switch | Pass after deployment repair | Initial 500 correlated to absent Passport PEM files; identical prior-release keys restored with matching SHA-256, then mobile password sign-in returned 200; readiness now fails closed when keys are absent |
+| Provider-checkout system inset | Open defect | On realme RMX3085/API 33 three-button navigation, provider-owned fixed-bottom Continue/Yes-Cancel controls extend under system navigation; keyboard focus completed the test but is not acceptable broad-release evidence |
 | Live capture | Blocked | No `rzp_live_` credential; canary/refund/reconciliation evidence absent |
 
 ### Verdict
 
-Implementation and repository gates pass. Sandbox deployment is authorized but
-not yet evidenced in this entry. This checkpoint cannot be described as live
+Implementation, repository gates, stable-host sandbox deployment and one
+server-verified test payment pass. This checkpoint cannot be described as live
 payment: the supplied key is a Razorpay test key, and production DI refuses
-test mode by design. Live activation needs the APP-0100 conditions and secret
-rotation. Existing UX-REM-01 edits and open physical accessibility gates are
-independent and were preserved.
+test mode by design. Live activation still needs the APP-0100 conditions,
+secret rotation, Dashboard webhook evidence and the open RMX3085 checkout-inset
+defect repaired and retested. Existing UX-REM-01 physical accessibility gates
+remain independent.
 
 ## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
 

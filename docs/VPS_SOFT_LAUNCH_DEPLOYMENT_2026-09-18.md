@@ -298,3 +298,69 @@ After restart, the supervised service was active, loopback readiness was
 authority check returned only the expected safe ElevenLabs TTS denial codes:
 `http_enablement_not_authorized`, `kill_switch`, `dispatch_flag_off`,
 `evidence_missing`, `secret_unbound`.
+
+## Razorpay sandbox deployment and real-device smoke — 18 September 2026
+
+**Checkpoint:** `PAYMENT-RAZORPAY-01`
+
+**Authority:** APP-0100 / D-0321 / ADR-0039
+
+**Source revision:** `3ab1dd5812ba02007c6453baf8931ae5d7a19dfe`
+
+Before the release switch, encrypted database backup
+`soft-launch-20260918T161237Z.sql.gz.enc` was created with ciphertext SHA-256
+`01629153dffceadb99f3fac52c4976ba190805d70f9fec15417e2e19d6e0feb6`.
+The exact git archive SHA-256 was
+`e5a66bb9b0c689b583e2958bfdbe937a7aa9fd83b3a8629e2011a0f5a2cab986`.
+The immutable active release is
+`/srv/global-spoken-english/releases/3ab1dd5812ba`; the prior `5376a20d4f5f`
+release remains the rollback target. Test key, secret and webhook secret are
+external mode-0600 configuration and are not recorded here.
+
+The stable host returned live/ready success, unsigned webhook input returned
+401, a metadata-only Razorpay Orders API request authenticated with HTTP 200,
+and `make soft-launch-ready` returned **26 pass / 1 warning / 0 fail** before
+the Passport-key check was added. The single warning remains the missing active
+Content Studio publication head/enrollment pin.
+
+The immutable release handoff omitted the existing VPS-generated Passport PEM
+files. Android password sign-in therefore returned a content-safe 500 with a
+server-side `LogicException`. The exact prior-release private/public files were
+restored into the active release; both source/destination hashes matched, the
+private key remains mode 0600, and the next RMX3085 sign-in returned 200. The
+repository readiness check now fails when neither environment PEM values nor a
+non-empty release key pair with a mode-0600 private key exists.
+
+Real-device test evidence on the realme RMX3085, Android 13 / API 33:
+
+- Android test account sign-in passed after the Passport repair.
+- Razorpay created pending checkout `01M2TP4FF5XX30W9SK9ERP94E7` for ₹590.00
+  and provider order `order_TdZJ0LserJ8wHl`.
+- The Razorpay demo bank reported success; the provider order independently
+  reported `paid`, ₹590.00 paid and zero due.
+- The app submitted payment `pay_TdZNX2YPPJEk9X`; the server verified the
+  signature and provider state, returned HTTP 200 and completed the checkout.
+- Exactly one active checkout-sourced entitlement
+  `01M2TPP5K10TSWTQKGS2EW7K63` was created with the expected 120-minute pool.
+- The app immediately displayed 120 live-AI minutes. No real funds moved.
+- No webhook event exists because the Dashboard webhook has not been
+  registered; callback confirmation, not a fabricated webhook, completed this
+  smoke.
+
+Android artifact SHA-256 is
+`5bca5a62a9d0c9922e1ff058f36598a6c4eff5939a137d9400b90ad88e819629`
+(82,981,530 bytes). The published stable-host download matched byte-for-byte.
+It is a debug APK, not a Play-signed production AAB.
+
+Two bounded UI defects were observed. Opening plans from the paid-minutes chip
+passed React's click event as subscription context and rendered `Level
+undefined`; the repository callback now invokes with zero arguments and is
+covered by its component test. Razorpay's provider-owned fixed-bottom controls
+extended under three-button system navigation on this device; keyboard focus
+allowed the sandbox test to finish, but the inset defect remains open for a
+supported cross-device fix and retest.
+
+Live collection remains blocked: separate Test/Live Dashboard webhook
+registration, matching rotated `rzp_live_` credentials, a low-value live
+canary, refund and authoritative reconciliation are still required. Production
+and Play publication are not inferred from this sandbox evidence.

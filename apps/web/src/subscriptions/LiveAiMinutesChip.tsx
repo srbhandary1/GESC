@@ -52,7 +52,7 @@ export function LiveAiMinutesChip({
       <button
         aria-label={openAccountLabel}
         className="shell-live-ai-chip"
-        onClick={onOpenAccount}
+        onClick={() => onOpenAccount()}
         title={openAccountLabel}
         type="button"
       >
@@ -65,7 +65,7 @@ export function LiveAiMinutesChip({
     <button
       aria-label={openAccountLabel}
       className="shell-live-ai-chip"
-      onClick={onOpenAccount}
+      onClick={() => onOpenAccount()}
       title={openAccountLabel}
       type="button"
     >

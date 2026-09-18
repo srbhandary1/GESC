@@ -175,6 +175,14 @@ fi
 grep -Fq 'the rotating Quick Tunnel is disabled' "$soft_launch_runner"
 grep -Fq 'WAN 80 -> this host:%s; WAN 443 -> this host:%s' "$soft_launch_runner"
 
+readiness_check="$root_dir/scripts/check-soft-launch-readiness.sh"
+grep -Fq 'Passport signing key pair configured through the runtime environment' \
+  "$readiness_check"
+grep -Fq 'Passport signing key pair present; private key is mode 0600' \
+  "$readiness_check"
+grep -Fq 'Passport signing key pair missing or private key is not mode 0600' \
+  "$readiness_check"
+
 configured_runtime="$test_root/configured-runtime"
 mkdir -p "$configured_runtime/env"
 printf '%s\n' 'APP_ENV=soft-launch' > "$configured_runtime/env/soft-launch.env"

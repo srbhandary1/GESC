@@ -60,6 +60,7 @@ describe('LiveAiMinutesChip', () => {
     )
 
     expect(onOpenAccount).toHaveBeenCalledTimes(1)
+    expect(onOpenAccount).toHaveBeenCalledWith()
   })
 
   it('hides the chip for demo plans without a live-AI pool', () => {

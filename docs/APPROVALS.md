@@ -3275,7 +3275,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Related decision | [D-0321](DECISIONS.md) |
 | Related ADR | [ADR-0039](adr/0039-razorpay-server-authoritative-direct-checkout.md) |
 | Recorder | Codex, acting as implementation agent and evidence recorder |
-| Repository revision | Commit containing this record |
+| Repository revision | `3ab1dd5` |
 | Master-plan amendment | None |
 
 ### Exact human statements
