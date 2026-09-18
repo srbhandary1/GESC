@@ -31,6 +31,10 @@
 | `make build` | Pass | Laravel cache cycle and Vite production build completed; existing chunk-size warning only |
 | Existing ElevenLabs key | Blocked | Metadata-only India models request returned HTTP 400 `invalid_api_key`; no audio/text payload was sent |
 | Azure OpenAI | Blocked on human MFA | Management-plane read requires device-code MFA; existing synthetic provider call remains HTTP 403 |
+| Pre-deploy recovery | Pass | Encrypted database backup ciphertext SHA-256 `1faf9c0b…249d8c`; previous immutable release `56f2caa…` retained |
+| Immutable deployment | Pass | Commit `5376a20` staged at `/srv/global-spoken-english/releases/5376a20d4f5f`; archive SHA-256 `da4d0ab3…3f2e2`; autoload/syntax/route smoke passed before atomic switch |
+| Post-deploy health | Pass | Supervised service active; public `https://ai.globalspokenenglish.com/api/v1/health/{live,ready}` returned `ok` / `ready` |
+| Deployed dispatch posture | Pass, fail-closed | Safe TTS denial codes: `http_enablement_not_authorized`, `kill_switch`, `dispatch_flag_off`, `evidence_missing`, `secret_unbound` |
 
 ### Residual activation steps
 

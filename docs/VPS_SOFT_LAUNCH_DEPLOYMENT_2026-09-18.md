@@ -283,3 +283,18 @@ ID must be supplied, before synthetic TTS/STT and deletion evidence can run.
 Azure OpenAI remains configured but not accepted: provider calls return HTTP
 403 and Azure management-plane inspection requires the account owner to
 complete interactive MFA. No Azure resource was changed in this addendum.
+
+The verified source commit is `5376a20`. Before the release switch, the VPS
+created encrypted database ciphertext SHA-256
+`1faf9c0bf922cb8714de53d227211645048dab52f08a10f7c53ecf259c249d8c`.
+The exact git archive SHA-256 was
+`da4d0ab3d0639ec3190e7081a0f370f075dac2a381710492c1101b277983f2e2`.
+It was staged at `/srv/global-spoken-english/releases/5376a20d4f5f`; syntax,
+optimized autoload and route discovery passed before an atomic `current`
+symlink switch. The previous `56f2caa…` release remains intact for rollback.
+
+After restart, the supervised service was active, loopback readiness was
+`ready`, and both public stable-host health endpoints passed. A deployed
+authority check returned only the expected safe ElevenLabs TTS denial codes:
+`http_enablement_not_authorized`, `kill_switch`, `dispatch_flag_off`,
+`evidence_missing`, `secret_unbound`.

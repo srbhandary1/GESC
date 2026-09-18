@@ -26,6 +26,13 @@
 - Azure management-plane inspection remains blocked on human MFA, so Azure
   OpenAI's HTTP 403 is not resolved or represented as live. No Azure resource
   policy was changed.
+- Commit `5376a20` is deployed as immutable release
+  `/srv/global-spoken-english/releases/5376a20d4f5f`; the previous `56f2caa…`
+  release remains the rollback target. A pre-switch encrypted database backup
+  was written with ciphertext SHA-256 `1faf9c0b…249d8c`. Public stable-host
+  live/ready both pass after the switch. Deployed ElevenLabs denial reasons are
+  exactly router off, kill switch on, candidate flag off, evidence missing and
+  secret unbound.
 - Repository gates are green: `make verify` (321 SQLite / 360 PostgreSQL / 466
   web), `make e2e` (API 4/4 and Playwright 29/29), `make ai-eval` (15/15,
   deterministic) and `make build`. The first sandboxed `make ai-eval` could

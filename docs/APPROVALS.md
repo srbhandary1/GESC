@@ -3275,7 +3275,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Related decisions | [D-0316](DECISIONS.md); [D-0318](DECISIONS.md) |
 | Related ADRs | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md); [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
 | Recorder | Codex, acting only as author and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Repository revision | `5376a20` (`PROVIDER-LIVE-WIRING-01: add governed ElevenLabs speech paths`) |
 | Master-plan amendment | None |
 
 ### Exact human statement
