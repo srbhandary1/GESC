@@ -3260,6 +3260,44 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0098"></a>
+
+## APP-0098 — Stable VPS hostname cutover authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted and executed |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Confirmation in the active Codex conversation after the stable-host cutover steps were stated |
+| Related evidence | [VPS stable-host evidence](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md#stable-host-cutover--18-september-2026) |
+| Related decision | [D-0317](DECISIONS.md) |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | Commit containing this record; deployed application source remains `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Its done
+```
+
+This answered the immediately preceding request to confirm that the admin had
+pointed `ai.globalspokenenglish.com` to the VPS so Codex could perform the
+listed stable DNS/TLS, runtime and Android cutover steps.
+
+### Accepted scope and limitations
+
+- Verify DNS, expose only public HTTP/HTTPS, obtain TLS, change the authoritative
+  application origin, stop the Quick Tunnel and rebuild the debug APK.
+- Preserve the unprivileged application service and all existing provider,
+  consent, deletion, tenant and payment controls.
+- This does not supply Play signing credentials, authorize a Play track,
+  enable payment capture, complete Content Studio publication, repair Azure
+  OpenAI's HTTP 403 or implement ElevenLabs.
+
 <a id="app-0097"></a>
 
 ## APP-0097 — Live provider calls and learner-data processing authorization

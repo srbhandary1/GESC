@@ -301,6 +301,29 @@ make soft-launch-restart
 make soft-launch-status
 ```
 
+For a directly addressed cloud VPS there is no router port-forward. Keep the
+application Caddy process unprivileged on 8080/8443 and install the four
+`infra/soft-launch/global-english-{http,https}-proxy.{socket,service}` units as
+root. These systemd socket proxies expose public 80/443 and forward only to
+loopback 8080/8443. In this topology UFW allows OpenSSH, 80/tcp and 443/tcp;
+raw public 8080/8443 remain blocked. Enable the two `.socket` units, not the
+services directly:
+
+```bash
+sudo install -m 0644 infra/soft-launch/global-english-{http,https}-proxy.{socket,service} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo ufw allow 80/tcp comment 'Global English HTTP ACME redirect'
+sudo ufw allow 443/tcp comment 'Global English HTTPS'
+sudo systemctl enable --now global-english-http-proxy.socket global-english-https-proxy.socket
+```
+
+The current `soft-launch-stable-prereq` LAN-address assertion is specific to
+the router topology and will report that one row as failed on a public VPS.
+For a VPS, independently prove the A record equals the host public IPv4, raw
+8080/8443 time out externally, HTTP 80 redirects to the exact stable HTTPS
+hostname and HTTPS health/ready succeeds before treating the prerequisite as
+satisfied.
+
 The stable edge obtains a public certificate, redirects HTTP to the exact
 HTTPS origin, adds HSTS/nosniff/frame/referrer headers and proxies only to the
 loopback application edge. Configuration fails closed unless `APP_URL` exactly

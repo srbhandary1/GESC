@@ -1,5 +1,32 @@
 # Repository status
 
+## STABLE-HOST-CUTOVER-01 VPS DNS/TLS and Android cutover — 18 September 2026
+
+- APP-0098/D-0317 record the owner's confirmation that the DNS work was done
+  and authorize completing the already planned stable-host cutover.
+  `ai.globalspokenenglish.com` resolves to VPS IPv4 `172.235.18.171`.
+- Persistent root systemd socket units expose only public TCP 80 and 443 and
+  forward to the unprivileged Caddy edge on 8080/8443. UFW allows OpenSSH,
+  80/tcp and 443/tcp; raw WAN 8080 remains blocked. The exact unit files are
+  now versioned under `infra/soft-launch/`.
+- HTTP returns a permanent redirect to the exact stable HTTPS hostname. Caddy
+  obtained a Let's Encrypt certificate for `ai.globalspokenenglish.com`, valid
+  from 18 September through 17 December 2026. Live/ready and browser/mobile
+  password-mode checks pass; the rotating Quick Tunnel is stopped.
+- A pre-cutover encrypted database backup exists as
+  `soft-launch-20260918T114200Z.sql.gz.enc` with ciphertext SHA-256
+  `7ea092af…bdb05ef8`. UFW and runtime env rollback copies were captured before
+  the change.
+- Final VPS readiness is **26 pass / 1 warning / 0 fail**. The remaining
+  warning is the missing active Content Studio publication head/enrollment
+  pin. Post-cutover Azure guidance TTS → Sarvam STT synthetic round-trip
+  passed, and source-audio deletion status remains healthy.
+- The stable-host debug APK is published at
+  `https://ai.globalspokenenglish.com/downloads/global-spoken-english-android.apk`:
+  SHA-256 `37793a48c60fd07e10ac8141bb82ea99f6e90340b93aa56e4a72b76e433a2f15`,
+  82,981,384 bytes, `com.globalenglish.app`, target SDK 36. It is not a signed
+  Play release artifact.
+
 ## PROVIDER-ACTIVATION-01 bounded live-provider activation — 18 September 2026
 
 - APP-0097/D-0316 record the Accountable Product Owner's instruction to

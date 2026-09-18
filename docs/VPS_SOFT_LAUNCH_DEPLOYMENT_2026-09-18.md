@@ -217,3 +217,44 @@ retention rules. Final VPS readiness is 23 pass / 1 warning / 0 fail; the
 warning is the missing active Content Studio publication head/enrollment pin.
 `voice:deletion-status` is healthy with zero active, due, retrying,
 dead-lettered or stale source-deletion entries.
+
+## Stable-host cutover — 18 September 2026
+
+**Checkpoint:** `STABLE-HOST-CUTOVER-01`
+
+**Authority:** APP-0098 / D-0317
+
+The `ai.globalspokenenglish.com` A record resolves to the VPS public IPv4
+`172.235.18.171`. Before cutover, an encrypted database backup was created as
+`soft-launch-20260918T114200Z.sql.gz.enc` (ciphertext SHA-256
+`7ea092af530208da00a0bec411b69f891f2e44a71b2fce375e176d00bdb05ef8`).
+The prior UFW configuration and mode-0600 runtime env were also retained.
+
+Because this is a directly addressed VPS rather than the retired LAN/router
+topology, root systemd socket units expose 80/443 and proxy to the unprivileged
+Caddy edge on 8080/8443. UFW allows only OpenSSH, 80 and 443; an external raw
+8080 request timed out. The exact socket/service units are versioned in
+`infra/soft-launch/`.
+
+The stable edge now provides:
+
+- HTTP 308 redirect to `https://ai.globalspokenenglish.com/`;
+- Let's Encrypt certificate with exact hostname SAN, valid until
+  17 December 2026;
+- API live `ok` and ready `ready`;
+- browser and Android/mobile password mode `password_only`;
+- successful privacy and account-deletion policy pages;
+- stable Secure-cookie/same-origin state; and
+- no running Quick Tunnel.
+
+`make soft-launch-ready` reports 26 pass / 1 warning / 0 fail. The sole warning
+is the missing active Content Studio publication head/enrollment pin. A
+post-cutover synthetic Azure guidance TTS to Sarvam STT round trip passed, and
+the deletion outbox remains healthy.
+
+The stable-origin debug APK is available at
+`https://ai.globalspokenenglish.com/downloads/global-spoken-english-android.apk`.
+SHA-256 is
+`37793a48c60fd07e10ac8141bb82ea99f6e90340b93aa56e4a72b76e433a2f15`,
+size 82,981,384 bytes, package `com.globalenglish.app`, target SDK 36. The
+artifact is debug-signed and is not a Play release AAB.

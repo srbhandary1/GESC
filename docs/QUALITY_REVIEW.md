@@ -1,5 +1,40 @@
 # Quality review
 
+## STABLE-HOST-CUTOVER-01 VPS DNS/TLS and Android cutover — 18 September 2026
+
+### Scope reviewed
+
+- Prove the stable A record, public 80/443 transport and restricted raw ports.
+- Preserve rollback, switch the authoritative origin, issue TLS and stop the
+  rotating tunnel.
+- Rebuild and externally verify the production-package debug APK.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| DNS | Pass | `ai.globalspokenenglish.com` A = `172.235.18.171` |
+| Pre-cutover recovery | Pass | Encrypted DB ciphertext SHA-256 `7ea092af…bdb05ef8`; UFW and mode-0600 runtime env snapshots retained |
+| Public-port isolation | Pass | Root systemd sockets listen on 80/443; UFW allows only OpenSSH/80/443; external raw 8080 timed out |
+| HTTP canonical redirect | Pass | HTTP 308 to `https://ai.globalspokenenglish.com/` |
+| TLS | Pass | Let's Encrypt `YE2`; SAN `ai.globalspokenenglish.com`; valid 2026-09-18 through 2026-12-17 |
+| Runtime origin | Pass | `APP_URL=https://ai.globalspokenenglish.com`; stable hostname, Secure cookies and same-origin Sanctum pass readiness |
+| Public API | Pass | live=`ok`, ready=`ready`; browser and mobile password mode=`password_only` with the public PKCE client |
+| Public policy pages | Pass | `/privacy.html` and `/account-deletion.html` return success over stable HTTPS |
+| Provider regression | Pass | Post-cutover synthetic Azure guidance TTS → Sarvam STT round trip returned both expected provider keys and a transcript |
+| Deletion health | Pass | 0 active, due, retrying, dead-lettered or stale source deletions |
+| VPS readiness | Pass with one content warning | 26 pass / 1 warn / 0 fail; missing active publication head/enrollment pin |
+| Android artifact | Pass for debug testing | Gradle unit tests/assemble passed; external download matches SHA-256 `37793a48…3a2f15`, 82,981,384 bytes, package `com.globalenglish.app`, target SDK 36 |
+
+### Known limitations
+
+- Debug signing is not Play signing; no AAB was produced or uploaded.
+- Azure OpenAI still returns HTTP 403, ElevenLabs remains unimplemented,
+  payment remains disabled and Content Studio still lacks the active
+  publication/enrollment pin.
+- The root password disclosed earlier must still be rotated or password/root
+  SSH disabled after tested key-based break-glass access exists.
+
 ## PROVIDER-ACTIVATION-01 bounded live-provider activation — 18 September 2026
 
 ### Scope reviewed

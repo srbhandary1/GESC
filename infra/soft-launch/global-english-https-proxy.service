@@ -1,0 +1,11 @@
+[Unit]
+Description=Global English HTTPS proxy to unprivileged Caddy
+Requires=global-english-https-proxy.socket
+After=network.target
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 127.0.0.1:8443
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
