@@ -20,14 +20,17 @@
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 467/467; five expected independent-review warnings |
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 including Kannada first use |
 | `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
-| Android/deployment/device evidence | Pending | Exact commit, APK, stable-host release and RMX3085 verification not yet recorded |
+| Android build | Pass | Commit `1bdea67`; Gradle tests/assemble `BUILD SUCCESSFUL` (103 tasks); SHA-256 `28bda09e…dcfff4c`, 83,050,428 bytes |
+| Stable-host deployment | Pass | Immutable release `/srv/global-spoken-english/releases/1bdea6793424`; public live/ready pass; readiness 27 pass / 1 existing publication warning / 0 fail; published APK hash matches |
+| RMX3085 installation | Pass | Preserve-data `adb install -r` succeeded on the connected API-33 handset |
+| RMX3085 visual inspection | Pending unlock | Installed app opened to the device's secure lock screen; Plans/Progress evidence not inferred; temporary hierarchy deleted |
 
 ### Verdict
 
-Repository implementation and gates pass. Deployment/device evidence remains
-open until the exact committed candidate is packaged and verified. The Kannada
-copy remains an implementation draft pending independent human linguistic and
-accessibility review under ADR-0005.
+Repository implementation, packaging, stable-host deployment and preserve-data
+installation pass. Final Plans/Progress visual inspection awaits one handset
+unlock. The Kannada copy remains an implementation draft pending independent
+human linguistic and accessibility review under ADR-0005.
 
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 

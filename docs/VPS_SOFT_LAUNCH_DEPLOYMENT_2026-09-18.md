@@ -439,3 +439,37 @@ on the RMX3085 succeeded. This is still debug-signed and not a Play artifact.
 Temporary screenshots and UI hierarchy files were used only under workstation
 `/tmp` and handset `/sdcard`; all were deleted after inspection. No test image
 is stored in Git, the VPS release or production data.
+
+## Kannada learner-interface release — 18 September 2026
+
+**Checkpoint:** `KANNADA-LEARNER-UI-FIX-02`
+
+**Authority:** APP-0102 / D-0323 / ADR-0005
+
+**Source revision:** `1bdea6793424de54d76fc469fc9ee7e5e9fe6779`
+
+The bounded follow-up replaces 51 English-identical Kannada interface values
+in Plans, Progress, delayed review, model-audio controls and entitlement
+messages. It does not translate English learning content or API-authoritative
+plan names and does not change application, payment, consent or learner-record
+behavior. Kannada is revision `ui-kn-IN-2026-09-18.2` and remains visibly
+`pending-independent-review`.
+
+The exact Git archive SHA-256 is
+`7f815809b103c3c6ca0478117d967091680000dc1844794a5b295e6128195c3f`.
+The immutable active release is
+`/srv/global-spoken-english/releases/1bdea6793424`; `4f4f4fcbf04f` remains
+available for rollback. External runtime configuration and Passport keys were
+preserved. The first controller restart observed a startup race while the
+recreated PostgreSQL container was still becoming healthy; PostgreSQL then
+reported ready and the supported start completed. Public live/ready pass and
+`make soft-launch-ready` reports **27 pass / 1 warning / 0 fail**; the warning
+remains the missing active publication head/enrollment pin.
+
+The public and local production-package debug APK SHA-256 is
+`28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`
+(83,050,428 bytes). Gradle tests/assemble passed and preserve-data installation
+on the RMX3085 succeeded. This remains debug-signed and is not a Play artifact.
+Final Plans/Progress inspection awaits a handset unlock; no result is inferred
+from the temporary locked-screen UI hierarchy. That hierarchy and all named
+workstation/VPS staging copies were deleted after inspection.

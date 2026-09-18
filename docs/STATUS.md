@@ -18,9 +18,14 @@
 - Gates pass: localization 36/36, LearnerJourney 14/14, `make verify` (SQLite
   330/330; PostgreSQL 360/360; web 467/467), `make e2e` (API 4/4; Playwright
   30/30), and `make build` (existing large-chunk advisory only).
-- Android packaging, stable-host deployment, physical-device verification and
-  deletion of any temporary captures remain to be recorded after the exact
-  implementation commit is created.
+- Commit `1bdea67` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/1bdea6793424`; readiness is 27 pass / 1
+  content-publication warning / 0 fail. The stable public APK and local build
+  match at SHA-256
+  `28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`
+  (83,050,428 bytes), and its preserve-data installation succeeded.
+- Final physical inspection of Plans/Progress awaits one handset unlock. The
+  temporary locked-screen hierarchy and staging/download copies were deleted.
 
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 
