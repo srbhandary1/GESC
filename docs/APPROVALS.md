@@ -3260,6 +3260,58 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0096"></a>
+
+## APP-0096 — VPS testing-provider credential sync
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for VPS-TEST-SECRETS-01 only |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Role exercised | Accountable Product Owner |
+| Evidence source | Exact free-text instruction in the active Codex conversation |
+| Related evidence | [VPS deployment evidence](VPS_SOFT_LAUNCH_DEPLOYMENT_2026-09-18.md#testing-secret-sync--18-september-2026) |
+| Related decision | [D-0304](DECISIONS.md) |
+| Related ADRs | ADR-0007, ADR-0008 and ADR-0027 remain controlling; none is amended |
+| Recorder | Codex agent, acting only as author and evidence recorder |
+| Repository revision | Documentation commit containing this record; runtime application remains source revision `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c` |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+Copy all secrets from the workstation as we are in the testing phase.
+All secrets will be rotated once we go live.
+```
+
+### Accepted interpretation and scope
+
+- “All secrets” means every Global English provider credential required for
+  the authorized testing pathways: Azure OpenAI, Azure Speech, Sarvam Indic
+  STT and ElevenLabs, together with their configuration and recorded
+  vendor/spend evidence.
+- The VPS-generated application key, database/object-storage credentials,
+  digest/signing keys, Passport keys and backup passphrase remain VPS-owned and
+  are not replaced with workstation values.
+- Personal SSH keys, Azure CLI session material, unrelated project/account
+  credentials, historic diagnostic token files, obsolete test-user passwords,
+  Android release signing keys and any payment credential are excluded.
+
+### Conditions and limitations
+
+- Credentials stay outside Git, owner-only and mode `0600`. Temporary transfer
+  material must be deleted after verified extraction and a protected rollback
+  archive must exist before replacement.
+- Copying credentials does not authorize a provider request. Live AI/Speech/
+  media switches, voice upload and payment remain disabled until their exact
+  existing activation gates are separately satisfied.
+- Rotation at go-live is mandatory. The earlier disclosed VPS root password
+  remains a separate immediate rotation/disablement requirement.
+- Production, Play signing/upload, payment capture, learner-content dispatch
+  and specialist-review waivers are not authorized.
+
 <a id="app-0095"></a>
 
 ## APP-0095 — New VPS invite-only soft-launch deployment

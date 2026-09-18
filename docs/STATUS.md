@@ -1,5 +1,29 @@
 # Repository status
 
+## VPS-TEST-SECRETS-01 testing credential sync — 18 September 2026
+
+- APP-0096/D-0304 authorize only Global English test-provider credential
+  transfer. Azure OpenAI, Azure Speech, Sarvam Indic STT and ElevenLabs secrets,
+  configuration and evidence are installed outside Git with mode `0600`.
+- VPS-generated application/database/storage/Passport/backup secrets were
+  preserved. Personal/unrelated credentials, signing keys, diagnostic tokens,
+  stale test-user passwords and payment credentials were not copied.
+- A protected pre-sync rollback archive exists under
+  `~/ge-secret-rollbacks/20260918T090500Z/`. The verified temporary transfer
+  archive was removed from both endpoints after extraction.
+- All live-request switches, voice upload and payment remain disabled.
+  `make soft-launch-ready` improved to **21 pass / 2 expected warnings / 0
+  fail**. Wave 3.8 is `ready` / `checkpoint_closed=true` with
+  `dispatch_authorized=false`; no provider call was made.
+- Wave 6 Indic preflight intentionally remains fail-closed while dispatch is
+  disabled: 20 pass / 4 fail for the disabled upload switch/provider binding,
+  absent live authorization and its live-binding test. This is not reported as
+  a passed Wave 6 activation.
+- Restarting the Quick Tunnel changed the temporary HTTPS entry to
+  `https://boston-balanced-reflect-down.trycloudflare.com`. The rebuilt
+  VPS-bound debug APK is published with SHA-256
+  `56a0dc745925d78a678eaeaf2b67fa6db96a63d3ab0e202f8a5aab8b5508e47c`.
+
 ## VPS-SOFT-LAUNCH-01 new VPS deployment — 18 September 2026
 
 - APP-0095/D-0303 authorize deployment of exact revision

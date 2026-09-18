@@ -52,8 +52,8 @@ live AI/Speech provider dispatch are not authorized.
   Redis, SeaweedFS, Mailpit, the API and the primary Caddy proxy bind to
   loopback. The legacy staff HTTP listener is firewall-blocked from the WAN.
 - fail2ban's SSH jail is active.
-- The temporary HTTPS entry at deployment completion was
-  `https://walked-agencies-toys-beside.trycloudflare.com`. It is an ephemeral
+- The current temporary HTTPS entry is
+  `https://boston-balanced-reflect-down.trycloudflare.com`. It is an ephemeral
   Quick Tunnel, not the production DNS/TLS endpoint, and may change after a
   supervisor or tunnel restart.
 - Root/password SSH remains enabled pending owner credential rotation or an
@@ -86,9 +86,10 @@ live AI/Speech provider dispatch are not authorized.
   origin. It was not retained as the deployment artifact. A fresh
   `android-closed-beta` debug build embeds the VPS Quick Tunnel origin and the
   public PKCE client above; Gradle unit tests and `assembleDebug` passed.
-- Corrected public APK route downloaded successfully. SHA-256:
-  `034fa83d724f0c31b91f73b4e7a7e0a460857c74f8c73fa12af263c57157d9e9`
-  (82,981,461 bytes). `aapt2` confirms package `com.globalenglish.app` and
+- After the testing-secret sync restarted the Quick Tunnel, the debug APK was
+  rebuilt again for the current origin. Its public SHA-256 is
+  `56a0dc745925d78a678eaeaf2b67fa6db96a63d3ab0e202f8a5aab8b5508e47c`
+  (82,981,464 bytes). `aapt2` confirms package `com.globalenglish.app` and
   target SDK 36. This is debug-signed closed-beta evidence, not a Play artifact.
 
 ## Repository verification at deployed revision
@@ -132,3 +133,29 @@ live AI/Speech provider dispatch are not authorized.
   language/content and legal review.
 - Complete remaining Android device-matrix evidence, production signing, Play
   closed-track authorization and payment authorization.
+
+## Testing secret sync — 18 September 2026
+
+APP-0096/D-0304 added the four project provider credential families required
+for later authorized testing: Azure OpenAI, Azure Speech, Sarvam Indic STT and
+ElevenLabs. Their configuration and approval/vendor evidence were copied to the
+equivalent `globalenglish` home workspaces. Files are non-empty, owner-only and
+mode `0600`; no value or secret hash is recorded here.
+
+The sync deliberately excluded all unrelated workstation material, personal
+SSH/Azure sessions, platform/database/storage/Passport/backup secrets,
+diagnostic token files, old user passwords, Android release signing material
+and payment credentials. A protected pre-change archive is retained at
+`~/ge-secret-rollbacks/20260918T090500Z/pre-secret-sync.tar`. The temporary
+transfer archive was verified and deleted from both endpoints.
+
+All provider dispatch remained disabled. Post-restart evidence:
+
+- `make soft-launch-ready`: **21 pass / 2 warn / 0 fail**;
+- Wave 3.8: **ready**, checkpoint closed, dispatch unauthorized, no provider
+  request;
+- Wave 6: **20 pass / 4 fail**, intentionally fail-closed because voice upload,
+  live authorization and the live adapter binding remain disabled;
+- external live/ready: healthy;
+- `make android-closed-beta`: passed, followed by a byte-exact public-download
+  verification of the current APK hash above.

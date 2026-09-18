@@ -1,5 +1,52 @@
 # Quality review
 
+## VPS-TEST-SECRETS-01 testing credential sync — 18 September 2026
+
+### Scope reviewed
+
+- Transfer only the four Global English provider credential families and their
+  evidence/configuration from the workstation to the invite-only VPS.
+- Preserve every VPS-generated platform secret and keep provider/payment
+  dispatch disabled.
+- Restart the supervised runtime, run non-dispatch preflights, rebuild the
+  debug closed-beta APK for the rotated Quick Tunnel and verify externally.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Pre-change recovery | Pass | Protected pre-sync archive at `~/ge-secret-rollbacks/20260918T090500Z/pre-secret-sync.tar` |
+| Credential scope | Pass | Azure OpenAI, Azure Speech, Sarvam Indic STT and ElevenLabs only; four expected secret files are non-empty and mode `0600` |
+| Platform-secret preservation | Pass | VPS app/database/storage/Passport/digest/backup secrets were not imported or overwritten |
+| Exclusions | Pass | No personal SSH/Azure session, unrelated project, historic diagnostic-token, stale test-user, Android-signing or payment credential copied |
+| Runtime stop rules | Pass | AI/Speech/media live switches false; voice upload false; payment disabled |
+| Soft-launch readiness | Pass with expected warnings | 21 pass / 2 warn / 0 fail; only disabled live Azure switch and absent publication head remain |
+| Wave 3.8 no-call preflight | Pass | `ready`, `checkpoint_closed=true`, `dispatch_authorized=false`; key rotation/deletion test retained as live-deployment deferrals |
+| Wave 6 no-call preflight | Fail-closed as intended | 20 pass / 4 fail because voice upload/live authorization and live adapter binding remain disabled; no provider call made |
+| Supervised runtime | Pass | systemd user service active; live and ready endpoints externally healthy after restart |
+| Rebuilt Android test artifact | Pass | Full `make android-closed-beta` exited 0; package retains target SDK 36 and embeds the rotated tunnel; public SHA-256 `56a0dc74…e47c` |
+
+### Security, privacy and tenancy review
+
+- Transfer used SSH host-key verification. The temporary archive was mode
+  `0600`, hash-verified before extraction and deleted from both endpoints.
+- Secret values and hashes are not written to Git, logs or this evidence.
+  Provider files and copied operational evidence are owner-only on the VPS.
+- No learner data, audio or transcript moved, and no provider request was
+  made. Tenant scoping and authoritative records were unchanged.
+- Copied credentials must be rotated before production. Credential presence is
+  not spend, privacy, security, deletion, production or Play authorization.
+
+### Residuals
+
+- Stable DNS is still absent, so every Quick Tunnel restart requires another
+  Android debug rebuild. The present endpoint is temporary.
+- Wave 6 stays deliberately blocked until an exact later authorization enables
+  voice upload/live dispatch and its full preflight is green.
+- Root-password rotation/disablement, off-box backup/PITR, active publication,
+  governed users, independent reviews, production signing, Play and payment
+  remain open.
+
 ## VPS-SOFT-LAUNCH-01 new VPS deployment — 18 September 2026
 
 ### Scope reviewed
