@@ -215,3 +215,5 @@ passed 15/15 at zero provider spend, `make build` passed, and
 existing separate consent purposes, organization scope, deletion and
 retention rules. Final VPS readiness is 23 pass / 1 warning / 0 fail; the
 warning is the missing active Content Studio publication head/enrollment pin.
+`voice:deletion-status` is healthy with zero active, due, retrying,
+dead-lettered or stale source-deletion entries.

@@ -23,6 +23,7 @@
 | Azure recorded-STT failover | Pass | Azure-generated synthetic WAV only; `azure-speech-soft-launch-stt`, 355 ms, transcript present |
 | Azure OpenAI | Blocked externally | Adapter/configuration preflight passes and switch is true; synthetic call returned HTTP 403 / `provider_authorization_failed`; Azure CLI requires interactive MFA before resource network policy can be changed |
 | ElevenLabs | Not implemented / not activated | Provider methods stop at `SpeechDispatchAuthority`; router is hard-disabled and no live HTTP response path exists |
+| Source-audio deletion outbox | Pass | `voice:deletion-status`: healthy; 0 active, due, retrying, dead-lettered or stale entries |
 | Runtime health | Pass | systemd supervisor recovered after one automatic retry; live and ready endpoints returned `ok` after Quick Tunnel restart |
 | VPS readiness | Pass with one launch warning | 23 pass / 1 warn / 0 fail; no active Content Studio publication head/enrollment pin |
 | Android artifact | Pass for debug testing | `make android-closed-beta` passed; public bytes match SHA-256 `b7bd4c4b…8371fc2`, 82,981,426 bytes, `com.globalenglish.app`, target SDK 36 |
