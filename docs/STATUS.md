@@ -1,5 +1,36 @@
 # Repository status
 
+## PROVIDER-LIVE-WIRING-01 Azure, Sarvam and ElevenLabs — 18 September 2026
+
+- APP-0099/D-0318 authorize the bounded live-wiring checkpoint. The existing
+  Azure guidance TTS, Sarvam recorded STT and Azure recorded-STT failover paths
+  remain live on the stable-host invite-only stack; their prior synthetic
+  round trip remains the current acceptance evidence.
+- ElevenLabs TTS and recorded-STT now have project-owned REST implementations:
+  exact India-residency host allowlisting, `enable_logging=false` on every
+  request, mode-0600 external secrets/evidence, no redirects, response limits,
+  safe error mapping and owned result contracts. Azure guidance TTS may attempt
+  ElevenLabs only as its one provider fallback after every authority gate
+  passes; otherwise it preserves the existing text-first result.
+- The authority is no longer an unconditional source stub, but it remains
+  fail-closed unless the global router and candidate flag are on, the kill
+  switch is off, the implementation exists, and current learner-content,
+  India-residency, zero-retention, spend, key-rotation and deletion evidence is
+  valid. Unimplemented realtime and Sarvam Bulbul candidates remain explicitly
+  unavailable.
+- The stored ElevenLabs test credential returned HTTP 400 `invalid_api_key`
+  from the required India-residency models endpoint. It remains unbound; no
+  ElevenLabs speech or learner content was sent. Activation needs a newly
+  issued India-workspace key and a voice ID, followed by synthetic TTS/STT and
+  a truthful deletion/zero-retention check.
+- Azure management-plane inspection remains blocked on human MFA, so Azure
+  OpenAI's HTTP 403 is not resolved or represented as live. No Azure resource
+  policy was changed.
+- Repository gates are green: `make verify` (321 SQLite / 360 PostgreSQL / 466
+  web), `make e2e` (API 4/4 and Playwright 29/29), `make ai-eval` (15/15,
+  deterministic) and `make build`. The first sandboxed `make ai-eval` could
+  not reach loopback PostgreSQL; the identical authorized host run exited 0.
+
 ## STABLE-HOST-CUTOVER-01 VPS DNS/TLS and Android cutover — 18 September 2026
 
 - APP-0098/D-0317 record the owner's confirmation that the DNS work was done
@@ -873,15 +904,15 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | AUDIT-CLOSE-01 documentation closure reconciled at `179b534`; UX-10A device/accessibility gates remain open |
-| Status | APP-0093/D-0300 remain the historical closure authority and defer UX-EXP-01/02/03. The superseding RMX3085 §10.2 rerun at `d62a25a` / APK `0409e528…` leaves 6 current-phone PASS, 6 FAIL and 1 NOT RUN. UX10-DEV-01–06 are open and 58 of 64 device cells are unmarked. Pinned verify/E2E/build gates are green at `179b534`; this does not close the human/device gates. Wave 5 host remains blocked. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | PROVIDER-LIVE-WIRING-01 external activation gates after source implementation |
+| Status | APP-0099/D-0318 source implementation and repository gates are complete. Azure Speech and Sarvam recorded speech remain live. ElevenLabs remains fail-closed because the stored key is invalid and rotation/deletion/voice evidence is absent. Azure OpenAI remains HTTP 403 pending human Azure MFA. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
-| Updated date | 16 September 2026 |
+| Updated date | 18 September 2026 |
 | Git branch | `cursor/learner-variant-c-jezweb-3f88` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Do not treat the historical closure as production, Play or live-payment authorization. UX10-DEV-01–06, gesture predictive Back, physical target measurement and physical Back-during-recording evidence require later authorization/evidence; no fix is authorized here. Independent privacy/security/tenancy review is required before funnel-event emission. Academic review of review intervals remains under ADR-0028. Independent review of the five non-English catalogues, representative comprehension studies, seeded connected instrumentation and optional later API 24/35/36 and low-cost-phone coverage remain open. Defect 6 (dashboard fail-close on `completed_at < due_at`) remains a residual. APO: payment gateway (Wave 8), GST, hosting server, DNS A record for `ai.globalspokenenglish.com`. Do **not** set `APP_ENV=production`. Do **not** stop the Quick Tunnel until Wave 5.3. |
+| Next required action | Human completes the pending Azure device-code MFA so the Azure OpenAI resource policy can be inspected. ElevenLabs administrator creates a fresh key in the India isolated workspace and supplies a valid voice ID; revoke the disclosed/invalid key, run synthetic TTS/STT, prove zero retention/deletion, then enable only the passing fallback. Do not set `APP_ENV=production`, publish to Play or enable payment on this provider decision. The previously recorded UX/device, independent review, catalogue and academic-review residuals remain open. |
 | Production/public release | Not authorized |
-| Soft launch | Live Azure OpenAI and mixed-script guidance TTS. Indic STT staff verification is complete with the driver still set to `VOICE_PROVIDER_DRIVER=indic`. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues are pending independent review and fall back to English outside explicit development preview. Learner locale picker remains kn-IN + en-IN only. A GATE-FIX-01 production debug APK was sideloaded to the attached RMX3085 for §10.2; it is not a published closed-beta artifact. Live payment remains disabled and unauthorized. |
+| Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Live payment remains disabled and unauthorized. |
 
 ## D-0283: UX-01 Studio programme complete — 6 September 2026
 

@@ -36,8 +36,8 @@ final class SpeechProviderRoutingTest extends TestCase
             $authority->denialReasons('elevenlabs-tts', 'tts'),
         );
         $this->assertContains(
-            'live_deployment_key_rotation_required',
-            $authority->denialReasons('elevenlabs-tts', 'tts'),
+            'implementation_unavailable',
+            $authority->denialReasons('sarvam-bulbul-tts', 'tts'),
         );
 
         foreach ([

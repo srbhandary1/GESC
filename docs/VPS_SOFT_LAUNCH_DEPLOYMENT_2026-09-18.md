@@ -258,3 +258,28 @@ SHA-256 is
 `37793a48c60fd07e10ac8141bb82ea99f6e90340b93aa56e4a72b76e433a2f15`,
 size 82,981,384 bytes, package `com.globalenglish.app`, target SDK 36. The
 artifact is debug-signed and is not a Play release AAB.
+## Provider live-wiring addendum — 18 September 2026
+
+APP-0099/D-0318 authorize a bounded provider-wiring pass. Azure guidance TTS,
+Sarvam recorded STT and Azure recorded-STT failover remain the only deployed
+provider paths with passing synthetic evidence.
+
+The repository now contains project-owned ElevenLabs TTS and recorded-STT REST
+adapters with exact India-residency host allowlisting and fixed zero-retention
+query parameters. Runtime authority additionally requires global/candidate
+enablement, kill-switch release, a mode-0600 external secret, learner-content
+approval, current vendor/spend evidence, a ₹500-or-lower cap, a genuine key
+rotation receipt and a matching content-free deletion-test receipt. Azure TTS
+may use ElevenLabs only as its single provider fallback; recorded learner STT
+remains Sarvam with Azure failover.
+
+A metadata-only VPS request to the required India models endpoint returned
+HTTP 400 `invalid_api_key` for the stored ElevenLabs test credential. No speech,
+learner text, audio or transcript was sent. The credential remains unbound and
+all ElevenLabs dispatch flags remain false with kill switches true. A new key
+must be issued inside the separate India isolated workspace, and a valid voice
+ID must be supplied, before synthetic TTS/STT and deletion evidence can run.
+
+Azure OpenAI remains configured but not accepted: provider calls return HTTP
+403 and Azure management-plane inspection requires the account owner to
+complete interactive MFA. No Azure resource was changed in this addendum.

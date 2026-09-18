@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Conversation\Providers\SoftLaunch;
 
 use App\Conversation\Providers\ConversationProviderException;
+use App\Conversation\Providers\ElevenLabs\ElevenLabsTextToSpeechProvider;
 use App\Conversation\Providers\ProviderUsage;
 use App\Conversation\Providers\TextFirstTextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechProvider;
@@ -30,6 +31,7 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
         private SoftLaunchGuidanceTtsConfiguration $configuration,
         private Factory $http,
         private PcmWavInspector $wavInspector,
+        private ElevenLabsTextToSpeechProvider $elevenLabs,
         private TextFirstTextToSpeechProvider $textFirst,
     ) {}
 
@@ -63,7 +65,11 @@ final readonly class SoftLaunchGuidanceAzureTextToSpeechProvider implements Text
                 );
             }
 
-            return $this->textFirst->synthesize($request);
+            try {
+                return $this->elevenLabs->synthesize($request);
+            } catch (Throwable) {
+                return $this->textFirst->synthesize($request);
+            }
         }
     }
 

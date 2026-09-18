@@ -99,6 +99,10 @@ final readonly class ConversationProviderUsagePolicy
                 $usage->providerKey === 'azure-speech-guidance'
                 && str_starts_with($usage->modelVersion, 'soft-launch-guidance-tts-v1:')
                 && $usage->estimatedCostMicrounits >= 0
+            ) || (
+                $usage->providerKey === 'elevenlabs-tts'
+                && $usage->modelVersion === 'eleven_v3'
+                && $usage->estimatedCostMicrounits >= 0
             ),
             default => false,
         };

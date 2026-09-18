@@ -5,11 +5,20 @@ declare(strict_types=1);
 return [
     'version' => 'speech-route-v1',
     'maximum_dispatches_per_stage' => 2,
-    'live_router_enabled' => false,
+    'live_router_enabled' => env('SPEECH_LIVE_ROUTER_ENABLED', false),
     'candidates' => [
         'elevenlabs-tts' => [
             'stage' => 'tts',
+            'implementation_ready' => true,
             'product' => 'eleven_v3_conversational',
+            'api_model' => 'eleven_v3',
+            'route' => '/v1/text-to-speech',
+            'voice_id' => env('SPEECH_ELEVENLABS_TTS_VOICE_ID', ''),
+            'output_format' => 'pcm_24000',
+            'maximum_characters' => 160,
+            'maximum_response_bytes' => 2 * 1024 * 1024,
+            'connection_timeout_seconds' => 5,
+            'request_timeout_seconds' => 20,
             'route_role' => 'challenger',
             'dispatch_authorized' => env('SPEECH_ELEVENLABS_TTS_DISPATCH_AUTHORIZED', false),
             'kill_switch' => env('SPEECH_ELEVENLABS_TTS_KILL_SWITCH', true),
@@ -19,7 +28,13 @@ return [
         ],
         'elevenlabs-stt' => [
             'stage' => 'stt',
+            'implementation_ready' => true,
             'product' => 'scribe_v2',
+            'api_model' => 'scribe_v2',
+            'route' => '/v1/speech-to-text',
+            'maximum_json_response_bytes' => 1024 * 1024,
+            'connection_timeout_seconds' => 5,
+            'request_timeout_seconds' => 25,
             'route_role' => 'challenger',
             'dispatch_authorized' => env('SPEECH_ELEVENLABS_STT_DISPATCH_AUTHORIZED', false),
             'kill_switch' => env('SPEECH_ELEVENLABS_STT_KILL_SWITCH', true),
@@ -29,6 +44,7 @@ return [
         ],
         'elevenlabs-stt-realtime' => [
             'stage' => 'stt',
+            'implementation_ready' => false,
             'product' => 'scribe_v2_realtime',
             'route_role' => 'challenger',
             'dispatch_authorized' => env(
@@ -48,6 +64,7 @@ return [
         ],
         'sarvam-saaras-realtime' => [
             'stage' => 'stt',
+            'implementation_ready' => false,
             'product' => 'saaras_realtime',
             'route_role' => 'challenger',
             'dispatch_authorized' => env(
@@ -64,6 +81,7 @@ return [
         ],
         'sarvam-bulbul-tts' => [
             'stage' => 'tts',
+            'implementation_ready' => false,
             'product' => 'bulbul:v3',
             'route_role' => 'challenger',
             'dispatch_authorized' => env('SPEECH_SARVAM_BULBUL_DISPATCH_AUTHORIZED', false),

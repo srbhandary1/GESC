@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Realtime;
 
+use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Routing\SpeechDispatchAuthority;
 
 final readonly class ElevenLabsScribeRealtimeSpeechToTextProvider implements RealtimeSpeechToTextProvider
@@ -16,5 +17,11 @@ final readonly class ElevenLabsScribeRealtimeSpeechToTextProvider implements Rea
         RealtimeSpeechToTextRequest $request,
     ): RealtimeSpeechToTextSession {
         $this->authority->assertDispatchAllowed('elevenlabs-stt-realtime', 'stt');
+
+        throw new ConversationProviderException(
+            safeCode: 'provider_not_authorized',
+            providerKey: 'elevenlabs-stt-realtime',
+            modelVersion: 'implementation-unavailable',
+        );
     }
 }

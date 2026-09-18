@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Realtime;
 
+use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Routing\SpeechDispatchAuthority;
 
 final readonly class SarvamSaarasRealtimeSpeechToTextProvider implements RealtimeSpeechToTextProvider
@@ -16,5 +17,11 @@ final readonly class SarvamSaarasRealtimeSpeechToTextProvider implements Realtim
         RealtimeSpeechToTextRequest $request,
     ): RealtimeSpeechToTextSession {
         $this->authority->assertDispatchAllowed('sarvam-saaras-realtime', 'stt');
+
+        throw new ConversationProviderException(
+            safeCode: 'provider_not_authorized',
+            providerKey: 'sarvam-saaras-realtime',
+            modelVersion: 'implementation-unavailable',
+        );
     }
 }

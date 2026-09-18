@@ -1,5 +1,51 @@
 # Quality review
 
+## PROVIDER-LIVE-WIRING-01 Azure, Sarvam and ElevenLabs — 18 September 2026
+
+### Scope reviewed
+
+- Replace only the ElevenLabs TTS/recorded-STT scaffolds with project-owned
+  REST transports and preserve the ADR-0038 route/dispatch ceiling.
+- Keep India residency, zero retention, spend, credential, deletion, consent
+  and fallback controls fail-closed.
+- Recheck the deployed credential without sending learner or synthetic speech,
+  then run all repository/provider gates.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Project-owned adapters | Pass | ElevenLabs TTS and recorded STT expose only existing `TextToSpeechProvider` / `RecordedSpeechToTextProvider` contracts; no vendor SDK type leaves the adapters |
+| Data residency | Pass in source; blocked operationally | Exact `api.in.residency.elevenlabs.io` allowlist; alternate host, user info, port, redirect, query-controlled endpoint and repository secret paths are rejected |
+| Zero retention | Pass in source | Both provider URLs append fixed `enable_logging=false`; clients cannot override it |
+| Credential/evidence gate | Pass | External readable owner/mode-0600 secret and evidence only; learner-content approval, future vendor/spend validity, ₹500 cap, rotation receipt and matching content-free deletion receipt are mandatory |
+| Response safety | Pass | HTTPS verification, no redirects, connect/request timeouts, bounded response bodies, content-type/JSON/PCM validation and safe status mapping |
+| TTS product compatibility | Pass | Provider PCM is wrapped as owned 24 kHz mono PCM WAV for the existing private artifact/player path; input remains capped at 160 characters |
+| Recorded STT semantics | Pass | English `en-IN` WAV only; transcript is bounded UTF-8; confidence is derived only from returned word log probabilities and is 0 when unavailable |
+| Dispatch topology | Pass | Azure guidance remains primary, ElevenLabs is at most one provider fallback, and text-first remains the non-provider recovery; Sarvam→Azure recorded STT is unchanged |
+| Unimplemented candidates | Pass | ElevenLabs/Sarvam realtime and Sarvam Bulbul classes remain explicitly `implementation_unavailable` and cannot fall through to a null return |
+| Focused tests | Pass | 17 tests / 41 assertions for adapters, authority, maximum dispatch and provider-usage policy |
+| `make verify` | Pass | Pint and PHPStan green; SQLite 321/321, PostgreSQL 360/360, web 466/466; OpenAPI/release/localization/lint/typecheck green |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 29/29 |
+| `make ai-eval` | Pass on host rerun | 15/15 deterministic, zero estimated provider cost; initial sandbox attempt could not reach loopback PostgreSQL and is not counted as a pass |
+| `make build` | Pass | Laravel cache cycle and Vite production build completed; existing chunk-size warning only |
+| Existing ElevenLabs key | Blocked | Metadata-only India models request returned HTTP 400 `invalid_api_key`; no audio/text payload was sent |
+| Azure OpenAI | Blocked on human MFA | Management-plane read requires device-code MFA; existing synthetic provider call remains HTTP 403 |
+
+### Residual activation steps
+
+- Human must complete Azure MFA before the OpenAI resource/network policy can
+  be inspected or changed.
+- ElevenLabs administrator must issue a new key in the separate India isolated
+  workspace and choose/provide a voice ID. The disclosed/invalid key must be
+  revoked; only then may rotation/deletion receipts be recorded.
+- Run content-free account/model checks, synthetic TTS and synthetic-WAV STT,
+  verify zero-retention/deletion behavior, then turn on the global router and
+  only the passing candidate. Until then, VPS flags stay off and kill switches
+  stay on.
+- Independent privacy/security/tenancy review remains a production gate. No
+  Play or payment authority is implied.
+
 ## STABLE-HOST-CUTOVER-01 VPS DNS/TLS and Android cutover — 18 September 2026
 
 ### Scope reviewed

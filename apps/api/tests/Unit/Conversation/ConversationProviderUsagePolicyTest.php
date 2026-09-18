@@ -59,6 +59,12 @@ final class ConversationProviderUsagePolicyTest extends TestCase
             'soft-launch-guidance-tts-v1:kn-IN-SapnaNeural',
             12,
         ];
+        yield 'ElevenLabs guidance speech fallback' => [
+            'tts',
+            'elevenlabs-tts',
+            'eleven_v3',
+            0,
+        ];
         yield 'indic recorded speech' => [
             'stt',
             'indic-http-stt',

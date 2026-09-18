@@ -3260,6 +3260,67 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0099"></a>
+
+## APP-0099 — Azure, Sarvam and ElevenLabs live-wiring authorization
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for the bounded live-provider wiring checkpoint; external provider gates remain fail-closed |
+| Decision date | 2026-09-18 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated in this approval |
+| Roles exercised for development | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Exact human instruction in the active Codex conversation |
+| Related decisions | [D-0316](DECISIONS.md); [D-0318](DECISIONS.md) |
+| Related ADRs | [ADR-0007](adr/0007-recording-consent-retention-provider-processing-and-deletion-policy.md); [ADR-0038](adr/0038-multiprovider-speech-routing-kannada-help-and-first-audible-gate.md) |
+| Recorder | Codex, acting only as author and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA was unavailable while the record was authored |
+| Master-plan amendment | None |
+
+### Exact human statement
+
+```text
+I want Azure, Sarvam and elevenlabs live wird.
+```
+
+### Context and accepted interpretation
+
+Immediately before the instruction, the deployed stable-host evidence stated
+that Azure guidance TTS, Sarvam recorded STT and Azure recorded-STT failover
+were live and had passed synthetic calls, Azure OpenAI was configured but
+returned HTTP 403, and the ElevenLabs adapters had no HTTP implementation. In
+that bounded context, `live wird` is recorded as `live wired`: authorization to
+finish the missing project-owned transport and attempt controlled activation.
+
+### Accepted scope
+
+- Implement ElevenLabs recorded STT and TTS behind the existing project-owned
+  ports and ADR-0038 maximum-two-dispatch routing boundary.
+- Permit ElevenLabs only through the India-residency API host with zero
+  retention requested on every STT/TTS call, external owner-only credentials,
+  explicit spend/learner-content authority, key-rotation and deletion-test
+  evidence, independent kill switches and bounded responses.
+- Keep Azure guidance TTS primary and permit ElevenLabs only as its reviewed
+  failover after all ElevenLabs gates pass; ordinary learner audio is not sent
+  to three providers. Recorded STT remains Sarvam primary with Azure failover.
+- Diagnose the Azure OpenAI 403 through the Azure management plane after the
+  human completes required MFA, and use synthetic content before learner data.
+
+### Conditions and limitations
+
+- APP-0081's deferred rotation is now due. The disclosed D-0305 key remains
+  compromised and cannot be used for learner dispatch. No rotation or deletion
+  receipt may be invented.
+- A real synthetic call must pass before any route is represented as live.
+  Credential presence or a configured flag is not success evidence.
+- One human exercised two development roles. This is not independent privacy,
+  security or tenancy review and does not authorize Play publication, payment
+  capture or removal of ADR-0007 consent/deletion/retention controls.
+- Production-environment DI remains fail-closed; this approval applies to the
+  stable-host invite-only `soft-launch` runtime until the separate production
+  release gates are closed.
+
 <a id="app-0098"></a>
 
 ## APP-0098 — Stable VPS hostname cutover authorization
