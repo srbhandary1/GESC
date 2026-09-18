@@ -201,7 +201,10 @@
 }
 
 .ge-application-frame--tutor .level-path__pending {
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 9rem), 1fr)
+  );
 }
 
 .ge-application-frame--tutor .level-path__pending-item {

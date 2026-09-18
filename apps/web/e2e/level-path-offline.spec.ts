@@ -410,6 +410,153 @@ test('keeps Android-style Back, focus, targets, IME inset and Variant C contrast
   ))).toBe('3px')
 })
 
+test('reflows authenticated Android chrome and quiz actions at 200% text', async ({
+  page,
+}) => {
+  await mockLevelPathLearnerApi(page, true, 4920)
+  await page.setViewportSize({ height: 900, width: 320 })
+  await page.goto('/#learn')
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+  })
+
+  for (const locale of ['en-IN', 'kn-IN']) {
+    await page.locator('#interface-locale').selectOption(locale)
+
+    for (const width of [320, 360, 412]) {
+      await page.setViewportSize({ height: 900, width })
+      const overflowEvidence = await page.evaluate(() => ({
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: globalThis.innerWidth,
+      }))
+      expect(overflowEvidence, JSON.stringify(overflowEvidence)).toMatchObject({
+        documentWidth: width,
+        viewportWidth: width,
+      })
+
+      const chromeMetrics = await page.evaluate(() => {
+        const metrics = (selector: string) => [
+          ...document.querySelectorAll<HTMLElement>(selector),
+        ].map((element) => ({
+          clientHeight: element.clientHeight,
+          clientWidth: element.clientWidth,
+          height: element.getBoundingClientRect().height,
+          scrollHeight: element.scrollHeight,
+          scrollWidth: element.scrollWidth,
+          width: element.getBoundingClientRect().width,
+        }))
+
+        return {
+          headerControls: metrics('.shell-header-toolbar > *'),
+          navigation: metrics('.ge-primary-navigation__link'),
+        }
+      })
+
+      expect(chromeMetrics.navigation).toHaveLength(5)
+      for (const target of chromeMetrics.navigation) {
+        expect(target.height, JSON.stringify(target)).toBeGreaterThanOrEqual(48)
+        expect(target.width, JSON.stringify(target)).toBeGreaterThanOrEqual(48)
+        expect(target.scrollHeight, JSON.stringify(target)).toBeLessThanOrEqual(
+          target.clientHeight + 1,
+        )
+        expect(target.scrollWidth, JSON.stringify(target)).toBeLessThanOrEqual(
+          target.clientWidth + 1,
+        )
+      }
+      for (const control of chromeMetrics.headerControls) {
+        expect(control.scrollWidth, JSON.stringify(control)).toBeLessThanOrEqual(
+          control.clientWidth + 1,
+        )
+      }
+    }
+  }
+
+  await page.setViewportSize({ height: 412, width: 800 })
+  await expect.poll(() => page.evaluate(() => (
+    document.documentElement.scrollWidth <= globalThis.innerWidth
+  ))).toBe(true)
+
+  const levelControl = page.getByRole('button', {
+    name: message('level.path.checkpoint_open', { number: '1' }),
+  })
+  await levelControl.click()
+  await page.getByRole('radio', { name: 'I can swim.' }).check()
+
+  const stickyAction = page.locator('.level-session__assessment-actions')
+  const navigation = page.locator('.ge-primary-navigation')
+  await stickyAction.scrollIntoViewIfNeeded()
+  const closedKeyboardGeometry = await page.evaluate(() => {
+    const action = document.querySelector<HTMLElement>('.level-session__assessment-actions')
+    const nav = document.querySelector<HTMLElement>('.ge-primary-navigation')
+    const frame = document.querySelector<HTMLElement>('.ge-application-frame')
+    const actionBox = action?.getBoundingClientRect()
+    const navigationBox = nav?.getBoundingClientRect()
+
+    return {
+      actionBottom: actionBox === undefined ? null : actionBox.bottom,
+      actionBottomStyle: action === null ? null : getComputedStyle(action).bottom,
+      navigationOffset: frame === null
+        ? null
+        : getComputedStyle(frame).getPropertyValue('--ge-mobile-navigation-offset'),
+      navigationTop: navigationBox === undefined ? null : navigationBox.top,
+    }
+  })
+  expect(
+    closedKeyboardGeometry.actionBottom,
+    JSON.stringify(closedKeyboardGeometry),
+  ).not.toBeNull()
+  expect(
+    closedKeyboardGeometry.navigationTop,
+    JSON.stringify(closedKeyboardGeometry),
+  ).not.toBeNull()
+  expect(
+    closedKeyboardGeometry.actionBottom!,
+    JSON.stringify(closedKeyboardGeometry),
+  ).toBeLessThanOrEqual(closedKeyboardGeometry.navigationTop! + 1)
+  await expect.poll(async () => {
+    const [actionBox, navigationBox] = await Promise.all([
+      stickyAction.boundingBox(),
+      navigation.boundingBox(),
+    ])
+    if (actionBox === null || navigationBox === null) {
+      return false
+    }
+
+    return actionBox.y + actionBox.height <= navigationBox.y + 1
+  }).toBe(true)
+
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--ge-native-ime-inset-bottom', '220px')
+  })
+  await stickyAction.scrollIntoViewIfNeeded()
+  const openKeyboardGeometry = await stickyAction.evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    return {
+      bottom: box.bottom,
+      bottomStyle: getComputedStyle(element).bottom,
+      height: box.height,
+      top: box.top,
+    }
+  })
+  expect(
+    openKeyboardGeometry.bottom,
+    JSON.stringify(openKeyboardGeometry),
+  ).toBeLessThanOrEqual(192)
+
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' })
+  const contrastMetrics = await page.locator('.ge-primary-navigation__link').evaluateAll(
+    (links) => links.map((link) => ({
+      color: getComputedStyle(link).color,
+      opacity: getComputedStyle(link).opacity,
+    })),
+  )
+  expect(contrastMetrics.every(({ opacity }) => opacity === '1')).toBe(true)
+  expect(new Set(contrastMetrics.map(({ color }) => color))).not.toContain('rgba(0, 0, 0, 0)')
+})
+
 interface MockLevelPathApiState {
   offlineCheckpointBodies: unknown[]
   offlineLevelBundleRequests: number
@@ -419,6 +566,7 @@ interface MockLevelPathApiState {
 async function mockLevelPathLearnerApi(
   page: Page,
   initiallyOnboarded: boolean,
+  liveAiSecondsRemaining: number | null = null,
 ): Promise<MockLevelPathApiState> {
   let onboarded = initiallyOnboarded
   const state: MockLevelPathApiState = {
@@ -484,7 +632,7 @@ async function mockLevelPathLearnerApi(
         gstin_is_placeholder: true,
         is_demo: false,
         live_ai_cap_seconds: null,
-        live_ai_seconds_remaining: null,
+        live_ai_seconds_remaining: liveAiSecondsRemaining,
         max_level_number: 2,
         plan_code: null,
         plan_name: null,

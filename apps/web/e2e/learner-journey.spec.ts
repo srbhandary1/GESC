@@ -113,13 +113,48 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
 for (const locale of ['en-IN', 'kn-IN'] as const) {
   test(`completes first-use onboarding in ${locale}`, async ({ page }) => {
     const api = await mockLearnerApi(page, false)
+    await page.setViewportSize({ height: 700, width: 320 })
     await page.goto('/#home')
 
     await page.locator('#interface-locale').selectOption(locale)
+    await page.locator('.ge-application-frame').evaluate((frame) => {
+      frame.classList.add('ge-application-frame--native-android')
+    })
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%'
+      document.documentElement.style.setProperty('--ge-native-safe-area-top', '24px')
+      document.documentElement.style.setProperty('--ge-native-safe-area-right', '8px')
+      document.documentElement.style.setProperty('--ge-native-safe-area-bottom', '24px')
+      document.documentElement.style.setProperty('--ge-native-safe-area-left', '8px')
+      document.documentElement.style.setProperty('--ge-native-ime-inset-bottom', '120px')
+    })
     await expect(page.locator('html')).toHaveAttribute('lang', locale)
     await expect(page.getByRole('heading', {
       name: localizedMessage('learner.onboarding.welcome_title', locale),
     })).toBeFocused()
+    await expect.poll(() => page.evaluate(() => (
+      document.documentElement.scrollWidth <= globalThis.innerWidth
+    ))).toBe(true)
+    const continueButton = page.getByRole('button', {
+      name: localizedMessage('learner.onboarding.continue', locale),
+    })
+    await expect(continueButton).toBeVisible()
+    await continueButton.scrollIntoViewIfNeeded()
+    await expect.poll(async () => {
+      const box = await continueButton.boundingBox()
+      return box === null ? 701 : box.y + box.height
+    }).toBeLessThanOrEqual(700)
+    await page.evaluate(() => {
+      document.documentElement.style.removeProperty('font-size')
+      document.documentElement.style.removeProperty('--ge-native-safe-area-top')
+      document.documentElement.style.removeProperty('--ge-native-safe-area-right')
+      document.documentElement.style.removeProperty('--ge-native-safe-area-bottom')
+      document.documentElement.style.removeProperty('--ge-native-safe-area-left')
+      document.documentElement.style.removeProperty('--ge-native-ime-inset-bottom')
+      document.querySelector<HTMLElement>('.ge-onboarding-screen')?.scrollTo({
+        top: 0,
+      })
+    })
 
     await advanceFirstUseToGoal(page, locale)
     await continueFirstUse(page, locale)
