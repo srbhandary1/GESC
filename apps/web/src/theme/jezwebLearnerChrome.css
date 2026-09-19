@@ -916,9 +916,9 @@
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-header-toolbar {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: var(--ge-target-minimum);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
     width: 100%;
     max-width: 100%;
     gap: 6px;
@@ -927,11 +927,12 @@
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-header-toolbar > * {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    overflow-wrap: anywhere;
-    white-space: normal;
+    flex: 1 1 calc(25% - 6px);
+    width: auto;
+    min-width: max-content;
+    max-width: 100%;
+    overflow-wrap: normal;
+    white-space: nowrap;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
@@ -955,7 +956,9 @@
     font-weight: 750;
     line-height: 1.1;
     text-align: center;
-    text-wrap: balance;
+    overflow-wrap: normal;
+    text-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
@@ -1027,8 +1030,8 @@
     font-weight: 650;
     line-height: 1;
     text-align: center;
-    text-wrap: balance;
-    white-space: normal;
+    text-wrap: nowrap;
+    white-space: nowrap;
     word-break: normal;
   }
 
@@ -1089,6 +1092,9 @@
     text-align: center;
     text-align-last: center;
     text-overflow: ellipsis;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: keep-all;
     cursor: pointer;
   }
 

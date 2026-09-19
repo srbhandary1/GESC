@@ -451,14 +451,16 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
       const chromeMetrics = await page.evaluate(() => {
         const metrics = (selector: string) => [
           ...document.querySelectorAll<HTMLElement>(selector),
-        ].map((element) => ({
-          clientHeight: element.clientHeight,
-          clientWidth: element.clientWidth,
-          height: element.getBoundingClientRect().height,
-          scrollHeight: element.scrollHeight,
-          scrollWidth: element.scrollWidth,
-          width: element.getBoundingClientRect().width,
-        }))
+        ]
+          .filter((element) => element.getClientRects().length > 0)
+          .map((element) => ({
+            clientHeight: element.clientHeight,
+            clientWidth: element.clientWidth,
+            height: element.getBoundingClientRect().height,
+            scrollHeight: element.scrollHeight,
+            scrollWidth: element.scrollWidth,
+            width: element.getBoundingClientRect().width,
+          }))
 
         return {
           headerControls: metrics('.shell-header-toolbar > *'),
@@ -488,6 +490,10 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
         )
       }
       for (const control of chromeMetrics.headerControls) {
+        expect(control.height, JSON.stringify(control)).toBeGreaterThanOrEqual(48)
+        expect(control.scrollHeight, JSON.stringify(control)).toBeLessThanOrEqual(
+          control.clientHeight + 1,
+        )
         expect(control.scrollWidth, JSON.stringify(control)).toBeLessThanOrEqual(
           control.clientWidth + 1,
         )
