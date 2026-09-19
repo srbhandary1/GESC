@@ -16,12 +16,12 @@
   Mangalore without displaying a sales email address.
 - Full gates pass: `make verify` (SQLite 330/330; PostgreSQL 360/360; web
   468/468), `make e2e` (API 4/4; Playwright 30/30) and `make build`.
-- Exact source `a6d36af` is active as immutable VPS release
-  `/srv/global-spoken-english/releases/a6d36af`; public live/ready pass and the
+- Exact source `d13c80e` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/d13c80e`; public live/ready pass and the
   readiness gate reports 27 pass / 1 existing content-publication warning / 0
   fail. The public and RMX3085-installed APK SHA-256 is
-  `5b454d209e90a92199948468e68e3a5f1a4b3eddab49ad8c8da9cb69ffc3ff76`
-  (83,050,631 bytes).
+  `0b576ff5cb69dd871628daf324c70155c3b47abfc61241ca5812118f213b61a8`
+  (83,050,623 bytes).
 - RMX3085 UI hierarchy confirms exact **Global Spoken English App**, `ಶುಭ ದಿನ`,
   right-side Sign in/Theme/Language controls and the Northstar footer. All
   temporary screenshot, hierarchy and transfer artefacts were deleted.

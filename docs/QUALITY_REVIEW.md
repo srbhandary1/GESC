@@ -21,9 +21,9 @@
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468 |
 | `make e2e` | Pass after bounded reflow repair | API 4/4; Playwright 30/30; guest Theme at 320px/400% no longer expands its toolbar |
 | `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
-| Android build/install | Pass | Gradle `BUILD SUCCESSFUL` (103 tasks); preserve-data install on RMX3085/API 33; APK `5b454d20…ffc3ff76`, 83,050,631 bytes |
+| Android build/install | Pass | Gradle `BUILD SUCCESSFUL` (103 tasks); preserve-data install on RMX3085/API 33; APK `0b576ff5…13b61a8`, 83,050,623 bytes |
 | Physical hierarchy | Pass | Exact app name, `ಶುಭ ದಿನ`, Sign in/Theme/Language accessible names and Northstar footer present |
-| Stable-host deployment | Pass | Source `a6d36af`; immutable release `/srv/global-spoken-english/releases/a6d36af`; public live/ready; readiness 27 pass / 1 existing publication warning / 0 fail; public APK hash matches |
+| Stable-host deployment | Pass | Source `d13c80e`; immutable release `/srv/global-spoken-english/releases/d13c80e`; public live/ready; readiness 27 pass / 1 existing publication warning / 0 fail; public APK hash matches |
 | Diagnostic cleanup | Pass | Temporary workstation/handset screenshots and UI dumps plus transfer archives removed after inspection |
 
 ### Verdict

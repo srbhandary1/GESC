@@ -518,3 +518,14 @@ public artifact SHA-256 is
 (83,050,631 bytes). Temporary screenshot, hierarchy and transfer artefacts were
 deleted after inspection. No schema, migration, secret or provider binding
 changed.
+
+### Greeting/footer follow-up
+
+Git `d13c80e` is active at immutable release
+`/srv/global-spoken-english/releases/d13c80e`. It replaces the guest-home
+`ಇಂದು` hierarchy with one bold `ಶುಭ ದಿನ` heading and removes the sales email
+from the retained Northstar developer attribution. The exact production debug
+APK is installed preserve-data and published with SHA-256
+`0b576ff5cb69dd871628daf324c70155c3b47abfc61241ca5812118f213b61a8`
+(83,050,623 bytes). Public live/ready pass; readiness remains 27 pass / 1
+existing publication warning / 0 fail.
