@@ -563,3 +563,22 @@ APK is installed preserve-data and published with SHA-256
 `0b576ff5cb69dd871628daf324c70155c3b47abfc61241ca5812118f213b61a8`
 (83,050,623 bytes). Public live/ready pass; readiness remains 27 pass / 1
 existing publication warning / 0 fail.
+
+### Direct voice allowlist correction — 19 September 2026
+
+Physical Learn testing showed the microphone UI falling back because
+`GET /api/v1/voice-consents` returned 404. The recovered `Global English
+Direct` organization uses a new VPS-local identifier that was not included in
+the retained voice allowlist. The exact Direct identifier was appended to
+`VOICE_ALLOWED_ORGANIZATION_IDS`; the prior entry remains, and no allowlist,
+adult-confirmation, onboarding-completion or purpose-consent gate was removed.
+The pre-change environment is retained outside Git at mode 0600 as
+`soft-launch.env.pre-voice-direct-20260919`.
+
+The repository runtime was restarted coherently after an intermediate reload
+exposed a stale API/proxy port mismatch. Final API, worker, scheduler, internal
+proxy and public proxy are running; public `/health/live` and `/health/ready`
+return HTTP 200. The final Android candidate SHA-256 is
+`952ec833122d748f39de143fa17952ad6925a557ccde0a62aad7be83cf53ab91`
+(83,050,623 bytes). A signed-in physical consent and recording attempt remains
+required before claiming live microphone/provider success.

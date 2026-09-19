@@ -10154,3 +10154,27 @@ blueprint `check` when no `level_checkpoint` block is authored.
 | `localDemo.test.ts` | Pass | seventeen levels + demo checkpoint API |
 
 Postgres filter `LevelSession|LevelCheckpoint`: 4 tests, 100 assertions.
+## UX-REM-01 equal toolbar and Learn microphone recovery — 19 September 2026
+
+### Scope reviewed
+
+- Equal dimensions for Account, Appearance, Interface language and live-AI
+  controls in the native Android header.
+- VPS `voice-consents` 404 for the recovered Direct tenant.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Toolbar structure | Pass | Fixed four-column, compact 3.25rem row; Account wrapper/trigger stretch; 48px minimum targets retained |
+| Drill repetition | Pass | An exact transcript/retry-prompt duplicate is rendered once; different prior and next sentences remain visible |
+| Root cause | Pass | API log recorded named `voice-consents.index` requests returning 404; recovered Direct organization was absent from the allowlist |
+| Privacy/tenancy | Pass | Exact Direct organization added; allowlist, adult confirmation, onboarding completion and purpose-specific consent remain mandatory |
+| Runtime | Pass | Coherent API/worker/scheduler/proxy restart; public live and ready return HTTP 200 |
+| Automated gates | Pass | `make verify`; `make e2e` API 4/4 and browser 30/30; `make build`; Android 103-task build |
+| Device | Partial | Final APK `952ec83…3ab91` installed; signed-in consent/recording/provider result still requires physical execution |
+
+No schema, API, review, scoring, entitlement, credential-storage or retention
+semantic changed. The VPS environment backup
+`soft-launch.env.pre-voice-direct-20260919` is retained outside Git at mode
+0600. UX-REM-01 remains in progress.

@@ -2,6 +2,17 @@
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
+- Follow-up toolbar/microphone repair: authenticated Android utilities now use
+  a compact four-column, equal-height 3.25rem grid. An identical learner
+  transcript/retry target is deduplicated in embedded drills. The Learn microphone was present but
+  its consent listing returned 404 because the recovered Direct organization
+  was absent from the VPS voice allowlist. The exact Direct organization was
+  added alongside the existing entry; adult/onboarding requirements and all
+  consent/tenancy gates remain. Public live/ready pass. The installed APK is
+  `952ec833122d748f39de143fa17952ad6925a557ccde0a62aad7be83cf53ab91`
+  (83,050,623 bytes). Repository verify/e2e/build and Android build pass;
+  signed-in physical microphone/provider evidence remains open.
+
 - The owner rejected the anonymous circular Android header controls during the
   TalkBack session. They are replaced by a labeled compact action strip:
   explicit Account/Sign in, localized Theme and Language captions with current

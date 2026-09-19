@@ -438,3 +438,35 @@ with English-label condensation, and both the 200% reflow journey and the
 complete end-to-end gate then passed. UX-REM-01 remains in progress only for
 the previously recorded exact-200%, high-contrast, TalkBack/quiz and
 additional-device/API gates.
+
+### Equal toolbar and Learn microphone recovery — 19 September 2026
+
+The authenticated Android header now uses a compact fixed four-column,
+equal-height 3.25rem grid. Account, Appearance, Interface language and the live-AI allowance have
+the same outer dimensions; the Account wrapper and trigger stretch through
+the full grid row. Labels, native-select semantics and 48 CSS-pixel minimum
+targets are retained.
+
+The embedded lesson drill no longer renders the learner transcript as a
+second identical line when the deterministic retry prompt asks for that exact
+same sentence. A different prior answer remains visible, so correction context
+is retained without visually repeating `I can…` / `I cannot…` targets.
+
+The Learn microphone fallback was traced to the deployed API rather than the
+Android permission bridge. `GET /api/v1/voice-consents` returned 404 because
+the recovered `Global English Direct` organization identifier was not in the
+outside-repository `VOICE_ALLOWED_ORGANIZATION_IDS` value. The exact recovered
+Direct organization was added alongside the existing organization; the gate
+was not removed or widened globally. Its sole learner profile has both
+`adult_confirmed_at` and `onboarding_completed_at`. API, worker, scheduler and
+proxy were restarted coherently. Public live and ready endpoints returned 200.
+
+The final production debug APK was built against
+`https://ai.globalspokenenglish.com`, installed preserve-data on the
+RMX3085/API 33 and has SHA-256
+`952ec833122d748f39de143fa17952ad6925a557ccde0a62aad7be83cf53ab91`
+(83,050,623 bytes). `make verify` passed (SQLite 330/330, 3,147 assertions;
+PostgreSQL 361/361, 5,232 assertions; web 468/468), `make e2e` passed API 4/4
+and Playwright 30/30, `make build` passed, and the Android build passed 103
+tasks. A signed-in physical consent/recording attempt remains required; no
+provider-success claim is inferred from configuration and automated gates.

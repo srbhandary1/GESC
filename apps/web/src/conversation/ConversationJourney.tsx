@@ -47,7 +47,10 @@ import {
   FRIEND_SESSION_CONTENT,
   type FriendSessionType,
 } from './confidenceContent'
-import { lessonDrillDisplayLine } from './lessonDrillStepper'
+import {
+  lessonDrillDisplayLine,
+  lessonDrillNormalizeForMatch,
+} from './lessonDrillStepper'
 import './ConversationJourney.css'
 
 export interface ConversationJourneyProps {
@@ -1166,7 +1169,11 @@ export function ConversationJourney({
               {drillPrompt}
             </p>
           ) : null}
-          {drillRoom && lastTurn?.transcript ? (
+          {drillRoom &&
+          lastTurn?.transcript &&
+          (drillPrompt === null ||
+            lessonDrillNormalizeForMatch(lastTurn.transcript) !==
+              lessonDrillNormalizeForMatch(drillPrompt)) ? (
             <p className="conversation-journey__you-said" lang="en-IN">
               {lastTurn.transcript}
             </p>
