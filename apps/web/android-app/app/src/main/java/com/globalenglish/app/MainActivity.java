@@ -21,6 +21,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.AppTheme_NoActionBar);
         registerPlugin(GlobalEnglishSecureCredentialsPlugin.class);
         registerPlugin(GlobalEnglishSystemBrowserPlugin.class);
         registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
