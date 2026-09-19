@@ -42,7 +42,7 @@ export function InterfaceThemeControl({
       <span aria-hidden="true" className="shell-toolbar-icon">
         ◐
       </span>
-      <label className="visually-hidden" htmlFor="interface-theme">
+      <label className="visually-hidden shell-toolbar-caption" htmlFor="interface-theme">
         <LocalizedMessage resolution={message('shell.theme_label')} />
       </label>
       <select

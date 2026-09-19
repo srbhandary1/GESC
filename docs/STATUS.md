@@ -2,6 +2,15 @@
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
+- The owner rejected the anonymous circular Android header controls during the
+  TalkBack session. They are replaced by a labeled compact action strip:
+  explicit Account/Sign in, localized Theme and Language captions with current
+  values, and `AI · N min`. The native select and 48px target semantics remain
+  unchanged. Focused tests, `make verify`, `make e2e` (4/4 API; 30/30 browser)
+  and `make build` pass. The installed preserve-data APK SHA-256 is
+  `f68f3043f55d77882849a1d1b71f07b7b76846e4e49e8d84d1b2846f56aab750`
+  (83,050,623 bytes). TalkBack acceptance remains a human gate.
+
 - Follow-up defect `UXREM01-DEV-07` is closed on the same RMX3085/API 33:
   the dedicated sign-in route had retained the retired Studio dark shell and
   used the full 48px target as the visible Show-password checkbox. Commits

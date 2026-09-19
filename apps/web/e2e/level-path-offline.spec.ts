@@ -462,10 +462,20 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
 
         return {
           headerControls: metrics('.shell-header-toolbar > *'),
+          headerLabels: [
+            document.querySelector<HTMLElement>('.shell-account-dropdown__trigger')?.innerText.trim(),
+            document.querySelector<HTMLElement>('.shell-theme-control .shell-toolbar-caption')?.innerText.trim(),
+            document.querySelector<HTMLSelectElement>('#interface-theme')?.selectedOptions[0]?.text.trim(),
+            document.querySelector<HTMLElement>('.shell-locale-control .shell-toolbar-caption')?.innerText.trim(),
+            document.querySelector<HTMLSelectElement>('#interface-locale')?.selectedOptions[0]?.text.trim(),
+            document.querySelector<HTMLElement>('.shell-live-ai-chip__compact')?.innerText.trim(),
+          ],
           navigation: metrics('.ge-primary-navigation__link'),
         }
       })
 
+      expect(chromeMetrics.headerLabels).toHaveLength(6)
+      expect(chromeMetrics.headerLabels.every((label) => Boolean(label))).toBe(true)
       expect(chromeMetrics.navigation).toHaveLength(5)
       for (const target of chromeMetrics.navigation) {
         expect(target.height, JSON.stringify(target)).toBeGreaterThanOrEqual(48)

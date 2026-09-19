@@ -1115,7 +1115,7 @@ function App({
               <span aria-hidden="true" className="shell-toolbar-icon">
                 文
               </span>
-              <label className="visually-hidden" htmlFor="interface-locale">
+              <label className="visually-hidden shell-toolbar-caption" htmlFor="interface-locale">
                 <LocalizedMessage resolution={message('shell.locale_label')} />
               </label>
               <select

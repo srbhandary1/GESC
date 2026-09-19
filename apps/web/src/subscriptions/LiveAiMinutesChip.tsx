@@ -83,7 +83,7 @@ export function LiveAiMinutesChip({
         />
       </span>
       <span aria-hidden="true" className="shell-live-ai-chip__compact">
-        ◷ {Math.floor(seconds / 60)}
+        AI · {Math.floor(seconds / 60)} min
       </span>
     </button>
   )

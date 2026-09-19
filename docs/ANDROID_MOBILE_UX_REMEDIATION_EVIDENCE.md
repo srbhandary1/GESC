@@ -146,6 +146,27 @@ gate as passing.
 
 ## UX-REM-01 — Accessibility, reflow and adaptive layout
 
+### Recognizable Android header controls — 19 September 2026
+
+The Accountable Product Owner rejected the anonymous circular glyph toolbar as
+ambiguous and visually unprofessional during the physical TalkBack session.
+The phone header now uses one compact labeled action strip instead: Account or
+Sign in is written explicitly; Theme and Language show both their localized
+purpose label and current native-select value; and paid usage reads
+`AI · N min`. Controls remain at least 48 CSS pixels, retain native select
+semantics and use consistent rounded rectangles rather than unexplained
+circles. No account, locale, theme or entitlement behavior changed.
+
+Focused component tests pass, the authenticated 320/360/412 CSS-pixel
+Playwright journey passes in English and Kannada at 200% text, and the full
+repository gates remain green: `make verify`, `make e2e` (API 4/4; browser
+30/30) and `make build`. The final production-package debug APK SHA-256 is
+`f68f3043f55d77882849a1d1b71f07b7b76846e4e49e8d84d1b2846f56aab750`
+(83,050,623 bytes); preserve-data installation succeeded on the RMX3085. Its
+native accessibility hierarchy exposes localized Sign in, Theme, current
+theme, Language and current-language text. Human TalkBack journey results are
+still pending and are not inferred from the hierarchy.
+
 ### APP-0103 compact-title-bar continuation — 19 September 2026
 
 The Android authenticated header now keeps Language, Theme, paid minutes and

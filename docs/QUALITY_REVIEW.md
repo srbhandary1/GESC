@@ -2,6 +2,16 @@
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
+The follow-up Android header refinement replaces four anonymous circular
+glyphs with a consistent labeled toolbar. Localized purpose labels and current
+values are visible for Theme and Language; Account/Sign in is explicit; paid
+usage reads `AI · N min`. Native selects, account behavior, entitlement truth
+and 48px targets are preserved. Component tests, exact-width/200% Playwright,
+`make verify`, `make e2e` and `make build` pass. Preserve-data installation of
+APK `f68f3043…aab750` succeeded and its hierarchy exposes the expected labels.
+This closes the recognition defect only; it does not self-approve the ongoing
+human TalkBack journey.
+
 ### Scope reviewed
 
 - Recorded UX-REM-01 device defects `UXREM01-DEV-01` through `UXREM01-DEV-05`.

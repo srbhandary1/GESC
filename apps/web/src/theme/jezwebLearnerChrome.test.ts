@@ -49,6 +49,8 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('24px')
     expect(jezweb).toContain('lift bottom tabs above gesture/home indicators')
     expect(jezweb).toContain('text-wrap: balance')
+    expect(jezweb).toContain('repeat(auto-fit, minmax(3.75rem, 1fr))')
+    expect(jezweb).toContain('border-radius: 0.75rem')
     expect(jezweb).toContain('ge-primary-navigation__label')
     expect(jezweb).toContain('background: #ffffff')
     expect(jezweb).toContain('color: #1a1a1a')
