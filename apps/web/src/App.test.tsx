@@ -282,6 +282,9 @@ describe('localized application shell', () => {
     expect(
       await screen.findByLabelText(text('auth.password.username')),
     ).toBeInTheDocument()
+    const signInFrame = document.querySelector('.ge-application-frame')
+    expect(signInFrame).toHaveClass('ge-application-frame--studio-learner')
+    expect(signInFrame).toHaveClass('ge-application-frame--jezweb')
     expect(
       screen.queryByText(text('session.sign_in_hint')),
     ).not.toBeInTheDocument()

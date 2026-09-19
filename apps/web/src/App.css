@@ -1109,12 +1109,14 @@
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: min(var(--ge-space-2), 8px);
+  min-block-size: var(--ge-target-minimum);
 }
 
 .web-otp-sign-in__form input[type='checkbox'] {
-  inline-size: var(--ge-target-minimum);
-  block-size: var(--ge-target-minimum);
+  inline-size: 24px;
+  block-size: 24px;
   margin: 0;
+  accent-color: var(--ge-color-action);
 }
 
 .web-otp-sign-in__form label:has(input[type='checkbox']) > span {

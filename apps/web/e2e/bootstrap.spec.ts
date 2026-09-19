@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
 test('opens the dedicated sign-in page instead of the retired LPL-01 review aid', async ({
   page,
 }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/lpl01-reconciliation.html')
   await expect(
     page.getByRole('heading', {
@@ -24,6 +25,21 @@ test('opens the dedicated sign-in page instead of the retired LPL-01 review aid'
 
   await page.goto('/#sign-in')
   await expect(page.locator('#sign-in-title')).toBeVisible()
+
+  const frame = page.locator('.ge-application-frame')
+  await expect(frame).toHaveClass(/ge-application-frame--jezweb/u)
+  await expect(page.locator('.shell-sign-in-page__card')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  )
+
+  const showPassword = page.getByRole('checkbox', {
+    name: message('auth.password.show'),
+  })
+  await expect(showPassword).toHaveCSS('width', '24px')
+  await expect(showPassword).toHaveCSS('height', '24px')
+  const checkboxLabel = showPassword.locator('xpath=ancestor::label')
+  expect((await checkboxLabel.boundingBox())?.height).toBeGreaterThanOrEqual(48)
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])

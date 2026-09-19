@@ -9,6 +9,7 @@ describe('Jezweb Variant C learner chrome', () => {
   it('loads after Variant A chrome and keeps the five-destination flow', () => {
     const jezweb = readFileSync(resolve(themeDir, 'jezwebLearnerChrome.css'), 'utf8')
     const app = readFileSync(resolve(themeDir, '../App.tsx'), 'utf8')
+    const appStyles = readFileSync(resolve(themeDir, '../App.css'), 'utf8')
     const androidDownload = readFileSync(
       resolve(themeDir, '../marketing/androidDownload.ts'),
       'utf8',
@@ -53,6 +54,12 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('color: #1a1a1a')
     expect(jezweb).toContain('max-height: 32rem')
     expect(jezweb).toContain('text-wrap: nowrap')
+    expect(appStyles).toMatch(
+      /input\[type='checkbox'\]\s*\{[^}]*inline-size:\s*24px;[^}]*block-size:\s*24px;/su,
+    )
+    expect(appStyles).toMatch(
+      /label:has\(input\[type='checkbox'\]\)\s*\{[^}]*min-block-size:\s*var\(--ge-target-minimum\);/su,
+    )
     expect(jezweb).toMatch(
       /\.learner-home__title:focus-visible\s*\{\s*outline: none;/u,
     )

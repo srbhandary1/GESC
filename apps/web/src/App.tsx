@@ -867,7 +867,7 @@ function App({
               destination === 'home' ? ' ge-application-frame--home' : ''
             }${isNativeAndroid ? ' ge-application-frame--native-android' : ''}${
               isGuestSession
-                ? showGuestMiraHome
+                ? showGuestMiraHome || showDedicatedSignIn
                   ? ' ge-application-frame--studio ge-application-frame--studio-learner ge-application-frame--mira-learner ge-application-frame--jezweb'
                   : ' ge-application-frame--studio'
                 : isLearnerSession || demoMode

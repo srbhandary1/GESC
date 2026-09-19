@@ -205,7 +205,7 @@
     flex-direction: column;
     gap: 0.15rem;
     border-radius: 0.5rem;
-    font-size: 0.7rem;
+    font-size: 12px;
     font-weight: 650;
     letter-spacing: 0;
     line-height: 1.2;
@@ -241,6 +241,12 @@
     hyphens: none;
     line-break: auto;
     overflow-wrap: anywhere;
+  }
+
+  :lang(en) .ge-application-frame--jezweb .ge-primary-navigation__label {
+    white-space: nowrap;
+    transform: scaleX(0.88);
+    transform-origin: center;
   }
 
   .ge-application-frame--jezweb .ge-nav-glyph,
@@ -1147,7 +1153,7 @@
     gap: 0.15rem;
     padding: 0.35rem 0.15rem 0.15rem;
     border-radius: 0.5rem;
-    font-size: 0.7rem;
+    font-size: 12px;
     line-height: 1.2;
     overflow-wrap: break-word;
     text-align: center;
