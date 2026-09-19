@@ -63,7 +63,8 @@
 .ge-application-frame--native-android .ge-application-frame__header {
   padding-block-start: max(
     env(safe-area-inset-top, 0px),
-    var(--ge-native-safe-area-top, 0px)
+    var(--ge-native-safe-area-top, 0px),
+    24px
   );
   padding-inline: max(
     env(safe-area-inset-left, 0px),
