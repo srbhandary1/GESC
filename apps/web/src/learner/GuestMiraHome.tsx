@@ -28,11 +28,6 @@ export function GuestMiraHome({
     >
       <header className="phase1-home__hello">
         <div className="phase1-home__hello-copy">
-          <p className="phase1-home__greeting">
-            <LocalizedMessage
-              resolution={message('demo.phase1.home.greeting')}
-            />
-          </p>
           <h1 className="phase1-home__title" id="guest-mira-home-title" tabIndex={-1}>
             <LocalizedMessage resolution={message('demo.phase1.home.title')} />
           </h1>

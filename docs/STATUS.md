@@ -9,10 +9,11 @@
   top toolbar immediately beside Account; no allowance is fabricated for a
   signed-out session.
 - The product name remains the invariant English proper name in Kannada UI,
-  while the Kannada home greeting is now `ಶುಭ ದಿನ`. Catalogue revision
-  `ui-kn-IN-2026-09-19.2` remains `pending-independent-review` under ADR-0005.
+  while the single bold Kannada home greeting is now `ಶುಭ ದಿನ`. Catalogue
+  revision `ui-kn-IN-2026-09-19.3` remains `pending-independent-review` under
+  ADR-0005.
 - The legal footer identifies Northstar Enterprise Solutions Private Limited,
-  Mangalore and links `sales@northstar-es.in`.
+  Mangalore without displaying a sales email address.
 - Full gates pass: `make verify` (SQLite 330/330; PostgreSQL 360/360; web
   468/468), `make e2e` (API 4/4; Playwright 30/30) and `make build`.
 - Exact source `a6d36af` is active as immutable VPS release

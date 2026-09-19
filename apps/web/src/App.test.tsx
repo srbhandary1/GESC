@@ -252,9 +252,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('link', { name: text('legal.account_deletion') }),
     ).toHaveAttribute('href', '/account-deletion.html')
-    expect(
-      screen.getByRole('link', { name: 'sales@northstar-es.in' }),
-    ).toHaveAttribute('href', 'mailto:sales@northstar-es.in')
+    expect(screen.queryByText('sales@northstar-es.in')).not.toBeInTheDocument()
     expect(
       screen.getByText(/Developed by Northstar Enterprise Solutions Private Limited/),
     ).toBeInTheDocument()

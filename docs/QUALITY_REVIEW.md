@@ -15,8 +15,8 @@
 | App identity | Pass (automated + RMX3085 inspection) | Exact invariant proper name **Global Spoken English App** is no longer suppressed by native narrow-screen CSS |
 | Utility controls | Pass (automated) | Native toolbar is end-aligned; guest Theme and Language selects retain accessible labels and three theme choices |
 | AI allowance | Pass | Existing API-authoritative chip remains immediately before Account for authenticated Android and web sessions; no guest value is invented |
-| Kannada greeting | Pass with human gate | `demo.phase1.home.greeting` is `ಶುಭ ದಿನ`; canonical hash validates; independent review remains open |
-| Developer attribution | Pass (automated) | Footer contains the supplied legal company name and a `mailto:sales@northstar-es.in` link |
+| Kannada greeting | Pass with human gate | The single bold home heading is `ಶುಭ ದಿನ`; the duplicate small greeting and `ಇಂದು` heading are absent; independent review remains open |
+| Developer attribution | Pass (automated) | Footer contains the supplied legal company name and no sales email address |
 | Focused tests | Pass | App/theme 24/24; localization 36/36; workspace typecheck green |
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468 |
 | `make e2e` | Pass after bounded reflow repair | API 4/4; Playwright 30/30; guest Theme at 320px/400% no longer expands its toolbar |

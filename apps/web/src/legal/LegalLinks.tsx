@@ -20,8 +20,7 @@ export function LegalLinks({ message }: LegalLinksProps) {
         </a>
       </nav>
       <p className="shell-developer-credit" lang="en-IN">
-        Developed by Northstar Enterprise Solutions Private Limited – Mangalore ·{' '}
-        <a href="mailto:sales@northstar-es.in">sales@northstar-es.in</a>
+        Developed by Northstar Enterprise Solutions Private Limited – Mangalore
       </p>
     </footer>
   )

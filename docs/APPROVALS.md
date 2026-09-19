@@ -3284,9 +3284,10 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 - Expose the existing System/Light/Dark selector to signed-out users and keep
   the authoritative live-AI allowance beside the account menu for signed-in
   learners.
-- Correct the Kannada home greeting to `ಶುಭ ದಿನ` while retaining
-  `pending-independent-review`, and add the supplied Northstar developer and
-  sales-email attribution to the application footer.
+- Correct the Kannada home greeting to one bold `ಶುಭ ದಿನ` while retaining
+  `pending-independent-review`, and add the supplied Northstar developer
+  attribution to the application footer. The owner's follow-up removes the
+  email address from that footer.
 - Preserve authentication, entitlement, payment, content-publication, locale,
   API and storage semantics. This approval does not close independent Kannada
   review or the missing lesson-media gate.
