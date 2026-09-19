@@ -16,7 +16,9 @@
   `5499b696b43eef4dff1726a94c02c4e9801a4ad2e357fb84146124b71eb9b117`
   (83,050,785 bytes), and its packaged web assets pass the same vendor-brand
   scan. ADB currently reports no connected device, so install and physical
-  alignment acceptance remain open.
+  alignment acceptance remain open. Git `c9f612b` is active as immutable VPS
+  release `/srv/global-spoken-english/releases/c9f612b`; public live/ready,
+  privacy-page vendor scan and downloadable-APK hash all pass.
 - Follow-up toolbar/microphone repair: authenticated Android utilities now use
   a compact four-column, equal-height grid. An identical learner
   transcript/retry target is deduplicated in embedded drills. The Learn microphone was present but

@@ -582,3 +582,25 @@ return HTTP 200. The final Android candidate SHA-256 is
 `952ec833122d748f39de143fa17952ad6925a557ccde0a62aad7be83cf53ab91`
 (83,050,623 bytes). A signed-in physical consent and recording attempt remains
 required before claiming live microphone/provider success.
+
+### Compact toolbar and provider-category disclosure — 19 September 2026
+
+Git `c9f612b` is active at immutable release
+`/srv/global-spoken-english/releases/c9f612b`; the preceding release remains
+the rollback target. External environment, runtime storage, dependencies and
+provider routing were preserved. There is no schema or migration change.
+
+The initial restart stopped the previous processes and then failed closed
+because the new immutable path did not contain repository-local toolchain
+binaries. Restarting with the installed `/srv/global-spoken-english/toolchain`
+Node, pnpm and PHP paths restored API, worker, scheduler, internal Caddy and
+public Caddy. Public `/api/v1/health/live` and `/api/v1/health/ready` return
+HTTP 200.
+
+The deployed public privacy page and production web bundle contain no Sarvam,
+Azure or ElevenLabs branding; they retain provider-category, purpose,
+failover, retention, withdrawal, refusal and no-training disclosure. The
+published debug APK SHA-256 is
+`5499b696b43eef4dff1726a94c02c4e9801a4ad2e357fb84146124b71eb9b117`
+(83,050,785 bytes), exactly matching the local candidate. Temporary deployment
+archives and verification downloads were deleted from the VPS and workstation.

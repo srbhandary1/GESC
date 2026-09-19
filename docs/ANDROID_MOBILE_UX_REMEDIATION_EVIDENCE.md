@@ -499,3 +499,12 @@ SHA-256 is
 (83,050,785 bytes), and a scan of its packaged web assets found none of the
 three vendor brands. No ADB device was connected, so this candidate has not
 yet received physical toolbar-alignment acceptance.
+
+Git `c9f612b` is deployed at immutable VPS release
+`/srv/global-spoken-english/releases/c9f612b`; the preceding release remains
+available for rollback. The first restart attempt correctly stopped the old
+processes but required the installed Node, pnpm and PHP paths to be supplied
+explicitly. A subsequent idempotent start restored API, worker, scheduler,
+internal proxy and public proxy. Public live and ready return HTTP 200, the
+deployed privacy page passes the vendor-brand scan, and the public APK matches
+the local candidate at SHA-256 `5499b696…b9b117` and 83,050,785 bytes.

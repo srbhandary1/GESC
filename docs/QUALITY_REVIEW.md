@@ -10200,6 +10200,7 @@ semantic changed. The VPS environment backup
 | Provider behavior | Unchanged | Internal adapters, routes, credentials, failover limits, retention and no-training controls were not changed |
 | Automated evidence | Pass | Focused Vitest 6 files / 25 tests; typecheck; `make verify` (SQLite 330/330, PostgreSQL 361/361 with 5,231 assertions, web 468/468); `make e2e` API 4/4 and Playwright 30/30; `make build`; production-bundle vendor-brand scan passed |
 | Android package | Pass / physical pending | `make android-closed-beta`: 103 tasks, BUILD SUCCESSFUL; APK `5499b696…b9b117`, 83,050,785 bytes; packaged web-asset vendor scan passed; no ADB device was connected for install/visual acceptance |
+| VPS deployment | Pass | Git `c9f612b` active at immutable `/srv/global-spoken-english/releases/c9f612b`; prior release retained; public live/ready return 200; deployed privacy scan passes; public APK hash/size match local candidate |
 
 The provider category disclosure follows ADR-0007, which requires category,
 purpose, retention, deletion and refusal consequences but does not require a
