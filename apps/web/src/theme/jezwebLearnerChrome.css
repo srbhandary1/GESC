@@ -898,10 +898,10 @@
     height: var(--ge-target-minimum);
     place-items: center;
     padding: 0;
-    border: 1px solid rgb(255 255 255 / 0.5);
+    border: 1px solid #006b3f;
     border-radius: 999px;
-    background: rgb(255 255 255 / 0.12);
-    color: #ffffff;
+    background: #e8f4ed;
+    color: #006b3f;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
