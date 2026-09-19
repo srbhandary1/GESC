@@ -32,6 +32,14 @@ test('opens the dedicated sign-in page instead of the retired LPL-01 review aid'
     'background-color',
     'rgb(255, 255, 255)',
   )
+  await expect(page.locator('#web-password-username')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  )
+  await expect(page.locator('#web-password-username')).toHaveCSS(
+    'color',
+    'rgb(26, 26, 26)',
+  )
 
   const showPassword = page.getByRole('checkbox', {
     name: message('auth.password.show'),

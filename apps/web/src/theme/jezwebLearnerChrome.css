@@ -475,6 +475,27 @@
 }
 
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page__card {
+  border-color: #c8ddd3;
+  box-shadow: 0 18px 44px rgb(16 32 25 / 0.12);
+  color-scheme: light;
+}
+
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page__close {
+  border-color: #a5cdb9;
+  background: #ffffff;
+  color: #005533;
+}
+
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page__eyebrow {
+  border-color: #a5cdb9;
+  background: #e8f4ed;
+  color: #005533;
+}
+
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
   .shell-sign-in-page__header h1,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .shell-sign-in-page__lede,
@@ -483,6 +504,17 @@
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .web-otp-sign-in__form input:not([type='checkbox']) {
   color: var(--ge-color-text);
+}
+
+.ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page
+  .web-otp-sign-in__form
+  input:not([type='checkbox']) {
+  border-color: #9fb9ad;
+  background: #ffffff;
+  color: #1a1a1a;
+  caret-color: #006b3f;
+  -webkit-text-fill-color: #1a1a1a;
 }
 
 .ge-application-frame--jezweb .ge-primary-navigation__link::before {
