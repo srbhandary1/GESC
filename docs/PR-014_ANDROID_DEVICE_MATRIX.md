@@ -138,6 +138,36 @@ seven current-phone rows and 58 of 64 audit §10 non-N/A cells unmarked. No
 application fix, production release, Play release or live payment was
 authorized or performed.
 
+## UX-REM-01 physical acceptance rerun (2026-09-19)
+
+This is checkpoint-specific evidence on the same RMX3085/API-33 handset, not a
+new DM assignment and not evidence for another API level, gesture navigation,
+the authentication journeys above or the negative-storage checklist.
+
+| Field | Value |
+|---|---|
+| Repository implementation | `1bdea67` |
+| Installed APK | SHA-256 `28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`; 83,050,428 bytes |
+| Device | realme RMX3085 (`RMX3085L1`), Android 13 / API 33, WebView 151.0.7922.199, three-button navigation |
+| Exact narrow viewport | 1080 physical px / density 540 = 320 CSS px through OEM Display size |
+| Restored state | Font 1.0; density 408; rotation free; high contrast Off; TalkBack Off |
+
+| UX-REM-01 row | Result | Evidence note |
+|---|---|---|
+| TalkBack first use → quiz → result → Plans return | **NOT RUN** | Learner has completed first use and no published levels; Plans-only return test failed as described below |
+| English 200% | **FAIL / exact 2.0 NOT RUN** | OEM maximum is 1.6; `Progress` split with an isolated final letter |
+| Kannada 200% | **FAIL / exact 2.0 NOT RUN** | OEM maximum is 1.6; destination labels wrapped awkwardly |
+| 320 CSS portrait + short landscape | **FAIL** | Exact-320 portrait visually bounded; short landscape left heading/content unusably constrained |
+| Split-screen task preservation | **PASS** | App task entered split-screen-primary with Settings secondary; signed-in task and navigation survived |
+| Sticky quiz action with IME and both navigation modes | **NOT RUN** | No quiz available and device remained three-button; Speak Type-instead separately failed because the focused field/Send action vanished above IME |
+| High contrast | **FAIL** | Bottom-navigation labels faded into the white background |
+| Plans close/focus return | **FAIL** | Continue free left Plans expanded; system Back closed it but focused Home instead of the opener |
+
+Bounded remediation defects `UXREM01-DEV-01` through `UXREM01-DEV-06` are
+owned by the remediation evidence package. No application fix was made during
+this device run, and no existing §10 cell was upgraded beyond the explicitly
+observed split-screen sub-result.
+
 ### Emulator substitute note (2026-08-07)
 
 | Field | Value |

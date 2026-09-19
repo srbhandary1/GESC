@@ -223,7 +223,8 @@ attached by USB to the MacBook. Pin one candidate APK before recording results.
 - [ ] Kannada at 200% text has no clipped label, control or essential content.
 - [ ] 320 CSS px portrait and short-height landscape have no document-level
       horizontal overflow.
-- [ ] Split-screen remains usable and preserves current task state.
+- [x] Split-screen remains usable and preserves current task state. Evidence:
+      [UX-REM-01 physical-device rerun](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026).
 - [ ] The sticky quiz action is visible with IME open/closed and both gesture
       and three-button navigation.
 - [ ] High contrast preserves legibility and the active destination remains
@@ -659,7 +660,7 @@ Do not mark a row complete without a linked artefact and exact candidate SHA.
 | Order | Checkpoint | State | Owner | Required evidence | Completed |
 |---:|---|---|---|---|---|
 | 0 | UX-REM-00 Device evidence path | Complete | Android engineer / tester | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path); Git `b1660dc`; APK `fffbcec…665012` | 2026-09-18 |
-| 1 | UX-REM-01 Accessibility/reflow | In progress — implementation complete; physical acceptance open | Frontend/Android engineer | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-01--accessibility-reflow-and-adaptive-layout); APK `e132cc2…41db9`; automated gates green; physical rows remain unchecked | |
+| 1 | UX-REM-01 Accessibility/reflow | In progress — implementation complete; physical rerun found bounded failures | Frontend/Android engineer | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026); installed APK `28bda09…dcfff4c`; split-screen passed; enlarged text, short landscape, IME visibility, high contrast, Plans focus return and TalkBack/quiz evidence remain open | |
 | 2 | UX-REM-02 Back/restoration | Not started | Frontend/Android engineer | API 35/36 Back + lifecycle/offline evidence | |
 | 3 | UX-REM-03 Copy/completion cues | Not started | Product designer / frontend engineer | Copy review + comprehension evidence | |
 | 4 | UX-REM-04 Quiz/result hierarchy | Not started | Product designer / frontend engineer | Tests + representative-user evidence | |

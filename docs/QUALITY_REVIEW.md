@@ -23,14 +23,14 @@
 | Android build | Pass | Commit `1bdea67`; Gradle tests/assemble `BUILD SUCCESSFUL` (103 tasks); SHA-256 `28bda09e…dcfff4c`, 83,050,428 bytes |
 | Stable-host deployment | Pass | Immutable release `/srv/global-spoken-english/releases/1bdea6793424`; public live/ready pass; readiness 27 pass / 1 existing publication warning / 0 fail; published APK hash matches |
 | RMX3085 installation | Pass | Preserve-data `adb install -r` succeeded on the connected API-33 handset |
-| RMX3085 visual inspection | Pending unlock | Installed app opened to the device's secure lock screen; Plans/Progress evidence not inferred; temporary hierarchy deleted |
+| RMX3085 visual inspection | Pass with human gate | Authenticated Kannada Progress and Plans rendered corrected interface copy; authoritative API plan names and intentional English-learning content remain English; independent linguistic approval remains open; temporary captures deleted |
 
 ### Verdict
 
-Repository implementation, packaging, stable-host deployment and preserve-data
-installation pass. Final Plans/Progress visual inspection awaits one handset
-unlock. The Kannada copy remains an implementation draft pending independent
-human linguistic and accessibility review under ADR-0005.
+Repository implementation, packaging, stable-host deployment, preserve-data
+installation and the bounded Plans/Progress visual inspection pass. The
+Kannada copy remains an implementation draft pending independent human
+linguistic and accessibility review under ADR-0005.
 
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 
@@ -113,7 +113,7 @@ secret rotation, Dashboard webhook evidence and the open RMX3085 checkout-inset
 defect repaired and retested. Existing UX-REM-01 physical accessibility gates
 remain independent.
 
-## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
+## UX-REM-01 accessibility, reflow and adaptive layout — 19 September 2026
 
 ### Scope reviewed
 
@@ -139,17 +139,28 @@ remain independent.
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
 | `make build` | Pass | Production Vite/Laravel build; existing chunk warning only |
 | Android package | Pass | `BUILD SUCCESSFUL in 7s`; installed/on-device SHA `e132cc26…9941db9`, 82,981,429 bytes |
-| RMX3085 exact 200%/320px | Blocked | OEM denies shell `WRITE_SETTINGS` and `WRITE_SECURE_SETTINGS`; settings remained 1.0/408 |
-| Authenticated physical journey | Not run | Installed state is public guest Home; no authenticated result inferred |
+| Initial RMX3085 shell attempt | Blocked, superseded in part below | OEM denied shell `WRITE_SETTINGS` and `WRITE_SECURE_SETTINGS`; the later settings-UI run reached density 540 but the device still offers no 2.0 font setting |
+| Initial authenticated physical journey | Not run, superseded in part below | Initial installed state was public guest Home; the later unlocked run covered authenticated Home/Progress/Plans/Speak but not first use or quiz |
 | API 36 AVD | Blocked | No KVM; software AVD reached API 36 ADB but never `sys.boot_completed` or focused an app |
-| TalkBack / split-screen | Not run | Requires completed physical interaction; browser evidence does not replace it |
+| Initial TalkBack / split-screen attempt | Not run, superseded in part below | Later split-screen passed; TalkBack critical journey remains not run |
+| Exact 320 CSS px | Partial physical pass | OEM Large display size produced density 540 on 1080px (exact 320 CSS px); portrait visually bounded, short landscape failed usable reflow |
+| Split-screen | Pass on RMX3085/API 33 | App task entered split-screen-primary alongside Settings, preserved the signed-in task and remained navigable |
+| Enlarged text | Fail on RMX3085 maximum 1.6 | English `Progress` isolated its final letter; Kannada destination labels wrapped awkwardly; exact 2.0 remains unavailable |
+| IME-open fallback | Fail | Speak → Type instead focused the field and Android reported IME open, but the field and Send action were not visible above the keyboard |
+| OEM high contrast | Fail | Bottom-navigation labels faded into the white background |
+| Plans return/focus | Fail | Continue free left Plans expanded; system Back closed it but focused Home instead of the opener |
+| TalkBack / physical quiz CTA | Not run | Current learner has completed first use and has no published levels; no result is inferred |
+| Evidence-update `make verify` | Pass | Composer audit/Pint/PHPStan; SQLite 330/330 (3,147 assertions); PostgreSQL 360/360 (5,224 assertions); locale/OpenAPI/release/soft-launch, lint and typecheck; web 467/467 |
 
 ### Verdict
 
-The UX-REM-01 implementation and automated acceptance are complete. The
-checkpoint remains **in progress**, not complete, because every physical
-device criterion in the remediation plan is still unchecked. No later
-checkpoint may start without passing evidence or an explicit residual decision.
+The UX-REM-01 implementation and automated acceptance are complete. One
+physical row (split-screen task preservation) now passes, but the checkpoint
+remains **in progress** because enlarged text, short landscape, IME visibility,
+high contrast, Plans focus return, TalkBack and physical quiz evidence remain
+open. Bounded defects `UXREM01-DEV-01` through `UXREM01-DEV-06` are recorded;
+no fixes were made. No later checkpoint may start without passing evidence or
+an explicit residual decision.
 
 Detailed evidence:
 [Android Mobile UX Remediation Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-01--accessibility-reflow-and-adaptive-layout).

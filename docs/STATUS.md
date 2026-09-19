@@ -24,8 +24,10 @@
   match at SHA-256
   `28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`
   (83,050,428 bytes), and its preserve-data installation succeeded.
-- Final physical inspection of Plans/Progress awaits one handset unlock. The
-  temporary locked-screen hierarchy and staging/download copies were deleted.
+- RMX3085 physical inspection now passes the implementation check for Kannada
+  Progress and Plans copy. Authoritative API plan names and intentional English
+  learning content remain English; independent Kannada linguistic approval is
+  still open. Temporary screenshots and UI hierarchies were deleted.
 
 ## KANNADA-ONBOARDING-FIX-01 first-use catalogue correction — 18 September 2026
 
@@ -99,7 +101,7 @@
   long-lived use. The RMX3085 test also found provider-owned checkout controls
   below the three-button navigation inset; that device defect remains open.
 
-## UX-REM-01 accessibility, reflow and adaptive layout — 18 September 2026
+## UX-REM-01 accessibility, reflow and adaptive layout — 19 September 2026
 
 - D-0320 records the bounded adaptive-layout implementation under D-0319. All
   five ADR-0026 destinations remain; no navigation history, quiz behavior,
@@ -118,11 +120,37 @@
 - Installed candidate SHA-256 is
   `e132cc26dc9250420fe8bcb0be1c1283c37a4c9c66da81e518f23fe739941db9`
   (82,981,429 bytes). Android's on-device hash matches exactly.
-- UX-REM-01 remains **in progress**. The RMX3085 currently exposes only guest
-  Home; OEM policy rejected shell font/density changes, and the API 36 AVD
-  could not complete a software-only boot without KVM. TalkBack, authenticated
-  physical 200%/320px, split-screen, landscape, IME and high-contrast rows are
-  therefore still open. UX-REM-02 has not started.
+- The initial locked/guest attempt could not establish physical acceptance:
+  shell font/density writes were rejected and the API 36 AVD could not finish
+  a software-only boot without KVM. The authenticated follow-up below
+  supersedes the RMX3085 guest-state limitation; the API 36 limitation remains.
+
+### 19 September authenticated physical rerun
+
+- The current installed candidate is commit `1bdea67`, APK SHA-256
+  `28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`
+  (83,050,428 bytes), on realme RMX3085 / Android 13 / API 33 / three-button
+  navigation. Split-screen entered through Android task APIs and preserved the
+  signed-in app task, so that single device-acceptance row is now evidenced.
+- Exact 320 CSS pixels was reached through the OEM Large display-size preset
+  (1080px at density 540). Portrait remained visually bounded, but short
+  landscape was unusably constrained. At the OEM maximum font scale 1.6,
+  English `Progress` split off its final letter and Kannada destination labels
+  wrapped awkwardly; exact 2.0 remains unavailable and unclaimed.
+- Physical failures were also reproduced for IME-open Type-instead action
+  visibility, high-contrast bottom-navigation legibility, and Plans
+  close/focus restoration. TalkBack first-use/quiz/result and the physical
+  quiz CTA remain not run because the signed-in learner has completed first
+  use and has no published levels.
+- Bounded defects `UXREM01-DEV-01` through `UXREM01-DEV-06` are recorded in
+  the remediation evidence. No app behavior changed and UX-REM-02 did not
+  start. Original font/density/rotation/accessibility settings were restored;
+  all temporary screenshots and UI dumps were deleted from workstation and
+  handset.
+- The documentation-only evidence update passed `make verify`: SQLite 330/330,
+  PostgreSQL 360/360, web 467/467, with static, contract, locale and security
+  gates green. The first sandboxed attempt stopped at Composer audit solely
+  because DNS was blocked; the network-enabled rerun passed.
 
 ## UX-REM-00 Android candidate and device evidence path — 18 September 2026
 

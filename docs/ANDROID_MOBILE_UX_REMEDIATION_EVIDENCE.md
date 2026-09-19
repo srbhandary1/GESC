@@ -232,7 +232,8 @@ emulator was stopped cleanly. No API 36 acceptance cell is marked PASS.
 - [ ] English and Kannada pass on a device at its maximum font setting, with
       exact 200% evidence from a capable device/emulator.
 - [ ] Exact 320 CSS-pixel portrait and short-height physical landscape pass.
-- [ ] Physical split-screen preserves state and remains usable.
+- [x] Physical split-screen preserves state and remains usable. Evidence:
+      [19 September physical-device rerun](#physical-device-rerun--19-september-2026).
 - [ ] Physical quiz CTA remains visible with IME open/closed.
 - [ ] Physical high-contrast navigation remains legible and non-colour-only.
 
@@ -240,3 +241,59 @@ UX-REM-01 implementation is complete, but the checkpoint remains **in
 progress** because these physical/human acceptance conditions are not yet
 evidenced. UX-REM-02 must not start until they pass or the Accountable Product
 Owner explicitly accepts a bounded residual.
+
+### Physical-device rerun — 19 September 2026
+
+The production-package debug APK from implementation commit `1bdea67` was
+exercised on the authenticated realme RMX3085 (`RMX3085L1`), Android 13 / API
+33, WebView 151.0.7922.199 and three-button navigation. The installed APK is
+SHA-256 `28bda09e06d7b062171bdcdc6c41f90c1e89d30630926d38597b8a2a2dcfff4c`
+(83,050,428 bytes). This rerun does not copy API-33 results to another device,
+API level or navigation mode.
+
+The OEM settings UI, rather than a privileged shell override, provided the
+maximum font preset and exact narrow-width proxy. `Very large` produced
+`font_scale=1.6`; the device exposes no 2.0 option. The `Large` display-size
+preset produced density 540 on the 1080-pixel display, which is exactly 320
+CSS pixels at DPR 3.375. Original font scale 1.0, density 408, free rotation,
+high-contrast Off and TalkBack Off were restored after the run.
+
+| Acceptance observation | Result | Evidence |
+|---|---|---|
+| Kannada Progress and Plans catalogue correction | PASS (visual implementation check) | Progress empty-state, Plans entitlement, benefits, totals and Continue-free copy rendered in Kannada; authoritative API plan names and English-learning content remained intentionally English; independent linguistic approval remains open |
+| English enlarged text | FAIL at device maximum; exact 200% NOT RUN | At 1.6, `Progress` wrapped with an isolated final `s`; the OEM has no 2.0 setting |
+| Kannada enlarged text | FAIL at device maximum; exact 200% NOT RUN | At 1.6, Home and Speak labels wrapped awkwardly across lines; the OEM has no 2.0 setting |
+| 320 CSS-pixel portrait | PASS (visual) | Density 540 produced an exact 320 CSS-pixel viewport; authenticated Kannada Home and all five destinations remained visible without observed horizontal clipping |
+| 320 CSS-pixel short landscape | FAIL | No horizontal crop was observed, but the brand heading stacked almost word-by-word and the fixed bottom navigation consumed a disproportionate share of the short viewport, leaving the content surface unusably constrained |
+| Split-screen task preservation | PASS | Android reported the app task `mode=split-screen-primary` and Settings `mode=split-screen-secondary`; the signed-in Home task, controls and navigation remained available after the configuration change |
+| IME action visibility | FAIL | In Kannada Speak → Type instead, Android reported `mInputShown=true` and a 1554-pixel WebView; the focused text field and Send action were not visible above the keyboard |
+| High-contrast navigation | FAIL | OEM High contrast colours made bottom-navigation labels fade into the white background; the active treatment was therefore not reliably legible |
+| Plans close and focus return | FAIL | Continue free focused the Plans opener but left Plans expanded; system Back closed Plans but moved focus to the Home destination instead of the originating opener |
+| TalkBack critical journey | NOT RUN | Current learner has completed first use and has no published levels/quiz. No TalkBack, first-use, full-quiz or result pass is inferred |
+| Physical quiz CTA with IME open/closed | NOT RUN | No published level or quiz was available for the authenticated learner; the separate Speak Type-instead failure does not substitute for quiz evidence |
+
+#### Bounded defects opened — no fixes in this evidence run
+
+| ID | Defect | Owner | Disposition |
+|---|---|---|---|
+| UXREM01-DEV-01 | Bottom-destination text reflow is not robust at the RMX3085 maximum 1.6 font scale in English or Kannada; exact 2.0 remains unevidenced | Frontend/Android engineer | Repair and retest at 1.6 plus exact 2.0 on a capable device/emulator |
+| UXREM01-DEV-02 | Exact-320-CSS short landscape leaves the heading and content area unusably constrained | Frontend/Android engineer / product designer | Repair responsive hierarchy and rerun portrait/landscape evidence |
+| UXREM01-DEV-03 | Speak Type-instead field and Send action disappear when the IME opens | Frontend/Android engineer | Repair native inset/scroll/focus behavior; regression-test without changing learner text storage |
+| UXREM01-DEV-04 | OEM high-contrast mode fades bottom-navigation labels against the white background | Frontend engineer | Repair header/navigation-scoped high-contrast styling and verify non-colour active state |
+| UXREM01-DEV-05 | Plans return actions do not both close the surface and restore focus to the opener | Frontend engineer | Repair close/history/focus contract and cover Continue-free plus system Back |
+| UXREM01-DEV-06 | TalkBack first-use/quiz/result and physical quiz-CTA evidence cannot run with the current learner because first use is complete and no levels are published | Product/content owner + accessibility tester | Provision a non-production test learner with published test content, then execute the exact journey |
+
+Temporary screenshots and UI hierarchy dumps were inspected during the run,
+then deleted from workstation `/tmp` and handset `/sdcard`. They were not
+committed, copied to the VPS or retained as production data.
+
+The documentation-only evidence update passed `make verify`: Composer audit,
+Pint and PHPStan passed; SQLite passed 330/330 (3,147 assertions), PostgreSQL
+passed 360/360 (5,224 assertions), locale/OpenAPI/release/soft-launch checks,
+lint and typecheck passed, and web tests passed 467/467. The initial sandboxed
+attempt stopped at Composer audit because DNS was unavailable; the identical
+command passed when rerun with network access.
+
+UX-REM-01 remains **in progress**. UX-REM-02 has not started. Advancing still
+requires passing evidence for the open rows or an explicit Accountable Product
+Owner decision accepting each bounded residual.

@@ -29,7 +29,7 @@ Automated axe scans alone do **not** satisfy production accessibility sign-off.
 
 | Path | Commit | Tester | Date | Result |
 |---|---|---|---|---|
-| | | | | |
+| Authenticated Kannada Home, Progress, Plans, Speak/IME and system accessibility settings on realme RMX3085 / API 33 | `1bdea67` / APK `28bda09…dcfff4c` | Codex device run via ADB | 2026-09-19 | **FAIL / partial:** split-screen preserved task and exact-320 portrait was visually bounded; enlarged text, short landscape, IME action visibility, high contrast and Plans focus restoration failed; TalkBack critical journey not run |
 
 ## Limitations recorded under APP-0032
 
