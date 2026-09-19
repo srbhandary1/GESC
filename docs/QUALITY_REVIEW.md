@@ -12,7 +12,7 @@
 
 | Check | Result | Evidence |
 |---|---|---|
-| App identity | Pass (automated) | Existing localized `app.name` is no longer suppressed by native narrow-screen CSS |
+| App identity | Pass (automated + RMX3085 inspection) | Exact invariant proper name **Global Spoken English App** is no longer suppressed by native narrow-screen CSS |
 | Utility controls | Pass (automated) | Native toolbar is end-aligned; guest Theme and Language selects retain accessible labels and three theme choices |
 | AI allowance | Pass | Existing API-authoritative chip remains immediately before Account for authenticated Android and web sessions; no guest value is invented |
 | Kannada greeting | Pass with human gate | `demo.phase1.home.greeting` is `ಶುಭ ದಿನ`; canonical hash validates; independent review remains open |

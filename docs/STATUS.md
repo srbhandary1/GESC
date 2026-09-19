@@ -8,7 +8,8 @@
 - Authenticated learners retain the API-authoritative live-AI allowance in the
   top toolbar immediately beside Account; no allowance is fabricated for a
   signed-out session.
-- The Kannada home greeting is now `ಶುಭ ದಿನ`. Catalogue revision
+- The product name remains the invariant English proper name in Kannada UI,
+  while the Kannada home greeting is now `ಶುಭ ದಿನ`. Catalogue revision
   `ui-kn-IN-2026-09-19.2` remains `pending-independent-review` under ADR-0005.
 - The legal footer identifies Northstar Enterprise Solutions Private Limited,
   Mangalore and links `sales@northstar-es.in`.
