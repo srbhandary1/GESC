@@ -2,6 +2,15 @@
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
+- Follow-up defect `UXREM01-DEV-07` is closed on the same RMX3085/API 33:
+  the dedicated sign-in route had retained the retired Studio dark shell and
+  used the full 48px target as the visible Show-password checkbox. Commits
+  `0ffc768` and `62b256e` move sign-in to the accepted light Variant C shell,
+  give fields and supporting controls explicit light/high-contrast styling,
+  and use a 24px checkbox inside a 48px label target. The exact installed APK
+  SHA-256 is `9401de821afee803d3f58d71810ff00c93dda20c41328ba1d3543c39c103a98c`
+  (83,050,623 bytes). Physical inspection confirms the light card/fields and
+  correctly scaled checkbox. `make verify` and `make e2e` (30/30) pass.
 - D-0319/D-0320 remain the authority. This is a bounded UX-REM-01 continuation
   for recorded defects `UXREM01-DEV-01` through `UXREM01-DEV-05`. UX-REM-02
   has not started.

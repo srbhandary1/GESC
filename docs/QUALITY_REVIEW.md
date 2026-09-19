@@ -5,6 +5,7 @@
 ### Scope reviewed
 
 - Recorded UX-REM-01 device defects `UXREM01-DEV-01` through `UXREM01-DEV-05`.
+- Follow-up sign-in contrast/checkbox defect `UXREM01-DEV-07`.
 - Overlay Plans close/focus versus learner-history Back.
 - Speak typed-fallback IME visibility without changing stored utterance
   content.
@@ -29,6 +30,9 @@
 | Speak IME form | Pass on device | Type instead leaves the focused field and complete Send action above the visible keyboard |
 | Plans return focus | Pass on device | Explicit Close and three-button system Back both dismiss Plans and focus `shell-live-ai-minutes` |
 | High contrast | Not run on repaired APK | Shell mutation was denied for lack of `WRITE_SECURE_SETTINGS`; no result inferred |
+| Sign-in surface | Pass on RMX3085/API 33 | Variant C light card and white fields with dark text remain readable under System appearance; badge and Close control use green contrast |
+| Show-password control | Pass on RMX3085/API 33 | 24 CSS-pixel visible checkbox inside a minimum 48 CSS-pixel label target; no oversized checkbox |
+| Final exact APK | Pass | Git `62b256e`; SHA-256 `9401de…a98c`; 83,050,623 bytes; preserve-data install succeeded |
 | TalkBack / quiz CTA | Not run | `UXREM01-DEV-06` still needs a non-production learner with published levels |
 
 ### Verdict

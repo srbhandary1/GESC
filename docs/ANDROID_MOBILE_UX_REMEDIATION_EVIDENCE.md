@@ -382,3 +382,38 @@ The phone was restored to Kannada, `font_scale=1.0`, automatic rotation,
 high-contrast Off and TalkBack Off. Every temporary `uxrem01-*` screenshot
 and UI hierarchy file was deleted from both workstation `/tmp` and handset
 `/sdcard`; none was committed or retained.
+
+### Sign-in contrast and checkbox follow-up — 19 September 2026
+
+Physical inspection of the next installed candidate identified
+`UXREM01-DEV-07`: the dedicated guest sign-in route received only the legacy
+Studio class, producing a dark low-visibility page, while the visible
+Show-password checkbox consumed the entire 48 CSS-pixel accessibility target.
+The 48px requirement belongs to the tappable label row, not the checkbox
+glyph.
+
+Commits `0ffc768` and `62b256e` assign the accepted Variant C learner shell to
+the dedicated sign-in route, explicitly pin its card, inputs, caret, badge and
+close control to readable light colours, and render a 24px checkbox inside a
+minimum 48px label target. A dark-system-preference Playwright regression
+asserts a white card/input, `#1a1a1a` input text, a 24×24 checkbox, a label at
+least 48px high and an axe-clean page.
+
+The production-wrapper debug APK from exact commit `62b256e` built
+successfully (103 Gradle tasks), has SHA-256
+`9401de821afee803d3f58d71810ff00c93dda20c41328ba1d3543c39c103a98c`
+and is 83,050,623 bytes. Preserve-data installation succeeded on the
+RMX3085/API 33. Physical inspection confirmed the light card and fields,
+high-contrast supporting controls and correctly scaled checkbox. The
+temporary random test text was cleared, and all screenshots/UI dumps were
+deleted from workstation and handset.
+
+Final gates: `make verify` passed (SQLite 330/330, 3,147 assertions;
+PostgreSQL 360/360, 5,227 assertions; web 468/468), `make e2e` passed API 4/4
+and Playwright 30/30, and the production-wrapper APK build passed. The first
+full end-to-end attempt exposed an 11.2px navigation-font regression from the
+earlier maximum-font repair; it was corrected to the accepted 12px minimum
+with English-label condensation, and both the 200% reflow journey and the
+complete end-to-end gate then passed. UX-REM-01 remains in progress only for
+the previously recorded exact-200%, high-contrast, TalkBack/quiz and
+additional-device/API gates.
