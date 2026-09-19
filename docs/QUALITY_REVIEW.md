@@ -1,5 +1,31 @@
 # Quality review
 
+## APP-0104 native home identity and utility-bar correction — 19 September 2026
+
+### Scope reviewed
+
+- Native home-header identity, control alignment and guest theme access.
+- Authenticated live-AI/account adjacency, Kannada greeting governance and
+  developer attribution.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| App identity | Pass (automated) | Existing localized `app.name` is no longer suppressed by native narrow-screen CSS |
+| Utility controls | Pass (automated) | Native toolbar is end-aligned; guest Theme and Language selects retain accessible labels and three theme choices |
+| AI allowance | Pass | Existing API-authoritative chip remains immediately before Account for authenticated Android and web sessions; no guest value is invented |
+| Kannada greeting | Pass with human gate | `demo.phase1.home.greeting` is `ಶುಭ ದಿನ`; canonical hash validates; independent review remains open |
+| Developer attribution | Pass (automated) | Footer contains the supplied legal company name and a `mailto:sales@northstar-es.in` link |
+| Focused tests | Pass | App/theme 24/24; localization 36/36; workspace typecheck green |
+
+### Verdict
+
+The bounded source correction passes focused automated review. Full repository,
+Android package, VPS deployment and physical-device evidence are recorded after
+the exact committed candidate is built and promoted. Kannada linguistic review
+and all existing UX-REM-01/content residuals remain open.
+
 ## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
 
 ### Scope reviewed

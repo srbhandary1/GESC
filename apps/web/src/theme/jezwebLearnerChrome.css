@@ -822,7 +822,8 @@
     .shell-header-actions {
     width: auto;
     min-width: 0;
-    align-items: flex-start;
+    justify-self: end;
+    align-items: flex-end;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
@@ -831,7 +832,7 @@
     width: auto;
     max-width: 100%;
     flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 4px;
     overflow: visible;
   }
@@ -955,12 +956,21 @@
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
-    .shell-studio-brand__name,
-  .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-header-actions__notice,
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-locale-note {
     display: none;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-studio-brand__name {
+    display: block;
+    max-width: 9.5rem;
+    color: #173d2e;
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.15;
+    white-space: normal;
   }
 
   .ge-application-frame--jezweb .shell-content {

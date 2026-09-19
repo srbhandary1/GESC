@@ -216,6 +216,12 @@ describe('localized application shell', () => {
     expect(document.querySelector('.marketing-landing')).toBeNull()
 
     expect(screen.getAllByText(text('app.name')).length).toBeGreaterThan(0)
+    expect(screen.getByText('ಶುಭ ದಿನ')).toBeInTheDocument()
+    const themeControl = screen.getByRole('combobox', {
+      name: text('shell.theme_label'),
+    })
+    expect(themeControl).toBeInTheDocument()
+    expect(within(themeControl).getAllByRole('option')).toHaveLength(3)
     expect(screen.getByRole('img', { name: text('tutor.name') })).toBeInTheDocument()
     const header = document.querySelector('header')
     expect(header).not.toBeNull()
@@ -246,6 +252,12 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('link', { name: text('legal.account_deletion') }),
     ).toHaveAttribute('href', '/account-deletion.html')
+    expect(
+      screen.getByRole('link', { name: 'sales@northstar-es.in' }),
+    ).toHaveAttribute('href', 'mailto:sales@northstar-es.in')
+    expect(
+      screen.getByText(/Developed by Northstar Enterprise Solutions Private Limited/),
+    ).toBeInTheDocument()
     expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
     expect(
       screen

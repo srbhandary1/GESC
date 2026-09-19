@@ -1075,14 +1075,12 @@ function App({
                 />
               </a>
             ) : null}
-            {isGuestSession ? null : (
             <InterfaceThemeControl
               locale={locale}
               localizationPolicy={localizationPolicy}
               onPreferenceChange={setThemePreference}
               preference={themePreference}
             />
-            )}
             <div className="shell-locale-control shell-locale-control--compact">
               <span aria-hidden="true" className="shell-toolbar-icon">
                 文

@@ -624,9 +624,20 @@ body {
 }
 
 @media (max-width: 30rem) {
-  .shell-header-toolbar .shell-theme-control,
+  .shell-header-toolbar .shell-theme-control {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
   .shell-header-toolbar .shell-theme-control__select {
     width: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
     justify-content: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

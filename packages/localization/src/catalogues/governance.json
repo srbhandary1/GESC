@@ -15,8 +15,8 @@
   "catalogues": {
     "kn-IN": {
       "locale": "kn-IN",
-      "revision": "ui-kn-IN-2026-09-19.1",
-      "catalogueHash": "sha256:7be46eed3ff73785cf7cedc92ca89335a7f4ed432c8d38b4a0a36efbbe12cb84",
+      "revision": "ui-kn-IN-2026-09-19.2",
+      "catalogueHash": "sha256:b08b62d31743e80805f222ab2d8e8aeaf6e9a1a09ba89834bb8b6aa1dfdc00e1",
       "sourceLocale": "en-IN",
       "sourceRevision": "ui-en-IN-2026-09-19.1",
       "sourceHash": "sha256:0490aa91c53deb85fa111a8d364353afbd8e9a294199a0fdba8ee43a170511d6",

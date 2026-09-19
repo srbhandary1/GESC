@@ -171,6 +171,19 @@
   color: inherit;
 }
 
+.shell-developer-credit {
+  margin: 0;
+  padding-block-end: 0.75rem;
+  color: var(--ge-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.shell-developer-credit a {
+  color: inherit;
+  font-weight: 650;
+}
+
 .shell-header-toolbar .shell-header-authentication,
 .shell-header-toolbar .shell-android-download,
 .shell-header-toolbar .shell-live-ai-chip,

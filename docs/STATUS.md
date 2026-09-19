@@ -1,5 +1,21 @@
 # Repository status
 
+## APP-0104 native home identity and utility-bar correction — 19 September 2026
+
+- D-0325 records the bounded correction: the native header now visibly names
+  **Global Spoken English App**, keeps compact utilities right aligned, and
+  exposes the existing System/Light/Dark selector to signed-out users.
+- Authenticated learners retain the API-authoritative live-AI allowance in the
+  top toolbar immediately beside Account; no allowance is fabricated for a
+  signed-out session.
+- The Kannada home greeting is now `ಶುಭ ದಿನ`. Catalogue revision
+  `ui-kn-IN-2026-09-19.2` remains `pending-independent-review` under ADR-0005.
+- The legal footer identifies Northstar Enterprise Solutions Private Limited,
+  Mangalore and links `sales@northstar-es.in`.
+- Focused App/theme tests pass 24/24, localization tests pass 36/36, and the
+  workspace typecheck passes. Full repository/package/deployment evidence is
+  recorded after the exact candidate is built and promoted.
+
 ## APP-0103 compact title-bar and Direct-content recovery — 19 September 2026
 
 - D-0324 records the bounded title-bar continuation. On Android-sized native

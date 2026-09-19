@@ -3260,6 +3260,37 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0104"></a>
+
+## APP-0104 — Native home identity and utility-bar correction
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; bounded implementation and deployment authorized |
+| Decision date | 2026-09-19 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated here |
+| Roles exercised | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Owner's home-page identity, alignment, theme, Kannada greeting, entitlement and developer-attribution correction instruction |
+| Related decision | [D-0325](DECISIONS.md) |
+| Recorder | Codex, acting as implementation agent and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA unavailable while authored |
+| Master-plan amendment | None |
+
+### Accepted scope and limits
+
+- Make the existing Global Spoken English App name visible in the native home
+  header and right-align the compact utility controls.
+- Expose the existing System/Light/Dark selector to signed-out users and keep
+  the authoritative live-AI allowance beside the account menu for signed-in
+  learners.
+- Correct the Kannada home greeting to `ಶುಭ ದಿನ` while retaining
+  `pending-independent-review`, and add the supplied Northstar developer and
+  sales-email attribution to the application footer.
+- Preserve authentication, entitlement, payment, content-publication, locale,
+  API and storage semantics. This approval does not close independent Kannada
+  review or the missing lesson-media gate.
+
 <a id="app-0103"></a>
 
 ## APP-0103 — Compact Android title-bar and governed Direct-content recovery
