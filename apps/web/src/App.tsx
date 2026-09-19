@@ -40,6 +40,7 @@ import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
+import { SessionAccountMenu } from './auth/SessionAccountMenu'
 import type { ConversationJourneyApi, FriendSession } from './conversation/ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
@@ -938,23 +939,12 @@ function App({
                     onOpenAccount={openAccountBilling}
                   />
                 ) : null}
-                <button
-                  aria-controls="session-account-security"
-                  aria-expanded={accountSecurityVisible}
-                  className="shell-header-authentication"
-                  onClick={() =>
-                    setAccountSecurityOpen((current) => !current)
-                  }
-                  type="button"
-                >
-                  <LocalizedMessage
-                    resolution={message('session.account_menu')}
-                  />
-                </button>
-                <button
-                  className="shell-header-authentication shell-header-authentication--quiet"
-                  type="button"
-                  onClick={() => {
+                <SessionAccountMenu
+                  accountLabel={message('session.account_menu').text}
+                  accountSettingsLabel={message('session.account_settings').text}
+                  signOutLabel={message('session.android_sign_out').text}
+                  onOpenAccount={() => setAccountSecurityOpen(true)}
+                  onSignOut={() => {
                     void androidAuthentication
                       .logout()
                       .then(() => {
@@ -965,11 +955,7 @@ function App({
                       })
                       .catch(() => setSession({ status: 'unavailable' }))
                   }}
-                >
-                  <LocalizedMessage
-                    resolution={message('session.android_sign_out')}
-                  />
-                </button>
+                />
               </>
             ) : null}
             {!demoMode &&
@@ -1031,22 +1017,12 @@ function App({
                     onOpenAccount={openAccountBilling}
                   />
                 ) : null}
-                <button
-                  aria-controls="session-account-security"
-                  aria-expanded={accountSecurityVisible}
-                  className="shell-header-authentication"
-                  onClick={() =>
-                    setAccountSecurityOpen((current) => !current)
-                  }
-                  type="button"
-                >
-                  <LocalizedMessage
-                    resolution={message('session.account_menu')}
-                  />
-                </button>
-                <button
-                  className="shell-header-authentication shell-header-authentication--quiet"
-                  onClick={() => {
+                <SessionAccountMenu
+                  accountLabel={message('session.account_menu').text}
+                  accountSettingsLabel={message('session.account_settings').text}
+                  signOutLabel={message('session.android_sign_out').text}
+                  onOpenAccount={() => setAccountSecurityOpen(true)}
+                  onSignOut={() => {
                     const webAuth = isWebSessionAuthentication(authentication)
                       ? authentication
                       : null
@@ -1066,12 +1042,7 @@ function App({
                         setSession({ status: 'unavailable' })
                       })
                   }}
-                  type="button"
-                >
-                  <LocalizedMessage
-                    resolution={message('session.android_sign_out')}
-                  />
-                </button>
+                />
               </>
             ) : null}
             {!demoMode &&
@@ -1103,6 +1074,9 @@ function App({
             />
             )}
             <div className="shell-locale-control shell-locale-control--compact">
+              <span aria-hidden="true" className="shell-toolbar-icon">
+                文
+              </span>
               <label className="visually-hidden" htmlFor="interface-locale">
                 <LocalizedMessage resolution={message('shell.locale_label')} />
               </label>

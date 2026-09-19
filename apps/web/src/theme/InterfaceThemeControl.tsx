@@ -39,6 +39,9 @@ export function InterfaceThemeControl({
 
   return (
     <div className="shell-theme-control shell-theme-control--compact">
+      <span aria-hidden="true" className="shell-toolbar-icon">
+        ◐
+      </span>
       <label className="visually-hidden" htmlFor="interface-theme">
         <LocalizedMessage resolution={message('shell.theme_label')} />
       </label>

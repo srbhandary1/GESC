@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation and Completion Plan"
-status: "Execution in progress under D-0319; UX-REM-01 implementation complete with physical acceptance open"
+status: "Execution in progress under D-0319; UX-REM-01 implementation and APP-0103 title-bar continuation complete with physical acceptance open"
 prepared: "18 September 2026"
 canonical_baseline: "ENTERPRISE_PRODUCT_MASTER_PLAN.md version 3.15"
 repository_baseline: "b1660dc"
@@ -660,7 +660,7 @@ Do not mark a row complete without a linked artefact and exact candidate SHA.
 | Order | Checkpoint | State | Owner | Required evidence | Completed |
 |---:|---|---|---|---|---|
 | 0 | UX-REM-00 Device evidence path | Complete | Android engineer / tester | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path); Git `b1660dc`; APK `fffbcec…665012` | 2026-09-18 |
-| 1 | UX-REM-01 Accessibility/reflow | In progress — implementation complete; physical rerun found bounded failures | Frontend/Android engineer | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026); installed APK `28bda09…dcfff4c`; split-screen passed; enlarged text, short landscape, IME visibility, high contrast, Plans focus return and TalkBack/quiz evidence remain open | |
+| 1 | UX-REM-01 Accessibility/reflow | In progress — implementation and APP-0103 title-bar continuation complete; physical rerun found bounded failures | Frontend/Android engineer | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026); APP-0103 compact-toolbar browser evidence; installed APK `28bda09…dcfff4c`; split-screen passed; enlarged text, short landscape, IME visibility, high contrast, Plans focus return and TalkBack/quiz evidence remain open | |
 | 2 | UX-REM-02 Back/restoration | Not started | Frontend/Android engineer | API 35/36 Back + lifecycle/offline evidence | |
 | 3 | UX-REM-03 Copy/completion cues | Not started | Product designer / frontend engineer | Copy review + comprehension evidence | |
 | 4 | UX-REM-04 Quiz/result hierarchy | Not started | Product designer / frontend engineer | Tests + representative-user evidence | |

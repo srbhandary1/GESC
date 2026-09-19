@@ -7,6 +7,7 @@ namespace App\Curriculum\LessonPractice;
 use App\Models\LessonPracticeBlueprint;
 use App\Models\LessonPracticeMedia;
 use App\Models\LessonPracticeReview;
+use Illuminate\Support\Facades\DB;
 
 /**
  * LPL-05: read-only completeness matrix for Direct lesson-practice Levels 1–17.
@@ -17,9 +18,9 @@ final class DirectPathwayCommissioningAuditService
 
     public const string APPROVAL = 'WAVE-7.1';
 
-    private const string ORG_ID = '01KYS97G7MX374P303XJHDXT72';
+    private const string ORGANIZATION_SYSTEM_KEY = 'global-english-direct';
 
-    private const string PROGRAM_ID = '01KZNK3BWD8A8NJ5A5JW0ZVZMT';
+    private const string PROGRAM_KEY = 'global-spoken-english-lpl-pilot';
 
     public function __construct(
         private readonly LessonPracticeBlueprintValidator $validator,
@@ -30,6 +31,13 @@ final class DirectPathwayCommissioningAuditService
      */
     public function audit(): array
     {
+        $organizationId = (string) DB::table('organizations')
+            ->where('system_key', self::ORGANIZATION_SYSTEM_KEY)
+            ->value('id');
+        $programId = $organizationId === '' ? '' : (string) DB::table('programs')
+            ->where('organization_id', $organizationId)
+            ->where('key', self::PROGRAM_KEY)
+            ->value('id');
         $concepts = config('level_sessions.level_concepts', []);
         $levels = [];
         $matrix = [
@@ -52,7 +60,12 @@ final class DirectPathwayCommissioningAuditService
                 continue;
             }
 
-            $row = $this->auditLevel($levelNumber, $conceptKey);
+            $row = $this->auditLevel(
+                $organizationId,
+                $programId,
+                $levelNumber,
+                $conceptKey,
+            );
             $levels[] = $row;
 
             if (($row['availability'] ?? '') === 'available') {
@@ -82,8 +95,8 @@ final class DirectPathwayCommissioningAuditService
         return [
             'checkpoint' => self::CHECKPOINT,
             'approval_reference' => self::APPROVAL,
-            'organization_id' => self::ORG_ID,
-            'program_id' => self::PROGRAM_ID,
+            'organization_id' => $organizationId,
+            'program_id' => $programId,
             'levels_configured' => $enabled,
             'levels_commissioned' => $commissioned,
             'levels_complete' => $complete,
@@ -97,11 +110,15 @@ final class DirectPathwayCommissioningAuditService
     /**
      * @return array<string, mixed>
      */
-    private function auditLevel(int $levelNumber, string $conceptKey): array
-    {
+    private function auditLevel(
+        string $organizationId,
+        string $programId,
+        int $levelNumber,
+        string $conceptKey,
+    ): array {
         $blueprint = LessonPracticeBlueprint::query()
-            ->where('organization_id', self::ORG_ID)
-            ->where('program_id', self::PROGRAM_ID)
+            ->where('organization_id', $organizationId)
+            ->where('program_id', $programId)
             ->where('concept_key', $conceptKey)
             ->where('state', 'published')
             ->orderByDesc('revision_number')
@@ -122,7 +139,7 @@ final class DirectPathwayCommissioningAuditService
         $canonical = $blueprint->canonical_json;
         $contentHash = (string) $blueprint->content_hash;
         $media = LessonPracticeMedia::query()
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $organizationId)
             ->where('blueprint_id', $blueprint->getKey())
             ->orderBy('part_order')
             ->get();
@@ -133,11 +150,13 @@ final class DirectPathwayCommissioningAuditService
             ->all();
 
         $englishReview = $this->hasReview(
+            $organizationId,
             (string) $blueprint->getKey(),
             $contentHash,
             'english_academic',
         );
         $kannadaReview = $this->hasReview(
+            $organizationId,
             (string) $blueprint->getKey(),
             $contentHash,
             'kannada',
@@ -221,12 +240,13 @@ final class DirectPathwayCommissioningAuditService
     }
 
     private function hasReview(
+        string $organizationId,
         string $blueprintId,
         string $contentHash,
         string $reviewKind,
     ): bool {
         return LessonPracticeReview::query()
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $organizationId)
             ->where('blueprint_id', $blueprintId)
             ->where('review_kind', $reviewKind)
             ->where('blueprint_content_hash', $contentHash)

@@ -113,6 +113,41 @@ secret rotation, Dashboard webhook evidence and the open RMX3085 checkout-inset
 defect repaired and retested. Existing UX-REM-01 physical accessibility gates
 remain independent.
 
+## APP-0103 compact title-bar and governed Direct-content recovery — 19 September 2026
+
+### Scope reviewed
+
+- Compact Android authenticated title-bar controls and Account/Sign-out menu.
+- Six-catalogue key parity and governance revisions.
+- Installation-independent, read-only Direct commissioning audit resolution.
+- Backup-first recovery inventory for the missing VPS Levels 1–17.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Account menu | Pass | Dedicated component tests cover open, Account action, Sign out, blur and Escape; App integration keeps Sign out unavailable until the menu is opened |
+| Compact controls | Pass (browser) | Language/theme retain native selects and accessible names; native header controls are 48×48 and horizontal at narrow widths |
+| 320px / 200% regression | Pass | `level-path-offline.spec.ts` exact affected journey passes with no document overflow |
+| Catalogue contract | Pass | Six catalogues include `session.account_settings`; canonical governance hashes validate; five expected non-English independent-review warnings remain |
+| Tenant/program resolution | Pass | `DirectPathwayCommissioningAuditTest` proves result IDs equal the current seeded stable-key records rather than fixed ULIDs |
+| Production rollback point | Pass | Encrypted VPS backup `soft-launch-20260919T035337Z.sql.gz.enc`; SHA-256 `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d` |
+| Restore-set reconciliation | Pass | 17 latest published blueprints, 68 attachments, 67 unique audio assets; concepts and current published IDs reconcile to the LPL-05 wave evidence |
+| Accepted media bytes | Blocked safely | None of the 67 exact MP3 objects is present in the local lesson-media store or recovered archives; importer stopped before any production content write |
+| `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468; static, localization, contract and security gates green |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
+| `make build` | Pass | Production Laravel/Vite build completed; existing large-chunk advisory only |
+
+### Verdict
+
+The title-bar behavior and portable read-only commissioning audit pass their
+repository gates. The 17-level production restoration is **not complete** and
+no production content row was written: importing metadata without the 67
+hash-matching private objects would violate ADR-0004 and produce broken lesson
+delivery. Recovery may resume only after those exact objects are restored from
+the authorized legacy source or another verified backup. UX-REM-01's existing
+physical-device residuals remain open and are not reclassified by this work.
+
 ## UX-REM-01 accessibility, reflow and adaptive layout — 19 September 2026
 
 ### Scope reviewed

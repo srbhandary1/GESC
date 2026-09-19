@@ -3260,6 +3260,49 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0103"></a>
+
+## APP-0103 — Compact Android title-bar and governed Direct-content recovery
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; bounded implementation and recovery attempt authorized |
+| Decision date | 2026-09-19 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | Accountable Product Owner in the active Codex conversation; personal name not restated here |
+| Roles exercised | Accountable Product Owner; Technical Decision Owner |
+| Evidence source | Owner's title-bar/layout questions followed by the instruction to complete the required next steps |
+| Related decision | [D-0324](DECISIONS.md) |
+| Recorder | Codex, acting as implementation agent and evidence recorder |
+| Repository revision | The commit containing this record; exact SHA unavailable while authored |
+| Master-plan amendment | None |
+
+### Exact human statements
+
+```text
+Why cant the language , the system light dark and system theme, sign out,
+account be small menu items with drop downs aligned in the top titlebar left
+and horizontally?
+Why are the 17 lessons not open?
+
+Complete the Required next steps
+```
+
+### Accepted scope and limits
+
+- Consolidate Account and Sign out into an accessible compact menu and render
+  language, system-theme and paid-minutes controls as a bounded horizontal
+  Android title-bar toolbar without changing the accepted Variant C identity,
+  locale semantics, authentication or entitlement behavior.
+- Attempt restoration of the already accepted Direct Levels 1–17 only through
+  a backup-first, hash-verified, tenant-remapped import. Never fabricate media,
+  reviews, rights or publication authority and never import records without
+  the exact accepted private objects.
+- This authorization does not make unavailable source media complete. The
+  recovery attempt must stop safely when any accepted object is absent.
+- Non-English catalogue changes remain implementation drafts pending the
+  independent reviews required by ADR-0005.
+
 <a id="app-0102"></a>
 
 ## APP-0102 — Kannada learner-interface catalogue correction

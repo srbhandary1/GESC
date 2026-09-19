@@ -217,12 +217,65 @@
   cursor: pointer;
 }
 
+.shell-account-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.shell-account-dropdown__trigger {
+  gap: 0.4rem;
+}
+
+.shell-account-dropdown__menu {
+  position: absolute;
+  z-index: 40;
+  inset-block-start: calc(100% + 0.4rem);
+  inset-inline-start: 0;
+  display: grid;
+  min-inline-size: 11rem;
+  padding: 0.35rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: var(--ge-radius-md);
+  background: var(--ge-color-surface);
+  box-shadow: var(--ge-shadow-panel);
+}
+
+.shell-account-dropdown__menu button {
+  min-block-size: var(--ge-target-minimum);
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-radius: var(--ge-radius-sm);
+  background: transparent;
+  color: var(--ge-color-text);
+  font: inherit;
+  font-weight: 650;
+  text-align: start;
+  cursor: pointer;
+}
+
+.shell-account-dropdown__menu button:hover,
+.shell-account-dropdown__menu button:focus-visible {
+  background: var(--ge-color-surface-muted);
+}
+
+.shell-account-dropdown__menu .shell-account-dropdown__sign-out {
+  color: var(--ge-color-danger);
+}
+
+.shell-toolbar-icon {
+  display: none;
+}
+
 .shell-live-ai-chip {
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--ge-color-brass) 45%, white);
   background: color-mix(in srgb, var(--ge-color-brass-soft) 24%, white);
   color: var(--ge-color-ink);
   cursor: pointer;
+}
+
+.shell-live-ai-chip__compact {
+  display: none;
 }
 
 .shell-live-ai-chip:hover,

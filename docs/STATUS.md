@@ -1,5 +1,35 @@
 # Repository status
 
+## APP-0103 compact title-bar and Direct-content recovery — 19 September 2026
+
+- D-0324 records the bounded title-bar continuation. On Android-sized native
+  chrome, Language and Theme remain accessible native selects but render as
+  compact 48×48 icon-led controls; Account and Sign out are consolidated into
+  one keyboard-operable menu; and the paid-minutes control uses compact
+  icon-plus-value presentation. Variant C and all underlying semantics remain
+  unchanged.
+- The exact 320 CSS-pixel/200% browser journey now passes without horizontal
+  overflow. Account-menu component coverage, App integration coverage,
+  typecheck, lint, all six catalogue contracts, `make verify`, `make e2e`
+  (API 4/4; Playwright 30/30) and `make build` pass.
+- Direct commissioning audit lookup now uses the stable organization key
+  `global-english-direct` and programme key
+  `global-spoken-english-lpl-pilot`, not workstation-specific ULIDs.
+- Before any VPS content write, an encrypted production backup was created at
+  `/home/globalenglish/ge-offsite-backups/soft-launch-20260919T035337Z.sql.gz.enc`
+  with SHA-256
+  `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d`.
+- The exact accepted restore set is 17 latest published blueprints, 68 media
+  attachments and 67 unique private audio objects. The database metadata is
+  available locally, but the 67 accepted audio bytes are no longer present in
+  the local private object store or recovered archives. The import therefore
+  stopped before writing production. The VPS still has zero Direct lesson
+  media, so its 17 levels correctly remain unavailable rather than becoming
+  corrupt metadata-only lessons.
+- Required recovery input: restore the 67 exact MP3 objects from the legacy
+  authorized source or another verified backup. Each byte stream must match
+  its recorded SHA-256 before the tenant-remapped import can proceed.
+
 ## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
 
 - APP-0102/D-0323 continue the owner-reported Kannada mixed-language defect as

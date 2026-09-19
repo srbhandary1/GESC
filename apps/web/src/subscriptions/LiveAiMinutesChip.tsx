@@ -69,11 +69,16 @@ export function LiveAiMinutesChip({
       title={openAccountLabel}
       type="button"
     >
-      <LocalizedMessage
-        resolution={message('subscription.chip_minutes', {
-          minutes: String(Math.floor(seconds / 60)),
-        })}
-      />
+      <span className="shell-live-ai-chip__full">
+        <LocalizedMessage
+          resolution={message('subscription.chip_minutes', {
+            minutes: String(Math.floor(seconds / 60)),
+          })}
+        />
+      </span>
+      <span aria-hidden="true" className="shell-live-ai-chip__compact">
+        ◷ {Math.floor(seconds / 60)}
+      </span>
     </button>
   )
 }

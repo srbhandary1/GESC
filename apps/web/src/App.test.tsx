@@ -723,8 +723,11 @@ describe('localized application shell', () => {
       }),
     ).not.toBeInTheDocument()
 
+    await user.click(account)
     await user.click(
-      screen.getByRole('button', { name: text('session.android_sign_out') }),
+      screen.getByRole('menuitem', {
+        name: text('session.android_sign_out'),
+      }),
     )
     expect(authentication.logout).toHaveBeenCalledOnce()
     expect(globalThis.location.hash).toBe('#home')
@@ -769,7 +772,12 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
 
     await user.click(
-      screen.getByRole('button', { name: text('session.android_sign_out') }),
+      screen.getByRole('button', { name: text('session.account_menu') }),
+    )
+    await user.click(
+      screen.getByRole('menuitem', {
+        name: text('session.android_sign_out'),
+      }),
     )
 
     expect(authentication.logout).toHaveBeenCalledOnce()
@@ -976,6 +984,7 @@ describe('localized application shell', () => {
   })
 
   it('shows account menu for signed-in Android learners', async () => {
+    const user = userEvent.setup()
     vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
     vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
 
@@ -1007,8 +1016,11 @@ describe('localized application shell', () => {
         name: text('session.account_menu'),
       }),
     ).toHaveAttribute('aria-expanded', 'false')
+    await user.click(
+      screen.getByRole('button', { name: text('session.account_menu') }),
+    )
     expect(
-      screen.getByRole('button', {
+      screen.getByRole('menuitem', {
         name: text('session.android_sign_out'),
       }),
     ).toBeInTheDocument()

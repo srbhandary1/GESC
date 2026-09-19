@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 implementation complete with physical acceptance open"
+status: "UX-REM-00 complete; UX-REM-01 implementation and APP-0103 title-bar continuation complete with physical acceptance open"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -145,6 +145,22 @@ authenticated learner journey, fresh-install permission row or Play/release
 gate as passing.
 
 ## UX-REM-01 — Accessibility, reflow and adaptive layout
+
+### APP-0103 compact-title-bar continuation — 19 September 2026
+
+The Android authenticated header now keeps Language, Theme, paid minutes and
+Account in one compact left-started toolbar. Language and Theme remain native
+selects with unchanged accessible labels and choices. Account opens a
+keyboard-operable menu containing Account settings and Sign out; Escape and
+focus departure close it. All interactive controls retain at least 48×48 CSS
+pixels. No authentication, entitlement, locale-persistence, navigation or
+authoritative-record semantic changed.
+
+Automated evidence is green: component and App integration tests, the exact
+320 CSS-pixel/200% Playwright regression, typecheck, lint, six-catalogue
+validation, `make verify`, `make e2e` (30/30 browser journeys) and `make build`.
+This browser evidence does not overwrite the existing RMX3085 failures or
+close the still-required physical/TalkBack rows below.
 
 ### Implementation evidence
 
