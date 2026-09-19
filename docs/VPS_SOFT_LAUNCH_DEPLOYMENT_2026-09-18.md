@@ -502,6 +502,40 @@ attempt is
 No lesson content was written: the 67 accepted MP3 objects are absent from the
 available local object store/backups, so the governed importer stopped safely.
 
+### Direct Levels 1–17 governed recovery completion — 19 September 2026
+
+The later authorized read-only legacy-source recovery located all 67 accepted
+lesson-audio objects. Exact SHA-256 and byte-size verification passed for all
+67 files (300,247,014 bytes total). Before the successful write, the encrypted
+rollback backup
+`/home/globalenglish/ge-offsite-backups/soft-launch-20260919T071925Z.sql.gz.enc`
+was created with SHA-256
+`9bdf4a3cc801c220a842c93366723bf906b60ff562ad848db61421d8dfd145af`.
+
+The media pipeline used `/usr/bin/ffprobe` 6.1.1 and the digest-pinned
+`clamav/clamav:1.5.4_base` container on loopback port 3310. Governed ingest
+accepted 67/67 assets and recorded 67 approved rights confirmations. Source
+revision `1dea1cb` removed workstation-ULID coupling from the APP-0063/65/66/67
+and WAVE-7.1 paths by resolving the Direct organization, programme, curriculum
+version and commissioner from stable keys.
+
+Level 1's published canonical lesson was recovered from the isolated metadata
+backup and remapped to VPS-local media, metadata and rights identifiers through
+`LessonPracticeAttachmentService`. Levels 2–17 completed their governed
+authoring/review stages. WAVE-7.1 then published all 17 levels. The final LPL-05
+result is 17 configured, 17 commissioned, 17 complete, `all_complete=true`;
+all matrix totals are 17. A real Direct learner projection separately returned
+17/17 levels as `available`, from `can` to `used_to`.
+
+The recovery appointment was revoked, the temporary commissioner role was
+detached and retired, and the brief second-admin grant required to satisfy the
+no-self-revocation rule was removed. VPS/workstation staging, legacy session
+artifacts, scripts and the isolated restore database were deleted. The
+encrypted rollback backup remains. Public `/api/v1/health/live` and
+`/api/v1/health/ready` both returned HTTP 200 (`ok` / `ready`). Readiness as
+the service account reports 27 pass / 1 unrelated Content Studio active-head
+warning / 0 fail. Media bytes and secrets were not committed to Git.
+
 ## APP-0104 native-home identity deployment — 19 September 2026
 
 The exact implementation candidate is Git `a6d36af69ee51d1a0069a1e85f6f4f8b141c3c80`.

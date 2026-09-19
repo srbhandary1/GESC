@@ -86,29 +86,37 @@
   enforce the existing NoActionBar theme before bridge creation. The final
   hierarchy contains no `android:id/action_bar_container`; the title bar has
   one logo and horizontally aligned 48px green/tint icon controls.
-- Final source commit `f6e0881` is active as immutable VPS release
-  `/srv/global-spoken-english/releases/f6e0881`. Public live/ready pass and the
-  readiness gate reports 27 pass / 1 content-publication warning / 0 fail.
+- Title-bar source commit `f6e0881` remains the packaged Android UI baseline;
+  commissioning fix `1dea1cb` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/1dea1cb`. Public live/ready pass.
   The installed and public debug APK SHA-256 is
   `3e5e495851301ce181ea94c599e3f4402054b1b296722b4d89bf5ee1ce03a97c`
   (83,050,611 bytes).
 - Direct commissioning audit lookup now uses the stable organization key
   `global-english-direct` and programme key
   `global-spoken-english-lpl-pilot`, not workstation-specific ULIDs.
-- Before any VPS content write, an encrypted production backup was created at
-  `/home/globalenglish/ge-offsite-backups/soft-launch-20260919T035337Z.sql.gz.enc`
+- Before the successful recovery write, an encrypted production backup was
+  created at
+  `/home/globalenglish/ge-offsite-backups/soft-launch-20260919T071925Z.sql.gz.enc`
   with SHA-256
-  `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d`.
-- The exact accepted restore set is 17 latest published blueprints, 68 media
-  attachments and 67 unique private audio objects. The database metadata is
-  available locally, but the 67 accepted audio bytes are no longer present in
-  the local private object store or recovered archives. The import therefore
-  stopped before writing production. The VPS still has zero Direct lesson
-  media, so its 17 levels correctly remain unavailable rather than becoming
-  corrupt metadata-only lessons.
-- Required recovery input: restore the 67 exact MP3 objects from the legacy
-  authorized source or another verified backup. Each byte stream must match
-  its recorded SHA-256 before the tenant-remapped import can proceed.
+  `9bdf4a3cc801c220a842c93366723bf906b60ff562ad848db61421d8dfd145af`.
+- A read-only legacy-source recovery found the exact 67 accepted private MP3
+  objects. All 67 matched the accepted hashes and byte counts (300,247,014
+  bytes total) before transfer. The governed upload pipeline accepted 67/67
+  after ffprobe inspection and ClamAV scanning and recorded approved APP-0062
+  rights; no media bytes entered Git.
+- Level 1's last published content was restored from the isolated metadata
+  backup with installation-local media, metadata and rights identifiers.
+  Levels 2–17 completed APP-0063/0065/0066/0067 authoring and review, then the
+  WAVE-7.1 publisher created the active set. The LPL-05 audit reports 17
+  configured, 17 commissioned, 17 complete, `all_complete=true`, with all 11
+  matrix columns at 17. A real Direct learner projection independently returns
+  17/17 `available` (`can` through `used_to`).
+- Recovery authority was removed after verification: the appointment has a
+  `revoked` event, the commissioner role is retired with no assignments, and
+  the bounded second-admin grant required by the no-self-revocation rule was
+  removed. Workstation/VPS staging, legacy session artifacts and the isolated
+  recovery database were deleted. The encrypted rollback backup remains.
 
 ## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
 
@@ -1196,13 +1204,13 @@ slice and was subsequently implemented under APP-0087/D-0294.
 
 | Field | Value |
 |---|---|
-| Checkpoint | PAYMENT-RAZORPAY-01 server-authoritative Direct checkout |
-| Status | APP-0100/D-0321 Razorpay implementation and invite-only sandbox deployment are complete. The RMX3085 test payment produced a paid provider order, a server-verified completed checkout and one active entitlement. The supplied key is test-mode, so real-money capture remains technically unavailable. Test-mode Dashboard webhook registration is still external and no webhook receipt was inferred. UX-REM-01 remains independently in progress. Azure Speech and Sarvam recorded speech are live; ElevenLabs remains fail-closed; Azure OpenAI remains pending its external gate. `APP_ENV` remains `soft-launch`. |
+| Checkpoint | APP-0103 Direct Levels 1–17 VPS recovery complete; UX-REM-01 human/device gates remain active |
+| Status | The governed Direct catalogue is published and independently returns 17/17 levels as available. APP-0100 Razorpay sandbox remains test-only: live credentials, webhook evidence and canary/refund/reconciliation are open. UX-REM-01 remains independently in progress. Azure Speech and Sarvam recorded speech are live; ElevenLabs remains fail-closed; Azure OpenAI remains pending its external gate. `APP_ENV` remains `soft-launch`. |
 | Canonical baseline | `ENTERPRISE_PRODUCT_MASTER_PLAN.md` version 3.15 |
-| Updated date | 18 September 2026 |
+| Updated date | 19 September 2026 |
 | Git branch | `main` |
 | Product code | Five-destination nav (ADR-0026); teacher name Swathi (D-0218); in-app Android password (ADR-0033); Google/Facebook extra sign-in (ADR-0034); Direct subscriptions (ADR-0035); Premium courtesy month (ADR-0036); paid live-AI caps and talk packs (ADR-0037); Indic STT port with 25s cap and Azure failover (ADR-0027 Wave 2A) |
-| Next required action | Register `https://ai.globalspokenenglish.com/api/v1/payments/razorpay/webhook` separately in Razorpay Test and Live modes with the required events; supply rotated `rzp_live_` credentials; run a low-value live canary, refund and reconciliation; and repair/retest the provider-checkout bottom-inset defect. UX-REM-01 physical acceptance, Azure/ElevenLabs, catalogue, academic, analytics and Play gates remain open. |
+| Next required action | Refresh the signed-in Android learner catalogue and confirm the 17 published levels on-device. Then continue only the next authorized UX-REM checkpoint. Razorpay live credentials/webhook/canary/refund, UX-REM-01 physical acceptance, Azure OpenAI/ElevenLabs, catalogue, academic, analytics, production signing and Play gates remain open. |
 | Production/public release | Authorized in principle by APP-0100; not yet executed or accepted because the stated technical, external-provider, accessibility, review and Play gates still lack evidence |
 | Soft launch | Azure guidance TTS, Sarvam Indic STT and Azure recorded-STT failover are live. Azure OpenAI is configured but blocked by HTTP 403 and is not accepted as live. ElevenLabs source support exists but dispatch remains off. UI catalogues are at `ui-*-2026-09-15.11`; the five non-English catalogues remain pending independent review. Razorpay test-mode deployment and one exact-once entitlement smoke are evidenced; live capture is unavailable without live credentials. |
 

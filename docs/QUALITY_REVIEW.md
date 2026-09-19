@@ -211,21 +211,27 @@ remain independent.
 | Tenant/program resolution | Pass | `DirectPathwayCommissioningAuditTest` proves result IDs equal the current seeded stable-key records rather than fixed ULIDs |
 | Production rollback point | Pass | Encrypted VPS backup `soft-launch-20260919T035337Z.sql.gz.enc`; SHA-256 `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d` |
 | Restore-set reconciliation | Pass | 17 latest published blueprints, 68 attachments, 67 unique audio assets; concepts and current published IDs reconcile to the LPL-05 wave evidence |
-| Accepted media bytes | Blocked safely | None of the 67 exact MP3 objects is present in the local lesson-media store or recovered archives; importer stopped before any production content write |
+| Accepted media bytes | Pass | Authorized legacy source yielded 67/67 exact SHA-256 matches, 300,247,014 bytes; governed ingest accepted 67/67 after ffprobe and ClamAV |
+| Level 1 remap | Pass | Last published `can` content restored from isolated backup; four media/metadata/rights references remapped to VPS tenant records through `LessonPracticeAttachmentService` |
+| Levels 2–17 | Pass | APP-0063/0065/0066/0067 completed for 16 levels; WAVE-7.1 published the complete 17-level set |
+| Commissioning matrix | Pass | LPL-05: 17 configured / 17 commissioned / 17 complete; `all_complete=true`; every matrix total is 17 |
+| Learner delivery | Pass | `northstar` tenant context returns 17/17 `available`, first `can`, last `used_to` |
+| Temporary authority cleanup | Pass | Appointment revoked; commissioner role retired and unassigned; temporary reviewer admin grant removed |
+| Recovery artifact cleanup | Pass | Legacy login/session files, media staging, recovery scripts and isolated restore DB removed; encrypted rollback backup retained |
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468; static, localization, contract and security gates green |
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
 | `make build` | Pass | Production Laravel/Vite build completed; existing large-chunk advisory only |
-| Deployment/package | Pass | Active immutable release `f6e0881`; public live/ready; readiness 27/1 warning/0 fail; installed/public APK SHA-256 `3e5e4958…e03a97c`, 83,050,611 bytes |
+| Deployment/package | Pass | Active immutable VPS release `1dea1cb`; public live/ready; readiness 27 pass / 1 unrelated Content Studio publication-head warning / 0 fail; installed/public title-bar APK remains SHA-256 `3e5e4958…e03a97c`, 83,050,611 bytes |
 
 ### Verdict
 
-The title-bar behavior and portable read-only commissioning audit pass their
-repository gates. The 17-level production restoration is **not complete** and
-no production content row was written: importing metadata without the 67
-hash-matching private objects would violate ADR-0004 and produce broken lesson
-delivery. Recovery may resume only after those exact objects are restored from
-the authorized legacy source or another verified backup. UX-REM-01's existing
-physical-device residuals remain open and are not reclassified by this work.
+The title-bar behavior and portable commissioning implementation pass their
+repository gates. The authorized legacy source supplied the exact accepted
+objects, so the backup-first governed recovery is complete: all 17 levels are
+published, the commissioning matrix is complete and learner delivery returns
+17/17 available. Temporary elevated authority and all recovery staging were
+removed after verification. UX-REM-01's existing physical-device residuals
+remain open and are not reclassified by this work.
 
 ## UX-REM-01 accessibility, reflow and adaptive layout — 19 September 2026
 

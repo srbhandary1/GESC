@@ -3306,7 +3306,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Evidence source | Owner's title-bar/layout questions followed by the instruction to complete the required next steps |
 | Related decision | [D-0324](DECISIONS.md) |
 | Recorder | Codex, acting as implementation agent and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA unavailable while authored |
+| Repository revision | Implementation `1dea1cb`; recovery evidence in the subsequent documentation commit |
 | Master-plan amendment | None |
 
 ### Exact human statements
