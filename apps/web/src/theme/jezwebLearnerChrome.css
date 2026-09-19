@@ -864,6 +864,13 @@
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-native-toolbar-action {
+    border-color: #006b3f;
+    background: #e8f4ed;
+    color: #006b3f;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-toolbar-icon {
     display: grid;
     width: 1.25rem;
