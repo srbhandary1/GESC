@@ -53,7 +53,7 @@ describe('LiveAiMinutesChip', () => {
 
     expect(
       screen.getByRole('button', { name: 'View plan and billing' }),
-    ).toHaveTextContent('89 live-AI minutes available')
+    ).toHaveAttribute('id', 'shell-live-ai-minutes')
 
     await user.click(
       screen.getByRole('button', { name: 'View plan and billing' }),

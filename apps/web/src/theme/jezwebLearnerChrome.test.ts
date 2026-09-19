@@ -47,7 +47,12 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('ge-application-frame--native-android')
     expect(jezweb).toContain('24px')
     expect(jezweb).toContain('lift bottom tabs above gesture/home indicators')
-    expect(jezweb).toContain('.learner-home__title:focus-visible')
+    expect(jezweb).toContain('text-wrap: balance')
+    expect(jezweb).toContain('ge-primary-navigation__label')
+    expect(jezweb).toContain('background: #ffffff')
+    expect(jezweb).toContain('color: #1a1a1a')
+    expect(jezweb).toContain('max-height: 32rem')
+    expect(jezweb).toContain('text-wrap: nowrap')
     expect(jezweb).toMatch(
       /\.learner-home__title:focus-visible\s*\{\s*outline: none;/u,
     )

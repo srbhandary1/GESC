@@ -405,7 +405,14 @@ export function SubscriptionPanel({
             </section>
           ) : null}
 
-          <a className="ge-button ge-button--quiet subscription-panel__continue-free" href="#learn" onClick={onClose}>
+          <a
+            className="ge-button ge-button--quiet subscription-panel__continue-free"
+            href="#learn"
+            onClick={(event) => {
+              event.preventDefault()
+              onClose?.()
+            }}
+          >
             <LocalizedMessage resolution={message('subscription.continue_free')} />
           </a>
           {entitlement.gstin_is_placeholder ? <p className="subscription-panel__tax-notice"><LocalizedMessage resolution={message('subscription.placeholder_gst')} /></p> : null}

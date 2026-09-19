@@ -1,5 +1,39 @@
 # Quality review
 
+## UX-REM-01 physical-defect source repair — 19 September 2026
+
+### Scope reviewed
+
+- Recorded UX-REM-01 device defects `UXREM01-DEV-01` through `UXREM01-DEV-05`.
+- Overlay Plans close/focus versus learner-history Back.
+- Speak typed-fallback IME visibility without changing stored utterance
+  content.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Scope isolation | Pass | CSS/layout and overlay close/focus only; no API, schema, scoring, entitlement, consent, provider or history-model change |
+| Enlarged-text wrapping | Pass (browser) | Destination labels use `text-wrap: balance`, Latin hyphenation and Indic `overflow-wrap` without destination rename |
+| Short landscape | Pass (browser) | 800×412 and 711×320 native-android simulations: nav < 40% of viewport, main remains usable, product name stays one line |
+| High-contrast nav | Pass (browser) | Opaque `#ffffff`/`#1a1a1a` navigation; active state remains bordered/non-colour-only; muted `#52625a` removed |
+| Speak IME form | Pass (browser) | Type instead focuses the textbox; sticky form with 220px IME inset ends at or above 520 CSS px |
+| Plans close + Continue free | Pass (browser) | Close and Continue free both dismiss the panel and restore the locked-level opener; Continue free no longer follows `#learn` |
+| System Back overlay | Pass (browser) | `ge:android-back-request` closes Plans and restores opener focus without leaving `#learn` |
+| Focused tests | Pass | ConversationJourney, SubscriptionPanel, LiveAiMinutesChip, SessionAccountMenu, Jezweb chrome, ApplicationFrame |
+| `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468; lint/typecheck/locale/OpenAPI/release/soft-launch green |
+| `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
+| Physical device | Not run | No RMX3085/ADB session in this repair; previous FAIL/NOT RUN rows are not reclassified |
+| TalkBack / quiz CTA | Not run | `UXREM01-DEV-06` still needs a non-production learner with published levels |
+
+### Verdict
+
+Source repairs for the five implementable UX-REM-01 physical defects are in
+the working tree and pass repository/browser gates. The checkpoint remains
+**in progress** until the same RMX3085 acceptance rows are rerun on a pinned
+APK, or the Accountable Product Owner accepts a bounded residual. UX-REM-02
+must not start.
+
 ## APP-0104 native home identity and utility-bar correction — 19 September 2026
 
 ### Scope reviewed

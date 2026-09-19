@@ -1,6 +1,8 @@
 import type { KeyboardEvent, ReactNode } from 'react'
 import { useState } from 'react'
 
+export const ACCOUNT_MENU_TRIGGER_ID = 'shell-account-menu-trigger'
+
 interface SessionAccountMenuProps {
   readonly accountLabel: string
   readonly accountSettingsLabel: string
@@ -43,6 +45,7 @@ export function SessionAccountMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         className="shell-header-authentication shell-account-dropdown__trigger"
+        id={ACCOUNT_MENU_TRIGGER_ID}
         onClick={() => setOpen((current) => !current)}
         type="button"
       >

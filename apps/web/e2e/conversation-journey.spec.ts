@@ -55,6 +55,22 @@ test('completes the disclosed voice-first AI conversation journey', async ({
   ).toBeVisible()
   await expect(page.getByText('Hear an example')).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
+  await expect(
+    page.getByRole('textbox', { name: 'Type one English practice turn' }),
+  ).toBeFocused()
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--ge-native-ime-inset-bottom', '220px')
+    document.documentElement.style.setProperty('--ge-mobile-navigation-offset', '72px')
+  })
+  const typedForm = page.locator('.conversation-journey__form')
+  await typedForm.scrollIntoViewIfNeeded()
+  await expect.poll(async () => {
+    const box = await typedForm.boundingBox()
+    return box === null ? 9_999 : box.y + box.height
+  }).toBeLessThanOrEqual(520)
 
   await page
     .getByRole('textbox', { name: 'Type one English practice turn' })

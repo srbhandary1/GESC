@@ -20,6 +20,7 @@ describe('SessionAccountMenu', () => {
     )
 
     const trigger = screen.getByRole('button', { name: 'Account' })
+    expect(trigger).toHaveAttribute('id', 'shell-account-menu-trigger')
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
 

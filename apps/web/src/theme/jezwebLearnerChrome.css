@@ -207,13 +207,40 @@
     border-radius: 0.5rem;
     font-size: 0.75rem;
     font-weight: 650;
-    letter-spacing: 0.01em;
-    line-height: 1.15;
-    overflow-wrap: anywhere;
+    letter-spacing: 0;
+    line-height: 1.2;
+    overflow-wrap: break-word;
     text-align: center;
+    text-wrap: balance;
     white-space: normal;
-    word-break: break-word;
+    word-break: normal;
+    hyphens: auto;
+    -webkit-hyphens: auto;
     box-shadow: none;
+  }
+
+  .ge-application-frame--jezweb .ge-primary-navigation__label,
+  .ge-application-frame--jezweb .ge-primary-navigation__link--speak
+    .ge-primary-navigation__label,
+  .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__label {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    word-break: normal;
+  }
+
+  :lang(kn) .ge-application-frame--jezweb .ge-primary-navigation__label,
+  :lang(ml) .ge-application-frame--jezweb .ge-primary-navigation__label,
+  :lang(ta) .ge-application-frame--jezweb .ge-primary-navigation__label,
+  :lang(te) .ge-application-frame--jezweb .ge-primary-navigation__label,
+  :lang(hi) .ge-application-frame--jezweb .ge-primary-navigation__label {
+    hyphens: none;
+    line-break: auto;
+    overflow-wrap: anywhere;
   }
 
   .ge-application-frame--jezweb .ge-nav-glyph,
@@ -239,13 +266,31 @@
     height: 1.35rem;
   }
 
+  .ge-application-frame--jezweb .ge-primary-navigation__link,
+  .ge-application-frame--jezweb .ge-primary-navigation__link--speak,
+  .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb
+    .ge-primary-navigation__link,
+  .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link {
+    color: #1a1a1a;
+    opacity: 1;
+  }
+
+  .ge-application-frame--jezweb .ge-nav-glyph,
+  .ge-application-frame--jezweb .ge-primary-navigation__link--speak .ge-nav-glyph,
+  .demo-experience .ge-application-frame--jezweb .ge-nav-glyph {
+    color: inherit;
+    opacity: 1;
+  }
+
   .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak[aria-current='page'],
   .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
-    background: color-mix(in srgb, var(--ge-color-action) 10%, transparent);
-    color: var(--ge-color-action);
-    box-shadow: inset 0 3px 0 var(--ge-color-action);
+    background: #e8f4ed;
+    color: #006b3f;
+    box-shadow: inset 0 3px 0 #006b3f;
+    outline: 1px solid #006b3f;
+    outline-offset: -4px;
     font-weight: 750;
   }
 }
@@ -282,22 +327,26 @@
 @media (prefers-contrast: more) {
   .ge-application-frame--jezweb .ge-primary-navigation,
   .ge-application-frame--jezweb .ge-primary-navigation__list {
-    border-color: currentColor;
+    border-color: #000000;
     background: #ffffff;
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation__link,
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak,
-  .ge-application-frame--jezweb .ge-nav-glyph {
-    color: #1a1a1a;
+  .ge-application-frame--jezweb .ge-nav-glyph,
+  .ge-application-frame--jezweb .ge-primary-navigation__label {
+    color: #000000;
     opacity: 1;
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
   .demo-experience .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
-    outline: 2px solid currentColor;
+    background: #ffffff;
+    color: #000000;
+    outline: 3px solid #000000;
     outline-offset: -3px;
+    box-shadow: inset 0 3px 0 #000000;
   }
 }
 
@@ -366,16 +415,15 @@
   z-index: 30;
   inset-block-end: 0;
   inset-inline: 0;
-  border-block-start: 1px solid var(--ge-color-border);
-  background: rgb(255 255 255 / 0.98);
+  border-block-start: 1px solid #1a1a1a;
+  background: #ffffff;
+  color: #1a1a1a;
   padding-block-end: max(
     env(safe-area-inset-bottom, 0px),
     var(--ge-native-safe-area-bottom, 0px),
     24px
   );
   box-shadow: 0 -10px 30px rgb(16 32 25 / 0.07);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 /* Variant C is a light professional shell — keep readable contrast even when
@@ -965,11 +1013,13 @@
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-studio-brand__name {
     display: block;
-    max-width: 9.5rem;
+    max-width: min(12rem, 46vw);
     color: #173d2e;
     font-size: 0.78rem;
     font-weight: 750;
-    line-height: 1.15;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+    text-wrap: balance;
     white-space: normal;
   }
 
@@ -1036,16 +1086,15 @@
   .ge-application-frame--jezweb .ge-primary-navigation,
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .ge-primary-navigation {
-    background: rgb(255 255 255 / 0.98);
+    background: #ffffff;
     box-shadow: 0 -10px 30px rgb(16 32 25 / 0.07);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation__link,
   .ge-application-frame--jezweb .ge-primary-navigation__link--speak {
-    color: #52625a;
+    color: #1a1a1a;
     font-size: 0.75rem;
+    opacity: 1;
   }
 
   .ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'],
@@ -1099,10 +1148,13 @@
     padding: 0.35rem 0.15rem 0.15rem;
     border-radius: 0.5rem;
     font-size: 0.75rem;
-    line-height: 1.15;
-    overflow-wrap: anywhere;
+    line-height: 1.2;
+    overflow-wrap: break-word;
     text-align: center;
+    text-wrap: balance;
     white-space: normal;
+    word-break: normal;
+    hyphens: auto;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
@@ -1116,6 +1168,25 @@
 }
 
 @media (max-height: 32rem) and (orientation: landscape) and (max-width: 60rem) {
+  .ge-application-frame--jezweb.ge-application-frame--native-android,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__main {
+    --ge-mobile-navigation-offset: calc(
+      3.25rem + max(
+        env(safe-area-inset-bottom, 0px),
+        var(--ge-native-safe-area-bottom, 0px),
+        8px
+      )
+    );
+    padding-block-end: calc(
+      3.25rem + max(
+        env(safe-area-inset-bottom, 0px),
+        var(--ge-native-safe-area-bottom, 0px),
+        8px
+      )
+    );
+  }
+
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .ge-application-frame__header {
     position: relative;
@@ -1124,12 +1195,71 @@
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .ge-application-frame__header-inner {
     grid-template-columns: auto minmax(0, 1fr);
-    min-height: 3rem;
-    padding-block: 0.25rem;
+    min-height: 2.75rem;
+    padding-block: 0.15rem;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__brand {
+    min-width: min-content;
+    max-width: none;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-application-frame__brand-text,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-studio-brand__name {
+    display: block;
+    max-width: none;
+    overflow-wrap: normal;
+    text-wrap: nowrap;
+    white-space: nowrap;
+    font-size: 0.8rem;
+    line-height: 1.15;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-header-toolbar {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-primary-navigation {
+    padding-block-end: max(
+      env(safe-area-inset-bottom, 0px),
+      var(--ge-native-safe-area-bottom, 0px),
+      8px
+    );
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-primary-navigation__list {
+    padding-block: 0.05rem 0.1rem;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-primary-navigation__link,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-primary-navigation__link--speak {
+    min-block-size: 48px;
+    min-height: 48px;
+    padding: 0.1rem 0.1rem 0.05rem;
+    gap: 0.05rem;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-nav-glyph,
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .ge-nav-glyph svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .learner-home__title {
+    overflow-wrap: normal;
+    text-wrap: balance;
+    font-size: 1.25rem;
+    line-height: 1.2;
   }
 }

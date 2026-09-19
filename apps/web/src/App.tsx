@@ -13,6 +13,7 @@ import {
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -40,7 +41,7 @@ import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
-import { SessionAccountMenu } from './auth/SessionAccountMenu'
+import { SessionAccountMenu, ACCOUNT_MENU_TRIGGER_ID } from './auth/SessionAccountMenu'
 import type { ConversationJourneyApi, FriendSession } from './conversation/ConversationJourneyApi'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
@@ -58,7 +59,10 @@ import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
 import { LegalLinks } from './legal/LegalLinks'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
-import { LiveAiMinutesChip } from './subscriptions/LiveAiMinutesChip'
+import {
+  LiveAiMinutesChip,
+  LIVE_AI_MINUTES_CHIP_ID,
+} from './subscriptions/LiveAiMinutesChip'
 import { InterfaceThemeControl } from './theme/InterfaceThemeControl'
 import { useInterfaceTheme } from './theme/useInterfaceTheme'
 import type {
@@ -76,6 +80,7 @@ import { DEMO_SESSION_PARTS } from './demo/demoLevelFixtures'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 import { clearFirstUseResume } from './learner/FirstUseOnboardingResume'
 import {
+  ANDROID_BACK_REQUEST_EVENT,
   handleAndroidBack,
   initializeLearnerNavigation,
   navigateToLearnerDestination,
@@ -300,6 +305,7 @@ function App({
   const [accountSecurityOpen, setAccountSecurityOpen] = useState(false)
   const [subscriptionContext, setSubscriptionContext] =
     useState<SubscriptionEntryContext | null>(null)
+  const plansReturnFocusIdRef = useRef<string | null>(null)
   const [operatorUsernameResource, setOperatorUsernameResource] =
     useState<OperatorUsernameResource | null>(null)
   const [locationHash, setLocationHash] = useState(
@@ -674,7 +680,22 @@ function App({
     accountSecurityVisible &&
     (authentication.transport === 'sanctum-cookie' ||
       androidAuthentication !== null)
-  const openAccountBilling = (context: SubscriptionEntryContext | null = null) => {
+  const closeContextualPlans = useCallback(() => {
+    const returnTargetId = plansReturnFocusIdRef.current
+    setAccountSecurityOpen(false)
+    setSubscriptionContext(null)
+    plansReturnFocusIdRef.current = null
+    if (returnTargetId !== null) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(returnTargetId)?.focus()
+      })
+    }
+  }, [])
+  const openAccountBilling = (
+    context: SubscriptionEntryContext | null = null,
+  ) => {
+    plansReturnFocusIdRef.current =
+      context?.returnTargetId ?? LIVE_AI_MINUTES_CHIP_ID
     setSubscriptionContext(context)
     setAccountSecurityOpen(true)
     window.setTimeout(() => {
@@ -683,16 +704,25 @@ function App({
         ?.scrollIntoView({ block: 'nearest' })
     }, 0)
   }
-  const closeContextualPlans = () => {
-    const returnTargetId = subscriptionContext?.returnTargetId ?? null
-    setAccountSecurityOpen(false)
-    setSubscriptionContext(null)
-    if (returnTargetId !== null) {
-      window.requestAnimationFrame(() => {
-        document.getElementById(returnTargetId)?.focus()
-      })
-    }
+  const openAccountSettings = () => {
+    plansReturnFocusIdRef.current = ACCOUNT_MENU_TRIGGER_ID
+    setAccountSecurityOpen(true)
   }
+  useEffect(() => {
+    const onPlansBack = (event: Event) => {
+      if (!accountSecurityOpen) {
+        return
+      }
+
+      event.preventDefault()
+      closeContextualPlans()
+    }
+
+    globalThis.addEventListener(ANDROID_BACK_REQUEST_EVENT, onPlansBack)
+    return () => {
+      globalThis.removeEventListener(ANDROID_BACK_REQUEST_EVENT, onPlansBack)
+    }
+  }, [accountSecurityOpen, closeContextualPlans])
   const suppressVisibleHero =
     showDemoMission ||
     canHomeLearner ||
@@ -943,7 +973,7 @@ function App({
                   accountLabel={message('session.account_menu').text}
                   accountSettingsLabel={message('session.account_settings').text}
                   signOutLabel={message('session.android_sign_out').text}
-                  onOpenAccount={() => setAccountSecurityOpen(true)}
+                  onOpenAccount={openAccountSettings}
                   onSignOut={() => {
                     void androidAuthentication
                       .logout()
@@ -1031,7 +1061,7 @@ function App({
                   accountLabel={message('session.account_menu').text}
                   accountSettingsLabel={message('session.account_settings').text}
                   signOutLabel={message('session.android_sign_out').text}
-                  onOpenAccount={() => setAccountSecurityOpen(true)}
+                  onOpenAccount={openAccountSettings}
                   onSignOut={() => {
                     const webAuth = isWebSessionAuthentication(authentication)
                       ? authentication
@@ -1630,7 +1660,7 @@ function SessionSummary({
           locale={locale}
           localizationPolicy={localizationPolicy}
           onChange={applyEntitlement}
-          onClose={subscriptionContext === null ? undefined : onSubscriptionClose}
+          onClose={onSubscriptionClose}
         />
       ) : null}
       {webAuth !== null && isAuthenticated && accountSecurityOpen ? (

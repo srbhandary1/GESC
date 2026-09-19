@@ -77,10 +77,21 @@ test('opens contextual plans from a locked level and returns without losing leve
   await panel.getByRole('link', {
     name: message('subscription.continue_free'),
   }).click()
+  await expect(panel).toHaveCount(0)
   await expect(page.getByRole('heading', {
     name: message('level.path.title'),
   })).toBeVisible()
   await expect(upgrade).toBeFocused()
+  await expect(page).toHaveURL(/#learn$/u)
+
+  await upgrade.click()
+  await expect(panel).toBeVisible()
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('ge:android-back-request', { cancelable: true }))
+  })
+  await expect(panel).toHaveCount(0)
+  await expect(upgrade).toBeFocused()
+  await expect(page).toHaveURL(/#learn$/u)
 })
 
 test('queues a level checkpoint offline and syncs through the signed submission route on reconnect', async ({
@@ -478,6 +489,49 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   await expect.poll(() => page.evaluate(() => (
     document.documentElement.scrollWidth <= globalThis.innerWidth
   ))).toBe(true)
+  const landscapeMetrics = await page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>('.ge-primary-navigation')
+    const header = document.querySelector<HTMLElement>('.ge-application-frame__header')
+    const main = document.querySelector<HTMLElement>('.ge-application-frame__main')
+    const brand = document.querySelector<HTMLElement>('.shell-studio-brand__name')
+    const labels = [...document.querySelectorAll<HTMLElement>('.ge-primary-navigation__label')]
+
+    return {
+      brandHeight: brand?.getBoundingClientRect().height ?? 0,
+      headerHeight: header?.getBoundingClientRect().height ?? 0,
+      labelLastLineWidths: labels.map((label) => {
+        const range = document.createRange()
+        range.selectNodeContents(label)
+        const lastRect = [...range.getClientRects()].at(-1)
+        return lastRect?.width ?? 0
+      }),
+      mainHeight: main?.getBoundingClientRect().height ?? 0,
+      navHeight: nav?.getBoundingClientRect().height ?? 0,
+      viewportHeight: globalThis.innerHeight,
+    }
+  })
+  expect(landscapeMetrics.navHeight).toBeLessThan(landscapeMetrics.viewportHeight * 0.4)
+  expect(landscapeMetrics.mainHeight).toBeGreaterThan(96)
+  expect(landscapeMetrics.brandHeight).toBeLessThan(48)
+  expect(landscapeMetrics.labelLastLineWidths.every((width) => width > 8)).toBe(true)
+
+  await page.setViewportSize({ height: 320, width: 711 })
+  await expect.poll(() => page.evaluate(() => (
+    document.documentElement.scrollWidth <= globalThis.innerWidth
+  ))).toBe(true)
+  const shortLandscape = await page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>('.ge-primary-navigation')
+    const main = document.querySelector<HTMLElement>('.ge-application-frame__main')
+    return {
+      mainHeight: main?.getBoundingClientRect().height ?? 0,
+      navHeight: nav?.getBoundingClientRect().height ?? 0,
+      viewportHeight: globalThis.innerHeight,
+    }
+  })
+  expect(shortLandscape.navHeight).toBeLessThan(shortLandscape.viewportHeight * 0.4)
+  expect(shortLandscape.mainHeight).toBeGreaterThan(80)
+
+  await page.setViewportSize({ height: 412, width: 800 })
 
   const levelControl = page.getByRole('button', {
     name: message('level.path.checkpoint_open', { number: '1' }),

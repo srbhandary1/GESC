@@ -79,7 +79,7 @@ export function PrimaryNavigation({
                 <span aria-hidden="true" className="ge-nav-glyph">
                   <DestinationGlyph destination={destination} />
                 </span>
-                {link.label}
+                <span className="ge-primary-navigation__label">{link.label}</span>
               </a>
             </li>
           )

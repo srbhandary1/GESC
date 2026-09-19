@@ -1,5 +1,28 @@
 # Repository status
 
+## UX-REM-01 physical-defect source repair — 19 September 2026
+
+- D-0319/D-0320 remain the authority. This is a bounded UX-REM-01 continuation
+  for recorded defects `UXREM01-DEV-01` through `UXREM01-DEV-05`. UX-REM-02
+  has not started.
+- Five-destination navigation labels now wrap with hyphenation/`text-wrap:
+  balance` instead of mid-word clipping; Indic labels avoid hyphenation.
+  Short landscape keeps the same bottom grid, shrinks chrome, and keeps the
+  product name on one line. Navigation uses opaque ink-on-white colours with
+  a bordered active state. Speak Type-instead focuses and sticks the form
+  above native IME/nav insets. Continue free and system Back both close Plans
+  and restore focus to the opener.
+- No API, schema, history model, scoring, entitlement, consent, provider or
+  storage semantic changed. Overlay Back consumes the existing
+  `ge:android-back-request` event; it does not add `onBackPressed` handling.
+- Repository gates: `make verify` (SQLite 330/330, 3,147 assertions;
+  PostgreSQL 360/360, 5,226 assertions; web 468/468) and `make e2e` (API 4/4;
+  Playwright 30/30). `make build` was not required (no packaging change).
+- Physical RMX3085/TalkBack/quiz rows remain open. Exact 2.0 font evidence and
+  `UXREM01-DEV-06` (published-level TalkBack learner) are still blocked.
+- Working tree is uncommitted on source `66eff5e`. No APK was rebuilt or
+  installed for this repair.
+
 ## APP-0104 native home identity and utility-bar correction — 19 September 2026
 
 - D-0325 records the bounded correction: the native header now visibly names

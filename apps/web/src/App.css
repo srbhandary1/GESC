@@ -9,7 +9,11 @@
 .ge-application-frame__header-actions {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+.ge-application-frame__brand-text {
+  text-wrap: balance;
 }
 
 .ge-application-frame__brand:has(.shell-brand-lockup),

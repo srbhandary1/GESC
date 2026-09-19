@@ -76,6 +76,11 @@ describe('Friend practice journey', () => {
     await user.click(
       screen.getByRole('button', { name: 'Type instead' }),
     )
+    expect(
+      await screen.findByRole('textbox', {
+        name: 'Type one English practice turn',
+      }),
+    ).toHaveFocus()
 
     await user.type(
       screen.getByRole('textbox', {

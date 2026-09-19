@@ -712,8 +712,32 @@ export function ConversationJourney({
   const typeInstead = () => {
     setInputMode('type')
     stopListening()
-    utteranceFieldRef.current?.focus()
   }
+
+  useEffect(() => {
+    if (inputMode !== 'type') {
+      return undefined
+    }
+
+    const field = utteranceFieldRef.current
+    if (field === null) {
+      return undefined
+    }
+
+    field.focus()
+    const keepVisible = () => {
+      field.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    }
+    keepVisible()
+
+    const viewport = globalThis.visualViewport
+    viewport?.addEventListener('resize', keepVisible)
+    viewport?.addEventListener('scroll', keepVisible)
+    return () => {
+      viewport?.removeEventListener('resize', keepVisible)
+      viewport?.removeEventListener('scroll', keepVisible)
+    }
+  }, [inputMode])
 
   const skipTurn = () => {
     setUtterance('')

@@ -45,6 +45,11 @@ describe('ApplicationFrame', () => {
     expect(screen.getByRole('link', { name: 'ಮಾತನಾಡಿ' })).toHaveClass(
       'ge-primary-navigation__link--speak',
     )
+    expect(
+      screen.getByRole('link', { name: 'ಮಾತನಾಡಿ' }).querySelector(
+        '.ge-primary-navigation__label',
+      ),
+    ).not.toBeNull()
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
     expect(
       screen.getByRole('heading', { name: 'ಮಾತನಾಡಿ' }),

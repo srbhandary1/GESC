@@ -445,7 +445,11 @@ describe('subscription panel', () => {
     expect(await screen.findByText(/You completed Level 2/)).toHaveTextContent('Level 3')
     await user.click(screen.getByRole('button', { name: 'Close plans' }))
     expect(onClose).toHaveBeenCalledOnce()
-    expect(screen.getByRole('link', { name: 'Continue free / review prior lessons' })).toHaveAttribute('href', '#learn')
+    const continueFree = screen.getByRole('link', { name: 'Continue free / review prior lessons' })
+    expect(continueFree).toHaveAttribute('href', '#learn')
+    await user.click(continueFree)
+    expect(onClose).toHaveBeenCalledTimes(2)
+    expect(window.location.hash).not.toBe('#learn')
   })
 
   it('hides itself for institutional learners', async () => {

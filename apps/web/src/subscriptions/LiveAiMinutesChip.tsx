@@ -7,12 +7,15 @@ import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import type { LearnerEntitlement } from './LearnerSubscriptionApi'
 
+export const LIVE_AI_MINUTES_CHIP_ID = 'shell-live-ai-minutes'
+
 export interface LiveAiMinutesChipProps {
   readonly context?: 'global' | 'speak'
   readonly entitlement: LearnerEntitlement | null
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
   readonly onOpenAccount: () => void
+  readonly openerId?: string
 }
 
 export function LiveAiMinutesChip({
@@ -21,6 +24,7 @@ export function LiveAiMinutesChip({
   locale,
   localizationPolicy,
   onOpenAccount,
+  openerId = LIVE_AI_MINUTES_CHIP_ID,
 }: LiveAiMinutesChipProps) {
   const message = (key: MessageKey, parameters?: Record<string, string>) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
@@ -52,6 +56,7 @@ export function LiveAiMinutesChip({
       <button
         aria-label={openAccountLabel}
         className="shell-live-ai-chip"
+        id={openerId}
         onClick={() => onOpenAccount()}
         title={openAccountLabel}
         type="button"
@@ -65,6 +70,7 @@ export function LiveAiMinutesChip({
     <button
       aria-label={openAccountLabel}
       className="shell-live-ai-chip"
+      id={openerId}
       onClick={() => onOpenAccount()}
       title={openAccountLabel}
       type="button"

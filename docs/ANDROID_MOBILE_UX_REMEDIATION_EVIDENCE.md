@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 implementation and APP-0103 title-bar continuation complete with physical acceptance open"
+status: "UX-REM-00 complete; UX-REM-01 source repair for UXREM01-DEV-01–05 complete with physical acceptance open"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -270,6 +270,27 @@ progress** because these physical/human acceptance conditions are not yet
 evidenced. UX-REM-02 must not start until they pass or the Accountable Product
 Owner explicitly accepts a bounded residual.
 
+### UXREM01-DEV-01–05 source repair — 19 September 2026
+
+The working tree above `66eff5e` repairs the five implementable defects from
+the 19 September RMX3085 rerun. Browser/component evidence is green; this does
+not reclassify any physical FAIL or NOT RUN row.
+
+| ID | Source repair | Automated evidence |
+|---|---|---|
+| UXREM01-DEV-01 | Destination labels wrap with `text-wrap: balance` and Latin hyphenation; Indic labels do not hyphenate; destinations are unchanged | 320/360/412 CSS px at 200% English/Kannada; last-line width > 8 CSS px in landscape |
+| UXREM01-DEV-02 | Short landscape keeps the five-destination grid, reduces nav/header chrome, and keeps the product name on one line | 800×412 and 711×320 native-android simulations: nav < 40% of viewport height |
+| UXREM01-DEV-03 | Type instead focuses the mounted textarea and sticks the Speak form above IME/nav insets | ConversationJourney focus test; Playwright form bottom ≤ 520 CSS px with 220px IME inset |
+| UXREM01-DEV-04 | Navigation uses opaque white/ink colours, no muted `#52625a`, and a bordered non-colour-only active state | Forced-colour and high-contrast CSS contracts; Jezweb chrome test |
+| UXREM01-DEV-05 | Continue free prevents hash navigation; Close plans and `ge:android-back-request` both dismiss Plans and restore the opener | SubscriptionPanel unit test; level-path Playwright close/Continue-free/Back |
+
+`UXREM01-DEV-06` is unchanged: TalkBack first-use/quiz/result and the physical
+quiz CTA still require a non-production learner with published test content.
+
+Repository gates for this repair: `make verify` (SQLite 330/330; PostgreSQL
+360/360; web 468/468) and `make e2e` (API 4/4; Playwright 30/30). No APK was
+built or installed. UX-REM-02 has not started.
+
 ### Physical-device rerun — 19 September 2026
 
 The production-package debug APK from implementation commit `1bdea67` was
@@ -304,11 +325,11 @@ high-contrast Off and TalkBack Off were restored after the run.
 
 | ID | Defect | Owner | Disposition |
 |---|---|---|---|
-| UXREM01-DEV-01 | Bottom-destination text reflow is not robust at the RMX3085 maximum 1.6 font scale in English or Kannada; exact 2.0 remains unevidenced | Frontend/Android engineer | Repair and retest at 1.6 plus exact 2.0 on a capable device/emulator |
-| UXREM01-DEV-02 | Exact-320-CSS short landscape leaves the heading and content area unusably constrained | Frontend/Android engineer / product designer | Repair responsive hierarchy and rerun portrait/landscape evidence |
-| UXREM01-DEV-03 | Speak Type-instead field and Send action disappear when the IME opens | Frontend/Android engineer | Repair native inset/scroll/focus behavior; regression-test without changing learner text storage |
-| UXREM01-DEV-04 | OEM high-contrast mode fades bottom-navigation labels against the white background | Frontend engineer | Repair header/navigation-scoped high-contrast styling and verify non-colour active state |
-| UXREM01-DEV-05 | Plans return actions do not both close the surface and restore focus to the opener | Frontend engineer | Repair close/history/focus contract and cover Continue-free plus system Back |
+| UXREM01-DEV-01 | Bottom-destination text reflow is not robust at the RMX3085 maximum 1.6 font scale in English or Kannada; exact 2.0 remains unevidenced | Frontend/Android engineer | Source repaired 19 September 2026; physical 1.6 and exact 2.0 rerun still required |
+| UXREM01-DEV-02 | Exact-320-CSS short landscape leaves the heading and content area unusably constrained | Frontend/Android engineer / product designer | Source repaired 19 September 2026; physical landscape rerun still required |
+| UXREM01-DEV-03 | Speak Type-instead field and Send action disappear when the IME opens | Frontend/Android engineer | Source repaired 19 September 2026; physical IME rerun still required |
+| UXREM01-DEV-04 | OEM high-contrast mode fades bottom-navigation labels against the white background | Frontend engineer | Source repaired 19 September 2026; physical high-contrast rerun still required |
+| UXREM01-DEV-05 | Plans return actions do not both close the surface and restore focus to the opener | Frontend engineer | Source repaired 19 September 2026; physical Continue-free and system Back rerun still required |
 | UXREM01-DEV-06 | TalkBack first-use/quiz/result and physical quiz-CTA evidence cannot run with the current learner because first use is complete and no levels are published | Product/content owner + accessibility tester | Provision a non-production test learner with published test content, then execute the exact journey |
 
 Temporary screenshots and UI hierarchy dumps were inspected during the run,
@@ -323,5 +344,7 @@ attempt stopped at Composer audit because DNS was unavailable; the identical
 command passed when rerun with network access.
 
 UX-REM-01 remains **in progress**. UX-REM-02 has not started. Advancing still
-requires passing evidence for the open rows or an explicit Accountable Product
-Owner decision accepting each bounded residual.
+requires passing physical evidence for the open rows or an explicit Accountable
+Product Owner decision accepting each bounded residual. The 19 September
+source repair for `UXREM01-DEV-01` through `UXREM01-DEV-05` is browser-gated
+only.

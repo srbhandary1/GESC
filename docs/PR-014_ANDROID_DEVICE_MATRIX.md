@@ -164,9 +164,10 @@ the authentication journeys above or the negative-storage checklist.
 | Plans close/focus return | **FAIL** | Continue free left Plans expanded; system Back closed it but focused Home instead of the opener |
 
 Bounded remediation defects `UXREM01-DEV-01` through `UXREM01-DEV-06` are
-owned by the remediation evidence package. No application fix was made during
-this device run, and no existing §10 cell was upgraded beyond the explicitly
-observed split-screen sub-result.
+owned by the remediation evidence package. The 19 September source repair for
+`UXREM01-DEV-01` through `UXREM01-DEV-05` is browser-gated only and does not
+upgrade these physical rows. No existing §10 cell was upgraded beyond the
+explicitly observed split-screen sub-result.
 
 ### Emulator substitute note (2026-08-07)
 
