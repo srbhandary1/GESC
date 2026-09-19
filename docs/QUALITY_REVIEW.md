@@ -129,6 +129,8 @@ remain independent.
 | Account menu | Pass | Dedicated component tests cover open, Account action, Sign out, blur and Escape; App integration keeps Sign out unavailable until the menu is opened |
 | Compact controls | Pass (browser) | Language/theme retain native selects and accessible names; native header controls are 48×48 and horizontal at narrow widths |
 | 320px / 200% regression | Pass | `level-path-offline.spec.ts` exact affected journey passes with no document overflow |
+| Physical title bar | Pass on RMX3085/API 33 | Final screenshot inspected; one app-owned header, compact horizontal controls, visible green/tint contrast; UI hierarchy contains no `android:id/action_bar_container` |
+| Both Android wrappers | Pass | Production and demo manifests use `AppTheme.NoActionBar`; both activities enforce it before `BridgeActivity` decor creation; both Gradle compile/unit-test gates pass |
 | Catalogue contract | Pass | Six catalogues include `session.account_settings`; canonical governance hashes validate; five expected non-English independent-review warnings remain |
 | Tenant/program resolution | Pass | `DirectPathwayCommissioningAuditTest` proves result IDs equal the current seeded stable-key records rather than fixed ULIDs |
 | Production rollback point | Pass | Encrypted VPS backup `soft-launch-20260919T035337Z.sql.gz.enc`; SHA-256 `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d` |
@@ -137,6 +139,7 @@ remain independent.
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468; static, localization, contract and security gates green |
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
 | `make build` | Pass | Production Laravel/Vite build completed; existing large-chunk advisory only |
+| Deployment/package | Pass | Active immutable release `f6e0881`; public live/ready; readiness 27/1 warning/0 fail; installed/public APK SHA-256 `3e5e4958…e03a97c`, 83,050,611 bytes |
 
 ### Verdict
 

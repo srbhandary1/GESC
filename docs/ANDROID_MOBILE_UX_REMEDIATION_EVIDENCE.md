@@ -162,6 +162,18 @@ validation, `make verify`, `make e2e` (30/30 browser journeys) and `make build`.
 This browser evidence does not overwrite the existing RMX3085 failures or
 close the still-required physical/TalkBack rows below.
 
+The follow-up physical run on RMX3085/API 33 exposed anonymous text overflow,
+an OEM splash fallback that recreated the legacy native ActionBar, and
+white-on-white compact controls. The accepted final artifact fixes all three:
+both wrappers enforce the existing NoActionBar theme before bridge decor
+creation, the native hierarchy contains no `android:id/action_bar_container`,
+and Language, Theme, paid minutes and Account use visible Variant C
+green/tint icon controls. The installed artifact is commit `f6e0881`, SHA-256
+`3e5e495851301ce181ea94c599e3f4402054b1b296722b4d89bf5ee1ce03a97c`
+(83,050,611 bytes). This closes only the compact-title-bar continuation; the
+previously recorded enlarged-text, IME, high-contrast, Plans-focus, TalkBack
+and physical-quiz residuals remain open.
+
 ### Implementation evidence
 
 The bounded change keeps the accepted five destinations and Variant C identity

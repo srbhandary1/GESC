@@ -473,3 +473,31 @@ on the RMX3085 succeeded. This remains debug-signed and is not a Play artifact.
 Final Plans/Progress inspection awaits a handset unlock; no result is inferred
 from the temporary locked-screen UI hierarchy. That hierarchy and all named
 workstation/VPS staging copies were deleted after inspection.
+
+## APP-0103 compact-title-bar release — 19 September 2026
+
+**Source revision:** `f6e0881`
+
+The final immutable release is
+`/srv/global-spoken-english/releases/f6e0881`. Existing external environment,
+provider secrets, Passport keys and mutable API storage were preserved outside
+the Git archive. Public `/health/live` and `/health/ready` pass; exactly one
+supervisor is running; the fail-closed readiness result is **27 pass / 1
+content-publication warning / 0 fail**.
+
+The Android production-package debug APK is installed on the RMX3085 and
+published at
+`https://ai.globalspokenenglish.com/downloads/global-spoken-english-android.apk`.
+Local, installed and public bytes match SHA-256
+`3e5e495851301ce181ea94c599e3f4402054b1b296722b4d89bf5ee1ce03a97c`
+(83,050,611 bytes). Physical evidence confirms one app-owned title bar and no
+native `android:id/action_bar_container`. This is debug-signed test delivery,
+not a Play-signed production bundle.
+
+The production restore backup created before the Direct Levels 1–17 recovery
+attempt is
+`/home/globalenglish/ge-offsite-backups/soft-launch-20260919T035337Z.sql.gz.enc`
+(SHA-256
+`1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d`).
+No lesson content was written: the 67 accepted MP3 objects are absent from the
+available local object store/backups, so the governed importer stopped safely.

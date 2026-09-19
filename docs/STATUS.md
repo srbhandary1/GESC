@@ -12,6 +12,19 @@
   overflow. Account-menu component coverage, App integration coverage,
   typecheck, lint, all six catalogue contracts, `make verify`, `make e2e`
   (API 4/4; Playwright 30/30) and `make build` pass.
+- RMX3085 physical verification found and closed three title-bar integration
+  defects before acceptance: anonymous text actions were not compact, the OEM
+  splash fallback recreated a legacy native ActionBar over the web header, and
+  compact controls assumed a green rather than white header. Both wrappers now
+  enforce the existing NoActionBar theme before bridge creation. The final
+  hierarchy contains no `android:id/action_bar_container`; the title bar has
+  one logo and horizontally aligned 48px green/tint icon controls.
+- Final source commit `f6e0881` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/f6e0881`. Public live/ready pass and the
+  readiness gate reports 27 pass / 1 content-publication warning / 0 fail.
+  The installed and public debug APK SHA-256 is
+  `3e5e495851301ce181ea94c599e3f4402054b1b296722b4d89bf5ee1ce03a97c`
+  (83,050,611 bytes).
 - Direct commissioning audit lookup now uses the stable organization key
   `global-english-direct` and programme key
   `global-spoken-english-lpl-pilot`, not workstation-specific ULIDs.
