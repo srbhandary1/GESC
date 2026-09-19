@@ -21,17 +21,13 @@ final class App0063LevelsCommissioner
 {
     private const string APPROVAL = 'APP-0063';
 
-    private const string ORG_ID = '01KYS97G7MX374P303XJHDXT72';
-
-    private const string PROGRAM_ID = '01KZNK3BWD8A8NJ5A5JW0ZVZMT';
-
-    private const string CURRICULUM_VERSION_ID = '01KZZY3RFJGXQENRM5YBEWE67C';
-
-    private const string ACTOR_MEMBERSHIP_ID = '01KZGE9QRTCQE3PQ3RN31AXQSF';
+    /** @var array<string, string> */
+    private array $scope = [];
 
     public function __construct(
         private readonly LessonPracticeAttachmentService $attachment,
         private readonly OrganizationContextManager $contexts,
+        private readonly DirectPathwayScopeResolver $scopeResolver,
     ) {}
 
     /**
@@ -39,6 +35,7 @@ final class App0063LevelsCommissioner
      */
     public function commission(string $inventoryPath): array
     {
+        $this->scope = $this->scopeResolver->resolve();
         if (! is_file($inventoryPath)) {
             throw new RuntimeException('inventory_missing');
         }
@@ -72,17 +69,13 @@ final class App0063LevelsCommissioner
         }
 
         $actor = User::query()
-            ->whereKey(
-                (string) DB::table('memberships')
-                    ->where('id', self::ACTOR_MEMBERSHIP_ID)
-                    ->value('user_id'),
-            )
+            ->whereKey($this->scope['actor_user_id'])
             ->firstOrFail();
 
         $context = new OrganizationContext(
-            self::ORG_ID,
+            $this->scope['organization_id'],
             (string) $actor->getKey(),
-            self::ACTOR_MEMBERSHIP_ID,
+            $this->scope['actor_membership_id'],
             OrganizationContextSource::Membership,
         );
 
@@ -104,8 +97,8 @@ final class App0063LevelsCommissioner
 
         return [
             'approval_reference' => self::APPROVAL,
-            'organization_id' => self::ORG_ID,
-            'program_id' => self::PROGRAM_ID,
+            'organization_id' => $this->scope['organization_id'],
+            'program_id' => $this->scope['program_id'],
             'levels_commissioned' => count($levels),
             'levels' => array_values($levels),
         ];
@@ -133,8 +126,8 @@ final class App0063LevelsCommissioner
         );
         $created = $this->attachment->createBlueprint(
             $this->contexts->current(),
-            self::PROGRAM_ID,
-            self::CURRICULUM_VERSION_ID,
+            $this->scope['program_id'],
+            $this->scope['curriculum_version_id'],
             $conceptKey,
             $canonical,
             (string) Str::ulid(),
@@ -242,7 +235,7 @@ final class App0063LevelsCommissioner
         string $hash,
     ): array {
         $asset = DB::table('media_assets')
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $this->scope['organization_id'])
             ->where('asset_kind', 'lesson_audio')
             ->where('asset_hash', $hash)
             ->first();
@@ -252,7 +245,7 @@ final class App0063LevelsCommissioner
         $assetId = (string) $asset->id;
 
         $active = DB::table('media_asset_lifecycles')
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $this->scope['organization_id'])
             ->where('media_asset_id', $assetId)
             ->where('state', 'active')
             ->exists();
@@ -261,7 +254,7 @@ final class App0063LevelsCommissioner
         }
 
         $rights = DB::table('media_rights_revisions')
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $this->scope['organization_id'])
             ->where('media_asset_id', $assetId)
             ->where('evidence_status', 'approved')
             ->orderByDesc('created_at')
@@ -271,12 +264,12 @@ final class App0063LevelsCommissioner
         }
 
         $head = DB::table('media_asset_metadata_heads')
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $this->scope['organization_id'])
             ->where('media_asset_id', $assetId)
             ->first();
         if ($head !== null) {
             $meta = DB::table('media_asset_metadata_revisions')
-                ->where('organization_id', self::ORG_ID)
+                ->where('organization_id', $this->scope['organization_id'])
                 ->where('id', $head->metadata_revision_id)
                 ->first();
             if ($meta === null) {
@@ -314,7 +307,7 @@ final class App0063LevelsCommissioner
         $now = now();
         DB::table('media_asset_metadata_revisions')->insert([
             'id' => $revisionId,
-            'organization_id' => self::ORG_ID,
+            'organization_id' => $this->scope['organization_id'],
             'media_asset_id' => $assetId,
             'asset_kind' => 'lesson_audio',
             'parent_revision_id' => null,
@@ -323,16 +316,16 @@ final class App0063LevelsCommissioner
             'transcript' => $transcript,
             'text_alternative' => null,
             'content_hash' => $contentHash,
-            'authored_by_membership_id' => self::ACTOR_MEMBERSHIP_ID,
+            'authored_by_membership_id' => $this->scope['actor_membership_id'],
             'authored_at' => $now,
             'created_at' => $now,
         ]);
         DB::table('media_asset_metadata_heads')->insert([
-            'organization_id' => self::ORG_ID,
+            'organization_id' => $this->scope['organization_id'],
             'media_asset_id' => $assetId,
             'metadata_revision_id' => $revisionId,
             'version' => 1,
-            'updated_by_membership_id' => self::ACTOR_MEMBERSHIP_ID,
+            'updated_by_membership_id' => $this->scope['actor_membership_id'],
             'created_at' => $now,
             'updated_at' => $now,
         ]);

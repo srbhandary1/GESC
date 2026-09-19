@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Tenancy\OrganizationContext;
 use App\Tenancy\OrganizationContextManager;
 use App\Tenancy\OrganizationContextSource;
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -25,17 +24,13 @@ final class DirectPathwayPublicationService
 {
     public const string APPROVAL = 'WAVE-7.1';
 
-    private const string ORG_ID = '01KYS97G7MX374P303XJHDXT72';
-
-    private const string PROGRAM_ID = '01KZNK3BWD8A8NJ5A5JW0ZVZMT';
-
-    private const string CURRICULUM_VERSION_ID = '01KZZY3RFJGXQENRM5YBEWE67C';
-
-    private const string ACTOR_MEMBERSHIP_ID = '01KZGE9QRTCQE3PQ3RN31AXQSF';
+    /** @var array<string, string> */
+    private array $scope = [];
 
     public function __construct(
         private readonly LessonPracticeAttachmentService $attachment,
         private readonly OrganizationContextManager $contexts,
+        private readonly DirectPathwayScopeResolver $scopeResolver,
     ) {}
 
     /**
@@ -43,18 +38,15 @@ final class DirectPathwayPublicationService
      */
     public function publish(): array
     {
+        $this->scope = $this->scopeResolver->resolve();
         $actor = User::query()
-            ->whereKey(
-                (string) DB::table('memberships')
-                    ->where('id', self::ACTOR_MEMBERSHIP_ID)
-                    ->value('user_id'),
-            )
+            ->whereKey($this->scope['actor_user_id'])
             ->firstOrFail();
 
         $context = new OrganizationContext(
-            self::ORG_ID,
+            $this->scope['organization_id'],
             (string) $actor->getKey(),
-            self::ACTOR_MEMBERSHIP_ID,
+            $this->scope['actor_membership_id'],
             OrganizationContextSource::Membership,
         );
 
@@ -83,8 +75,8 @@ final class DirectPathwayPublicationService
 
         return [
             'approval_reference' => self::APPROVAL,
-            'organization_id' => self::ORG_ID,
-            'program_id' => self::PROGRAM_ID,
+            'organization_id' => $this->scope['organization_id'],
+            'program_id' => $this->scope['program_id'],
             'levels_processed' => count($levels),
             'levels_published' => $published,
             'publication_eligible' => true,
@@ -98,8 +90,8 @@ final class DirectPathwayPublicationService
     private function publishLevel(int $levelNumber, string $conceptKey): array
     {
         $current = LessonPracticeBlueprint::query()
-            ->where('organization_id', self::ORG_ID)
-            ->where('program_id', self::PROGRAM_ID)
+            ->where('organization_id', $this->scope['organization_id'])
+            ->where('program_id', $this->scope['program_id'])
             ->where('concept_key', $conceptKey)
             ->whereIn('state', ['draft', 'published'])
             ->orderByDesc('revision_number')
@@ -109,7 +101,7 @@ final class DirectPathwayPublicationService
         }
 
         $media = LessonPracticeMedia::query()
-            ->where('organization_id', self::ORG_ID)
+            ->where('organization_id', $this->scope['organization_id'])
             ->where('blueprint_id', $current->getKey())
             ->orderBy('part_order')
             ->get();
@@ -155,8 +147,8 @@ final class DirectPathwayPublicationService
 
         $created = $this->attachment->createBlueprint(
             $this->contexts->current(),
-            self::PROGRAM_ID,
-            self::CURRICULUM_VERSION_ID,
+            $this->scope['program_id'],
+            $this->scope['curriculum_version_id'],
             $conceptKey,
             $canonical,
             'lpl04-checkpoint-create-'.$conceptKey,
