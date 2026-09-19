@@ -968,8 +968,8 @@ function App({
                 <a
                   className={
                     showDedicatedSignIn
-                      ? 'shell-header-authentication shell-header-authentication--quiet'
-                      : 'shell-header-nav-link'
+                      ? 'shell-header-authentication shell-header-authentication--quiet shell-native-toolbar-action'
+                      : 'shell-header-nav-link shell-native-toolbar-action'
                   }
                   href={showDedicatedSignIn ? '#home' : '#sign-in'}
                   onClick={(event) => {
@@ -983,24 +983,34 @@ function App({
                     navigateToLearnerSignIn()
                   }}
                 >
-                  <LocalizedMessage
-                    resolution={message(
-                      showDedicatedSignIn ? 'nav.home' : 'session.label',
-                    )}
-                  />
+                  <span aria-hidden="true" className="shell-toolbar-icon">
+                    {showDedicatedSignIn ? '⌂' : '●'}
+                  </span>
+                  <span className="shell-toolbar-label">
+                    <LocalizedMessage
+                      resolution={message(
+                        showDedicatedSignIn ? 'nav.home' : 'session.label',
+                      )}
+                    />
+                  </span>
                 </a>
                 {showDedicatedSignIn ? null : (
                   <a
-                    className="shell-header-authentication"
+                    className="shell-header-authentication shell-native-toolbar-action"
                     href="#sign-in"
                     onClick={(event) => {
                       event.preventDefault()
                       navigateToLearnerSignIn()
                     }}
                   >
-                    <LocalizedMessage
-                      resolution={message('marketing.hero.cta_sign_in')}
-                    />
+                    <span aria-hidden="true" className="shell-toolbar-icon">
+                      ↪
+                    </span>
+                    <span className="shell-toolbar-label">
+                      <LocalizedMessage
+                        resolution={message('marketing.hero.cta_sign_in')}
+                      />
+                    </span>
                   </a>
                 )}
               </>
