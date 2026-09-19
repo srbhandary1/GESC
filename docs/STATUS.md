@@ -13,9 +13,17 @@
   `ui-kn-IN-2026-09-19.2` remains `pending-independent-review` under ADR-0005.
 - The legal footer identifies Northstar Enterprise Solutions Private Limited,
   Mangalore and links `sales@northstar-es.in`.
-- Focused App/theme tests pass 24/24, localization tests pass 36/36, and the
-  workspace typecheck passes. Full repository/package/deployment evidence is
-  recorded after the exact candidate is built and promoted.
+- Full gates pass: `make verify` (SQLite 330/330; PostgreSQL 360/360; web
+  468/468), `make e2e` (API 4/4; Playwright 30/30) and `make build`.
+- Exact source `a6d36af` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/a6d36af`; public live/ready pass and the
+  readiness gate reports 27 pass / 1 existing content-publication warning / 0
+  fail. The public and RMX3085-installed APK SHA-256 is
+  `5b454d209e90a92199948468e68e3a5f1a4b3eddab49ad8c8da9cb69ffc3ff76`
+  (83,050,631 bytes).
+- RMX3085 UI hierarchy confirms exact **Global Spoken English App**, `ಶುಭ ದಿನ`,
+  right-side Sign in/Theme/Language controls and the Northstar footer. All
+  temporary screenshot, hierarchy and transfer artefacts were deleted.
 
 ## APP-0103 compact title-bar and Direct-content recovery — 19 September 2026
 

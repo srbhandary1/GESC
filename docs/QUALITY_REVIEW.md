@@ -18,13 +18,20 @@
 | Kannada greeting | Pass with human gate | `demo.phase1.home.greeting` is `ಶುಭ ದಿನ`; canonical hash validates; independent review remains open |
 | Developer attribution | Pass (automated) | Footer contains the supplied legal company name and a `mailto:sales@northstar-es.in` link |
 | Focused tests | Pass | App/theme 24/24; localization 36/36; workspace typecheck green |
+| `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468 |
+| `make e2e` | Pass after bounded reflow repair | API 4/4; Playwright 30/30; guest Theme at 320px/400% no longer expands its toolbar |
+| `make build` | Pass | Laravel/Vite production build; existing large-chunk advisory only |
+| Android build/install | Pass | Gradle `BUILD SUCCESSFUL` (103 tasks); preserve-data install on RMX3085/API 33; APK `5b454d20…ffc3ff76`, 83,050,631 bytes |
+| Physical hierarchy | Pass | Exact app name, `ಶುಭ ದಿನ`, Sign in/Theme/Language accessible names and Northstar footer present |
+| Stable-host deployment | Pass | Source `a6d36af`; immutable release `/srv/global-spoken-english/releases/a6d36af`; public live/ready; readiness 27 pass / 1 existing publication warning / 0 fail; public APK hash matches |
+| Diagnostic cleanup | Pass | Temporary workstation/handset screenshots and UI dumps plus transfer archives removed after inspection |
 
 ### Verdict
 
-The bounded source correction passes focused automated review. Full repository,
-Android package, VPS deployment and physical-device evidence are recorded after
-the exact committed candidate is built and promoted. Kannada linguistic review
-and all existing UX-REM-01/content residuals remain open.
+The bounded correction passes repository, Android package, VPS deployment and
+physical-device inspection. Kannada linguistic review and all existing
+UX-REM-01/content residuals remain open; this work does not make the absent 67
+lesson-media objects available.
 
 ## KANNADA-LEARNER-UI-FIX-02 learner chrome catalogue correction — 18 September 2026
 

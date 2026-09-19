@@ -3274,7 +3274,7 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 | Evidence source | Owner's home-page identity, alignment, theme, Kannada greeting, entitlement and developer-attribution correction instruction |
 | Related decision | [D-0325](DECISIONS.md) |
 | Recorder | Codex, acting as implementation agent and evidence recorder |
-| Repository revision | The commit containing this record; exact SHA unavailable while authored |
+| Repository revision | `748d2806fa147f722e1105dd9b92babd94ba59e3`; exact-brand follow-up `a6d36af69ee51d1a0069a1e85f6f4f8b141c3c80` |
 | Master-plan amendment | None |
 
 ### Accepted scope and limits

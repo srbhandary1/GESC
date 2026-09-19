@@ -501,3 +501,20 @@ attempt is
 `1b96eb42e147e5b1bdb4d944db487955c2e21d52179b4afc7006c7344481986d`).
 No lesson content was written: the 67 accepted MP3 objects are absent from the
 available local object store/backups, so the governed importer stopped safely.
+
+## APP-0104 native-home identity deployment — 19 September 2026
+
+The exact implementation candidate is Git `a6d36af69ee51d1a0069a1e85f6f4f8b141c3c80`.
+It is active at immutable release
+`/srv/global-spoken-english/releases/a6d36af`; the prior `f6e0881` release is
+retained for rollback. Public `/health/live` and `/health/ready` pass. The
+readiness report is 27 pass / 1 existing content-publication warning / 0 fail.
+
+The production debug APK was built against `https://ai.globalspokenenglish.com`,
+installed preserve-data on the RMX3085/API 33 handset and published at
+`/downloads/global-spoken-english-android.apk`. Local, installed-source and
+public artifact SHA-256 is
+`5b454d209e90a92199948468e68e3a5f1a4b3eddab49ad8c8da9cb69ffc3ff76`
+(83,050,631 bytes). Temporary screenshot, hierarchy and transfer artefacts were
+deleted after inspection. No schema, migration, secret or provider binding
+changed.
