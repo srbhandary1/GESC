@@ -1114,6 +1114,35 @@
     inset-inline: auto 0;
   }
 
+  html.ge-native-enlarged-text
+    .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(var(--ge-target-minimum), auto);
+  }
+
+  html.ge-native-enlarged-text
+    .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar > * {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    white-space: normal;
+  }
+
+  html.ge-native-enlarged-text
+    .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-toolbar-caption,
+  html.ge-native-enlarged-text
+    .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-toolbar-label {
+    overflow-wrap: normal;
+    text-wrap: balance;
+    white-space: normal;
+    word-break: normal;
+  }
+
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-brand-logo--android {
     width: clamp(68px, 20vw, 88px);

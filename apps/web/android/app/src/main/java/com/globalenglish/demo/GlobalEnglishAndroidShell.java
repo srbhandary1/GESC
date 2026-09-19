@@ -111,6 +111,7 @@ final class GlobalEnglishAndroidShell {
             );
             Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
             float density = view.getResources().getDisplayMetrics().density;
+            float fontScale = view.getResources().getConfiguration().fontScale;
             String script = "(function(){var s=document.documentElement.style;"
                 + cssProperty("--ge-native-safe-area-top", safe.top, density)
                 + cssProperty("--ge-native-safe-area-right", safe.right, density)
@@ -121,6 +122,10 @@ final class GlobalEnglishAndroidShell {
                     windowInsets.isVisible(WindowInsetsCompat.Type.ime()) ? ime.bottom : 0,
                     density
                 )
+                + "s.setProperty('--ge-native-font-scale','" + fontScale + "');"
+                + "document.documentElement.classList.toggle('ge-native-enlarged-text',"
+                + isEnlargedText(fontScale)
+                + ");"
                 + "})();";
             webView.evaluateJavascript(script, null);
             return windowInsets;
@@ -131,6 +136,10 @@ final class GlobalEnglishAndroidShell {
     private static String cssProperty(String name, int pixels, float density) {
         float cssPixels = density <= 0f ? pixels : pixels / density;
         return "s.setProperty('" + name + "','" + cssPixels + "px');";
+    }
+
+    static boolean isEnlargedText(float fontScale) {
+        return fontScale >= 1.3f;
     }
 
     private static void evaluate(WebView webView, String expression) {

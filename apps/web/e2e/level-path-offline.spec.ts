@@ -432,6 +432,7 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   })
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%'
+    document.documentElement.classList.add('ge-native-enlarged-text')
   })
 
   for (const locale of ['en-IN', 'kn-IN']) {

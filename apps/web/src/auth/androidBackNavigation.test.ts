@@ -58,6 +58,9 @@ describe('Android 16 Back and window integration', () => {
       expect(activity).toContain('onStart')
       expect(shell).toContain('TAG_INSETS_INSTALLED')
       expect(shell).toContain('requestApplyInsets')
+      expect(shell).toContain('--ge-native-font-scale')
+      expect(shell).toContain("classList.toggle('ge-native-enlarged-text'")
+      expect(shell).toContain('isEnlargedText(fontScale)')
       expect(build).toContain(
         'implementation "androidx.activity:activity:$androidxActivityVersion"',
       )

@@ -7,6 +7,14 @@ import org.junit.Test;
 
 public class GlobalEnglishAndroidShellTest {
     @Test
+    public void enlargedTextThresholdTracksAndroidFontScale() {
+        assertFalse(GlobalEnglishAndroidShell.isEnlargedText(1.0f));
+        assertFalse(GlobalEnglishAndroidShell.isEnlargedText(1.29f));
+        assertTrue(GlobalEnglishAndroidShell.isEnlargedText(1.3f));
+        assertTrue(GlobalEnglishAndroidShell.isEnlargedText(2.0f));
+    }
+
+    @Test
     public void timeoutReleasesPendingDispatchAndIgnoresLateCallback() {
         GlobalEnglishAndroidShell.BackDispatchGuard guard =
             new GlobalEnglishAndroidShell.BackDispatchGuard();
