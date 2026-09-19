@@ -1,6 +1,6 @@
 # Quality review
 
-## UX-REM-01 physical-defect source repair — 19 September 2026
+## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
 ### Scope reviewed
 
@@ -23,16 +23,21 @@
 | Focused tests | Pass | ConversationJourney, SubscriptionPanel, LiveAiMinutesChip, SessionAccountMenu, Jezweb chrome, ApplicationFrame |
 | `make verify` | Pass | SQLite 330/330; PostgreSQL 360/360; web 468/468; lint/typecheck/locale/OpenAPI/release/soft-launch green |
 | `make e2e` | Pass | API 4/4 (103 assertions); Playwright 30/30 |
-| Physical device | Not run | No RMX3085/ADB session in this repair; previous FAIL/NOT RUN rows are not reclassified |
+| Physical exact candidate | Pass with bounded residuals | Commit `cd6a298`; APK SHA-256 `ed079be…2332d`, 83,050,623 bytes; preserve-data install on RMX3085/API 33 |
+| Maximum-font navigation | Pass at OEM 1.6; exact 2.0 not run | English `Progress` stays whole; all English and Kannada destinations remain complete and readable |
+| Signed-in short landscape | Pass on API 33 | Header, utilities and five destinations remain visible; content remains vertically scrollable without observed horizontal crop |
+| Speak IME form | Pass on device | Type instead leaves the focused field and complete Send action above the visible keyboard |
+| Plans return focus | Pass on device | Explicit Close and three-button system Back both dismiss Plans and focus `shell-live-ai-minutes` |
+| High contrast | Not run on repaired APK | Shell mutation was denied for lack of `WRITE_SECURE_SETTINGS`; no result inferred |
 | TalkBack / quiz CTA | Not run | `UXREM01-DEV-06` still needs a non-production learner with published levels |
 
 ### Verdict
 
-Source repairs for the five implementable UX-REM-01 physical defects are in
-the working tree and pass repository/browser gates. The checkpoint remains
-**in progress** until the same RMX3085 acceptance rows are rerun on a pinned
-APK, or the Accountable Product Owner accepts a bounded residual. UX-REM-02
-must not start.
+The pinned repaired APK closes the observed maximum-font, short-landscape,
+Speak-IME and Plans-focus defects for this API-33 three-button device. The
+checkpoint remains **in progress** because exact 200% text, repaired-APK high
+contrast, TalkBack first-use/quiz/result, physical quiz CTA and additional
+device/API coverage are unevidenced. UX-REM-02 must not start.
 
 ## APP-0104 native home identity and utility-bar correction — 19 September 2026
 

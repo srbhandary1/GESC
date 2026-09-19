@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation and Completion Plan"
-status: "Execution in progress under D-0319; UX-REM-01 source repair for UXREM01-DEV-01–05 complete with physical acceptance still open"
+status: "Execution in progress under D-0319; UX-REM-01 repaired-APK API-33 rerun complete with bounded physical/human gates still open"
 prepared: "18 September 2026"
 canonical_baseline: "ENTERPRISE_PRODUCT_MASTER_PLAN.md version 3.15"
 repository_baseline: "b1660dc"
@@ -660,7 +660,7 @@ Do not mark a row complete without a linked artefact and exact candidate SHA.
 | Order | Checkpoint | State | Owner | Required evidence | Completed |
 |---:|---|---|---|---|---|
 | 0 | UX-REM-00 Device evidence path | Complete | Android engineer / tester | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path); Git `b1660dc`; APK `fffbcec…665012` | 2026-09-18 |
-| 1 | UX-REM-01 Accessibility/reflow | In progress — UXREM01-DEV-01–05 source repair complete; physical rerun still required | Frontend/Android engineer | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#uxrem01-dev-01-05-source-repair--19-september-2026); browser gates green on working tree above `66eff5e`; split-screen previously passed; enlarged text, short landscape, IME, high contrast, Plans focus and TalkBack/quiz still need a pinned-APK physical rerun | |
+| 1 | UX-REM-01 Accessibility/reflow | In progress — repaired APK passes API-33 maximum-font, short-landscape, Speak IME and Plans-return checks; bounded gates remain | Frontend/Android engineer | [Repaired-APK evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#repaired-apk-physical-rerun--19-september-2026); Git `cd6a298`; APK `ed079be…2332d`; exact 200%, high contrast, TalkBack/quiz CTA and additional-device/API evidence remain open | |
 | 2 | UX-REM-02 Back/restoration | Not started | Frontend/Android engineer | API 35/36 Back + lifecycle/offline evidence | |
 | 3 | UX-REM-03 Copy/completion cues | Not started | Product designer / frontend engineer | Copy review + comprehension evidence | |
 | 4 | UX-REM-04 Quiz/result hierarchy | Not started | Product designer / frontend engineer | Tests + representative-user evidence | |

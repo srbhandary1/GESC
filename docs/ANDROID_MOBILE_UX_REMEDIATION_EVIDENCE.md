@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 source repair for UXREM01-DEV-01–05 complete with physical acceptance open"
+status: "UX-REM-00 complete; UX-REM-01 repaired-APK rerun closes defects 01, 02, 03 and 05, with remaining physical/human acceptance open"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -348,3 +348,37 @@ requires passing physical evidence for the open rows or an explicit Accountable
 Product Owner decision accepting each bounded residual. The 19 September
 source repair for `UXREM01-DEV-01` through `UXREM01-DEV-05` is browser-gated
 only.
+
+### Repaired-APK physical rerun — 19 September 2026
+
+The production-package debug APK from commit `cd6a298` was installed without
+clearing learner data and exercised while signed in on the same realme
+RMX3085 (`RMX3085L1`), Android 13 / API 33, WebView 151.0.7922.199 and
+three-button navigation. Its SHA-256 is
+`ed079be8fff89f9e38621dc34f441dd3a8cc8d7c4d689848ac722a82bfe2332d`
+(83,050,623 bytes). Gradle completed successfully with 103 tasks. Results are
+not copied to another device, API level, navigation mode or APK.
+
+| Acceptance observation | Result | Evidence |
+|---|---|---|
+| English at the device maximum | PASS at `font_scale=1.6`; exact 200% NOT RUN | All five destination labels rendered in full and `Progress` remained one complete label after the `cd6a298` narrow-label correction; this OEM exposes no 2.0 preset |
+| Kannada at the device maximum | PASS at `font_scale=1.6`; exact 200% NOT RUN | All five Kannada destination labels remained present and readable; wrapping was allowed and no label was clipped off-screen |
+| Signed-in short landscape | PASS on this API-33 device | Header utilities and all five destinations remained visible; the product name stayed on one line and the content remained vertically scrollable without observed horizontal crop |
+| Speak Type-instead with IME | PASS | The deliberate Talk action exposed Type instead without recording; after activation the focused text field and complete `Send turn` action were both above the visible keyboard |
+| Plans explicit close | PASS | `Close plans` dismissed the surface and UI Automator reported the originating `shell-live-ai-minutes` control focused |
+| Plans system Back | PASS (three-button) | Physical Back dismissed Plans and restored focus to `shell-live-ai-minutes`; gesture/predictive Back is not inferred |
+| High-contrast navigation | NOT RUN | The current value was confirmed Off. Android denied the shell `WRITE_SECURE_SETTINGS` mutation, and no manual high-contrast rerun was performed |
+| TalkBack first use / quiz / result | NOT RUN | The learner has completed first use and still has no published level/quiz; no TalkBack or quiz result is inferred |
+| Physical quiz CTA with IME open/closed | NOT RUN | No published quiz was available; the passing Speak typed-fallback check does not substitute for quiz evidence |
+| API 35/36 or gesture navigation | NOT RUN | This device is API 33 in three-button mode; UX-REM-02 was not started |
+
+Defects `UXREM01-DEV-01`, `UXREM01-DEV-02`, `UXREM01-DEV-03` and
+`UXREM01-DEV-05` are closed for this exact API-33 candidate. The physical
+portion of `UXREM01-DEV-04` remains open because high contrast was not rerun.
+`UXREM01-DEV-06`, exact 200% text, physical quiz-CTA, and API 35/36 evidence
+also remain open. Therefore UX-REM-01 remains **in progress**.
+
+The phone was restored to Kannada, `font_scale=1.0`, automatic rotation,
+high-contrast Off and TalkBack Off. Every temporary `uxrem01-*` screenshot
+and UI hierarchy file was deleted from both workstation `/tmp` and handset
+`/sdcard`; none was committed or retained.

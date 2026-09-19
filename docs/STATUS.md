@@ -1,6 +1,6 @@
 # Repository status
 
-## UX-REM-01 physical-defect source repair — 19 September 2026
+## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
 - D-0319/D-0320 remain the authority. This is a bounded UX-REM-01 continuation
   for recorded defects `UXREM01-DEV-01` through `UXREM01-DEV-05`. UX-REM-02
@@ -18,10 +18,19 @@
 - Repository gates: `make verify` (SQLite 330/330, 3,147 assertions;
   PostgreSQL 360/360, 5,226 assertions; web 468/468) and `make e2e` (API 4/4;
   Playwright 30/30). `make build` was not required (no packaging change).
-- Physical RMX3085/TalkBack/quiz rows remain open. Exact 2.0 font evidence and
-  `UXREM01-DEV-06` (published-level TalkBack learner) are still blocked.
-- Working tree is uncommitted on source `66eff5e`. No APK was rebuilt or
-  installed for this repair.
+- The exact commit `cd6a298` production debug APK (SHA-256
+  `ed079be8fff89f9e38621dc34f441dd3a8cc8d7c4d689848ac722a82bfe2332d`,
+  83,050,623 bytes) was installed preserving data and tested signed in on the
+  RMX3085/API 33. At the OEM maximum `font_scale=1.6`, English and Kannada
+  destination labels were complete; signed-in short landscape remained
+  usable; Speak Type instead kept the field and Send action above the IME;
+  and both Close plans and physical Back restored focus to the live-AI chip.
+- Exact 2.0 text, physical high contrast, TalkBack first-use/quiz/result,
+  physical quiz CTA and API 35/36/gesture evidence remain open. UX-REM-01 is
+  therefore still in progress and UX-REM-02 has not started.
+- Device settings were restored to Kannada, font scale 1.0, automatic
+  rotation, high contrast Off and TalkBack Off. All temporary audit captures
+  were deleted from handset and workstation.
 
 ## APP-0104 native home identity and utility-bar correction — 19 September 2026
 
