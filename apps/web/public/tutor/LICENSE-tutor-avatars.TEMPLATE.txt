@@ -10,6 +10,6 @@ Vendor / store:
 Product names / SKUs:
 Purchase date:
 License type (commercial app / redistribution / modification):
-Morph set (ARKit / Azure visemes / other names):
+Morph set (ARKit / speech-viseme names / other names):
 Licensed to: Global Spoken English App (this repository)
 Notes:

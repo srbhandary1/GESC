@@ -15,7 +15,7 @@ import {
   persistSpeakingComfort,
   readFirstRunDismissed,
 } from '../../ui/firstRunPreference'
-import { demoAzureTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
+import { demoCloudTtsConfigured, speakDemoText, stopDemoSpeech } from '../demoTts'
 import {
   PHASE1_MODULES,
   moduleFromHash,
@@ -194,7 +194,7 @@ export function DemoPhase1Shell({
 
   useEffect(() => {
     let cancelled = false
-    void demoAzureTtsConfigured().then((configured) => {
+    void demoCloudTtsConfigured().then((configured) => {
       if (!cancelled && !configured) {
         setUsedBrowserFallback(true)
       }
@@ -546,7 +546,7 @@ export function DemoPhase1Shell({
             {usedBrowserFallback ? (
               <p className="phase1-muted" role="status">
                 <LocalizedMessage
-                  resolution={message('demo.speech.azure_unavailable')}
+                  resolution={message('demo.speech.cloud_unavailable')}
                 />
               </p>
             ) : null}
@@ -633,7 +633,7 @@ export function DemoPhase1Shell({
             {usedBrowserFallback && module === 'daily-activity' ? (
               <p className="phase1-muted" role="status">
                 <LocalizedMessage
-                  resolution={message('demo.speech.azure_unavailable')}
+                  resolution={message('demo.speech.cloud_unavailable')}
                 />
               </p>
             ) : null}

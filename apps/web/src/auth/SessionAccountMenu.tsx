@@ -52,7 +52,10 @@ export function SessionAccountMenu({
         <span aria-hidden="true" className="shell-toolbar-icon">
           {accountIcon ?? '●'}
         </span>
-        <span className="shell-toolbar-label">{accountLabel}</span>
+        <span className="shell-toolbar-caption">{accountLabel}</span>
+        <span aria-hidden="true" className="shell-toolbar-label">
+          ▾
+        </span>
       </button>
       {open ? (
         <div

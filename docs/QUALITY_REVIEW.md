@@ -10178,3 +10178,31 @@ No schema, API, review, scoring, entitlement, credential-storage or retention
 semantic changed. The VPS environment backup
 `soft-launch.env.pre-voice-direct-20260919` is retained outside Git at mode
 0600. UX-REM-01 remains in progress.
+
+## UX-REM-01 compact toolbar and provider-category disclosure — 19 September 2026
+
+### Scope reviewed
+
+- Reduce the native Android utility strip to the accepted 48 CSS-pixel target
+  floor and align every control as a caption/value pair.
+- Remove speech/conversation vendor branding from customer-facing UI, demo and
+  public privacy copy without hiding the processing purposes, provider
+  categories, failover, retention, withdrawal, no-training or refusal terms.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Toolbar geometry | Pass | Four equal columns use `var(--ge-target-minimum)`; captions and values share centered flex alignment and native select text uses centered last-line alignment |
+| Accessible controls | Pass | The visible row remains 48 CSS pixels; Account and AI keep their descriptive button accessible names; Theme and Language retain explicit labels |
+| Public disclosure | Pass | `privacy.html`, voice consent notices and all six demo catalogues use approved provider categories and contain no Sarvam, Azure or ElevenLabs branding |
+| Consent versioning | Pass | Notice revision advanced to `voice-processing-notice-2026-09-19`; existing consent cannot be reused as acceptance of changed notice text |
+| Provider behavior | Unchanged | Internal adapters, routes, credentials, failover limits, retention and no-training controls were not changed |
+| Automated evidence | Pass | Focused Vitest 6 files / 25 tests; typecheck; `make verify` (SQLite 330/330, PostgreSQL 361/361 with 5,231 assertions, web 468/468); `make e2e` API 4/4 and Playwright 30/30; `make build`; production-bundle vendor-brand scan passed |
+| Android package | Pass / physical pending | `make android-closed-beta`: 103 tasks, BUILD SUCCESSFUL; APK `5499b696…b9b117`, 83,050,785 bytes; packaged web-asset vendor scan passed; no ADB device was connected for install/visual acceptance |
+
+The provider category disclosure follows ADR-0007, which requires category,
+purpose, retention, deletion and refusal consequences but does not require a
+customer-facing vendor brand. Five non-English catalogue drafts still require
+independent human language review. UX-REM-01 remains in progress for its
+previously recorded physical and human gates.

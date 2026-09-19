@@ -2,8 +2,23 @@
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
+- Follow-up compact-toolbar/provider-disclosure repair: the Android utility
+  strip now uses one 48 CSS-pixel row with consistent caption/value alignment
+  for Account, AI allowance, Theme and Language. Customer-facing consent,
+  privacy and demo copy now describes approved speech-processing and automated
+  conversation-provider categories without vendor branding. The consent
+  notice revision advances to `voice-processing-notice-2026-09-19`, so an
+  earlier grant cannot silently cover the revised notice. Internal adapters,
+  credentials and routing remain unchanged. The six catalogue revisions and
+  hashes were advanced; five non-English catalogues remain pending independent
+  review. The production-path debug APK build passes (103 tasks); candidate
+  SHA-256 is
+  `5499b696b43eef4dff1726a94c02c4e9801a4ad2e357fb84146124b71eb9b117`
+  (83,050,785 bytes), and its packaged web assets pass the same vendor-brand
+  scan. ADB currently reports no connected device, so install and physical
+  alignment acceptance remain open.
 - Follow-up toolbar/microphone repair: authenticated Android utilities now use
-  a compact four-column, equal-height 3.25rem grid. An identical learner
+  a compact four-column, equal-height grid. An identical learner
   transcript/retry target is deduplicated in embedded drills. The Learn microphone was present but
   its consent listing returned 404 because the recovered Direct organization
   was absent from the VPS voice allowlist. The exact Direct organization was

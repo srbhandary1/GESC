@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DemoPhase1Shell } from './DemoPhase1Shell'
 
 vi.mock('../demoTts', () => ({
-  speakDemoText: vi.fn().mockResolvedValue('azure'),
+  speakDemoText: vi.fn().mockResolvedValue('cloud'),
   stopDemoSpeech: vi.fn(),
-  demoAzureTtsConfigured: vi.fn().mockResolvedValue(true),
+  demoCloudTtsConfigured: vi.fn().mockResolvedValue(true),
 }))
 
 afterEach(() => {
@@ -94,7 +94,7 @@ describe('DemoPhase1Shell', () => {
     await user.click(screen.getByRole('link', { name: 'AI Teacher' }))
     expect(
       screen.getByText(
-        'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
+        'Scripted demo replies. Voice uses an approved speech service when configured; no generative AI call.',
       ),
     ).toBeInTheDocument()
     expect(

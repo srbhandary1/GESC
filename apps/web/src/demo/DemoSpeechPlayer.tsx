@@ -19,7 +19,7 @@ export interface DemoSpeechPlayerProps {
 }
 
 /**
- * Demo-only model-audio player. Prefers Azure neural TTS via `/demo/tts`,
+ * Demo-only model-audio player. Prefers cloud neural TTS via `/demo/tts`,
  * then falls back to on-device browser speech for `demo-speech:` URLs.
  */
 export function DemoSpeechPlayer({
@@ -78,7 +78,7 @@ export function DemoSpeechPlayer({
   }
 
   return (
-    <div data-demo-speech="azure-first-tts">
+    <div data-demo-speech="cloud-first-tts">
       <p className="demo-speech-caption" lang={utterance.locale}>
         {utterance.text}
       </p>

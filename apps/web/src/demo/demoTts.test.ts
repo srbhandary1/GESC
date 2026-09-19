@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  resetDemoAzureTtsStatusCache,
+  resetDemoCloudTtsStatusCache,
   speakDemoText,
   stopDemoSpeech,
 } from './demoTts'
@@ -8,7 +8,7 @@ import {
 describe('demo Azure-first speech helper', () => {
   afterEach(() => {
     stopDemoSpeech()
-    resetDemoAzureTtsStatusCache()
+    resetDemoCloudTtsStatusCache()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -54,7 +54,7 @@ describe('demo Azure-first speech helper', () => {
 
     const source = await speakDemoText('ಸ್ವಾಗತ', 'kn-IN')
 
-    expect(source).toBe('azure')
+    expect(source).toBe('cloud')
     expect(fetchMock).toHaveBeenCalledWith(
       '/demo/tts',
       expect.objectContaining({

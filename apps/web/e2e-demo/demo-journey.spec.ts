@@ -31,7 +31,7 @@ test('runs the disclosed Phase 1 dashboard demo without API calls', async ({
   await page.getByRole('link', { name: 'AI Teacher' }).click()
   await expect(
     page.getByText(
-      'Scripted demo replies. Voice uses Azure neural TTS when configured; no generative AI call.',
+      'Scripted demo replies. Voice uses an approved speech service when configured; no generative AI call.',
     ),
   ).toBeVisible()
   await page.getByRole('button', { name: 'English' }).first().click()

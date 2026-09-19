@@ -215,7 +215,11 @@ grep -Fq 'handle /privacy.html {' "$soft_launch_caddyfile"
 grep -Fq 'handle /account-deletion.html {' "$soft_launch_caddyfile"
 test -f "$root_dir/apps/web/public/privacy.html"
 test -f "$root_dir/apps/web/public/account-deletion.html"
-grep -Fq 'Sarvam' "$root_dir/apps/web/public/privacy.html"
+grep -Fq 'approved speech-processing providers' "$root_dir/apps/web/public/privacy.html"
+if grep -Eiq 'Sarvam|Azure|Eleven[[:space:]]*Labs' "$root_dir/apps/web/public/privacy.html"; then
+    printf '%s\n' 'Public privacy notice must describe provider categories without vendor branding.' >&2
+    exit 1
+fi
 grep -Fq 'operator privacy' "$root_dir/apps/web/public/account-deletion.html"
 grep -Fq 'Cache-Control "no-store, max-age=0"' "$soft_launch_caddyfile"
 if grep -Eq 'reconciliationPage|lpl01-reconciliation|Referrer-Policy "same-origin"' \

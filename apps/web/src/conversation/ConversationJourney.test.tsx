@@ -245,8 +245,8 @@ describe('Friend practice journey', () => {
         json: async () => ({ configured: false }),
       })),
     )
-    const { resetDemoAzureTtsStatusCache } = await import('../demo/demoTts')
-    resetDemoAzureTtsStatusCache()
+    const { resetDemoCloudTtsStatusCache } = await import('../demo/demoTts')
+    resetDemoCloudTtsStatusCache()
 
     const session = fakeSession()
     const turn = fakeTurn(session.id)

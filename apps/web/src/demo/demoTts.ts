@@ -1,5 +1,5 @@
 /**
- * Demo speech playback: Azure neural TTS via local `/demo/tts` first,
+ * Demo speech playback: cloud neural TTS via local `/demo/tts` first,
  * then on-device browser speech as fallback. Presentation-only.
  */
 
@@ -10,11 +10,11 @@ import {
 } from './browserSpeech'
 import { stopSpeechPlayback } from '../shared/stopSpeechPlayback'
 
-export type DemoSpeechSource = 'azure' | 'browser'
+export type DemoSpeechSource = 'cloud' | 'browser'
 
 let currentAudio: HTMLAudioElement | null = null
 let currentObjectUrl: string | null = null
-let azureConfiguredCache: boolean | null = null
+let cloudConfiguredCache: boolean | null = null
 
 export function stopDemoSpeech(): void {
   stopSpeechPlayback()
@@ -32,10 +32,10 @@ export function stopDemoSpeech(): void {
   stopBrowserSpeech()
 }
 
-export async function demoAzureTtsConfigured(): Promise<boolean> {
+export async function demoCloudTtsConfigured(): Promise<boolean> {
   // Re-check when previously false so a restarted demo with credentials
   // is picked up after HMR without a full browser reload.
-  if (azureConfiguredCache === true) {
+  if (cloudConfiguredCache === true) {
     return true
   }
 
@@ -45,24 +45,24 @@ export async function demoAzureTtsConfigured(): Promise<boolean> {
       cache: 'no-store',
     })
     if (!response.ok) {
-      azureConfiguredCache = false
+      cloudConfiguredCache = false
       return false
     }
     const body = (await response.json()) as { configured?: unknown }
-    azureConfiguredCache = body.configured === true
-    return azureConfiguredCache
+    cloudConfiguredCache = body.configured === true
+    return cloudConfiguredCache
   } catch {
-    azureConfiguredCache = false
+    cloudConfiguredCache = false
     return false
   }
 }
 
 /** Test helper — clears the status cache between cases. */
-export function resetDemoAzureTtsStatusCache(): void {
-  azureConfiguredCache = null
+export function resetDemoCloudTtsStatusCache(): void {
+  cloudConfiguredCache = null
 }
 
-async function speakWithAzureTts(
+async function speakWithCloudTts(
   text: string,
   locale: string,
 ): Promise<void> {
@@ -76,12 +76,12 @@ async function speakWithAzureTts(
   })
 
   if (!response.ok) {
-    throw new Error(`azure_tts_http_${response.status}`)
+    throw new Error(`cloud_tts_http_${response.status}`)
   }
 
   const blob = await response.blob()
   if (blob.size === 0) {
-    throw new Error('azure_tts_empty')
+    throw new Error('cloud_tts_empty')
   }
 
   const objectUrl = URL.createObjectURL(blob)
@@ -104,18 +104,18 @@ async function speakWithAzureTts(
 
     const timer = globalThis.setTimeout(() => {
       stopDemoSpeech()
-      finish(() => reject(new Error('Azure TTS playback timed out.')))
+      finish(() => reject(new Error('Cloud voice playback timed out.')))
     }, timeoutMs)
 
     audio.onended = () => finish(() => resolve())
     audio.onerror = () =>
-      finish(() => reject(new Error('Azure TTS playback failed.')))
+      finish(() => reject(new Error('Cloud voice playback failed.')))
     void audio.play().catch((error: unknown) => {
       finish(() =>
         reject(
           error instanceof Error
             ? error
-            : new Error('Azure TTS playback failed to start.'),
+            : new Error('Cloud voice playback failed to start.'),
         ),
       )
     })
@@ -133,18 +133,18 @@ export async function speakDemoText(
 
   stopDemoSpeech()
 
-  const azureReady = await demoAzureTtsConfigured()
-  if (azureReady) {
+  const cloudReady = await demoCloudTtsConfigured()
+  if (cloudReady) {
     try {
-      await speakWithAzureTts(trimmed, locale)
-      return 'azure'
+      await speakWithCloudTts(trimmed, locale)
+      return 'cloud'
     } catch {
       // Fall through to browser speech.
     }
   }
 
   if (!browserSpeechSynthesisAvailable()) {
-    throw new Error('Azure and browser speech are both unavailable.')
+    throw new Error('Cloud and device speech are both unavailable.')
   }
 
   await speakWithBrowserSpeech(trimmed, locale)
@@ -152,7 +152,7 @@ export async function speakDemoText(
 }
 
 export function demoSpeechPlaybackAvailable(
-  azureConfigured: boolean,
+  cloudConfigured: boolean,
 ): boolean {
-  return azureConfigured || browserSpeechSynthesisAvailable()
+  return cloudConfigured || browserSpeechSynthesisAvailable()
 }

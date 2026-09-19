@@ -54,7 +54,8 @@ describe('LiveAiMinutesChip', () => {
     expect(
       screen.getByRole('button', { name: 'View plan and billing' }),
     ).toHaveAttribute('id', 'shell-live-ai-minutes')
-    expect(screen.getByText('AI · 89 min')).toBeInTheDocument()
+    expect(screen.getByText('AI')).toBeInTheDocument()
+    expect(screen.getByText('89 min')).toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: 'View plan and billing' }),

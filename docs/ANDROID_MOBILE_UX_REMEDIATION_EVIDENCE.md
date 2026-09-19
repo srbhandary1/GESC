@@ -470,3 +470,32 @@ PostgreSQL 361/361, 5,232 assertions; web 468/468), `make e2e` passed API 4/4
 and Playwright 30/30, `make build` passed, and the Android build passed 103
 tasks. A signed-in physical consent/recording attempt remains required; no
 provider-success claim is inferred from configuration and automated gates.
+
+### Compact toolbar and provider-category disclosure — 19 September 2026
+
+The four native header controls now share a single 48 CSS-pixel row and the
+same centered caption/value rhythm. Account renders a compact disclosure
+indicator, AI renders `AI` above the minutes value, and the Theme/Language
+native selects use centered text without reducing the touch target below the
+accepted minimum.
+
+Customer-facing voice consent, the public privacy page and demo status copy
+now identify approved speech-processing and automated conversation-provider
+categories without naming vendors. Required purpose, failover, retention,
+withdrawal, no-training and text-only/refusal terms remain explicit. The
+notice revision is `voice-processing-notice-2026-09-19`; catalogue governance
+hashes/revisions were advanced and the five translated catalogues remain
+pending independent review.
+
+Focused Vitest (6 files / 25 tests), typecheck, `make verify` (SQLite 330/330,
+PostgreSQL 361/361 with 5,231 assertions, web 468/468), `make e2e` (API 4/4,
+Playwright 30/30), `make build` and the production-bundle vendor-brand scan
+pass. Provider routing and credentials were not changed. Physical
+alignment acceptance and the already-open UX-REM-01 human gates remain open.
+
+The refreshed production-path debug APK passed all 103 Gradle tasks. Candidate
+SHA-256 is
+`5499b696b43eef4dff1726a94c02c4e9801a4ad2e357fb84146124b71eb9b117`
+(83,050,785 bytes), and a scan of its packaged web assets found none of the
+three vendor brands. No ADB device was connected, so this candidate has not
+yet received physical toolbar-alignment acceptance.
