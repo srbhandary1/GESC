@@ -17,6 +17,7 @@ the show-password naming defect without revising catalogues or Android.
 | Unit tests | Pass | `pnpm --filter @global-english/web test` 107 files / 478 tests |
 | Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8 including `#about` badge CSS and 390 48×48 header |
 | Browser | Pass | Local preview: badge `rgb(0, 85, 51)` / `rgb(232, 244, 237)`; 390 Sign in 73×48, APK 48×48; Dark cards `rgb(18, 36, 28)`; privacy `#FAFBFA` / `#006B3F` |
+| Stable-host deployment | Pass | Git `034b16e` at `/srv/global-spoken-english/releases/034b16e`; prior `c4ee5cc` retained; encrypted backup `soft-launch-20260921T093523Z.sql.gz.enc`; public live/ready 200; `/legal.css` 200 with `#fafbfa` / `#006b3f` |
 | Android device residuals | Open | TalkBack, exact 200% font, predictive Back |
 
 ## WEB-UX web guest home — 21 September 2026

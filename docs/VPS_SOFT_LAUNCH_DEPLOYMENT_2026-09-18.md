@@ -607,11 +607,13 @@ archives and verification downloads were deleted from the VPS and workstation.
 
 ## WEB-UX web guest home — 21 September 2026
 
-Git `c4ee5cc` is active at immutable release
-`/srv/global-spoken-english/releases/c4ee5cc`; prior `8daed9d` remains the
+Git `034b16e` is active at immutable release
+`/srv/global-spoken-english/releases/034b16e`; prior `c4ee5cc` remains the
 rollback target. Encrypted offsite backup
-`soft-launch-20260921T091325Z.sql.gz.enc` (sha256 `b97f29d3…4773`) was taken
-before the switch. Unsigned web `#home` Listen plays static
-`/guest-sample/level-12-*.wav` files. Capacitor Android compact home and the
-published APK are unchanged. Public `/api/v1/health/live` and `/health/ready`
-return HTTP 200. There is no schema or migration change.
+`soft-launch-20260921T093523Z.sql.gz.enc` (sha256 `068cf49b…b30a7`) was taken
+before the switch. Public-web audit residuals (badge contrast, 48px header
+targets, Variant C legal pages, explicit Dark) are live. J4 Kannada leftover
+English strings and Android TalkBack/200%/predictive Back remain open.
+Capacitor Android compact home and the published APK are unchanged. Public
+`/api/v1/health/live` and `/health/ready` return HTTP 200. There is no schema
+or migration change.

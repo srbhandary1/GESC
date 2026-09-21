@@ -12,7 +12,14 @@
   **decision request**: changing those strings would change
   `ui-kn-IN-2026-09-19.4` and reopen independent review. Android TalkBack,
   exact 200% font and predictive Back were not re-run.
-- No catalogue, API, schema, APK or VPS cutover in this checkpoint.
+- Git `034b16e` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/034b16e`; `c4ee5cc` remains the rollback
+  target. Encrypted offsite backup
+  `soft-launch-20260921T093523Z.sql.gz.enc` (sha256 `068cf49b…b30a7`) was taken
+  before the switch. Public `/api/v1/health/live` and `/health/ready` return
+  200. Live `/legal.css` serves Variant C tokens; `#about` badge override is
+  present in `/assets/index-m5rICasf.css`. There is no schema, migration or
+  APK change.
 
 ## WEB-UX web guest home — 21 September 2026
 
