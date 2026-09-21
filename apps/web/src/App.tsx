@@ -999,11 +999,7 @@ function App({
               session.status === 'unavailable') ? (
               <>
                 <a
-                  className={
-                    showDedicatedSignIn
-                      ? 'shell-header-authentication shell-header-authentication--quiet shell-native-toolbar-action'
-                      : 'shell-header-nav-link shell-native-toolbar-action'
-                  }
+                  className="shell-header-authentication shell-header-authentication--quiet shell-native-toolbar-action"
                   href={showDedicatedSignIn ? '#home' : '#sign-in'}
                   onClick={(event) => {
                     event.preventDefault()

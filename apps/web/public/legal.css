@@ -1,0 +1,61 @@
+/* Variant C tokens for standalone Play legal pages. Keep copy unchanged. */
+:root {
+  color-scheme: light;
+  --ge-canvas: #fafbfa;
+  --ge-ink: #1a1a1a;
+  --ge-muted: #5c6670;
+  --ge-border: #e2e8e5;
+  --ge-action: #006b3f;
+  --ge-action-hover: #005533;
+  --ge-surface: #ffffff;
+}
+
+body {
+  margin: 0;
+  background: var(--ge-canvas);
+  color: var(--ge-ink);
+  font: 16px/1.5 system-ui, "Noto Sans", sans-serif;
+}
+
+main {
+  margin: 2rem auto;
+  max-width: 40rem;
+  padding: 0 1rem 4rem;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  color: var(--ge-action);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.card {
+  background: var(--ge-surface);
+  border: 1px solid var(--ge-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  color: var(--ge-ink);
+}
+
+.card p {
+  margin: 0 0 0.85rem;
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.kn {
+  margin-top: 1.5rem;
+}
+
+a {
+  color: var(--ge-action-hover);
+  text-decoration: underline;
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--ge-action);
+}

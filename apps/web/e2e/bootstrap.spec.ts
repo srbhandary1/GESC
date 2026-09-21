@@ -177,6 +177,19 @@ test('keeps MarketingLanding on the explicit about hash', async ({
   ).toBeVisible()
   await expect(page.locator('.marketing-landing')).toHaveCount(1)
   await expect(page.locator('[data-guest-mira-home]')).toHaveCount(0)
+  await expect(page.locator('.marketing-hero__badge')).toHaveCSS(
+    'color',
+    'rgb(0, 85, 51)',
+  )
+  await expect(page.locator('.marketing-hero__badge')).toHaveCSS(
+    'background-color',
+    'rgb(232, 244, 237)',
+  )
+
+  const accessibility = await new AxeBuilder({ page })
+    .include('.marketing-hero__badge')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
 })
 
 test('supports skip-link and sign-in from the keyboard', async ({
@@ -242,7 +255,7 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
 test('reflows at target widths and enlarged-text stress proxies', async ({
   page,
 }) => {
-  for (const width of [320, 360, 412, 768, 1280]) {
+  for (const width of [320, 360, 390, 412, 768, 1280]) {
     await page.setViewportSize({ height: 900, width })
     await page.goto('/')
 
@@ -251,6 +264,19 @@ test('reflows at target widths and enlarged-text stress proxies', async ({
     await expect(
       page.getByRole('link', { exact: true, name: message('session.label') }),
     ).toBeVisible()
+  }
+
+  await page.setViewportSize({ height: 900, width: 390 })
+  for (const target of await page
+    .locator(
+      '.shell-header-authentication, .shell-android-download, #interface-locale',
+    )
+    .all()) {
+    const box = await target.boundingBox()
+
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(48)
+    expect(box!.width).toBeGreaterThanOrEqual(48)
   }
 
   await page.setViewportSize({ height: 900, width: 320 })

@@ -356,10 +356,12 @@ export function WebPasswordSignInPanel({
                 />
               </>
             ) : null}
-            <label>
+            <label htmlFor="web-password-show">
               <input
                 checked={showPassword}
                 disabled={busy}
+                id="web-password-show"
+                name="show-password"
                 onChange={(event) =>
                   setShowPassword(event.currentTarget.checked)
                 }

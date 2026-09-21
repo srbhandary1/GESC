@@ -74,6 +74,10 @@ describe('Jezweb Variant C learner chrome', () => {
       /\.learner-home__title:focus-visible\s*\{\s*outline: none;/u,
     )
     expect(jezweb).not.toContain('level-path--variant-a')
+    expect(jezweb).toContain("[data-ge-theme-preference='dark']")
+    expect(jezweb).toContain('color-scheme: dark')
+    expect(jezweb).toContain('min-inline-size: 48px')
+    expect(jezweb).toContain('min-block-size: 48px')
 
     expect(app).toContain("import './theme/jezwebLearnerChrome.css'")
     expect(app).toContain('ge-application-frame--jezweb')

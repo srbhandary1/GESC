@@ -231,6 +231,11 @@ describe('localized application shell', () => {
       }),
     ).toHaveAttribute('href', '#sign-in')
     expect(
+      within(header as HTMLElement).getByRole('link', {
+        name: text('session.label'),
+      }),
+    ).toHaveClass('shell-header-authentication')
+    expect(
       screen.getByRole('link', { name: text('marketing.hero.cta_sign_in') }),
     ).toHaveAttribute('href', '#sign-in')
     expect(

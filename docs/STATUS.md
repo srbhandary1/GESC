@@ -1,5 +1,19 @@
 # Repository status
 
+## WEB-UX audit residuals — 21 September 2026
+
+- J1: `#about` hero badge is `#005533` on `#e8f4ed` (AA) instead of cyan on
+  mint. J2/J3: unsigned header Sign in uses the quiet 48 CSS-pixel
+  authentication control; the 390 APK chip is at least 48×48.
+- Explicit Dark restyles jezweb learner cards; System and Light stay Variant C
+  light so Android dark-mode WebViews remain readable. Privacy and
+  account-deletion HTML now load Variant C `legal.css`.
+- J4 (`tutor.role`, Tap to Play tip still English in approved `kn-IN`) is a
+  **decision request**: changing those strings would change
+  `ui-kn-IN-2026-09-19.4` and reopen independent review. Android TalkBack,
+  exact 200% font and predictive Back were not re-run.
+- No catalogue, API, schema, APK or VPS cutover in this checkpoint.
+
 ## WEB-UX web guest home — 21 September 2026
 
 - Unsigned **web** `#home` now uses the Impeccable desktop guest home: product

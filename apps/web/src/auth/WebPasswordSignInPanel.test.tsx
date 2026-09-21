@@ -47,6 +47,13 @@ describe('web password sign-in panel', () => {
     await user.type(password, 'Correct horse battery 2026!')
     await user.click(screen.getByLabelText('Show password'))
     expect(password).toHaveAttribute('type', 'text')
+    expect(screen.getByLabelText('Show password')).toHaveAttribute(
+      'id',
+      'web-password-show',
+    )
+    expect(screen.getByLabelText('Show password')).not.toHaveAttribute(
+      'readonly',
+    )
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(authentication.signIn).toHaveBeenCalledWith(

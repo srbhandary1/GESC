@@ -462,6 +462,74 @@
   color-scheme: light;
 }
 
+/* Explicit Dark: learner cards follow the chosen appearance. System and Light
+   stay Variant C light so Android dark-mode WebViews remain readable. */
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner,
+.demo-experience
+  [data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner {
+  --ge-color-canvas: #0b1210;
+  --ge-color-canvas-deep: #0f1f17;
+  --ge-color-surface: #12241c;
+  --ge-color-surface-elevated: #1a2620;
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #c4d0c9;
+  --ge-color-border: #24332c;
+  --ge-panel-background: #12241c;
+  --ge-panel-border: #24332c;
+  --ge-accent-panel-bg: #12241c;
+  --ge-accent-panel-border: #24332c;
+  --ge-accent-panel-text: #f7fbf9;
+  --ge-accent-panel-heading: #f7fbf9;
+  --ge-accent-panel-muted: #c4d0c9;
+  --ge-conversation-heading-bg: #12241c;
+  --ge-roleplay-scene-bg: #12241c;
+  color: var(--ge-color-text);
+  background: var(--ge-color-canvas-deep);
+  color-scheme: dark;
+}
+
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page__card,
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .ge-panel,
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .learner-card,
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .phase1-home__lesson,
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .level-path__hero {
+  background: var(--ge-color-surface);
+  color: var(--ge-color-text);
+}
+
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page__card {
+  border-color: #24332c;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+}
+
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner
+  .shell-sign-in-page
+  .web-otp-sign-in__form
+  input:not([type='checkbox']) {
+  border-color: #3d5348;
+  background: #0b1210;
+  color: #f7fbf9;
+  caret-color: #3ddc97;
+  -webkit-text-fill-color: #f7fbf9;
+}
+
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .shell-sign-in-page__card,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner .ge-panel,
@@ -644,6 +712,22 @@
   background: #fafbfa;
 }
 
+[data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner,
+.demo-experience
+  [data-ge-theme-preference='dark']
+  .ge-application-frame--jezweb.ge-application-frame--studio-learner {
+  --ge-color-canvas: #0b1210;
+  --ge-color-canvas-deep: #0f1f17;
+  --ge-color-ink: #f7fbf9;
+  --ge-color-text: #f7fbf9;
+  --ge-color-text-muted: #c4d0c9;
+  --ge-color-border: #24332c;
+  --ge-color-soft-brand: #163328;
+  --ge-panel-border: #24332c;
+  background: #0f1f17;
+}
+
 .ge-application-frame--jezweb .ge-application-frame__header {
   border-block-end: 1px solid var(--ge-color-border);
   background: rgb(255 255 255 / 0.96);
@@ -651,6 +735,11 @@
   box-shadow: none;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .ge-application-frame__header {
+  background: rgb(11 18 16 / 0.96);
+  color: #f7fbf9;
 }
 
 .ge-application-frame--jezweb .shell-studio-brand__name,
@@ -1269,6 +1358,20 @@
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  /* 48×48 CSS-pixel account and APK targets at 390; locale/theme may stay compact. */
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-header-authentication,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-android-download {
+    min-inline-size: 48px;
+    min-block-size: 48px;
+    min-height: 48px;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android

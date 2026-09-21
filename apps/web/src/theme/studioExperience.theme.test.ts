@@ -31,6 +31,14 @@ describe('Studio appearance themes', () => {
     expect(BRAND_COLORS.lightBg).toBe('#F8FFFE')
     expect(source).toContain('--ge-mira-green: #006b3f')
     expect(source).toContain('--ge-studio-cyan: var(--ge-mira-mint)')
+    expect(miraGescGreenPin).toContain(
+      "[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__badge",
+    )
+    expect(miraGescGreenPin).toContain('color: #005533')
+    expect(miraGescGreenPin).toContain('background: #e8f4ed')
+    expect(miraGescGreenPin).not.toMatch(
+      /\[data-ge-theme='light'\][^{]*marketing-hero__badge[^{]*\{[^}]*#a5f3fc/su,
+    )
     expect(appStyles).toContain('.shell-content--gate')
     expect(studioExperience).toContain('width: 100%')
   })

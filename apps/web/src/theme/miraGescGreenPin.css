@@ -51,6 +51,18 @@
   color: var(--ge-mira-green);
 }
 
+/* Light #about keeps the studio hero but the cyan badge is 1.18:1 on mint. */
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__badge {
+  border-color: #a5cdb9;
+  background: #e8f4ed;
+  color: #005533;
+}
+
+[data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__badge-signal {
+  background: #006b3f;
+  box-shadow: 0 0 0 0.3rem rgb(0 107 63 / 0.12);
+}
+
 [data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__lede,
 [data-ge-theme='light'] .ge-application-frame--studio .marketing-hero__path li {
   color: var(--ge-color-text-muted);

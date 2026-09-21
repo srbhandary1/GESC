@@ -1,5 +1,24 @@
 # Quality review
 
+## WEB-UX audit residuals — 21 September 2026
+
+Closes jezweb/Impeccable public-web residuals J1, J2, J3, J5, legal HTML and
+the show-password naming defect without revising catalogues or Android.
+
+| Check | Result | Evidence |
+|---|---|---|
+| J1 badge contrast | Pass (source + e2e CSS) | Light `#about` badge `#005533` / `#e8f4ed`; axe include `.marketing-hero__badge` |
+| J2 header Sign in | Pass | Quiet `shell-header-authentication`; 48×48 at 390 |
+| J3 APK chip | Pass | `min-inline-size/min-block-size: 48px` at 390 mobile web |
+| J5 explicit Dark | Pass (source) | `[data-ge-theme-preference='dark']` restyles cards; System/Light stay light |
+| Legal pages | Pass | `/legal.css` Variant C tokens; copy unchanged |
+| Show password | Pass | `id=web-password-show`; not `readonly` |
+| Catalogues | Unchanged | J4 held; `ui-kn-IN-2026-09-19.4` hash not revised |
+| Unit tests | Pass | `pnpm --filter @global-english/web test` 107 files / 478 tests |
+| Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8 including `#about` badge CSS and 390 48×48 header |
+| Browser | Pass | Local preview: badge `rgb(0, 85, 51)` / `rgb(232, 244, 237)`; 390 Sign in 73×48, APK 48×48; Dark cards `rgb(18, 36, 28)`; privacy `#FAFBFA` / `#006B3F` |
+| Android device residuals | Open | TalkBack, exact 200% font, predictive Back |
+
 ## WEB-UX web guest home — 21 September 2026
 
 Unsigned web `#home` uses the Impeccable desktop guest home. Android compact
