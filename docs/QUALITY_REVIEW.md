@@ -16,7 +16,7 @@ home is unchanged. No catalogue, API, schema or native-shell change.
 | Unit tests | Pass | `pnpm --filter @global-english/web test` 105 files / 475 tests |
 | Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8 |
 | `make verify` | Not run to completion | Toolchain pin requires Node 24.18.1; this environment has 22.22.1 |
-| Stable-host deployment | Pass | Git `8daed9d` at `/srv/global-spoken-english/releases/8daed9d`; prior `c76aa14` retained; encrypted backup `soft-launch-20260921T085757Z.sql.gz.enc`; public live/ready 200; live `#home` H1 `marketing.hero.title` with Level 12 sample |
+| Stable-host deployment | Pass | Git `c4ee5cc` at `/srv/global-spoken-english/releases/c4ee5cc`; prior `8daed9d` retained; encrypted backup `soft-launch-20260921T091325Z.sql.gz.enc`; public live/ready 200; `/guest-sample/level-12-i-would-like-black-tea.wav` HTTP 200 113444 bytes |
 
 ## WEB-HUM-01 kn-IN independent review — 21 September 2026
 

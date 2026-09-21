@@ -607,11 +607,11 @@ archives and verification downloads were deleted from the VPS and workstation.
 
 ## WEB-UX web guest home — 21 September 2026
 
-Git `8daed9d` is active at immutable release
-`/srv/global-spoken-english/releases/8daed9d`; prior `c76aa14` remains the
+Git `c4ee5cc` is active at immutable release
+`/srv/global-spoken-english/releases/c4ee5cc`; prior `8daed9d` remains the
 rollback target. Encrypted offsite backup
-`soft-launch-20260921T085757Z.sql.gz.enc` (sha256 `ac5e8218…4bdaf`) was taken
-before the switch. The unsigned web PWA `#home` now serves the Impeccable
-desktop guest home. Capacitor Android compact home and the published APK are
-unchanged. Public `/api/v1/health/live` and `/health/ready` return HTTP 200.
-There is no schema or migration change.
+`soft-launch-20260921T091325Z.sql.gz.enc` (sha256 `b97f29d3…4773`) was taken
+before the switch. Unsigned web `#home` Listen plays static
+`/guest-sample/level-12-*.wav` files. Capacitor Android compact home and the
+published APK are unchanged. Public `/api/v1/health/live` and `/health/ready`
+return HTTP 200. There is no schema or migration change.
