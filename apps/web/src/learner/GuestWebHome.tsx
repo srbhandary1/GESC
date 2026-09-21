@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   MessageKey,
   ResolutionPolicy,
@@ -7,7 +7,13 @@ import type {
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
 import { demoLevelFixture } from '../demo/demoLevelFixtures'
+import {
+  registerSpeechAudio,
+  stopSpeechPlayback,
+  unregisterSpeechAudio,
+} from '../shared/stopSpeechPlayback'
 import { AvatarSlot } from '../ui/AvatarSlot'
+import { guestSampleAudioSrc } from './guestSampleAudio'
 import './GuestWebHome.css'
 
 export interface GuestWebHomeProps {
@@ -40,19 +46,48 @@ export function GuestWebHome({
   const [choice, setChoice] = useState<number | null>(null)
   const [loopStep, setLoopStep] = useState<(typeof LOOP_STEPS)[number]>('listen')
   const [sessionStep, setSessionStep] = useState<(typeof SESSION_STEPS)[number]>(1)
-
-  useEffect(() => {
-    if (!playing) {
-      return
-    }
-    const timer = window.setTimeout(() => {
-      setPlaying(false)
-      setHeard(true)
-    }, 2200)
-    return () => window.clearTimeout(timer)
-  }, [playing])
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const phrase = phrases[phraseIndex] ?? phrases[0] ?? ''
+  const sampleAudioSrc = guestSampleAudioSrc(phrase)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (audio === null) {
+      return
+    }
+    registerSpeechAudio(audio)
+    return () => {
+      audio.pause()
+      unregisterSpeechAudio(audio)
+    }
+  }, [sampleAudioSrc])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (audio === null) {
+      return
+    }
+    audio.pause()
+    audio.currentTime = 0
+    setPlaying(false)
+    setHeard(false)
+  }, [phrase])
+
+  const playSample = async () => {
+    const audio = audioRef.current
+    if (audio === null || sampleAudioSrc === null) {
+      return
+    }
+    stopSpeechPlayback()
+    audio.currentTime = 0
+    setPlaying(true)
+    try {
+      await audio.play()
+    } catch {
+      setPlaying(false)
+    }
+  }
 
   return (
     <section
@@ -126,14 +161,33 @@ export function GuestWebHome({
               <p className="guest-web-home__phrase" lang="en">
                 {phrase}
               </p>
+              {sampleAudioSrc ? (
+                <audio
+                  aria-hidden="true"
+                  data-testid="guest-sample-audio"
+                  onEnded={() => {
+                    setPlaying(false)
+                    setHeard(true)
+                  }}
+                  onError={() => {
+                    setPlaying(false)
+                  }}
+                  preload="metadata"
+                  ref={audioRef}
+                  src={sampleAudioSrc}
+                />
+              ) : null}
               <div className="guest-web-home__playbar" data-state={playing ? 'playing' : heard ? 'heard' : 'idle'}>
                 <span className="guest-web-home__playbar-fill" />
               </div>
               <div className="guest-web-home__hero-actions">
                 <button
+                  aria-pressed={playing}
                   className="ge-button ge-button--primary"
-                  disabled={playing}
-                  onClick={() => setPlaying(true)}
+                  disabled={playing || sampleAudioSrc === null}
+                  onClick={() => {
+                    void playSample()
+                  }}
                   type="button"
                 >
                   <LocalizedMessage resolution={message('marketing.loop.listen.title')} />
@@ -148,8 +202,6 @@ export function GuestWebHome({
                       lang="en"
                       onClick={() => {
                         setPhraseIndex(index)
-                        setPlaying(false)
-                        setHeard(false)
                       }}
                       type="button"
                     >

@@ -1,0 +1,11 @@
+Guest-home Listen samples
+=========================
+
+These three WAV files are product-owned Azure Neural TTS clips of the Level 12
+demo phrases already published in `demoLevelFixtures.json`. They were
+synthesised once with `en-IN-NeerjaNeural` (the ordinary guidance-TTS voice)
+so unsigned `#home` can play a fixed file instead of calling Azure or
+`/demo/tts` on every Listen click.
+
+They are not learner recordings and must not be replaced with unlicensed
+third-party media.

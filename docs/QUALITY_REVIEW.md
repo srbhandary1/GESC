@@ -11,6 +11,7 @@ home is unchanged. No catalogue, API, schema or native-shell change.
 | Android compact | Pass | `layout="compact"` when `Capacitor` native Android; `ಶುಭ ದಿನ` / Today retained |
 | Marketing landing | Pass | Still `#about` / `#marketing`; not preloaded on guest home |
 | Primary CTA | Pass | One `marketing.hero.cta_sign_in`; learn link is in-page `#guest-sessions` |
+| Guest Listen | Pass | Static `/guest-sample/level-12-*.wav`; Listen does not call `fetch` / `/demo/tts` |
 | Catalogues | Pass | Existing keys only; `ui-kn-IN-2026-09-19.4` hash unchanged |
 | Unit tests | Pass | `pnpm --filter @global-english/web test` 105 files / 475 tests |
 | Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8 |

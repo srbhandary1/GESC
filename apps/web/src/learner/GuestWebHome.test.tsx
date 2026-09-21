@@ -1,10 +1,22 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GuestMiraHome } from './GuestMiraHome'
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
+})
+
+beforeEach(() => {
+  Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+    configurable: true,
+    value: vi.fn().mockResolvedValue(undefined),
+  })
+  Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+    configurable: true,
+    value: vi.fn(),
+  })
 })
 
 describe('GuestMiraHome web layout', () => {
@@ -44,6 +56,25 @@ describe('GuestMiraHome web layout', () => {
     ).toBeInTheDocument()
     expect(document.querySelector('.marketing-landing')).toBeNull()
     expect(document.querySelector('[data-guest-layout="web"]')).not.toBeNull()
+
+    const audio = screen.getByTestId('guest-sample-audio')
+    expect(audio).toHaveAttribute(
+      'src',
+      '/guest-sample/level-12-i-would-like-black-tea.wav',
+    )
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    await user.click(screen.getByRole('button', { name: 'Listen' }))
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalled()
+    expect(fetchSpy).not.toHaveBeenCalled()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Would you like some water?' }),
+    )
+    expect(audio).toHaveAttribute(
+      'src',
+      '/guest-sample/level-12-would-you-like-some-water.wav',
+    )
 
     await user.click(
       screen.getByRole('button', { name: 'I would like a window seat.' }),

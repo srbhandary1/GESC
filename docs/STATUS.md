@@ -7,6 +7,9 @@
   listen/speak/understand/improve loop, the four sessions, and trust notes.
   Copy is existing `marketing.*` / `demo.*` keys plus demo fixtures. No
   catalogue revision or hash change.
+- Listen on the Level 12 sample now plays a **fixed** product-owned WAV
+  (`/guest-sample/level-12-*.wav`, Azure `en-IN-NeerjaNeural` synthesised once).
+  Clicking Listen does not call Azure, `/demo/tts` or browser speech synthesis.
 - Capacitor **Android** keeps the compact `GuestMiraHome` (`ಶುಭ ದಿನ` / Today).
   `MarketingLanding` stays on `#about` / `#marketing` and is still not preloaded
   on guest home. One primary `Sign in to start` CTA remains. Five destinations,
