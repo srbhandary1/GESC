@@ -78,10 +78,16 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('color-scheme: dark')
     expect(jezweb).toContain('min-inline-size: 48px')
     expect(jezweb).toContain('min-block-size: 48px')
+    expect(jezweb).toMatch(
+      /\.ge-application-frame--jezweb \.ge-application-frame__header \{[^}]*backdrop-filter: none;/su,
+    )
+    expect(jezweb).not.toContain('backdrop-filter: blur(16px)')
 
     expect(app).toContain("import './theme/jezwebLearnerChrome.css'")
     expect(app).toContain('ge-application-frame--jezweb')
     expect(app).toContain('variant-c-jezweb')
+    expect(app).toContain("import { GuestMiraHome } from './learner/GuestMiraHome'")
+    expect(app).not.toContain("import('./learner/GuestMiraHome')")
 
     const chromeImport = app.indexOf("import './theme/miraLearnerChrome.css'")
     const jezwebImport = app.indexOf("import './theme/jezwebLearnerChrome.css'")

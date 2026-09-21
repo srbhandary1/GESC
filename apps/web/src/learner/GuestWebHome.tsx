@@ -172,7 +172,7 @@ export function GuestWebHome({
                   onError={() => {
                     setPlaying(false)
                   }}
-                  preload="metadata"
+                  preload="none"
                   ref={audioRef}
                   src={sampleAudioSrc}
                 />

@@ -130,6 +130,19 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   await expect(page.locator('[aria-roledescription="carousel"]')).toHaveCount(0)
   await expect(page.locator('.marketing-hero__slide')).toHaveCount(0)
   await expect(page.locator('.marketing-landing')).toHaveCount(0)
+  const homeAssets = await page.evaluate(() => ({
+    links: [...document.querySelectorAll('link')].map((link) => link.href),
+    resources: performance
+      .getEntriesByType('resource')
+      .map((entry) => entry.name),
+  }))
+  expect(
+    [...homeAssets.links, ...homeAssets.resources].filter((url) =>
+      /marketing-landing|MarketingLanding|operator-console|OperatorConsole/u.test(
+        url,
+      ),
+    ),
+  ).toEqual([])
   await expect(
     page.getByRole('link', {
       name: message('marketing.hero.cta_learn'),

@@ -49,4 +49,35 @@ describe('local authentication development configuration', () => {
     expect(demo.base).toBe('./')
     expect(demo.build?.outDir).toBe('dist-demo')
   })
+
+  it('does not fold lazy marketing or operator pages into the guest-home graph', () => {
+    const production = resolveConfiguration({
+      command: 'build',
+      mode: 'production',
+    })
+    const preload = production.build?.modulePreload
+
+    expect(production.build?.rollupOptions?.output).toBeUndefined()
+    expect(preload).toEqual(
+      expect.objectContaining({
+        resolveDependencies: expect.any(Function),
+      }),
+    )
+
+    if (typeof preload === 'object' && preload?.resolveDependencies) {
+      expect(
+        preload.resolveDependencies(
+          'assets/index.js',
+          [
+            'assets/marketing-landing-abc.js',
+            'assets/MarketingLanding-def.js',
+            'assets/operator-console-ghi.js',
+            'assets/OperatorConsole-jkl.js',
+            'assets/GuestMiraHome-mno.js',
+          ],
+          { hostId: 'index.html', hostType: 'html' },
+        ),
+      ).toEqual(['assets/GuestMiraHome-mno.js'])
+    }
+  })
 })

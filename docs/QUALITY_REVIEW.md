@@ -1,5 +1,25 @@
 # Quality review
 
+## WEB-UX guest-home launch — 21 September 2026
+
+Live `#home` stayed on the Kannada loading fallback while Chrome parsed
+821 kB of marketing JavaScript and preloaded 281 kB of operator JavaScript.
+That is the patchy-tile / laptop-heat / incomplete-launch defect.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Root cause | Pass (live) | `index.html` modulepreloaded `operator-console-BvjqtXNh.js`; `marketing-landing-DbCU2nl3.js` (821617 bytes) executed on `#home`; guest markup arrived only after that parse |
+| Chunk graph | Pass (build) | Folder-wide `manualChunks` removed; `MarketingLanding-*.js` is 13.53 kB and lazy; `OperatorConsole` is absent from `index.html`; guest home ships in the first module |
+| Guest home | Pass (source) | `GuestMiraHome` is a static App import; no `import('./learner/GuestMiraHome')` |
+| Listen prefetch | Pass (source) | Guest sample `<audio preload="none">` |
+| Header GPU | Pass (source) | Jezweb header `backdrop-filter: none`; no `blur(16px)` |
+| Narrow wrap | Pass (e2e) | Guest web home wraps at 320 CSS px and 200%/400% font |
+| Catalogues / Android | Unchanged | Compact Capacitor home, hashes, APIs and Sanctum/Passport untouched |
+| Unit tests | Pass | `LocalDevelopmentConfiguration`, `GuestWebHome`, `jezwebLearnerChrome`, `App.test` |
+| Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8, including no marketing/operator assets on `#home` |
+| `make verify` | Not run to completion | Toolchain pin requires Node 24.18.1; this environment has 22.22.1 |
+| Deployment | Not done | Owner has not asked to commit or cut over |
+
 ## WEB-UX audit residuals — 21 September 2026
 
 Closes jezweb/Impeccable public-web residuals J1, J2, J3, J5, legal HTML and

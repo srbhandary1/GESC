@@ -22,20 +22,12 @@ export default defineConfig(({ mode }) => {
       outDir: mode === 'demo' ? 'dist-demo' : 'dist',
       modulePreload: {
         resolveDependencies(_filename, deps) {
-          return deps.filter((dep) => !dep.includes('marketing-landing'))
-        },
-      },
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('/src/operator/')) {
-              return 'operator-console'
-            }
-            if (id.includes('/src/marketing/')) {
-              return 'marketing-landing'
-            }
-            return undefined
-          },
+          return deps.filter(
+            (dep) =>
+              !/marketing-landing|MarketingLanding|operator-console|OperatorConsole/u.test(
+                dep,
+              ),
+          )
         },
       },
     },

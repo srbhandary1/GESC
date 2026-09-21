@@ -57,6 +57,7 @@ import './theme/miraLearnerChrome.css'
 import './theme/jezwebLearnerChrome.css'
 import type { AudioRecorder } from './learner/BrowserAudioRecorder'
 import type { LearnerJourneyApi } from './learner/LearnerJourneyApi'
+import { GuestMiraHome } from './learner/GuestMiraHome'
 import { LegalLinks } from './legal/LegalLinks'
 import type { TuitionRequestsApi } from './learner/TuitionRequestsApi'
 import {
@@ -156,10 +157,6 @@ const LevelPathPanel = lazy(async () => {
 const MarketingLanding = lazy(async () => {
   const module = await import('./marketing/MarketingLanding')
   return { default: module.MarketingLanding }
-})
-const GuestMiraHome = lazy(async () => {
-  const module = await import('./learner/GuestMiraHome')
-  return { default: module.GuestMiraHome }
 })
 const OperatorConsole = lazy(async () => {
   const module = await import('./operator/OperatorConsole')

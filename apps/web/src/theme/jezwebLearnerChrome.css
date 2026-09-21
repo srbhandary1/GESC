@@ -730,11 +730,11 @@
 
 .ge-application-frame--jezweb .ge-application-frame__header {
   border-block-end: 1px solid var(--ge-color-border);
-  background: rgb(255 255 255 / 0.96);
+  background: #ffffff;
   color: var(--ge-color-ink);
   box-shadow: none;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 [data-ge-theme-preference='dark'] .ge-application-frame--jezweb .ge-application-frame__header {

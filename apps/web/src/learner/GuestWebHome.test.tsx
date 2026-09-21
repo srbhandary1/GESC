@@ -58,6 +58,7 @@ describe('GuestMiraHome web layout', () => {
     expect(document.querySelector('[data-guest-layout="web"]')).not.toBeNull()
 
     const audio = screen.getByTestId('guest-sample-audio')
+    expect(audio).toHaveAttribute('preload', 'none')
     expect(audio).toHaveAttribute(
       'src',
       '/guest-sample/level-12-i-would-like-black-tea.wav',

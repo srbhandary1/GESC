@@ -1,5 +1,21 @@
 # Repository status
 
+## WEB-UX guest-home launch — 21 September 2026
+
+- Live unsigned `#home` was parsing the 821 kB `marketing-landing` JavaScript
+  chunk and module-preloading the 281 kB `operator-console` chunk before
+  `GuestMiraHome` could paint. Folder-wide Vite `manualChunks` had merged those
+  lazy pages with the small `androidDownload` / operator API imports used by
+  the shell, so the guest page stayed on the Kannada loading line, painted in
+  compositor tiles, and heated the laptop.
+- The production web build no longer names those folders as sync chunks.
+  `GuestMiraHome` is a static import so `#home` paints with the first module.
+  `#about` / `#marketing` and the operator workspace stay lazy. Guest Listen
+  uses `preload="none"` so the Level 12 WAV is not fetched until Play. The
+  jezweb header is an opaque surface without `backdrop-filter` blur.
+- Catalogues, Sanctum vs Passport, Android compact home, APIs and lesson
+  audio are unchanged. This revision is not yet deployed.
+
 ## WEB-UX audit residuals — 21 September 2026
 
 - J1: `#about` hero badge is `#005533` on `#e8f4ed` (AA) instead of cyan on

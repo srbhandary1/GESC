@@ -1,6 +1,16 @@
 .guest-mira-home--web {
   width: min(100%, 72rem);
+  min-width: 0;
+  max-width: 100%;
   gap: 3rem;
+}
+
+.guest-mira-home--web,
+.guest-mira-home--web * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 
 .guest-web-home__hero,
@@ -25,13 +35,23 @@
   text-transform: uppercase;
 }
 
-.guest-web-home__title {
+.guest-web-home__title,
+.guest-web-home__title span {
+  display: block;
   margin: 1rem 0 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
   font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-size: min(3.5rem, max(1.5rem, 8vw));
   font-weight: 750;
   letter-spacing: -0.04em;
   line-height: 1.08;
+}
+
+.guest-web-home__title span {
+  margin: 0;
 }
 
 .guest-web-home__section-title,
@@ -60,22 +80,28 @@
 
 .guest-web-home__muted {
   color: var(--ge-color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .guest-web-home__hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  width: 100%;
   margin-block-start: 1.5rem;
 }
 
 .guest-web-home__hero-actions .ge-button {
+  flex: 1 1 12rem;
+  width: auto;
+  max-width: 100%;
   min-block-size: var(--ge-mira-chrome-target, 3rem);
+  white-space: normal;
 }
 
 .guest-web-home__teacher,
 .guest-web-home__card {
-  padding: 1.5rem;
+  padding: clamp(12px, 4vw, 1.5rem);
   border: 1px solid var(--ge-color-border);
   border-radius: var(--ge-radius-hero, 0.75rem);
   background: var(--ge-color-surface);
@@ -83,12 +109,21 @@
 
 .guest-web-home__teacher-row {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
 }
 
+.guest-web-home__teacher-row > :last-child {
+  min-width: 0;
+  flex: 1 1 10rem;
+}
+
 .guest-web-home__teacher-name {
   margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
   font-size: 1.5rem;
   font-weight: 650;
@@ -105,8 +140,10 @@
 
 .guest-web-home__phrase {
   margin: 1rem 0 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-family: var(--ge-font-family-display, var(--ge-font-family-ui));
-  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-size: min(1.75rem, max(1rem, 6vw));
   font-weight: 650;
   line-height: 1.25;
 }
@@ -148,14 +185,16 @@
 .guest-web-home__step,
 .guest-web-home__session {
   width: 100%;
+  max-width: 100%;
   min-block-size: var(--ge-mira-chrome-target, 3rem);
-  padding: 0.75rem 1rem;
+  padding: clamp(8px, 2vw, 0.75rem) clamp(8px, 3vw, 1rem);
   border: 1px solid var(--ge-color-border);
   border-radius: var(--ge-radius-control, 0.625rem);
   background: var(--ge-color-canvas);
   color: inherit;
   font: inherit;
   text-align: start;
+  white-space: normal;
   cursor: pointer;
 }
 
