@@ -94,7 +94,7 @@ describe('ApplicationErrorBoundary', () => {
     expect(onReload).toHaveBeenCalledOnce()
   })
 
-  it('uses a visible English fallback when pending Kannada is not allowed', async () => {
+  it('uses approved Kannada when the production policy allows it', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const consoleWarning = vi
       .spyOn(console, 'warn')
@@ -106,24 +106,22 @@ describe('ApplicationErrorBoundary', () => {
       </ApplicationErrorBoundary>,
     )
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      message('localization.fallback_notice', 'approved-only'),
-    )
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
       message('error.message', 'approved-only'),
     )
     expect(
-      screen
-        .getByRole('button', {
-          name: message('error.reload', 'approved-only'),
-        })
-        .querySelector('[lang="en-IN"]'),
+      screen.getByRole('button', {
+        name: message('error.reload', 'approved-only'),
+      }),
     ).toBeInTheDocument()
-    await waitFor(() => expect(consoleWarning).toHaveBeenCalled())
-    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
+    expect(document.documentElement).toHaveAttribute('lang', 'kn-IN')
     expect(document.documentElement).toHaveAttribute(
       'data-requested-locale',
       DEFAULT_LOCALE,
+    )
+    expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
+      'localization.fallback',
     )
     expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
       sensitiveFixture,

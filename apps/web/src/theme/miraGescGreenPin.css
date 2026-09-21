@@ -184,10 +184,14 @@
 
 .ge-application-frame--studio-learner .ge-primary-navigation__link[aria-current='page'],
 .ge-application-frame--studio .marketing-button--primary,
-.ge-application-frame--studio .shell-header-authentication,
+.ge-application-frame--studio .shell-header-authentication {
+  background: linear-gradient(135deg, var(--ge-mira-mint), var(--ge-mira-green));
+  color: var(--ge-color-action-text);
+}
+
 .ge-application-frame--studio .shell-sign-in-page .web-otp-sign-in__form button[type='submit'],
 .ge-application-frame--studio .web-otp-sign-in__form button[type='submit'] {
-  background: linear-gradient(135deg, var(--ge-mira-mint), var(--ge-mira-green));
+  background: var(--ge-color-action);
   color: var(--ge-color-action-text);
 }
 

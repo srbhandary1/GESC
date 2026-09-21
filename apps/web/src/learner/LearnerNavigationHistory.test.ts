@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ANDROID_BACK_REQUEST_EVENT,
+  closeFirstUseNavigation,
   handleAndroidBack,
   initializeLearnerNavigation,
   navigateToLearnerDestination,
   navigateToLearnerSignIn,
+  openFirstUseStep,
   openLearnerLevel,
   openLearnerQuestion,
   openLearnerSessionPart,
@@ -76,6 +78,26 @@ describe('learner navigation history', () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
     expect(handleAndroidBack()).toBe(true)
     expect(back).toHaveBeenCalledOnce()
+  })
+
+  it('pushes allowlisted first-use steps and pops them with browser Back', () => {
+    initializeLearnerNavigation('home')
+    openFirstUseStep('welcome')
+    expect(globalThis.location.hash).toBe('#home/first-use/welcome')
+    expect(readLearnerNavigationState()?.index).toBe(0)
+
+    openFirstUseStep('adult')
+    expect(globalThis.location.hash).toBe('#home/first-use/adult')
+    expect(readLearnerNavigationState()).toMatchObject({
+      destination: 'home',
+      firstUseStep: 'adult',
+      index: 1,
+      previous: { destination: 'home', firstUseStep: 'welcome' },
+    })
+
+    closeFirstUseNavigation()
+    expect(globalThis.location.hash).toBe('#home')
+    expect(readLearnerNavigationState()?.firstUseStep).toBeUndefined()
   })
 
   it('lets an active recording consume Android Back before navigation', () => {

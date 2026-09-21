@@ -17,11 +17,16 @@ describe('GuestMiraHome', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Swathi' })).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Speak now' }),
-    ).toHaveAttribute('href', '#sign-in')
+      screen.queryByRole('link', { name: 'Speak now' }),
+    ).not.toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Sign in to start' }),
     ).toHaveAttribute('href', '#sign-in')
+    expect(screen.getAllByRole('link', { name: 'Sign in to start' })).toHaveLength(1)
+    expect(
+      screen.getByText('Sign in to open your lessons and practice.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Continue today’s lesson')).not.toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'See the four sessions' }),
     ).toHaveAttribute('href', '#about')

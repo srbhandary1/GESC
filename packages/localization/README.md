@@ -15,10 +15,11 @@ be added to these catalogues.
 - Strict default resolution policy: `approved-only`
 - Explicit non-production policy: `development-preview`
 
-The Kannada, Malayalam, Tamil, Telugu and Hindi catalogues are attributed
-implementation drafts. Their governance records are deliberately
-`pending-independent-review`; `reviewedBy` and `approvedAt` are `null`, and
-`independentReview` is `false`. The strict policy therefore returns English.
+The Kannada catalogue is independently reviewed and `approved` for ordinary
+`approved-only` resolution. Malayalam, Tamil, Telugu and Hindi remain
+attributed implementation drafts with `pending-independent-review`;
+`reviewedBy` and `approvedAt` are `null`, and `independentReview` is `false`.
+The strict policy therefore returns English for those four locales.
 A development shell may explicitly request `development-preview`, display the
 returned `isPreview` state, and make the pending-review limitation visible.
 Stale, rejected, missing and unsupported translations still fall back to

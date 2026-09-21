@@ -59,6 +59,26 @@ describe('web password sign-in panel', () => {
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
   })
 
+  it('keeps Sign in as the only primary action', () => {
+    render(
+      <WebPasswordSignInPanel
+        authentication={webAuthentication()}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Sign in' })).toHaveClass(
+      'ge-button--primary',
+    )
+    expect(screen.getByRole('button', { name: 'Forgot password?' })).toHaveClass(
+      'web-password-sign-in__text-action',
+    )
+    expect(
+      screen.getByRole('button', { name: 'I have an invitation code' }),
+    ).toHaveClass('web-password-sign-in__text-action')
+  })
+
   it('keeps the password and shows the error above Sign in when sign-in fails', async () => {
     const user = userEvent.setup()
     const authentication = webAuthentication()

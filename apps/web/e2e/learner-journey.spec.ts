@@ -132,6 +132,20 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     await expect(page.getByRole('heading', {
       name: localizedMessage('learner.onboarding.welcome_title', locale),
     })).toBeFocused()
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe(
+      '#home/first-use/welcome',
+    )
+    await continueFirstUse(page, locale)
+    await expect(page.getByRole('heading', {
+      name: localizedMessage('learner.onboarding.adult_title', locale),
+    })).toBeFocused()
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe(
+      '#home/first-use/adult',
+    )
+    await page.goBack()
+    await expect(page.getByRole('heading', {
+      name: localizedMessage('learner.onboarding.welcome_title', locale),
+    })).toBeFocused()
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= globalThis.innerWidth
     ))).toBe(true)

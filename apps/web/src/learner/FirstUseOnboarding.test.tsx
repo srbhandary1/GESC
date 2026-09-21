@@ -28,6 +28,7 @@ const learnerB: OfflineProfileBinding = {
 
 beforeEach(() => {
   window.localStorage.clear()
+  window.history.replaceState({}, '', '#home')
   Object.defineProperty(globalThis.navigator, 'onLine', {
     configurable: true,
     value: true,
@@ -299,6 +300,48 @@ describe('production first-use onboarding', () => {
     expect(adult).not.toBeChecked()
     await user.click(adult)
     expect(adult).toBeChecked()
+  })
+
+  it('keeps browser Back aligned with in-flow Back across the ten first-use steps', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <FirstUseOnboarding
+        api={apiStub()}
+        audioRecorder={recorderStub(false)}
+        createClientId={() => 'command-id'}
+        initialHome={incompleteHome()}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+        onComplete={vi.fn()}
+        resumeBinding={learnerA}
+        titleRef={createRef<HTMLHeadingElement>()}
+      />,
+    )
+
+    await expectHeading('Set up English learning for your goals')
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#home/first-use/welcome'),
+    )
+    await continueFlow(user)
+    await expectHeading('Are you 18 or older?')
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#home/first-use/adult'),
+    )
+
+    window.history.back()
+    await expectHeading('Set up English learning for your goals')
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#home/first-use/welcome'),
+    )
+
+    await continueFlow(user)
+    await expectHeading('Are you 18 or older?')
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await expectHeading('Set up English learning for your goals')
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#home/first-use/welcome'),
+    )
   })
 })
 

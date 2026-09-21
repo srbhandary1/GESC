@@ -298,13 +298,24 @@ export function SubscriptionPanel({
       <header className="subscription-panel__header">
         <div>
           <p className="subscription-panel__eyebrow"><LocalizedMessage resolution={message('subscription.eyebrow')} /></p>
-          <h2 id="subscription-title"><LocalizedMessage resolution={message('subscription.title')} /></h2>
+          <h2 id="subscription-title">
+            {context ? (
+              <LocalizedMessage
+                resolution={message(
+                  context.completedLevelNumber === null
+                    ? 'subscription.context_locked'
+                    : 'subscription.context_completed',
+                  {
+                    completed: String(context.completedLevelNumber ?? ''),
+                    locked: String(context.lockedLevelNumber),
+                  },
+                )}
+              />
+            ) : (
+              <LocalizedMessage resolution={message('subscription.title')} />
+            )}
+          </h2>
         </div>
-        {onClose ? (
-          <button className="ge-button ge-button--quiet" onClick={onClose} type="button">
-            <LocalizedMessage resolution={message('subscription.close')} />
-          </button>
-        ) : null}
       </header>
 
       {stateKey ? (
@@ -334,15 +345,6 @@ export function SubscriptionPanel({
               <p><LocalizedMessage resolution={message('subscription.ai_minutes_value', { minutes: minutes(entitlement.live_ai_seconds_remaining)! })} /></p>
             ) : null}
           </section>
-
-          {context ? (
-            <div className="subscription-panel__context" role="status">
-              <LocalizedMessage resolution={message(
-                context.completedLevelNumber === null ? 'subscription.context_locked' : 'subscription.context_completed',
-                { completed: String(context.completedLevelNumber ?? ''), locked: String(context.lockedLevelNumber) },
-              )} />
-            </div>
-          ) : null}
 
           {membershipPlans.length === 2 ? (
             <section aria-labelledby="subscription-memberships-title">
@@ -405,19 +407,27 @@ export function SubscriptionPanel({
             </section>
           ) : null}
 
-          <a
-            className="ge-button ge-button--quiet subscription-panel__continue-free"
-            href="#learn"
-            onClick={(event) => {
-              event.preventDefault()
-              onClose?.()
-            }}
-          >
-            <LocalizedMessage resolution={message('subscription.continue_free')} />
-          </a>
           {entitlement.gstin_is_placeholder ? <p className="subscription-panel__tax-notice"><LocalizedMessage resolution={message('subscription.placeholder_gst')} /></p> : null}
         </>
       ) : null}
+
+      <div className="subscription-panel__dock">
+        <a
+          className="ge-button ge-button--quiet subscription-panel__continue-free"
+          href="#learn"
+          onClick={(event) => {
+            event.preventDefault()
+            onClose?.()
+          }}
+        >
+          <LocalizedMessage resolution={message('subscription.continue_free')} />
+        </a>
+        {onClose ? (
+          <button className="ge-button ge-button--quiet" onClick={onClose} type="button">
+            <LocalizedMessage resolution={message('subscription.close')} />
+          </button>
+        ) : null}
+      </div>
     </section>
   )
 }

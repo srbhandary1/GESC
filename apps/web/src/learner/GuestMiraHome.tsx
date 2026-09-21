@@ -50,19 +50,8 @@ export function GuestMiraHome({
           </p>
         </div>
         <p className="phase1-home__lesson-title">
-          <LocalizedMessage
-            resolution={message('demo.phase1.home.next_action')}
-          />
-        </p>
-        <p className="phase1-home__level">
           <LocalizedMessage resolution={message('session.sign_in_hint')} />
         </p>
-        <a
-          className="ge-button ge-button--primary phase1-home__speak"
-          href="#sign-in"
-        >
-          <LocalizedMessage resolution={message('demo.phase1.home.speak')} />
-        </a>
         <a
           className="ge-button ge-button--primary phase1-home__cta"
           href="#sign-in"

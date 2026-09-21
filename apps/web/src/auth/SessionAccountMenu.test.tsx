@@ -1,7 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SessionAccountMenu } from './SessionAccountMenu'
+
+afterEach(() => {
+  cleanup()
+})
 
 describe('SessionAccountMenu', () => {
   it('keeps account actions compact until deliberately opened', async () => {
@@ -33,5 +37,28 @@ describe('SessionAccountMenu', () => {
     await user.click(trigger)
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }))
     expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it('exposes account deletion only after the menu is opened', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <SessionAccountMenu
+        accountLabel="Account"
+        accountSettingsLabel="Account settings"
+        deleteAccountHref="/account-deletion.html"
+        deleteAccountLabel="Delete account"
+        onOpenAccount={vi.fn()}
+        onSignOut={vi.fn()}
+        signOutLabel="Sign out"
+      />,
+    )
+
+    expect(screen.queryByRole('menuitem', { name: 'Delete account' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Account' }))
+    expect(screen.getByRole('menuitem', { name: 'Delete account' })).toHaveAttribute(
+      'href',
+      '/account-deletion.html',
+    )
   })
 })

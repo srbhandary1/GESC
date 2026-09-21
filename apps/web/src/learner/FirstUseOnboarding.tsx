@@ -31,6 +31,12 @@ import {
   type FirstUseStep,
   type PlacementChoice,
 } from './FirstUseOnboardingResume'
+import {
+  closeFirstUseNavigation,
+  openFirstUseStep,
+  readLearnerNavigationState,
+  subscribeToLearnerNavigation,
+} from './LearnerNavigationHistory'
 type ConsentPurpose =
   | 'voice_upload_and_transcription'
   | 'conversation_provider_processing'
@@ -210,6 +216,28 @@ export function FirstUseOnboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, step])
 
+  useEffect(() => {
+    if (!resumeReady) {
+      return
+    }
+
+    return subscribeToLearnerNavigation((state) => {
+      const next = state.firstUseStep
+      if (next === undefined) {
+        return
+      }
+      setStep((current) => (current === next ? current : next))
+    })
+  }, [resumeReady])
+
+  useEffect(() => {
+    if (!resumeReady) {
+      return
+    }
+
+    openFirstUseStep(step)
+  }, [resumeReady, step])
+
   const moveTo = (next: FirstUseStep) => {
     setError(null)
     setStep(next)
@@ -369,6 +397,7 @@ export function FirstUseOnboarding({
         setError('learner.onboarding.practice_error')
       }
     } else {
+      closeFirstUseNavigation()
       void clearFirstUseResume(resumeBinding)
       onComplete(savedHome ?? initialHome)
     }
@@ -377,9 +406,16 @@ export function FirstUseOnboarding({
   const back = () => {
     const index = FIRST_USE_STEPS.indexOf(step)
     const minimumIndex = savedHome === null ? 0 : FIRST_USE_STEPS.indexOf('placement')
-    if (index > minimumIndex) {
-      moveTo(FIRST_USE_STEPS[index - 1]!)
+    if (index <= minimumIndex) {
+      return
     }
+    const previous = FIRST_USE_STEPS[index - 1]!
+    const navigation = readLearnerNavigationState()
+    if (navigation?.previous?.firstUseStep === previous) {
+      globalThis.history.back()
+      return
+    }
+    moveTo(previous)
   }
 
   const playOutput = async () => {

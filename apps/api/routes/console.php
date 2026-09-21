@@ -32,6 +32,7 @@ use App\Curriculum\LessonPractice\DirectPathwayCommissioningAuditService;
 use App\Curriculum\LessonPractice\DirectPathwayPublicationService;
 use App\Identity\LocalOperatorIdentityBootstrapper;
 use App\Learning\LevelVideos\LegacyLevelVideoCommissioner;
+use App\Learning\Review\DelayedReviewReturnDispatcher;
 use App\Models\Membership;
 use App\Models\Organization;
 use App\Models\User;
@@ -1247,6 +1248,14 @@ Artisan::command(
 )->purpose(
     'Import inventoried legacy level videos as a review-blocked draft',
 );
+
+Artisan::command('learning:notify-due-reviews', function (): int {
+    $result = app(DelayedReviewReturnDispatcher::class)
+        ->dispatchDue();
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return 0;
+})->purpose('Privacy-gated delayed-review return email; no-ops without APP approval');
 
 Schedule::command('voice:purge-expired')
     ->everyFiveMinutes()

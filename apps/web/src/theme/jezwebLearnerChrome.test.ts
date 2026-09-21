@@ -53,6 +53,10 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(jezweb).toContain('min-width: max-content')
     expect(jezweb).toContain('word-break: keep-all')
     expect(jezweb).toContain('html.ge-native-enlarged-text')
+    expect(jezweb).toContain('Mobile web: one toolbar row at 390 CSS px')
+    expect(jezweb).toMatch(
+      /\.ge-application-frame--jezweb:not\(\s*\.ge-application-frame--native-android\s*\)\s*\.shell-header-actions__notice/u,
+    )
     expect(jezweb).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))')
     expect(jezweb).toContain('border-radius: 0.75rem')
     expect(jezweb).toContain('ge-primary-navigation__label')

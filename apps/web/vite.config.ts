@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => {
     base: mode === 'demo' ? './' : '/',
     build: {
       outDir: mode === 'demo' ? 'dist-demo' : 'dist',
+      modulePreload: {
+        resolveDependencies(_filename, deps) {
+          return deps.filter((dep) => !dep.includes('marketing-landing'))
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks(id) {

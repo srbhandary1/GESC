@@ -1369,7 +1369,10 @@ describe('LevelPathPanel', () => {
     await user.click(screen.getByRole('radio', { name: 'I cans swim.' }))
     expect(
       screen.getByRole('radio', { name: 'I cans swim.' }).closest('label'),
-    ).toHaveTextContent('Selected')
+    ).toHaveClass('is-selected')
+    expect(
+      document.querySelector('.level-session--question-phase'),
+    ).not.toBeNull()
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(screen.getByText('Question 2 of 2')).toBeInTheDocument()

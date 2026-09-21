@@ -1,4 +1,8 @@
 import type { PrimaryDestination } from '@global-english/design-system'
+import {
+  FIRST_USE_STEPS,
+  type FirstUseStep,
+} from './FirstUseOnboardingResume'
 import type { SessionPartId } from './LevelSessionsApi'
 
 const HISTORY_KEY = '__globalEnglishLearnerNavigation'
@@ -9,6 +13,7 @@ export type LearnerAssessmentKind = 'quick-check' | 'checkpoint'
 
 export interface LearnerNavigationTarget {
   readonly destination: PrimaryDestination
+  readonly firstUseStep?: FirstUseStep
   readonly levelNumber?: number
   readonly partId?: SessionPartId
   readonly assessment?: Readonly<{
@@ -34,8 +39,11 @@ function destinationFromHash(hash: string): PrimaryDestination | null {
   if (candidate === 'practice' || candidate === 'speak') {
     return 'speak'
   }
-  if (candidate === 'home' || candidate === 'progress') {
-    return candidate
+  if (candidate === 'home' || candidate.startsWith('home/')) {
+    return 'home'
+  }
+  if (candidate === 'progress') {
+    return 'progress'
   }
   if (candidate === 'learn' || candidate.startsWith('learn/')) {
     return 'learn'
@@ -52,6 +60,20 @@ function targetFromHash(hash: string): LearnerNavigationTarget | null {
   if (destination === null) {
     return null
   }
+  const candidate = hash.replace(/^#/u, '')
+  if (destination === 'home') {
+    const match = /^home\/first-use\/([A-Za-z0-9-]+)$/u.exec(candidate)
+    const step = match?.[1]
+    if (
+      step !== undefined &&
+      (FIRST_USE_STEPS as readonly string[]).includes(step)
+    ) {
+      return { destination: 'home', firstUseStep: step as FirstUseStep }
+    }
+
+    return { destination: 'home' }
+  }
+
   if (destination !== 'learn') {
     return { destination }
   }
@@ -110,6 +132,9 @@ function targetFromHash(hash: string): LearnerNavigationTarget | null {
 }
 
 function urlForTarget(target: LearnerNavigationTarget): string {
+  if (target.firstUseStep !== undefined) {
+    return `#home/first-use/${target.firstUseStep}`
+  }
   if (target.destination !== 'learn' || target.levelNumber === undefined) {
     return `#${target.destination}`
   }
@@ -126,6 +151,7 @@ function sameTarget(
 ): boolean {
   return (
     left.destination === right.destination &&
+    left.firstUseStep === right.firstUseStep &&
     left.levelNumber === right.levelNumber &&
     left.partId === right.partId &&
     left.assessment?.kind === right.assessment?.kind &&
@@ -138,6 +164,7 @@ function sameTarget(
 function targetFromState(state: LearnerNavigationState): LearnerNavigationTarget {
   return {
     destination: state.destination,
+    ...(state.firstUseStep === undefined ? {} : { firstUseStep: state.firstUseStep }),
     ...(state.levelNumber === undefined ? {} : { levelNumber: state.levelNumber }),
     ...(state.partId === undefined ? {} : { partId: state.partId }),
     ...(state.assessment === undefined ? {} : { assessment: state.assessment }),
@@ -165,6 +192,16 @@ function storedState(value: unknown): LearnerNavigationState | null {
     )
   ) {
     return null
+  }
+
+  if (
+    state.firstUseStep !== undefined &&
+    !(FIRST_USE_STEPS as readonly string[]).includes(state.firstUseStep)
+  ) {
+    return {
+      ...(state as LearnerNavigationState),
+      firstUseStep: undefined,
+    }
   }
 
   return state as LearnerNavigationState
@@ -330,6 +367,67 @@ export function openLearnerQuestion(
     },
     restoreFocusId,
   )
+}
+
+function replaceTarget(
+  target: LearnerNavigationTarget,
+  index?: number,
+  previous?: LearnerNavigationTarget | null,
+): LearnerNavigationState {
+  const current =
+    readLearnerNavigationState() ?? initializeLearnerNavigation(target.destination)
+  const state: LearnerNavigationState = {
+    ...target,
+    index: index ?? current.index,
+    previous: previous === undefined ? current.previous : previous,
+    restoreFocusId: null,
+    version: 1,
+  }
+  globalThis.history.replaceState(
+    mergedBrowserState(state),
+    '',
+    urlForTarget(target),
+  )
+  announceNavigationState(state)
+  return state
+}
+
+export function openFirstUseStep(
+  step: FirstUseStep,
+  restoreFocusId: string | null = null,
+): LearnerNavigationState {
+  const current =
+    readLearnerNavigationState() ?? initializeLearnerNavigation('home')
+  const target: LearnerNavigationTarget = {
+    destination: 'home',
+    firstUseStep: step,
+  }
+  if (sameTarget(targetFromState(current), target)) {
+    return current
+  }
+
+  if (current.firstUseStep === undefined) {
+    return replaceTarget(target)
+  }
+
+  const currentIndex = FIRST_USE_STEPS.indexOf(current.firstUseStep)
+  const nextIndex = FIRST_USE_STEPS.indexOf(step)
+  if (nextIndex < currentIndex) {
+    return replaceTarget(target, current.index, current.previous)
+  }
+
+  return pushTarget(target, restoreFocusId)
+}
+
+export function closeFirstUseNavigation(): LearnerNavigationState {
+  const current =
+    readLearnerNavigationState() ?? initializeLearnerNavigation('home')
+  const target: LearnerNavigationTarget = { destination: 'home' }
+  if (current.firstUseStep === undefined && current.destination === 'home') {
+    return current
+  }
+
+  return replaceTarget(target, current.index, current.previous)
 }
 
 export function subscribeToLearnerNavigation(listener: NavigationListener): () => void {

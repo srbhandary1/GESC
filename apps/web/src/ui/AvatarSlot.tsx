@@ -1,4 +1,4 @@
-import miraPortrait from './avatars/mira.jpg'
+import miraPortrait from './avatars/mira.webp'
 import './AvatarSlot.css'
 
 export type AvatarRole = 'teacher' | 'friend' | 'coach'
@@ -24,7 +24,12 @@ export function AvatarSlot({
       data-avatar-slot={slot}
       role="img"
     >
-      <img alt="" src={miraPortrait} />
+      <img
+        alt=""
+        height={148}
+        src={miraPortrait}
+        width={148}
+      />
     </div>
   )
 }

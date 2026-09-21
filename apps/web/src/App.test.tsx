@@ -231,12 +231,14 @@ describe('localized application shell', () => {
       }),
     ).toHaveAttribute('href', '#sign-in')
     expect(
-      screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') })
-        .length,
-    ).toBeGreaterThan(0)
-    expect(
-      screen.getByRole('link', { name: text('demo.phase1.home.speak') }),
+      screen.getByRole('link', { name: text('marketing.hero.cta_sign_in') }),
     ).toHaveAttribute('href', '#sign-in')
+    expect(
+      screen.queryByRole('link', { name: text('demo.phase1.home.speak') }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole('link', { name: text('marketing.hero.cta_sign_in') }),
+    ).toHaveLength(1)
     expect(
       screen.getByRole('link', { name: text('marketing.hero.cta_learn') }),
     ).toHaveAttribute('href', '#about')
@@ -250,8 +252,8 @@ describe('localized application shell', () => {
       screen.getByRole('link', { name: text('legal.privacy') }),
     ).toHaveAttribute('href', '/privacy.html')
     expect(
-      screen.getByRole('link', { name: text('legal.account_deletion') }),
-    ).toHaveAttribute('href', '/account-deletion.html')
+      screen.queryByRole('link', { name: text('legal.account_deletion') }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('sales@northstar-es.in')).not.toBeInTheDocument()
     expect(
       screen.getByText(/Developed by Northstar Enterprise Solutions Private Limited/),
@@ -288,13 +290,10 @@ describe('localized application shell', () => {
     expect(
       screen.queryByText(text('session.sign_in_hint')),
     ).not.toBeInTheDocument()
-    const close = screen
-      .getAllByRole('link', { name: text('nav.home') })
-      .find((link) => link.classList.contains('shell-sign-in-page__close'))
-    expect(close).toBeDefined()
-    expect(close).toHaveAttribute('href', '#home')
+    const home = screen.getByRole('link', { name: text('nav.home') })
+    expect(home).toHaveAttribute('href', '#home')
 
-    await user.click(close!)
+    await user.click(home)
 
     expect(
       await screen.findByRole('heading', {
@@ -494,7 +493,7 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('falls back visibly to English under the production policy', async () => {
+  it('resolves approved Kannada under the production policy', async () => {
     const consoleWarning = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => undefined)
@@ -509,26 +508,19 @@ describe('localized application shell', () => {
 
     const heroHeading = await screen.findByRole('heading', {
       level: 1,
-      name: text('demo.phase1.home.title', 'en-IN', 'approved-only'),
+      name: text('demo.phase1.home.title', DEFAULT_LOCALE, 'approved-only'),
     })
 
-    expect(heroHeading.closest('[lang="en-IN"]')).not.toBeNull()
-
+    expect(heroHeading.querySelector('[lang="kn-IN"]')).not.toBeNull()
     expect(
-      screen.getByRole('complementary', {
+      screen.queryByRole('complementary', {
         name: text(
           'localization.fallback_label',
           DEFAULT_LOCALE,
           'approved-only',
         ),
       }),
-    ).toHaveTextContent(
-      text(
-        'localization.fallback_notice',
-        DEFAULT_LOCALE,
-        'approved-only',
-      ),
-    )
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByText(text('localization.preview_notice')),
     ).not.toBeInTheDocument()
@@ -546,7 +538,7 @@ describe('localized application shell', () => {
         name: text('locale.hi_IN', DEFAULT_LOCALE, 'approved-only'),
       }),
     ).not.toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
+    expect(document.documentElement).toHaveAttribute('lang', 'kn-IN')
     expect(document.documentElement).toHaveAttribute(
       'data-requested-locale',
       DEFAULT_LOCALE,
@@ -570,10 +562,9 @@ describe('localized application shell', () => {
           'approved-only',
         ),
       ),
-    ).toHaveAttribute('lang', 'en-IN')
-    await waitFor(() => expect(consoleWarning).toHaveBeenCalled())
+    ).toHaveAttribute('lang', 'kn-IN')
     expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
-      'Your learning home is ready.',
+      'localization.fallback',
     )
   })
 
@@ -993,7 +984,9 @@ describe('localized application shell', () => {
         name: text('demo.phase1.home.title', DEFAULT_LOCALE),
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText(text('localization.preview_notice'))).toBeInTheDocument()
+    expect(
+      screen.queryByText(text('localization.preview_notice')),
+    ).not.toBeInTheDocument()
   })
 
   it('shows account menu for signed-in Android learners', async () => {

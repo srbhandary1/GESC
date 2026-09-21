@@ -1,5 +1,55 @@
 # Quality review
 
+## WEB-HUM-01 kn-IN independent review — 21 September 2026
+
+APP-0105 / D-0327 records named independent review of
+`ui-kn-IN-2026-09-19.4` (`sha256:ae5b774c63ee4f11da769c8a29ebd0349a8a89acac0eb8a7c25ee1da2ca18381`).
+Production `approved-only` resolution now serves Kannada chrome without the
+fallback banner. The four other translated packs remain pending. Catalogue
+wording was not changed.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Honest approval metadata | Pass | Distinct Codex translator vs `S R Bhandary` reviewer; `independentReview=true`; valid `approvedAt` |
+| Hash unchanged | Pass | Canonical SHA-256 still `ae5b774c…` |
+| Other locales | Pass | `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` still pending |
+| Existing product authorities | Pass | APP-0106 / D-0328: curriculum, Role-play, production and Play were already authorized; WEB-HUM-01 does not withdraw them |
+| Resolver / App tests | Pass | Approved Kannada under `approved-only`; Hindi still falls back |
+
+## WEB-UX programme — 21 September 2026
+
+Web PWA chrome checkpoints WEB-UX-01–05 and WEB-UX-07 are implemented without
+amending D-0293, ADR-0005, ADR-0007, ADR-0021, ADR-0026 or ADR-0028. WEB-UX-06
+is a decision packet. WEB-HUM-01 later approved `kn-IN` under APP-0105; APP-0106
+records that curriculum, Role-play, production and Play were already
+authorized. WEB-UX-08 is fail-closed. WEB-UX-09 is skipped. Funnel events are
+not emitted.
+
+### Scope reviewed
+
+- Guest home CTA, locale notice compaction, unsigned footer, Mira LCP,
+  marketing-landing preload exclusion, and a single mobile-web toolbar row at
+  390 CSS px. Answer cards use a 50px min-block-size so the 48px target holds
+  after dropping the selected chip.
+- Sign-in primary action, recovery/invite text actions, single Home control.
+- First-use hash history for all ten stages; browser Back matches in-flow Back.
+- Question-phase Check chrome; rationale remains on the result step.
+- Plans value-first overlay with sticky Continue free and GST in details.
+- Web App Manifest and post-speaking A2HS.
+- Delayed-review return worker/mailable with no lesson content.
+
+### Review result
+
+| Check | Result | Evidence |
+|---|---|---|
+| Scope isolation | Pass | No scoring, entitlement, consent grant, tenancy or credential-storage change |
+| D-0293 ten stages | Pass | History only; WEB-UX-06 Option 2 not coded |
+| ADR-0005 honesty | Pass | Compact notice; kn-IN remains pending independent review |
+| ADR-0007 consents | Pass | First-use consent stage and unselected purposes unchanged |
+| Account deletion URL | Pass | Removed from unsigned footer; `/account-deletion.html` retained |
+| Funnel emission | Pass (not implemented) | Contract holdbacks recorded; no events shipped |
+| WEB-UX-08 privacy | Pass (fail-closed) | Worker returns `privacy_gate` unless APP approval is configured; never sends without a destination adapter |
+
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
 The follow-up Android header refinement replaces four anonymous circular

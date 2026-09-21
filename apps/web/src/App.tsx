@@ -79,6 +79,7 @@ import type {
 import { DEMO_SESSION_PARTS } from './demo/demoLevelFixtures'
 import { defaultLearnerJourneyApi } from './learner/WebLearnerJourneyApi'
 import { clearFirstUseResume } from './learner/FirstUseOnboardingResume'
+import { WebInstallPrompt } from './pwa/WebInstallPrompt'
 import {
   ANDROID_BACK_REQUEST_EVENT,
   handleAndroidBack,
@@ -972,6 +973,8 @@ function App({
                 <SessionAccountMenu
                   accountLabel={message('session.account_menu').text}
                   accountSettingsLabel={message('session.account_settings').text}
+                  deleteAccountHref="/account-deletion.html"
+                  deleteAccountLabel={message('legal.account_deletion').text}
                   signOutLabel={message('session.android_sign_out').text}
                   onOpenAccount={openAccountSettings}
                   onSignOut={() => {
@@ -1024,25 +1027,6 @@ function App({
                     />
                   </span>
                 </a>
-                {showDedicatedSignIn ? null : (
-                  <a
-                    className="shell-header-authentication shell-native-toolbar-action"
-                    href="#sign-in"
-                    onClick={(event) => {
-                      event.preventDefault()
-                      navigateToLearnerSignIn()
-                    }}
-                  >
-                    <span aria-hidden="true" className="shell-toolbar-icon">
-                      ↪
-                    </span>
-                    <span className="shell-toolbar-label">
-                      <LocalizedMessage
-                        resolution={message('marketing.hero.cta_sign_in')}
-                      />
-                    </span>
-                  </a>
-                )}
               </>
             ) : null}
             {!demoMode &&
@@ -1060,6 +1044,8 @@ function App({
                 <SessionAccountMenu
                   accountLabel={message('session.account_menu').text}
                   accountSettingsLabel={message('session.account_settings').text}
+                  deleteAccountHref="/account-deletion.html"
+                  deleteAccountLabel={message('legal.account_deletion').text}
                   signOutLabel={message('session.android_sign_out').text}
                   onOpenAccount={openAccountSettings}
                   onSignOut={() => {
@@ -1140,25 +1126,6 @@ function App({
                   )
                 })}
               </select>
-              {previewNotice.isPreview ? (
-                <aside
-                  className="shell-locale-note"
-                  aria-label={previewLabel.text}
-                  data-review-status={previewNotice.reviewStatus}
-                  lang={previewNotice.resolvedLocale}
-                >
-                  <LocalizedMessage resolution={previewNotice} />
-                </aside>
-              ) : isFallbackActive ? (
-                <aside
-                  className="shell-locale-note"
-                  aria-label={fallbackLabel.text}
-                  data-fallback-reason={title.reason}
-                  lang={fallbackNotice.resolvedLocale}
-                >
-                  <LocalizedMessage resolution={fallbackNotice} />
-                </aside>
-              ) : null}
               <p
                 className="visually-hidden"
                 aria-atomic="true"
@@ -1194,6 +1161,39 @@ function App({
               : 'shell-content'
         }
       >
+        {previewNotice.isPreview ? (
+          <aside
+            className="shell-locale-note"
+            aria-label={previewLabel.text}
+            data-review-status={previewNotice.reviewStatus}
+            lang={previewNotice.resolvedLocale}
+          >
+            <details>
+              <summary>
+                <LocalizedMessage resolution={previewLabel} />
+              </summary>
+              <p>
+                <LocalizedMessage resolution={previewNotice} />
+              </p>
+            </details>
+          </aside>
+        ) : isFallbackActive ? (
+          <aside
+            className="shell-locale-note"
+            aria-label={fallbackLabel.text}
+            data-fallback-reason={title.reason}
+            lang={fallbackNotice.resolvedLocale}
+          >
+            <details>
+              <summary>
+                <LocalizedMessage resolution={fallbackLabel} />
+              </summary>
+              <p>
+                <LocalizedMessage resolution={fallbackNotice} />
+              </p>
+            </details>
+          </aside>
+        ) : null}
         {demoMode ? (
           <aside
             className="shell-demo"
@@ -1281,17 +1281,6 @@ function App({
             id="web-sign-in-page"
           >
             <div className="shell-sign-in-page__card">
-              <a
-                className="shell-sign-in-page__close"
-                href="#home"
-                onClick={() => {
-                  setDestination('home')
-                  setLocationHash('#home')
-                }}
-              >
-                <span aria-hidden="true">×</span>
-                <LocalizedMessage resolution={message('nav.home')} />
-              </a>
               <header className="shell-sign-in-page__header">
                 <TutorPresence
                   locale={locale}
@@ -1530,7 +1519,20 @@ function App({
 
         </Suspense>
 
-        {demoMode ? null : <LegalLinks message={message} />}
+        {demoMode ? null : (
+          <LegalLinks
+            includeAccountDeletion={!isGuestSession}
+            message={message}
+          />
+        )}
+        {!isNativeAndroid && session.status === 'authenticated' ? (
+          <WebInstallPrompt
+            profileKey={
+              session.identity.current_membership?.id ??
+              session.identity.user.id
+            }
+          />
+        ) : null}
       </div>
     </ApplicationFrame>
     </div>
@@ -1748,8 +1750,12 @@ function destinationFromHash(
     return 'speak'
   }
 
-  if (candidate === 'home' || candidate === 'progress') {
-    return candidate
+  if (candidate === 'home' || candidate?.startsWith('home/')) {
+    return 'home'
+  }
+
+  if (candidate === 'progress') {
+    return 'progress'
   }
 
   if (candidate === 'learn' || candidate?.startsWith('learn/')) {
@@ -1767,6 +1773,22 @@ function learnerNavigationTargetLabel(
   target: LearnerNavigationTarget,
   message: (key: MessageKey) => InterfaceMessageResolution,
 ): string {
+  if (target.firstUseStep !== undefined) {
+    const titles: Record<NonNullable<LearnerNavigationTarget['firstUseStep']>, MessageKey> = {
+      acknowledgement: 'learner.onboarding.acknowledgement_title',
+      adult: 'learner.onboarding.adult_title',
+      'audio-output': 'learner.onboarding.audio_title',
+      consent: 'learner.onboarding.consent_title',
+      goal: 'learner.onboarding.goal_title',
+      microphone: 'learner.onboarding.microphone_title',
+      placement: 'learner.onboarding.placement_title',
+      practice: 'learner.onboarding.practice_title',
+      preferences: 'learner.onboarding.preferences_title',
+      welcome: 'learner.onboarding.welcome_title',
+    }
+    return message(titles[target.firstUseStep]).text
+  }
+
   if (target.assessment !== undefined) {
     const partKey: Record<SessionPartId, MessageKey> = {
       conversation: 'level.path.part.conversation',

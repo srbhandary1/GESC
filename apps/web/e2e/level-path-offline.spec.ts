@@ -173,7 +173,8 @@ test('queues a level checkpoint offline and syncs through the signed submission 
   const answerCard = firstAnswer.locator('xpath=ancestor::label')
   expect((await answerCard.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(48)
   await firstAnswer.check()
-  await expect(answerCard).toContainText(message('level.path.answer_selected'))
+  await expect(answerCard).toHaveClass(/is-selected/)
+  await expect(firstAnswer).toBeChecked()
   await expect
     .poll(async () =>
       page.evaluate(async () => {

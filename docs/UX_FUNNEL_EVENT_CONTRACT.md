@@ -254,3 +254,20 @@ versioned contract update.
 - OpenAPI/generated client updates for any endpoint;
 - accessibility-safe disclosure/choice if applicable; and
 - `make verify`, plus critical journey E2E when emission changes behavior.
+
+## 12. WEB-MEASURE-01 / WEB-EXP-01–03 holdbacks (21 September 2026)
+
+Emission remains unimplemented. These experiments are preregistered against
+this contract only; they must not start until independent privacy, security
+and tenancy review of the contract is recorded.
+
+| Test | Hypothesis | Status |
+|---|---|---|
+| H1 | One guest CTA vs dual CTAs | **Holdback.** WEB-UX-01 shipped the single-CTA variant as default. A future experiment may hold back the dual-CTA control. |
+| H2 | Ten-step first-use vs fast path | **Blocked.** Requires WEB-UX-06 Option 2 and a D-0293 amendment. |
+| H3 | Current Plans vs WEB-UX-05 layout | **Holdback.** WEB-UX-05 shipped the value-first layout as default. A future experiment may hold back the prior layout. |
+
+Metrics stay in the allowlisted envelope (`screen_id`, `step_id`,
+`result_category`, viewport bucket). No raw duration, copy, payment payloads
+or lesson content.
+

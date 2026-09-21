@@ -660,10 +660,10 @@
 
 .level-session__answer-list label {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   gap: var(--ge-space-2);
   align-items: center;
-  min-block-size: 48px;
+  min-block-size: 50px;
   padding: var(--ge-space-2) var(--ge-space-3);
   border: 2px solid var(--ge-color-border);
   border-radius: var(--ge-radius-sm);
@@ -893,4 +893,14 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.level-session--question-phase .level-session__hero .level-session__eyebrow,
+.level-session--question-phase .level-session__hero .level-session__objective,
+.level-session--question-phase .level-session__hero .level-session__lead,
+.level-session--question-phase .level-session__nav,
+.level-session--question-phase .level-session__panel:not(.level-session__panel--check):not(.level-session__checkpoint):not(.level-session__checkpoint-offline),
+.level-session--question-phase .level-session__panel--check > h3,
+.level-session--question-phase .level-session__check-lead {
+  display: none;
 }

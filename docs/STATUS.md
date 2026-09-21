@@ -1,5 +1,31 @@
 # Repository status
 
+## WEB-UX programme — 21 September 2026
+
+- WEB-UX-01–05 and WEB-UX-07 are implemented on the web PWA: one guest Sign-in
+  CTA, compact locale honesty notice, a single mobile-web toolbar row at 390
+  CSS px, Privacy-only unsigned footer, compressed Mira LCP portrait, no
+  marketing-landing preload on guest home, sign-in primary/recovery hierarchy,
+  ten-stage first-use hash history, one-question Check chrome, value-first
+  Plans overlay, Web App Manifest and quiet A2HS after the first spoken turn.
+- WEB-UX-06 remains a decision packet; D-0293 ten stages are unchanged.
+- WEB-HUM-01 / APP-0105 / D-0327: `kn-IN` revision `ui-kn-IN-2026-09-19.4`
+  is independently reviewed and `approved`. Ordinary `approved-only` builds
+  resolve Kannada chrome without the English fallback banner. `ml-IN`,
+  `ta-IN`, `te-IN` and `hi-IN` remain `pending-independent-review`. APP-0106 /
+  D-0328 records that curriculum, Role-play, production and Play were already
+  authorized; the Kannada UI approval does not withdraw them.
+- WEB-UX-08 adds a fail-closed delayed-review return mailable/worker with no
+  lesson content. Sending stays disabled without APP approval and a reviewed
+  destination adapter (recovery contacts remain digests).
+- WEB-UX-09 web push is skipped because the email envelope covers return.
+- Funnel emission is still unimplemented. H1 and H3 are holdbacks of shipped
+  defaults; H2 is blocked on Option 2.
+- Username/password, consents, `/account-deletion.html`, due-review dominance
+  and five destinations are unchanged. English fallback remains only for the
+  four still-pending UI packs. No credentials in localStorage. A2HS stores
+  only a once-per-profile prompted marker.
+
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
 - Follow-up compact-toolbar/provider-disclosure repair: the Android utility

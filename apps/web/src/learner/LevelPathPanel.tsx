@@ -695,16 +695,6 @@ function OneQuestionAssessment({
                   {selected ? '✓' : ''}
                 </span>
                 <span className="level-session__answer-copy">{option}</span>
-                {selected ? (
-                  <span
-                    aria-hidden="true"
-                    className="level-session__answer-selected"
-                  >
-                    <LocalizedMessage
-                      resolution={message('level.path.answer_selected')}
-                    />
-                  </span>
-                ) : null}
               </label>
             )
           })}
@@ -2023,7 +2013,19 @@ function LevelSessionJourney({
 
   return (
     <section
-      className={`level-session level-session--${partId}`}
+      className={[
+        'level-session',
+        `level-session--${partId}`,
+        (checkDraftForView !== null && checkResult === null && !checkFeedbackDone) ||
+        (checkpointDraftForView !== null &&
+          checkpointResult === null &&
+          !checkpointFeedbackDone &&
+          checkpointOfflinePending === null)
+          ? 'level-session--question-phase'
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-labelledby="level-session-title"
       data-level-part={partId}
       lang={locale}

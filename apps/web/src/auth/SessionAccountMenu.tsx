@@ -6,6 +6,8 @@ export const ACCOUNT_MENU_TRIGGER_ID = 'shell-account-menu-trigger'
 interface SessionAccountMenuProps {
   readonly accountLabel: string
   readonly accountSettingsLabel: string
+  readonly deleteAccountHref?: string
+  readonly deleteAccountLabel?: string
   readonly signOutLabel: string
   readonly onOpenAccount: () => void
   readonly onSignOut: () => void
@@ -15,6 +17,8 @@ interface SessionAccountMenuProps {
 export function SessionAccountMenu({
   accountLabel,
   accountSettingsLabel,
+  deleteAccountHref,
+  deleteAccountLabel,
   signOutLabel,
   onOpenAccount,
   onSignOut,
@@ -73,6 +77,11 @@ export function SessionAccountMenu({
           >
             {accountSettingsLabel}
           </button>
+          {deleteAccountHref !== undefined && deleteAccountLabel !== undefined ? (
+            <a href={deleteAccountHref} role="menuitem">
+              {deleteAccountLabel}
+            </a>
+          ) : null}
           <button
             className="shell-account-dropdown__sign-out"
             onClick={() => {

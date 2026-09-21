@@ -29,6 +29,7 @@ import type {
 import { playConversationSpeechResult } from './speakSessionSpeech'
 import { speakSessionSpeech } from './speakSessionSpeech'
 import { defaultConversationJourneyApi } from './WebConversationJourneyApi'
+import { announceSpeakingTurnCompleted } from '../pwa/speakingTurnCompleted'
 import { AiMemoryPanel } from './AiMemoryPanel'
 import { VoicePracticePanel } from './VoicePracticePanel'
 import { TutorPresence, type TutorMood } from '../tutor/TutorPresence'
@@ -215,6 +216,7 @@ export function ConversationJourney({
   const stopRecognition = useRef<(() => void) | null>(null)
   const utteranceFieldRef = useRef<HTMLTextAreaElement | null>(null)
   const openingSpoken = useRef(false)
+  const announcedSpeakingTurnId = useRef<string | null>(null)
   const inFlightAbort = useRef<AbortController | null>(null)
   const stateRef = useRef(state)
   const mounted = useRef(true)
@@ -225,6 +227,21 @@ export function ConversationJourney({
   const text = (key: MessageKey, parameters: MessageParameters = {}) =>
     message(key, parameters).text
   const sessionContent = FRIEND_SESSION_CONTENT[sessionType]
+
+  useEffect(() => {
+    if (
+      state.kind !== 'result' ||
+      inputMode !== 'speak' ||
+      state.turn.transcript === null ||
+      state.turn.transcript === '' ||
+      announcedSpeakingTurnId.current === state.turn.id
+    ) {
+      return
+    }
+
+    announcedSpeakingTurnId.current = state.turn.id
+    announceSpeakingTurnCompleted()
+  }, [inputMode, state])
 
   useEffect(() => {
     stateRef.current = state

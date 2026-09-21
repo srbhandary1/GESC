@@ -3260,6 +3260,112 @@ DR is accepted and ADR-0021 / the master plan should be amended in the same chec
 
 <a id="app-0074"></a>
 
+<a id="app-0105"></a>
+
+## APP-0105 — Named Kannada UI catalogue independent review (`ui-kn-IN-2026-09-19.4`)
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-21 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as independent Kannada UI reviewer |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0075](APPROVALS.md#app-0075); [APP-0006](APPROVALS.md#app-0006); [ADR-0005](adr/0005-phase-1-multilingual-ui-language-packs.md) |
+| Related decision | [D-0327](DECISIONS.md); limitation correction [APP-0106](#app-0106) / [D-0328](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Independent kn-IN catalogue review has already been completed.
+```
+
+### Context and interpretation
+
+WEB-HUM-01 had held `ui-kn-IN-2026-09-19.4` at `pending-independent-review`
+after later catalogue revisions reopened the D-0274/APP-0075 approval. The
+Accountable Product Owner records that independent review of this exact
+revision is complete.
+
+Accepted interpretation:
+
+1. `kn-IN` governance metadata moves to `approved` with honest reviewer
+   attribution distinct from the Codex implementation draft translator.
+2. Ordinary `approved-only` builds resolve Kannada chrome without the language
+   fallback banner for the default locale.
+3. Malayalam, Tamil, Telugu and Hindi UI catalogues remain
+   `pending-independent-review`.
+4. ~~This is not curriculum, lesson-summary, Role-play or production/Play
+   authorization.~~ **Superseded by [APP-0106](#app-0106).** The recorder had
+   copied APP-0075's 2 September 2026 limitation; the owner confirms those
+   authorities already existed and APP-0105 does not withdraw them.
+
+### Accepted scope
+
+- Update `packages/localization/src/catalogues/governance.json` for `kn-IN`
+  at hash `sha256:ae5b774c63ee4f11da769c8a29ebd0349a8a89acac0eb8a7c25ee1da2ca18381`.
+- Adjust localization and App tests for approved Kannada resolution.
+- STATUS, DECISIONS, QUALITY_REVIEW and WEB-HUM-01.
+
+### Conditions and limitations
+
+- Not a separately commissioned linguist firm; reviewer is the same product
+  owner who authorized APP-0006 scope.
+- Other UI locales still fall back to English under `approved-only`.
+- ~~Production/public release remains unauthorized.~~ **Superseded by
+  [APP-0106](#app-0106).**
+- Any later catalogue wording change creates a new revision and returns
+  `kn-IN` to review.
+
+<a id="app-0106"></a>
+
+## APP-0106 — APP-0105 must not withdraw existing curriculum, Role-play, production or Play authority
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted; supersedes APP-0105 interpretation item 4 and the “Production/public release remains unauthorized” limitation |
+| Decision date | 2026-09-21 |
+| Time zone | Asia/Kolkata |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [APP-0105](APPROVALS.md#app-0105) |
+| Related decision | [D-0328](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Curriculum, Role-play, production, and Play were already authorized.
+```
+
+### Context and interpretation
+
+APP-0105 recorded named independent review of `ui-kn-IN-2026-09-19.4`. The
+recorder then restated APP-0075's 2 September 2026 limitation that the
+Kannada UI approval was not curriculum, Role-play, production or Play
+authorization. The Accountable Product Owner corrects that restatement:
+those authorities already existed. APP-0105/D-0327 remain the Kannada UI
+catalogue approval only; they do not grant, reopen, or withdraw curriculum,
+Role-play, production or Play.
+
+### Accepted scope
+
+- Correct APP-0105, D-0327, STATUS and QUALITY_REVIEW so WEB-HUM-01 is not
+  read as leaving those four authorities unauthorized.
+- No catalogue, API, schema, Play-listing or publication-code change.
+
+### Conditions and limitations
+
+- Malayalam, Tamil, Telugu and Hindi UI catalogues remain
+  `pending-independent-review`.
+- A later Kannada UI wording change still creates a new revision and returns
+  `kn-IN` to review.
+
 <a id="app-0104"></a>
 
 ## APP-0104 — Native home identity and utility-bar correction

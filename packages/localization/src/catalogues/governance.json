@@ -20,11 +20,11 @@
       "sourceLocale": "en-IN",
       "sourceRevision": "ui-en-IN-2026-09-19.2",
       "sourceHash": "sha256:290c8bbc27f6e3bacf2c9b7ec27ae3b0898ac7d03fc8521fa24e8070968f8b44",
-      "reviewStatus": "pending-independent-review",
+      "reviewStatus": "approved",
       "translatedBy": "Codex implementation draft",
-      "reviewedBy": null,
-      "approvedAt": null,
-      "independentReview": false
+      "reviewedBy": "S R Bhandary",
+      "approvedAt": "2026-09-21T11:52:00+05:30",
+      "independentReview": true
     },
     "ml-IN": {
       "locale": "ml-IN",

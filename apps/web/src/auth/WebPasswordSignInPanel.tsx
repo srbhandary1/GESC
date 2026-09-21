@@ -381,7 +381,11 @@ export function WebPasswordSignInPanel({
           </p>
         ) : null}
 
-        <button disabled={busy || recoverySent} type="submit">
+        <button
+          className="ge-button ge-button--primary"
+          disabled={busy || recoverySent}
+          type="submit"
+        >
           <LocalizedMessage
             resolution={message(
               invitationSetup
@@ -395,6 +399,7 @@ export function WebPasswordSignInPanel({
           />
         </button>
         <button
+          className="web-password-sign-in__text-action"
           disabled={busy}
           onClick={() => {
             if (invitationSetup) {
@@ -417,6 +422,7 @@ export function WebPasswordSignInPanel({
         </button>
         {!recovery && !invitationSetup ? (
           <button
+            className="web-password-sign-in__text-action"
             disabled={busy}
             onClick={() => {
               setInvitationSetup(true)

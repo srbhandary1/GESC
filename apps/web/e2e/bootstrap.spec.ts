@@ -136,8 +136,11 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
     }),
   ).toHaveAttribute('href', '#about')
   await expect(
-    page.getByRole('link', { name: message('demo.phase1.home.speak') }),
+    page.getByRole('link', { name: message('marketing.hero.cta_sign_in') }),
   ).toHaveAttribute('href', '#sign-in')
+  await expect(
+    page.getByRole('link', { name: message('demo.phase1.home.speak') }),
+  ).toHaveCount(0)
   await expect(
     page.getByRole('navigation', {
       name: message('shell.navigation_label'),

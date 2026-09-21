@@ -442,7 +442,8 @@ describe('subscription panel', () => {
       />,
     )
 
-    expect(await screen.findByText(/You completed Level 2/)).toHaveTextContent('Level 3')
+    expect(await screen.findByRole('heading', { name: /You completed Level 2/ })).toHaveTextContent('Level 3')
+    expect(document.querySelector('.subscription-panel__dock')).not.toBeNull()
     await user.click(screen.getByRole('button', { name: 'Close plans' }))
     expect(onClose).toHaveBeenCalledOnce()
     const continueFree = screen.getByRole('link', { name: 'Continue free / review prior lessons' })

@@ -1156,6 +1156,121 @@
     display: none;
   }
 
+  .ge-application-frame--jezweb:not(.ge-application-frame--native-android)
+    .shell-header-actions__notice {
+    display: none;
+  }
+
+  /* Mobile web: one toolbar row at 390 CSS px. Locale honesty stays in main.
+     Wrap instead of overflowing at 320 CSS px / enlarged text. */
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .ge-application-frame__header-inner {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-block-size: 48px;
+    max-width: 100%;
+    overflow-x: clip;
+    padding-block: 4px;
+    padding-inline: 12px;
+  }
+
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .ge-application-frame__header-actions,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-actions,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 auto;
+    gap: 6px;
+    grid-template-columns: none;
+  }
+
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar > * {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-header-authentication,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-header-nav-link,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-android-download,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-locale-control,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-locale-control__select,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-theme-control,
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-header-toolbar .shell-theme-control__select {
+    width: auto;
+    min-inline-size: 0;
+    max-inline-size: min(100%, 100px);
+    justify-content: center;
+    padding-inline: 8px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-android-download {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ge-application-frame--studio.ge-application-frame--jezweb:not(
+      .ge-application-frame--native-android
+    )
+    .shell-android-download > :not(.shell-android-download__icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-studio-brand__name {
     display: block;

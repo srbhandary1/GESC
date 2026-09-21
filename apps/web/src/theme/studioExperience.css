@@ -747,8 +747,15 @@
 
 .ge-application-frame--studio .shell-sign-in-page .web-otp-sign-in__form button[type='submit'] {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--ge-studio-cyan), var(--ge-studio-teal));
+  background: var(--ge-color-action);
   color: var(--ge-color-action-text);
+}
+
+.ge-application-frame--studio .shell-sign-in-page .web-otp-sign-in__form .web-password-sign-in__text-action {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
 }
 
 .ge-application-frame--studio .shell-sign-in-hint {
@@ -783,7 +790,7 @@
 
 .ge-application-frame--studio .web-otp-sign-in__form button[type='submit'] {
   border: 0;
-  background: linear-gradient(135deg, var(--ge-studio-cyan), var(--ge-studio-teal));
+  background: var(--ge-color-action);
   color: var(--ge-color-action-text);
 }
 
