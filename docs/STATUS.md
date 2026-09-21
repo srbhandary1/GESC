@@ -14,7 +14,14 @@
   uses `preload="none"` so the Level 12 WAV is not fetched until Play. The
   jezweb header is an opaque surface without `backdrop-filter` blur.
 - Catalogues, Sanctum vs Passport, Android compact home, APIs and lesson
-  audio are unchanged. This revision is not yet deployed.
+  audio are unchanged.
+- Git `d7d82e1` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/d7d82e1`; `034b16e` remains the rollback
+  target. Encrypted offsite backup
+  `soft-launch-20260921T105644Z.sql.gz.enc` (sha256 `df31ba32…f14692`) was taken
+  before the switch. Public `/api/v1/health/live` and `/health/ready` return
+  200. Live `/` no longer modulepreloads marketing or operator chunks.
+  There is no schema, migration or APK change.
 
 ## WEB-UX audit residuals — 21 September 2026
 

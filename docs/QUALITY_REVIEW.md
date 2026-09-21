@@ -18,7 +18,7 @@ That is the patchy-tile / laptop-heat / incomplete-launch defect.
 | Unit tests | Pass | `LocalDevelopmentConfiguration`, `GuestWebHome`, `jezwebLearnerChrome`, `App.test` |
 | Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8, including no marketing/operator assets on `#home` |
 | `make verify` | Not run to completion | Toolchain pin requires Node 24.18.1; this environment has 22.22.1 |
-| Deployment | Not done | Owner has not asked to commit or cut over |
+| Stable-host deployment | Pass | Git `d7d82e1` at `/srv/global-spoken-english/releases/d7d82e1`; prior `034b16e` retained; encrypted backup `soft-launch-20260921T105644Z.sql.gz.enc`; public live/ready 200; live `index.html` preloads only `LocalizedMessage` and `BrowserOfflineLearningStore` |
 
 ## WEB-UX audit residuals — 21 September 2026
 

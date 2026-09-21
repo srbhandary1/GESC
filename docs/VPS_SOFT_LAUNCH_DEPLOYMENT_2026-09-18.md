@@ -605,6 +605,17 @@ published debug APK SHA-256 is
 (83,050,785 bytes), exactly matching the local candidate. Temporary deployment
 archives and verification downloads were deleted from the VPS and workstation.
 
+## WEB-UX guest-home launch — 21 September 2026
+
+Git `d7d82e1` is active at immutable release
+`/srv/global-spoken-english/releases/d7d82e1`; prior `034b16e` remains the
+rollback target. Encrypted offsite backup
+`soft-launch-20260921T105644Z.sql.gz.enc` (sha256 `df31ba32…f14692`) was taken
+before the switch. Unsigned web `#home` no longer downloads the marketing or
+operator page bundles before first paint. Capacitor Android compact home and
+the published APK are unchanged. Public `/api/v1/health/live` and
+`/health/ready` return HTTP 200. There is no schema or migration change.
+
 ## WEB-UX audit residuals — 21 September 2026
 
 Git `034b16e` is active at immutable release
