@@ -15,6 +15,7 @@ wording was not changed.
 | Other locales | Pass | `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` still pending |
 | Existing product authorities | Pass | APP-0106 / D-0328: curriculum, Role-play, production and Play were already authorized; WEB-HUM-01 does not withdraw them |
 | Resolver / App tests | Pass | Approved Kannada under `approved-only`; Hindi still falls back |
+| Stable-host deployment | Pass | Git `c76aa14` at `/srv/global-spoken-english/releases/c76aa14`; prior `0dc20f1` retained; encrypted backup `soft-launch-20260921T064945Z.sql.gz.enc`; public live/ready 200; live Kannada guest home has no fallback banner |
 
 ## WEB-UX programme — 21 September 2026
 

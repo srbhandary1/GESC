@@ -25,6 +25,14 @@
   and five destinations are unchanged. English fallback remains only for the
   four still-pending UI packs. No credentials in localStorage. A2HS stores
   only a once-per-profile prompted marker.
+- Git `c76aa14` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/c76aa14`; `0dc20f1` remains the rollback
+  target. Encrypted offsite backup
+  `soft-launch-20260921T064945Z.sql.gz.enc` (sha256 `91b945b8…9e8f`) was taken
+  before the switch. Public `/api/v1/health/live` and `/health/ready` return
+  200. Live Kannada guest home at https://ai.globalspokenenglish.com no longer
+  shows the independent-review fallback banner. There is no schema or
+  migration change.
 
 ## UX-REM-01 repaired-APK physical rerun — 19 September 2026
 
