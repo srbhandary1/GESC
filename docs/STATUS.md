@@ -1,5 +1,17 @@
 # Repository status
 
+## WEB-UX web guest home — 21 September 2026
+
+- Unsigned **web** `#home` now uses the Impeccable desktop guest home: product
+  lede, Swathi, a Level 12 sample (`I would like…`) with a meaning check, the
+  listen/speak/understand/improve loop, the four sessions, and trust notes.
+  Copy is existing `marketing.*` / `demo.*` keys plus demo fixtures. No
+  catalogue revision or hash change.
+- Capacitor **Android** keeps the compact `GuestMiraHome` (`ಶುಭ ದಿನ` / Today).
+  `MarketingLanding` stays on `#about` / `#marketing` and is still not preloaded
+  on guest home. One primary `Sign in to start` CTA remains. Five destinations,
+  username/password and privacy footer are unchanged.
+
 ## WEB-UX programme — 21 September 2026
 
 - WEB-UX-01–05 and WEB-UX-07 are implemented on the web PWA: one guest Sign-in

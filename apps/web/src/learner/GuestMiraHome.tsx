@@ -5,17 +5,26 @@ import type {
 } from '@global-english/localization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import { GuestWebHome } from './GuestWebHome'
 import { AvatarSlot } from '../ui/AvatarSlot'
 
 export interface GuestMiraHomeProps {
+  readonly layout?: 'compact' | 'web'
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
 }
 
 export function GuestMiraHome({
+  layout = 'compact',
   locale,
   localizationPolicy,
 }: GuestMiraHomeProps) {
+  if (layout === 'web') {
+    return (
+      <GuestWebHome locale={locale} localizationPolicy={localizationPolicy} />
+    )
+  }
+
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
@@ -23,6 +32,7 @@ export function GuestMiraHome({
     <section
       aria-labelledby="guest-mira-home-title"
       className="guest-mira-home phase1-home"
+      data-guest-layout="compact"
       data-guest-mira-home="unsigned"
       lang={locale}
     >

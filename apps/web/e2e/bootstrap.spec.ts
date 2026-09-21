@@ -123,7 +123,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: message('demo.phase1.home.title'),
+      name: message('marketing.hero.title'),
     }),
   ).toBeVisible()
   await expect(page.getByRole('img', { name: message('tutor.name') })).toBeVisible()
@@ -134,7 +134,7 @@ test('renders an axe-clean Kannada-first semantic shell', async ({
     page.getByRole('link', {
       name: message('marketing.hero.cta_learn'),
     }),
-  ).toHaveAttribute('href', '#about')
+  ).toHaveAttribute('href', '#guest-sessions')
   await expect(
     page.getByRole('link', { name: message('marketing.hero.cta_sign_in') }),
   ).toHaveAttribute('href', '#sign-in')
@@ -215,7 +215,7 @@ test('keeps the locale selection ephemeral and stores no credentials', async ({
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'Today',
+      name: message('marketing.hero.title', 'en-IN'),
     }),
   ).toBeVisible()
   await expect

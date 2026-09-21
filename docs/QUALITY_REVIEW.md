@@ -1,5 +1,21 @@
 # Quality review
 
+## WEB-UX web guest home — 21 September 2026
+
+Unsigned web `#home` uses the Impeccable desktop guest home. Android compact
+home is unchanged. No catalogue, API, schema or native-shell change.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Web guest home | Pass | `GuestWebHome` on non-native `#home`; H1 `marketing.hero.title`; sample Level 12; four sessions |
+| Android compact | Pass | `layout="compact"` when `Capacitor` native Android; `ಶುಭ ದಿನ` / Today retained |
+| Marketing landing | Pass | Still `#about` / `#marketing`; not preloaded on guest home |
+| Primary CTA | Pass | One `marketing.hero.cta_sign_in`; learn link is in-page `#guest-sessions` |
+| Catalogues | Pass | Existing keys only; `ui-kn-IN-2026-09-19.4` hash unchanged |
+| Unit tests | Pass | `pnpm --filter @global-english/web test` 105 files / 475 tests |
+| Guest e2e | Pass | `playwright test e2e/bootstrap.spec.ts` 8/8 |
+| `make verify` | Not run to completion | Toolchain pin requires Node 24.18.1; this environment has 22.22.1 |
+
 ## WEB-HUM-01 kn-IN independent review — 21 September 2026
 
 APP-0105 / D-0327 records named independent review of

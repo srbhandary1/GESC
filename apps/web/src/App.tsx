@@ -1261,6 +1261,7 @@ function App({
         >
         {showGuestMiraHome ? (
           <GuestMiraHome
+            layout={isNativeAndroid ? 'compact' : 'web'}
             locale={locale}
             localizationPolicy={localizationPolicy}
           />

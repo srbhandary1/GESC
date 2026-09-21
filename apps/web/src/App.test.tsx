@@ -206,7 +206,7 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.phase1.home.title'),
+        name: text('marketing.hero.title'),
       }),
     ).toBeInTheDocument()
 
@@ -216,7 +216,7 @@ describe('localized application shell', () => {
     expect(document.querySelector('.marketing-landing')).toBeNull()
 
     expect(screen.getAllByText(text('app.name')).length).toBeGreaterThan(0)
-    expect(screen.getByText('ಶುಭ ದಿನ')).toBeInTheDocument()
+    expect(screen.getByText(text('marketing.hero.title'))).toBeInTheDocument()
     const themeControl = screen.getByRole('combobox', {
       name: text('shell.theme_label'),
     })
@@ -241,7 +241,7 @@ describe('localized application shell', () => {
     ).toHaveLength(1)
     expect(
       screen.getByRole('link', { name: text('marketing.hero.cta_learn') }),
-    ).toHaveAttribute('href', '#about')
+    ).toHaveAttribute('href', '#guest-sessions')
     expect(document.querySelector('.marketing-hero__slide')).toBeNull()
     expect(
       screen.queryByRole('navigation', {
@@ -263,7 +263,7 @@ describe('localized application shell', () => {
       screen
         .getByRole('heading', {
           level: 1,
-          name: text('demo.phase1.home.title'),
+          name: text('marketing.hero.title'),
         })
         .closest(`[lang="${DEFAULT_LOCALE}"]`),
     ).toBeInTheDocument()
@@ -298,7 +298,7 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: text('demo.phase1.home.title'),
+        name: text('marketing.hero.title'),
       }),
     ).toBeInTheDocument()
     expect(document.querySelector('.marketing-landing')).toBeNull()
@@ -434,7 +434,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('demo.phase1.home.title', 'en-IN'),
+        name: text('marketing.hero.title', 'en-IN'),
       }),
     ).toBeInTheDocument()
 
@@ -479,7 +479,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('demo.phase1.home.title', 'en-IN'),
+        name: text('marketing.hero.title', 'en-IN'),
       }),
     ).toBeInTheDocument()
 
@@ -488,7 +488,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: text('demo.phase1.home.title', DEFAULT_LOCALE),
+        name: text('marketing.hero.title', DEFAULT_LOCALE),
       }),
     ).toBeInTheDocument()
   })
@@ -508,7 +508,7 @@ describe('localized application shell', () => {
 
     const heroHeading = await screen.findByRole('heading', {
       level: 1,
-      name: text('demo.phase1.home.title', DEFAULT_LOCALE, 'approved-only'),
+      name: text('marketing.hero.title', DEFAULT_LOCALE, 'approved-only'),
     })
 
     expect(heroHeading.querySelector('[lang="kn-IN"]')).not.toBeNull()
@@ -737,7 +737,7 @@ describe('localized application shell', () => {
     expect(globalThis.location.hash).toBe('#home')
     expect(
       await screen.findByRole('heading', {
-        name: text('demo.phase1.home.title'),
+        name: text('marketing.hero.title'),
       }),
     ).toBeInTheDocument()
     expect(
@@ -788,7 +788,7 @@ describe('localized application shell', () => {
     expect(globalThis.location.hash).toBe('#home')
     expect(
       await screen.findByRole('heading', {
-        name: text('demo.phase1.home.title'),
+        name: text('marketing.hero.title'),
       }),
     ).toBeInTheDocument()
   })
@@ -862,7 +862,7 @@ describe('localized application shell', () => {
     expect(globalThis.location.hash).toBe('#home')
     expect(
       await screen.findByRole('heading', {
-        name: text('demo.phase1.home.title'),
+        name: text('marketing.hero.title'),
       }),
     ).toBeInTheDocument()
     expect(

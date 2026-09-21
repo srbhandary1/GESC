@@ -30,6 +30,7 @@ describe('GuestMiraHome', () => {
     expect(
       screen.getByRole('link', { name: 'See the four sessions' }),
     ).toHaveAttribute('href', '#about')
+    expect(document.querySelector('[data-guest-layout="compact"]')).not.toBeNull()
     expect(document.querySelector('.marketing-landing')).toBeNull()
   })
 })
