@@ -11,6 +11,14 @@
   `MarketingLanding` stays on `#about` / `#marketing` and is still not preloaded
   on guest home. One primary `Sign in to start` CTA remains. Five destinations,
   username/password and privacy footer are unchanged.
+- Git `8daed9d` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/8daed9d`; `c76aa14` remains the rollback
+  target. Encrypted offsite backup
+  `soft-launch-20260921T085757Z.sql.gz.enc` (sha256 `ac5e8218…4bdaf`) was taken
+  before the switch. Public `/api/v1/health/live` and `/health/ready` return
+  200. Live unsigned web `#home` at https://ai.globalspokenenglish.com/#home
+  now serves the Impeccable desktop guest home. There is no schema, migration
+  or APK change.
 
 ## WEB-UX programme — 21 September 2026
 

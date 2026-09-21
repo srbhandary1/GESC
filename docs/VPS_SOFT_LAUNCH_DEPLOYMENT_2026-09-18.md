@@ -604,3 +604,14 @@ published debug APK SHA-256 is
 `5499b696b43eef4dff1726a94c02c4e9801a4ad2e357fb84146124b71eb9b117`
 (83,050,785 bytes), exactly matching the local candidate. Temporary deployment
 archives and verification downloads were deleted from the VPS and workstation.
+
+## WEB-UX web guest home — 21 September 2026
+
+Git `8daed9d` is active at immutable release
+`/srv/global-spoken-english/releases/8daed9d`; prior `c76aa14` remains the
+rollback target. Encrypted offsite backup
+`soft-launch-20260921T085757Z.sql.gz.enc` (sha256 `ac5e8218…4bdaf`) was taken
+before the switch. The unsigned web PWA `#home` now serves the Impeccable
+desktop guest home. Capacitor Android compact home and the published APK are
+unchanged. Public `/api/v1/health/live` and `/health/ready` return HTTP 200.
+There is no schema or migration change.
