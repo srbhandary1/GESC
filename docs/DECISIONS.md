@@ -6,6 +6,7 @@ to the master plan.
 
 | ID | Status | Decision | Authority |
 |---|---|---|---|
+| D-0340 | Accepted | UX-REM-06 Option A is authoritative for this release: retain the refined current ten-stage first-use sequence, its existing `{ adult_confirmed: true, goal_key }` authoritative command, independent optional voice purposes, typed fallback, Back behavior and encrypted option-only restoration. The current implementation already conforms, so no code, API/OpenAPI, schema, migration, consent, authentication, restoration or catalogue change is required. Option B's partial-onboarding contract is not authorized. Representative time, abandonment and comprehension measurements remain an unpassed UX-HUM-03 gate. | Accountable Product Owner instruction “Option A”, 23 September 2026; [decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) |
 | D-0339 | Recorded | UX-REM-05 is technically complete for the ordered implementation sequence. Locked-level plan context suppresses unrelated account-security/federated panels while preserving two non-preselected authoritative offers, exact GST totals, inset-aware Continue-free/Close controls, exact focus return, fail-closed reconciliation and institutional exclusion. Representative plan comprehension remains an unpassed UX-HUM-03 gate. No live payment, API, schema, entitlement, credential, Play or production authority changes. | Accountable Product Owner instruction to close all other gaps; D-0319; [evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-05-contextual-plans-and-continue-free-parity--23-september-2026) |
 | D-0338 | Recorded | UX-REM-03 is technically complete for the ordered implementation sequence, while its representative comprehension and exact five-catalogue review rows remain unpassed UX-HUM-03/01 gates. UX-REM-04 progressively discloses result detail without deleting authoritative facts and defers aggregate score/pass until all item rationales are acknowledged. Its representative five-second recall row remains UX-HUM-03 evidence, not an automated PASS. No API, schema, scoring, mastery, consent, entitlement, credential, payment, Play or production authority changes. | Accountable Product Owner instruction to close all other gaps; D-0319; [plan](ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md); [evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-04-quiz-and-result-hierarchy--23-september-2026) |
 | D-0337 | Recorded | UX-REM-03 retains the stored `workplace-confidence` goal and learner label “Speak with confidence at work.” “Work or study confidence” is not a copy-only synonym: it broadens semantic meaning and would reinterpret historical selections. Action labels, remediation explanation, plain-language evidence wording and non-colour completion cues may change without changing authoritative payloads. Source revision `ui-en-IN-2026-09-23.1` reopens independent review for all five non-English catalogues; approved-only resolution must fall back until exact revisions are approved. | D-0319; [plan](ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md#6-ux-rem-03--action-copy-remediation-and-completion-cues); [evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-03-action-copy-and-completion-cues--23-september-2026) |
@@ -417,6 +418,7 @@ than weakening an existing contract or changing the authorized bytes.
 
 | ID | Resolution |
 |---|---|
+| DR-0048 | Resolved by Option A under D-0340: retain the refined current ten-stage first-use sequence for this release. The existing implementation is authoritative; Option B is not authorized. Representative prototype measurement remains UX-HUM-03. |
 | DR-0001 | Resolved by [ADR-0002](adr/0002-authentication-session-token-and-recovery-policy.md) under APP-0001. |
 | DR-0002 | Resolved by [ADR-0003](adr/0003-resource-ownership-and-organization-context.md) under APP-0001. |
 | DR-0003 | Resolved by [ADR-0004](adr/0004-content-ownership-publication-and-curriculum-sharing.md) under APP-0004. |
@@ -457,6 +459,5 @@ authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
-| DR-0048 | UX-REM-06 implementation | Accept Option A (retain the refined ten-stage sequence, recommended) or Option B (adult/goal fast path with new partial-onboarding authority contract) in the [decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |

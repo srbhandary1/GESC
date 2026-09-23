@@ -1,10 +1,18 @@
 ---
 title: "UX-REM-06 shorter first-success decision packet"
-status: "Decision required"
+status: "Option A accepted"
 date: "23 September 2026"
 ---
 
 # UX-REM-06 shorter first-success decision packet
+
+## Accepted decision
+
+The Accountable Product Owner accepted **Option A** on 23 September 2026.
+The refined current sequence is therefore authoritative for this release.
+The implementation already conforms to Option A, so acceptance requires no
+code, API, OpenAPI, schema, migration, consent, authentication, restoration or
+catalogue change. Option B is not authorized for this release.
 
 ## Decision boundary
 
@@ -76,7 +84,7 @@ restoration and authority boundaries, while UX-REM-03/04 already remove the
 largest clarity and first-result problems. Treat Option B as a separately
 specified experiment only after UX-HUM-03 measures the refined current flow.
 
-## Acceptance evidence still required
+## Human evidence still required
 
 For either option, UX-HUM-03 must represent 5–8 casual learners, 5–8 students
 and 5–8 business professionals, including Kannada-first and hesitant learners.

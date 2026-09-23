@@ -1,16 +1,17 @@
 # Repository status
 
-## UX-REM-06 first-success decision packet — 23 September 2026
+## UX-REM-06 retained first-success sequence — 23 September 2026
 
-- [Decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) documents the current
-  refined ten-stage sequence and the adult/goal fast path, including exact
-  payload, consent, typed fallback, restoration, accessibility, API and
-  governance consequences.
-- Option A (retain the refined current sequence) is recommended for this
-  release. Option B changes the authoritative meaning of onboarding completion
-  and requires explicit product acceptance plus API/schema/governance work.
-- No option is recorded as accepted and no first-use sequence change was made.
-  The moderated prototype thresholds remain UX-HUM-03 human evidence.
+- The Accountable Product Owner accepted Option A in the
+  [decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md). The refined current
+  ten-stage sequence and its existing adult/goal, consent, typed-fallback,
+  Back and encrypted option-only restoration boundaries are authoritative for
+  this release. Option B is not authorized.
+- The current implementation already conforms, so no code, API/OpenAPI,
+  schema, migration, consent, authentication, restoration or catalogue change
+  was required. UX-REM-06 is technically complete.
+- Representative first-use completion, comprehension, median/p90 time and
+  abandonment measurements remain an unpassed UX-HUM-03 human gate.
 
 ## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
 

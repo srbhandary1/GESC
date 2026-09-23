@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 through UX-REM-05 technically complete; retained human review gates remain unpassed"
+status: "UX-REM-00 through UX-REM-06 technically complete; retained human review gates remain unpassed"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,22 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## UX-REM-06 retained first-success sequence — 23 September 2026
+
+The Accountable Product Owner accepted Option A. The refined current ten-stage
+first-use sequence is authoritative for this release, including the existing
+adult/goal command, independent optional voice purposes, typed fallback, Back
+behavior and encrypted option-only restoration. The implementation already
+conforms to that decision; no code, API/OpenAPI, schema, migration, consent,
+authentication, restoration or catalogue change was required. Option B's
+partial-onboarding contract is not authorized.
+
+The implementation and full repository gates recorded under UX-REM-03/04/05
+remain the technical evidence for this unchanged flow. Representative
+first-use completion, voice-choice comprehension, median/p90 time,
+abandonment point and invalid-submit measurements remain unpassed UX-HUM-03
+evidence and are not inferred from automated tests.
 
 ## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
 
