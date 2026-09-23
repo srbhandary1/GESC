@@ -38,6 +38,15 @@ Final gates pass: `make verify` (SQLite 333/333, 3,161 assertions; PostgreSQL
 large-chunk advisory. The package audit reports two moderate advisories and no
 high-severity failure.
 
+The combined UX-REM-03/04/05 debug-signed closed-beta APK was built from Git
+`7d3faf7` with the stable HTTPS origin and public Passport client. Android unit
+tests and `assembleDebug` passed (103 tasks). The verified artifact is
+82,944,538 bytes with SHA-256
+`8a7781c597ab1c67d11e54e94fecf2463b657fb977445923de50d405a823071d`,
+package `com.globalenglish.app`, min SDK 24 and target SDK 36. Installation is
+not claimed: the reverse-forwarded ADB daemon stopped listing the phone before
+this exact candidate could be installed.
+
 ## UX-REM-04 quiz and result hierarchy — 23 September 2026
 
 Aggregate quick-check and checkpoint scores are now absent while individual

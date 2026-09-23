@@ -1,5 +1,17 @@
 # Repository status
 
+## UX-REM-06 first-success decision packet — 23 September 2026
+
+- [Decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) documents the current
+  refined ten-stage sequence and the adult/goal fast path, including exact
+  payload, consent, typed fallback, restoration, accessibility, API and
+  governance consequences.
+- Option A (retain the refined current sequence) is recommended for this
+  release. Option B changes the authoritative meaning of onboarding completion
+  and requires explicit product acceptance plus API/schema/governance work.
+- No option is recorded as accepted and no first-use sequence change was made.
+  The moderated prototype thresholds remain UX-HUM-03 human evidence.
+
 ## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
 
 - Locked-level plans now hide unrelated password/federated account panels.

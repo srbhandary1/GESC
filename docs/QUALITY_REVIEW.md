@@ -1,5 +1,14 @@
 # Quality review
 
+## UX-REM-06 first-success decision packet — 23 September 2026
+
+The decision packet covers both required options and their adult/goal payload,
+Back/restoration, consent timing, typed fallback, time/tap measurement,
+localization/accessibility and governance consequences. Option A is recommended
+because it preserves the current reviewed authority and privacy boundaries.
+The Accountable Product Owner has not yet accepted an option, and the required
+representative prototype study has not run; neither is claimed as passed.
+
 ## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
 
 | Check | Result | Evidence |

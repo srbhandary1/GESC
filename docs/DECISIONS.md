@@ -457,5 +457,6 @@ authoritative.
 
 | ID | Needed by | Decision required |
 |---|---|---|
+| DR-0048 | UX-REM-06 implementation | Accept Option A (retain the refined ten-stage sequence, recommended) or Option B (adult/goal fast path with new partial-onboarding authority contract) in the [decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) |
 | DR-0006 | Validation Beta | Exact beta scope, sample sizes, subgroup definitions and measurable acceptance thresholds |
 | DR-0009 | External source distribution or production release | Product source licence, distribution rights and third-party notice policy |
