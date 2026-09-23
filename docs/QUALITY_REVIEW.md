@@ -1,5 +1,23 @@
 # Quality review
 
+## UX-REM-04 quiz and result hierarchy — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Per-item hierarchy | Pass | Aggregate score/pass remains absent until the last rationale is acknowledged; selected answer and rationale remain visible per item |
+| Result first viewport | Pass automated | Can-do outcome, correct/not-yet state, capability cue and dominant action fit at 320×568 with no horizontal document overflow |
+| Progressive disclosure | Pass | Attempt details retains knowledge, spoken, local-capture boundary and first/latest/best evidence; Review details retains due date and objective schedule |
+| Enlarged text/accessibility | Pass automated | 200% single-column details, keyboard-operated native disclosures and scoped axe with zero violations |
+| Existing authority | Pass | One-question flow, bounded attempts, exact replay and offline submission remain green; no API/schema/scoring/mastery change |
+| Human recall | Open | Five-second can-do recall and unprompted next-action finding require representative learners under UX-HUM-03 |
+
+Focused component tests pass 29/29 and localization tests pass 38/38. Final
+`make verify` passes SQLite 333/333 (3,161 assertions), PostgreSQL 361/361
+(5,232 assertions), and web 479/479; `make e2e` passes API 4/4 (103 assertions)
+and Playwright 30/30; `make build` passes with the existing large-chunk
+advisory. Catalogue source is `ui-en-IN-2026-09-23.2`; all five non-English
+exact revisions remain pending independent review.
+
 ## UX-REM-03 action copy and completion cues — 23 September 2026
 
 | Check | Result | Evidence |

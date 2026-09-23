@@ -1391,6 +1391,7 @@ describe('LevelPathPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Submit check' }))
 
     expect(await screen.findByText('Not yet')).toBeInTheDocument()
+    expect(screen.queryByText(/^Score /)).not.toBeInTheDocument()
     expect(screen.getByText('1 of 4 sessions complete')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Introduction, Completed' }),
@@ -1399,6 +1400,7 @@ describe('LevelPathPanel', () => {
     expect(screen.getByText('Your answer: I cans swim.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Next result' }))
     expect(screen.getByText('Correct')).toBeInTheDocument()
+    expect(screen.queryByText(/^Score /)).not.toBeInTheDocument()
     expect(
       screen.getByText(
         'Reviewed. This answer needs more practice, so one short retry is ready now. Your review attempt was recorded; mastery has not changed.',
@@ -1416,6 +1418,13 @@ describe('LevelPathPanel', () => {
       await screen.findByRole('radio', { name: 'I can swim.' }),
     )
     await user.click(screen.getByRole('button', { name: 'Submit check' }))
+
+    expect(await screen.findByText('Correct')).toBeInTheDocument()
+    expect(screen.queryByText(/^Score /)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Next result' }))
+    expect(screen.queryByText(/^Score /)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.getByText('Score 1% — passed')).toBeVisible()
 
     expect(submitCheck).toHaveBeenNthCalledWith(
       1,

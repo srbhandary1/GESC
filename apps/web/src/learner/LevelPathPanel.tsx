@@ -2427,7 +2427,7 @@ function LevelSessionJourney({
                   submitLabel="level.path.submit_check"
                 />
               ) : null}
-              {checkResult ? (
+              {checkResult && checkFeedbackDone ? (
                 <p className="level-session__score">
                   <LocalizedMessage
                     resolution={message('level.path.score', {
@@ -2638,7 +2638,7 @@ function LevelSessionJourney({
                   submitLabel="level.path.checkpoint_submit"
                 />
               ) : null}
-              {checkpointResult ? (
+              {checkpointResult && checkpointFeedbackDone ? (
                 <>
                   <p className="level-session__score">
                     <LocalizedMessage

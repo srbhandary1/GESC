@@ -339,11 +339,60 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     })
     .click()
 
+  const resultTitle = page.getByRole('heading', {
+    name: message('learner.result.title'),
+  })
+  await expect(resultTitle).toBeFocused()
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+  await page.setViewportSize({ height: 568, width: 320 })
+  await resultTitle.evaluate((heading) => {
+    heading.scrollIntoView({ block: 'start' })
+  })
+  const firstViewport = await page.evaluate(() => {
+    const canDo = document.querySelector<HTMLElement>('.learner-result__can-do')
+    const action = document.querySelector<HTMLElement>(
+      '.learner-result__actions .ge-button--primary',
+    )
+    const canDoRect = canDo?.getBoundingClientRect()
+    const actionRect = action?.getBoundingClientRect()
+    return {
+      actionBottom: actionRect?.bottom ?? Number.POSITIVE_INFINITY,
+      actionTop: actionRect?.top ?? Number.NEGATIVE_INFINITY,
+      canDoTop: canDoRect?.top ?? Number.NEGATIVE_INFINITY,
+      hasHorizontalOverflow:
+        document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      viewportHeight: globalThis.innerHeight,
+    }
+  })
+  expect(firstViewport.hasHorizontalOverflow).toBe(false)
+  expect(firstViewport.canDoTop).toBeGreaterThanOrEqual(0)
+  expect(firstViewport.actionTop).toBeGreaterThan(firstViewport.canDoTop)
+  expect(firstViewport.actionBottom).toBeLessThanOrEqual(
+    firstViewport.viewportHeight,
+  )
   await expect(
-    page.getByRole('heading', {
-      name: message('learner.result.title'),
-    }),
-  ).toBeFocused()
+    page.getByText(message('learner.result.knowledge_mastered')),
+  ).not.toBeVisible()
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%'
+    document.documentElement.classList.add('ge-native-enlarged-text')
+  })
+  const attemptDetails = page.locator('summary').filter({
+    hasText: message('learner.result.attempt_details'),
+  })
+  await attemptDetails.focus()
+  await page.keyboard.press('Enter')
+  await expect(attemptDetails.locator('..')).toHaveAttribute('open', '')
+  const enlargedOverflow = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+  }))
+  expect(enlargedOverflow, JSON.stringify(enlargedOverflow)).toMatchObject({
+    documentWidth: 320,
+    viewportWidth: 320,
+  })
   await expect(
     page.getByText(message('learner.result.knowledge_mastered')),
   ).toBeVisible()
@@ -370,6 +419,10 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
   await expect(
     page.getByRole('button', { name: message('learner.result.retry') }),
   ).not.toHaveClass(/ge-button--primary/u)
+  const resultAccessibility = await new AxeBuilder({ page })
+    .include('.learner-stack')
+    .analyze()
+  expect(resultAccessibility.violations).toEqual([])
 
   expect(api.lastResponse?.local_recording).toMatchObject({
     captured: true,

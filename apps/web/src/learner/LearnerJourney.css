@@ -533,6 +533,30 @@
   flex: 1 1 14rem;
 }
 
+.learner-result__outcome {
+  margin-block: var(--ge-space-3);
+}
+
+.learner-result__details {
+  display: block;
+}
+
+.learner-result__details > summary {
+  min-block-size: var(--ge-target-minimum);
+  padding-block: var(--ge-space-2);
+  color: var(--ge-color-action);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.learner-result__details[open] > summary {
+  margin-block-end: var(--ge-space-4);
+}
+
+.learner-result__details > :not(summary) + :not(summary) {
+  margin-block-start: var(--ge-space-4);
+}
+
 .learner-definition-list {
   display: grid;
   min-width: 0;
@@ -560,6 +584,18 @@
 .learner-definition-list code {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .learner-definition-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ge-space-1);
+  }
+}
+
+html.ge-native-enlarged-text .learner-definition-list > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ge-space-1);
 }
 
 .learner-progress-objective + .learner-progress-objective {

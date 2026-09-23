@@ -191,6 +191,12 @@ describe('deterministic learner journey', () => {
         name: t('learner.result.title'),
       }),
     ).toHaveFocus()
+    expect(
+      screen.getByRole('button', { name: t('learner.result.continue') }),
+    ).toHaveClass('ge-button--primary')
+    expect(screen.getByText(t('learner.result.knowledge_mastered'))).not
+      .toBeVisible()
+    await user.click(screen.getByText(t('learner.result.attempt_details')))
     expect(screen.getByText(t('learner.result.knowledge_mastered'))).toBeVisible()
     expect(screen.getAllByText(t('learner.result.spoken_pending'))).not
       .toHaveLength(0)
@@ -211,9 +217,6 @@ describe('deterministic learner journey', () => {
         }).text,
       ),
     ).toBeVisible()
-    expect(
-      screen.getByRole('button', { name: t('learner.result.continue') }),
-    ).toHaveClass('ge-button--primary')
     expect(
       screen.getByRole('button', { name: t('learner.result.retry') }),
     ).not.toHaveClass('ge-button--primary')
@@ -273,6 +276,9 @@ describe('deterministic learner journey', () => {
       }),
     )
 
+    await user.click(
+      await screen.findByText(t('learner.result.attempt_details')),
+    )
     expect(
       await screen.findAllByText(
         t('learner.result.local_capture_not_recorded'),

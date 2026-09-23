@@ -1,5 +1,25 @@
 # Repository status
 
+## UX-REM-04 quiz and result hierarchy — 23 September 2026
+
+- Per-item feedback now contains only progress, correct/not-yet state,
+  selected answer and rationale. Aggregate score/pass appears only after the
+  final rationale is acknowledged.
+- Mission results lead with one can-do outcome, outcome state, capability cue
+  and dominant Continue-from-Home action. Attempt evidence and recording facts
+  are under Attempt details; scheduling and objective history are under Review
+  details. No authoritative fact was removed.
+- Automated 320×568 and 200%-text evidence passes with keyboard-operable
+  disclosures, single-column enlarged-text details, no document overflow and
+  a clean scoped axe scan.
+- `make verify` passes SQLite 333/333 (3,161 assertions), PostgreSQL 361/361
+  (5,232 assertions), and web 107 files / 479 tests; `make e2e` passes API 4/4
+  (103 assertions) and Playwright 30/30; `make build` passes with the existing
+  large-chunk advisory.
+- Source is `ui-en-IN-2026-09-23.2` / `b5d174c1…5fe9f`; all five non-English
+  exact revisions remain pending independent review. Five-second recall and
+  unprompted next-action evidence remains an unpassed UX-HUM-03 gate.
+
 ## UX-REM-03 action copy and completion cues — 23 September 2026
 
 - Task-specific first-use, Home and result actions replace generic Continue;
@@ -19,8 +39,9 @@
 - The copy freeze creates English source `ui-en-IN-2026-09-23.1` /
   `ef313dc6…00ad7`. All five non-English exact revisions are pending independent
   review; approved-only mode therefore falls back to English. Representative
-  learner comprehension also remains open, so UX-REM-03 is not yet complete
-  and UX-REM-04 has not started.
+  learner comprehension also remains open under UX-HUM-03. UX-REM-03 is
+  technically complete for the ordered implementation sequence; neither human
+  gate is represented as passed or waived.
 
 ## UX-REM-02 Back, interruption and restoration — 23 September 2026
 

@@ -1474,7 +1474,7 @@ function MissionResultView({
         <p className="learner-result__can-do">
           <GovernedText content={result.can_do} />
         </p>
-        <dl className="learner-definition-list">
+        <dl className="learner-definition-list learner-result__outcome">
           <div>
             <dt>
               <LocalizedMessage
@@ -1491,6 +1491,45 @@ function MissionResultView({
               />
             </dd>
           </div>
+        </dl>
+        {capabilityTotal > 0 ? (
+          <p className="learner-result__capability-progress" role="status">
+            <LocalizedMessage
+              resolution={resolveInterfaceMessage(
+                'learner.result.capability_progress',
+                locale,
+                localizationPolicy,
+                {
+                  completed: String(capabilitiesReady),
+                  total: String(capabilityTotal),
+                },
+              )}
+            />
+          </p>
+        ) : null}
+        <div className="learner-result__actions">
+          <button
+            className="ge-button ge-button--primary"
+            onClick={onContinue}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.result.continue')} />
+          </button>
+          <button
+            className="ge-button"
+            onClick={onRetry}
+            type="button"
+          >
+            <LocalizedMessage resolution={message('learner.result.retry')} />
+          </button>
+        </div>
+      </section>
+
+      <details className="learner-card learner-result__details">
+        <summary>
+          <LocalizedMessage resolution={message('learner.result.attempt_details')} />
+        </summary>
+        <dl className="learner-definition-list">
           <div>
             <dt>
               <LocalizedMessage
@@ -1520,9 +1559,7 @@ function MissionResultView({
           <div>
             <dt>
               <LocalizedMessage
-                resolution={message(
-                  'learner.result.local_capture_label',
-                )}
+                resolution={message('learner.result.local_capture_label')}
               />
             </dt>
             <dd>
@@ -1541,77 +1578,41 @@ function MissionResultView({
             resolution={message('learner.result.spoken_boundary')}
           />
         </p>
-      </section>
+        <EvidenceSummary
+          evidence={result.evidence}
+          locale={locale}
+          localizationPolicy={localizationPolicy}
+        />
+      </details>
 
-      <EvidenceSummary
-        evidence={result.evidence}
-        locale={locale}
-        localizationPolicy={localizationPolicy}
-      />
-
-      <section
-        aria-labelledby="review-title"
-        className="learner-card"
-      >
-        <h3
-          className="learner-card__title"
-          id="review-title"
-        >
-          <LocalizedMessage
-            resolution={message('learner.result.review_title')}
-          />
-        </h3>
-        <p>
-          <time dateTime={result.review.due_at}>
-            {formatReviewDate(
-              result.review.due_at,
-              locale,
-              result.review.timezone,
-            )}
-          </time>
-        </p>
-      </section>
-
-      {progress === null ? null : (
-        <>
-          {capabilityTotal > 0 ? (
-            <p className="learner-result__capability-progress" role="status">
-              <LocalizedMessage
-                resolution={resolveInterfaceMessage(
-                  'learner.result.capability_progress',
-                  locale,
-                  localizationPolicy,
-                  {
-                    completed: String(capabilitiesReady),
-                    total: String(capabilityTotal),
-                  },
-                )}
-              />
-            </p>
-          ) : null}
+      <details className="learner-card learner-result__details">
+        <summary>
+          <LocalizedMessage resolution={message('learner.result.review_details')} />
+        </summary>
+        <section aria-labelledby="review-title">
+          <h3 className="learner-card__title" id="review-title">
+            <LocalizedMessage
+              resolution={message('learner.result.review_title')}
+            />
+          </h3>
+          <p>
+            <time dateTime={result.review.due_at}>
+              {formatReviewDate(
+                result.review.due_at,
+                locale,
+                result.review.timezone,
+              )}
+            </time>
+          </p>
+        </section>
+        {progress === null ? null : (
           <ProgressSummary
             locale={locale}
             localizationPolicy={localizationPolicy}
             progress={progress}
           />
-        </>
-      )}
-      <div className="learner-result__actions">
-        <button
-          className="ge-button ge-button--primary"
-          onClick={onContinue}
-          type="button"
-        >
-          <LocalizedMessage resolution={message('learner.result.continue')} />
-        </button>
-        <button
-          className="ge-button"
-          onClick={onRetry}
-          type="button"
-        >
-          <LocalizedMessage resolution={message('learner.result.retry')} />
-        </button>
-      </div>
+        )}
+      </details>
     </section>
   )
 }

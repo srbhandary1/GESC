@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00, UX-REM-01 and UX-REM-02 complete; UX-REM-01 TalkBack and quiz-IME/navigation retained as explicitly accepted bounded pre-production residuals"
+status: "UX-REM-00 through UX-REM-04 technically complete; retained human review gates remain unpassed"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,39 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## UX-REM-04 quiz and result hierarchy — 23 September 2026
+
+Aggregate quick-check and checkpoint scores are now absent while individual
+question feedback is being reviewed. The score/pass result appears only after
+the learner acknowledges the last rationale. One-question presentation,
+48-pixel targets, focused retry, bounded attempts, idempotency and offline
+submission semantics are unchanged.
+
+The mission-result first viewport now contains the can-do outcome, correct/not
+yet state, compact capability cue and dominant **Continue from Home** action.
+Knowledge/spoken/local-recording facts and first/latest/best attempt evidence
+remain available under keyboard-operable **Attempt details**. The due date and
+objective schedule remain available under **Review details**. No authoritative
+fact was removed or rewritten.
+
+At 320×568 CSS pixels the can-do outcome and primary action are visible in the
+same first viewport with no horizontal document overflow. At 200% text the
+result order remains logical, definition lists collapse to one column, the
+native disclosures operate by keyboard and the scoped result axe scan is
+clean. Focused component tests pass 29/29 and localization tests pass 38/38.
+Final gates pass: `make verify` (SQLite 333/333, 3,161 assertions; PostgreSQL
+361/361, 5,232 assertions; web 107 files / 479 tests), `make e2e` (API 4/4,
+103 assertions; Playwright 30/30), and `make build` with the existing
+large-chunk advisory. The package audit reports two moderate advisories and no
+high-severity failure.
+
+Catalogue source revision is `ui-en-IN-2026-09-23.2` with hash
+`sha256:b5d174c13b24c5d6cd1577435b2d4ca78ec268ede180945374cb83b9cdd5fe9f`.
+All five non-English exact revisions remain `pending-independent-review` and
+approved-only builds continue to fall back to English. Representative
+five-second outcome recall and unprompted next-action evidence remains an
+unpassed UX-HUM-03 gate; automated tests do not substitute for it.
 
 ## UX-REM-03 action copy and completion cues — 23 September 2026
 
@@ -53,10 +86,11 @@ build retains the existing large-chunk advisory, and the package audit reports
 two moderate advisories but no high-severity failure.
 
 No API, OpenAPI, schema, scoring, mastery, consent, entitlement, provider,
-retention or credential-storage behavior changed. UX-REM-03 remains **in
-progress** for representative-learner comprehension evidence and independent
-review of the exact five non-English revisions; those human gates are not
-inferred from automated tests.
+retention or credential-storage behavior changed. UX-REM-03 is technically
+complete for ordered implementation. Representative-learner comprehension and
+independent review of the exact five non-English revisions remain unpassed
+UX-HUM-03 and UX-HUM-01 gates; those human gates are not inferred from
+automated tests.
 
 ## UX-REM-02 Back, interruption and restoration — 23 September 2026
 
