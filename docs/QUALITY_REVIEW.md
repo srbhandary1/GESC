@@ -1,5 +1,36 @@
 # Quality review
 
+## UX-REM-02 Back, interruption and restoration — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Predictive/gesture Back | Pass | API 35/36 real edge gestures traverse allowlisted question/session/Learn history; prior-question preview is visible; existing browser coverage supplies the level-list transition |
+| Root behavior | Pass | Manual API 35/36 gesture runs return Sign in → Home → launcher; no legacy Back API or manifest opt-out was added |
+| Recording interruption | Pass | Active cancelable recording request consumes a real edge gesture before navigation; product component coverage verifies cancellation and localized explanation |
+| Microphone permission | Pass | API 35/36 system dialogs cover denied once, denied permanently, App Settings recovery and granted; typed fallback coverage remains green |
+| Restoration/privacy | Pass | Encrypted option-only, tenant/member-bound draft resumes exact nested question; no learner text, transcript, audio, credentials or provider content is persisted; cross-account restoration fails closed |
+| Offline state | Pass | Saved/pending → syncing → server-verified synced is visible; terminal 4xx/replay conflict becomes needs-attention; transient failure returns to pending |
+| Idempotency | Pass | Concurrent PostgreSQL exact replay creates one authoritative submitted attempt; stable command/receipt coverage passes |
+| API/schema/authority | Unchanged | Presentation state and tests only; no API/OpenAPI, database, scoring, mastery, entitlement, authentication, provider, retention or payment change |
+
+Focused Vitest passed 48/48, offline Playwright 4/4, the broader learner/offline
+selection 11/11, concurrent replay 1/1 (8 assertions), and app-scoped JDK-21
+Android unit/test-APK assembly. API 35 and 36 each pass the recording/gesture
+and microphone-permission instrumentation cases. UX-REM-02 is complete;
+UX-REM-03 is next. Final gates pass: `make verify` (SQLite 333/333, 3,161
+assertions; PostgreSQL 361/361, 5,232 assertions; web 479/479), `make e2e`
+(API 4/4, 103 assertions; Playwright 30/30), and `make build` with only the
+existing large-chunk advisory.
+
+## UX-REM-01 bounded residual disposition — 23 September 2026
+
+UX-REM-01 is complete for sequential pre-production work. The Accountable
+Product Owner accepted the unpassed human TalkBack journey and authenticated
+quiz-CTA IME/navigation matrix as bounded pre-production residuals. They are
+not PASS results and remain required evidence before public/paid release unless
+a later explicit release decision changes their disposition. UX-REM-02 may
+start; production, Play and payment authority are unchanged.
+
 ## UX-REM-01 exact API-36 emulator continuation — 23 September 2026
 
 | Check | Result | Evidence |

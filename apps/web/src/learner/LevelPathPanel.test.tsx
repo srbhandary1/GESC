@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -1641,7 +1641,9 @@ describe('LevelPathPanel', () => {
     }
     const submitCheckpoint = vi.fn(async () => checkpointResult)
     const submitOfflineLevelCheckpoint = vi.fn(async () => checkpointResult)
+    const markCheckpointNeedsAttention = vi.fn(async () => undefined)
     let savedDraft: LevelQuizDraft | null = null
+    let lastQueued: PendingLevelCheckpointCommand | null = null
     const storedLevelBundle = {
       bundle: {
         lease: 'signed-lease-token',
@@ -1736,7 +1738,7 @@ describe('LevelPathPanel', () => {
           savedDraft = null
         }
       }),
-      markCheckpointNeedsAttention: vi.fn(async () => undefined),
+      markCheckpointNeedsAttention,
       markNeedsAttention: vi.fn(async () => undefined),
       pendingCheckpointCommands: vi.fn(async () => queued),
       pendingCommands: vi.fn(async () => []),
@@ -1744,6 +1746,7 @@ describe('LevelPathPanel', () => {
       purge: vi.fn(async () => undefined),
       purgeAll: vi.fn(async () => undefined),
       queueCheckpointSubmission: vi.fn(async (_binding, command) => {
+        lastQueued = command
         queued = [command]
       }),
       queueCompletion: vi.fn(async () => undefined),
@@ -1780,7 +1783,10 @@ describe('LevelPathPanel', () => {
       configurable: true,
       value: false,
     })
-    globalThis.dispatchEvent(new Event('offline'))
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('offline'))
+      await Promise.resolve()
+    })
 
     await user.click(
       await screen.findByRole('radio', { name: 'I can swim.' }),
@@ -1828,7 +1834,10 @@ describe('LevelPathPanel', () => {
       configurable: true,
       value: true,
     })
-    globalThis.dispatchEvent(new Event('online'))
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('online'))
+      await Promise.resolve()
+    })
 
     await waitFor(() => {
       expect(submitOfflineLevelCheckpoint).toHaveBeenCalledWith(
@@ -1847,5 +1856,45 @@ describe('LevelPathPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('Level 2 is now open.')).toBeInTheDocument()
     })
+    expect(
+      screen.getByText('The server verified your saved completion.'),
+    ).toBeInTheDocument()
+
+    expect(lastQueued).not.toBeNull()
+    queued = [{
+      ...lastQueued!,
+      commandId: '018f4f82-6400-7a12-8f4b-20b12bf6b6f6',
+    }]
+    submitOfflineLevelCheckpoint.mockRejectedValueOnce(
+      new Error('level_sessions_http_409'),
+    )
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    })
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('offline'))
+      await Promise.resolve()
+    })
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    })
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('online'))
+      await Promise.resolve()
+    })
+
+    await waitFor(() => {
+      expect(markCheckpointNeedsAttention).toHaveBeenCalledWith(
+        offlineBinding,
+        '018f4f82-6400-7a12-8f4b-20b12bf6b6f6',
+      )
+    })
+    expect(
+      screen.getByText(
+        'The saved completion could not be verified yet. It remains on this device for another safe retry.',
+      ),
+    ).toBeInTheDocument()
   })
 })

@@ -1234,6 +1234,9 @@ function LevelSessionJourney({
   const [checkpointOfflinePending, setCheckpointOfflinePending] = useState<{
     readonly commandId: string
   } | null>(null)
+  const [checkpointOfflineState, setCheckpointOfflineState] = useState<
+    'pending' | 'syncing' | 'synced' | 'needs-attention' | null
+  >(null)
   const [blueprintContentHash, setBlueprintContentHash] = useState<
     string | null
   >(null)
@@ -1340,6 +1343,7 @@ function LevelSessionJourney({
 
         if (pending !== undefined) {
           setCheckpointOfflinePending({ commandId: pending.commandId })
+          setCheckpointOfflineState('pending')
         }
       })
 
@@ -1367,6 +1371,9 @@ function LevelSessionJourney({
 
       for (const command of pending) {
         try {
+          if (command.levelNumber === levelNumber) {
+            setCheckpointOfflineState('syncing')
+          }
           let result: LevelCheckpointSubmissionResult
           if (
             command.bundleId !== '' &&
@@ -1413,6 +1420,7 @@ function LevelSessionJourney({
             setCheckpointFeedbackIndex(0)
             setCheckpointFeedbackDone(false)
             setCheckpointOfflinePending(null)
+            setCheckpointOfflineState('synced')
             setCheckpointDetail((current) => {
               const base =
                 current ??
@@ -1442,8 +1450,11 @@ function LevelSessionJourney({
 
             if (command.levelNumber === levelNumber) {
               setCheckpointOfflinePending(null)
+              setCheckpointOfflineState('needs-attention')
               setError('check_failed')
             }
+          } else if (command.levelNumber === levelNumber) {
+            setCheckpointOfflineState('pending')
           }
 
           break
@@ -1854,6 +1865,7 @@ function LevelSessionJourney({
         setCheckpointFeedbackIndex(0)
         setCheckpointFeedbackDone(false)
         setCheckpointOfflinePending(null)
+        setCheckpointOfflineState(null)
         setError(null)
         openLearnerQuestion(
           levelNumber,
@@ -1905,6 +1917,7 @@ function LevelSessionJourney({
       })
       await checkpointDraftController.clear(draft.attemptId)
       setCheckpointOfflinePending({ commandId })
+      setCheckpointOfflineState('pending')
       setError(null)
     } catch {
       setError('check_failed')
@@ -2492,21 +2505,31 @@ function LevelSessionJourney({
             ) : null}
           </div>
 
-          {allSessionsComplete && checkpointOfflinePending ? (
+          {allSessionsComplete && checkpointOfflineState !== null ? (
             <div
               className="level-session__panel level-session__checkpoint-offline"
               role="status"
             >
               <h3>
                 <LocalizedMessage
-                  resolution={message('learner.offline.saved')}
+                  resolution={message(
+                    checkpointOfflineState === 'pending'
+                      ? 'learner.offline.saved'
+                      : checkpointOfflineState === 'syncing'
+                        ? 'learner.offline.syncing'
+                        : checkpointOfflineState === 'synced'
+                          ? 'learner.offline.synced'
+                          : 'learner.offline.failed',
+                  )}
                 />
               </h3>
-              <p>
-                <LocalizedMessage
-                  resolution={message('learner.offline.pending_authority')}
-                />
-              </p>
+              {checkpointOfflineState === 'pending' ? (
+                <p>
+                  <LocalizedMessage
+                    resolution={message('learner.offline.pending_authority')}
+                  />
+                </p>
+              ) : null}
             </div>
           ) : null}
 

@@ -930,6 +930,18 @@ describe('localized application shell', () => {
     expect(
       await screen.findByLabelText(text('auth.password.username')),
     ).toBeInTheDocument()
+    expect(window.history.state).toMatchObject({
+      __globalEnglishLearnerNavigation: {
+        destination: 'home',
+        index: 1,
+        previous: { destination: 'home' },
+      },
+    })
+    expect(
+      (window as Window & {
+        __globalEnglishStartAndroidBackPreview?: () => boolean
+      }).__globalEnglishStartAndroidBackPreview?.(),
+    ).toBe(true)
     expect(beginAuthorization).not.toHaveBeenCalled()
   })
 

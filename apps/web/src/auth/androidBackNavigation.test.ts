@@ -89,6 +89,11 @@ describe('Android 16 Back and window integration', () => {
       expect(smoke).toContain('speakPermissionDenial')
       expect(smoke).toMatch(/contextualPlans|plansSurface/u)
       expect(smoke).toContain('backFromSecondQuizQuestion')
+      if (wrapper.activity.includes('android-app/')) {
+        expect(smoke).toContain('predictiveGestureBackWalksQuestionSessionAndLearnHistory')
+        expect(smoke).toContain('__globalEnglishStartAndroidBackPreview')
+        expect(smoke).toContain('microphonePermissionBranchesRecoverThroughAppSettings')
+      }
     }
   })
 })

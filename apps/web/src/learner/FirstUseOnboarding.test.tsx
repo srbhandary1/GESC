@@ -331,6 +331,11 @@ describe('production first-use onboarding', () => {
 
     window.history.back()
     await expectHeading('Set up English learning for your goals')
+    expect(
+      screen.getByRole('heading', {
+        name: 'Set up English learning for your goals',
+      }),
+    ).toHaveFocus()
     await waitFor(() =>
       expect(window.location.hash).toBe('#home/first-use/welcome'),
     )
@@ -339,6 +344,11 @@ describe('production first-use onboarding', () => {
     await expectHeading('Are you 18 or older?')
     await user.click(screen.getByRole('button', { name: 'Back' }))
     await expectHeading('Set up English learning for your goals')
+    expect(
+      screen.getByRole('heading', {
+        name: 'Set up English learning for your goals',
+      }),
+    ).toHaveFocus()
     await waitFor(() =>
       expect(window.location.hash).toBe('#home/first-use/welcome'),
     )

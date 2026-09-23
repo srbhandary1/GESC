@@ -218,7 +218,9 @@ attached by USB to the MacBook. Pin one candidate APK before recording results.
 ### Device acceptance
 
 - [ ] TalkBack completes first use, one full quiz, result, plans close and
-      focus restoration without a trap or unexplained focus jump.
+      focus restoration without a trap or unexplained focus jump. Explicitly
+      accepted on 23 September 2026 as a bounded pre-production residual; not
+      reclassified as PASS.
 - [x] English at 200% text has no clipped label, control or essential content.
       Evidence: [exact API-36 emulator continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026).
 - [x] Kannada at 200% text has no clipped label, control or essential content.
@@ -229,7 +231,8 @@ attached by USB to the MacBook. Pin one candidate APK before recording results.
 - [x] Split-screen remains usable and preserves current task state. Evidence:
       [UX-REM-01 physical-device rerun](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026).
 - [ ] The sticky quiz action is visible with IME open/closed and both gesture
-      and three-button navigation.
+      and three-button navigation. Explicitly accepted on 23 September 2026
+      as a bounded pre-production residual; not reclassified as PASS.
 - [x] High contrast preserves legibility and the active destination remains
       non-color-only. Evidence: [connected-device continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#connected-device-continuation--23-september-2026).
 
@@ -267,16 +270,16 @@ attached by USB to the MacBook. Pin one candidate APK before recording results.
 
 ### Exit evidence
 
-- [ ] API 35 and API 36 gesture Back follows question → session → level list →
+- [x] API 35 and API 36 gesture Back follows question → session → level list →
       Learn and previews the true prior destination.
-- [ ] Root Back returns to the launcher with the system animation.
-- [ ] Onboarding Back traverses stages and restores focus correctly.
-- [ ] Daily-review choice survives app switch and authorized process
+- [x] Root Back returns to the launcher with the system animation.
+- [x] Onboarding Back traverses stages and restores focus correctly.
+- [x] Daily-review choice survives app switch and authorized process
       recreation without cross-account restoration.
-- [ ] Offline submission displays saved/pending, syncing, reconciled or
+- [x] Offline submission displays saved/pending, syncing, reconciled or
       needs-attention truthfully.
-- [ ] Exact replay produces one authoritative attempt and one receipt.
-- [ ] Recording Back and every microphone-permission branch pass on device.
+- [x] Exact replay produces one authoritative attempt and one receipt.
+- [x] Recording Back and every microphone-permission branch pass on device.
 
 ## 6. UX-REM-03 — Action copy, remediation and completion cues
 
@@ -663,8 +666,8 @@ Do not mark a row complete without a linked artefact and exact candidate SHA.
 | Order | Checkpoint | State | Owner | Required evidence | Completed |
 |---:|---|---|---|---|---|
 | 0 | UX-REM-00 Device evidence path | Complete | Android engineer / tester | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path); Git `b1660dc`; APK `fffbcec…665012` | 2026-09-18 |
-| 1 | UX-REM-01 Accessibility/reflow | In progress — repaired APK passes API-33 maximum-font, short-landscape, Speak IME, Plans-return and sign-in checks; labeled toolbar reduced to the 48px floor with aligned caption/value pairs; customer-facing provider disclosure uses categories; Direct voice allowlist repaired; bounded gates remain | Frontend/Android engineer | [Repaired-APK evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#repaired-apk-physical-rerun--19-september-2026), [sign-in follow-up](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#sign-in-contrast-and-checkbox-follow-up--19-september-2026), [recognizable controls](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#recognizable-android-header-controls--19-september-2026), [equal-toolbar/voice recovery](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#equal-toolbar-and-learn-microphone-recovery--19-september-2026) and [compact toolbar/provider disclosure](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#compact-toolbar-and-provider-category-disclosure--19-september-2026); APK `952ec83…3ab91`; refreshed APK/device alignment, signed-in voice attempt, exact 200%, high contrast, TalkBack/quiz CTA and additional-device/API evidence remain open | |
-| 2 | UX-REM-02 Back/restoration | Not started | Frontend/Android engineer | API 35/36 Back + lifecycle/offline evidence | |
+| 1 | UX-REM-01 Accessibility/reflow | Complete — exact 200%/320-CSS/API-36, API-33 OEM maximum, short-landscape, split-screen, high-contrast, Speak/sign-in IME, Plans-return and closed-keyboard quiz evidence pass; TalkBack judgement and quiz-IME/navigation remain explicitly accepted bounded pre-production residuals, not passes | Frontend/Android engineer | [Bounded residual acceptance](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#bounded-residual-acceptance--23-september-2026), [exact API-36 evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026), [connected-device evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#connected-device-continuation--23-september-2026); exact c11 APK `42cb92ca…bdbb4` | 2026-09-23 |
+| 2 | UX-REM-02 Back/restoration | Complete | Frontend/Android engineer | [API 35/36 Back + lifecycle/offline evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-02-back-interruption-and-restoration--23-september-2026); exact c11 APK `42cb92ca…bdbb4` | 2026-09-23 |
 | 3 | UX-REM-03 Copy/completion cues | Not started | Product designer / frontend engineer | Copy review + comprehension evidence | |
 | 4 | UX-REM-04 Quiz/result hierarchy | Not started | Product designer / frontend engineer | Tests + representative-user evidence | |
 | 5 | UX-REM-05 Plans decision | Not started | Product owner / frontend engineer | Tenancy tests + comprehension evidence | |

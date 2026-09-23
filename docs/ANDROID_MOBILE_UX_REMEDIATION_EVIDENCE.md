@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 exact API-36 emulator evidence closes 200% text and 320-CSS-pixel reflow; TalkBack and quiz-IME/navigation acceptance remain open"
+status: "UX-REM-00, UX-REM-01 and UX-REM-02 complete; UX-REM-01 TalkBack and quiz-IME/navigation retained as explicitly accepted bounded pre-production residuals"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,58 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## UX-REM-02 Back, interruption and restoration — 23 September 2026
+
+The exact c11 production-origin APK (SHA-256
+`42cb92ca087cdd7403cf70107487a7673415aba7d7a8175696a04de28f7bdbb4`)
+and the package-correct instrumentation APK were exercised on official Android
+API 35 and API 36 x86_64 AVDs in gesture-navigation mode. The production APK
+was not rebuilt by this checkpoint; only the test APK changed.
+
+| Exit row | Result | Evidence |
+|---|---|---|
+| Gesture Back and predictive preview | Pass on API 35 and API 36 | The native AndroidX callback exposed a visible prior-question preview. Real edge gestures traversed question 2 → question 1 → session → Learn. Existing browser coverage supplies the session → level-list transition using production history helpers; the native test injects only the same allowlisted history identifiers and does not claim server content |
+| Root Back | Pass on API 35 and API 36 | Manual gesture-navigation runs traversed Sign in → Home and then returned the app root to the launcher without a legacy Back override |
+| Onboarding Back and focus | Pass | Focused component coverage traverses browser and in-flow Back and asserts the restored stage heading receives focus; the existing Chromium journey covers the production onboarding route |
+| Restorable choice and account isolation | Pass | The existing ADR-0006 encrypted store retains only tenant/member/level/part/attempt-bound option identifiers. Reload resumes the exact question and selected option; tenant-binding tests reject a different learner. No credential, learner text, transcript, audio or provider content is stored |
+| Offline truth states | Pass | The level checkpoint now renders saved/pending, syncing, server-verified synced, or needs-attention. A delayed browser response proves the visible transition; a replayed 409/4xx is removed from retry and visibly marked needs-attention rather than falsely reconciled |
+| Exact replay | Pass | PostgreSQL concurrent replay creates one submitted authoritative attempt for one stable idempotency key (1 test, 8 assertions); component coverage preserves the command ID and one receipt path |
+| Recording Back | Pass on API 35 and API 36 | A real edge gesture while the cancelable recording Back request is active is consumed before navigation; after cancellation is removed, the same gesture advances history. Existing component coverage asserts capture cancellation and the localized explanation |
+| Microphone permission branches | Pass on API 35 and API 36 | Production permission bridge exercised with system dialogs: denied once, denied permanently, App Settings recovery and granted. Permission reset was performed externally before instrumentation because revoking the target permission terminates the instrumented process. Existing product coverage keeps Type instead available across permission states |
+
+Focused verification passed: four Vitest files / 48 tests; the level-path
+offline Playwright file 4/4; the broader learner/offline Playwright selection
+11/11; and the concurrent PostgreSQL replay test 1/1 (8 assertions). The app
+module's JDK-21 `:app:testDebugUnitTest :app:assembleDebugAndroidTest` target
+passed. The unqualified multi-module `assembleDebugAndroidTest` remains
+inapplicable because two third-party Capacitor plugin modules expose duplicate
+Kotlin test classes; the package-correct app target above is the executed gate.
+
+This checkpoint changes no API, OpenAPI schema, database schema, scoring,
+mastery, entitlement, authentication, credential storage, provider routing or
+retention rule. It adds truthful local presentation state and test coverage
+only. Final repository gates pass: `make verify` (SQLite 333/333, 3,161
+assertions; PostgreSQL 361/361, 5,232 assertions; web 107 files / 479 tests),
+`make e2e` (API 4/4, 103 assertions; Playwright 30/30) and `make build`
+(existing large-chunk advisory only). UX-REM-02 is complete; UX-REM-03 is
+next.
+
+## Bounded residual acceptance — 23 September 2026
+
+The Accountable Product Owner explicitly accepted the two remaining UX-REM-01
+rows as bounded pre-production residuals and instructed work to continue:
+
+1. human TalkBack announcement judgement through first use, quiz, result,
+   plans close and focus return; and
+2. the authenticated quiz CTA with IME open/closed under both gesture and
+   three-button navigation.
+
+Neither row is reclassified as PASS. The acceptance closes UX-REM-01 only for
+sequential implementation and pre-production continuation. Both rows remain
+release evidence to obtain before a public/paid learner release or Play
+production listing unless a later release decision explicitly disposes of
+them. UX-REM-02 may now start under D-0319/D-0320.
 
 ## Exact API-36 emulator continuation — 23 September 2026
 
@@ -38,7 +90,8 @@ public guest/sign-in UI, were retained only under workstation `/tmp` for this
 session and were not added to Git or deployed. This evidence closes the exact
 200% and exact 320-CSS-pixel implementation rows on API 36; it does not close
 TalkBack, an authenticated quiz/result journey, the quiz-specific IME row or
-the required navigation-mode matrix. UX-REM-01 therefore remains in progress.
+the required navigation-mode matrix. Those two remaining rows were later
+accepted as bounded pre-production residuals above.
 
 ## Connected-device continuation — 23 September 2026
 

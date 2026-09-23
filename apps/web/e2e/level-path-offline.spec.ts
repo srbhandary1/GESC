@@ -303,9 +303,16 @@ test('queues a level checkpoint offline and syncs through the signed submission 
   await context.setOffline(false)
 
   await expect(
+    page.getByText(message('learner.offline.syncing')),
+  ).toBeVisible()
+
+  await expect(
     page.getByText(
       message('level.path.checkpoint_unlocked', { number: '2' }),
     ),
+  ).toBeVisible()
+  await expect(
+    page.getByText(message('learner.offline.synced')),
   ).toBeVisible()
   await expect(
     page.getByText(message('level.path.answer_correct')),
@@ -631,7 +638,9 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--ge-native-ime-inset-bottom', '220px')
   })
-  await stickyAction.scrollIntoViewIfNeeded()
+  await stickyAction.evaluate((element) => {
+    element.scrollIntoView({ block: 'end' })
+  })
   const openKeyboardGeometry = await stickyAction.evaluate((element) => {
     const box = element.getBoundingClientRect()
     return {
@@ -826,6 +835,7 @@ async function mockLevelPathLearnerApi(
       state.offlineCheckpointBodies.push(
         JSON.parse(postData ?? 'null') as unknown,
       )
+      await new Promise((resolve) => globalThis.setTimeout(resolve, 300))
       await json(route, checkpointSubmissionResult())
       return
     }

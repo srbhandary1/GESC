@@ -1,5 +1,38 @@
 # Repository status
 
+## UX-REM-02 Back, interruption and restoration — 23 September 2026
+
+- API 35 and API 36 gesture-navigation AVDs pass real edge-gesture question →
+  question → session → Learn traversal, recording interception, and the
+  production microphone bridge's denied-once, permanently-denied, App Settings
+  recovery and granted branches. Manual root Back returns to the launcher.
+- Onboarding Back restores focus; the existing encrypted ADR-0006 option-only
+  draft survives reload without crossing learner bindings; concurrent exact
+  replay creates one authoritative attempt.
+- Offline checkpoint presentation now distinguishes saved/pending, syncing,
+  server-verified synced and terminal needs-attention. No server authority or
+  payload changed.
+- Focused Vitest passed 48/48, offline Playwright 4/4, broader learner/offline
+  Playwright 11/11, concurrent PostgreSQL replay 1/1 (8 assertions), and the
+  app-scoped JDK-21 Android unit/test-APK build passed. `make verify` passed
+  SQLite 333/333 (3,161 assertions), PostgreSQL 361/361 (5,232 assertions) and
+  web 107 files / 479 tests; `make e2e` passed API 4/4 (103 assertions) and
+  Playwright 30/30; `make build` passed with the existing chunk advisory.
+- UX-REM-02 is complete. UX-REM-03 is next. The c11 production APK remains
+  byte-identical at SHA-256 `42cb92ca…bdbb4`; keys/credentials, payments, Play
+  and production cutover remain outside this checkpoint.
+
+## UX-REM-01 bounded residual acceptance — 23 September 2026
+
+- The Accountable Product Owner explicitly accepted human TalkBack judgement
+  and authenticated quiz-CTA IME/navigation evidence as bounded
+  pre-production residuals and instructed work to continue.
+- The two rows remain unpassed and remain public/paid-release evidence. This
+  decision closes UX-REM-01 for sequential implementation and authorizes
+  UX-REM-02 to start; it does not authorize Play production, live payment or
+  public production.
+- Credential and key rollover remain excluded by the same owner instruction.
+
 ## UX-REM-01 exact API-36 / 200% / 320-CSS continuation — 23 September 2026
 
 - The exact c11 APK was installed on the Android 16/API 36 AVD at density 540

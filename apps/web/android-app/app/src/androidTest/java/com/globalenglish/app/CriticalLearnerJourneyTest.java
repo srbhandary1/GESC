@@ -136,6 +136,102 @@ public class CriticalLearnerJourneyTest {
         );
     }
 
+    @Test
+    public void predictiveGestureBackWalksQuestionSessionAndLearnHistory() {
+        assertDom(
+            "(()=>{"
+                + "const k='__globalEnglishLearnerNavigation';"
+                + "const learn={destination:'learn',index:0,previous:null,restoreFocusId:null,version:1};"
+                + "const session={destination:'learn',levelNumber:1,partId:'practice',index:1,previous:{destination:'learn'},restoreFocusId:null,version:1};"
+                + "const q0={destination:'learn',levelNumber:1,partId:'practice',assessment:{kind:'quick-check',phase:'question',questionIndex:0,totalQuestions:2},index:2,previous:{destination:'learn',levelNumber:1,partId:'practice'},restoreFocusId:null,version:1};"
+                + "const q1={destination:'learn',levelNumber:1,partId:'practice',assessment:{kind:'quick-check',phase:'question',questionIndex:1,totalQuestions:2},index:3,previous:{destination:'learn',levelNumber:1,partId:'practice',assessment:{kind:'quick-check',phase:'question',questionIndex:0,totalQuestions:2}},restoreFocusId:null,version:1};"
+                + "history.replaceState({[k]:learn},'','#learn');"
+                + "history.pushState({[k]:session},'','#learn/levels/1/practice');"
+                + "history.pushState({[k]:q0},'','#learn/levels/1/practice/quick-check/question/0/2');"
+                + "history.pushState({[k]:q1},'','#learn/levels/1/practice/quick-check/question/1/2');"
+                + "dispatchEvent(new PopStateEvent('popstate',{state:history.state}));"
+                + "return true;})()",
+            "synthetic allowlisted question history"
+        );
+        assertDom(
+            "window.__globalEnglishStartAndroidBackPreview?.()===true",
+            "prior-question predictive preview"
+        );
+        assertDom(
+            "document.querySelector('.ge-android-back-preview')!==null",
+            "visible predictive preview"
+        );
+        assertDom(
+            "(()=>{window.__globalEnglishCancelAndroidBackPreview?.();return true;})()",
+            "cancelled predictive preview"
+        );
+
+        assertDom(
+            "(()=>{window.__uxrem02RecordingBack=(event)=>event.preventDefault();"
+                + "addEventListener('ge:android-back-request',window.__uxrem02RecordingBack);"
+                + "return true;})()",
+            "recording Back interception"
+        );
+        gestureBack();
+        assertDom(
+            "location.hash==='#learn/levels/1/practice/quick-check/question/1/2'",
+            "recording Back consumed before navigation"
+        );
+        assertDom(
+            "(()=>{removeEventListener('ge:android-back-request',window.__uxrem02RecordingBack);"
+                + "delete window.__uxrem02RecordingBack;return true;})()",
+            "recording Back interception removed"
+        );
+
+        gestureBack();
+        assertDom(
+            "location.hash==='#learn/levels/1/practice/quick-check/question/0/2'",
+            "prior question after gesture Back"
+        );
+        gestureBack();
+        assertDom(
+            "location.hash==='#learn/levels/1/practice'",
+            "session after gesture Back"
+        );
+        gestureBack();
+        assertDom("location.hash==='#learn'", "Learn after gesture Back");
+    }
+
+    @Test
+    public void microphonePermissionBranchesRecoverThroughAppSettings() throws Exception {
+        requestMicrophonePermission();
+        denyMicrophonePermission();
+        assertDom(
+            "window.__uxrem02MicrophonePermission==='denied_once'",
+            "denied-once microphone branch"
+        );
+
+        requestMicrophonePermission();
+        denyMicrophonePermission();
+        assertDom(
+            "window.__uxrem02MicrophonePermission==='denied_permanently'",
+            "permanently-denied microphone branch"
+        );
+
+        device.executeShellCommand(
+            "am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:com.globalenglish.app"
+        );
+        assertTrue(
+            device.wait(
+                Until.hasObject(By.pkg("com.android.settings").depth(0)),
+                TIMEOUT_MS
+            )
+        );
+        device.executeShellCommand("pm grant com.globalenglish.app android.permission.RECORD_AUDIO");
+        device.pressBack();
+        assertTrue(device.wait(Until.hasObject(By.pkg("com.globalenglish.app").depth(0)), TIMEOUT_MS));
+        requestMicrophonePermission();
+        assertDom(
+            "window.__uxrem02MicrophonePermission==='granted'",
+            "granted microphone branch after App Settings recovery"
+        );
+    }
+
     private void openSeededQuestion() {
         setHash("learn");
         click(".level-path__item");
@@ -161,6 +257,45 @@ public class CriticalLearnerJourneyTest {
             "control " + selector
         );
         SystemClock.sleep(350L);
+    }
+
+    private void gestureBack() {
+        int middle = device.getDisplayHeight() / 2;
+        assertTrue(
+            "Edge gesture completed",
+            device.swipe(1, middle, device.getDisplayWidth() * 2 / 3, middle, 40)
+        );
+        SystemClock.sleep(700L);
+    }
+
+    private void requestMicrophonePermission() {
+        assertDom(
+            "(()=>{window.__uxrem02MicrophonePermission='pending';"
+                + "window.Capacitor.Plugins.GlobalEnglishMicrophonePermission"
+                + ".requestAfterSpeakingAction()"
+                + ".then(({status})=>{window.__uxrem02MicrophonePermission=status;})"
+                + ".catch(()=>{window.__uxrem02MicrophonePermission='error';});"
+                + "return true;})()",
+            "microphone permission request"
+        );
+    }
+
+    private void denyMicrophonePermission() {
+        androidx.test.uiautomator.UiObject2 deny = device.wait(
+            Until.findObject(By.res("com.android.permissioncontroller:id/permission_deny_button")),
+            1_000L
+        );
+        if (deny == null) {
+            deny = device.wait(
+                Until.findObject(By.res(
+                    "com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button"
+                )),
+                TIMEOUT_MS
+            );
+        }
+        assertTrue("Android microphone deny control exists", deny != null);
+        deny.click();
+        device.waitForIdle();
     }
 
     private void assertDom(String expression, String description) {
