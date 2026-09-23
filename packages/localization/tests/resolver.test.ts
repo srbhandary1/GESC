@@ -57,19 +57,19 @@ describe('message resolution', () => {
     const result = resolveMessage('nav.home', { onFallback })
 
     expect(result).toEqual({
-      text: knINCatalogue['nav.home'],
+      text: 'Home',
       requestedLocale: 'kn-IN',
-      resolvedLocale: 'kn-IN',
-      usedFallback: false,
-      reason: 'requested-locale',
-      reviewStatus: 'approved',
-      revision: catalogueGovernance.catalogues['kn-IN']!.revision,
+      resolvedLocale: 'en-IN',
+      usedFallback: true,
+      reason: 'unapproved-translation',
+      reviewStatus: 'source',
+      revision: catalogueGovernance.catalogues['en-IN']!.revision,
       isPreview: false,
     })
-    expect(onFallback).not.toHaveBeenCalled()
+    expect(onFallback).toHaveBeenCalledOnce()
   })
 
-  it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
+  it.each(['kn-IN', 'ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
     'falls back from the canonical pending %s under the production policy',
     (locale) => {
       const onFallback = vi.fn<(event: FallbackEvent) => void>()
@@ -91,7 +91,7 @@ describe('message resolution', () => {
     },
   )
 
-  it.each(['ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
+  it.each(['kn-IN', 'ml-IN', 'ta-IN', 'te-IN', 'hi-IN'] as const)(
     'returns pending %s only under explicit development preview',
     (locale) => {
       const entries = mutableGovernance()

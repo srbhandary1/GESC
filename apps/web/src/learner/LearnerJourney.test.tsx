@@ -38,6 +38,13 @@ const ids = {
   publication: '01J00000000000000000000029',
 } as const
 
+const ONBOARDING_ACTION_NAME = (_name: string, element: Element | null) =>
+  element instanceof HTMLButtonElement &&
+  element.classList.contains('ge-onboarding__continue')
+const HOME_ACTION_NAME = (_name: string, element: Element | null) =>
+  element instanceof HTMLButtonElement &&
+  element.classList.contains('learner-home__continue')
+
 beforeEach(() => {
   window.localStorage.clear()
   Object.defineProperty(globalThis.navigator, 'onLine', {
@@ -90,7 +97,7 @@ describe('deterministic learner journey', () => {
     await chooseOnboardingGoal(user)
     await user.click(
       screen.getByRole('button', {
-        name: t('learner.onboarding.continue'),
+        name: ONBOARDING_ACTION_NAME,
       }),
     )
 
@@ -105,7 +112,7 @@ describe('deterministic learner journey', () => {
     await finishOnboardingAfterGoal(user)
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     )
     expect(
@@ -185,7 +192,7 @@ describe('deterministic learner journey', () => {
       }),
     ).toHaveFocus()
     expect(screen.getByText(t('learner.result.knowledge_mastered'))).toBeVisible()
-    expect(screen.getAllByText(t('learner.result.spoken_unassessed'))).not
+    expect(screen.getAllByText(t('learner.result.spoken_pending'))).not
       .toHaveLength(0)
     expect(screen.getByText('ಪ್ರಯತ್ನ 1')).toBeVisible()
     expect(screen.getAllByText('ಪ್ರಯತ್ನ 2')).toHaveLength(2)
@@ -244,7 +251,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     )
     await user.click(
@@ -272,7 +279,7 @@ describe('deterministic learner journey', () => {
       ),
     ).not.toHaveLength(0)
     expect(
-      screen.getAllByText(t('learner.result.spoken_unassessed')),
+      screen.getAllByText(t('learner.result.spoken_pending')),
     ).not.toHaveLength(0)
     expect(api.recordResponse).toHaveBeenCalledWith(
       ids.attempt,
@@ -312,7 +319,7 @@ describe('deterministic learner journey', () => {
 
     await chooseOnboardingGoal(user)
     const submit = screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     })
     await user.click(submit)
 
@@ -350,7 +357,7 @@ describe('deterministic learner journey', () => {
     expect(travelGoal).toBeEnabled()
     await user.click(travelGoal)
     await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
     await finishOnboardingAfterGoal(user)
     await screen.findByRole('heading', {
@@ -366,7 +373,7 @@ describe('deterministic learner journey', () => {
     )
   })
 
-  it('separates onboarding validation, offline, timeout and server errors', async () => {
+  it('disables missing onboarding choices and separates offline errors', async () => {
     const user = userEvent.setup()
     const api = fakeApi(incompleteHome())
 
@@ -379,23 +386,20 @@ describe('deterministic learner journey', () => {
     )
 
     await user.click(await screen.findByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
-    await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
-    }))
-    expect(screen.getByText(
-      t('learner.onboarding.error_validation'),
-    )).toBeVisible()
+    expect(screen.getByRole('button', {
+      name: t('learner.onboarding.confirm_age_continue'),
+    })).toBeDisabled()
 
     await user.click(screen.getByRole('checkbox', {
       name: t('learner.onboarding.adult_confirmation'),
     }))
     await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
     await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
     await user.click(screen.getByRole('radio', {
       name: t('learner.onboarding.goal_workplace'),
@@ -405,7 +409,7 @@ describe('deterministic learner journey', () => {
       value: false,
     })
     await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
     expect(screen.getByText(t('learner.onboarding.error_offline'))).toBeVisible()
     expect(api.updateOnboarding).not.toHaveBeenCalled()
@@ -445,7 +449,7 @@ describe('deterministic learner journey', () => {
 
     await chooseOnboardingGoal(user)
     await user.click(screen.getByRole('button', {
-      name: t('learner.onboarding.continue'),
+      name: ONBOARDING_ACTION_NAME,
     }))
 
     expect(await screen.findByText(t(messageKey))).toBeVisible()
@@ -483,7 +487,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     )
     await user.click(
@@ -555,7 +559,7 @@ describe('deterministic learner journey', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     )
     await user.click(
@@ -662,7 +666,7 @@ describe('deterministic learner journey', () => {
     globalThis.dispatchEvent(new Event('offline'))
     await user.click(
       screen.getByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     )
     await user.click(
@@ -803,7 +807,7 @@ describe('deterministic learner journey', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: t('learner.home.continue'),
+        name: HOME_ACTION_NAME,
       }),
     ).toBeVisible()
     await vi.waitFor(() => {
@@ -850,7 +854,7 @@ describe('deterministic learner journey', () => {
     expect(screen.getByText(longKnTitle)).toHaveAttribute('lang', 'kn-IN')
     expect(screen.getByText('2 ಅರ್ಥಪೂರ್ಣ ಮಾತಿನ ದಿನಗಳು')).toBeVisible()
     expect(
-      screen.getByRole('button', { name: t('learner.home.continue') }),
+      screen.getByRole('button', { name: HOME_ACTION_NAME }),
     ).toHaveClass('learner-home__continue')
     expect(
       screen.queryByRole('link', { name: t('demo.phase1.home.speak') }),
@@ -889,7 +893,7 @@ describe('deterministic learner journey', () => {
       dominantAction?.querySelectorAll('.ge-button--primary'),
     ).toHaveLength(1)
     await user.click(
-      screen.getByRole('button', { name: t('learner.home.continue') }),
+      screen.getByRole('button', { name: HOME_ACTION_NAME }),
     )
     expect(api.mission).toHaveBeenCalledWith(ids.mission, ids.enrollment)
   })
@@ -962,7 +966,7 @@ describe('deterministic learner journey', () => {
       await screen.findByText(t('learner.home.streak_zero')),
     ).toBeVisible()
     expect(
-      screen.getByRole('button', { name: t('learner.home.continue') }),
+      screen.getByRole('button', { name: HOME_ACTION_NAME }),
     ).toBeVisible()
     expect(screen.getByText(t('learner.home.guidance_kn'))).toHaveAttribute(
       'lang',
@@ -1208,16 +1212,16 @@ async function chooseOnboardingGoal(
   user: ReturnType<typeof userEvent.setup>,
 ): Promise<void> {
   await user.click(await screen.findByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(await screen.findByRole('checkbox', {
     name: t('learner.onboarding.adult_confirmation'),
   }))
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(screen.getByRole('radio', {
     name: t('learner.onboarding.goal_workplace'),
@@ -1231,26 +1235,26 @@ async function finishOnboardingAfterGoal(
     name: new RegExp(t('learner.onboarding.placement_beginning')),
   }))
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(screen.getByRole('button', {
     name: t('learner.onboarding.audio_defer'),
   }))
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await screen.findByRole('heading', {
     name: t('learner.onboarding.consent_title'),
   })
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   const typeInstead = await screen.findAllByRole('button', {
     name: t('learner.onboarding.microphone_type_instead'),
   })
   await user.click(typeInstead[0]!)
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(await screen.findByRole('radio', {
     name: t('learner.onboarding.practice_typed'),
@@ -1259,7 +1263,7 @@ async function finishOnboardingAfterGoal(
     name: t('learner.onboarding.practice_typed_label'),
   }), 'Good morning.')
   await user.click(screen.getByRole('button', {
-    name: t('learner.onboarding.continue'),
+    name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(await screen.findByRole('button', {
     name: t('learner.onboarding.open_home'),

@@ -46,7 +46,7 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
   const home = page.locator('.learner-home')
   const action = home.locator('.learner-home__action')
   const continueButton = action.getByRole('button', {
-    name: message('learner.home.continue'),
+    name: message('learner.home.start_mission'),
   })
 
   await expect(
@@ -135,7 +135,7 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     await expect.poll(() => page.evaluate(() => location.hash)).toBe(
       '#home/first-use/welcome',
     )
-    await continueFirstUse(page, locale)
+    await continueFirstUse(page)
     await expect(page.getByRole('heading', {
       name: localizedMessage('learner.onboarding.adult_title', locale),
     })).toBeFocused()
@@ -149,9 +149,7 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= globalThis.innerWidth
     ))).toBe(true)
-    const continueButton = page.getByRole('button', {
-      name: localizedMessage('learner.onboarding.continue', locale),
-    })
+    const continueButton = page.locator('.ge-onboarding__continue')
     await expect(continueButton).toBeVisible()
     await continueButton.scrollIntoViewIfNeeded()
     await expect.poll(async () => {
@@ -171,7 +169,7 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     })
 
     await advanceFirstUseToGoal(page, locale)
-    await continueFirstUse(page, locale)
+    await continueFirstUse(page)
     if (locale === 'kn-IN') {
       await expect.poll(() => page.evaluate(() => {
         const resumeKey = Object.keys(localStorage).find((key) =>
@@ -203,7 +201,7 @@ test('recovers onboarding with same-command retry and new-command edit', async (
   await page.goto('/#home')
 
   await advanceFirstUseToGoal(page, DEFAULT_LOCALE)
-  await continueFirstUse(page, DEFAULT_LOCALE)
+  await continueFirstUse(page)
 
   await expect(page.getByText(
     message('learner.onboarding.error_server'),
@@ -229,7 +227,7 @@ test('recovers onboarding with same-command retry and new-command edit', async (
   await expect(travel).toBeEnabled()
   await travel.check()
   await page.getByRole('button', {
-    name: message('learner.onboarding.continue'),
+    name: message('learner.onboarding.save_goal_continue'),
   }).click()
 
   await finishFirstUseAfterGoal(page, DEFAULT_LOCALE)
@@ -256,12 +254,12 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     }),
   ).toBeFocused()
   await advanceFirstUseToGoal(page, DEFAULT_LOCALE)
-  await continueFirstUse(page, DEFAULT_LOCALE)
+  await continueFirstUse(page)
   await finishFirstUseAfterGoal(page, DEFAULT_LOCALE)
 
   await page
     .getByRole('button', {
-      name: message('learner.home.continue'),
+      name: message('learner.home.start_mission'),
     })
     .click()
   await expect(
@@ -350,7 +348,7 @@ test('completes the contract-stubbed online no-AI learner journey', async ({
     page.getByText(message('learner.result.knowledge_mastered')),
   ).toBeVisible()
   await expect(
-    page.getByText(message('learner.result.spoken_unassessed')).first(),
+    page.getByText(message('learner.result.spoken_pending')).first(),
   ).toBeVisible()
   await expect(
     page.getByText(message('learner.result.local_capture_completed')).first(),
@@ -494,7 +492,7 @@ test('contract-stubbed microphone denial stays spoken-unassessed', async ({
   await page.goto('/#home')
   await page
     .getByRole('button', {
-      name: message('learner.home.continue'),
+      name: message('learner.home.start_mission'),
     })
     .click()
   await page
@@ -618,7 +616,7 @@ test('encrypts a personal-device bundle, completes offline, and syncs once on re
   await context.setOffline(true)
   await page
     .getByRole('button', {
-      name: message('learner.home.continue'),
+      name: message('learner.home.start_mission'),
     })
     .click()
   await page
@@ -728,15 +726,15 @@ async function advanceFirstUseToGoal(
   page: Page,
   locale: SupportedLocale,
 ): Promise<void> {
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await page.getByRole('checkbox', {
     name: localizedMessage('learner.onboarding.adult_confirmation', locale),
   }).check()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await expect(page.getByRole('heading', {
     name: localizedMessage('learner.onboarding.preferences_title', locale),
   })).toBeFocused()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await page.getByRole('radio', {
     name: localizedMessage('learner.onboarding.goal_workplace', locale),
   }).check()
@@ -754,11 +752,11 @@ async function finishFirstUseAfterGoal(
       localizedMessage('learner.onboarding.placement_beginning', locale),
     ),
   }).check()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await page.getByRole('button', {
     name: localizedMessage('learner.onboarding.audio_defer', locale),
   }).click()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
 
   await expect(page.getByRole('heading', {
     name: localizedMessage('learner.onboarding.consent_title', locale),
@@ -775,7 +773,7 @@ async function finishFirstUseAfterGoal(
   })
   await expect(recordingConsent).not.toBeChecked()
   await expect(processingConsent).not.toBeChecked()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
 
   await expect(page.getByRole('heading', {
     name: localizedMessage('learner.onboarding.microphone_title', locale),
@@ -783,14 +781,14 @@ async function finishFirstUseAfterGoal(
   await page.getByRole('button', {
     name: localizedMessage('learner.onboarding.microphone_type_instead', locale),
   }).last().click()
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await page.getByRole('radio', {
     name: localizedMessage('learner.onboarding.practice_typed', locale),
   }).check()
   await page.getByRole('textbox', {
     name: localizedMessage('learner.onboarding.practice_typed_label', locale),
   }).fill('Good morning.')
-  await continueFirstUse(page, locale)
+  await continueFirstUse(page)
   await page.getByRole('button', {
     name: localizedMessage('learner.onboarding.open_home', locale),
   }).click()
@@ -798,11 +796,8 @@ async function finishFirstUseAfterGoal(
 
 async function continueFirstUse(
   page: Page,
-  locale: SupportedLocale,
 ): Promise<void> {
-  await page.getByRole('button', {
-    name: localizedMessage('learner.onboarding.continue', locale),
-  }).click()
+  await page.locator('.ge-onboarding__continue').click()
 }
 
 interface MockApiState {

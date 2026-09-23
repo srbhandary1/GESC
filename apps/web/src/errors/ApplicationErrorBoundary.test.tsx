@@ -94,7 +94,7 @@ describe('ApplicationErrorBoundary', () => {
     expect(onReload).toHaveBeenCalledOnce()
   })
 
-  it('uses approved Kannada when the production policy allows it', async () => {
+  it('falls back safely while Kannada awaits renewed review', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const consoleWarning = vi
       .spyOn(console, 'warn')
@@ -106,7 +106,7 @@ describe('ApplicationErrorBoundary', () => {
       </ApplicationErrorBoundary>,
     )
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent(
       message('error.message', 'approved-only'),
     )
@@ -115,12 +115,12 @@ describe('ApplicationErrorBoundary', () => {
         name: message('error.reload', 'approved-only'),
       }),
     ).toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('lang', 'kn-IN')
+    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
     expect(document.documentElement).toHaveAttribute(
       'data-requested-locale',
       DEFAULT_LOCALE,
     )
-    expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
+    expect(JSON.stringify(consoleWarning.mock.calls)).toContain(
       'localization.fallback',
     )
     expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(

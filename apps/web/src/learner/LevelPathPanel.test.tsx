@@ -1391,10 +1391,19 @@ describe('LevelPathPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Submit check' }))
 
     expect(await screen.findByText('Not yet')).toBeInTheDocument()
+    expect(screen.getByText('1 of 4 sessions complete')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Introduction, Completed' }),
+    ).toBeVisible()
     expect(screen.getByText('Why: Use can without adding s.')).toBeInTheDocument()
     expect(screen.getByText('Your answer: I cans swim.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Next result' }))
     expect(screen.getByText('Correct')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Reviewed. This answer needs more practice, so one short retry is ready now. Your review attempt was recorded; mastery has not changed.',
+      ),
+    ).toBeVisible()
     await user.click(
       screen.getByRole('button', { name: 'Retry incorrect answers' }),
     )
@@ -1486,7 +1495,9 @@ describe('LevelPathPanel', () => {
     await waitFor(() => {
       expect(storedDraft?.currentItemIndex).toBe(1)
     })
-    await user.click(screen.getByRole('button', { name: 'Introduction' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Introduction, Completed' }),
+    )
     await user.click(await screen.findByRole('button', { name: 'Practice' }))
     expect(await screen.findByText('Question 2 of 2')).toBeInTheDocument()
     expect(JSON.stringify(storedDraft)).not.toContain('I can swim.')

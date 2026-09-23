@@ -318,12 +318,12 @@ intervals, scoring, mastery, consent, entitlement or authoritative payloads.
 
 ### Exit evidence
 
-- [ ] Every primary learner action describes its immediate outcome.
-- [ ] Ordinary mistakes use non-shaming language.
+- [x] Every primary learner action describes its immediate outcome.
+- [x] Ordinary mistakes use non-shaming language.
 - [ ] A representative learner can distinguish attempt recorded, mastery
       unchanged and remediation ready.
-- [ ] Current and completed session stages are identifiable without color.
-- [ ] No API/schema change occurred unless separately authorized and reflected
+- [x] Current and completed session stages are identifiable without color.
+- [x] No API/schema change occurred unless separately authorized and reflected
       in OpenAPI/generated clients.
 
 ## 7. UX-REM-04 — Quiz and result hierarchy
@@ -668,7 +668,7 @@ Do not mark a row complete without a linked artefact and exact candidate SHA.
 | 0 | UX-REM-00 Device evidence path | Complete | Android engineer / tester | [Evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-00--candidate-and-device-evidence-path); Git `b1660dc`; APK `fffbcec…665012` | 2026-09-18 |
 | 1 | UX-REM-01 Accessibility/reflow | Complete — exact 200%/320-CSS/API-36, API-33 OEM maximum, short-landscape, split-screen, high-contrast, Speak/sign-in IME, Plans-return and closed-keyboard quiz evidence pass; TalkBack judgement and quiz-IME/navigation remain explicitly accepted bounded pre-production residuals, not passes | Frontend/Android engineer | [Bounded residual acceptance](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#bounded-residual-acceptance--23-september-2026), [exact API-36 evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026), [connected-device evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#connected-device-continuation--23-september-2026); exact c11 APK `42cb92ca…bdbb4` | 2026-09-23 |
 | 2 | UX-REM-02 Back/restoration | Complete | Frontend/Android engineer | [API 35/36 Back + lifecycle/offline evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-02-back-interruption-and-restoration--23-september-2026); exact c11 APK `42cb92ca…bdbb4` | 2026-09-23 |
-| 3 | UX-REM-03 Copy/completion cues | Not started | Product designer / frontend engineer | Copy review + comprehension evidence | |
+| 3 | UX-REM-03 Copy/completion cues | In progress — implementation and automated evidence pass; exact five non-English revisions and representative comprehension remain human gates | Product designer / frontend engineer | [Implementation evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-03-action-copy-and-completion-cues--23-september-2026); English `ui-en-IN-2026-09-23.1` / `ef313dc6…00ad7` | |
 | 4 | UX-REM-04 Quiz/result hierarchy | Not started | Product designer / frontend engineer | Tests + representative-user evidence | |
 | 5 | UX-REM-05 Plans decision | Not started | Product owner / frontend engineer | Tenancy tests + comprehension evidence | |
 | 6 | UX-REM-06 First-success decision | Decision required | Accountable Product Owner | Accepted option/DR and prototype evidence | |

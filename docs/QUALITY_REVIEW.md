@@ -1,5 +1,29 @@
 # Quality review
 
+## UX-REM-03 action copy and completion cues — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Immediate-outcome actions | Pass | Get started, per-stage save/continue labels, Continue without voice, Start lesson/review and Continue from Home; focused component and browser journeys |
+| Required choices | Pass | Adult, goal, placement, audio, microphone and practice actions remain disabled until their required local choice exists; retry semantics remain unchanged |
+| Mistake/remediation truth | Pass in product and automated copy evidence | Non-shaming Not yet plus explicit recorded-attempt, unchanged-mastery and ready-retry statement |
+| Completion without colour | Pass | Check icon, visible Completed, accessible completed session name and X-of-4 status |
+| Plain language | Pass on affected English surfaces | No learner-facing `authoritative entitlement`, `receipt`, `unassessed` or `in this slice` string remains in the audited source surface |
+| Type instead | Pass | Existing state-matrix coverage retains exactly one visible fallback action per microphone state |
+| Goal semantics | Retained | `workplace-confidence` is not relabeled to work/study because that broadens stored meaning and historical interpretation |
+| Catalogue governance | Correctly open | English source `ui-en-IN-2026-09-23.1`; all five non-English exact revisions are pending independent review, and approved-only resolution falls back |
+| Human comprehension | Open | No representative learner session was run; automated presence/semantics do not substitute |
+| API/schema/authority | Unchanged | No API/OpenAPI, database, scoring, mastery, consent, entitlement, provider, retention or credential change |
+
+Focused localization tests pass 38/38, focused web tests 70/70, and focused
+learner/level-path Playwright passes 11/11 with scoped axe. Final `make verify`
+passes SQLite 333/333 (3,161 assertions), PostgreSQL 361/361 (5,233 assertions),
+and web 107 files / 479 tests; `make e2e` passes API 4/4 (103 assertions) and
+Playwright 30/30; `make build` passes with the existing large-chunk advisory.
+The package audit reports two moderate advisories and no high-severity failure.
+UX-REM-03 remains in progress for exact language review and
+representative-learner comprehension; UX-REM-04 has not started.
+
 ## UX-REM-02 Back, interruption and restoration — 23 September 2026
 
 | Check | Result | Evidence |

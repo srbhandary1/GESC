@@ -11,6 +11,53 @@ Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
 
+## UX-REM-03 action copy and completion cues — 23 September 2026
+
+The bounded implementation is complete. It changes learner-facing labels and
+presentation state only:
+
+- first use uses **Get started**, **Confirm age and continue**, **Save goal and
+  continue**, explicit privacy/practice actions, and **Continue without
+  voice** when no voice purpose is selected;
+- a required adult, goal, starting route, audio outcome, microphone choice or
+  practice response disables the primary action until selected instead of
+  presenting an enabled generic Continue;
+- Home uses **Start lesson** or **Start review**, and result retains
+  **Continue from Home**;
+- incorrect multi-item feedback states that the attempt was recorded, mastery
+  did not change and one short retry is ready;
+- every completed session shows a check icon, visible **Completed** text, an
+  accessible completed name, and compact **X of 4 sessions complete** status;
+- learner-facing `authoritative entitlement`, `receipt`, `unassessed` and
+  `in this slice` wording was removed from the affected English surfaces; and
+- existing recording-state coverage continues to prove exactly one visible
+  **Type instead** action per state.
+
+The `workplace-confidence` label remains **Speak with confidence at work**.
+Changing it to **Work or study confidence** would broaden the stored goal's
+meaning and historical cohort interpretation; D-0337 therefore retains the
+current label/key rather than silently relabeling authoritative history.
+
+Governed source revision `ui-en-IN-2026-09-23.1` has hash
+`sha256:ef313dc6afd7d9c3d1fe244fb68dbda03e2057dafeec9cad94aa920fb0400ad7`.
+All five non-English catalogues, including the revised Kannada draft, are
+truthfully `pending-independent-review`. Approved-only resolution falls back
+to English until each exact revision is reviewed; development preview may show
+the drafts. Focused evidence passes: localization 38/38, web 70/70 and
+learner/level-path Playwright 11/11, including scoped axe.
+
+Final repository gates also pass: `make verify` (SQLite 333/333, 3,161
+assertions; PostgreSQL 361/361, 5,233 assertions; web 107 files / 479 tests),
+`make e2e` (API 4/4, 103 assertions; Playwright 30/30), and `make build`. The
+build retains the existing large-chunk advisory, and the package audit reports
+two moderate advisories but no high-severity failure.
+
+No API, OpenAPI, schema, scoring, mastery, consent, entitlement, provider,
+retention or credential-storage behavior changed. UX-REM-03 remains **in
+progress** for representative-learner comprehension evidence and independent
+review of the exact five non-English revisions; those human gates are not
+inferred from automated tests.
+
 ## UX-REM-02 Back, interruption and restoration — 23 September 2026
 
 The exact c11 production-origin APK (SHA-256

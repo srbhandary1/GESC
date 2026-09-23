@@ -63,8 +63,9 @@ describe('UI catalogue validation', () => {
 
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
-    expect(result.warnings).toHaveLength(4)
+    expect(result.warnings).toHaveLength(5)
     expect(result.warnings.map(({ locale }) => locale)).toEqual([
+      'kn-IN',
       'ml-IN',
       'ta-IN',
       'te-IN',

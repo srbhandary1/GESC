@@ -1,5 +1,27 @@
 # Repository status
 
+## UX-REM-03 action copy and completion cues — 23 September 2026
+
+- Task-specific first-use, Home and result actions replace generic Continue;
+  required first-use choices disable the primary action until supplied.
+- Incorrect feedback now distinguishes recorded attempt, unchanged mastery and
+  ready retry. Completed sessions expose a check, visible Completed label,
+  accessible state and `X of 4 sessions complete` progress.
+- Internal entitlement/receipt/unassessed language was removed from affected
+  English learner surfaces. The `workplace-confidence` label is deliberately
+  retained because broadening it to study would reinterpret stored history.
+- Focused localization 38/38, web 70/70 and learner/level-path Playwright
+  11/11 pass. Final `make verify` passes SQLite 333/333 (3,161 assertions),
+  PostgreSQL 361/361 (5,233 assertions), and web 107 files / 479 tests;
+  `make e2e` passes API 4/4 (103 assertions) and Playwright 30/30; `make build`
+  passes with the existing large-chunk advisory. The package audit reports two
+  moderate advisories and no high-severity failure.
+- The copy freeze creates English source `ui-en-IN-2026-09-23.1` /
+  `ef313dc6…00ad7`. All five non-English exact revisions are pending independent
+  review; approved-only mode therefore falls back to English. Representative
+  learner comprehension also remains open, so UX-REM-03 is not yet complete
+  and UX-REM-04 has not started.
+
 ## UX-REM-02 Back, interruption and restoration — 23 September 2026
 
 - API 35 and API 36 gesture-navigation AVDs pass real edge-gesture question →

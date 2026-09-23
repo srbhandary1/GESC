@@ -610,6 +610,13 @@ function OneQuestionAssessment({
             />
           </p>
         ) : null}
+        {hasIncorrect && canRetry && !hasMoreFeedback ? (
+          <p className="level-session__remediation">
+            <LocalizedMessage
+              resolution={message('level.path.review_remediation')}
+            />
+          </p>
+        ) : null}
         <div className="level-session__assessment-actions">
           <button
             className="level-session__primary"
@@ -2086,7 +2093,13 @@ function LevelSessionJourney({
             <button
               key={part}
               type="button"
-              aria-label={message(PART_MESSAGE_KEYS[part]).text}
+              aria-label={
+                completions[part]
+                  ? message('level.path.session_completed', {
+                      session: message(PART_MESSAGE_KEYS[part]).text,
+                    }).text
+                  : message(PART_MESSAGE_KEYS[part]).text
+              }
               aria-current={part === partId ? 'true' : undefined}
               aria-disabled={unlocked ? undefined : 'true'}
               className={[
@@ -2102,7 +2115,7 @@ function LevelSessionJourney({
               id={`level-${levelNumber}-part-${part}`}
             >
               <span aria-hidden className="level-session__tab-step">
-                {PART_STEP[part]}
+                {completions[part] ? '✓' : PART_STEP[part]}
               </span>
               <span className="level-session__tab-copy">
                 <span className="level-session__tab-label">
@@ -2111,13 +2124,27 @@ function LevelSessionJourney({
                   />
                 </span>
                 <span className="level-session__tab-hint">
-                  <LocalizedMessage resolution={message(PART_HINT_KEYS[part])} />
+                  <LocalizedMessage
+                    resolution={message(
+                      completions[part]
+                        ? 'level.path.completed'
+                        : PART_HINT_KEYS[part],
+                    )}
+                  />
                 </span>
               </span>
             </button>
           )
         })}
       </nav>
+      <p className="level-session__progress" role="status">
+        <LocalizedMessage
+          resolution={message('level.path.sessions_progress', {
+            completed: String(PARTS.filter((part) => completions[part]).length),
+            total: String(PARTS.length),
+          })}
+        />
+      </p>
 
       {error === 'session_locked' ? (
         <p className="level-session__status" role="alert">

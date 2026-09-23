@@ -498,12 +498,10 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('resolves approved Kannada under the production policy', async () => {
+  it('falls back from pending Kannada under the production policy', async () => {
     const consoleWarning = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => undefined)
-    const user = userEvent.setup()
-
     render(
       <App
         authentication={anonymousAuthentication()}
@@ -516,7 +514,7 @@ describe('localized application shell', () => {
       name: text('marketing.hero.title', DEFAULT_LOCALE, 'approved-only'),
     })
 
-    expect(heroHeading.querySelector('[lang="kn-IN"]')).not.toBeNull()
+    expect(heroHeading.querySelector('[lang="en-IN"]')).not.toBeNull()
     expect(
       screen.queryByRole('complementary', {
         name: text(
@@ -525,7 +523,7 @@ describe('localized application shell', () => {
           'approved-only',
         ),
       }),
-    ).not.toBeInTheDocument()
+    ).toBeInTheDocument()
     expect(
       screen.queryByText(text('localization.preview_notice')),
     ).not.toBeInTheDocument()
@@ -543,32 +541,13 @@ describe('localized application shell', () => {
         name: text('locale.hi_IN', DEFAULT_LOCALE, 'approved-only'),
       }),
     ).not.toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('lang', 'kn-IN')
+    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
     expect(document.documentElement).toHaveAttribute(
       'data-requested-locale',
       DEFAULT_LOCALE,
     )
 
-    const localeSelect = screen.getByRole('combobox', {
-      name: text(
-        'shell.locale_label',
-        DEFAULT_LOCALE,
-        'approved-only',
-      ),
-    })
-    await user.selectOptions(localeSelect, 'en-IN')
-    await user.selectOptions(localeSelect, DEFAULT_LOCALE)
-
-    expect(
-      screen.getByText(
-        text(
-          'shell.locale_changed',
-          DEFAULT_LOCALE,
-          'approved-only',
-        ),
-      ),
-    ).toHaveAttribute('lang', 'kn-IN')
-    expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
+    expect(JSON.stringify(consoleWarning.mock.calls)).toContain(
       'localization.fallback',
     )
   })
@@ -968,7 +947,7 @@ describe('localized application shell', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('switches the native Android preview from English to Kannada immediately', async () => {
+  it('switches the native Android development preview to pending Kannada', async () => {
     vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
     vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
     const user = userEvent.setup()
@@ -1002,8 +981,8 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByText(text('localization.preview_notice')),
-    ).not.toBeInTheDocument()
+      screen.getByText(text('localization.preview_notice')),
+    ).toBeInTheDocument()
   })
 
   it('shows account menu for signed-in Android learners', async () => {

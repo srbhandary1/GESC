@@ -889,7 +889,9 @@ export function LearnerJourney({
                     resolution={message(
                       busy
                         ? 'learner.home.continuing'
-                        : 'learner.home.continue',
+                        : reviewDue
+                          ? 'learner.home.start_review'
+                          : 'learner.home.start_mission',
                     )}
                   />
                 </span>
@@ -1512,9 +1514,7 @@ function MissionResultView({
               />
             </dt>
             <dd>
-              <LocalizedMessage
-                resolution={message('learner.result.spoken_unassessed')}
-              />
+              <LocalizedMessage resolution={message('learner.result.spoken_pending')} />
             </dd>
           </div>
           <div>
@@ -1708,9 +1708,7 @@ function ProgressSummary({
             <GovernedText content={objective.label} />
           </h4>
           <p>
-            <LocalizedMessage
-              resolution={message('learner.result.spoken_unassessed')}
-            />
+            <LocalizedMessage resolution={message('learner.result.spoken_pending')} />
           </p>
           <p>
             <LocalizedMessage

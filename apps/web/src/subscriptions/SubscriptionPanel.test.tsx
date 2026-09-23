@@ -311,7 +311,7 @@ describe('subscription panel', () => {
       <SubscriptionPanel api={reconciledApi} locale="en-IN" localizationPolicy="development-preview" />,
     )
     await user.click(await screen.findByRole('button', { name: 'Choose Premium features' }))
-    expect(await screen.findByText(/Access confirmed from the authoritative/)).toBeInTheDocument()
+    expect(await screen.findByText(/Access confirmed from your current plan/)).toBeInTheDocument()
     expect(screen.getByText('Active access')).toBeInTheDocument()
   })
 
@@ -421,7 +421,7 @@ describe('subscription panel', () => {
       'pay_test12345678',
       'a'.repeat(64),
     )
-    expect(await screen.findByText(/Access confirmed from the authoritative/)).toBeInTheDocument()
+    expect(await screen.findByText(/Access confirmed from your current plan/)).toBeInTheDocument()
   })
 
   it('preserves the locked-level accomplishment and provides a recoverable close action', async () => {

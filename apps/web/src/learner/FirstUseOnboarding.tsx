@@ -468,6 +468,51 @@ export function FirstUseOnboarding({
     setSelectedConsents,
     step,
   })
+  const canAdvance =
+    commandLocked ||
+    step === 'welcome' ||
+    step === 'preferences' ||
+    step === 'consent' ||
+    step === 'acknowledgement' ||
+    (step === 'adult' && adultConfirmed) ||
+    (step === 'goal' && goal !== null) ||
+    (step === 'placement' && placement !== null) ||
+    (step === 'audio-output' &&
+      (audioState === 'heard' || audioState === 'deferred')) ||
+    (step === 'microphone' && microphoneOutcome !== null) ||
+    (step === 'practice' &&
+      ((practiceMode === 'typed' && practiceText.trim().length > 0) ||
+        (practiceMode === 'spoken' && practiceSpoken)))
+
+  const continueLabel = commandLocked
+    ? message('learner.onboarding.retry_same')
+    : step === 'welcome'
+      ? message('learner.onboarding.get_started')
+      : step === 'adult'
+        ? message('learner.onboarding.confirm_age_continue')
+        : step === 'preferences'
+          ? message('learner.onboarding.save_preferences_continue')
+          : step === 'goal'
+            ? message('learner.onboarding.save_goal_continue')
+            : step === 'placement'
+              ? message('learner.onboarding.save_start_continue')
+              : step === 'audio-output'
+                ? message('learner.onboarding.continue_to_privacy')
+                : step === 'consent'
+                  ? message(
+                      selectedConsents.size === 0
+                        ? 'learner.onboarding.continue_without_voice'
+                        : 'learner.onboarding.save_voice_continue',
+                    )
+                  : step === 'microphone'
+                    ? message(
+                        microphoneOutcome === 'typed'
+                          ? 'learner.onboarding.continue_without_voice'
+                          : 'learner.onboarding.continue_to_practice',
+                      )
+                    : step === 'practice'
+                      ? message('learner.onboarding.review_setup')
+                      : message('learner.onboarding.open_home')
 
   return (
     <div
@@ -482,16 +527,10 @@ export function FirstUseOnboarding({
           (savedHome === null ? 0 : FIRST_USE_STEPS.indexOf('placement'))
         }
         busy={busy}
-        canAdvance
+        canAdvance={canAdvance}
         commandLocked={commandLocked}
         content={content}
-        continueLabel={
-          commandLocked
-            ? message('learner.onboarding.retry_same')
-            : step === 'acknowledgement'
-              ? message('learner.onboarding.open_home')
-              : undefined
-        }
+        continueLabel={continueLabel}
         description={message(descriptions[step])}
         error={error === null ? null : <LocalizedMessage resolution={message(error)} />}
         locale={locale}

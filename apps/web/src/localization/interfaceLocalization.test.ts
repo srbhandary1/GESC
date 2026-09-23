@@ -69,7 +69,7 @@ describe('interface localization policy', () => {
     ).toBe('development-preview')
   })
 
-  it('resolves approved Kannada under the strict policy', () => {
+  it('falls back from pending Kannada under the strict policy', () => {
     const resolution = resolveInterfaceMessage(
       'nav.home',
       'kn-IN',
@@ -78,11 +78,11 @@ describe('interface localization policy', () => {
 
     expect(resolution).toMatchObject({
       isPreview: false,
-      resolvedLocale: 'kn-IN',
-      usedFallback: false,
+      resolvedLocale: 'en-IN',
+      usedFallback: true,
     })
-    expect(resolution.text).not.toBe('Home')
-    expect(resolution.fallbackEvent).toBeNull()
+    expect(resolution.text).toBe('Home')
+    expect(resolution.fallbackEvent?.reason).toBe('unapproved-translation')
   })
 
   it('falls back from pending Hindi under the strict policy', () => {

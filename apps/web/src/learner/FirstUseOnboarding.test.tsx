@@ -70,8 +70,12 @@ describe('production first-use onboarding', () => {
     )
 
     await expectHeading('Set up English learning for your goals')
+    expect(screen.getByRole('button', { name: 'Get started' })).toBeEnabled()
     await continueFlow(user)
     await expectHeading('Are you 18 or older?')
+    expect(
+      screen.getByRole('button', { name: 'Confirm age and continue' }),
+    ).toBeDisabled()
     await user.click(screen.getByRole('checkbox', {
       name: 'I confirm that I am 18 years old or older.',
     }))
@@ -110,8 +114,14 @@ describe('production first-use onboarding', () => {
     })
     expect(upload).not.toBeChecked()
     expect(provider).not.toBeChecked()
+    expect(
+      screen.getByRole('button', { name: 'Continue without voice' }),
+    ).toBeEnabled()
     await user.click(upload)
     await user.click(provider)
+    expect(
+      screen.getByRole('button', { name: 'Save voice choices and continue' }),
+    ).toBeEnabled()
     await continueFlow(user)
     expect(grantVoiceConsent).toHaveBeenCalledTimes(2)
     expect(grantVoiceConsent).toHaveBeenCalledWith(
@@ -356,7 +366,9 @@ describe('production first-use onboarding', () => {
 })
 
 async function continueFlow(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: /Save and continue/ }))
+  await user.click(screen.getByRole('button', {
+    name: /Get started|Confirm age and continue|Save preferences and continue|Save goal and continue|Save starting point and continue|Continue to privacy choices|Continue without voice|Save voice choices and continue|Continue to private practice|Review your setup|Open Home/,
+  }))
 }
 
 async function expectHeading(name: string) {
