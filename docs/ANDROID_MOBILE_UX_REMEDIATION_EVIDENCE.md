@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 connected-device continuation closes catalogue, OEM-max reflow, landscape, high-contrast and closed-keyboard rows; remaining physical/human acceptance open"
+status: "UX-REM-00 complete; UX-REM-01 exact API-36 emulator evidence closes 200% text and 320-CSS-pixel reflow; TalkBack and quiz-IME/navigation acceptance remain open"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,35 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## Exact API-36 emulator continuation — 23 September 2026
+
+The final c11 production-origin APK (SHA-256
+`42cb92ca087cdd7403cf70107487a7673415aba7d7a8175696a04de28f7bdbb4`)
+was installed without modification on the existing `eeshani_api_36` AVD. The
+headless software-rendered emulator reported Android 16/API 36, a 1080×2400
+physical display, physical density 420, override density 540, exact
+`font_scale=2.0` and high-text-contrast enabled. Density 540 gives an exact
+320-CSS-pixel portrait viewport; rotation gives a 711×320-CSS-pixel
+short-landscape viewport.
+
+| Evidence row | Result |
+|---|---|
+| Exact 200% text | Pass on API 36 emulator: the Kannada guest and sign-in surfaces retained complete controls and readable content without observed horizontal crop |
+| Exact 320 CSS px portrait | Pass on API 36 emulator: brand, Home, Sign in, theme and locale controls reflowed without document-level horizontal crop |
+| Exact 711×320 CSS px short landscape | Pass on API 36 emulator: product title and header controls remained complete and the content surface remained vertically scrollable |
+| High contrast at 200%/320 CSS px | Pass on the observed guest/sign-in surfaces; active outlines and text remained perceivable |
+| Visible IME at 200%/320 CSS px | Pass for sign-in: Android reported `mInputShown=true` and `mIsInputViewShown=true`; the focused identifier field remained visible above the keyboard without horizontal crop |
+| Quiz action with IME and gesture/three-button navigation | Open: sign-in IME evidence does not substitute for the authenticated quiz row |
+| TalkBack | Open: the AVD contains Accessibility Menu but no TalkBack service; announcement order and quality still require human judgement on a TalkBack-capable device |
+
+The four inspected screenshots had SHA-256 values `6cb19aff…b460`,
+`ab1a7cb2…ba6e`, `38f31a15…5c` and `4d4b99c…d52`. They contained only the
+public guest/sign-in UI, were retained only under workstation `/tmp` for this
+session and were not added to Git or deployed. This evidence closes the exact
+200% and exact 320-CSS-pixel implementation rows on API 36; it does not close
+TalkBack, an authenticated quiz/result journey, the quiz-specific IME row or
+the required navigation-mode matrix. UX-REM-01 therefore remains in progress.
 
 ## Connected-device continuation — 23 September 2026
 
@@ -324,13 +353,14 @@ emulator was stopped cleanly. No API 36 acceptance cell is marked PASS.
 ### Open physical acceptance
 
 - [ ] TalkBack completes first use, quiz, result, plans close and focus return.
-- [ ] English and Kannada pass on a device at its maximum font setting, with
-      exact 200% evidence from a capable device/emulator.
-- [ ] Exact 320 CSS-pixel portrait and short-height physical landscape pass.
+- [x] English and Kannada reflow at exact 200% on the API 36 emulator; the
+      physical RMX3085 also passes at its OEM maximum of 1.6.
+- [x] Exact 320 CSS-pixel portrait and 711×320 short-height landscape pass on
+      the API 36 emulator; the physical RMX3085 short-landscape row also passes.
 - [x] Physical split-screen preserves state and remains usable. Evidence:
       [19 September physical-device rerun](#physical-device-rerun--19-september-2026).
 - [ ] Physical quiz CTA remains visible with IME open/closed.
-- [ ] Physical high-contrast navigation remains legible and non-colour-only.
+- [x] Physical high-contrast navigation remains legible and non-colour-only.
 
 UX-REM-01 implementation is complete, but the checkpoint remains **in
 progress** because these physical/human acceptance conditions are not yet

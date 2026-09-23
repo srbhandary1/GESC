@@ -219,16 +219,19 @@ attached by USB to the MacBook. Pin one candidate APK before recording results.
 
 - [ ] TalkBack completes first use, one full quiz, result, plans close and
       focus restoration without a trap or unexplained focus jump.
-- [ ] English at 200% text has no clipped label, control or essential content.
-- [ ] Kannada at 200% text has no clipped label, control or essential content.
-- [ ] 320 CSS px portrait and short-height landscape have no document-level
+- [x] English at 200% text has no clipped label, control or essential content.
+      Evidence: [exact API-36 emulator continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026).
+- [x] Kannada at 200% text has no clipped label, control or essential content.
+      Evidence: [exact API-36 emulator continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026).
+- [x] 320 CSS px portrait and short-height landscape have no document-level
       horizontal overflow.
+      Evidence: [exact API-36 emulator continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#exact-api-36-emulator-continuation--23-september-2026).
 - [x] Split-screen remains usable and preserves current task state. Evidence:
       [UX-REM-01 physical-device rerun](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#physical-device-rerun--19-september-2026).
 - [ ] The sticky quiz action is visible with IME open/closed and both gesture
       and three-button navigation.
-- [ ] High contrast preserves legibility and the active destination remains
-      non-color-only.
+- [x] High contrast preserves legibility and the active destination remains
+      non-color-only. Evidence: [connected-device continuation](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#connected-device-continuation--23-september-2026).
 
 ## 5. UX-REM-02 — Back, interruption and restoration
 

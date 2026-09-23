@@ -1,5 +1,22 @@
 # Repository status
 
+## UX-REM-01 exact API-36 / 200% / 320-CSS continuation — 23 September 2026
+
+- The exact c11 APK was installed on the Android 16/API 36 AVD at density 540
+  (exact 320-CSS-pixel portrait), `font_scale=2.0` and high contrast. Kannada
+  guest and sign-in portrait, 711×320 short landscape, and a visible sign-in
+  IME remained bounded without observed horizontal crop.
+- This closes the exact 200% and exact 320-CSS-pixel implementation rows on an
+  Android API 36 emulator. It does not substitute for the authenticated
+  quiz-CTA IME/navigation matrix or human TalkBack judgement. The AVD image has
+  Accessibility Menu but no TalkBack service.
+- UX-REM-01 remains in progress only for those bounded device/human rows;
+  UX-REM-02 has not started. No API, schema, content, credential, provider,
+  payment, deployment or APK change was made.
+- Pinned `make verify` passes: Composer audit, Pint and PHPStan; SQLite 333/333
+  (3,161 assertions); PostgreSQL 361/361 (5,232 assertions); locale/OpenAPI/
+  release/soft-launch checks; lint/typecheck; and web 107 files / 479 tests.
+
 ## UX-REM-01 connected-device continuation and APK publication — 23 September 2026
 
 - The realme RMX3085/API 33 connected-device rerun exposed all 17 Direct

@@ -1,5 +1,21 @@
 # Quality review
 
+## UX-REM-01 exact API-36 emulator continuation — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Candidate identity | Pass | Exact c11 APK, SHA-256 `42cb92ca…bdbb4`; package `com.globalenglish.app`, version 1.0 (1), min SDK 24, target SDK 36 |
+| Exact 200% text | Pass (API 36 emulator) | Android `font_scale=2.0`; Kannada guest/sign-in controls and content reflow without observed horizontal crop |
+| Exact 320 CSS px | Pass (API 36 emulator) | 1080px display at density 540; portrait 320 CSS px and rotated 711×320 CSS px remain bounded and scrollable |
+| High contrast | Pass on observed surfaces | High-text-contrast enabled at 200%/320 CSS px; text and active outlines remain perceivable |
+| Real IME | Pass for sign-in only | Android reports input and input view shown; focused identifier remains visible above keyboard |
+| Quiz IME/navigation | Open | Sign-in IME is not evidence for authenticated quiz CTA under both gesture and three-button navigation |
+| TalkBack | Open human gate | AVD has no TalkBack service; announcement order/quality cannot be inferred |
+| `make verify` | Pass | Pint/PHPStan; SQLite 333/333 (3,161 assertions); PostgreSQL 361/361 (5,232 assertions); web 107 files / 479 tests; contracts/lint/types pass |
+
+No source or artifact changed. UX-REM-01 remains in progress for TalkBack and
+the authenticated quiz-specific IME/navigation row.
+
 ## UX-REM-01 connected-device continuation and c11 APK — 23 September 2026
 
 | Check | Result | Evidence |
