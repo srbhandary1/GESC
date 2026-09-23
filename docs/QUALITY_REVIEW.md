@@ -1,5 +1,24 @@
 # Quality review
 
+## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Focused decision | Pass | Locked-level context suppresses password/federated account panels while retaining current access first |
+| Offer parity | Pass | Exactly two membership cards; benefit and price differences visible; Premium styling does not preselect a plan |
+| Continue free / close | Pass | Inset-aware sticky dock; Close, Continue free and Android Back restore exact locked-level focus |
+| Payment truth | Pass | Pending/ambiguous states retain Check access and do not claim success before reconciliation |
+| Tenancy | Pass | Institutional `applies=false` renders no Direct checkout UI |
+| Human comprehension | Open | Recall of current access, both plan differences, exact payable total and Continue free remains UX-HUM-03 evidence |
+
+Focused App/Subscription tests pass 32/32, typecheck passes, and the contextual
+Playwright journey passes with 320-pixel reflow and zero scoped axe violations.
+Final `make verify` passes SQLite 333/333 (3,161 assertions), PostgreSQL 361/361
+(5,232 assertions), and web 479/479; `make e2e` passes API 4/4 (103 assertions)
+and Playwright 30/30; `make build` passes with the existing large-chunk
+advisory. No live payment was enabled and no API, schema, entitlement or
+reconciliation semantics changed.
+
 ## UX-REM-04 quiz and result hierarchy — 23 September 2026
 
 | Check | Result | Evidence |

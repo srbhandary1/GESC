@@ -1659,7 +1659,10 @@ function SessionSummary({
           onClose={onSubscriptionClose}
         />
       ) : null}
-      {webAuth !== null && isAuthenticated && accountSecurityOpen ? (
+      {webAuth !== null &&
+      isAuthenticated &&
+      accountSecurityOpen &&
+      subscriptionContext === null ? (
         <PasswordAccountSecurityPanel
           authentication={webAuth}
           locale={locale}
@@ -1672,6 +1675,7 @@ function SessionSummary({
       ) : null}
       {webAuth === null &&
       isAuthenticated &&
+      subscriptionContext === null &&
       isFederatedAccountAuthentication(authentication) &&
       isPasswordFormAuthentication(authentication) ? (
         <FederatedAccountsPanel

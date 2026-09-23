@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 through UX-REM-04 technically complete; retained human review gates remain unpassed"
+status: "UX-REM-00 through UX-REM-05 technically complete; retained human review gates remain unpassed"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,33 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
+
+Contextual plans opened from a locked level now isolate the purchase decision:
+unrelated password-security and federated-account panels are not rendered.
+The panel still leads with current access and the locked/completed-level
+context, shows exactly two membership cards, does not preselect either offer,
+and makes Premium visually distinctive without changing selection state.
+
+Each offer retains benefit-led differences and an accessible price disclosure
+with ex-GST amount, GST and exact payable total. The inset-aware sticky dock
+keeps **Continue free / review prior lessons** and **Close plans** available.
+Close, Continue free and Android Back restore the exact originating locked
+level and keyboard focus. Pending and ambiguous checkout states expose **Check
+access** and do not claim success before reconciliation. Institutional
+entitlements still render no Direct checkout, and live payment remains off.
+
+Focused App/Subscription tests pass 32/32, typecheck passes, and the contextual
+Playwright journey passes with 320-pixel no-overflow and scoped axe evidence.
+Representative recall of current access, both plan differences, exact total
+and Continue-free remains an unpassed UX-HUM-03 comprehension gate.
+
+Final gates pass: `make verify` (SQLite 333/333, 3,161 assertions; PostgreSQL
+361/361, 5,232 assertions; web 107 files / 479 tests), `make e2e` (API 4/4,
+103 assertions; Playwright 30/30), and `make build` with the existing
+large-chunk advisory. The package audit reports two moderate advisories and no
+high-severity failure.
 
 ## UX-REM-04 quiz and result hierarchy — 23 September 2026
 

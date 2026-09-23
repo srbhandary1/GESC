@@ -51,6 +51,9 @@ test('opens contextual plans from a locked level and returns without losing leve
   await expect(panel.getByRole('heading', {
     name: message('subscription.talk_packs'),
   })).toHaveCount(0)
+  await expect(page.getByRole('heading', {
+    name: message('operator.password.title'),
+  })).toHaveCount(0)
 
   const priceDetails = panel.locator('.subscription-panel__tax').first()
   await priceDetails.locator('summary').click()

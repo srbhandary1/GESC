@@ -1,5 +1,22 @@
 # Repository status
 
+## UX-REM-05 contextual plans and Continue-free parity — 23 September 2026
+
+- Locked-level plans now hide unrelated password/federated account panels.
+  Current access, exact locked-level context, two unselected benefit-led plan
+  cards, exact GST totals and the non-preselected Premium distinction remain.
+- The inset-aware dock keeps Continue free and Close plans visible. Close,
+  Continue free and Android Back restore the exact locked control and focus.
+  Pending/ambiguous checkout keeps Check access and never claims early success;
+  institutional learners still receive no Direct checkout.
+- Focused App/Subscription tests pass 32/32, typecheck passes, and the
+  contextual Playwright journey passes at 320 pixels with scoped axe.
+  `make verify` passes SQLite 333/333 (3,161 assertions), PostgreSQL 361/361
+  (5,232 assertions), and web 479/479; `make e2e` passes API 4/4 (103
+  assertions) and Playwright 30/30; `make build` passes with the existing
+  large-chunk advisory. Representative plan comprehension remains an unpassed
+  UX-HUM-03 gate.
+
 ## UX-REM-04 quiz and result hierarchy — 23 September 2026
 
 - Per-item feedback now contains only progress, correct/not-yet state,
