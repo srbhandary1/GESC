@@ -1,5 +1,29 @@
 # Repository status
 
+## UX-REM-01 connected-device continuation and APK publication — 23 September 2026
+
+- The realme RMX3085/API 33 connected-device rerun exposed all 17 Direct
+  levels, preserved the Level 2–17 locks, and passed English/Kannada navigation,
+  closed-keyboard quiz CTA, short landscape and high-contrast checks at the OEM
+  maximum `font_scale=1.6`. Exact 200%, exact 320-physical-pixel, TalkBack
+  announcement judgement and physical IME-open evidence remain open.
+- Short landscape no longer renders the long live-AI sentence into the native
+  toolbar; the visible chip is the compact `AI / N min` form while the full
+  localized wording remains available to assistive technology. Variant C
+  learner notices now own readable Light/System and explicit Dark tokens.
+- Git `cc02500` is active as immutable VPS release
+  `/srv/global-spoken-english/releases/cc02500`; `d7d82e1` is the rollback
+  target. The homepage uses `?v=jezweb-c11`. The public debug-signed closed-beta
+  APK is 82,944,538 bytes with SHA-256
+  `42cb92ca087cdd7403cf70107487a7673415aba7d7a8175696a04de28f7bdbb4`,
+  byte-identical to the local candidate. Public live/ready checks pass.
+- Pre-switch encrypted backup
+  `soft-launch-20260923T034320Z.sql.gz.enc` has SHA-256
+  `7eb839d879965204138269919c646c61392d12e7c81e6d288a219884b07380a1`.
+  No API, schema, migration, authentication, entitlement, authoritative record
+  or provider-routing change was made. UX-REM-01 remains in progress and
+  UX-REM-02 has not started.
+
 ## WEB-UX guest-home launch — 21 September 2026
 
 - Live unsigned `#home` was parsing the 821 kB `marketing-landing` JavaScript

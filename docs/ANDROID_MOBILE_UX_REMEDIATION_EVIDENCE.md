@@ -1,6 +1,6 @@
 ---
 title: "Android Mobile UX Remediation Evidence"
-status: "UX-REM-00 complete; UX-REM-01 repaired-APK rerun closes defects 01, 02, 03 and 05, with remaining physical/human acceptance open"
+status: "UX-REM-00 complete; UX-REM-01 connected-device continuation closes catalogue, OEM-max reflow, landscape, high-contrast and closed-keyboard rows; remaining physical/human acceptance open"
 started: "18 September 2026"
 plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 ---
@@ -10,6 +10,52 @@ plan: "docs/ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md"
 Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
+
+## Connected-device continuation — 23 September 2026
+
+The connected path used realme RMX3085 (`RMX3085L1`), serial
+`J7GUXWEENBNZTW85`, Android 13/API 33, security patch 2024-07-05, WebView
+151.0.7922.199, physical 1080×2400 display, physical density 480 with override
+408, three-button navigation and system locale `en-GB`. The app UI remained
+Kannada. ADB used the owner-established reverse tunnel at
+`ADB_SERVER_SOCKET=tcp:127.0.0.1:5038`.
+
+| Evidence row | Result |
+|---|---|
+| Direct catalogue | Pass: 17/17 levels visible; Level 1 open; Levels 2–17 locked |
+| OEM maximum font | Pass at `font_scale=1.6` in English and Kannada; five labels complete without clipping |
+| Exact 200% text | Open: OEM blocks direct settings writes and its visible maximum is 1.6 |
+| Short landscape | Pass on the physical device: compact `AI / 118 min`, separated controls and complete Kannada destinations |
+| Exact 320 physical pixels | Open: OEM blocks density override writes; automated 711×320 CSS evidence passes |
+| High contrast | Pass at font scale 1.6; labels/glyphs legible and active destination retains a border cue |
+| Quiz action, keyboard closed | Pass: question, answers and full Continue remain above fixed five-item navigation; no attempt submitted |
+| Quiz action, IME open | Open: the tested radio-question screen has no meaningful text-input IME path |
+| TalkBack | Open: package is installed and disabled at restored baseline; announcement quality requires human judgement |
+
+`UXREM01-DEV-08` was discovered in physical short landscape: the long
+localized live-AI sentence collided with the visible `AI` marker. The native
+short-landscape chip now renders compact `AI / N min`; its full localized text
+remains visually hidden for assistive semantics. The same continuation repaired
+learner-notice contrast by assigning Variant C Light/System and explicit Dark
+notice tokens. Focused and full browser evidence passes.
+
+The final production-origin debug APK was built with
+`VITE_MOBILE_API_ORIGIN=https://ai.globalspokenenglish.com`:
+
+```text
+Path:     apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk
+SHA-256:  42cb92ca087cdd7403cf70107487a7673415aba7d7a8175696a04de28f7bdbb4
+Bytes:    82,944,538
+Package:  com.globalenglish.app
+Version:  1.0 (1)
+SDK:      min 24, target 36
+```
+
+Git `cc02500` is active at immutable VPS release
+`/srv/global-spoken-english/releases/cc02500`, with `d7d82e1` retained for
+rollback. Homepage cache key `jezweb-c11` and a fresh public download match the
+local APK byte-for-byte. UX-REM-01 remains in progress; UX-REM-02 has not
+started.
 
 ## UX-REM-00 — Candidate and device evidence path
 

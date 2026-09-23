@@ -1,5 +1,25 @@
 # Quality review
 
+## UX-REM-01 connected-device continuation and c11 APK — 23 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Physical catalogue | Pass | RMX3085/API 33 displayed 17/17 Direct levels; Level 1 open and Levels 2–17 locked |
+| Enlarged text | Partial pass | English/Kannada Home, five destinations and closed-keyboard quiz CTA pass at OEM maximum `font_scale=1.6`; exact 2.0 remains unavailable on this OEM |
+| Short landscape | Pass | Physical 1080×2400 device with override density 408 shows compact `AI / 118 min` and complete destinations; automated 711×320/800×412 assertions pass |
+| High contrast | Pass | OEM High contrast text at `font_scale=1.6`; labels/glyphs legible and active Home retains a non-colour border cue |
+| Learner notice contrast | Pass | Variant C Light/System and explicit Dark notice tokens; focused Kannada Android Home axe test passes |
+| Quiz action | Partial pass | Physical closed-keyboard question/answers/Continue pass; no authoritative attempt submitted; physical IME-open row remains open |
+| Human/device residuals | Open | TalkBack announcement judgement, exact 200%, exact 320 physical pixels and physical IME-open evidence |
+| `make verify` | Pass | Pint/PHPStan; SQLite 333/333 (3,161 assertions); PostgreSQL 361/361 (5,233 assertions); web 107 files / 479 tests; contracts/lint/types pass |
+| `make e2e` | Pass | API reconciliation 4/4 (103 assertions); Playwright 30/30 |
+| `make build` | Pass | Production API optimization and Vite build; existing large-chunk advisory only |
+| Android build | Pass | Gradle 103 tasks; package `com.globalenglish.app`, min SDK 24, target SDK 36 |
+| Stable-host publication | Pass | Git/release `cc02500`; homepage `jezweb-c11`; public/local APK SHA-256 `42cb92ca…bdbb4`, 82,944,538 bytes; public live/ready 200 |
+
+UX-REM-01 remains in progress; UX-REM-02 is not authorized to start until the
+remaining physical/human rows pass or an explicit bounded residual is accepted.
+
 ## WEB-UX guest-home launch — 21 September 2026
 
 Live `#home` stayed on the Kannada loading fallback while Chrome parsed

@@ -639,3 +639,27 @@ before the switch. Unsigned web `#home` Listen plays static
 `/guest-sample/level-12-*.wav` files. Capacitor Android compact home and the
 published APK are unchanged. Public `/api/v1/health/live` and `/health/ready`
 return HTTP 200. There is no schema or migration change.
+
+## UX-REM-01 c11 Android APK publication — 23 September 2026
+
+Git `cc02500` is active at immutable release
+`/srv/global-spoken-english/releases/cc02500`; `d7d82e1` remains the rollback
+target. Before cutover, encrypted backup
+`soft-launch-20260923T034320Z.sql.gz.enc` was created and verified with SHA-256
+`7eb839d879965204138269919c646c61392d12e7c81e6d288a219884b07380a1`.
+
+Guarded activation attempts failed closed first on the known API/proxy startup
+race and then on a staged Laravel configuration cache created without the
+runtime environment. The active symlink was restored to `d7d82e1` after each
+failed attempt. The staged cache was regenerated through the existing
+soft-launch environment loader; isolated `/health/live` and `/health/ready`
+then passed before the final switch. No migration or database restore ran.
+
+The homepage advertises
+`/downloads/global-spoken-english-android.apk?v=jezweb-c11`. A fresh public
+download is 82,944,538 bytes and byte-identical to the local production-origin
+debug APK at SHA-256
+`42cb92ca087cdd7403cf70107487a7673415aba7d7a8175696a04de28f7bdbb4`.
+`aapt2` verifies package `com.globalenglish.app`, min SDK 24 and target SDK 36.
+Public live and ready endpoints return HTTP 200. This remains an invite-only,
+debug-signed closed-beta artifact, not a Play release.
