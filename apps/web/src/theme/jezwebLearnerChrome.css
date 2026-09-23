@@ -705,6 +705,8 @@
   --ge-color-text-muted: #58665f;
   --ge-color-border: #dce4df;
   --ge-color-soft-brand: #e9f4ee;
+  --ge-notice-background: #f7f3e7;
+  --ge-notice-border: #d8cba5;
   --ge-panel-border: #dce4df;
   --ge-radius-control: 0.875rem;
   --ge-radius-hero: 1.25rem;
@@ -724,6 +726,8 @@
   --ge-color-text-muted: #c4d0c9;
   --ge-color-border: #24332c;
   --ge-color-soft-brand: #163328;
+  --ge-notice-background: rgb(251 191 36 / 0.12);
+  --ge-notice-border: rgb(251 191 36 / 0.35);
   --ge-panel-border: #24332c;
   background: #0f1f17;
 }
@@ -1585,6 +1589,38 @@
   .ge-application-frame--jezweb.ge-application-frame--native-android
     .shell-header-toolbar {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar
+    .shell-live-ai-chip {
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 0.68rem;
+    line-height: 1.1;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar
+    .shell-live-ai-chip__full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .ge-application-frame--jezweb.ge-application-frame--native-android
+    .shell-header-toolbar
+    .shell-live-ai-chip__compact {
+    display: block;
+    min-width: 0;
+    line-height: 1;
   }
 
   .ge-application-frame--jezweb.ge-application-frame--native-android

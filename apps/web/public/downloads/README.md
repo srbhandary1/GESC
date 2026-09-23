@@ -1,15 +1,15 @@
 # Android APK downloads
 
 The web app links to `global-spoken-english-android.apk` in this folder
-(`?v=jezweb-c4` on the homepage).
+(`?v=jezweb-c11` on the homepage).
 
 Staff LAN (use this URL — do **not** use the private GitHub release link
 without signing in; that saves a 9-byte `Not Found` file and Android reports
 **Parse error / There was a problem parsing the package**):
 
-`http://117.254.108.143:8080/downloads/global-spoken-english-android.apk?v=jezweb-c4`
+`https://ai.globalspokenenglish.com/downloads/global-spoken-english-android.apk?v=jezweb-c11`
 
-Before installing, confirm the downloaded file is about **53–56 MB**. A file
+Before installing, confirm the downloaded file is about **80–85 MB**. A file
 that is only a few bytes or kilobytes is HTML, not an APK. Requires **Android
 7.0+** (API 24). Uninstall any older Global Spoken English App build first.
 

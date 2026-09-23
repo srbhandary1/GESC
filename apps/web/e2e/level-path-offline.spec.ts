@@ -512,6 +512,9 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
     const header = document.querySelector<HTMLElement>('.ge-application-frame__header')
     const main = document.querySelector<HTMLElement>('.ge-application-frame__main')
     const brand = document.querySelector<HTMLElement>('.shell-studio-brand__name')
+    const liveAiChip = document.querySelector<HTMLElement>('.shell-live-ai-chip')
+    const liveAiCompact = document.querySelector<HTMLElement>('.shell-live-ai-chip__compact')
+    const liveAiFull = document.querySelector<HTMLElement>('.shell-live-ai-chip__full')
     const labels = [...document.querySelectorAll<HTMLElement>('.ge-primary-navigation__label')]
 
     return {
@@ -523,6 +526,12 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
         const lastRect = [...range.getClientRects()].at(-1)
         return lastRect?.width ?? 0
       }),
+      liveAiChipClientWidth: liveAiChip?.clientWidth ?? 0,
+      liveAiChipScrollWidth: liveAiChip?.scrollWidth ?? 0,
+      liveAiCompactDisplay: liveAiCompact === null
+        ? 'missing'
+        : getComputedStyle(liveAiCompact).display,
+      liveAiFullWidth: liveAiFull?.getBoundingClientRect().width ?? 0,
       mainHeight: main?.getBoundingClientRect().height ?? 0,
       navHeight: nav?.getBoundingClientRect().height ?? 0,
       viewportHeight: globalThis.innerHeight,
@@ -532,6 +541,11 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   expect(landscapeMetrics.mainHeight).toBeGreaterThan(96)
   expect(landscapeMetrics.brandHeight).toBeLessThan(48)
   expect(landscapeMetrics.labelLastLineWidths.every((width) => width > 8)).toBe(true)
+  expect(landscapeMetrics.liveAiCompactDisplay).toBe('block')
+  expect(landscapeMetrics.liveAiFullWidth).toBeLessThanOrEqual(1)
+  expect(landscapeMetrics.liveAiChipScrollWidth).toBeLessThanOrEqual(
+    landscapeMetrics.liveAiChipClientWidth + 1,
+  )
 
   await page.setViewportSize({ height: 320, width: 711 })
   await expect.poll(() => page.evaluate(() => (
@@ -540,7 +554,16 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   const shortLandscape = await page.evaluate(() => {
     const nav = document.querySelector<HTMLElement>('.ge-primary-navigation')
     const main = document.querySelector<HTMLElement>('.ge-application-frame__main')
+    const liveAiChip = document.querySelector<HTMLElement>('.shell-live-ai-chip')
+    const liveAiCompact = document.querySelector<HTMLElement>('.shell-live-ai-chip__compact')
+    const liveAiFull = document.querySelector<HTMLElement>('.shell-live-ai-chip__full')
     return {
+      liveAiChipClientWidth: liveAiChip?.clientWidth ?? 0,
+      liveAiChipScrollWidth: liveAiChip?.scrollWidth ?? 0,
+      liveAiCompactDisplay: liveAiCompact === null
+        ? 'missing'
+        : getComputedStyle(liveAiCompact).display,
+      liveAiFullWidth: liveAiFull?.getBoundingClientRect().width ?? 0,
       mainHeight: main?.getBoundingClientRect().height ?? 0,
       navHeight: nav?.getBoundingClientRect().height ?? 0,
       viewportHeight: globalThis.innerHeight,
@@ -548,6 +571,11 @@ test('reflows authenticated Android chrome and quiz actions at 200% text', async
   })
   expect(shortLandscape.navHeight).toBeLessThan(shortLandscape.viewportHeight * 0.4)
   expect(shortLandscape.mainHeight).toBeGreaterThan(80)
+  expect(shortLandscape.liveAiCompactDisplay).toBe('block')
+  expect(shortLandscape.liveAiFullWidth).toBeLessThanOrEqual(1)
+  expect(shortLandscape.liveAiChipScrollWidth).toBeLessThanOrEqual(
+    shortLandscape.liveAiChipClientWidth + 1,
+  )
 
   await page.setViewportSize({ height: 412, width: 800 })
 
