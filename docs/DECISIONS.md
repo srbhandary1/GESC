@@ -1,5 +1,12 @@
 # Decision ledger
 
+### D-0364 — BRAND-ADMIN-POLISH-18, 14 October 2026
+
+Owner-directed branding, onboarding, learning UI, and operator administration update for **1.0.15 / code 16**:
+1. Applied `gsea-2.jpg` as the Android launcher/app icon, `gsea-1.jpeg` as the web app icon, and `favicon.ico` across web and marketing bundles, and displayed the live app version (`v1.0.15`) in the shared footer (`LegalLinks`) sourced from `apps/web/src/appRelease.json`.
+2. Removed the onboarding age-restriction step (`adult`) from `FIRST_USE_STEPS` and collapsed post-approval recovery/disclosure boilerplate on `Speak` and `Role-play` screens while preserving first-time consent/recovery approvals.
+3. Extended operator entitlement administration to resolve learners by membership ULID or username/phone (materializing pending `paid_registration_intents` when payment succeeded but confirmation failed), record `reason` and `payment_reference` in `entitlement_events` and `audit_events`, and return the learner's access audit log; added `POST /api/v1/operator/memberships` (`createStaffAccount`) so administrators can create multiple privileged `organization_admin` and `trainer` accounts directly in the Admin Console.
+
 ### D-0363 — PHONE-E2E-POLISH-17, 14 October 2026
 
 Physical Android device (`RMX3085` / `J7GUXWEENBNZTW85`) end-to-end UI walk and UX/layout remediation for **1.0.14 / code 15**:

@@ -1,5 +1,12 @@
 # Quality review
 
+## BRAND-ADMIN-POLISH-18 — 14 October 2026
+
+Delivered brand/icon updates (`gsea-2.jpg` Android icon, `gsea-1.jpeg` web icon, `favicon.ico`), removed the onboarding age restriction (`FIRST_USE_STEPS` 9-step sequence), hid post-approval recovery/disclosure text on `Speak` and `Role-play`, aligned `Learn` tab tiles, added audited operator access grants by username/phone (`reason` + `payment_reference` + `events` audit trail + `audit_events`) and multi-admin account creation (`POST /api/v1/operator/memberships`), exposed `v1.0.15` in the app footer, and verified on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`):
+- `make verify`: **PASS** (`0` exit code; SQLite `365/365`, PostgreSQL `446/446`, Vitest `635/635`).
+- `make e2e`: **PASS** (`0` exit code; `4/4` API + `48/48` Chromium Playwright journeys including Role-play stage progression and interactive AI role-play corrections).
+- `make android-closed-beta` + `make build` + `adb install -r`: **PASS** (`14/14` native JVM tests; APK **1.0.15 / code 16** SHA-256 `8ee4782d8b2a4d2da41804087362703976bb75f3654bb9b455964c763f62c307`, `15,780,235` bytes).
+
 ## PHONE-E2E-POLISH-17 — 14 October 2026
 
 Executed an end-to-end UI and UX audit on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`, Android 13 / API 33, `1080x2400`) across Guest, Direct Self-Registration + Razorpay Test Checkout, 10-step First-Use Onboarding, and all five Learner destinations (`Home`, `Learn`, `Speak`, `Progress`, `1:1`) plus `Account` / `Subscriptions` / `Linked Social Accounts` in Kannada (`kn-IN`) and English (`en-IN`), Light and Dark themes, and remediated all 14 discovered issues in **1.0.14 / code 15**:

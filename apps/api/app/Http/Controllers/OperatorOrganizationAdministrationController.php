@@ -162,6 +162,42 @@ final class OperatorOrganizationAdministrationController extends Controller
         ));
     }
 
+    public function createMembership(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'min:4', 'max:64'],
+            'password' => ['required', 'string', 'min:15', 'max:128'],
+            'display_name' => ['nullable', 'string', 'max:120'],
+            'membership_type' => ['required', 'string', 'in:organization_admin,trainer'],
+            'role_id' => ['nullable', 'string', 'ulid'],
+            'expected_version' => ['required', 'integer', 'in:0'],
+            'idempotency_key' => ['nullable', 'string', 'max:120'],
+        ]);
+        $headerKey = $request->header('Idempotency-Key');
+        $idempotencyKey = is_string($headerKey) && trim($headerKey) !== ''
+            ? trim($headerKey)
+            : (string) ($validated['idempotency_key'] ?? '');
+
+        if ($idempotencyKey === '') {
+            throw ValidationException::withMessages([
+                'idempotency_key' => ['An idempotency key is required.'],
+            ]);
+        }
+
+        return $this->command(fn (): OrganizationAdministrationCommandResult => (
+            $this->commands->createStaffAccount(
+                $this->actor($request),
+                (string) $validated['username'],
+                (string) $validated['password'],
+                $this->nullableString($validated['display_name'] ?? null),
+                (string) $validated['membership_type'],
+                $this->nullableString($validated['role_id'] ?? null),
+                (int) $validated['expected_version'],
+                $idempotencyKey,
+            )
+        ), true);
+    }
+
     public function assignMembershipRole(
         ChangeMembershipRoleRequest $request,
         string $membership,

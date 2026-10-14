@@ -258,10 +258,10 @@ for (const locale of ['en-IN', 'kn-IN'] as const) {
     )
     await continueFirstUse(page)
     await expect(page.getByRole('heading', {
-      name: localizedMessage('learner.onboarding.adult_title', locale),
+      name: localizedMessage('learner.onboarding.preferences_title', locale),
     })).toBeFocused()
     await expect.poll(() => page.evaluate(() => location.hash)).toBe(
-      '#home/first-use/adult',
+      '#home/first-use/preferences',
     )
     await page.goBack()
     await expect(page.getByRole('heading', {
@@ -900,10 +900,6 @@ async function advanceFirstUseToGoal(
   page: Page,
   locale: SupportedLocale,
 ): Promise<void> {
-  await continueFirstUse(page)
-  await page.getByRole('checkbox', {
-    name: localizedMessage('learner.onboarding.adult_confirmation', locale),
-  }).check()
   await continueFirstUse(page)
   await expect(page.getByRole('heading', {
     name: localizedMessage('learner.onboarding.preferences_title', locale),

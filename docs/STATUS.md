@@ -1,5 +1,12 @@
 # Repository status
 
+## BRAND-ADMIN-POLISH-18 — 14 October 2026
+
+Updated brand/app icons and favicon (`gsea-2.jpg` Android app icon, `gsea-1.jpeg` web app icon, `favicon.ico`), removed the onboarding age-restriction step, collapsed post-approval privacy/recovery boilerplate on speaking and role-play screens, aligned `Learn` tab tiles (`.level-path__item` and `.level-session__tab`), added audited operator access grants by username/phone (including failed-payment registration recovery) and multi-admin account creation (`POST /api/v1/operator/memberships`), added visible `v1.0.15` version display in the app footer, installed **1.0.15 / code 16** on the connected Realme `RMX3085` handset, pushed to `origin/main`, and deployed to the soft-launch VPS:
+- `make verify`: **PASS** (`0` exit code — Composer validate/audit `0`, Pint `0`, PHPStan `0`, SQLite `365/365` tests, PostgreSQL `446/446` tests / `6,568` assertions, pnpm audit `0`, locale check `0`, OpenAPI/contracts `0`, release & soft-launch contracts `0`, ESLint `0`, TypeScript `0`, Vitest `635/635` passed across 123 files).
+- `make e2e`: **PASS** (`0` exit code — `4/4` API tests + `48/48` Playwright Chromium journeys).
+- `make android-closed-beta` & `make build`: **PASS** (`14/14` native JVM tests; APK **1.0.15 / code 16**, SHA-256 `8ee4782d8b2a4d2da41804087362703976bb75f3654bb9b455964c763f62c307`, `15,780,235` bytes, installed on `RMX3085` and deployed to `verify-fix-20261014-r3`).
+
 ## PHONE-E2E-POLISH-17 — 14 October 2026
 
 Completed a full UI/E2E walkthrough and layout/UX remediation on the connected Realme `RMX3085` handset (`J7GUXWEENBNZTW85`) across Guest, Direct Self-Registration + Razorpay Test Checkout, 10-step First-Use Onboarding, and all five Learner destinations (`Home`, `Learn`, `Speak`, `Progress`, `1:1`) plus `Account` / `Subscriptions` / `Linked Social Accounts` in Kannada and English, Light and Dark modes.

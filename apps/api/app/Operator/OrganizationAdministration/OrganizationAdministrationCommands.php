@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Operator\OrganizationAdministration;
 
 use App\Audit\AuditEventRecorder;
+use App\Authentication\Password\PasswordCredentialService;
+use App\Authentication\Password\PasswordPolicy;
+use App\Authentication\Password\PasswordPolicyViolation;
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\Governance\AuthorityAppointmentCommands;
 use App\Curriculum\Governance\AuthorityKind;
 use App\Models\Membership;
+use App\Models\Role;
 use App\Models\User;
 use App\Operator\OrganizationAdministration\Exceptions\OrganizationAdministrationConflict;
 use App\Operator\OrganizationAdministration\Exceptions\OrganizationAdministrationRejected;
@@ -31,6 +35,8 @@ final readonly class OrganizationAdministrationCommands
         private AuthorityAppointmentCommands $appointments,
         private InstitutionInviteCodeDigester $inviteCodes,
         private AuditEventRecorder $audit,
+        private PasswordPolicy $passwordPolicy,
+        private PasswordCredentialService $passwordCredentials,
     ) {}
 
     public function createBranch(
@@ -419,6 +425,15 @@ final readonly class OrganizationAdministrationCommands
                     throw new OrganizationAdministrationConflict;
                 }
 
+                $defaultRoleKey = $membershipType === Membership::TYPE_ORGANIZATION_ADMIN
+                    ? Role::DIRECT_ORGANIZATION_ADMIN_KEY
+                    : Role::DIRECT_TRAINER_KEY;
+                $defaultRoleId = DB::table('roles')
+                    ->where('organization_id', $organizationId)
+                    ->where('key', $defaultRoleKey)
+                    ->where('status', 'active')
+                    ->value('id');
+
                 $rawCode = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
                 $invitationId = (string) Str::ulid();
                 DB::table('institution_invites')->insert([
@@ -426,7 +441,7 @@ final readonly class OrganizationAdministrationCommands
                     'organization_id' => $organizationId,
                     'code_digest' => $this->inviteCodes->digest($rawCode),
                     'membership_type' => $membershipType,
-                    'role_id' => null,
+                    'role_id' => is_string($defaultRoleId) && $defaultRoleId !== '' ? $defaultRoleId : null,
                     'cohort_id' => null,
                     'status' => 'pending',
                     'expires_at' => $now->addHours($expiresInHours),
@@ -461,6 +476,180 @@ final readonly class OrganizationAdministrationCommands
                     'result_type' => 'institution_invitation',
                     'result_id' => $invitationId,
                     'activation_code' => $rawCode,
+                ];
+            },
+        );
+    }
+
+    public function createStaffAccount(
+        User $actor,
+        string $username,
+        string $password,
+        ?string $displayName,
+        string $membershipType,
+        ?string $roleId,
+        int $expectedVersion,
+        string $idempotencyKey,
+    ): OrganizationAdministrationCommandResult {
+        try {
+            $canonicalUsername = $this->passwordPolicy->normalizeUsername($username);
+            $passwordHash = $this->passwordCredentials->hashNewPassword($password, $canonicalUsername);
+        } catch (PasswordPolicyViolation) {
+            throw new OrganizationAdministrationRejected;
+        }
+
+        return $this->execute(
+            actor: $actor,
+            permission: OrganizationAdministrationAuthorization::MEMBERSHIPS_MANAGE,
+            operation: 'membership.create',
+            targetType: 'membership_collection',
+            targetId: $this->organizationId($actor),
+            body: [
+                'display_name' => $displayName,
+                'expected_version' => $expectedVersion,
+                'membership_type' => $membershipType,
+                'role_id' => $roleId,
+                'username' => $canonicalUsername,
+            ],
+            idempotencyKey: $idempotencyKey,
+            command: function (
+                string $organizationId,
+                string $actorMembershipId,
+                string $commandId,
+                CarbonImmutable $now,
+            ) use (
+                $canonicalUsername,
+                $passwordHash,
+                $displayName,
+                $membershipType,
+                $roleId,
+                $expectedVersion,
+            ): array {
+                if (
+                    $expectedVersion !== 0
+                    || ! in_array($membershipType, [Membership::TYPE_ORGANIZATION_ADMIN, Membership::TYPE_TRAINER], true)
+                ) {
+                    throw new OrganizationAdministrationConflict;
+                }
+
+                $existingUser = User::query()
+                    ->where('username', $canonicalUsername)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existingUser instanceof User) {
+                    throw new OrganizationAdministrationConflict;
+                }
+
+                $user = new User;
+                $user->forceFill([
+                    'display_name' => $displayName !== null && trim($displayName) !== ''
+                        ? trim($displayName)
+                        : $canonicalUsername,
+                    'status' => User::STATUS_ACTIVE,
+                ])->save();
+
+                $this->passwordCredentials->storePreparedHash(
+                    $user,
+                    $canonicalUsername,
+                    $passwordHash,
+                    request(),
+                );
+
+                $membershipId = (string) Str::ulid();
+                DB::table('memberships')->insert([
+                    'id' => $membershipId,
+                    'organization_id' => $organizationId,
+                    'user_id' => $user->getKey(),
+                    'membership_type' => $membershipType,
+                    'status' => Membership::STATUS_ACTIVE,
+                    'joined_at' => $now,
+                    'ended_at' => null,
+                    'version' => 1,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                $resolvedRoleId = $roleId;
+                if ($resolvedRoleId === null || $resolvedRoleId === '') {
+                    $defaultKey = $membershipType === Membership::TYPE_ORGANIZATION_ADMIN
+                        ? Role::DIRECT_ORGANIZATION_ADMIN_KEY
+                        : Role::DIRECT_TRAINER_KEY;
+                    $found = DB::table('roles')
+                        ->where('organization_id', $organizationId)
+                        ->where('key', $defaultKey)
+                        ->where('status', 'active')
+                        ->value('id');
+                    if (is_string($found) && $found !== '') {
+                        $resolvedRoleId = $found;
+                    } elseif ($membershipType === Membership::TYPE_ORGANIZATION_ADMIN) {
+                        $actorRole = DB::table('membership_roles')
+                            ->join('roles', function ($join): void {
+                                $join->on('roles.organization_id', '=', 'membership_roles.organization_id')
+                                    ->on('roles.id', '=', 'membership_roles.role_id');
+                            })
+                            ->where('membership_roles.organization_id', $organizationId)
+                            ->where('membership_roles.membership_id', $actorMembershipId)
+                            ->where('roles.status', 'active')
+                            ->orderBy('roles.id')
+                            ->value('roles.id');
+                        if (is_string($actorRole) && $actorRole !== '') {
+                            $resolvedRoleId = $actorRole;
+                        }
+                    }
+                } else {
+                    $validRole = DB::table('roles')
+                        ->where('organization_id', $organizationId)
+                        ->where('id', $resolvedRoleId)
+                        ->where('status', 'active')
+                        ->value('id');
+                    if (! is_string($validRole) || $validRole === '') {
+                        throw new OrganizationAdministrationRejected;
+                    }
+                }
+
+                if (is_string($resolvedRoleId) && $resolvedRoleId !== '') {
+                    DB::table('membership_roles')->insertOrIgnore([
+                        'organization_id' => $organizationId,
+                        'membership_id' => $membershipId,
+                        'role_id' => $resolvedRoleId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                    $this->events->record(
+                        $organizationId,
+                        $actorMembershipId,
+                        $commandId,
+                        'membership.role_assigned',
+                        [
+                            'membership_id' => $membershipId,
+                            'role_id' => $resolvedRoleId,
+                        ],
+                        $now,
+                    );
+                }
+
+                if ($membershipType === Membership::TYPE_TRAINER) {
+                    DB::table('trainer_profiles')->insertOrIgnore([
+                        'id' => (string) Str::ulid(),
+                        'organization_id' => $organizationId,
+                        'trainer_membership_id' => $membershipId,
+                        'status' => 'active',
+                        'version' => 1,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
+
+                $this->audit->recordTenant(
+                    'organization_administration.membership.created',
+                    'membership',
+                    $membershipId,
+                );
+
+                return [
+                    'result_type' => 'membership',
+                    'result_id' => $membershipId,
                 ];
             },
         );

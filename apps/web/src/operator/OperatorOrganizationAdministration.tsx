@@ -679,6 +679,13 @@ function StaffMembershipsPanel({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [namePrefix, setNamePrefix] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [newUsername, setNewUsername] = useState('')
+  const [newDisplayName, setNewDisplayName] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [newMembershipType, setNewMembershipType] = useState<
+    'organization_admin' | 'trainer'
+  >('organization_admin')
+  const [newRoleId, setNewRoleId] = useState('')
   const loadMemberships = useCallback(
     (cursor: string | undefined, signal: AbortSignal) =>
       api.listMemberships(filters, cursor, signal),
@@ -785,6 +792,156 @@ function StaffMembershipsPanel({
 
           return (
             <>
+              {typeof api.createStaffAccount === 'function' ? (
+                <form
+                  className="operator-people__form"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    const createStaffAccount = api.createStaffAccount
+                    if (
+                      typeof createStaffAccount !== 'function' ||
+                      newUsername.trim().length < 4 ||
+                      newPassword.length < 15
+                    ) {
+                      return
+                    }
+                    const payload = {
+                      expected_version: 0 as const,
+                      membership_type: newMembershipType,
+                      password: newPassword,
+                      username: newUsername.trim(),
+                      ...(newDisplayName.trim() !== ''
+                        ? { display_name: newDisplayName.trim() }
+                        : {}),
+                      ...(newRoleId !== '' ? { role_id: newRoleId } : {}),
+                    }
+                    void command
+                      .run(
+                        `membership.create:${payload.username.toLowerCase()}:${payload.membership_type}`,
+                        (idempotencyKey) =>
+                          createStaffAccount.call(api, payload, idempotencyKey),
+                      )
+                      .then((completed) => {
+                        if (completed) {
+                          setNewUsername('')
+                          setNewDisplayName('')
+                          setNewPassword('')
+                          setNewRoleId('')
+                        }
+                      })
+                  }}
+                >
+                  <h5>Create privileged admin or trainer account</h5>
+                  <Field
+                    id="operator-create-staff-username"
+                    label="Username or phone"
+                  >
+                    <input
+                      autoComplete="off"
+                      id="operator-create-staff-username"
+                      maxLength={64}
+                      minLength={4}
+                      onChange={(event) =>
+                        setNewUsername(event.currentTarget.value)
+                      }
+                      required
+                      value={newUsername}
+                    />
+                  </Field>
+                  <Field
+                    id="operator-create-staff-display-name"
+                    label={message('operator.people.field.name').text}
+                  >
+                    <input
+                      autoComplete="off"
+                      id="operator-create-staff-display-name"
+                      maxLength={120}
+                      onChange={(event) =>
+                        setNewDisplayName(event.currentTarget.value)
+                      }
+                      value={newDisplayName}
+                    />
+                  </Field>
+                  <Field
+                    id="operator-create-staff-password"
+                    label="Initial password (15+ characters)"
+                  >
+                    <input
+                      autoComplete="new-password"
+                      id="operator-create-staff-password"
+                      maxLength={128}
+                      minLength={15}
+                      onChange={(event) =>
+                        setNewPassword(event.currentTarget.value)
+                      }
+                      required
+                      type="password"
+                      value={newPassword}
+                    />
+                  </Field>
+                  <Field
+                    id="operator-create-staff-type"
+                    label={message('operator.people.field.membership_type').text}
+                  >
+                    <select
+                      id="operator-create-staff-type"
+                      onChange={(event) =>
+                        setNewMembershipType(
+                          event.currentTarget.value === 'trainer'
+                            ? 'trainer'
+                            : 'organization_admin',
+                        )
+                      }
+                      value={newMembershipType}
+                    >
+                      <option value="organization_admin">
+                        {
+                          message(
+                            'operator.people.membership_type.organization_admin',
+                          ).text
+                        }
+                      </option>
+                      <option value="trainer">
+                        {message('operator.people.membership_type.trainer').text}
+                      </option>
+                    </select>
+                  </Field>
+                  {roles.state.status === 'ready' &&
+                  roles.state.value.data.length > 0 ? (
+                    <Field
+                      id="operator-create-staff-role"
+                      label={message('operator.people.memberships.assign_role').text}
+                    >
+                      <select
+                        id="operator-create-staff-role"
+                        onChange={(event) =>
+                          setNewRoleId(event.currentTarget.value)
+                        }
+                        value={newRoleId}
+                      >
+                        <option value="">Default role for account type</option>
+                        {roles.state.value.data
+                          .filter((role) => role.status === 'active')
+                          .map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name} ({role.key})
+                            </option>
+                          ))}
+                      </select>
+                    </Field>
+                  ) : null}
+                  <button
+                    disabled={
+                      command.busy ||
+                      newUsername.trim().length < 4 ||
+                      newPassword.length < 15
+                    }
+                    type="submit"
+                  >
+                    Create account
+                  </button>
+                </form>
+              ) : null}
               <p className="operator-directory__summary">
                 {
                   resolveInterfaceMessage(

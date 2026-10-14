@@ -27,7 +27,9 @@ export function RecoveryAcknowledgement({ accepted, onChange, locale, localizati
 }) {
   const message = (key: MessageKey) => resolveInterfaceMessage(key, locale, localizationPolicy)
   return <div className="conversation-journey__notice">
-    <p><LocalizedMessage resolution={message('conversation.interactive.privacy')} /></p>
+    {!accepted ? (
+      <p><LocalizedMessage resolution={message('conversation.interactive.privacy')} /></p>
+    ) : null}
     <p><LocalizedMessage resolution={message('conversation.interactive.session_limit')} /></p>
     <label className="conversation-interactive__consent">
       <input checked={accepted} onChange={(event) => onChange(event.currentTarget.checked)} type="checkbox" />

@@ -12,6 +12,7 @@ import { createClientId } from '../shared/createClientId'
 import {
   defaultOperatorEntitlementApi,
   type OperatorEntitlementApi,
+  type OperatorEntitlementAuditEvent,
   type OperatorEntitlementPlan,
   type OperatorLearnerEntitlement,
   type OperatorTaxSettings,
@@ -38,8 +39,14 @@ export function OperatorEntitlementAdministration({
   const [gstin, setGstin] = useState('')
   const [gstRate, setGstRate] = useState('18')
   const [learnerId, setLearnerId] = useState('')
+  const [selectedPlanId, setSelectedPlanId] = useState('')
+  const [grantReason, setGrantReason] = useState('')
+  const [paymentReference, setPaymentReference] = useState('')
   const [entitlements, setEntitlements] = useState<
     readonly OperatorLearnerEntitlement[]
+  >([])
+  const [auditEvents, setAuditEvents] = useState<
+    readonly OperatorEntitlementAuditEvent[]
   >([])
   const [providerUsage, setProviderUsage] = useState<LearnerProviderUsage | undefined>()
   const [error, setError] = useState(false)
@@ -52,6 +59,15 @@ export function OperatorEntitlementAdministration({
     }) => {
       setTax(workspace.tax)
       setPlans(workspace.plans)
+      setSelectedPlanId((current) => {
+        if (current !== '' && workspace.plans.some((p) => p.id === current)) {
+          return current
+        }
+        const preferred =
+          workspace.plans.find((p) => p.code === 'monthly_modules_roleplay') ??
+          workspace.plans[0]
+        return preferred?.id ?? ''
+      })
       setCourtesyCount(workspace.courtesy_premium?.granted_memberships ?? 0)
       setGstin(workspace.tax.gstin)
       setGstRate((workspace.tax.gst_rate_bps / 100).toFixed(0))
@@ -231,16 +247,36 @@ export function OperatorEntitlementAdministration({
       <form
         onSubmit={(event: FormEvent) => {
           event.preventDefault()
-          const paid = plans.find((plan) => plan.code === 'monthly_modules_roleplay')
-          if (!paid || learnerId.length !== 26) {
+          const targetLearner = learnerId.trim()
+          const paid =
+            plans.find((plan) => plan.id === selectedPlanId) ??
+            plans.find((plan) => plan.code === 'monthly_modules_roleplay')
+          if (!paid || targetLearner.length < 4) {
             return
           }
-          void api
-            .grant(learnerId, paid.id, createCommandId())
+          const metadata =
+            grantReason.trim() !== '' || paymentReference.trim() !== ''
+              ? {
+                  ...(grantReason.trim() !== ''
+                    ? { reason: grantReason.trim() }
+                    : {}),
+                  ...(paymentReference.trim() !== ''
+                    ? { payment_reference: paymentReference.trim() }
+                    : {}),
+                }
+              : undefined
+          const grantPromise =
+            metadata === undefined
+              ? api.grant(targetLearner, paid.id, createCommandId())
+              : api.grant(targetLearner, paid.id, createCommandId(), metadata)
+          void grantPromise
             .then(async () => {
-              const listed = await api.learner(learnerId)
+              const listed = await api.learner(targetLearner)
               setEntitlements(listed.entitlements)
-          setProviderUsage(listed.provider_usage)
+              setAuditEvents(listed.events ?? [])
+              setProviderUsage(listed.provider_usage)
+              setGrantReason('')
+              setPaymentReference('')
             })
             .catch(() => setError(true))
         }}
@@ -251,7 +287,44 @@ export function OperatorEntitlementAdministration({
           />
           <input
             value={learnerId}
+            placeholder="ULID or phone/username"
             onChange={(event) => setLearnerId(event.target.value)}
+          />
+        </label>
+        {plans.length > 0 ? (
+          <label>
+            <span>Plan</span>
+            <select
+              aria-label="Plan to grant"
+              value={selectedPlanId}
+              onChange={(event) => setSelectedPlanId(event.target.value)}
+            >
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.name} ({plan.code})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <label>
+          <span>Audit reason (optional)</span>
+          <input
+            aria-label="Audit reason"
+            maxLength={240}
+            placeholder="e.g. Payment captured — manual access recovery"
+            value={grantReason}
+            onChange={(event) => setGrantReason(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>Payment reference (optional)</span>
+          <input
+            aria-label="Payment reference"
+            maxLength={120}
+            placeholder="e.g. pay_... or order_..."
+            value={paymentReference}
+            onChange={(event) => setPaymentReference(event.target.value)}
           />
         </label>
         <button type="submit">
@@ -260,8 +333,28 @@ export function OperatorEntitlementAdministration({
         <button
           type="button"
           onClick={() => {
+            const targetLearner = learnerId.trim()
+            if (targetLearner.length < 4) {
+              return
+            }
             void api
-              .clearThrottle(learnerId, createCommandId())
+              .learner(targetLearner)
+              .then((listed) => {
+                setEntitlements(listed.entitlements)
+                setAuditEvents(listed.events ?? [])
+                setProviderUsage(listed.provider_usage)
+                setError(false)
+              })
+              .catch(() => setError(true))
+          }}
+        >
+          Load learner access
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void api
+              .clearThrottle(learnerId.trim(), createCommandId())
               .catch(() => setError(true))
           }}
         >
@@ -281,9 +374,10 @@ export function OperatorEntitlementAdministration({
                 void api
                   .restartClock(row.id, createCommandId())
                   .then(async () => {
-                    const listed = await api.learner(learnerId)
+                    const listed = await api.learner(learnerId.trim())
                     setEntitlements(listed.entitlements)
-          setProviderUsage(listed.provider_usage)
+                    setAuditEvents(listed.events ?? [])
+                    setProviderUsage(listed.provider_usage)
                   })
               }}
             >
@@ -297,9 +391,10 @@ export function OperatorEntitlementAdministration({
                 void api
                   .restartMeter(row.id, createCommandId())
                   .then(async () => {
-                    const listed = await api.learner(learnerId)
+                    const listed = await api.learner(learnerId.trim())
                     setEntitlements(listed.entitlements)
-          setProviderUsage(listed.provider_usage)
+                    setAuditEvents(listed.events ?? [])
+                    setProviderUsage(listed.provider_usage)
                   })
               }}
             >
@@ -311,9 +406,10 @@ export function OperatorEntitlementAdministration({
               type="button"
               onClick={() => {
                 void api.revoke(row.id, createCommandId()).then(async () => {
-                  const listed = await api.learner(learnerId)
+                  const listed = await api.learner(learnerId.trim())
                   setEntitlements(listed.entitlements)
-          setProviderUsage(listed.provider_usage)
+                  setAuditEvents(listed.events ?? [])
+                  setProviderUsage(listed.provider_usage)
                 })
               }}
             >
@@ -324,6 +420,28 @@ export function OperatorEntitlementAdministration({
           </li>
         ))}
       </ul>
+      {auditEvents.length > 0 ? (
+        <section aria-labelledby="operator-entitlement-audit-title">
+          <h4 id="operator-entitlement-audit-title">Access audit log</h4>
+          <ul>
+            {auditEvents.map((event) => (
+              <li key={event.id}>
+                <strong>{event.event_type}</strong>
+                {event.plan_code ? ` · ${event.plan_code}` : ''}
+                {event.source ? ` (${event.source})` : ''}
+                {event.actor_membership_id
+                  ? ` · actor ${event.actor_membership_id}`
+                  : ''}
+                {event.payment_reference
+                  ? ` · ref ${event.payment_reference}`
+                  : ''}
+                {event.reason ? ` · ${event.reason}` : ''}
+                {` · ${event.occurred_at}`}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </section>
   )
 }

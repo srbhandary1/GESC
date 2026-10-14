@@ -906,9 +906,11 @@ function App({
           {isGuestSession || isLearnerSession || demoMode ? (
             <span aria-hidden="true" className="shell-studio-brand">
               <span className="shell-studio-brand__mark">
-                <i />
-                <i />
-                <i />
+                <img
+                  alt=""
+                  className="shell-studio-brand__logo"
+                  src={isNativeAndroid ? '/brand/gsea-2.jpg' : '/brand/gsea-1.jpeg'}
+                />
               </span>
               <span className="shell-studio-brand__name">
                 <LocalizedMessage resolution={brand} />
@@ -1870,7 +1872,6 @@ function learnerNavigationTargetLabel(
   if (target.firstUseStep !== undefined) {
     const titles: Record<NonNullable<LearnerNavigationTarget['firstUseStep']>, MessageKey> = {
       acknowledgement: 'learner.onboarding.acknowledgement_title',
-      adult: 'learner.onboarding.adult_title',
       'audio-output': 'learner.onboarding.audio_title',
       consent: 'learner.onboarding.consent_title',
       goal: 'learner.onboarding.goal_title',

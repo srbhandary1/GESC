@@ -30,6 +30,21 @@ export interface OperatorLearnerEntitlement {
   readonly plan_code: string
   readonly status: string
   readonly live_ai_seconds_used: number
+  readonly source?: string
+  readonly starts_at?: string
+  readonly expires_at?: string | null
+}
+
+export interface OperatorEntitlementAuditEvent {
+  readonly id: string
+  readonly entitlement_id: string
+  readonly event_type: string
+  readonly actor_membership_id?: string | null
+  readonly occurred_at: string
+  readonly plan_code?: string | null
+  readonly source?: string | null
+  readonly reason?: string | null
+  readonly payment_reference?: string | null
 }
 
 export interface OperatorEntitlementApi {
@@ -39,8 +54,10 @@ export interface OperatorEntitlementApi {
     courtesy_premium: { granted_memberships: number }
   }>
   learner(learnerId: string): Promise<{
+    learner_membership_id?: string
     entitlements: readonly OperatorLearnerEntitlement[]
     provider_usage?: LearnerProviderUsage
+    events?: readonly OperatorEntitlementAuditEvent[]
   }>
   updateTax(
     body: {
@@ -51,7 +68,15 @@ export interface OperatorEntitlementApi {
     },
     idempotencyKey: string,
   ): Promise<void>
-  grant(learnerId: string, planId: string, idempotencyKey: string): Promise<void>
+  grant(
+    learnerId: string,
+    planId: string,
+    idempotencyKey: string,
+    metadata?: {
+      readonly reason?: string
+      readonly payment_reference?: string
+    },
+  ): Promise<void>
   grantCourtesyPremium(idempotencyKey: string): Promise<void>
   updatePlan(
     planId: string,
@@ -114,16 +139,24 @@ export const defaultOperatorEntitlementApi: OperatorEntitlementApi = {
       courtesy_premium: { granted_memberships: number }
     }>,
   learner: (learnerId) =>
-    read(`/api/v1/operator/learners/${learnerId}/entitlements`) as Promise<{
+    read(`/api/v1/operator/learners/${encodeURIComponent(learnerId)}/entitlements`) as Promise<{
+      learner_membership_id?: string
       entitlements: readonly OperatorLearnerEntitlement[]
-    provider_usage?: LearnerProviderUsage
+      provider_usage?: LearnerProviderUsage
+      events?: readonly OperatorEntitlementAuditEvent[]
     }>,
   updateTax: (body, key) =>
     command('/api/v1/operator/tax-settings/updates', body, key),
-  grant: (learnerId, planId, key) =>
+  grant: (learnerId, planId, key, metadata) =>
     command(
-      `/api/v1/operator/learners/${learnerId}/entitlement-grants`,
-      { plan_id: planId },
+      `/api/v1/operator/learners/${encodeURIComponent(learnerId)}/entitlement-grants`,
+      {
+        plan_id: planId,
+        ...(metadata?.reason ? { reason: metadata.reason } : {}),
+        ...(metadata?.payment_reference
+          ? { payment_reference: metadata.payment_reference }
+          : {}),
+      },
       key,
     ),
   grantCourtesyPremium: (key) =>

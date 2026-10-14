@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Operator\EntitlementAdministration;
 
+use App\Audit\AuditEventRecorder;
 use App\Authentication\AuthenticationSecretDigester;
 use App\Entitlements\CourtesyPremiumGrantService;
 use App\Entitlements\DirectPlanDefaults;
 use App\Entitlements\EntitlementAccess;
+use App\Entitlements\PaidRegistrationMaterializer;
 use App\Models\Membership;
 use App\Models\User;
 use App\Operator\EntitlementAdministration\Exceptions\EntitlementAdministrationConflict;
@@ -19,6 +21,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use stdClass;
+use Throwable;
 
 final readonly class EntitlementAdministrationCommands
 {
@@ -28,6 +31,8 @@ final readonly class EntitlementAdministrationCommands
         private EntitlementAccess $access,
         private CourtesyPremiumGrantService $courtesy,
         private AuthenticationSecretDigester $digester,
+        private AuditEventRecorder $audit,
+        private PaidRegistrationMaterializer $paidMaterializer,
     ) {}
 
     public function updateTax(
@@ -161,24 +166,34 @@ final readonly class EntitlementAdministrationCommands
         string $learnerMembershipId,
         string $planId,
         string $idempotencyKey,
+        ?string $reason = null,
+        ?string $paymentReference = null,
     ): OrganizationAdministrationCommandResult {
+        $resolvedTargetId = $this->resolveLearnerTargetId($actor, $learnerMembershipId);
+
         return $this->execute(
             actor: $actor,
             permissions: [EntitlementAdministrationAuthorization::ENTITLEMENTS_GRANT],
             operation: 'entitlement.grant',
             targetType: 'learner_membership',
-            targetId: $learnerMembershipId,
-            body: [
-                'plan_id' => $planId,
-            ],
+            targetId: $resolvedTargetId,
+            body: array_filter(
+                [
+                    'plan_id' => $planId,
+                    'reason' => $reason,
+                    'payment_reference' => $paymentReference,
+                ],
+                static fn (?string $value): bool => $value !== null && $value !== '',
+            ),
             idempotencyKey: $idempotencyKey,
             command: function (
                 string $organizationId,
                 string $actorMembershipId,
                 string $commandId,
                 CarbonImmutable $now,
-            ) use ($learnerMembershipId, $planId): array {
-                $this->lockedLearner($organizationId, $learnerMembershipId);
+            ) use ($resolvedTargetId, $planId, $reason, $paymentReference): array {
+                $learner = $this->lockedLearner($organizationId, $resolvedTargetId);
+                $resolvedMembershipId = $this->string($learner, 'id');
                 $plan = DB::table('entitlement_plans')
                     ->where('organization_id', $organizationId)
                     ->where('id', $planId)
@@ -189,15 +204,28 @@ final readonly class EntitlementAdministrationCommands
                     throw new EntitlementAdministrationRejected;
                 }
 
+                $eventMeta = array_filter(
+                    [
+                        'reason' => $reason,
+                        'payment_reference' => $paymentReference,
+                    ],
+                    static fn (?string $value): bool => $value !== null && $value !== '',
+                );
+
                 $starts = CarbonImmutable::now('Asia/Kolkata');
                 $id = $this->access->grantPlan(
                     $organizationId,
-                    $learnerMembershipId,
+                    $resolvedMembershipId,
                     $plan,
                     'operator_grant',
                     $actorMembershipId,
-                    [],
+                    $eventMeta,
                     $starts,
+                );
+                $this->audit->recordTenant(
+                    'entitlement_administration.entitlement.granted',
+                    'learner_entitlement',
+                    $id,
                 );
 
                 return [
@@ -318,6 +346,11 @@ final readonly class EntitlementAdministrationCommands
                     'updated_at' => $now,
                 ]);
                 $this->access->event($organizationId, $entitlementId, 'revoked', $actorMembershipId, []);
+                $this->audit->recordTenant(
+                    'entitlement_administration.entitlement.revoked',
+                    'learner_entitlement',
+                    $entitlementId,
+                );
 
                 return [
                     'result_type' => 'entitlement',
@@ -332,12 +365,14 @@ final readonly class EntitlementAdministrationCommands
         string $learnerMembershipId,
         string $idempotencyKey,
     ): OrganizationAdministrationCommandResult {
+        $resolvedTargetId = $this->resolveLearnerTargetId($actor, $learnerMembershipId);
+
         return $this->execute(
             actor: $actor,
             permissions: [EntitlementAdministrationAuthorization::ENTITLEMENTS_ADJUST],
             operation: 'entitlement.signin_throttle.clear',
             targetType: 'learner_membership',
-            targetId: $learnerMembershipId,
+            targetId: $resolvedTargetId,
             body: [],
             idempotencyKey: $idempotencyKey,
             command: function (
@@ -345,8 +380,9 @@ final readonly class EntitlementAdministrationCommands
                 string $actorMembershipId,
                 string $commandId,
                 CarbonImmutable $now,
-            ) use ($learnerMembershipId): array {
-                $learner = $this->lockedLearner($organizationId, $learnerMembershipId);
+            ) use ($resolvedTargetId): array {
+                $learner = $this->lockedLearner($organizationId, $resolvedTargetId);
+                $resolvedMembershipId = $this->string($learner, 'id');
                 $username = DB::table('users')
                     ->where('id', $this->string($learner, 'user_id'))
                     ->value('username');
@@ -360,7 +396,7 @@ final readonly class EntitlementAdministrationCommands
 
                 return [
                     'result_type' => 'learner_membership',
-                    'result_id' => $learnerMembershipId,
+                    'result_id' => $resolvedMembershipId,
                 ];
             },
         );
@@ -515,20 +551,130 @@ final readonly class EntitlementAdministrationCommands
         return $this->authorization->contextFor($actor)->organizationId;
     }
 
-    private function lockedLearner(string $organizationId, string $membershipId): stdClass
+    private function resolveLearnerTargetId(User $actor, string $identifier): string
     {
-        $row = DB::table('memberships')
-            ->where('organization_id', $organizationId)
-            ->where('id', $membershipId)
-            ->where('membership_type', Membership::TYPE_LEARNER)
-            ->lockForUpdate()
-            ->first();
-
-        if (! $row instanceof stdClass) {
+        $organizationId = $this->organizationId($actor);
+        $trimmed = trim($identifier);
+        if ($trimmed === '') {
             throw new EntitlementAdministrationRejected;
         }
 
-        return $row;
+        if (preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/i', $trimmed) === 1) {
+            return $trimmed;
+        }
+
+        $normalized = strtolower($trimmed);
+        $byUsername = DB::table('memberships')
+            ->join('users', 'users.id', '=', 'memberships.user_id')
+            ->where('memberships.organization_id', $organizationId)
+            ->where('memberships.membership_type', Membership::TYPE_LEARNER)
+            ->whereRaw('LOWER(users.username) = ?', [$normalized])
+            ->orderByDesc('memberships.joined_at')
+            ->value('memberships.id');
+
+        if (is_string($byUsername) && $byUsername !== '') {
+            return $byUsername;
+        }
+
+        if ($this->access->applies($organizationId)) {
+            $intent = DB::table('paid_registration_intents')
+                ->join('subscription_checkouts', 'subscription_checkouts.id', '=', 'paid_registration_intents.checkout_id')
+                ->where('subscription_checkouts.organization_id', $organizationId)
+                ->whereRaw('LOWER(paid_registration_intents.phone) = ?', [$normalized])
+                ->whereNull('paid_registration_intents.consumed_at')
+                ->orderByDesc('paid_registration_intents.created_at')
+                ->first(['paid_registration_intents.checkout_id']);
+
+            if ($intent instanceof stdClass && is_string($intent->checkout_id ?? null)) {
+                try {
+                    $this->paidMaterializer->attachMembership($intent->checkout_id, request());
+                } catch (Throwable) {
+                    throw new EntitlementAdministrationRejected;
+                }
+
+                $materialized = DB::table('memberships')
+                    ->join('users', 'users.id', '=', 'memberships.user_id')
+                    ->where('memberships.organization_id', $organizationId)
+                    ->where('memberships.membership_type', Membership::TYPE_LEARNER)
+                    ->whereRaw('LOWER(users.username) = ?', [$normalized])
+                    ->orderByDesc('memberships.joined_at')
+                    ->value('memberships.id');
+
+                if (is_string($materialized) && $materialized !== '') {
+                    return $materialized;
+                }
+            }
+        }
+
+        throw new EntitlementAdministrationRejected;
+    }
+
+    private function lockedLearner(string $organizationId, string $membershipId): stdClass
+    {
+        $trimmed = trim($membershipId);
+        if ($trimmed === '') {
+            throw new EntitlementAdministrationRejected;
+        }
+
+        if (preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/i', $trimmed) === 1) {
+            $row = DB::table('memberships')
+                ->where('organization_id', $organizationId)
+                ->where('id', $trimmed)
+                ->where('membership_type', Membership::TYPE_LEARNER)
+                ->lockForUpdate()
+                ->first();
+
+            if ($row instanceof stdClass) {
+                return $row;
+            }
+        }
+
+        $normalized = strtolower($trimmed);
+        $byUsername = DB::table('memberships')
+            ->join('users', 'users.id', '=', 'memberships.user_id')
+            ->where('memberships.organization_id', $organizationId)
+            ->where('memberships.membership_type', Membership::TYPE_LEARNER)
+            ->whereRaw('LOWER(users.username) = ?', [$normalized])
+            ->orderByDesc('memberships.joined_at')
+            ->lockForUpdate()
+            ->first(['memberships.*']);
+
+        if ($byUsername instanceof stdClass) {
+            return $byUsername;
+        }
+
+        if ($this->access->applies($organizationId)) {
+            $intent = DB::table('paid_registration_intents')
+                ->join('subscription_checkouts', 'subscription_checkouts.id', '=', 'paid_registration_intents.checkout_id')
+                ->where('subscription_checkouts.organization_id', $organizationId)
+                ->whereRaw('LOWER(paid_registration_intents.phone) = ?', [$normalized])
+                ->whereNull('paid_registration_intents.consumed_at')
+                ->orderByDesc('paid_registration_intents.created_at')
+                ->first(['paid_registration_intents.checkout_id']);
+
+            if ($intent instanceof stdClass && is_string($intent->checkout_id ?? null)) {
+                try {
+                    $this->paidMaterializer->attachMembership($intent->checkout_id, request());
+                } catch (Throwable) {
+                    throw new EntitlementAdministrationRejected;
+                }
+
+                $materialized = DB::table('memberships')
+                    ->join('users', 'users.id', '=', 'memberships.user_id')
+                    ->where('memberships.organization_id', $organizationId)
+                    ->where('memberships.membership_type', Membership::TYPE_LEARNER)
+                    ->whereRaw('LOWER(users.username) = ?', [$normalized])
+                    ->orderByDesc('memberships.joined_at')
+                    ->lockForUpdate()
+                    ->first(['memberships.*']);
+
+                if ($materialized instanceof stdClass) {
+                    return $materialized;
+                }
+            }
+        }
+
+        throw new EntitlementAdministrationRejected;
     }
 
     private function string(stdClass $row, string $field): string

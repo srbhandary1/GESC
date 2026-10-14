@@ -522,13 +522,11 @@ Route::prefix('v1')->group(function (): void {
         Route::get(
             '/operator/learners/{learner}/entitlements',
             [OperatorEntitlementAdministrationController::class, 'learner'],
-        )->whereUlid('learner')
-            ->name('api.v1.operator.learners.entitlements.show');
+        )->name('api.v1.operator.learners.entitlements.show');
         Route::post(
             '/operator/learners/{learner}/entitlement-grants',
             [OperatorEntitlementAdministrationController::class, 'grant'],
-        )->whereUlid('learner')
-            ->name('api.v1.operator.learners.entitlement-grants.store');
+        )->name('api.v1.operator.learners.entitlement-grants.store');
         Route::post(
             '/operator/courtesy-premium-grants',
             [OperatorEntitlementAdministrationController::class, 'grantCourtesyPremium'],
@@ -536,8 +534,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post(
             '/operator/learners/{learner}/signin-throttle-clears',
             [OperatorEntitlementAdministrationController::class, 'clearThrottle'],
-        )->whereUlid('learner')
-            ->name('api.v1.operator.learners.signin-throttle-clears.store');
+        )->name('api.v1.operator.learners.signin-throttle-clears.store');
         Route::post(
             '/operator/entitlements/{entitlement}/demo-clock-restarts',
             [OperatorEntitlementAdministrationController::class, 'restartClock'],
@@ -675,6 +672,10 @@ Route::prefix('v1')->group(function (): void {
             '/operator/memberships',
             [OperatorOrganizationAdministrationController::class, 'memberships'],
         )->name('api.v1.operator.memberships.index');
+        Route::post(
+            '/operator/memberships',
+            [OperatorOrganizationAdministrationController::class, 'createMembership'],
+        )->name('api.v1.operator.memberships.store');
         Route::post(
             '/operator/memberships/{membership}/role-assignments',
             [OperatorOrganizationAdministrationController::class, 'assignMembershipRole'],

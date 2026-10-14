@@ -28,6 +28,19 @@
   display: none;
 }
 
+.shell-studio-brand__mark {
+  overflow: hidden;
+  padding: 0;
+}
+
+.shell-studio-brand__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 :is(h1, h2, h3, h4, main)[tabindex='-1']:focus {
   outline: none;
   box-shadow: none;

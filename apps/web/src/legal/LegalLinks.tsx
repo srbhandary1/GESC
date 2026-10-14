@@ -1,6 +1,7 @@
 import type { MessageKey } from '@global-english/localization'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
+import { APP_VERSION } from '../marketing/androidDownload'
 
 export interface LegalLinksProps {
   readonly includeAccountDeletion?: boolean
@@ -26,7 +27,7 @@ export function LegalLinks({
         ) : null}
       </nav>
       <p className="shell-developer-credit" lang="en-IN">
-        Developed by Northstar Enterprise Solutions Private Limited – Mangalore
+        Developed by Northstar Enterprise Solutions Private Limited – Mangalore · v{APP_VERSION}
       </p>
     </footer>
   )

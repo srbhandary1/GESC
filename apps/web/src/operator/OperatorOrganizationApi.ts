@@ -335,6 +335,17 @@ export interface OperatorOrganizationApi {
     }>,
     idempotencyKey: string,
   ): Promise<OperatorCommandResponse<OperatorStaffMembership>>
+  createStaffAccount?(
+    body: Readonly<{
+      username: string
+      password: string
+      display_name?: string | null
+      membership_type: 'organization_admin' | 'trainer'
+      role_id?: string | null
+      expected_version: 0
+    }>,
+    idempotencyKey: string,
+  ): Promise<OperatorCommandResponse<OperatorStaffMembership>>
   revokeMembershipRole(
     membershipId: string,
     body: Readonly<{
@@ -722,6 +733,24 @@ export class WebOperatorOrganizationApi implements OperatorOrganizationApi {
   ) {
     return this.#post<OperatorCommandResponse<OperatorStaffMembership>>(
       `/operator/memberships/${this.#segment(membershipId)}/role-assignments`,
+      body,
+      idempotencyKey,
+    )
+  }
+
+  createStaffAccount(
+    body: Readonly<{
+      username: string
+      password: string
+      display_name?: string | null
+      membership_type: 'organization_admin' | 'trainer'
+      role_id?: string | null
+      expected_version: 0
+    }>,
+    idempotencyKey: string,
+  ) {
+    return this.#post<OperatorCommandResponse<OperatorStaffMembership>>(
+      '/operator/memberships',
       body,
       idempotencyKey,
     )

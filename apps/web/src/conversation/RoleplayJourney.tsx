@@ -353,7 +353,6 @@ export function RoleplayJourney({
       onLiveAiUsageChanged={onLiveAiUsageChanged}
       onExited={() => {
         setState({ kind: 'idle' })
-        setRecoveryAccepted(false)
         startCommand.current = null
         onBack?.()
       }}
@@ -407,23 +406,20 @@ export function RoleplayJourney({
         ) : null}
       </header>
 
-      <div className="conversation-journey__notice">
-        <h2>
-          <LocalizedMessage
-            resolution={message(session === undefined ? 'conversation.disclosure_title' : 'conversation.roleplay.disclosure_title')}
-          />
-        </h2>
-        <p>
-          <LocalizedMessage
-            resolution={message(session === undefined ? 'conversation.interactive.advisory' : 'conversation.roleplay.prototype_notice')}
-          />
-        </p>
-        {session !== undefined ? <p>
-          <LocalizedMessage
-            resolution={message('conversation.roleplay.privacy_notice')}
-          />
-        </p> : null}
-      </div>
+      {session === undefined && !recoveryAccepted ? (
+        <div className="conversation-journey__notice">
+          <h2>
+            <LocalizedMessage
+              resolution={message('conversation.disclosure_title')}
+            />
+          </h2>
+          <p>
+            <LocalizedMessage
+              resolution={message('conversation.interactive.advisory')}
+            />
+          </p>
+        </div>
+      ) : null}
 
       {state.kind === 'idle' || state.kind === 'starting' || (state.kind === 'error' && !state.session) ? (
         <div className="conversation-journey__start">

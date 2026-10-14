@@ -49,24 +49,54 @@ final readonly class EntitlementAdministrationQuery
     {
         $this->authorization->assert($actor, EntitlementAdministrationAuthorization::ENTITLEMENTS_READ);
         $organizationId = $this->authorization->contextFor($actor)->organizationId;
-        $this->assertLearner($organizationId, $learnerMembershipId);
+        $resolvedMembershipId = $this->resolveLearnerMembershipId($organizationId, $learnerMembershipId);
         $rows = DB::table('learner_entitlements')
             ->where('organization_id', $organizationId)
-            ->where('learner_membership_id', $learnerMembershipId)
+            ->where('learner_membership_id', $resolvedMembershipId)
             ->orderByDesc('starts_at')
             ->orderByDesc('id')
             ->limit(25)
             ->get();
         $items = [];
+        $entitlementIds = [];
 
         foreach ($rows as $row) {
             $items[] = $this->entitlement($row);
+            $entitlementIds[] = $this->string($row, 'id');
+        }
+
+        $events = [];
+        if ($entitlementIds !== []) {
+            $eventRows = DB::table('entitlement_events')
+                ->where('organization_id', $organizationId)
+                ->whereIn('entitlement_id', $entitlementIds)
+                ->orderByDesc('occurred_at')
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get();
+
+            foreach ($eventRows as $eventRow) {
+                $payload = json_decode((string) ($eventRow->payload ?? '{}'), true);
+                $payload = is_array($payload) ? $payload : [];
+                $events[] = [
+                    'id' => $this->string($eventRow, 'id'),
+                    'entitlement_id' => $this->string($eventRow, 'entitlement_id'),
+                    'event_type' => $this->string($eventRow, 'event_type'),
+                    'actor_membership_id' => $this->nullableString($eventRow, 'actor_membership_id'),
+                    'occurred_at' => $this->string($eventRow, 'occurred_at'),
+                    'plan_code' => is_string($payload['plan_code'] ?? null) ? $payload['plan_code'] : null,
+                    'source' => is_string($payload['source'] ?? null) ? $payload['source'] : null,
+                    'reason' => is_string($payload['reason'] ?? null) ? $payload['reason'] : null,
+                    'payment_reference' => is_string($payload['payment_reference'] ?? null) ? $payload['payment_reference'] : null,
+                ];
+            }
         }
 
         return [
-            'learner_membership_id' => $learnerMembershipId,
-            'provider_usage' => app(LearnerProviderUsageQuery::class)->read($organizationId, $learnerMembershipId),
+            'learner_membership_id' => $resolvedMembershipId,
+            'provider_usage' => app(LearnerProviderUsageQuery::class)->read($organizationId, $resolvedMembershipId),
             'entitlements' => $items,
+            'events' => $events,
         ];
     }
 
@@ -177,17 +207,38 @@ final readonly class EntitlementAdministrationQuery
         ];
     }
 
-    private function assertLearner(string $organizationId, string $membershipId): void
+    private function resolveLearnerMembershipId(string $organizationId, string $identifier): string
     {
-        $row = DB::table('memberships')
-            ->where('organization_id', $organizationId)
-            ->where('id', $membershipId)
-            ->where('membership_type', Membership::TYPE_LEARNER)
-            ->first(['id']);
-
-        if (! $row instanceof stdClass) {
+        $trimmed = trim($identifier);
+        if ($trimmed === '') {
             throw new EntitlementAdministrationRejected;
         }
+
+        if (preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/i', $trimmed) === 1) {
+            $byId = DB::table('memberships')
+                ->where('organization_id', $organizationId)
+                ->where('id', $trimmed)
+                ->where('membership_type', Membership::TYPE_LEARNER)
+                ->first(['id']);
+            if ($byId instanceof stdClass) {
+                return $this->string($byId, 'id');
+            }
+        }
+
+        $normalized = strtolower($trimmed);
+        $byUsername = DB::table('memberships')
+            ->join('users', 'users.id', '=', 'memberships.user_id')
+            ->where('memberships.organization_id', $organizationId)
+            ->where('memberships.membership_type', Membership::TYPE_LEARNER)
+            ->whereRaw('LOWER(users.username) = ?', [$normalized])
+            ->orderByDesc('memberships.joined_at')
+            ->first(['memberships.id']);
+
+        if (! $byUsername instanceof stdClass) {
+            throw new EntitlementAdministrationRejected;
+        }
+
+        return $this->string($byUsername, 'id');
     }
 
     private function membershipForEntitlement(string $organizationId, string $entitlementId): string

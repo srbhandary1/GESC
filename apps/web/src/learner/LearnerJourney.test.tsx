@@ -394,19 +394,13 @@ describe('deterministic learner journey', () => {
     await user.click(await screen.findByRole('button', {
       name: ONBOARDING_ACTION_NAME,
     }))
+    await user.click(screen.getByRole('button', {
+      name: ONBOARDING_ACTION_NAME,
+    }))
     expect(screen.getByRole('button', {
-      name: t('learner.onboarding.confirm_age_continue'),
+      name: t('learner.onboarding.save_goal_continue'),
     })).toBeDisabled()
 
-    await user.click(screen.getByRole('checkbox', {
-      name: t('learner.onboarding.adult_confirmation'),
-    }))
-    await user.click(screen.getByRole('button', {
-      name: ONBOARDING_ACTION_NAME,
-    }))
-    await user.click(screen.getByRole('button', {
-      name: ONBOARDING_ACTION_NAME,
-    }))
     await user.click(screen.getByRole('radio', {
       name: t('learner.onboarding.goal_workplace'),
     }))
@@ -1306,12 +1300,6 @@ async function chooseOnboardingGoal(
   user: ReturnType<typeof userEvent.setup>,
 ): Promise<void> {
   await user.click(await screen.findByRole('button', {
-    name: ONBOARDING_ACTION_NAME,
-  }))
-  await user.click(await screen.findByRole('checkbox', {
-    name: t('learner.onboarding.adult_confirmation'),
-  }))
-  await user.click(screen.getByRole('button', {
     name: ONBOARDING_ACTION_NAME,
   }))
   await user.click(screen.getByRole('button', {

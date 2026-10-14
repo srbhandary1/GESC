@@ -72,14 +72,6 @@ describe('production first-use onboarding', () => {
     await expectHeading('Set up English learning for your goals')
     expect(screen.getByRole('button', { name: 'Get started' })).toBeEnabled()
     await continueFlow(user)
-    await expectHeading('Are you 18 or older?')
-    expect(
-      screen.getByRole('button', { name: 'Confirm age and continue' }),
-    ).toBeDisabled()
-    await user.click(screen.getByRole('checkbox', {
-      name: 'I confirm that I am 18 years old or older.',
-    }))
-    await continueFlow(user)
     await expectHeading('Choose your interface preferences')
     await user.click(screen.getByRole('checkbox', {
       name: 'Use larger text for this session',
@@ -272,8 +264,7 @@ describe('production first-use onboarding', () => {
     expect(screen.queryByText('Make one short English turn')).not.toBeInTheDocument()
   })
 
-  it('never restores the adult confirmation from resume storage', async () => {
-    const user = userEvent.setup()
+  it('restores to preferences when onboarding is not yet saved on the server', async () => {
     await writeFirstUseResume(learnerA, {
       goal: 'workplace-confidence',
       placement: 'deferred',
@@ -285,7 +276,6 @@ describe('production first-use onboarding', () => {
     ) as Record<string, unknown>
     window.localStorage.setItem(storageKey, JSON.stringify({
       ...stored,
-      adultConfirmed: true,
       onboardingSaved: true,
     }))
 
@@ -303,16 +293,10 @@ describe('production first-use onboarding', () => {
       />,
     )
 
-    await expectHeading('Are you 18 or older?')
-    const adult = screen.getByRole('checkbox', {
-      name: 'I confirm that I am 18 years old or older.',
-    })
-    expect(adult).not.toBeChecked()
-    await user.click(adult)
-    expect(adult).toBeChecked()
+    await expectHeading('Choose your interface preferences')
   })
 
-  it('keeps browser Back aligned with in-flow Back across the ten first-use steps', async () => {
+  it('keeps browser Back aligned with in-flow Back across the first-use steps', async () => {
     const user = userEvent.setup()
 
     render(
@@ -334,9 +318,9 @@ describe('production first-use onboarding', () => {
       expect(window.location.hash).toBe('#home/first-use/welcome'),
     )
     await continueFlow(user)
-    await expectHeading('Are you 18 or older?')
+    await expectHeading('Choose your interface preferences')
     await waitFor(() =>
-      expect(window.location.hash).toBe('#home/first-use/adult'),
+      expect(window.location.hash).toBe('#home/first-use/preferences'),
     )
 
     window.history.back()
@@ -351,7 +335,7 @@ describe('production first-use onboarding', () => {
     )
 
     await continueFlow(user)
-    await expectHeading('Are you 18 or older?')
+    await expectHeading('Choose your interface preferences')
     await user.click(screen.getByRole('button', { name: 'Back' }))
     await expectHeading('Set up English learning for your goals')
     expect(

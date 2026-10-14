@@ -87,12 +87,17 @@ final class OperatorEntitlementAdministrationController extends Controller
 
     public function grant(GrantLearnerEntitlementRequest $request, string $learner): JsonResponse
     {
+        $reason = $request->validated('reason');
+        $paymentReference = $request->validated('payment_reference');
+
         return $this->command(fn (): OrganizationAdministrationCommandResult => (
             $this->commands->grant(
                 actor: $this->actor($request),
                 learnerMembershipId: $learner,
                 planId: (string) $request->validated('plan_id'),
                 idempotencyKey: (string) $request->validated('idempotency_key'),
+                reason: is_string($reason) && trim($reason) !== '' ? trim($reason) : null,
+                paymentReference: is_string($paymentReference) && trim($paymentReference) !== '' ? trim($paymentReference) : null,
             )
         ), true);
     }

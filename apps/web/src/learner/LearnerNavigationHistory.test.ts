@@ -86,11 +86,11 @@ describe('learner navigation history', () => {
     expect(globalThis.location.hash).toBe('#home/first-use/welcome')
     expect(readLearnerNavigationState()?.index).toBe(0)
 
-    openFirstUseStep('adult')
-    expect(globalThis.location.hash).toBe('#home/first-use/adult')
+    openFirstUseStep('preferences')
+    expect(globalThis.location.hash).toBe('#home/first-use/preferences')
     expect(readLearnerNavigationState()).toMatchObject({
       destination: 'home',
-      firstUseStep: 'adult',
+      firstUseStep: 'preferences',
       index: 1,
       previous: { destination: 'home', firstUseStep: 'welcome' },
     })

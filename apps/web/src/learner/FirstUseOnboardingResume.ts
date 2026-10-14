@@ -6,7 +6,6 @@ import type { LearnerGoal } from './LearnerJourneyApi'
 
 export const FIRST_USE_STEPS = [
   'welcome',
-  'adult',
   'preferences',
   'goal',
   'placement',

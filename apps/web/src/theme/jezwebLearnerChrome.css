@@ -1906,27 +1906,115 @@ html.ge-native-enlarged-text .ge-application-frame--jezweb.ge-application-frame-
   font-weight: 700;
 }
 
-/* Prevent mid-word hyphenless breaks ("Introduct-ion", "Interactio-n") in 4-part session tabs on phones. */
-@media (max-width: 40rem) {
+/* Fit and align Level Path tiles and 4-part Session tabs cleanly in the Learn tab. */
+.ge-application-frame--jezweb .level-path__list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ge-application-frame--jezweb .level-path__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: auto;
+  min-block-size: 0;
+  padding: 14px 16px;
+  text-align: start;
+}
+
+.ge-application-frame--jezweb .level-path__item-index {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ge-application-frame--jezweb .level-path__item-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-align: start;
+  justify-items: start;
+  align-content: center;
+}
+
+.ge-application-frame--jezweb .level-path__item-copy strong,
+.ge-application-frame--jezweb .level-path__item-copy span {
+  width: 100%;
+  text-align: start;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+.ge-application-frame--jezweb .level-path__item-action {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  align-self: center;
+  width: 100%;
+  padding: 8px 14px;
+  text-align: center;
+}
+
+.ge-application-frame--jezweb .level-session__nav {
+  align-items: stretch;
+}
+
+.ge-application-frame--jezweb .level-session__tab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  height: 100%;
+  text-align: start;
+}
+
+.ge-application-frame--jezweb .level-session__tab-step {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ge-application-frame--jezweb .level-session__tab-copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: start;
+  justify-items: start;
+  align-content: center;
+}
+
+.ge-application-frame--jezweb .level-session__tab-label,
+.ge-application-frame--jezweb .level-session__tab-hint {
+  width: 100%;
+  text-align: start;
+}
+
+@media (max-width: 42rem) {
+  .ge-application-frame--jezweb .level-session__nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
   .ge-application-frame--jezweb .level-session__tab {
-    gap: 0.4rem;
-    padding: 0.5rem 0.55rem;
+    gap: 0.5rem;
+    padding: 0.6rem 0.7rem;
   }
 
   .ge-application-frame--jezweb .level-session__tab-step {
-    width: 1.45rem;
-    height: 1.45rem;
-    font-size: 0.75rem;
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 0.78rem;
   }
 
   .ge-application-frame--jezweb .level-session__tab-label {
     font-size: 0.875rem;
+    line-height: 1.25;
     overflow-wrap: normal;
     word-break: normal;
   }
 
   .ge-application-frame--jezweb .level-session__tab-hint {
     font-size: 0.75rem;
+    line-height: 1.25;
     overflow-wrap: break-word;
     word-break: normal;
   }

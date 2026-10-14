@@ -65,7 +65,7 @@ export function QuestionHelpJourney({ api, createClientId, locale, localizationP
     }
   }
   if (session) return <>
-    <InteractiveDialogue api={api} createClientId={createClientId} initialSession={session} locale={locale} localizationPolicy={localizationPolicy} onExited={() => { setSession(null); setAccepted(false); command.current = createClientId() }} onLiveAiUsageChanged={onLiveAiUsageChanged} />
+    <InteractiveDialogue api={api} createClientId={createClientId} initialSession={session} locale={locale} localizationPolicy={localizationPolicy} onExited={() => { setSession(null); command.current = createClientId() }} onLiveAiUsageChanged={onLiveAiUsageChanged} />
     {flow === 'free_speech' ? <AiMemoryPanel api={api} createClientId={createClientId} locale={locale} localizationPolicy={localizationPolicy} text={(key) => message(key).text} /> : null}
   </>
 

@@ -57,7 +57,6 @@ const localeKeys: Readonly<Record<(typeof INTERFACE_LOCALES)[number], MessageKey
 
 const titles: Readonly<Record<FirstUseStep, MessageKey>> = {
   acknowledgement: 'learner.onboarding.acknowledgement_title',
-  adult: 'learner.onboarding.adult_title',
   'audio-output': 'learner.onboarding.audio_title',
   consent: 'learner.onboarding.consent_title',
   goal: 'learner.onboarding.goal_title',
@@ -70,7 +69,6 @@ const titles: Readonly<Record<FirstUseStep, MessageKey>> = {
 
 const descriptions: Readonly<Record<FirstUseStep, MessageKey>> = {
   acknowledgement: 'learner.onboarding.acknowledgement_hint',
-  adult: 'learner.onboarding.adult_hint',
   'audio-output': 'learner.onboarding.audio_hint',
   consent: 'learner.onboarding.consent_hint',
   goal: 'learner.onboarding.introduction',
@@ -115,7 +113,7 @@ export function FirstUseOnboarding({
 }: FirstUseOnboardingProps) {
   const [resumeReady, setResumeReady] = useState(resumeBinding === null)
   const [step, setStep] = useState<FirstUseStep>('welcome')
-  const [adultConfirmed, setAdultConfirmed] = useState(false)
+  const [adultConfirmed, setAdultConfirmed] = useState(true)
   const [goal, setGoal] = useState<LearnerGoal | null>(
     initialHome.onboarding.goal_key,
   )
@@ -159,7 +157,7 @@ export function FirstUseOnboarding({
     queueMicrotask(() => {
       if (active) {
         setResumeReady(resumeBinding === null)
-        setAdultConfirmed(false)
+        setAdultConfirmed(true)
       }
     })
 
@@ -178,7 +176,7 @@ export function FirstUseOnboarding({
           FIRST_USE_STEPS.indexOf('goal')
         setStep(
           !initialHome.onboarding.completed && restoredPastGoal
-            ? 'adult'
+            ? 'preferences'
             : restored.step,
         )
         setGoal(restored.goal ?? initialHome.onboarding.goal_key)
@@ -246,7 +244,7 @@ export function FirstUseOnboarding({
   const submitAuthoritativeOnboarding = async () => {
     let input = pendingInput.current
     if (input === null) {
-      if (!adultConfirmed || goal === null) {
+      if (goal === null) {
         setError('learner.onboarding.error_validation')
         return
       }
@@ -356,13 +354,7 @@ export function FirstUseOnboarding({
 
   const continueFlow = () => {
     if (step === 'welcome') {
-      moveTo('adult')
-    } else if (step === 'adult') {
-      if (!adultConfirmed) {
-        setError('learner.onboarding.error_validation')
-      } else {
-        moveTo('preferences')
-      }
+      moveTo('preferences')
     } else if (step === 'preferences') {
       moveTo('goal')
     } else if (step === 'goal') {
@@ -474,7 +466,6 @@ export function FirstUseOnboarding({
     step === 'preferences' ||
     step === 'consent' ||
     step === 'acknowledgement' ||
-    (step === 'adult' && adultConfirmed) ||
     (step === 'goal' && goal !== null) ||
     (step === 'placement' && placement !== null) ||
     (step === 'audio-output' &&
@@ -488,31 +479,38 @@ export function FirstUseOnboarding({
     ? message('learner.onboarding.retry_same')
     : step === 'welcome'
       ? message('learner.onboarding.get_started')
-      : step === 'adult'
-        ? message('learner.onboarding.confirm_age_continue')
-        : step === 'preferences'
-          ? message('learner.onboarding.save_preferences_continue')
-          : step === 'goal'
-            ? message('learner.onboarding.save_goal_continue')
-            : step === 'placement'
-              ? message('learner.onboarding.save_start_continue')
-              : step === 'audio-output'
-                ? message('learner.onboarding.continue_to_privacy')
-                : step === 'consent'
+      : step === 'preferences'
+        ? message('learner.onboarding.save_preferences_continue')
+        : step === 'goal'
+          ? message('learner.onboarding.save_goal_continue')
+          : step === 'placement'
+            ? message('learner.onboarding.save_start_continue')
+            : step === 'audio-output'
+              ? message('learner.onboarding.continue_to_privacy')
+              : step === 'consent'
+                ? message(
+                    selectedConsents.size === 0
+                      ? 'learner.onboarding.continue_without_voice'
+                      : 'learner.onboarding.save_voice_continue',
+                  )
+                : step === 'microphone'
                   ? message(
-                      selectedConsents.size === 0
+                      microphoneOutcome === 'typed'
                         ? 'learner.onboarding.continue_without_voice'
-                        : 'learner.onboarding.save_voice_continue',
+                        : 'learner.onboarding.continue_to_practice',
                     )
-                  : step === 'microphone'
-                    ? message(
-                        microphoneOutcome === 'typed'
-                          ? 'learner.onboarding.continue_without_voice'
-                          : 'learner.onboarding.continue_to_practice',
-                      )
-                    : step === 'practice'
-                      ? message('learner.onboarding.review_setup')
-                      : message('learner.onboarding.open_home')
+                  : step === 'practice'
+                    ? message('learner.onboarding.review_setup')
+                    : message('learner.onboarding.open_home')
+
+  const rawDescription = message(descriptions[step])
+  const stepDescription =
+    step === 'welcome'
+      ? {
+          ...rawDescription,
+          text: rawDescription.text.replace(/\badult\s+/iu, ''),
+        }
+      : rawDescription
 
   return (
     <div
@@ -531,7 +529,7 @@ export function FirstUseOnboarding({
         commandLocked={commandLocked}
         content={content}
         continueLabel={continueLabel}
-        description={message(descriptions[step])}
+        description={stepDescription}
         error={error === null ? null : <LocalizedMessage resolution={message(error)} />}
         locale={locale}
         message={message}
@@ -598,13 +596,6 @@ function renderStepContent(input: StepContentInput): ReactNode {
       <li><LocalizedMessage resolution={message('learner.onboarding.welcome_value_practice')} /></li>
       <li><LocalizedMessage resolution={message('learner.onboarding.welcome_value_control')} /></li>
     </ul>
-  }
-
-  if (step === 'adult') {
-    return <label className="ge-select-card ge-select-card--confirm" data-selected={input.adultConfirmed ? 'true' : undefined}>
-      <span><LocalizedMessage resolution={message('learner.onboarding.adult_confirmation')} /></span>
-      <input checked={input.adultConfirmed} disabled={input.busy || input.commandLocked} onChange={(event) => input.setAdultConfirmed(event.currentTarget.checked)} type="checkbox" />
-    </label>
   }
 
   if (step === 'preferences') {

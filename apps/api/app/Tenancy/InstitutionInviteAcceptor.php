@@ -456,7 +456,23 @@ final readonly class InstitutionInviteAcceptor
         InstitutionInvite $invite,
         Membership $membership,
     ): void {
-        if ($invite->role_id === null) {
+        $roleId = $invite->role_id;
+
+        if ($roleId === null && in_array($membership->membership_type, [Membership::TYPE_ORGANIZATION_ADMIN, Membership::TYPE_TRAINER], true)) {
+            $defaultKey = $membership->membership_type === Membership::TYPE_ORGANIZATION_ADMIN
+                ? 'organization_admin'
+                : 'trainer';
+            $found = DB::table('roles')
+                ->where('organization_id', $membership->organizationId())
+                ->where('key', $defaultKey)
+                ->where('status', 'active')
+                ->value('id');
+            if (is_string($found) && $found !== '') {
+                $roleId = $found;
+            }
+        }
+
+        if ($roleId === null) {
             return;
         }
 
@@ -465,7 +481,7 @@ final readonly class InstitutionInviteAcceptor
         DB::table('membership_roles')->insertOrIgnore([
             'organization_id' => $membership->organizationId(),
             'membership_id' => $membership->getKey(),
-            'role_id' => $invite->role_id,
+            'role_id' => $roleId,
             'created_at' => $now,
             'updated_at' => $now,
         ]);

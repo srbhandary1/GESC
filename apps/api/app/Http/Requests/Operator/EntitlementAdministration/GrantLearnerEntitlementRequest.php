@@ -8,7 +8,7 @@ final class GrantLearnerEntitlementRequest extends StrictEntitlementAdministrati
 {
     protected function allowedPayloadKeys(): array
     {
-        return ['plan_id'];
+        return ['plan_id', 'reason', 'payment_reference'];
     }
 
     /**
@@ -18,6 +18,8 @@ final class GrantLearnerEntitlementRequest extends StrictEntitlementAdministrati
     {
         return [
             'plan_id' => ['required', 'string', 'ulid'],
+            'reason' => ['nullable', 'string', 'max:240'],
+            'payment_reference' => ['nullable', 'string', 'max:120'],
         ];
     }
 }
