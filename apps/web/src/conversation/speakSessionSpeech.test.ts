@@ -49,7 +49,7 @@ describe('speakSessionSpeech', () => {
       },
       expect.any(String),
     )
-    expect(playBase64Audio).toHaveBeenCalledWith('QQ==', 'audio/wav')
+    expect(playBase64Audio).toHaveBeenCalledWith('QQ==', 'audio/wav', expect.objectContaining({ onTimeUpdate: expect.any(Function), signal: expect.any(AbortSignal) }))
   })
 
   it('asks TTS to say and and Or only for grammar-drill formulas', async () => {

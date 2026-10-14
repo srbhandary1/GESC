@@ -29,6 +29,15 @@ const premium: LearnerEntitlement = {
 }
 
 describe('useLearnerEntitlement', () => {
+  it('refreshes the shared balance after tutor or playback usage changes', async () => {
+    const entitlement = vi.fn().mockResolvedValueOnce(premium).mockResolvedValue({ ...premium, live_ai_seconds_remaining: 4800 })
+    const api = subscriptionApi(entitlement)
+    const { result } = renderHook(() => useLearnerEntitlement('membership-one', api))
+    await waitFor(() => expect(result.current.entitlement?.live_ai_seconds_remaining).toBe(4920))
+    act(() => window.dispatchEvent(new Event('global-english:ai-usage-changed')))
+    await waitFor(() => expect(result.current.entitlement?.live_ai_seconds_remaining).toBe(4800))
+  })
+
   it('models every state and preserves paid access after refresh failure', async () => {
     let resolveInitial: (value: LearnerEntitlement) => void = () => undefined
     const entitlement = vi.fn(
@@ -70,6 +79,8 @@ describe('useLearnerEntitlement', () => {
         live_ai_seconds_remaining: 10,
       })
     })
+    expect(result.current.status).toBe('ready')
+    act(() => result.current.applyEntitlement({ ...premium, live_ai_seconds_remaining: 0 }))
     expect(result.current.status).toBe('exhausted')
   })
 })

@@ -354,4 +354,104 @@ describe('WebSessionAuthenticationAdapter', () => {
     })
     expect(localStorageWrite).not.toHaveBeenCalled()
   })
+
+  it('opens Razorpay for a pending registration and confirms before treating the account as created', async () => {
+    const requests: Request[] = []
+    const opened: string[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      requests.push(request)
+
+      if (request.url.endsWith('/sanctum/csrf-cookie')) {
+        return new Response(null, { status: 204 })
+      }
+
+      if (request.url.endsWith('/direct/paid-registrations')) {
+        return Response.json({
+          id: '01J00000000000000000000031',
+          provider: 'razorpay',
+          provider_order_id: 'order_signup123456',
+          provider_public_key: 'rzp_test_public123456',
+          status: 'pending',
+          total_paise: 59000,
+        })
+      }
+
+      if (request.url.endsWith('/direct/paid-registrations/01J00000000000000000000031/confirmations')) {
+        return Response.json({ status: 'completed' })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = new WebSessionAuthenticationAdapter({
+      baseUrl: 'https://app.global-english.test/api/v1',
+      fetch: fetcher as typeof fetch,
+      openCheckout: async (request) => {
+        opened.push(request.orderId)
+        expect(request).toMatchObject({
+          amount: 59000,
+          currency: 'INR',
+          key: 'rzp_test_public123456',
+          orderId: 'order_signup123456',
+        })
+        return {
+          orderId: request.orderId,
+          paymentId: 'pay_signup123456',
+          signature: 'ab'.repeat(32),
+        }
+      },
+      readCookie: () => 'XSRF-TOKEN=csrf-token',
+    })
+
+    await adapter.registerWithPayment(
+      '7439091944',
+      'Correct horse battery 2026!',
+      '01J00000000000000000000021',
+    )
+
+    expect(opened).toEqual(['order_signup123456'])
+    const registration = requests.find((request) =>
+      request.url.endsWith('/direct/paid-registrations'),
+    )
+    const confirmation = requests.find((request) =>
+      request.url.endsWith('/confirmations'),
+    )
+    expect(registration?.credentials).toBe('include')
+    expect(registration?.headers.get('X-XSRF-TOKEN')).toBe('csrf-token')
+    await expect(registration?.json()).resolves.toMatchObject({
+      phone: '7439091944',
+      password: 'Correct horse battery 2026!',
+      plan_id: '01J00000000000000000000021',
+    })
+    await expect(confirmation?.json()).resolves.toEqual({
+      payment_id: 'pay_signup123456',
+      signature: 'ab'.repeat(32),
+    })
+  })
+  it.each(['cancelled', 'wrong-order', 'pending-confirmation'] as const)(
+    'does not complete registration for %s checkout', async (outcome) => {
+      const requests: string[] = []
+      const adapter = new WebSessionAuthenticationAdapter({
+        baseUrl: 'https://app.global-english.test/api/v1',
+        readCookie: () => 'XSRF-TOKEN=csrf-token',
+        fetch: (async (input: RequestInfo | URL) => {
+          const url = String(input)
+          requests.push(url)
+          if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 })
+          if (url.endsWith('/confirmations')) return Response.json({ status: 'pending' })
+          return Response.json({ id: '01J00000000000000000000031', provider: 'razorpay',
+            provider_order_id: 'order_original', provider_public_key: 'rzp_test_public123456',
+            status: 'pending', total_paise: 59000 })
+        }) as typeof fetch,
+        openCheckout: async () => outcome === 'cancelled' ? null : {
+          orderId: outcome === 'wrong-order' ? 'order_other' : 'order_original',
+          paymentId: 'pay_test123456', signature: 'ab'.repeat(32),
+        },
+      })
+      await expect(adapter.registerWithPayment('9000000041', 'Correct horse battery 2026!',
+        '01J00000000000000000000021')).rejects.toThrow()
+      expect(requests.filter(url => url.endsWith('/confirmations'))).toHaveLength(outcome === 'pending-confirmation' ? 1 : 0)
+    },
+  )
+
 })

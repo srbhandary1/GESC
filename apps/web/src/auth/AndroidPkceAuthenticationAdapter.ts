@@ -15,7 +15,9 @@ import {
   type FederatedProviderAvailability,
   type PasswordAuthenticationStatus,
 } from './AuthenticationAdapter'
+import { parseDirectRegistrationPlans, type DirectRegistrationPlan } from './directRegistrationPlan'
 import { formDataWithFileParts } from './formDataWithFileParts'
+import { openRazorpayCheckout, type RazorpayCheckoutSuccess } from '../subscriptions/RazorpayCheckout'
 
 interface PendingAuthorization {
   state: string
@@ -46,6 +48,16 @@ export interface AndroidPkceAuthenticationOptions {
   secureStore: NativeSecureCredentialStore
   systemBrowser: SystemAuthorizationBrowser
   tokenEndpoint: string
+  openCheckout?: (
+    request: {
+      amount: number
+      currency: 'INR'
+      description: string
+      key: string
+      name: string
+      orderId: string
+    },
+  ) => Promise<RazorpayCheckoutSuccess | null>
 }
 
 export class AndroidPkceAuthenticationAdapter
@@ -173,6 +185,160 @@ export class AndroidPkceAuthenticationAdapter
     )
   }
 
+  async listDirectPlans(): Promise<readonly DirectRegistrationPlan[]> {
+    let response: Response
+
+    try {
+      response = await this.#fetch(
+        `${this.#options.apiBaseUrl}/direct/subscription-plans`,
+        {
+          credentials: 'omit',
+          headers: { Accept: 'application/json' },
+          method: 'GET',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const plans =
+      body !== null &&
+      typeof body === 'object' &&
+      'plans' in body &&
+      Array.isArray(body.plans)
+        ? body.plans
+        : null
+
+    if (plans === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return parseDirectRegistrationPlans(plans)
+  }
+
+  async registerWithPayment(
+    phone: string,
+    password: string,
+    planId: string,
+  ): Promise<void> {
+    const credentialGeneration = this.#credentialGeneration
+    const installationId =
+      await this.#options.secureStore.getOrCreateInstallationId()
+    const clientId = await this.#ensureClientId()
+    let response: Response
+
+    try {
+      response = await this.#fetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/direct/paid-registrations`,
+        {
+          body: JSON.stringify({
+            client_id: clientId,
+            idempotency_key: randomBase64Url(18),
+            installation_id: installationId,
+            password,
+            phone,
+            plan_id: planId,
+          }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let body: unknown
+
+    try {
+      body = await response.json()
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const tokens = parseTokenResponse(body)
+
+    if (tokens !== null) {
+      await this.#acceptTokens(tokens, credentialGeneration)
+      return
+    }
+
+    const pending = parsePendingCheckout(body)
+
+    if (pending === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const checkout = this.#options.openCheckout ?? openRazorpayCheckout
+    const completed = await checkout({
+      amount: pending.totalPaise,
+      currency: 'INR',
+      description: 'Global Spoken English',
+      key: pending.publicKey,
+      name: 'Global Spoken English App',
+      orderId: pending.orderId,
+    })
+
+    if (completed === null || completed.orderId !== pending.orderId) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    let confirmation: Response
+
+    try {
+      confirmation = await this.#fetch(
+        `${this.#options.apiBaseUrl}/auth/mobile/direct/paid-registrations/${pending.id}/confirmations`,
+        {
+          body: JSON.stringify({
+            client_id: clientId,
+            installation_id: installationId,
+            payment_id: completed.paymentId,
+            signature: completed.signature,
+          }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!confirmation.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const confirmed = parseTokenResponse(await confirmation.json())
+
+    if (confirmed === null) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    await this.#acceptTokens(confirmed, credentialGeneration)
+  }
+
   async enrollWithInvitation(
     invitationCode: string,
     username: string,
@@ -193,12 +359,49 @@ export class AndroidPkceAuthenticationAdapter
     return this.#federatedAvailability('/auth/mobile/social/providers')
   }
 
-  async beginFederatedSignIn(provider: FederatedProvider): Promise<void> {
+  async selectMembership(
+    membershipId: string,
+  ): Promise<AuthenticationSnapshot> {
+    let response: Response
+
+    try {
+      response = await this.authenticatedFetch(
+        `${this.#options.apiBaseUrl}/me/organization-context`,
+        {
+          body: JSON.stringify({ membership_id: membershipId }),
+          credentials: 'omit',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'PUT',
+        },
+      )
+    } catch {
+      throw new AuthenticationUnavailableError()
+    }
+
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    return this.current()
+  }
+
+  async beginFederatedSignIn(
+    provider: FederatedProvider,
+    options?: {
+      readonly intent?: 'sign_in' | 'register'
+      readonly planCode?: string
+      readonly planId?: string
+    },
+  ): Promise<void> {
     const installationId =
       await this.#options.secureStore.getOrCreateInstallationId()
     const authorizationUrl = await this.#federatedAuthorizationUrl(
       provider,
       installationId,
+      options,
     )
     await this.#options.systemBrowser.open(authorizationUrl)
   }
@@ -299,6 +502,11 @@ export class AndroidPkceAuthenticationAdapter
   async #federatedAuthorizationUrl(
     provider: FederatedProvider,
     installationId: string,
+    options?: {
+      readonly intent?: 'sign_in' | 'register'
+      readonly planCode?: string
+      readonly planId?: string
+    },
   ): Promise<string> {
     let response: Response
     const clientId = await this.#ensureClientId()
@@ -309,6 +517,13 @@ export class AndroidPkceAuthenticationAdapter
       )
       url.searchParams.set('client_id', clientId)
       url.searchParams.set('installation_id', installationId)
+      if (options?.intent === 'register' && options.planId) {
+        url.searchParams.set('intent', 'register')
+        url.searchParams.set('plan_id', options.planId)
+        if (options.planCode) {
+          url.searchParams.set('plan_code', options.planCode)
+        }
+      }
       response = await this.#fetch(url, {
         credentials: 'omit',
         headers: { Accept: 'application/json' },
@@ -1104,6 +1319,40 @@ function isCurrentUserIdentity(
     'current_membership' in candidate &&
     Array.isArray(candidate.memberships)
   )
+}
+
+function parsePendingCheckout(value: unknown): {
+  id: string
+  orderId: string
+  publicKey: string
+  totalPaise: number
+} | null {
+  if (value === null || typeof value !== 'object') {
+    return null
+  }
+
+  const candidate = value as Record<string, unknown>
+
+  if (
+    candidate.status !== 'pending' ||
+    candidate.provider !== 'razorpay' ||
+    typeof candidate.id !== 'string' ||
+    candidate.id === '' ||
+    typeof candidate.provider_order_id !== 'string' ||
+    !candidate.provider_order_id.startsWith('order_') ||
+    typeof candidate.provider_public_key !== 'string' ||
+    candidate.provider_public_key === '' ||
+    typeof candidate.total_paise !== 'number'
+  ) {
+    return null
+  }
+
+  return {
+    id: candidate.id,
+    orderId: candidate.provider_order_id,
+    publicKey: candidate.provider_public_key,
+    totalPaise: candidate.total_paise,
+  }
 }
 
 function parseTokenResponse(value: unknown): MobileTokenResponse | null {

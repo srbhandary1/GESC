@@ -117,7 +117,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             )
             ->assertJsonPath(
                 'summary.inventory_version',
-                'learner-privacy-v12',
+                'learner-privacy-v13',
             )
             ->assertJsonPath(
                 'summary.scope.membership_id',
@@ -193,7 +193,7 @@ final class OperatorPrivacySupportTest extends TenancyIntegrationTestCase
             ->assertJsonPath('status', 'completed')
             ->assertJsonPath(
                 'outcome.inventory_version',
-                'learner-privacy-v12',
+                'learner-privacy-v13',
             )
             ->assertJsonPath('voice_recording_count', 0);
         $this->assertNoStore($erasure);

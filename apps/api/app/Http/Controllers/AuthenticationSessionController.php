@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Authentication\Sessions\AuthenticationSessionService;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
 use App\Models\AuthenticationSession;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +14,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class AuthenticationSessionController extends Controller
 {
-    public function __construct(private readonly AuthenticationSessionService $sessions) {}
+    public function __construct(
+        private readonly AuthenticationSessionService $sessions,
+        private readonly ConversationRecoveryStore $recovery,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -68,10 +72,12 @@ final class AuthenticationSessionController extends Controller
 
     public function logout(Request $request): Response
     {
+        $user = $this->authenticatedUser($request);
         $this->sessions->revokeCurrent(
-            $this->authenticatedUser($request),
+            $user,
             $request,
         );
+        $this->recovery->deleteForUser((string) $user->getAuthIdentifier());
 
         return response()->noContent()->header('Cache-Control', 'no-store');
     }

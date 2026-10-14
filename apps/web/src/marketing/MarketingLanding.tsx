@@ -3,9 +3,11 @@ import { useState } from 'react'
 import type { InterfaceMessageResolution } from '../localization/interfaceLocalization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import {
+  APP_VERSION,
   ANDROID_APK_FILENAME,
   ANDROID_APK_HREF,
 } from './androidDownload'
+import { directSignupHref, directSignupPlans } from './directSignupPlans'
 import './MarketingLanding.css'
 
 export interface MarketingLandingProps {
@@ -94,28 +96,6 @@ const stats = [
   { label: 'marketing.stats.ai', value: 'marketing.stats.ai_value' },
   { label: 'marketing.stats.guidance', value: 'marketing.stats.guidance_value' },
   { label: 'marketing.stats.path', value: 'marketing.stats.path_value' },
-] as const
-
-const plans = [
-  {
-    name: 'marketing.plan.demo.name',
-    price: 'marketing.plan.demo.price',
-    lead: 'marketing.plan.demo.lead',
-    extra: 'marketing.plan.demo.extra',
-  },
-  {
-    name: 'marketing.plan.modules.name',
-    price: 'marketing.plan.modules.price',
-    lead: 'marketing.plan.modules.lead',
-    extra: 'marketing.plan.modules.extra',
-  },
-  {
-    name: 'marketing.plan.premium.name',
-    price: 'marketing.plan.premium.price',
-    lead: 'marketing.plan.premium.lead',
-    extra: 'marketing.plan.premium.extra',
-    recommended: true,
-  },
 ] as const
 
 export function MarketingLanding({
@@ -321,13 +301,20 @@ export function MarketingLanding({
           <span><LocalizedMessage resolution={message('subscription.gst_exclusive')} /></span>
         </div>
         <ul>
-          {plans.map((plan) => (
-            <li className={'recommended' in plan && plan.recommended === true ? 'studio-plan studio-plan--recommended' : 'studio-plan'} key={plan.name}>
-              {'recommended' in plan && plan.recommended === true ? <p className="studio-plan__flag"><LocalizedMessage resolution={message('subscription.recommended')} /></p> : null}
+          {directSignupPlans.map((plan) => (
+            <li className={plan.recommended === true ? 'studio-plan studio-plan--recommended' : 'studio-plan'} key={plan.code}>
+              {plan.recommended === true ? <p className="studio-plan__flag"><LocalizedMessage resolution={message('subscription.recommended')} /></p> : null}
               <h3><LocalizedMessage resolution={message(plan.name)} /></h3>
               <strong><LocalizedMessage resolution={message(plan.price)} /></strong>
               <p><LocalizedMessage resolution={message(plan.lead)} /></p>
               <small><LocalizedMessage resolution={message(plan.extra)} /></small>
+              <a className="marketing-button marketing-button--primary" href={directSignupHref(plan.code)}>
+                <LocalizedMessage resolution={message('auth.paid.open')} />
+                {' '}
+                <span className="visually-hidden">
+                  <LocalizedMessage resolution={message(plan.name)} />
+                </span>
+              </a>
             </li>
           ))}
         </ul>
@@ -357,7 +344,7 @@ export function MarketingLanding({
             <span><LocalizedMessage resolution={message('marketing.android.lead')} /></span>
           </div>
           <a className="marketing-button marketing-button--android" download={ANDROID_APK_FILENAME} href={ANDROID_APK_HREF}>
-            <LocalizedMessage resolution={message('marketing.android.download')} />
+            <LocalizedMessage resolution={message('marketing.android.download')} />{' '}<span>v{APP_VERSION}</span>
           </a>
         </section>
       ) : null}

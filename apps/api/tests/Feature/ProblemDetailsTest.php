@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Conversation\Dialogue\DialogueTurnOutcomeUnknown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,19 @@ use Tests\TestCase;
 
 class ProblemDetailsTest extends TestCase
 {
+    public function test_unknown_dialogue_outcome_is_a_distinct_nonretrying_conflict(): void
+    {
+        Route::middleware('api')->post('/api/v1/testing/dialogue-unknown', function (): never {
+            throw new DialogueTurnOutcomeUnknown;
+        });
+        $response = $this->postJson('/api/v1/testing/dialogue-unknown')
+            ->assertStatus(409)
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('message_key', 'conversation.turn_outcome_unknown')
+            ->assertJsonPath('detail', 'End this practice and start a new session. The previous command will not be sent again.');
+        $this->assertNoStore($response->headers->get('Cache-Control'));
+    }
+
     public function test_unknown_api_route_returns_problem_details(): void
     {
         $response = $this->getJson('/api/v1/does-not-exist')

@@ -50,11 +50,11 @@ Route::middleware(['web', ProtectAuthenticationPageResponse::class])->group(func
         ->name('passport.authorizations.deny');
     Route::get('/oauth/social/{provider}/authorize', [FederatedAuthenticationController::class, 'authorize'])
         ->middleware('throttle:password-sign-ins')
-        ->whereIn('provider', ['google', 'facebook'])
+        ->whereIn('provider', ['google', 'facebook', 'instagram'])
         ->name('auth.social.authorize');
     Route::get('/oauth/social/{provider}/callback', [FederatedAuthenticationController::class, 'callback'])
         ->middleware('throttle:password-sign-ins')
-        ->whereIn('provider', ['google', 'facebook'])
+        ->whereIn('provider', ['google', 'facebook', 'instagram'])
         ->name('auth.social.callback');
 });
 

@@ -68,10 +68,14 @@ export function useInterfaceTheme() {
     }
   }, [])
 
-  const setPreference = useCallback((next: InterfaceThemePreference) => {
-    persistInterfaceThemePreference(next)
-    setPreferenceState(next)
-  }, [])
+  const setPreference = useCallback(
+    (next: InterfaceThemePreference) => {
+      persistInterfaceThemePreference(next)
+      applyInterfaceTheme(next, systemPrefersDark)
+      setPreferenceState(next)
+    },
+    [systemPrefersDark],
+  )
 
   return {
     preference,

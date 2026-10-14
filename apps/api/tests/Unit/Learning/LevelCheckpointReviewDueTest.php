@@ -32,7 +32,7 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
         $membershipId = (string) $learnerContext->membershipId;
 
         foreach (['introduction', 'practice', 'conversation', 'interaction'] as $partId) {
-            $this->insertCompletion($organizationId, $userId, $membershipId, 1, $partId);
+            $this->insertCompletion($organizationId, $userId, $membershipId, 2, $partId);
         }
 
         $reviewDue = $this->createMock(ReviewDueBlockingService::class);
@@ -56,7 +56,7 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
             fn (): array => $checkpoints->projection(
                 $learnerContext,
                 $userId,
-                1,
+                2,
                 'available',
             ),
         );
@@ -64,14 +64,14 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
         self::assertTrue($projection['review_due_blocking']);
         self::assertSame(3, $projection['checkpoint_attempts_remaining']);
 
-        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 1);
+        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 2);
         $progress = app(LevelSessionProgressService::class);
         $unlock = $this->contexts()->run(
             $learnerContext,
             fn (): ?array => $progress->recordUnlockAfterLevelCompletion(
                 $learnerContext,
                 $userId,
-                1,
+                2,
             ),
         );
         self::assertNull($unlock);
@@ -93,7 +93,7 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
         $membershipId = (string) $learnerContext->membershipId;
 
         foreach (['introduction', 'practice', 'conversation', 'interaction'] as $partId) {
-            $this->insertCompletion($organizationId, $userId, $membershipId, 1, $partId);
+            $this->insertCompletion($organizationId, $userId, $membershipId, 2, $partId);
         }
 
         $reviewDue = $this->createMock(ReviewDueBlockingService::class);
@@ -108,25 +108,25 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
             fn (): array => $checkpoints->projection(
                 $learnerContext,
                 $userId,
-                1,
+                2,
                 'available',
             ),
         );
         self::assertSame('ready', $projection['checkpoint_status']);
         self::assertFalse($projection['review_due_blocking']);
 
-        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 1);
+        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 2);
         $progress = app(LevelSessionProgressService::class);
         $unlock = $this->contexts()->run(
             $learnerContext,
             fn (): ?array => $progress->recordUnlockAfterLevelCompletion(
                 $learnerContext,
                 $userId,
-                1,
+                2,
             ),
         );
         self::assertNotNull($unlock);
-        self::assertSame(2, $unlock['level_number']);
+        self::assertSame(3, $unlock['level_number']);
     }
 
     public function test_later_due_review_does_not_revoke_an_issued_unlock(): void
@@ -145,9 +145,9 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
         $membershipId = (string) $learnerContext->membershipId;
 
         foreach (['introduction', 'practice', 'conversation', 'interaction'] as $partId) {
-            $this->insertCompletion($organizationId, $userId, $membershipId, 1, $partId);
+            $this->insertCompletion($organizationId, $userId, $membershipId, 2, $partId);
         }
-        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 1);
+        $this->insertCheckpointPass($organizationId, $userId, $membershipId, 2);
 
         $reviewDue = $this->createMock(ReviewDueBlockingService::class);
         $reviewDue->method('enabled')->willReturn(true);
@@ -160,7 +160,7 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
             fn (): ?array => $progress->recordUnlockAfterLevelCompletion(
                 $learnerContext,
                 $userId,
-                1,
+                2,
             ),
         );
         self::assertNotNull($unlock);
@@ -170,16 +170,16 @@ final class LevelCheckpointReviewDueTest extends TenancyIntegrationTestCase
         $reviewDueAfterUnlock->method('hasDueIncompleteReview')->willReturn(true);
         $this->app->instance(ReviewDueBlockingService::class, $reviewDueAfterUnlock);
 
-        $levelTwo = $this->contexts()->run(
+        $levelThree = $this->contexts()->run(
             $learnerContext,
             fn (): array => $progress->projection(
                 $learnerContext,
                 $userId,
-                2,
+                3,
                 'available',
             ),
         );
-        self::assertSame('allowed', $levelTwo['progress_access']);
+        self::assertSame('allowed', $levelThree['progress_access']);
     }
 
     private function insertCheckpointPass(

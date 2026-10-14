@@ -6,7 +6,7 @@ namespace App\Conversation\Voice;
 
 final class PcmWavInspector
 {
-    public function inspect(string $bytes): WavMetadata
+    public function inspect(string $bytes, ?int $maximumDurationMs = null): WavMetadata
     {
         $length = strlen($bytes);
         $maximum = (int) config('voice.maximum_bytes', 10 * 1024 * 1024);
@@ -83,10 +83,10 @@ final class PcmWavInspector
 
         if (
             $durationMs < 1
-            || $durationMs > (int) config(
+            || $durationMs > ($maximumDurationMs ?? (int) config(
                 'voice.maximum_duration_ms',
                 25_000,
-            )
+            ))
         ) {
             throw new VoiceOperationRejected;
         }

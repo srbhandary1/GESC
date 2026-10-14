@@ -8,6 +8,7 @@ use App\Conversation\Orchestration\PriorityCorrection;
 
 final readonly class ConversationModelResult implements ProviderResult
 {
+    /** @param array<string, mixed> $dialogue */
     public function __construct(
         public string $understoodIntent,
         public string $assistantReply,
@@ -15,6 +16,8 @@ final readonly class ConversationModelResult implements ProviderResult
         public ?PriorityCorrection $priorityCorrection = null,
         public string $safetyState = 'ok',
         public bool $usedFallback = false,
+        public string $replyLocale = 'en-IN',
+        public array $dialogue = [],
     ) {}
 
     public function usage(): ProviderUsage

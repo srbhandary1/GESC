@@ -24,6 +24,33 @@ afterEach(() => {
 })
 
 describe('synthetic Role-play journey', () => {
+  it('localizes Kannada scene labels and role previews, then switches back to English', async () => {
+    const api: ConversationJourneyApi = { startSession: vi.fn(), createTurn: vi.fn(), events: vi.fn(), voiceConsents: vi.fn(async () => grantedVoiceConsents()) }
+    const user = userEvent.setup()
+    const { rerender } = render(<RoleplayJourney api={api} locale="kn-IN" localizationPolicy="development-preview" />)
+    expect(screen.getByRole('button', { name: /ಚಿಕಿತ್ಸಾಲಯದ ಸ್ವಾಗತ ಕಚೇರಿ/ })).toBeInTheDocument()
+    expect(screen.getByText('ಸ್ವಾಗತಕಾರರು / ರೋಗಿ')).toHaveAttribute('lang', 'kn-IN')
+    expect(screen.queryByRole('button', { name: /Clinic reception/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /ಉದ್ಯೋಗ ಸಂದರ್ಶನ/ }))
+    expect(screen.getByText('ಸಂದರ್ಶಕರು / ಅಭ್ಯರ್ಥಿ')).toBeInTheDocument()
+    rerender(<RoleplayJourney api={api} locale="en-IN" localizationPolicy="development-preview" />)
+    expect(screen.getByText('Interviewer / Candidate')).toHaveAttribute('lang', 'en-IN')
+    expect(api.startSession).not.toHaveBeenCalled()
+  })
+
+  it('previews both roles before starting and updates them with the selected situation', async () => {
+    const api: ConversationJourneyApi = { startSession: vi.fn(), createTurn: vi.fn(), events: vi.fn(), voiceConsents: vi.fn(async () => grantedVoiceConsents()) }
+    const user = userEvent.setup()
+    render(<RoleplayJourney api={api} locale="en-IN" localizationPolicy="development-preview" />)
+    expect(screen.getByText('AI role / Your role:')).toBeInTheDocument()
+    expect(screen.getByText('Receptionist / Patient')).toHaveAttribute('lang', 'en-IN')
+    await user.click(screen.getByRole('button', { name: /Job interview/ }))
+    expect(screen.getByText('Interviewer / Candidate')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Bank counter/ }))
+    expect(screen.getByText('Clerk / Customer')).toBeInTheDocument()
+    expect(api.startSession).not.toHaveBeenCalled()
+  })
+
   it('keeps the tutor speaking and advances visemes during model audio', async () => {
     const observe = fakeSession('observe')
     let finishPlayback: (() => void) | undefined
@@ -36,6 +63,7 @@ describe('synthetic Role-play journey', () => {
         }),
     )
     const api: ConversationJourneyApi = {
+      voiceConsents: vi.fn(async () => grantedVoiceConsents()),
       startSession: vi.fn(async () => observe),
       createTurn: vi.fn(),
       events: vi.fn(),
@@ -65,6 +93,7 @@ describe('synthetic Role-play journey', () => {
       />,
     )
 
+    await user.click(screen.getByRole('checkbox'))
     await user.click(
       screen.getByRole('button', { name: 'Start this situation' }),
     )
@@ -108,6 +137,7 @@ describe('synthetic Role-play journey', () => {
       sampled: true,
     }))
     const api: ConversationJourneyApi = {
+      voiceConsents: vi.fn(async () => grantedVoiceConsents()),
       startSession: vi.fn(async () => observe),
       advanceStage: vi
         .fn()
@@ -136,11 +166,16 @@ describe('synthetic Role-play journey', () => {
       />,
     )
 
+    await user.click(screen.getByRole('checkbox'))
     await user.click(
       screen.getByRole('button', { name: 'Start this situation' }),
     )
     await user.click(await screen.findByRole('button', { name: 'Continue' }))
     await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    expect(screen.queryByText(/Hold to speak in this scene/)).not.toBeInTheDocument()
+    expect(
+      screen.getAllByText('Speak English. Type instead only if you need to.').length,
+    ).toBeGreaterThan(0)
     await user.click(
       await screen.findByRole('button', { name: 'Type instead' }),
     )
@@ -173,6 +208,7 @@ describe('synthetic Role-play journey', () => {
       .mockResolvedValueOnce(reflect)
     const createTurn = vi.fn(async () => fakeTurn(perform.id))
     const api: ConversationJourneyApi = {
+      voiceConsents: vi.fn(async () => grantedVoiceConsents()),
       startSession: vi.fn(async () => observe),
       advanceStage,
       createTurn,
@@ -200,7 +236,7 @@ describe('synthetic Role-play journey', () => {
 
     expect(
       screen.getByText(
-        'This is a deterministic synthetic Role-play for local testing. It is not approved curriculum or a human.',
+        'Swathi is AI. Feedback is advisory and never changes marks or mastery.',
       ),
     ).toBeInTheDocument()
     expect(
@@ -211,6 +247,7 @@ describe('synthetic Role-play journey', () => {
       screen.getByLabelText('Choose a Role-play scenario'),
     ).toBeInTheDocument()
 
+    await user.click(screen.getByRole('checkbox'))
     await user.click(
       screen.getByRole('button', { name: 'Start this situation' }),
     )
@@ -233,8 +270,12 @@ describe('synthetic Role-play journey', () => {
         persona_key: 'clinic-reception-roleplay-prototype',
         scenario_key: 'clinic-reception-roleplay-scenario',
         ui_locale: 'en-IN',
+        interaction_flow: 'roleplay_dialogue',
+        recovery_notice_version: 'conversation-recovery-2026-09-25',
+        recovery_notice_accepted: true,
       },
       'start-command',
+      expect.any(AbortSignal),
     )
 
     await user.click(screen.getByRole('button', { name: 'Type instead' }))
@@ -339,6 +380,7 @@ describe('synthetic Role-play journey', () => {
       />,
     )
 
+    await user.click(screen.getByRole('checkbox'))
     await user.click(
       screen.getByRole('button', { name: 'ಈ ಪರಿಸ್ಥಿತಿ ಪ್ರಾರಂಭಿಸಿ' }),
     )

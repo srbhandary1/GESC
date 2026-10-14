@@ -35,7 +35,8 @@ return [
     ],
     'sequential_unlock' => [
         'enabled' => true,
-        'rule_key' => 'level_unlock_v1',
+        'rule_key' => 'level_unlock_initial_two_v2',
+        'initial_open_levels' => [1, 2],
     ],
     'level_checkpoint' => [
         'enabled' => true,

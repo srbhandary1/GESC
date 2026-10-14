@@ -6,6 +6,8 @@ namespace Tests\Integration;
 
 use App\Authentication\Otp\OtpCodeGenerator;
 use App\Authentication\Otp\OtpDeliveryAdapter;
+use App\Conversation\Dialogue\ConversationDialogueService;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
 use App\Curriculum\CanonicalJson;
 use App\Curriculum\LessonPractice\LessonPracticeAttachmentService;
 use App\Entitlements\DirectPlanDefaults;
@@ -16,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\HttpFoundation\Response;
 
 final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
@@ -38,7 +41,9 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
         $this->withCredentials();
     }
 
-    public function test_get_me_levels_reports_locked_and_allowed_progression(): void
+    #[TestWith(['monthly_modules'])]
+    #[TestWith(['monthly_modules_roleplay'])]
+    public function test_get_me_levels_reports_locked_and_allowed_progression(string $planCode): void
     {
         $organization = Organization::query()
             ->where('system_key', 'global-english-direct')
@@ -71,8 +76,16 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
             $this->canonicalBlueprint('should', 'Level 2', 'should-'),
         );
 
+        $this->commissionPublishedBlueprint(
+            $authorContext,
+            (string) $organization->getKey(),
+            (string) $author->getKey(),
+            'do_does',
+            $this->canonicalBlueprint('do_does', 'Level 3', 'do-'),
+        );
+
         $this->signInWeb();
-        $this->activatePaidFreeSpeechPlan();
+        $this->activateSubscriptionPlan($planCode);
 
         $initial = $this->withHeader('Origin', 'https://localhost')
             ->getJson('/api/v1/me/levels')
@@ -91,12 +104,13 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
         $this->assertNoStore($initial);
 
         $this->assertLevelProgress($initial, 1, 'available', 'allowed', null);
-        $this->assertLevelProgress($initial, 2, 'available', 'locked', 1);
-        $this->assertLevelProgress($initial, 3, 'commissioning_pending', 'not_applicable', null);
+        $this->assertLevelProgress($initial, 2, 'available', 'allowed', null);
+        $this->assertLevelProgress($initial, 3, 'available', 'locked', 2);
+        $this->withHeader('Origin', 'https://localhost')->getJson('/api/v1/me/levels/3/sessions')->assertNotFound();
 
         $this->withHeader('Origin', 'https://localhost')
             ->getJson('/api/v1/me/levels/2/sessions')
-            ->assertNotFound();
+            ->assertOk();
 
         $this->completeLevelOneViaHttp();
 
@@ -104,7 +118,7 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
             ->getJson('/api/v1/me/levels')
             ->assertOk();
         $this->assertNoStore($checkpointReady);
-        $this->assertLevelProgress($checkpointReady, 2, 'available', 'locked', 1);
+        $this->assertLevelProgress($checkpointReady, 2, 'available', 'allowed', null);
         $levels = $checkpointReady->json('levels');
         self::assertIsArray($levels);
         $levelOne = collect($levels)->firstWhere('level_number', 1);
@@ -249,7 +263,7 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
         $attemptId = $first->json('attempt_id');
         $unlockId = $first->json('level_unlock.unlock_decision_id');
         self::assertIsString($attemptId);
-        self::assertIsString($unlockId);
+        self::assertNull($unlockId);
 
         $second = $this->withHeaders($origin)->postJson(
             '/api/v1/me/levels/1/checkpoint-submissions',
@@ -257,8 +271,7 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
         )->assertOk()
             ->assertJsonPath('replayed', true)
             ->assertJsonPath('attempt_id', $attemptId)
-            ->assertJsonPath('level_unlock.replayed', true)
-            ->assertJsonPath('level_unlock.unlock_decision_id', $unlockId);
+            ->assertJsonPath('level_unlock', null);
 
         $learnerId = (string) auth()->id();
         self::assertSame(
@@ -270,13 +283,60 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
                 ->count(),
         );
         self::assertSame(
-            1,
+            0,
             DB::table('level_unlock_decisions')
                 ->where('organization_id', $organization->getKey())
                 ->where('user_id', $learnerId)
                 ->where('level_number', 2)
                 ->count(),
         );
+    }
+
+    public function test_every_configured_level_keeps_tutor_context_and_completes_practice_on_pass(): void
+    {
+        // Isolate within-level gates from separately tested previous-level checkpoints.
+        config()->set('level_sessions.sequential_unlock.enabled', false);
+        $organization = Organization::query()->where('system_key', 'global-english-direct')->firstOrFail();
+        $author = $this->createUser();
+        [$membership, $context] = $this->createMembership($organization, $author, Membership::TYPE_ORGANIZATION_ADMIN);
+        $this->grantTestPermissions($membership, $context, ['curriculum.author', 'media.metadata.manage'], 'all-level-tutor');
+        foreach (config('level_sessions.level_concepts') as $level => $concept) {
+            $this->commissionPublishedBlueprint($context, (string) $organization->getKey(), (string) $author->getKey(),
+                $concept, $this->canonicalBlueprint($concept, 'Level '.$level, 'level-'.$level.'-'));
+        }
+        $this->signInWeb();
+        $this->activatePaidFreeSpeechPlan();
+        $origin = ['Origin' => 'https://localhost'];
+        foreach (config('level_sessions.level_concepts') as $level => $concept) {
+            $this->travel(1)->minutes(); // Each level represents a separate learner visit, not a rate-limit load test.
+            $base = '/api/v1/me/levels/'.$level.'/sessions/';
+            $help = ['idempotency_key' => (string) Str::uuid(), 'ui_locale' => 'en-IN', 'purpose' => 'question_help',
+                'recovery_notice_version' => ConversationDialogueService::NOTICE, 'recovery_notice_accepted' => true];
+            $this->withHeaders($origin)->postJson($base.'introduction/conversation-sessions', [...$help, 'lesson' => ['concept_key' => 'injected']])->assertUnprocessable();
+            $session = $this->withHeaders($origin)->postJson($base.'introduction/conversation-sessions', $help)
+                ->assertCreated()->assertJsonPath('interaction.flow', 'question_help')->json('id');
+            $this->withHeaders($origin)->postJson($base.'introduction/conversation-sessions', $help)->assertOk()->assertJsonPath('id', $session);
+            $state = DB::table('conversation_dialogue_states')->where('organization_id', $organization->getKey())->where('conversation_session_id', $session)->firstOrFail();
+            $definition = app(ConversationRecoveryStore::class)->read((string) $organization->getKey(), $state->learner_membership_id, $session, $state->start_artifact_id);
+            self::assertIsArray($definition);
+            self::assertArrayHasKey('lesson', $definition);
+            self::assertIsArray($definition['lesson']);
+            self::assertSame($level, $definition['lesson']['level_number']);
+            self::assertSame($concept, $definition['lesson']['concept_key']);
+            self::assertSame(['I '.$concept.' + base verb.'], $definition['lesson']['target_patterns']);
+            self::assertArrayNotHasKey('check', $definition['lesson']);
+            self::assertArrayNotHasKey('correct_option', $definition['lesson']);
+            $this->withHeaders($origin)->postJson($base.'practice/conversation-sessions', [...$help, 'idempotency_key' => (string) Str::uuid()])->assertNotFound();
+            $this->withHeaders($origin)->postJson($base.'introduction/completions', ['idempotency_key' => (string) Str::uuid()])->assertCreated();
+            $this->withHeaders($origin)->postJson($base.'practice/check-submissions', ['idempotency_key' => (string) Str::uuid(), 'answers' => ['level-'.$level.'-01' => 1, 'level-'.$level.'-02' => 1, 'level-'.$level.'-03' => 1]])->assertCreated()->assertJsonPath('passed', false);
+            $this->withHeaders($origin)->postJson($base.'conversation/conversation-sessions', ['idempotency_key' => (string) Str::uuid(), 'ui_locale' => 'en-IN'])->assertNotFound();
+            $check = ['idempotency_key' => (string) Str::uuid(), 'answers' => ['level-'.$level.'-01' => 0, 'level-'.$level.'-02' => 0, 'level-'.$level.'-03' => 0]];
+            $this->withHeaders($origin)->postJson($base.'practice/check-submissions', $check)->assertCreated()->assertJsonPath('passed', true);
+            $this->withHeaders($origin)->postJson($base.'practice/check-submissions', $check)->assertOk()->assertJsonPath('passed', true);
+            self::assertSame(1, DB::table('level_session_completions')->where('organization_id', $organization->getKey())->where('user_id', auth()->id())->where('level_number', $level)->where('part_id', 'practice')->count());
+            $this->withHeaders($origin)->getJson($base.'practice')->assertOk()->assertJsonPath('completed', true);
+            $this->withHeaders($origin)->postJson($base.'conversation/conversation-sessions', ['idempotency_key' => (string) Str::uuid(), 'ui_locale' => 'en-IN'])->assertCreated();
+        }
     }
 
     private function signInWeb(string $mobileNumber = '+919876543219'): void
@@ -385,7 +445,7 @@ final class LevelSessionLevelsHttpTest extends TenancyIntegrationTestCase
             ->assertJsonPath('spoken_evidence.evidence_state', 'not_recorded')
             ->assertJsonPath('spoken_evidence.spoken_state', 'unassessed')
             ->assertJsonPath('spoken_evidence.spoken_progress_claim', false)
-            ->assertJsonPath('level_unlock.level_number', 2);
+            ->assertJsonPath('level_unlock', null);
     }
 
     /**

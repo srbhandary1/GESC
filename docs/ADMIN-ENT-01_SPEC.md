@@ -39,7 +39,9 @@ Institutional organizations are unchanged: subscription gates apply only to
 - Wiping marks, mastery or submitted evidence
 - Social/payment account creation
 - Per-minute overage billing
-- Importing students, passwords or progress from the previous website
+- Importing progress, recordings or payments from the previous website.
+  Bounded phone/password-hash onboarding into Direct basic (`monthly_modules`)
+  is authorized by [ADR-0040](adr/0040-legacy-website-phone-sign-in-and-basic-onboarding.md)
 
 ## 3. Tenant and transport
 

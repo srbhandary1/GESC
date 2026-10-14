@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Conversation\Dialogue\ConversationRecoveryUnavailable;
+use App\Conversation\Dialogue\DialogueTurnOutcomeUnknown;
 use App\Http\Middleware\AssignCorrelationId;
 use App\Http\Middleware\AuthenticateFirstParty;
 use App\Http\Middleware\EnforceAuthenticationSession;
@@ -54,6 +56,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (DialogueTurnOutcomeUnknown $exception, Request $request) {
+            return app(ProblemDetailsFactory::class)->fromExceptionResponse($request, response('', 409), $exception);
+        });
+        $exceptions->render(function (ConversationRecoveryUnavailable $exception) {
+            return response()->json(['message' => 'Private conversation recovery is temporarily unavailable.'], 503);
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

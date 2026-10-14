@@ -108,6 +108,7 @@ async function playHref(
       }, reject)
     })
   } finally {
+    options?.onTimeUpdate?.(Math.round(audio.currentTime * 1000))
     unregisterSpeechAudio(audio)
   }
 

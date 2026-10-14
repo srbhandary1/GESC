@@ -15,7 +15,7 @@ use Tests\Integration\TenancyIntegrationTestCase;
 
 final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
 {
-    public function test_level_two_stays_locked_until_level_one_is_fully_complete(): void
+    public function test_level_three_stays_locked_until_level_two_is_fully_complete(): void
     {
         $organization = Organization::query()
             ->where('system_key', 'global-english-direct')
@@ -33,32 +33,32 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): array => $progress->projection(
                 $learnerContext,
                 (string) $learner->getKey(),
-                2,
+                3,
                 'available',
             ),
         );
         self::assertSame('locked', $initial['progress_access']);
-        self::assertSame(1, $initial['unlock_after_level_number']);
+        self::assertSame(2, $initial['unlock_after_level_number']);
 
         $this->insertCompletion(
             (string) $organization->getKey(),
             (string) $learner->getKey(),
             (string) $learnerContext->membershipId,
-            1,
+            2,
             'introduction',
         );
         $this->insertCompletion(
             (string) $organization->getKey(),
             (string) $learner->getKey(),
             (string) $learnerContext->membershipId,
-            1,
+            2,
             'practice',
         );
         $this->insertCompletion(
             (string) $organization->getKey(),
             (string) $learner->getKey(),
             (string) $learnerContext->membershipId,
-            1,
+            2,
             'conversation',
         );
 
@@ -67,7 +67,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): array => $progress->projection(
                 $learnerContext,
                 (string) $learner->getKey(),
-                2,
+                3,
                 'available',
             ),
         );
@@ -77,7 +77,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             (string) $organization->getKey(),
             (string) $learner->getKey(),
             (string) $learnerContext->membershipId,
-            1,
+            2,
             'interaction',
         );
 
@@ -86,7 +86,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): array => $progress->projection(
                 $learnerContext,
                 (string) $learner->getKey(),
-                2,
+                3,
                 'available',
             ),
         );
@@ -96,7 +96,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             (string) $organization->getKey(),
             (string) $learner->getKey(),
             (string) $learnerContext->membershipId,
-            1,
+            2,
         );
 
         $unlocked = $this->contexts()->run(
@@ -104,7 +104,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): array => $progress->projection(
                 $learnerContext,
                 (string) $learner->getKey(),
-                2,
+                3,
                 'available',
             ),
         );
@@ -116,11 +116,11 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): ?array => $progress->recordUnlockAfterLevelCompletion(
                 $learnerContext,
                 (string) $learner->getKey(),
-                1,
+                2,
             ),
         );
         self::assertNotNull($recorded);
-        self::assertSame(2, $recorded['level_number']);
+        self::assertSame(3, $recorded['level_number']);
         self::assertFalse($recorded['replayed']);
 
         $replayed = $this->contexts()->run(
@@ -128,7 +128,7 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
             fn (): ?array => $progress->recordUnlockAfterLevelCompletion(
                 $learnerContext,
                 (string) $learner->getKey(),
-                1,
+                2,
             ),
         );
         self::assertNotNull($replayed);
@@ -163,6 +163,25 @@ final class LevelSessionProgressServiceTest extends TenancyIntegrationTestCase
         } catch (LearningOperationRejected $exception) {
             self::assertSame('level_progress_locked', $exception->getMessage());
         }
+    }
+
+    public function test_level_two_completion_in_another_tenant_cannot_unlock_level_three_here(): void
+    {
+        $learner = $this->createUser();
+        $first = $this->createOrganization('Starting levels A');
+        $second = $this->createOrganization('Starting levels B');
+        [, $firstContext] = $this->createMembership($first, $learner, Membership::TYPE_LEARNER);
+        [, $secondContext] = $this->createMembership($second, $learner, Membership::TYPE_LEARNER);
+        foreach (['introduction', 'practice', 'conversation', 'interaction'] as $part) {
+            $this->insertCompletion((string) $first->id, (string) $learner->id, (string) $firstContext->membershipId, 2, $part);
+        }
+        $this->insertCheckpointPass((string) $first->id, (string) $learner->id, (string) $firstContext->membershipId, 2);
+        $progress = app(LevelSessionProgressService::class);
+        $this->contexts()->run($secondContext, function () use ($progress, $secondContext, $learner): void {
+            self::assertSame('allowed', $progress->projection($secondContext, (string) $learner->id, 2, 'available')['progress_access']);
+            self::assertSame('locked', $progress->projection($secondContext, (string) $learner->id, 3, 'available')['progress_access']);
+            self::assertSame('not_applicable', $progress->projection($secondContext, (string) $learner->id, 2, 'commissioning_pending')['progress_access']);
+        });
     }
 
     private function insertCheckpointPass(

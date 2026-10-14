@@ -37,10 +37,13 @@ describe('web password sign-in panel', () => {
       />,
     )
 
-    const username = screen.getByLabelText('Username')
+    const username = screen.getByLabelText('Phone or username')
     const password = screen.getByLabelText('Password')
     expect(username).toHaveAttribute('autocomplete', 'username')
-    expect(username).toHaveAttribute('pattern', '[A-Za-z][A-Za-z0-9._\\-]{3,63}')
+    expect(username).toHaveAttribute(
+      'pattern',
+      '([A-Za-z][A-Za-z0-9._\\-]{3,63}|\\+?[0-9]{7,20})',
+    )
     expect(password).toHaveAttribute('autocomplete', 'current-password')
     expect(password).toHaveAttribute('type', 'password')
     await user.type(username, 'learner.one')
@@ -66,6 +69,26 @@ describe('web password sign-in panel', () => {
     expect(indexedDbOpen?.mock.calls ?? []).toHaveLength(0)
   })
 
+  it('accepts a previous-website phone number as the sign-in identifier', async () => {
+    const user = userEvent.setup()
+    const authentication = webAuthentication()
+    vi.mocked(authentication.current).mockResolvedValue(authenticatedSnapshot())
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('Phone or username'), '7439091943')
+    await user.type(screen.getByLabelText('Password'), '123')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(authentication.signIn).toHaveBeenCalledWith('7439091943', '123')
+  })
+
   it('keeps Sign in as the only primary action', () => {
     render(
       <WebPasswordSignInPanel
@@ -78,6 +101,12 @@ describe('web password sign-in panel', () => {
     expect(screen.getByRole('button', { name: 'Sign in' })).toHaveClass(
       'ge-button--primary',
     )
+    expect(
+      screen.getByRole('button', { name: 'Pay and create an account' }),
+    ).toHaveClass('ge-button')
+    expect(
+      screen.getByRole('button', { name: 'Pay and create an account' }),
+    ).not.toHaveClass('ge-button--primary')
     expect(screen.getByRole('button', { name: 'Forgot password?' })).toHaveClass(
       'web-password-sign-in__text-action',
     )
@@ -99,7 +128,7 @@ describe('web password sign-in panel', () => {
       />,
     )
 
-    await user.type(screen.getByLabelText('Username'), 'learner.one')
+    await user.type(screen.getByLabelText('Phone or username'), 'learner.one')
     await user.type(
       screen.getByLabelText('Password'),
       'Correct horse battery 2026!',
@@ -113,7 +142,7 @@ describe('web password sign-in panel', () => {
     expect(screen.getByLabelText('Password')).toHaveValue(
       'Correct horse battery 2026!',
     )
-    expect(screen.getByLabelText('Username')).toHaveAttribute(
+    expect(screen.getByLabelText('Phone or username')).toHaveAttribute(
       'aria-invalid',
       'true',
     )
@@ -139,7 +168,7 @@ describe('web password sign-in panel', () => {
       />,
     )
 
-    await user.type(screen.getByLabelText('Username'), 'learner.one')
+    await user.type(screen.getByLabelText('Phone or username'), 'learner.one')
     await user.type(
       screen.getByLabelText('Password'),
       'Correct horse battery 2026!',
@@ -166,7 +195,7 @@ describe('web password sign-in panel', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'Forgot password?' }))
-    await user.type(screen.getByLabelText('Username'), 'unknown.user')
+    await user.type(screen.getByLabelText('Phone or username'), 'unknown.user')
     await user.click(
       screen.getByRole('button', { name: 'Send recovery instructions' }),
     )
@@ -194,6 +223,10 @@ describe('web password sign-in panel', () => {
 
     await user.click(
       screen.getByRole('button', { name: 'I have an invitation code' }),
+    )
+    expect(screen.getByLabelText('Username')).toHaveAttribute(
+      'pattern',
+      '[A-Za-z][A-Za-z0-9._\\-]{3,63}',
     )
     await user.type(
       screen.getByLabelText('Invitation code'),
@@ -225,15 +258,16 @@ describe('web password sign-in panel', () => {
     expect(localStorageWrite).not.toHaveBeenCalled()
   })
 
-  it('offers Google and Facebook beside the password form', async () => {
+  it('offers Google, Facebook, and Instagram beside the password form and for paid registration', async () => {
     const user = userEvent.setup()
     const authentication = webAuthentication()
     vi.mocked(authentication.federatedProviders).mockResolvedValue({
       google: true,
       facebook: true,
+      instagram: true,
     })
 
-    render(
+    const view = render(
       <WebPasswordSignInPanel
         authentication={authentication}
         message={message}
@@ -247,10 +281,39 @@ describe('web password sign-in panel', () => {
     expect(
       screen.getByRole('button', { name: 'Continue with Facebook' }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Continue with Instagram' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Phone or username')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Continue with Google' }))
     expect(authentication.beginFederatedSignIn).toHaveBeenCalledWith('google')
     expect(authentication.signIn).not.toHaveBeenCalled()
+
+    const paidAuth = {
+      ...authentication,
+      listDirectPlans: vi.fn(async () => paidPlans()),
+      registerWithPayment: vi.fn(async () => undefined),
+    }
+    view.rerender(
+      <WebPasswordSignInPanel
+        authentication={paidAuth}
+        message={message}
+        onAuthenticated={vi.fn()}
+        paidPlanCode="monthly_modules_roleplay"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('radio', { name: /Premium with Role-play/ }),
+    ).toBeChecked()
+    await user.click(
+      screen.getByRole('button', { name: 'Continue with Instagram' }),
+    )
+    expect(paidAuth.beginFederatedSignIn).toHaveBeenCalledWith('instagram', {
+      intent: 'register',
+      planCode: 'monthly_modules_roleplay',
+      planId: '01JPLAN00000000000000000003',
+    })
   })
 
   it('explains that plain HTTP cannot complete sign-in', () => {
@@ -295,10 +358,128 @@ describe('web password sign-in panel', () => {
       ),
     ).toBeNull()
   })
+
+  it('shows the selected plan total and refuses a mismatched password before payment', async () => {
+    const user = userEvent.setup()
+    const registerWithPayment = vi.fn(async () => undefined)
+    const authentication = {
+      ...webAuthentication(),
+      listDirectPlans: vi.fn(async () => paidPlans()),
+      registerWithPayment,
+    }
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+        paidPlanCode="monthly_modules"
+      />,
+    )
+
+    expect(
+      await screen.findByRole('radio', { name: /Premium features/ }),
+    ).toBeChecked()
+    expect(screen.getByText(/Role-play is not included/)).toBeInTheDocument()
+    expect(screen.getAllByText(/₹354\.00/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/₹300\.00/)).toBeInTheDocument()
+    expect(screen.getByText(/₹54\.00/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Pay ₹354.00 for Premium features' }),
+    ).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Phone or username'), '7439091943')
+    await user.type(screen.getByLabelText('Password'), 'Correct horse battery 2026!')
+    await user.type(screen.getByLabelText('Confirm password'), 'Different horse battery 2026!')
+    await user.click(
+      screen.getByRole('button', { name: 'Pay ₹354.00 for Premium features' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Enter the same password twice.',
+    )
+    expect(registerWithPayment).not.toHaveBeenCalled()
+  })
+
+  it('registers with the plan the student chooses', async () => {
+    const user = userEvent.setup()
+    const registerWithPayment = vi.fn(async () => undefined)
+    const authentication = {
+      ...webAuthentication(),
+      current: vi.fn(async () => authenticatedSnapshot()),
+      listDirectPlans: vi.fn(async () => paidPlans()),
+      registerWithPayment,
+    }
+
+    render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+        paidPlanCode="demo"
+      />,
+    )
+
+    expect(await screen.findByRole('radio', { name: /5-day start/ })).toBeChecked()
+    await user.click(screen.getByRole('radio', { name: /Premium with Role-play/ }))
+    await user.type(screen.getByLabelText('Phone or username'), '7439091943')
+    await user.type(screen.getByLabelText('Password'), 'Correct horse battery 2026!')
+    await user.type(screen.getByLabelText('Confirm password'), 'Correct horse battery 2026!')
+    await user.click(
+      screen.getByRole('button', { name: 'Pay ₹590.00 for Premium with Role-play' }),
+    )
+
+    expect(registerWithPayment).toHaveBeenCalledWith(
+      '7439091943',
+      'Correct horse battery 2026!',
+      '01JPLAN00000000000000000003',
+    )
+  })
+
+  it('clears a payment message when the student returns to sign-in', async () => {
+    const user = userEvent.setup()
+    const authentication = {
+      ...webAuthentication(),
+      listDirectPlans: vi.fn(async () => paidPlans()),
+      registerWithPayment: vi.fn(async () => undefined),
+    }
+    const view = render(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+        paidPlanCode="monthly_modules"
+      />,
+    )
+
+    await user.type(await screen.findByLabelText('Phone or username'), '7439091943')
+    await user.type(screen.getByLabelText('Password'), 'Correct horse battery 2026!')
+    await user.type(screen.getByLabelText('Confirm password'), 'Different horse battery 2026!')
+    await user.click(
+      screen.getByRole('button', { name: 'Pay ₹354.00 for Premium features' }),
+    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Enter the same password twice.',
+    )
+
+    view.rerender(
+      <WebPasswordSignInPanel
+        authentication={authentication}
+        message={message}
+        onAuthenticated={vi.fn()}
+        paidPlanCode={null}
+      />,
+    )
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+  })
 })
 
-const message = (key: Parameters<typeof resolveInterfaceMessage>[0]) =>
-  resolveInterfaceMessage(key, 'en-IN', 'development-preview')
+const message = (
+  key: Parameters<typeof resolveInterfaceMessage>[0],
+  parameters: Parameters<typeof resolveInterfaceMessage>[3] = {},
+) => resolveInterfaceMessage(key, 'en-IN', 'development-preview', parameters)
 
 function webAuthentication(): WebSessionAuthentication {
   return {
@@ -335,6 +516,56 @@ function webAuthentication(): WebSessionAuthentication {
     verifyOtp: vi.fn(async () => undefined),
     verifyPrivilegedMfaChallenge: vi.fn(),
   }
+}
+
+function paidPlans() {
+  return [
+    {
+      allowsRoleplay: false,
+      amountExGstPaise: 300,
+      billingPeriod: 'hours',
+      code: 'demo',
+      gstPaise: 54,
+      id: '01JPLAN00000000000000000002',
+      isDemo: true,
+      isTalkPack: false,
+      liveAiCapSeconds: null,
+      maxLevelNumber: 2,
+      name: '5-day start',
+      recommended: false,
+      totalPaise: 354,
+    },
+    {
+      allowsRoleplay: false,
+      amountExGstPaise: 30000,
+      billingPeriod: 'calendar_month',
+      code: 'monthly_modules',
+      gstPaise: 5400,
+      id: '01JPLAN00000000000000000001',
+      isDemo: false,
+      isTalkPack: false,
+      liveAiCapSeconds: 7200,
+      maxLevelNumber: 17,
+      name: 'Premium features',
+      recommended: false,
+      totalPaise: 35400,
+    },
+    {
+      allowsRoleplay: true,
+      amountExGstPaise: 50000,
+      billingPeriod: 'calendar_month',
+      code: 'monthly_modules_roleplay',
+      gstPaise: 9000,
+      id: '01JPLAN00000000000000000003',
+      isDemo: false,
+      isTalkPack: false,
+      liveAiCapSeconds: 7200,
+      maxLevelNumber: 17,
+      name: 'Premium with Role-play',
+      recommended: true,
+      totalPaise: 59000,
+    },
+  ]
 }
 
 function authenticatedSnapshot(): AuthenticationSnapshot {

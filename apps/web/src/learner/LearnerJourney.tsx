@@ -58,6 +58,8 @@ export interface LearnerJourneyProps {
   readonly locale: SupportedLocale
   readonly localizationPolicy: ResolutionPolicy
   readonly onLocaleChange?: (locale: SupportedLocale) => void
+  /** Level access is independent of Home's published-mission enrollment. */
+  readonly onOpenLearn?: () => void
   readonly audioRecorder?: AudioRecorder
   readonly createClientId?: () => string
   readonly offlineBinding?: OfflineProfileBinding | null
@@ -112,6 +114,7 @@ export function LearnerJourney({
   locale,
   localizationPolicy,
   onLocaleChange,
+  onOpenLearn,
   audioRecorder = defaultAudioRecorder,
   createClientId = createRandomClientId,
   offlineBinding = null,
@@ -796,9 +799,41 @@ export function LearnerJourney({
         />
       </header>
       {!hasDominantAction ? (
-        <p className="learner-card learner-home__empty">
-          <LocalizedMessage resolution={message('learner.home.no_mission')} />
-        </p>
+        onOpenLearn !== undefined ? (
+          <section
+            aria-labelledby="learn-action-title"
+            className="learner-home__action"
+          >
+            <div className="learner-home__action-body">
+              <h3
+                className="learner-home__action-title"
+                id="learn-action-title"
+              >
+                <LocalizedMessage resolution={message('level.path.title')} />
+              </h3>
+              <p className="learner-home__guidance">
+                <LocalizedMessage resolution={message('page.learn.description')} />
+              </p>
+              <button
+                className="ge-button ge-button--primary learner-home__continue"
+                onClick={onOpenLearn}
+                type="button"
+              >
+                <LocalizedMessage resolution={message('nav.learn')} />
+                <span
+                  aria-hidden="true"
+                  className="learner-home__continue-arrow"
+                >
+                  →
+                </span>
+              </button>
+            </div>
+          </section>
+        ) : (
+          <p className="learner-card learner-home__empty">
+            <LocalizedMessage resolution={message('learner.home.no_mission')} />
+          </p>
+        )
       ) : (
         <section
           aria-labelledby="dominant-action-title"
@@ -831,7 +866,7 @@ export function LearnerJourney({
                     text: message('learner.home.guidance_kn').text,
                   },
                   {
-                    locale: 'en-IN',
+                    locale: message('learner.home.guidance_en').resolvedLocale,
                     text: message('learner.home.guidance_en').text,
                   },
                 ]}

@@ -195,8 +195,8 @@ describe('DemoPhase1Shell', () => {
     )
 
     await user.click(screen.getByRole('link', { name: 'AI ಶಿಕ್ಷಕ' }))
-    await user.click(screen.getByRole('button', { name: 'English' }))
-    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
+    await user.click(screen.getByRole('button', { name: 'ಇಂಗ್ಲಿಷ್' }))
+    expect(screen.getByRole('button', { name: 'ಇಂಗ್ಲಿಷ್' })).toHaveClass(
       'is-active',
     )
 

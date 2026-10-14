@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Operator\EntitlementAdministration;
 
+use App\Conversation\Metering\LearnerProviderUsageQuery;
 use App\Entitlements\CourtesyPremiumGrantService;
 use App\Entitlements\DirectCatalogSeeder;
 use App\Entitlements\GstCalculator;
@@ -64,6 +65,7 @@ final readonly class EntitlementAdministrationQuery
 
         return [
             'learner_membership_id' => $learnerMembershipId,
+            'provider_usage' => app(LearnerProviderUsageQuery::class)->read($organizationId, $learnerMembershipId),
             'entitlements' => $items,
         ];
     }

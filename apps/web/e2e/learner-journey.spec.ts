@@ -27,6 +27,51 @@ const ids = {
   user: '01J10000000000000000000012',
 } as const
 
+test('keeps the pilot header, account menu and dark navigation readable on phones', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockLearnerApi(page, true)
+  await page.goto('/#home')
+  await page.locator('#interface-locale').selectOption('en-IN')
+  await page.locator('#interface-theme').selectOption('dark')
+  await page.locator('#interface-theme').focus()
+  const focusStyle = await page.locator('#interface-theme').evaluate((select) => ({
+    innerShadow: getComputedStyle(select).boxShadow,
+    innerOutline: getComputedStyle(select).outlineStyle,
+    outerOutline: getComputedStyle(select.closest('.shell-theme-control')!).outlineStyle,
+  }))
+  expect(focusStyle).toEqual({ innerShadow: 'none', innerOutline: 'none', outerOutline: 'solid' })
+  await page.locator('.ge-application-frame').evaluate((frame) => frame.classList.add('ge-application-frame--native-android'))
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    await page.locator('#shell-account-menu-trigger').click()
+    const menu = page.getByRole('menu')
+    await expect(menu).toBeVisible()
+    const bounds = await menu.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    const metrics = await page.evaluate(() => {
+      const name = document.querySelector('.shell-studio-brand__name')!
+      const mark = document.querySelector('.shell-studio-brand__mark')!
+      return { nameSize: parseFloat(getComputedStyle(name).fontSize),
+        markHeight: parseFloat(getComputedStyle(mark).height),
+        overflow: document.documentElement.scrollWidth > window.innerWidth }
+    })
+    expect(metrics.nameSize).toBeGreaterThanOrEqual(metrics.markHeight)
+    expect(metrics.overflow).toBe(false)
+    await page.screenshot({ path: `/tmp/gse-pilot-dark-${width}.png`, fullPage: true })
+    const accessibility = await new AxeBuilder({ page })
+      .include('.shell-account-dropdown').include('.ge-primary-navigation').include('.learner-home__streak')
+      .withRules(['color-contrast']).analyze()
+    expect(accessibility.violations).toEqual([])
+    await page.keyboard.press('Escape')
+  }
+  await page.locator('#shell-account-menu-trigger').click()
+  await page.getByRole('menuitem', { name: 'Delete account' }).click()
+  await page.getByRole('link', { name: '← Back to app' }).click()
+  await expect(page).toHaveURL(/#home$/)
+  await expect(page.locator('.learner-home')).toBeVisible()
+})
+
 test('keeps the Kannada Android Home compact, coach-led and accessible', async ({
   page,
 }) => {
@@ -57,7 +102,7 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
   await expect(locale).toHaveValue(DEFAULT_LOCALE)
   await expect(page.locator('html')).toHaveAttribute('lang', DEFAULT_LOCALE)
   await expect(action.locator('.tutor-presence__face')).toBeVisible()
-  await expect(action.getByText(message('tutor.name'))).toBeVisible()
+  await expect(action.getByText(message('tutor.name'), { exact: true })).toBeVisible()
   await expect(home.locator('.ge-button--primary')).toHaveCount(1)
   await expect(home.getByRole('link', {
     name: message('demo.phase1.home.speak'),
@@ -108,6 +153,82 @@ test('keeps the Kannada Android Home compact, coach-led and accessible', async (
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
+})
+
+test('opens the level path from authenticated Home without a mission enrollment', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ height: 568, width: 320 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const api = await mockLearnerApi(page, true)
+  await page.route('**/api/v1/home', async (route) => {
+    await json(route, { ...home(true), enrollment: null, next_mission: null })
+  })
+  await page.route('**/api/v1/me/levels', async (route) => {
+    await json(route, {
+      levels: [{
+        availability: 'available',
+        blueprint_id: '01TESTBLUEPRINT000000000001',
+        checkpoint_status: 'not_ready',
+        concept_key: 'can',
+        entitlement_access: 'allowed',
+        level_number: 1,
+        progress_access: 'allowed',
+        session_part_ids: ['introduction', 'practice', 'conversation', 'interaction'],
+        spoken_evidence: {
+          evidence_state: 'not_recorded',
+          spoken_progress_claim: false,
+          spoken_state: 'unassessed',
+        },
+      }],
+    })
+  })
+
+  await page.goto('/#home')
+  await page.locator('#interface-locale').selectOption('en-IN')
+  await page.locator('.ge-application-frame').evaluate((frame) => {
+    frame.classList.add('ge-application-frame--native-android')
+  })
+
+  const learnerHome = page.locator('.learner-home')
+  const learnAction = learnerHome.getByRole('button', {
+    name: localizedMessage('nav.learn', 'en-IN'),
+    exact: true,
+  })
+  await expect(learnerHome.getByRole('heading', {
+    name: localizedMessage('level.path.title', 'en-IN'),
+  })).toBeVisible()
+  await expect(learnAction).toBeEnabled()
+  await expect(learnerHome.locator('.ge-button--primary')).toHaveCount(1)
+  await expect(learnAction).toHaveClass(/ge-button--primary/u)
+  await expect(learnerHome.getByText(
+    localizedMessage('learner.home.no_mission', 'en-IN'),
+  )).toHaveCount(0)
+  expect((await learnAction.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+  await expect.poll(() => page.evaluate(() => (
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth
+  ))).toBe(true)
+  const accessibility = await new AxeBuilder({ page })
+    .include('.learner-home')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.screenshot({
+    fullPage: true,
+    path: testInfo.outputPath('enrolled-home-learn-320x568.png'),
+  })
+
+  await learnAction.click()
+
+  await expect(page).toHaveURL(/#learn$/u)
+  const levelPath = page.locator('.level-path')
+  await expect(levelPath.getByRole('heading', {
+    name: localizedMessage('level.path.title', 'en-IN'),
+  })).toBeVisible()
+  await expect(levelPath.locator('#level-path-level-1')).toBeEnabled()
+  await expect(learnerHome).toHaveCount(0)
+  expect(api.commandIds).toHaveLength(0)
+  expect(api.requestBodies).toHaveLength(0)
+  expect(api.lastResponse).toBeNull()
 })
 
 for (const locale of ['en-IN', 'kn-IN'] as const) {
@@ -1374,3 +1495,21 @@ function localizedMessage(
     requestedLocale: locale,
   }).text
 }
+
+test('checks dark text across learner navigation and account surfaces', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockLearnerApi(page, true)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#home')
+  await page.locator('#interface-locale').selectOption('en-IN')
+  await page.locator('#interface-theme').selectOption('dark')
+  for (const nav of ['home', 'learn', 'progress', 'tuition']) {
+    await page.locator(`#primary-navigation-${nav}`).click()
+    await expect(page.locator('#application-error-title')).toHaveCount(0)
+    const result = await new AxeBuilder({ page }).setLegacyMode().withRules(['color-contrast']).analyze()
+    expect(result.violations, JSON.stringify(result.violations.map(v => v.nodes.map(n => ({target:n.target, summary:n.failureSummary}))))).toEqual([])
+    await page.screenshot({ path: testInfo.outputPath(`dark-${nav}.png`), fullPage: true })
+  }
+  await page.locator('#shell-account-menu-trigger').click()
+  expect((await new AxeBuilder({ page }).setLegacyMode().include('.shell-account-dropdown').withRules(['color-contrast']).analyze()).violations).toEqual([])
+})

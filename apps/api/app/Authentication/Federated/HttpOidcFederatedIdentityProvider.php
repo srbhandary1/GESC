@@ -51,6 +51,16 @@ final class HttpOidcFederatedIdentityProvider implements FederatedIdentityProvid
             ]);
         }
 
+        if ($provider === 'instagram') {
+            return 'https://www.instagram.com/oauth/authorize?'.http_build_query([
+                'client_id' => $clientId,
+                'redirect_uri' => $redirectUri,
+                'response_type' => 'code',
+                'scope' => 'instagram_business_basic',
+                'state' => $state,
+            ]);
+        }
+
         throw new FederatedIdentityUnavailable;
     }
 
@@ -73,9 +83,12 @@ final class HttpOidcFederatedIdentityProvider implements FederatedIdentityProvid
             throw new FederatedIdentityUnavailable;
         }
 
-        $subject = $provider === 'google'
-            ? $this->googleSubject($clientId, $clientSecret, $authorizationCode, $redirectUri)
-            : $this->facebookSubject($clientId, $clientSecret, $authorizationCode, $redirectUri);
+        $subject = match ($provider) {
+            'google' => $this->googleSubject($clientId, $clientSecret, $authorizationCode, $redirectUri),
+            'facebook' => $this->facebookSubject($clientId, $clientSecret, $authorizationCode, $redirectUri),
+            'instagram' => $this->instagramSubject($clientId, $clientSecret, $authorizationCode, $redirectUri),
+            default => null,
+        };
 
         if ($subject === null) {
             throw new FederatedIdentityUnavailable;
@@ -131,6 +144,34 @@ final class HttpOidcFederatedIdentityProvider implements FederatedIdentityProvid
         }
 
         $profile = $this->http->get('https://graph.facebook.com/me', [
+            'access_token' => $accessToken,
+            'fields' => 'id',
+        ]);
+
+        return $this->stringField($profile, 'id');
+    }
+
+    private function instagramSubject(
+        string $clientId,
+        string $clientSecret,
+        string $authorizationCode,
+        string $redirectUri,
+    ): ?string {
+        $token = $this->http->asForm()->post('https://api.instagram.com/oauth/access_token', [
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+            'code' => $authorizationCode,
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => $redirectUri,
+        ]);
+
+        $accessToken = $this->stringField($token, 'access_token');
+
+        if ($accessToken === null) {
+            return null;
+        }
+
+        $profile = $this->http->get('https://graph.instagram.com/me', [
             'access_token' => $accessToken,
             'fields' => 'id',
         ]);

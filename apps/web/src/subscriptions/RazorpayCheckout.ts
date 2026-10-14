@@ -21,6 +21,7 @@ interface RazorpayResponse {
 
 interface RazorpayInstance {
   open(): void
+  close?(): void
 }
 
 interface RazorpayConstructor {
@@ -72,13 +73,37 @@ export async function openRazorpayCheckout(
 
   return new Promise((resolve, reject) => {
     let settled = false
-    const checkout = new Constructor({
+    let checkout: RazorpayInstance | null = null
+    const cleanup = () => {
+      globalThis.removeEventListener('ge:android-back-request', onAndroidBack)
+    }
+    const onAndroidBack = (event: Event) => {
+      if (settled) return
+      event.preventDefault()
+      settled = true
+      cleanup()
+      try {
+        checkout?.close?.()
+      } catch {
+        // Ignore provider modal close errors.
+      }
+      if (typeof document !== 'undefined') {
+        document
+          .querySelectorAll('.razorpay-container, .razorpay-backdrop')
+          .forEach((node) => node.remove())
+      }
+      resolve(null)
+    }
+    globalThis.addEventListener('ge:android-back-request', onAndroidBack)
+
+    checkout = new Constructor({
       amount: request.amount,
       currency: request.currency,
       description: request.description,
       handler: (response: RazorpayResponse) => {
         if (settled) return
         settled = true
+        cleanup()
         resolve({
           paymentId: response.razorpay_payment_id,
           orderId: response.razorpay_order_id,
@@ -90,6 +115,7 @@ export async function openRazorpayCheckout(
         ondismiss: () => {
           if (settled) return
           settled = true
+          cleanup()
           resolve(null)
         },
       },
@@ -102,6 +128,8 @@ export async function openRazorpayCheckout(
     try {
       checkout.open()
     } catch (cause) {
+      settled = true
+      cleanup()
       reject(cause)
     }
   })

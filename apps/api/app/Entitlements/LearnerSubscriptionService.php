@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 namespace App\Entitlements;
 
+use App\Authentication\Federated\FederatedAccount;
+use App\Authentication\Federated\FederatedSignInService;
+use App\Authentication\Password\PasswordAuthenticationFailed;
+use App\Authentication\Password\PasswordCredentialService;
+use App\Authentication\Password\PasswordPolicy;
+use App\Authentication\Password\PasswordPolicyViolation;
 use App\Billing\CheckoutCapture;
 use App\Billing\CheckoutOrder;
 use App\Billing\PaymentProvider;
 use App\Entitlements\Exceptions\EntitlementDenied;
 use App\Learning\LearnerAuthority;
+use App\Models\Membership;
+use App\Models\Organization;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,6 +34,10 @@ final readonly class LearnerSubscriptionService
         private EntitlementAccess $access,
         private DirectCatalogSeeder $catalog,
         private PaymentProvider $payments,
+        private PaidRegistrationMaterializer $registrations,
+        private PasswordCredentialService $passwords,
+        private PasswordPolicy $policy,
+        private FederatedSignInService $federated,
     ) {}
 
     /**
@@ -59,10 +73,77 @@ final readonly class LearnerSubscriptionService
                 'plans' => [],
             ];
         }
-        $this->catalog->seed($context->organizationId, Date::now()->toIso8601String());
-        $tax = $this->tax($context->organizationId);
+
+        return $this->catalogueFor($context->organizationId);
+    }
+
+    /**
+     * @return array{
+     *   gstin_is_placeholder: bool,
+     *   gst_registered: bool,
+     *   plans: list<array{
+     *     id: string,
+     *     code: string,
+     *     name: string,
+     *     amount_ex_gst_paise: int,
+     *     gst_paise: int,
+     *     total_paise: int,
+     *     gst_rate_bps: int,
+     *     billing_period: string,
+     *     allows_roleplay: bool,
+     *     max_level_number: int|null,
+     *     live_ai_cap_seconds: int|null,
+     *     is_demo: bool,
+     *     is_talk_pack: bool,
+     *     checkout_required: bool,
+     *     recommended: bool
+     *   }>
+     * }
+     */
+    public function publicCatalogue(): array
+    {
+        $organizationId = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->where('kind', Organization::KIND_PLATFORM_DIRECT)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->value('id');
+
+        if (! is_string($organizationId) || $organizationId === '') {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        return $this->catalogueFor($organizationId);
+    }
+
+    /**
+     * @return array{
+     *   gstin_is_placeholder: bool,
+     *   gst_registered: bool,
+     *   plans: list<array{
+     *     id: string,
+     *     code: string,
+     *     name: string,
+     *     amount_ex_gst_paise: int,
+     *     gst_paise: int,
+     *     total_paise: int,
+     *     gst_rate_bps: int,
+     *     billing_period: string,
+     *     allows_roleplay: bool,
+     *     max_level_number: int|null,
+     *     live_ai_cap_seconds: int|null,
+     *     is_demo: bool,
+     *     is_talk_pack: bool,
+     *     checkout_required: bool,
+     *     recommended: bool
+     *   }>
+     * }
+     */
+    private function catalogueFor(string $organizationId): array
+    {
+        $this->catalog->seed($organizationId, Date::now()->toIso8601String());
+        $tax = $this->tax($organizationId);
         $plans = DB::table('entitlement_plans')
-            ->where('organization_id', $context->organizationId)
+            ->where('organization_id', $organizationId)
             ->where('status', 'active')
             ->orderByRaw("CASE WHEN billing_period = 'talk_pack' THEN 1 ELSE 0 END")
             ->orderByRaw("CASE WHEN billing_period = 'talk_pack' THEN live_ai_cap_seconds ELSE 0 END")
@@ -132,7 +213,8 @@ final readonly class LearnerSubscriptionService
                 ->first();
 
             if ($existing instanceof stdClass) {
-                if ($this->string($existing, 'plan_id') !== $planId) {
+                if ($this->string($existing, 'plan_id') !== $planId
+                    || $this->string($existing, 'learner_membership_id') !== $membershipId) {
                     throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
                 }
 
@@ -148,6 +230,8 @@ final readonly class LearnerSubscriptionService
             if (! $plan instanceof stdClass || (int) $plan->amount_ex_gst_paise <= 0) {
                 throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
             }
+
+            $this->assertNotCurrentPaidPlan($organizationId, $membershipId, $plan);
 
             if (DirectPlanDefaults::isTalkPack($plan)) {
                 $this->requirePaidEntitlement($organizationId, $membershipId, false);
@@ -229,6 +313,389 @@ final readonly class LearnerSubscriptionService
         }
 
         return $this->applyCapture($this->string($checkout, 'id'), $capture);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function beginPaidRegistration(
+        string $phone,
+        string $password,
+        string $planId,
+        string $idempotencyKey,
+        Request $request,
+    ): array {
+        try {
+            $canonical = $this->policy->normalizeUsername($phone);
+        } catch (PasswordPolicyViolation) {
+            throw new PasswordAuthenticationFailed;
+        }
+
+        $existing = User::query()->where('username', $canonical)->first();
+        $passwordHash = null;
+
+        if ($existing instanceof User) {
+            if (! $this->passwords->passwordMatches($existing, $password)) {
+                throw new PasswordAuthenticationFailed;
+            }
+        } else {
+            try {
+                $passwordHash = $this->passwords->hashNewPassword($password, $canonical);
+            } catch (PasswordPolicyViolation) {
+                throw new PasswordAuthenticationFailed;
+            }
+        }
+
+        $organizationId = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->where('kind', Organization::KIND_PLATFORM_DIRECT)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->value('id');
+
+        if (! is_string($organizationId) || $organizationId === '') {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        $prepared = DB::transaction(function () use (
+            $planId,
+            $idempotencyKey,
+            $organizationId,
+            $canonical,
+            $passwordHash,
+            $password,
+            $existing,
+        ): array {
+            $this->catalog->seed($organizationId, Date::now()->toIso8601String());
+            $replay = DB::table('subscription_checkouts')
+                ->where('organization_id', $organizationId)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($replay instanceof stdClass) {
+                $intent = DB::table('paid_registration_intents')
+                    ->where('checkout_id', $replay->id)
+                    ->first();
+                if ($this->string($replay, 'plan_id') !== $planId
+                    || ! $intent instanceof stdClass
+                    || $this->string($intent, 'phone') !== $canonical
+                    || (! $existing instanceof User && ! password_verify($password, $this->string($intent, 'password_hash')))) {
+                    throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+                }
+
+                return ['created' => false, 'checkout' => $replay, 'order' => null];
+            }
+
+            $plan = DB::table('entitlement_plans')
+                ->where('organization_id', $organizationId)
+                ->where('id', $planId)
+                ->where('status', 'active')
+                ->first();
+
+            if (
+                ! $plan instanceof stdClass
+                || (int) $plan->amount_ex_gst_paise <= 0
+                || DirectPlanDefaults::isTalkPack($plan)
+            ) {
+                throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+            }
+
+            if ($existing instanceof User) {
+                $membershipId = DB::table('memberships')
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $existing->getKey())
+                    ->where('membership_type', Membership::TYPE_LEARNER)
+                    ->where('status', Membership::STATUS_ACTIVE)
+                    ->lockForUpdate()
+                    ->value('id');
+                if (! is_string($membershipId)) {
+                    throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+                }
+                $this->assertNotCurrentPaidPlan($organizationId, $membershipId, $plan);
+            }
+
+            $tax = $this->tax($organizationId);
+            $payable = GstCalculator::payable(
+                (int) $plan->amount_ex_gst_paise,
+                (int) $tax->gst_rate_bps,
+                (bool) $tax->gst_registered,
+            );
+            $checkoutId = (string) Str::ulid();
+            $now = Date::now();
+            DB::table('subscription_checkouts')->insert([
+                'id' => $checkoutId,
+                'organization_id' => $organizationId,
+                'learner_membership_id' => null,
+                'plan_id' => $planId,
+                'plan_snapshot' => json_encode($this->access->planSnapshot($plan), JSON_THROW_ON_ERROR),
+                'status' => 'pending',
+                'amount_ex_gst_paise' => $payable['amount_ex_gst_paise'],
+                'gst_paise' => $payable['gst_paise'],
+                'gst_rate_bps' => $payable['gst_rate_bps'],
+                'gstin' => $this->string($tax, 'gstin'),
+                'gstin_is_placeholder' => (bool) $tax->gstin_is_placeholder,
+                'provider' => 'pending',
+                'provider_reference' => 'pending',
+                'idempotency_key' => $idempotencyKey,
+                'entitlement_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            DB::table('paid_registration_intents')->insert([
+                'checkout_id' => $checkoutId,
+                'phone' => $canonical,
+                'password_hash' => $passwordHash,
+                'existing_user' => $existing instanceof User,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $checkout = DB::table('subscription_checkouts')->where('id', $checkoutId)->first();
+
+            if (! $checkout instanceof stdClass) {
+                throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+            }
+
+            return ['created' => true, 'checkout' => $checkout, 'order' => new CheckoutOrder(
+                checkoutId: $checkoutId,
+                amountExGstPaise: $payable['amount_ex_gst_paise'],
+                gstPaise: $payable['gst_paise'],
+                totalPaise: $payable['total_paise'],
+                planCode: $this->string($plan, 'code'),
+            )];
+        });
+
+        /** @var stdClass $checkout */
+        $checkout = $prepared['checkout'];
+        if ($prepared['created'] !== true) {
+            $payload = $this->checkoutPayload($checkout);
+            $payload['replayed'] = true;
+
+            return $payload;
+        }
+
+        try {
+            /** @var CheckoutOrder $order */
+            $order = $prepared['order'];
+            $capture = $this->payments->capture($order);
+        } catch (EntitlementDenied $exception) {
+            $this->failPaidRegistration($this->string($checkout, 'id'));
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->checkoutPayload($checkout);
+        }
+
+        return $this->applyCapture($this->string($checkout, 'id'), $capture);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function beginSocialPaidRegistration(
+        FederatedAccount $account,
+        string $planId,
+        string $idempotencyKey,
+        Request $request,
+    ): array {
+        if (! $this->federated->isProvider($account->provider) || $account->subject === '') {
+            throw new PasswordAuthenticationFailed;
+        }
+
+        $existing = $this->federated->existingUserFor($account);
+        if ($existing instanceof User) {
+            $canonical = (string) $existing->username;
+            $passwordHash = null;
+        } else {
+            $canonical = $this->federated->generatedUsernameFor($account);
+            $existing = User::query()->where('username', $canonical)->first();
+            $passwordHash = $existing instanceof User
+                ? null
+                : $this->passwords->hashNewPassword(
+                    'SocialAuth!'.Str::random(24).'9',
+                    $canonical,
+                );
+        }
+
+        $organizationId = Organization::query()
+            ->where('system_key', Organization::DIRECT_SYSTEM_KEY)
+            ->where('kind', Organization::KIND_PLATFORM_DIRECT)
+            ->where('status', Organization::STATUS_ACTIVE)
+            ->value('id');
+
+        if (! is_string($organizationId) || $organizationId === '') {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        $prepared = DB::transaction(function () use (
+            $account,
+            $planId,
+            $idempotencyKey,
+            $organizationId,
+            $canonical,
+            $passwordHash,
+            $existing,
+        ): array {
+            $this->catalog->seed($organizationId, Date::now()->toIso8601String());
+            $replay = DB::table('subscription_checkouts')
+                ->where('organization_id', $organizationId)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($replay instanceof stdClass) {
+                $intent = DB::table('paid_registration_intents')
+                    ->where('checkout_id', $replay->id)
+                    ->first();
+                if (
+                    $this->string($replay, 'plan_id') !== $planId
+                    || ! $intent instanceof stdClass
+                    || $this->string($intent, 'phone') !== $canonical
+                    || ($intent->federated_provider ?? null) !== $account->provider
+                ) {
+                    throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+                }
+
+                return ['created' => false, 'checkout' => $replay, 'order' => null];
+            }
+
+            $plan = DB::table('entitlement_plans')
+                ->where('organization_id', $organizationId)
+                ->where('id', $planId)
+                ->where('status', 'active')
+                ->first();
+
+            if (
+                ! $plan instanceof stdClass
+                || (int) $plan->amount_ex_gst_paise <= 0
+                || DirectPlanDefaults::isTalkPack($plan)
+            ) {
+                throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+            }
+
+            if ($existing instanceof User) {
+                $membershipId = DB::table('memberships')
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $existing->getKey())
+                    ->where('membership_type', Membership::TYPE_LEARNER)
+                    ->where('status', Membership::STATUS_ACTIVE)
+                    ->lockForUpdate()
+                    ->value('id');
+                if (! is_string($membershipId)) {
+                    throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+                }
+                $this->assertNotCurrentPaidPlan($organizationId, $membershipId, $plan);
+            }
+
+            $tax = $this->tax($organizationId);
+            $payable = GstCalculator::payable(
+                (int) $plan->amount_ex_gst_paise,
+                (int) $tax->gst_rate_bps,
+                (bool) $tax->gst_registered,
+            );
+            $checkoutId = (string) Str::ulid();
+            $now = Date::now();
+            DB::table('subscription_checkouts')->insert([
+                'id' => $checkoutId,
+                'organization_id' => $organizationId,
+                'learner_membership_id' => null,
+                'plan_id' => $planId,
+                'plan_snapshot' => json_encode($this->access->planSnapshot($plan), JSON_THROW_ON_ERROR),
+                'status' => 'pending',
+                'amount_ex_gst_paise' => $payable['amount_ex_gst_paise'],
+                'gst_paise' => $payable['gst_paise'],
+                'gst_rate_bps' => $payable['gst_rate_bps'],
+                'gstin' => $this->string($tax, 'gstin'),
+                'gstin_is_placeholder' => (bool) $tax->gstin_is_placeholder,
+                'provider' => 'pending',
+                'provider_reference' => 'pending',
+                'idempotency_key' => $idempotencyKey,
+                'entitlement_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            DB::table('paid_registration_intents')->insert([
+                'checkout_id' => $checkoutId,
+                'phone' => $canonical,
+                'password_hash' => $passwordHash,
+                'federated_provider' => $account->provider,
+                'federated_subject_ciphertext' => Crypt::encryptString($account->subject),
+                'existing_user' => $existing instanceof User,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $checkout = DB::table('subscription_checkouts')->where('id', $checkoutId)->first();
+
+            if (! $checkout instanceof stdClass) {
+                throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+            }
+
+            return ['created' => true, 'checkout' => $checkout, 'order' => new CheckoutOrder(
+                checkoutId: $checkoutId,
+                amountExGstPaise: $payable['amount_ex_gst_paise'],
+                gstPaise: $payable['gst_paise'],
+                totalPaise: $payable['total_paise'],
+                planCode: $this->string($plan, 'code'),
+            )];
+        });
+
+        /** @var stdClass $checkout */
+        $checkout = $prepared['checkout'];
+        if ($prepared['created'] !== true) {
+            $payload = $this->checkoutPayload($checkout);
+            $payload['replayed'] = true;
+
+            return $payload;
+        }
+
+        try {
+            /** @var CheckoutOrder $order */
+            $order = $prepared['order'];
+            $capture = $this->payments->capture($order);
+        } catch (EntitlementDenied $exception) {
+            $this->failPaidRegistration($this->string($checkout, 'id'));
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->checkoutPayload($checkout);
+        }
+
+        return $this->applyCapture($this->string($checkout, 'id'), $capture);
+    }
+
+    /**
+     * Confirms a guest paid-registration checkout. The Razorpay signature is
+     * the proof of payment; a checkout without a registration intent is refused.
+     *
+     * @return array<string, mixed>
+     */
+    public function confirmPaidRegistration(
+        string $checkoutId,
+        string $providerPaymentReference,
+        string $signature,
+    ): array {
+        $intent = DB::table('paid_registration_intents')
+            ->where('checkout_id', $checkoutId)
+            ->first();
+        $checkout = DB::table('subscription_checkouts')
+            ->where('id', $checkoutId)
+            ->first();
+
+        if (! $intent instanceof stdClass || ! $checkout instanceof stdClass) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        if ($this->string($checkout, 'status') === 'failed') {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
+
+        $capture = $this->payments->confirm(
+            $this->checkoutOrder($checkout),
+            $this->string($checkout, 'provider_reference'),
+            $providerPaymentReference,
+            $signature,
+        );
+
+        return $this->applyCapture($checkoutId, $capture);
     }
 
     /** @return array<string, mixed> */
@@ -357,6 +824,17 @@ final readonly class LearnerSubscriptionService
                 return $this->checkoutPayload($pending, $capture);
             }
 
+            if ($checkout->learner_membership_id === null) {
+                $this->registrations->attachMembership($checkoutId, request());
+                $checkout = DB::table('subscription_checkouts')
+                    ->where('id', $checkoutId)
+                    ->lockForUpdate()
+                    ->first();
+                if (! $checkout instanceof stdClass || $checkout->learner_membership_id === null) {
+                    throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+                }
+            }
+
             $plan = $this->checkoutPlan($checkout);
             if (! $plan instanceof stdClass) {
                 throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
@@ -419,6 +897,20 @@ final readonly class LearnerSubscriptionService
 
             return $this->checkoutPayload($completed, $capture);
         }, 3);
+    }
+
+    private function failPaidRegistration(string $checkoutId): void
+    {
+        DB::table('paid_registration_intents')->where('checkout_id', $checkoutId)->update([
+            'password_hash' => null,
+            'federated_subject_ciphertext' => null,
+            'updated_at' => Date::now(),
+        ]);
+        DB::table('subscription_checkouts')->where('id', $checkoutId)->update([
+            'status' => 'failed',
+            'failed_at' => Date::now(),
+            'updated_at' => Date::now(),
+        ]);
     }
 
     /**
@@ -539,6 +1031,25 @@ final readonly class LearnerSubscriptionService
             ->where('organization_id', $this->string($checkout, 'organization_id'))
             ->where('id', $this->string($checkout, 'plan_id'))
             ->first();
+    }
+
+    /** Reject a fresh charge for the paid plan already active; retries return before this check. */
+    private function assertNotCurrentPaidPlan(string $organizationId, string $membershipId, stdClass $plan): void
+    {
+        if ((bool) $plan->is_demo || DirectPlanDefaults::isTalkPack($plan)) {
+            return;
+        }
+
+        $active = DB::table('learner_entitlements')
+            ->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)
+            ->where('plan_id', $plan->id)
+            ->where('status', 'active')
+            ->where('expires_at', '>', Date::now())
+            ->exists();
+        if ($active) {
+            throw new EntitlementDenied(EntitlementDenied::CHECKOUT_UNAVAILABLE);
+        }
     }
 
     private function requirePaidEntitlement(

@@ -59,6 +59,7 @@ public class GlobalEnglishSystemBrowserPlugin extends Plugin {
     private static boolean isAllowedAuthorizationPath(String path) {
         return "/oauth/authorize".equals(path)
             || "/oauth/social/google/authorize".equals(path)
-            || "/oauth/social/facebook/authorize".equals(path);
+            || "/oauth/social/facebook/authorize".equals(path)
+            || "/oauth/social/instagram/authorize".equals(path);
     }
 }

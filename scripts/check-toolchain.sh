@@ -2,6 +2,15 @@
 
 set -eu
 
+repository_root="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)"
+if [ -d "$repository_root/tmp/toolchain/node/bin" ]; then
+    PATH="$repository_root/tmp/toolchain/node/bin:$PATH"
+fi
+if [ -d "$repository_root/tmp/toolchain/php" ]; then
+    PATH="$repository_root/tmp/toolchain/php:$PATH"
+fi
+export PATH
+
 expected_node="$(cat .node-version)"
 actual_node="$(node --version | sed 's/^v//')"
 

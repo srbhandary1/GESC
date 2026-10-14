@@ -73,6 +73,20 @@ function membershipPlans(): readonly SubscriptionPlanOffer[] {
 }
 
 describe('subscription panel', () => {
+  it('uses Kannada names for known server plans and talk packs without changing checkout identity', async () => {
+    const api: LearnerSubscriptionApi = {
+      entitlement: vi.fn(async () => entitlement({ plan_code: 'monthly_modules_roleplay', plan_name: 'Premium with Role-play', is_demo: false, live_ai_seconds_remaining: 7200, live_ai_cap_seconds: 7200 })),
+      plans: vi.fn(async () => ({ gstin_is_placeholder: false, plans: [...membershipPlans(), plan({ id: 'talk30', code: 'talk_pack_30', name: 'Talk 30', is_talk_pack: true, billing_period: 'talk_pack', live_ai_cap_seconds: 1800 })] })),
+      checkout: vi.fn(),
+    }
+    render(<SubscriptionPanel api={api} locale="kn-IN" localizationPolicy="development-preview" />)
+    expect(await screen.findByRole('heading', { name: 'ಪ್ರೀಮಿಯಂ ಸೌಲಭ್ಯಗಳು' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ಪಾತ್ರಾಭಿನಯದೊಂದಿಗೆ ಪ್ರೀಮಿಯಂ' })).toBeInTheDocument()
+    expect(screen.getByText('ಮಾತನಾಡಲು 30 ನಿಮಿಷಗಳು')).toBeInTheDocument()
+    expect(screen.queryByText('Premium features')).not.toBeInTheDocument()
+    expect(api.checkout).not.toHaveBeenCalled()
+  })
+
   it('shows the 5-day start expiry and completes dummy checkout', async () => {
     const checkout = vi.fn(async () => ({ status: 'completed' }))
     const api: LearnerSubscriptionApi = {
@@ -135,6 +149,42 @@ describe('subscription panel', () => {
     expect(screen.queryByRole('heading', { name: 'Talk time' })).not.toBeInTheDocument()
     expect(screen.getByText(/₹354\.00 payable/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Choose Premium features' }))
+    expect(checkout).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the current paid month from being bought again and warns that a different plan replaces it', async () => {
+    const checkout = vi.fn(async () => ({ status: 'completed' }))
+    const api: LearnerSubscriptionApi = {
+      entitlement: vi.fn(async () => entitlement({
+        plan_code: 'monthly_modules',
+        plan_name: 'Premium features',
+        is_demo: false,
+        allows_free_speech: true,
+        allowed_session_parts: ['introduction', 'practice', 'conversation', 'interaction'],
+        max_level_number: 17,
+        live_ai_seconds_remaining: 7200,
+        live_ai_cap_seconds: 7200,
+      })),
+      plans: vi.fn(async () => ({
+        gstin_is_placeholder: true,
+        plans: membershipPlans(),
+      })),
+      checkout,
+    }
+    const user = userEvent.setup()
+
+    render(
+      <SubscriptionPanel
+        api={api}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByText(/replaces the current month/)).toBeInTheDocument()
+    expect(screen.getByText('Role-play is not included')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Your current plan' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Choose Premium with Role-play' }))
     expect(checkout).toHaveBeenCalledOnce()
   })
 

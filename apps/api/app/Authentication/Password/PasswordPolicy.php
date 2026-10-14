@@ -12,13 +12,41 @@ final readonly class PasswordPolicy
 
     public function normalizeUsername(string $username): string
     {
-        $canonical = strtolower(trim($username));
+        $trimmed = strtolower(trim($username));
 
-        if (preg_match('/\A[a-z][a-z0-9._-]{3,63}\z/D', $canonical) !== 1) {
+        if (preg_match('/\A[a-z][a-z0-9._-]{3,63}\z/D', $trimmed) === 1) {
+            return $trimmed;
+        }
+
+        $compact = preg_replace('/[\s().-]+/', '', trim($username));
+
+        if (is_string($compact) && preg_match('/\A\+?[0-9]{7,20}\z/D', $compact) === 1) {
+            return $compact;
+        }
+
+        throw new PasswordPolicyViolation('The username is not valid.');
+    }
+
+    public function normalizeEstablishmentUsername(string $username): string
+    {
+        $trimmed = strtolower(trim($username));
+
+        if (preg_match('/\A[a-z][a-z0-9._-]{3,63}\z/D', $trimmed) !== 1) {
             throw new PasswordPolicyViolation('The username is not valid.');
         }
 
-        return $canonical;
+        return $trimmed;
+    }
+
+    public function isImportablePasswordHash(string $hash): bool
+    {
+        if ($hash === '' || strlen($hash) > 255) {
+            return false;
+        }
+
+        $info = password_get_info($hash);
+
+        return ($info['algo'] ?? null) === PASSWORD_BCRYPT;
     }
 
     public function normalizeAndValidatePassword(

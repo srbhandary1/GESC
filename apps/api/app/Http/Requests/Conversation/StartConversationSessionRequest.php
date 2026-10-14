@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Conversation;
 
+use App\Conversation\Dialogue\ConversationDialogueService;
 use App\Conversation\Support\ConversationUiLocales;
 use App\Http\Requests\IdempotentRequest;
 use Illuminate\Contracts\Validation\Validator;
@@ -17,6 +18,9 @@ final class StartConversationSessionRequest extends IdempotentRequest
     protected function payloadRules(): array
     {
         return [
+            'interaction_flow' => ['required_with:recovery_notice_version,recovery_notice_accepted', 'string', Rule::in(['roleplay_dialogue', 'question_help', 'free_speech'])],
+            'recovery_notice_version' => ['required_with:interaction_flow', 'string', Rule::in([ConversationDialogueService::NOTICE])],
+            'recovery_notice_accepted' => ['required_with:interaction_flow', 'boolean', 'accepted_if:interaction_flow,roleplay_dialogue,question_help,free_speech'],
             'persona_key' => [
                 'required',
                 'string',
@@ -53,6 +57,7 @@ final class StartConversationSessionRequest extends IdempotentRequest
                         'scenario_key',
                         'coaching_mode',
                         'ui_locale',
+                        'interaction_flow', 'recovery_notice_version', 'recovery_notice_accepted',
                     ],
                 ) !== []
             ) {

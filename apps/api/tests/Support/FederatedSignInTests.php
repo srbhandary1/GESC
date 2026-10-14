@@ -8,12 +8,14 @@ use App\Authentication\Federated\FederatedAccount;
 use App\Authentication\Federated\FederatedSignInService;
 use App\Authentication\Mobile\MobileOAuthClient;
 use App\Authentication\Password\PasswordCredentialService;
+use App\Entitlements\DirectPlanDefaults;
 use App\Models\AuthenticationSession;
 use App\Models\FederatedIdentity;
 use App\Models\MobileTokenFamily;
 use App\Models\User;
 use Database\Seeders\FoundationSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -180,11 +182,77 @@ trait FederatedSignInTests
     {
         $this->getJson('/api/v1/auth/social/providers')
             ->assertOk()
-            ->assertExactJson(['google' => true, 'facebook' => true]);
+            ->assertExactJson(['google' => true, 'facebook' => true, 'instagram' => true]);
 
         $this->getJson('/api/v1/auth/mobile/social/providers')
             ->assertOk()
-            ->assertExactJson(['google' => true, 'facebook' => true]);
+            ->assertExactJson(['google' => true, 'facebook' => true, 'instagram' => true]);
+    }
+
+    public function test_social_paid_registration_creates_account_grants_selected_plan_and_signs_in_for_google_facebook_and_instagram(): void
+    {
+        config()->set('billing.driver', 'dummy');
+        $this->getJson('/api/v1/direct/subscription-plans')->assertOk();
+        $planId = DB::table('entitlement_plans')
+            ->where('code', DirectPlanDefaults::MONTHLY_ROLEPLAY)
+            ->value('id');
+        self::assertIsString($planId);
+
+        foreach ([
+            FederatedIdentity::PROVIDER_GOOGLE => 'google-reg-sub-1',
+            FederatedIdentity::PROVIDER_FACEBOOK => 'facebook-reg-sub-1',
+            FederatedIdentity::PROVIDER_INSTAGRAM => 'instagram-reg-sub-1',
+        ] as $provider => $subject) {
+            $authorize = $this->withHeader('Origin', 'https://localhost')
+                ->get('/oauth/social/'.$provider.'/authorize?'.http_build_query([
+                    'intent' => 'register',
+                    'plan_id' => $planId,
+                    'plan_code' => 'monthly_modules_roleplay',
+                ]));
+            $authorize->assertRedirect();
+            $state = $this->redirectQueryParam(
+                (string) $authorize->headers->get('Location'),
+                'state',
+            );
+            $this->followSessionCookie($authorize);
+
+            $callback = $this->withHeader('Origin', 'https://localhost')
+                ->get('/oauth/social/'.$provider.'/callback?'.http_build_query([
+                    'code' => $subject,
+                    'state' => $state,
+                ]));
+            $callback->assertRedirect('/');
+            $this->followSessionCookie($callback);
+
+            $me = $this->withHeader('Origin', 'https://localhost')
+                ->getJson('/api/v1/me')
+                ->assertOk()
+                ->assertJsonPath('current_membership.membership_type', 'learner')
+                ->assertJsonPath('current_membership.organization.kind', 'platform_direct');
+
+            $this->withHeader('Origin', 'https://localhost')
+                ->getJson('/api/v1/me/entitlement')
+                ->assertOk()
+                ->assertJsonPath('status', 'active')
+                ->assertJsonPath('plan_code', DirectPlanDefaults::MONTHLY_ROLEPLAY)
+                ->assertJsonPath('allows_roleplay', true);
+
+            $this->withHeader('Origin', 'https://localhost')
+                ->postJson('/api/v1/auth/logout')
+                ->assertNoContent();
+
+            $reSignIn = $this->completeWebProviderCallback($provider, $subject);
+            $reSignIn->assertRedirect('/');
+            $this->followSessionCookie($reSignIn);
+            $this->withHeader('Origin', 'https://localhost')
+                ->getJson('/api/v1/me')
+                ->assertOk()
+                ->assertJsonPath('user.id', $me->json('user.id'));
+
+            $this->withHeader('Origin', 'https://localhost')
+                ->postJson('/api/v1/auth/logout')
+                ->assertNoContent();
+        }
     }
 
     /** @return TestResponse<Response> */

@@ -32,6 +32,19 @@ return [
 
     'disks' => [
 
+        // ADR-0042: private, application-encrypted, <=15-minute bodies. Exclude
+        // this dedicated tree from backups/release archives; never storage:link.
+        'conversation_recovery' => [
+            'driver' => 'local',
+            'root' => storage_path('app/conversation-recovery'),
+            'serve' => false,
+            'visibility' => 'private',
+            'directory_visibility' => 'private',
+            'permissions' => ['file' => ['private' => 0600], 'dir' => ['private' => 0700]],
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

@@ -8,7 +8,7 @@ final class FakeFederatedIdentityProvider implements FederatedIdentityProvider
 {
     public function enabled(string $provider): bool
     {
-        return in_array($provider, ['google', 'facebook'], true);
+        return in_array($provider, ['google', 'facebook', 'instagram'], true);
     }
 
     public function authorizationUrl(

@@ -36,6 +36,43 @@ final class DirectEntitlementTest extends TestCase
         $this->seed(FoundationSeeder::class);
     }
 
+    public function test_checkout_replay_is_membership_bound_and_current_plan_cannot_be_charged_twice(): void
+    {
+        [$learner, $context] = $this->learner();
+        $manager = $this->app->make(OrganizationContextManager::class);
+        $manager->activate($context);
+        try {
+            $service = $this->app->make(LearnerSubscriptionService::class);
+            $offers = $service->catalogue($learner)['plans'];
+            $plan = collect($offers)->firstWhere('code', DirectPlanDefaults::MONTHLY_MODULES);
+            self::assertIsArray($plan);
+            $key = (string) Str::ulid();
+            $first = $service->checkout($learner, $plan['id'], $key);
+            self::assertSame($first['id'], $service->checkout($learner, $plan['id'], $key)['id']);
+            try {
+                $service->checkout($learner, $plan['id'], (string) Str::ulid());
+                self::fail('The same active paid month must not be charged again.');
+            } catch (EntitlementDenied) {
+                self::assertSame(1, DB::table('subscription_checkouts')->count());
+            }
+            // A checkout key cannot be reused after ownership points to another membership.
+            $other = User::query()->forceCreate(['display_name' => 'Other learner', 'status' => User::STATUS_ACTIVE]);
+            $membership = (array) DB::table('memberships')->where('id', $context->membershipId)->first();
+            $membership['id'] = (string) Str::ulid();
+            $membership['user_id'] = $other->getKey();
+            DB::table('memberships')->insert($membership);
+            DB::table('subscription_checkouts')->where('id', $first['id'])->update(['learner_membership_id' => $membership['id']]);
+            try {
+                $service->checkout($learner, $plan['id'], $key);
+                self::fail('Another membership must not recover this checkout.');
+            } catch (EntitlementDenied) {
+                self::assertSame(1, DB::table('subscription_checkouts')->count());
+            }
+        } finally {
+            $manager->clear();
+        }
+    }
+
     public function test_me_entitlement_requires_authentication(): void
     {
         $this->getJson('/api/v1/me/entitlement')->assertUnauthorized();

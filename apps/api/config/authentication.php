@@ -105,6 +105,11 @@ return [
             'client_secret' => env('FACEBOOK_OAUTH_CLIENT_SECRET'),
             'redirect_uri' => env('FACEBOOK_OAUTH_REDIRECT_URI'),
         ],
+        'instagram' => [
+            'client_id' => env('INSTAGRAM_OAUTH_CLIENT_ID'),
+            'client_secret' => env('INSTAGRAM_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('INSTAGRAM_OAUTH_REDIRECT_URI'),
+        ],
     ],
 
     'mobile' => [

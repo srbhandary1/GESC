@@ -1,0 +1,8 @@
+FROM php:8.4.23-fpm-bookworm@sha256:66a10c4b32b2f5886c32a4fb23c6cc3e727661e6a929c241befb335aaee0290e
+RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev libicu-dev ffmpeg \
+    && docker-php-ext-install -j2 pdo_pgsql intl pcntl opcache \
+    && pecl install redis-6.3.0 && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/*
+# Application and protected configuration are mounted by the existing operator.
+# No application secret, learner data or vendor dependency is copied into the image.
+CMD ["php-fpm", "--nodaemonize"]

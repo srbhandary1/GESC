@@ -1,10 +1,13 @@
+import { lessonInstruction } from './content/lessonInstruction'
+import { CONCEPT_MESSAGE_KEYS } from '../localization/learnerLabelKeys'
 import { type AudioControlLabels } from '@global-english/design-system'
 import {
   type MessageKey,
   type ResolutionPolicy,
   type SupportedLocale,
 } from '@global-english/localization'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { QuestionHelpJourney } from '../conversation/QuestionHelpJourney'
 import { ConversationJourney } from '../conversation/ConversationJourney'
 import { lessonDrillOpening } from '../conversation/lessonDrillStepper'
 import type {
@@ -128,25 +131,7 @@ function isPartUnlocked(
   return required === null || completions[required] === true
 }
 
-const CONCEPT_LABELS: Record<string, string> = {
-  can: 'Can — ability and permission',
-  should: 'Should — advice and suggestions',
-  do_does: 'Do / Does — present habits',
-  is_are_ing: 'Am / Is / Are + -ing — happening now',
-  did: 'Did — past actions',
-  was_were_ing: 'Was / Were + -ing — past continuous',
-  have_has: 'Have / Has — experience and results',
-  have_been_has_been: 'Have been / Has been + -ing — still continuing',
-  had: 'Had — earlier past',
-  will: 'Will — future plans',
-  gonna_wanna: 'Gonna / Wanna — informal speech',
-  would: 'Would — polite requests',
-  may: 'May — permission and possibility',
-  if: 'If — real conditions',
-  must: 'Must — rules and obligations',
-  should_have: 'Should have — past advice',
-  used_to: 'Used to — past habits',
-}
+
 
 function firstNonEmpty(
   values: readonly string[] | undefined,
@@ -199,12 +184,13 @@ function tutorOpeningLine(detail: LevelSessionDetail): string | undefined {
   )
 }
 
-function conceptLabel(conceptKey: string | null): string | null {
+function conceptLabel(conceptKey: string | null, message: (key: MessageKey) => { text: string }): string | null {
   if (conceptKey === null || conceptKey === '') {
     return null
   }
 
-  return CONCEPT_LABELS[conceptKey] ?? conceptKey.replaceAll('_', ' ')
+  const key = CONCEPT_MESSAGE_KEYS[conceptKey]
+  return key ? message(key).text : conceptKey.replaceAll('_', ' ')
 }
 
 function isAbortError(error: unknown): boolean {
@@ -536,7 +522,9 @@ function OneQuestionAssessment({
   result,
   submitLabel,
   assessmentKind,
+  instruction,
 }: {
+  readonly instruction: (source: string, rationale?: boolean) => ReactNode
   readonly assessmentKind: LearnerAssessmentKind
   readonly busy: boolean
   readonly canRetry: boolean
@@ -583,7 +571,7 @@ function OneQuestionAssessment({
             })}
           />
         </p>
-        <h4>{item.prompt}</h4>
+        <h4>{instruction(item.prompt)}</h4>
         <p className="level-session__feedback-state">
           <span aria-hidden="true">{itemResult.correct ? '✓' : '!'}</span>
           <LocalizedMessage
@@ -603,11 +591,7 @@ function OneQuestionAssessment({
         </p>
         {itemResult.rationale ? (
           <p className="level-session__rationale">
-            <LocalizedMessage
-              resolution={message('level.path.answer_rationale', {
-                rationale: itemResult.rationale,
-              })}
-            />
+            {instruction(itemResult.rationale, true)}
           </p>
         ) : null}
         {hasIncorrect && canRetry && !hasMoreFeedback ? (
@@ -682,7 +666,7 @@ function OneQuestionAssessment({
         />
       </p>
       <fieldset>
-        <legend>{item.prompt}</legend>
+        <legend>{instruction(item.prompt)}</legend>
         <div className="level-session__answer-list">
           {item.options.map((option, optionId) => {
             const selected = selectedOptionId === optionId
@@ -915,7 +899,7 @@ export function LevelPathPanel({
           <ol className="level-path__list">
             {ready.map((level) => {
               const concept =
-                conceptLabel(level.concept_key) ??
+                conceptLabel(level.concept_key, message) ??
                 message('level.path.ready').text
               return (
                 <li key={level.level_number}>
@@ -1230,6 +1214,7 @@ function LevelSessionJourney({
   const [conversationNote, setConversationNote] = useState<string | null>(null)
   const [audioHeard, setAudioHeard] = useState(false)
   const [speakingOpened, setSpeakingOpened] = useState(false)
+  const [tutorHelpOpen, setTutorHelpOpen] = useState(false)
   const [boundSession, setBoundSession] = useState<FriendSession | null>(null)
   const [lessonPlaying, setLessonPlaying] = useState(false)
   const [checkpointDetail, setCheckpointDetail] =
@@ -1760,14 +1745,8 @@ function LevelSessionJourney({
       setError('listen_required')
       return
     }
-    if (
-      partId === 'practice' &&
-      visibleDetail?.check !== null &&
-      checkResult?.passed !== true
-    ) {
-      setError('check_required')
-      return
-    }
+    // The server retains passed Checks across navigation/reloads. A missing
+    // in-memory result must not prevent completing previously passed Practice.
     if (
       (partId === 'conversation' || partId === 'interaction') &&
       !speakingOpened
@@ -1778,12 +1757,9 @@ function LevelSessionJourney({
     setBusy(true)
     try {
       await api.completeSession(levelNumber, partId, createClientId())
-      const refreshed = await api.sessionDetail(levelNumber, partId)
-      setDetail(refreshed)
-      setCompletions((current) => ({
-        ...current,
-        [partId]: true,
-      }))
+      setDetail((current) => current?.part_id === partId ? { ...current, completed: true } : current)
+      setCompletions((current) => ({ ...current, [partId]: true }))
+      setError(null)
     } catch {
       setError('complete_failed')
     } finally {
@@ -1813,6 +1789,10 @@ function LevelSessionJourney({
       )
       await checkDraftController.clear(draft.attemptId)
       setCheckResult(result)
+      if (result.passed) {
+        setCompletions((current) => ({ ...current, practice: true }))
+        setDetail((current) => current?.part_id === 'practice' ? { ...current, completed: true } : current)
+      }
       setCheckFeedbackIndex(0)
       setCheckFeedbackDone(false)
       setError(null)
@@ -2031,6 +2011,24 @@ function LevelSessionJourney({
     }
   }
 
+  const instruction = (source: string, rationale = false) => {
+    const resolved = lessonInstruction(source, locale, localizationPolicy)
+    return <span lang={resolved.lang}>{rationale ? message('level.path.answer_rationale', { rationale: resolved.text }).text : resolved.text}</span>
+  }
+  const lessonGuidance = locale === 'kn-IN' ? visibleDetail?.kannada_guidance.summary?.trim() : undefined
+  const lessonHeadingText = lessonGuidance || visibleDetail?.objective
+  const lessonHeadingLocale = lessonGuidance ? 'kn-IN' : 'en-IN'
+
+  if (tutorHelpOpen && conversationApi) {
+    return <section className="level-session" data-level-part={partId} lang={locale}>
+      <button className="level-session__back" type="button" onClick={() => setTutorHelpOpen(false)}><LocalizedMessage resolution={message('level.path.back')} /></button>
+      <p lang={lessonHeadingLocale}>{lessonHeadingText}</p>
+      {api.startTutorHelp ? <QuestionHelpJourney api={conversationApi} createClientId={createClientId} locale={locale} localizationPolicy={localizationPolicy}
+        startLessonSession={(command, signal) => api.startTutorHelp!(levelNumber, partId, locale, command, signal)} />
+        : <p role="status"><LocalizedMessage resolution={message('level.path.unavailable')} /></p>}
+    </section>
+  }
+
   return (
     <section
       className={[
@@ -2069,9 +2067,9 @@ function LevelSessionJourney({
         <h2 id="level-session-title">
           <LocalizedMessage resolution={message(PART_MESSAGE_KEYS[partId])} />
         </h2>
-        {detail?.objective ? (
-          <p className="level-session__objective" lang="en-IN">
-            {detail.objective}
+        {lessonHeadingText ? (
+          <p className="level-session__objective" lang={lessonHeadingLocale}>
+            {lessonHeadingText}
           </p>
         ) : null}
         <p className="level-session__lead">
@@ -2215,7 +2213,7 @@ function LevelSessionJourney({
                       resolution={message('level.path.part.scenario_label')}
                     />
                   </p>
-                  <p lang="en-IN">{visibleDetail.talk.scenario}</p>
+                  <p>{instruction(visibleDetail.talk.scenario)}</p>
                 </div>
               ) : null
             ) : null}
@@ -2230,8 +2228,8 @@ function LevelSessionJourney({
                 </p>
                 <ul className="level-session__goal-list">
                   {visibleDetail.talk?.elicitation_goals.map((goal) => (
-                    <li key={goal} lang="en-IN">
-                      {goal}
+                    <li key={goal}>
+                      {instruction(goal)}
                     </li>
                   ))}
                 </ul>
@@ -2246,20 +2244,14 @@ function LevelSessionJourney({
                       resolution={message('level.path.part.task_label')}
                     />
                   </p>
-                  <p lang="en-IN">{visibleDetail.apply.task}</p>
+                  <p>{instruction(visibleDetail.apply.task)}</p>
                 </div>
               ) : null
             ) : null}
 
             {visibleDetail.part_id === 'introduction' ||
             visibleDetail.part_id === 'practice' ? (
-              locale === 'kn-IN' ? (
-                visibleDetail.kannada_guidance.summary ? (
-                  <p className="level-session__kannada" lang="kn">
-                    {visibleDetail.kannada_guidance.summary}
-                  </p>
-                ) : null
-              ) : (
+              locale === 'kn-IN' ? null : (
                 <>
                   {visibleDetail.target_patterns.length > 0 ? (
                     <details className="level-session__patterns-help">
@@ -2355,7 +2347,7 @@ function LevelSessionJourney({
                 </summary>
               <ul className="level-session__activities">
                 {visibleDetail.activities.map((activity) => (
-                  <li key={activity.id}>{activity.prompt}</li>
+                  <li key={activity.id}>{instruction(activity.prompt)}</li>
                 ))}
               </ul>
               </details>
@@ -2374,6 +2366,7 @@ function LevelSessionJourney({
               </p>
               {checkDraftForView !== null && !checkFeedbackDone ? (
                 <OneQuestionAssessment
+                  instruction={instruction}
                   assessmentKind="quick-check"
                   busy={busy}
                   canRetry
@@ -2471,7 +2464,7 @@ function LevelSessionJourney({
                 type="button"
                 className="level-session__primary"
                 disabled={busy}
-                onClick={() => void startTalk()}
+                onClick={() => (visibleDetail.part_id === 'introduction' || visibleDetail.part_id === 'practice') && conversationApi ? setTutorHelpOpen(true) : void startTalk()}
               >
                 <LocalizedMessage
                   resolution={message(
@@ -2483,6 +2476,9 @@ function LevelSessionJourney({
                 />
               </button>
               )}
+              {!boundSession && conversationApi && (visibleDetail.part_id === 'introduction' || visibleDetail.part_id === 'practice') ? (
+                <button className="level-session__secondary" disabled={busy} type="button" onClick={() => void startTalk()}><LocalizedMessage resolution={message('conversation.start.skill_focus')} /></button>
+              ) : null}
               {onOpenRoleplay && visibleDetail.part_id === 'interaction' ? (
                 <button
                   type="button"
@@ -2509,6 +2505,12 @@ function LevelSessionJourney({
                 />
               </button>
             </div>
+            {visibleDetail.completed && PARTS[PARTS.indexOf(partId) + 1] ? (
+              <button className="level-session__primary" type="button" onClick={() => selectPart(PARTS[PARTS.indexOf(partId) + 1]!)}>
+                <LocalizedMessage resolution={message('level.path.continue_question')} />
+                {' · '}<LocalizedMessage resolution={message(PART_MESSAGE_KEYS[PARTS[PARTS.indexOf(partId) + 1]!])} />
+              </button>
+            ) : null}
             {conversationNote ? (
               <p className="level-session__note">{conversationNote}</p>
             ) : null}
@@ -2581,6 +2583,7 @@ function LevelSessionJourney({
               {checkpointDraftForView !== null &&
               !checkpointFeedbackDone ? (
                 <OneQuestionAssessment
+                  instruction={instruction}
                   assessmentKind="checkpoint"
                   busy={busy}
                   canRetry={

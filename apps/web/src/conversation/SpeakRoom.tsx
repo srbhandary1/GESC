@@ -13,8 +13,9 @@ import type {
   FriendSession,
 } from './ConversationJourneyApi'
 import { RoleplayJourney } from './RoleplayJourney'
+import { QuestionHelpJourney } from './QuestionHelpJourney'
 
-export type SpeakMode = 'everyday' | 'situation'
+export type SpeakMode = 'everyday' | 'situation' | 'question_help'
 
 export interface SpeakRoomProps {
   readonly locale: SupportedLocale
@@ -44,9 +45,9 @@ export function SpeakRoom({
   voiceUnavailableMessageKey,
 }: SpeakRoomProps) {
   const [requestedMode, setRequestedMode] = useState<SpeakMode>(
-    allowsRoleplay ? initialMode : 'everyday',
+    !allowsRoleplay && initialMode === 'situation' ? 'everyday' : initialMode,
   )
-  const mode: SpeakMode = allowsRoleplay ? requestedMode : 'everyday'
+  const mode: SpeakMode = !allowsRoleplay && requestedMode === 'situation' ? 'everyday' : requestedMode
   const message = (key: MessageKey) =>
     resolveInterfaceMessage(key, locale, localizationPolicy)
 
@@ -61,6 +62,7 @@ export function SpeakRoom({
           [
             { id: 'everyday', key: 'speak.mode.everyday' },
             { id: 'situation', key: 'speak.mode.situation' },
+            { id: 'question_help', key: 'conversation.help.title' },
           ] as const
         ).map((tab) => {
           const selected = mode === tab.id
@@ -76,6 +78,18 @@ export function SpeakRoom({
                 if (!locked) {
                   setRequestedMode(tab.id)
                 }
+              }}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+                event.preventDefault()
+                const available: SpeakMode[] = allowsRoleplay ? ['everyday', 'situation', 'question_help'] : ['everyday', 'question_help']
+                const index = available.indexOf(mode)
+                const next = event.key === 'Home' ? available[0]
+                  : event.key === 'End' ? available.at(-1)
+                  : available[(index + (event.key === 'ArrowRight' ? 1 : available.length - 1)) % available.length]
+                if (!next) return
+                setRequestedMode(next)
+                event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#speak-tab-${next}`)?.focus()
               }}
               role="tab"
               tabIndex={selected ? 0 : -1}
@@ -109,6 +123,16 @@ export function SpeakRoom({
               setRequestedMode('everyday')
             }}
           />
+        ) : mode === 'question_help' ? (
+          <QuestionHelpJourney key="question-help"
+            api={api}
+            createClientId={createClientId}
+            locale={locale}
+            localizationPolicy={localizationPolicy}
+            onLiveAiUsageChanged={onLiveAiUsageChanged}
+          />
+        ) : !demoMode && initialSession === undefined ? (
+          <QuestionHelpJourney key="free-speech" flow="free_speech" api={api} createClientId={createClientId} locale={locale} localizationPolicy={localizationPolicy} onLiveAiUsageChanged={onLiveAiUsageChanged} />
         ) : (
           <ConversationJourney
             api={api}

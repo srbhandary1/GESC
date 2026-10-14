@@ -658,7 +658,7 @@ function renderStepContent(input: StepContentInput): ReactNode {
     return <div className="ge-onboarding__action-stack">
       <button className="ge-button" disabled={input.audioState === 'playing'} onClick={() => void input.playOutput()} type="button"><LocalizedMessage resolution={message(input.audioState === 'playing' ? 'learner.onboarding.audio_playing' : 'learner.onboarding.audio_play')} /></button>
       {input.audioState === 'heard' ? <p role="status"><LocalizedMessage resolution={message('learner.onboarding.audio_heard')} /></p> : null}
-      <button className="ge-button" onClick={() => input.setAudioState('deferred')} type="button"><LocalizedMessage resolution={message('learner.onboarding.audio_defer')} /></button>
+      <button aria-pressed={input.audioState === 'deferred'} className="ge-button" onClick={() => input.setAudioState('deferred')} type="button"><LocalizedMessage resolution={message('learner.onboarding.audio_defer')} /></button>
     </div>
   }
 

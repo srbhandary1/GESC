@@ -109,6 +109,56 @@ final class IndicSpeechAdapterTest extends TestCase
         $this->assertContains('secret_file_invalid', $errors);
     }
 
+    public function test_modern_dialogue_requests_mixed_scripts_and_preserves_detected_locale(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://stt.indic.test/speech-to-text' => Http::response(['transcript' => 'ಭೂತಕಾಲ ಎಂದರೇನು?', 'language_code' => 'kn-IN'], 200, ['Content-Type' => 'application/json'])]);
+        $result = app(IndicHttpSpeechToTextProvider::class)->transcribe(new RecordedSpeechToTextRequest('synthetic', self::wav(), 'audio/wav', 'en-IN', preserveOriginal: true));
+        $this->assertSame('original_speech', $result->transcriptSource);
+        $this->assertSame('kn-IN', $result->transcriptLocale);
+        $this->assertSame('ಭೂತಕಾಲ ಎಂದರೇನು?', $result->transcript);
+        $this->assertStringEndsWith(':codemix', $result->usage->modelVersion);
+        $this->assertNull($result->confidenceBps);
+        Http::assertSent(fn (Request $request): bool => str_contains($request->body(), 'codemix') && str_contains($request->body(), "\r\nunknown\r\n") && ! str_contains($request->body(), "\r\ntranslate\r\n"));
+        $this->assertSame('translate', config('voice.indic.mode'));
+    }
+
+    public function test_original_transcription_uses_real_confidence_and_never_invents_detected_locale(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://stt.indic.test/speech-to-text' => Http::response(['transcript' => 'At ten.', 'confidence' => 0.42], 200, ['Content-Type' => 'application/json'])]);
+        $result = app(IndicHttpSpeechToTextProvider::class)->transcribe(new RecordedSpeechToTextRequest('synthetic', self::wav(), 'audio/wav', 'en-IN', preserveOriginal: true));
+        $this->assertSame(4200, $result->confidenceBps);
+        $this->assertSame('unknown', $result->transcriptLocale);
+        $this->assertSame('original_speech', $result->transcriptSource);
+        Http::assertSent(fn (Request $request): bool => str_contains($request->body(), "\r\ncodemix\r\n") && str_contains($request->body(), "\r\nunknown\r\n"));
+    }
+
+    public function test_english_roleplay_supplies_input_language_without_translating_or_inventing_provenance(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://stt.indic.test/speech-to-text' => Http::response(['transcript' => 'I have an appointment.', 'language_code' => 'en-IN'], 200, ['Content-Type' => 'application/json'])]);
+        $result = app(IndicHttpSpeechToTextProvider::class)->transcribe(new RecordedSpeechToTextRequest('synthetic', self::wav(), 'audio/wav', 'en-IN', preserveOriginal: true, recognitionLanguage: 'en-IN'));
+        $this->assertSame('en-IN', $result->transcriptLocale);
+        $this->assertSame('original_speech', $result->transcriptSource);
+        $this->assertStringEndsWith(':codemix', $result->usage->modelVersion);
+        Http::assertSent(fn (Request $request): bool => str_contains($request->body(), "\r\nen-IN\r\n") && str_contains($request->body(), 'codemix') && ! str_contains($request->body(), "\r\nunknown\r\n"));
+    }
+
+    public function test_english_hint_does_not_relabel_local_speech_as_english(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://stt.indic.test/speech-to-text' => Http::response(['transcript' => 'मुझे पानी चाहिए', 'language_code' => 'hi-IN'], 200, ['Content-Type' => 'application/json'])]);
+        $result = app(IndicHttpSpeechToTextProvider::class)->transcribe(new RecordedSpeechToTextRequest('synthetic', self::wav(), 'audio/wav', 'en-IN', preserveOriginal: true, recognitionLanguage: 'en-IN'));
+        $this->assertSame('hi-IN', $result->transcriptLocale);
+        $this->assertSame('मुझे पानी चाहिए', $result->transcript);
+        $this->assertSame('original_speech', $result->transcriptSource);
+    }
+
     private function configureAuthorizedBoundary(): void
     {
         $secretPath = sys_get_temp_dir().'/indic-stt-'.Str::random(20).'.key';

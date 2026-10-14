@@ -36,6 +36,7 @@ final class LevelSessionProgressService
     {
         $payload = [
             'rule_key' => $this->ruleKey(),
+            'initial_open_levels' => config('level_sessions.sequential_unlock.initial_open_levels', []),
             'required_part_ids' => config('level_sessions.session_part_ids', []),
             'requires_level_checkpoint' => config(
                 'level_sessions.level_checkpoint.enabled',
@@ -71,17 +72,7 @@ final class LevelSessionProgressService
             ];
         }
 
-        if (
-            $entitlementSnapshot !== null
-            && $this->isDemoPlanOpenLevel($entitlementSnapshot, $levelNumber)
-        ) {
-            return [
-                'progress_access' => 'allowed',
-                'unlock_after_level_number' => null,
-            ];
-        }
-
-        if (! $this->enabled() || $levelNumber <= 1) {
+        if (! $this->enabled() || $this->isInitiallyOpen($levelNumber)) {
             return [
                 'progress_access' => 'allowed',
                 'unlock_after_level_number' => null,
@@ -116,14 +107,7 @@ final class LevelSessionProgressService
         int $levelNumber,
         ?array $entitlementSnapshot = null,
     ): void {
-        if (
-            $entitlementSnapshot !== null
-            && $this->isDemoPlanOpenLevel($entitlementSnapshot, $levelNumber)
-        ) {
-            return;
-        }
-
-        if (! $this->enabled() || $levelNumber <= 1) {
+        if (! $this->enabled() || $this->isInitiallyOpen($levelNumber)) {
             return;
         }
 
@@ -148,7 +132,7 @@ final class LevelSessionProgressService
         string $userId,
         int $completedLevelNumber,
     ): ?array {
-        if (! $this->enabled()) {
+        if (! $this->enabled() || $this->isInitiallyOpen($completedLevelNumber + 1)) {
             return null;
         }
 
@@ -314,23 +298,11 @@ final class LevelSessionProgressService
             ->exists();
     }
 
-    /**
-     * @param  array<string, mixed>  $entitlementSnapshot
-     */
-    private function isDemoPlanOpenLevel(
-        array $entitlementSnapshot,
-        int $levelNumber,
-    ): bool {
-        if (($entitlementSnapshot['is_demo'] ?? false) !== true) {
-            return false;
-        }
+    private function isInitiallyOpen(int $levelNumber): bool
+    {
+        $levels = config('level_sessions.sequential_unlock.initial_open_levels', []);
 
-        $maxLevel = $entitlementSnapshot['max_level_number'] ?? null;
-        if (! is_int($maxLevel)) {
-            $maxLevel = DirectPlanDefaults::DEMO_MAX_LEVEL;
-        }
-
-        return $levelNumber >= 1 && $levelNumber <= $maxLevel;
+        return is_array($levels) && in_array($levelNumber, $levels, true);
     }
 
     /**

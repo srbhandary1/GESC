@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Conversation\Orchestration;
 
+use App\Conversation\Dialogue\DialogueModelPolicy;
+use App\Conversation\Dialogue\LocalDialogueGreeting;
 use App\Conversation\Memory\LearnerMemoryService;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
@@ -14,6 +16,7 @@ use App\Conversation\Support\LessonDrillStrictTurnResponder;
 use App\Conversation\Support\SyntheticL1Explanations;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 final readonly class ConversationOrchestrator
@@ -29,6 +32,7 @@ final readonly class ConversationOrchestrator
 
     /**
      * @param  array<string, mixed>  $lessonDrill
+     * @param  array<string, mixed>  $dialogue
      */
     public function respond(
         string $organizationId,
@@ -42,10 +46,29 @@ final readonly class ConversationOrchestrator
         string $uiLocale,
         bool $persistAdvisory = true,
         array $lessonDrill = [],
+        array $dialogue = [],
     ): ConversationModelResult {
         $locale = ConversationUiLocales::isSupported($uiLocale)
             ? $uiLocale
             : ConversationUiLocales::default();
+        $greeting = LocalDialogueGreeting::reply($transcript, $dialogue);
+        if ($greeting !== null) {
+            return new ConversationModelResult(
+                understoodIntent: 'help_greeting', assistantReply: $greeting,
+                providerUsage: new ProviderUsage('local-dialogue-control', 'dialogue-control-v1', 0, 0, 0, 0, dispatchKind: 'local_execution'),
+                dialogue: ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+            );
+        }
+        if ($dialogue !== [] && in_array($dialogue['action'] ?? '', ['confused', 'decline_explanation'], true)) {
+            return new ConversationModelResult(
+                understoodIntent: $dialogue['action'] === 'confused' ? 'help_confused' : 'help_declined',
+                assistantReply: $dialogue['action'] === 'confused'
+                    ? 'Would you like me to explain that in your selected language?'
+                    : 'Of course. We will keep using English. You can ask another question.',
+                providerUsage: new ProviderUsage('local-dialogue-control', 'dialogue-control-v1', 0, 0, 0, 0, dispatchKind: 'local_execution'),
+                dialogue: ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+            );
+        }
 
         if ($this->lessonDrillStrictTurns->applies($lessonDrill)) {
             $result = $this->lessonDrillStrictTurns->respond(
@@ -71,10 +94,10 @@ final readonly class ConversationOrchestrator
         }
 
         $prompt = $this->prompts->active($coachingMode);
-        $memoryFacts = $this->memory->activeFactTexts(
+        $memoryFacts = ($dialogue === [] || ($dialogue['flow'] ?? null) === 'free_speech') ? $this->memory->activeFactTexts(
             organizationId: $organizationId,
             membershipId: $membershipId,
-        );
+        ) : [];
         $context = $this->allowlist->build(
             transcript: $transcript,
             personaStyleCode: $personaStyleCode,
@@ -101,10 +124,30 @@ final readonly class ConversationOrchestrator
                 promptBody: $prompt['body'],
                 memoryFacts: $context['memory_facts'],
                 lessonDrill: $context['lesson_drill'],
+                dialogue: $dialogue,
             ),
         );
 
-        if (! $this->validator->validate($result)) {
+        if ($dialogue !== []) {
+            $result = (new DialogueModelPolicy)->separateFreeSpeechCorrection($result, $dialogue);
+            $result = (new DialogueModelPolicy)->discardStaleFreeSpeechCorrection($result, $dialogue, $transcript);
+            $result = (new DialogueModelPolicy)->canonicalizeRetry($result, $dialogue);
+        }
+        if ($dialogue !== [] && ! (new DialogueModelPolicy)->valid($result, $dialogue)) {
+            // Content-free diagnostics: distinguish a length rejection from a
+            // language/schema/safety contract failure without retaining text.
+            Log::notice('conversation.output_rejected', [
+                'flow' => in_array($dialogue['flow'] ?? '', ['question_help', 'free_speech', 'roleplay_dialogue'], true) ? $dialogue['flow'] : 'unknown',
+                'reason' => (new DialogueModelPolicy)->isBrief($result->assistantReply) ? 'dialogue_contract' : 'reply_length',
+                'policy' => DialogueModelPolicy::VERSION,
+            ]);
+            $result = new ConversationModelResult(
+                understoodIntent: 'safe_fallback',
+                assistantReply: 'I could not check that safely. Please try the same turn again.',
+                providerUsage: $result->usage(), safetyState: 'fallback', usedFallback: true,
+                dialogue: ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+            );
+        } elseif (! $this->validator->validate($result)) {
             $result = $this->fallback($result->usage(), $locale);
         }
 

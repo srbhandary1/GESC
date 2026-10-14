@@ -1,11 +1,278 @@
 # Decision ledger
 
+### D-0363 — PHONE-E2E-POLISH-17, 14 October 2026
+
+Physical Android device (`RMX3085` / `J7GUXWEENBNZTW85`) end-to-end UI walk and UX/layout remediation for **1.0.14 / code 15**:
+1. Enabled child popup `WebView` handling (`onCreateWindow` in `GlobalEnglishWebChromeClient` with `setSupportMultipleWindows(true)`) so Razorpay checkout 3DS/Netbanking/bank confirmation windows stay inside the app with `window.opener` intact, constrained `.razorpay-container` to Android top/bottom safe-area insets, and bound Android Back (`ge:android-back-request`) to close the Razorpay modal cleanly.
+2. Remediated mobile header/menu/layout/theme defects across Guest, Sign-Up, Sign-In, First-Use Onboarding, Home, Learn (`LevelPathPanel` / `ModelAudioPlayer` LRU audio blob cache), Speak (`SpeakRoom` 3-tab grid), Progress (`ProgressDashboard`), 1:1 Tuition (`TuitionRequestPanel` light/dark input tokens), and Account (`SessionAccountMenu`, `SubscriptionPanel`, `FederatedAccountsPanel`).
+3. Verified `make verify` (`0`), `make e2e` (`48/48`), `make android-closed-beta` (`14` JVM tests), `make build`, preserve-data installation on `RMX3085`, and VPS deployment.
+
+### D-0362 — VERIFY-FIX-16, 14 October 2026
+
+Owner-directed student onboarding & social credential update plus audit remediation:
+1. Students can self-register and sign in with **Google, Facebook, or Instagram** credentials in addition to phone/username + password. Paid social registration (`intent=register&plan_id=...`) stores the encrypted social subject on `paid_registration_intents` and materializes the `User`, `FederatedIdentity`, Direct `learner` `Membership`, and purchased plan `learner_entitlements` only when payment capture succeeds (`ADR-0034` / `ADR-0041`).
+2. Completed paid registrations automatically select the target `learner_membership_id` on the web session or Android token family, and multi-membership users can select their active organization/account type via `PUT /api/v1/me/organization-context` in the React shell.
+3. Remediated `DEFECT-01` through `DEFECT-09` and the `password-sign-ins` rate-limiter empty-username bucket collision; verified `make verify` (`0`), `make e2e` (`48/48`), `make android-closed-beta`, and preserve-data installation on the connected `RMX3085` phone over Tailscale/ADB. See [UI_AUDIT_2026-10-14.md](UI_AUDIT_2026-10-14.md).
+
+### D-0361 — UI-AUDIT-15, 14 October 2026
+
+Executed a bounded, non-mutating UI and API verification audit of release **1.0.12** (`b06b7d50ee605e36910c011844ac7825a0bfa23f`) against an isolated PostgreSQL test environment (`global_english_test`) with two synthetic organizations and disposable role-scoped accounts, alongside the repository's `make verify` and `make e2e` suites. Preserved all 254 existing worktree modifications intact, made zero live payments or cloud AI provider calls, and recorded nine defects (`DEFECT-01` through `DEFECT-09`) for a separate bounded remediation checkpoint (`VERIFY-FIX-16`). See [UI_AUDIT_2026-10-14.md](UI_AUDIT_2026-10-14.md).
+
+### D-0360 — BACKUP-14, 26 September 2026
+
+Created an encrypted dated backup of live app 1.0.12, database and 67 accepted
+media objects. Isolated database restore (175 tables) and all 16,164 archive file
+hashes passed. Recovery key is stored separately; temporary conversation/audio
+payloads are excluded. The user clarified that Real-Studioz is this local computer. Backup, dated
+recovery key, checksum and restore guide are now in Git-excluded
+`local-backups/2026-09-26/` inside this repository; all copied hashes match. See [scope, evidence, privacy and
+remaining work](BACKUP_14_REVIEW.md). No runtime or schema change.
+
+### D-0359 — MEMBERSHIP-VERIFY-13, 26 September 2026
+
+Verify the supplied membership journey and install only after checks pass. Enforce
+the already-decided current paid-plan block at checkout creation, including guest
+registration for an existing account; allow original-key retry and expired-plan
+renewal. Bind checkout replay to the original tenant membership or authenticated
+registration phone. This closes enforcement gaps without changing pricing,
+entitlement policy or API/schema. Verified release `membership-verified-20260926-r2`
+and Android 1.0.12/code 13 are deployed, including the connected phone. See [scope](MEMBERSHIP_VERIFY_13_SPEC.md) and
+[verification](MEMBERSHIP_VERIFY_13_REVIEW.md).
+
+
+### D-0358 — Kannada interface catalogue sign-off, 26 September 2026
+
+The Accountable Product Owner signs off exact revision
+`ui-kn-IN-2026-09-26.5`. Review metadata is `approved`,
+`reviewedBy=S R Bhandary`, `approvedAt=2026-09-26T13:58:00+05:30`,
+`independentReview=true`. The engineering draft remains the translator.
+Approved-only resolution may show this Kannada interface. Hindi, Malayalam,
+Tamil and Telugu stay pending. Lesson-instruction approved-only behavior is
+unchanged. The same instruction updates the invite-only web app and closed-beta
+Android package. No master-plan amendment. See [APP-0110](APPROVALS.md#app-0110).
+
+### D-0357 — Direct signup shows the plan being paid for, 26 September 2026
+
+A student choosing a membership must see that plan, its limits and the payable
+total, then receive that plan only after payment completes. Web registration
+now confirms a pending Razorpay checkout the same way Android already does, and
+sets the browser session only when the capture is completed. Homepage prices
+stay GST-exclusive; the payment form shows the live GST breakdown. Buying the
+already-active paid plan is blocked. A different plan still replaces the
+current month, and unused days and talk-pack minutes stay on the old grant.
+Talk packs remain unavailable as a first purchase. No entitlement formula,
+schema or master-plan change.
+
+### D-0356 — Kannada lesson-instruction sign-off, 26 September 2026
+
+The Accountable Product Owner signs off exact revision
+`kn-lesson-instructions-2026-09-26.1`. Review metadata is `approved`,
+`reviewer=S R Bhandary`, `approvedAt=2026-09-26T13:18:00+05:30`,
+`independentReview=true`. The engineering draft remains the translator.
+Approved-only resolution is unchanged and still shows the English source.
+No master-plan, API, schema or publication change. See [APP-0109](APPROVALS.md#app-0109).
+
+### D-0355 — KANNADA-CONTENT-11, 26 September 2026
+
+The owner requests completion of remaining Kannada lesson and quiz instructions.
+Add exact-source-linked, versioned Kannada reading variants for the explicit pilot
+preview, preserving published curriculum, English practice content and deterministic
+assessment records. Keep review metadata pending and approved-only behavior intact.
+All 17 live published foundation concepts have full instruction-source coverage.
+Released as `kannada-content-20260926-r1`, Android 1.0.10/code 11; final verification passed.
+See [scope](KANNADA_CONTENT_11_SPEC.md) and [verification](KANNADA_CONTENT_11_REVIEW.md).
+
+
+### D-0354 — APP-VERSION-10, 26 September 2026
+
+The owner requires visible website/APK/app versions. Use a single bundled release
+manifest for Gradle, the app's Account label and website download names. Stage a
+versioned APK automatically after a successful closed-beta build; retain the old
+filename only for compatibility. This is version visibility, not automatic update
+installation. No architecture, authorization or retention change. See [scope](APP_VERSION_10_SPEC.md)
+and [verification](APP_VERSION_10_REVIEW.md). Released and verified as `app-version-20260926-r1`, Android 1.0.9/code 10.
+
+### D-0353 — KANNADA-UI-09, 26 September 2026
+
+The owner reports English text on Kannada-selected learner pages. Route known
+concept, scene/role and plan labels through the governed UI resolver; repair
+copied-English Kannada messages, including the shared account-security panel.
+Use already-attached Kannada lesson guidance as the primary heading. Preserve
+English practice content, exact published records, assessment and plan identity.
+This applies the existing ADR-0005/master localization policy; it creates no
+architecture amendment or self-approved linguistic review. See [scope](KANNADA_UI_09_SPEC.md)
+and [verification](KANNADA_UI_09_REVIEW.md). Final verification passed; release `kannada-ui-20260926-r2`, Android 1.0.8/code 9.
+
+### D-0352 — LEARN-LEVEL-08, 26 September 2026
+
+The owner explicitly requires lesson-appropriate Ask AI Tutor and Conversation
+unlocking after Introduction/Practice in every level. Bind lesson questions through
+the existing scoped level endpoint to a server-pinned blueprint; keep general
+Speak help separate. A passed Practice check creates completion atomically;
+reconcile genuine matching historical passes without changing scores. Master
+v3.22 and ADR-0025/0042 record this clarification. No schema or retention change.
+See [bounded specification](LEARN_LEVEL_08_SPEC.md) and [release verification](LEARN_LEVEL_08_REVIEW.md). Deployed as `lesson-tutor-20260926-r1`, Android 1.0.6/code 7.
+
+### D-0351 — LEARN-FLOW-07, 26 September 2026
+
+Owner-directed voice-flow simplification and optional Android text/audio history
+are authorized by APP-0108 and ADR-0044 (master v3.21). Consent remains explicit
+and server-enforced; its controls and AI-advisory details move to Account > Privacy.
+Save encrypted local text/audio only after opt-in; exclude backups, isolate exact
+account/membership/organization, provide deletion and free offline replay. Keep
+server retention unchanged. Exact tutor greetings use local dialogue control;
+rejected model text receives no TTS. Independent review remains pending in the
+[prepared handoff](LEARN_FLOW_07_HUMAN_REVIEW.md); engineering notices do not serve
+as reviewer acceptance. No schema, price or authoritative-learning amendment.
+Delivered in `learn-flow-20260926-r2` / Android 1.0.5 with physical opt-in,
+offline replay, isolation and deletion checks; [final evidence](LEARN_FLOW_07_REVIEW.md).
+Live synthetic testing additionally required mixed-script original STT for tutor
+and free speech, preserving English script without translating learner evidence.
+
+
+### D-0350 — LEVELS-BRIEF-06, 25 September 2026
+
+The owner explicitly requested Levels 1 and 2 unlocked for every subscription,
+with subsequent levels gated by progress, and short, easily understood AI replies.
+Configure `initial_open_levels=[1,2]` independently of plan tier; version the
+progress rule as `level_unlock_initial_two_v2` and include the starting set in its
+hash. Do not create completion evidence or rewrite historical unlock decisions.
+Default access does not bypass content, active entitlement or session-feature gates.
+Master v3.20 and ADR-0025 record the progression amendment.
+
+AI policy v18 targets one simple sentence, normally 8–15 words, with a hard
+maximum of two sentences/30 words/240 Unicode characters. Correction guidance
+is one short sentence, at most 20 words/160 characters; no encouragement paragraph.
+Reject oversized output through the existing safe-output path before reading the
+long text aloud; never cut it mid-sentence or alter assessment. ADR-0042/master
+§4.1 record this owner clarification. No migration, prices, provider routes,
+audio-minute formula, retention or authentication changes.
+[Bounded specification](LEVELS_BRIEF_06_SPEC.md).
+
+### D-0349 — DARK-TALK-05, 25 September 2026
+
+Owner requests readable Android dark-mode tiles/text and optional selected-language
+reading under Free Speech replies. Theme foreground/background pairs must remain
+coherent, including consent controls, disabled lesson controls and allowance-chip
+focus states. Explicit reading selects an opening or exact scoped unexpired turn;
+server source text is authoritative. Reuse accept_explanation with an opaque
+explanation_target, returning source metadata for volatile UI recovery. Preserve
+English turn-taking; no TTS or listening charge for reading, model usage metered.
+ADR-0042/master v3.19 record the owner clarification; no new foundation schema,
+permission, retention or pricing decision. STT seconds, TTS characters and model
+tokens are separate provider units; fallback reconciliation remains open.
+[Scope and acceptance](DARK_TALK_05_SPEC.md). Live verification required v15 source-only
+translation input; control labels/history must not become translation content.
+v16 separates an explicit duplicate correction clause before display/audio,
+without rewriting the topic reply or assessment.
+Android 1.0.4 and release `dark-talk-20260925-r3` deliver this decision;
+[verification and limitations](DARK_TALK_05_REVIEW.md).
+
+
+### D-0348 — Measured audio time and 1,000-speaker capacity, 25 September 2026
+
+The owner explicitly chose “Actual speaking/listening minutes; tokens tracked
+separately” and “1,000 simultaneous speakers.” Accepted [ADR-0043](adr/0043-measured-ai-audio-time-and-capacity-admission.md)
+amends master-plan §§20.2/20.4/21.2 and ADR-0037. Actual submitted recording and
+played audio use the existing entitlement; no fixed seconds are deducted for a
+typed turn or unplayed generation. Provider tokens remain separate expense
+metadata. Prices, allowances, historic charges, marks and consent authority are
+unchanged. Scoped short-lived playback grants, replay-safe progress, compatible
+clients and explicit unknown usage are required.
+
+The delivered slice adds shared Redis overload admission, scoped session locks,
+a bounded FPM runtime and student/operator usage visibility. It retains Sarvam
+STT and Azure neural synthesis based on verified rates and working adapters;
+there is no evidence-based reason to enable the more expensive/inactive speech
+routes by default. This does not approve new cloud purchases, certify 1,000
+speakers, replace vendor invoice reconciliation, or resolve Azure management
+MFA/permissions. The capacity target requires additional provider-work/connection
+isolation, a funded account allocation and sustained authenticated load evidence.
+[Deployment, verification and limits](STATUS.md#capacity-usage-04-deployed--25-september-2026).
+
+
+### D-0347 — PILOT-CONVERSATION-03, 25 September 2026
+
+The owner's request for at least seven interactions in role-play, free speech
+and Ask AI Tutor authorizes the bounded synthetic live checks and demonstrated
+repairs recorded in [the issue evidence](CONVERSATION_SEVEN_TURN_CHECK_2026-09-25.md).
+Free speech reuses the existing acknowledged, encrypted 15-minute conversation
+recovery boundary and stays unassessed. Existing manually saved notes and coaching
+modes remain available; no new long-term transcript memory or mark authority.
+Learn question help is separate from the governed Skill Focus drill. Modern model
+payloads omit unnecessary audit identifiers while project records and strict
+validation remain intact. The flow-constraint migration and generated contracts
+implement this existing architecture; no ADR amendment or schema redesign.
+Release r7 and the matching preserve-data APK are deployed. The final backend
+follow-up constrains free-speech output using the existing structured-response
+mechanism without weakening validation or assigning marks. Azure CLI MFA remains
+an external capacity blocker; no quota/spending ceiling was raised or bypassed.
+Paced synthetic response checks are distinct from real-voice and concurrent-load
+acceptance. Prior releases remain available for rollback.
+
+
+### D-0346 deployment follow-up — 25 September 2026
+
+The owner's repeated “Continue” instructions authorize finishing verification,
+guarded invite-only deployment and bounded synthetic checks for PILOT-FIX-01.
+The active release is `pilot-fix-20260925-r3`; the earlier release is retained
+for rollback. No schema/configuration or authoritative progression rule changes.
+Live evidence showed verbatim STT could label English audio en-IN while writing
+Devanagari; English role-play now uses documented codemix output, preserving
+local-language words/provenance rather than translating them into English.
+Question-help behavior remains verbatim/automatic. Prompt v7 explicitly prevents
+missing greetings/name/time from becoming grammar corrections; deterministic
+marks, objective evidence validation and session gates remain unchanged.
+The public APK matches the previously installed candidate. Physical inspection
+found Introduction completed and Practice incomplete; no Check answers or
+learning evidence were manufactured. Full evidence and limits are recorded in
+[PILOT-FIX-01](PILOT_FIX_01_2026-09-25.md).
+
+### D-0346 phone follow-up — 25 September 2026
+
+The owner's “phone is connected” instruction continues candidate preparation
+and preserve-data device verification. They confirmed a MacBook USB connection.
+Mac ADB was restored and the verified final APK installed with data preserved.
+Physical UI verification exposed a remaining native selector focus oval; the
+scoped CSS repair retains keyboard focus on the outer tile and has a passing
+browser regression. Installed bytes match the final APK hash. This follow-up
+does not deploy server changes or publish downloads; live speech remains open.
+[Evidence](PILOT_FIX_01_2026-09-25.md#connected-phone-follow-up--25-september-2026).
+
+### D-0346 — PILOT-FIX-01, 25 September 2026
+
+The product owner's reported defects authorize the bounded local fixes in
+[PILOT-FIX-01](PILOT_FIX_01_2026-09-25.md). Practice completion defers to the
+existing server-held passed Check instead of requiring the current component's
+volatile result; it does not bypass completion or paid-plan access rules.
+English role-play passes an en-IN recognition hint while preserving actual
+returned transcript provenance; multilingual question help retains auto-detection.
+The prompt requests partner continuation, and drill audio avoids speaking a
+quoted target twice. These are implementation repairs under ADR-0025/0026/0042,
+not architecture or retention amendments. No new migration/API, deployment,
+real audio inspection or live quality claim is authorized or inferred here.
+
+### D-0345 deployment addendum — 25 September 2026
+
+The explicitly requested deployment/device work is executed as
+`student-conversation-20260925-r2`, Android 1.0.2/code 3, with six additive
+migrations and private non-swappable temporary recovery. Synthetic live checks
+are recorded separately from the consenting one-person Kannada pilot, whose
+observations are pending. This supersedes D-0345's local-only delivery status,
+not its scope or independent release gates. No credential rollover or production
+signing claim is made. See STUDENT_CONVERSATION_02_EVIDENCE_2026-09-25.md.
+
 This ledger summarizes accepted repository decisions. A material change to the
 canonical baseline requires an ADR, an impact note and a corresponding update
 to the master plan.
 
 | ID | Status | Decision | Authority |
 |---|---|---|---|
+| D-0345 | Accepted; locally implemented | STUDENT-CONVERSATION-02 replaces synthetic Role-play assessment with AI-first alternating dialogue, a grammar-correction retry gate and actual-turn-linked advisory feedback; adds English-first Ask Swathi with an explicit local-language explanation offer and acceptance; shares web/Android behavior. Dedicated encrypted private context/replay artifacts require updated explicit notice, expire within 15 minutes without extension and are deleted on exit/withdrawal. No authoritative learning, ordinary-cache/history, research-consent or independent-review gate is changed. Local automated gates pass and the pilot packet is prepared; deployment, live device/provider and real student evidence remain open. | Explicit user feature request, temporary encrypted recovery approval and “continue”, 25 September 2026; [APP-0107](APPROVALS.md#app-0107); [ADR-0042](adr/0042-interactive-roleplay-and-consented-question-help.md); [specification](STUDENT_CONVERSATION_02_SPEC.md); [local evidence](STUDENT_CONVERSATION_02_EVIDENCE_2026-09-25.md) |
+| D-0344 | Recorded | STUDENT-E2E-01 repairs the authenticated Home-to-Learn entry, conversation recovery, native recording/disclosure UX, a grammar-category provider instruction mismatch and release-symlink fingerprint startup. The exact tested web/APK is published as `student-readiness-20260925`; one explicitly approved live Android grammar retest passes with unchanged validation safeguards. Synthetic Role-play objective feedback is not accepted as learner assessment, and human/production gates remain open. No migration, provider route, credentials, authoritative learning rules, payment or Play authority change. | Accountable Product Owner request for complete student UI/UX/free-speech E2E and explicit approval to deploy the grammar fix to `ai.globalspokenenglish.com` / `172.235.18.171` and run one synthetic test, 25 September 2026; [evidence](STUDENT_READINESS_E2E_2026-09-25.md) |
+| D-0343 | Recorded | The ADR-0041 closed-beta debug APK with SHA-256 `2180ba5f25741734dc5620e48458bfff15e88c7ac55a14587e0055bc6f40f7a7` is installed preserve-data on the connected RMX3085/API 33 and promoted to the public homepage APK download. The homepage cache key is `adr0041-rmx3085`, and the public APK is byte-identical to the installed candidate. This is not a Play release and does not change API, schema, payment credentials, entitlement semantics, authentication authority, provider routing or production-cutover authority. | Accountable Product Owner instruction to link the updated APK on the web homepage; ADR-0041; [status](STATUS.md#adr-0041-android-apk-installation-and-homepage-download--25-september-2026); [quality review](QUALITY_REVIEW.md#adr-0041-android-apk-installation-and-homepage-download--25-september-2026) |
+| D-0342 | Accepted | A new Direct learner is registered when payment for a selected plan is captured. The account and that plan are written together. A failed payment creates no account. An existing phone receives the purchased plan on the same account. Staff and institution enrollment stays on invitations. | Accountable Product Owner instruction, 24 September 2026; [ADR-0041](adr/0041-paid-registration-creates-the-account.md) |
+| D-0341 | Accepted | Previous-website students are onboarded into Global English Direct as basic-tier (`monthly_modules`) learners using the same phone number and password. Sign-in identifiers accept that phone format; imported bcrypt hashes verify locally and rehash to Argon2id on first success. `https://globalspokenenglish.com` is not written. Progress, recordings and payments are not copied. | Accountable Product Owner instruction, 24 September 2026; [ADR-0040](adr/0040-legacy-website-phone-sign-in-and-basic-onboarding.md) |
 | D-0340 | Accepted | UX-REM-06 Option A is authoritative for this release: retain the refined current ten-stage first-use sequence, its existing `{ adult_confirmed: true, goal_key }` authoritative command, independent optional voice purposes, typed fallback, Back behavior and encrypted option-only restoration. The current implementation already conforms, so no code, API/OpenAPI, schema, migration, consent, authentication, restoration or catalogue change is required. Option B's partial-onboarding contract is not authorized. Representative time, abandonment and comprehension measurements remain an unpassed UX-HUM-03 gate. | Accountable Product Owner instruction “Option A”, 23 September 2026; [decision packet](UX_REM_06_FIRST_SUCCESS_DECISION.md) |
 | D-0339 | Recorded | UX-REM-05 is technically complete for the ordered implementation sequence. Locked-level plan context suppresses unrelated account-security/federated panels while preserving two non-preselected authoritative offers, exact GST totals, inset-aware Continue-free/Close controls, exact focus return, fail-closed reconciliation and institutional exclusion. Representative plan comprehension remains an unpassed UX-HUM-03 gate. No live payment, API, schema, entitlement, credential, Play or production authority changes. | Accountable Product Owner instruction to close all other gaps; D-0319; [evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-05-contextual-plans-and-continue-free-parity--23-september-2026) |
 | D-0338 | Recorded | UX-REM-03 is technically complete for the ordered implementation sequence, while its representative comprehension and exact five-catalogue review rows remain unpassed UX-HUM-03/01 gates. UX-REM-04 progressively discloses result detail without deleting authoritative facts and defers aggregate score/pass until all item rationales are acknowledged. Its representative five-second recall row remains UX-HUM-03 evidence, not an automated PASS. No API, schema, scoring, mastery, consent, entitlement, credential, payment, Play or production authority changes. | Accountable Product Owner instruction to close all other gaps; D-0319; [plan](ANDROID_MOBILE_UX_REMEDIATION_COMPLETION_PLAN.md); [evidence](ANDROID_MOBILE_UX_REMEDIATION_EVIDENCE.md#ux-rem-04-quiz-and-result-hierarchy--23-september-2026) |

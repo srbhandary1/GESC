@@ -6,6 +6,7 @@ namespace App\Conversation\Voice\Providers\Indic;
 
 use App\Conversation\Providers\ConversationProviderException;
 use App\Conversation\Providers\ProviderUsage;
+use App\Conversation\Support\ConversationUiLocales;
 use App\Conversation\Voice\PcmWavInspector;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextProvider;
 use App\Conversation\Voice\Providers\RecordedSpeechToTextRequest;
@@ -38,6 +39,7 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
         if (
             $request->mimeType !== 'audio/wav'
             || $request->language !== $this->configuration->outputLanguage()
+            || ! in_array($request->recognitionLanguage, [null, 'en-IN'], true)
         ) {
             throw $this->failure('provider_policy_failure');
         }
@@ -48,6 +50,11 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
             throw $this->failure('provider_input_invalid');
         }
 
+        // Keep English words in Latin script in tutor/free-speech too, while
+        // preserving Indic words instead of translating them into evidence.
+        $mode = $request->preserveOriginal
+            ? 'codemix'
+            : $this->configuration->mode();
         $started = hrtime(true);
         $maximumBytes = $this->configuration->maximumJsonResponseBytes();
 
@@ -90,8 +97,8 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
                 )
                 ->post($this->configuration->transcribeUrl(), [
                     'model' => $this->configuration->model(),
-                    'mode' => $this->configuration->mode(),
-                    'language_code' => $this->configuration->languageCode(),
+                    'mode' => $mode,
+                    'language_code' => $request->recognitionLanguage ?? $this->configuration->languageCode(),
                 ]);
         } catch (ConversationProviderException $exception) {
             throw $exception;
@@ -136,7 +143,7 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
         }
 
         $confidence = $payload['confidence'] ?? null;
-        $confidenceBps = 8700;
+        $confidenceBps = $request->preserveOriginal ? null : 8700;
         if ($confidence !== null) {
             if (
                 ! is_numeric($confidence)
@@ -155,7 +162,7 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
             confidenceBps: $confidenceBps,
             usage: new ProviderUsage(
                 providerKey: $this->configuration->providerKey(),
-                modelVersion: $this->configuration->modelVersion(),
+                modelVersion: $this->configuration->modelVersion().($request->preserveOriginal ? ':'.$mode : ''),
                 latencyMilliseconds: $latency,
                 inputUnits: $metadata->durationMs,
                 outputUnits: mb_strlen($transcript),
@@ -166,6 +173,9 @@ final readonly class IndicHttpSpeechToTextProvider implements RecordedSpeechToTe
                 billableUnitQuantity: $metadata->durationMs,
                 locale: $this->configuration->languageCode(),
             ),
+            transcriptSource: $request->preserveOriginal ? 'original_speech' : 'translated_speech',
+            transcriptLocale: $request->preserveOriginal && ConversationUiLocales::isSupported(is_string($payload['language_code'] ?? null) ? $payload['language_code'] : '')
+                ? $payload['language_code'] : ($request->preserveOriginal ? 'unknown' : 'en-IN'),
         );
     }
 

@@ -17,13 +17,31 @@
 }
 
 .ge-application-frame__brand:has(.shell-brand-lockup),
-.ge-application-frame__brand:has(.shell-brand-logo) {
+.ge-application-frame__brand:has(.shell-brand-logo),
+.ge-application-frame__brand:has(.shell-studio-brand) {
   gap: var(--ge-space-2);
 }
 
 .ge-application-frame__brand:has(.shell-brand-lockup) .ge-application-frame__brand-mark,
-.ge-application-frame__brand:has(.shell-brand-logo) .ge-application-frame__brand-mark {
+.ge-application-frame__brand:has(.shell-brand-logo) .ge-application-frame__brand-mark,
+.ge-application-frame__brand:has(.shell-studio-brand) .ge-application-frame__brand-mark {
   display: none;
+}
+
+:is(h1, h2, h3, h4, main)[tabindex='-1']:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.razorpay-container {
+  top: var(--ge-native-safe-area-top, 0px) !important;
+  bottom: var(--ge-native-safe-area-bottom, 0px) !important;
+  height: calc(
+    100% - var(--ge-native-safe-area-top, 0px) - var(--ge-native-safe-area-bottom, 0px)
+  ) !important;
+  max-height: calc(
+    100dvh - var(--ge-native-safe-area-top, 0px) - var(--ge-native-safe-area-bottom, 0px)
+  ) !important;
 }
 
 .shell-brand-lockup {
@@ -256,10 +274,13 @@
 }
 
 .shell-account-dropdown__menu {
-  position: absolute;
-  z-index: 40;
-  inset-block-start: calc(100% + 0.4rem);
-  inset-inline-start: 0;
+  position: fixed;
+  z-index: 100;
+  width: min(18rem, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: normal;
   display: grid;
   min-inline-size: 11rem;
   padding: 0.35rem;
@@ -269,7 +290,8 @@
   box-shadow: var(--ge-shadow-panel);
 }
 
-.shell-account-dropdown__menu button {
+.shell-account-dropdown__menu button,
+.shell-account-dropdown__menu a {
   min-block-size: var(--ge-target-minimum);
   padding: 0.65rem 0.8rem;
   border: 0;
@@ -993,6 +1015,42 @@
   width: 16rem;
   height: 16rem;
   inset: auto -6rem -4rem auto;
+}
+
+.web-paid-plans {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.web-paid-plans > p {
+  margin: 0;
+}
+
+.web-paid-plan {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  min-block-size: 3rem;
+  padding: 0.85rem;
+  border: 1px solid var(--ge-color-border);
+  border-radius: 0.75rem;
+}
+
+.web-paid-plan--selected {
+  border-color: var(--ge-color-accent, currentColor);
+}
+
+.web-paid-plan__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.web-paid-plan__price {
+  font-weight: 700;
 }
 
 .web-password-sign-in__brand-mark {

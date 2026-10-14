@@ -490,3 +490,65 @@ function message(
     requestedLocale: locale,
   }).text
 }
+
+for (const theme of ['dark', 'light']) test(`checks ${theme} sign-in text and controls`, async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#sign-in')
+  await page.locator('#interface-theme').selectOption(theme)
+  await expect(page.locator('html')).toHaveAttribute('data-ge-theme', theme)
+  if (theme === 'dark') await expect(page.locator('button[type=submit]')).toHaveCSS('color', 'rgb(11, 18, 16)')
+  await page.evaluate(async () => { await document.fonts.ready; await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))) })
+  const result = await new AxeBuilder({ page }).setLegacyMode().withRules(['color-contrast']).analyze()
+  expect(result.violations).toEqual([])
+  await page.screenshot({ path: testInfo.outputPath(`${theme}-sign-in.png`), fullPage: true })
+})
+
+test('offers Google, Facebook, and Instagram on paid signup and sign-in and resolves multi-membership selection', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route('**/api/v1/auth/social/providers', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: { google: true, facebook: true, instagram: true },
+      status: 200,
+    })
+  })
+  await page.route('**/api/v1/direct/subscription-plans', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        gst_registered: true,
+        gstin_is_placeholder: true,
+        plans: [
+          {
+            allows_roleplay: true,
+            amount_ex_gst_paise: 50000,
+            billing_period: 'calendar_month',
+            checkout_required: true,
+            code: 'monthly_modules_roleplay',
+            gst_paise: 9000,
+            gst_rate_bps: 1800,
+            id: '01JPLAN00000000000000000003',
+            is_demo: false,
+            is_talk_pack: false,
+            live_ai_cap_seconds: 7200,
+            max_level_number: null,
+            name: 'Premium with Role-play',
+            recommended: true,
+            total_paise: 59000,
+          },
+        ],
+      },
+      status: 200,
+    })
+  })
+
+  await page.goto('/#sign-up/monthly_modules_roleplay')
+  await page.locator('#interface-locale').selectOption('en-IN')
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continue with Facebook' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continue with Instagram' })).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+  const signupAxe = await new AxeBuilder({ page }).analyze()
+  expect(signupAxe.violations).toEqual([])
+})

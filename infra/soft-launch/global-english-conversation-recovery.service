@@ -1,0 +1,12 @@
+[Unit]
+Description=Private no-swap conversation recovery memory
+After=local-fs.target
+Before=user@1000.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/ge-conversation-recovery-memory mount
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=user@1000.service

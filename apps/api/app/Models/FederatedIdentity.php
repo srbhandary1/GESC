@@ -24,6 +24,8 @@ final class FederatedIdentity extends Model
 
     public const string PROVIDER_FACEBOOK = 'facebook';
 
+    public const string PROVIDER_INSTAGRAM = 'instagram';
+
     /**
      * @var list<string>
      */

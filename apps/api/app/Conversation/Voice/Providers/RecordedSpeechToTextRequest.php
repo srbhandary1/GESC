@@ -11,5 +11,7 @@ final readonly class RecordedSpeechToTextRequest
         public string $audioBytes,
         public string $mimeType,
         public string $language,
+        public bool $preserveOriginal = false,
+        public ?string $recognitionLanguage = null,
     ) {}
 }

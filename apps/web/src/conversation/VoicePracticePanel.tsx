@@ -1,3 +1,4 @@
+import { audioForHistory, historyEnabled, type SavedAudio } from './deviceConversationHistory'
 import type {
   MessageKey,
   MessageParameters,
@@ -25,6 +26,14 @@ import { isAbortError } from '../shared/isAbortError'
 import { HOLD_MAXIMUM_DURATION_MS } from './holdToTalkLimit'
 import { conversationErrorMessageKey } from './conversationErrorMessage'
 import { preconnectRealtimeSpeechAfterConsent } from './preconnectRealtimeSpeech'
+import { isNativeAndroid } from '../auth/nativeMicrophonePermissionPlugin'
+
+export interface SelectedVoiceTranscript {
+  readonly audio?: SavedAudio
+  readonly recordingId?: string
+  readonly locale: SupportedLocale | 'unknown'
+  readonly source: 'typed' | 'original_speech' | 'translated_speech'
+}
 
 interface VoicePracticePanelProps {
   readonly api: ConversationJourneyApi
@@ -32,7 +41,11 @@ interface VoicePracticePanelProps {
   readonly createClientId: () => string
   readonly locale: SupportedLocale
   readonly onPreferTyping?: () => void
-  readonly onTranscriptSelected: (transcript: string) => void
+  readonly hideTypingFallback?: boolean
+  readonly onTranscriptSelected: (transcript: string, metadata?: SelectedVoiceTranscript) => void
+  readonly onReviewStateChange?: (reviewing: boolean) => void
+  readonly includeTranscriptProvenance?: boolean
+  readonly onProcessingConsentWithdrawn?: () => void
   readonly onLoopPhase?: (phase: SpeakLoopPhase) => void
   readonly onCancelInFlight?: () => void
   readonly recorder?: AudioRecorder
@@ -74,11 +87,15 @@ export function VoicePracticePanel({
   createClientId,
   locale,
   onPreferTyping,
+  hideTypingFallback = false,
   onTranscriptSelected,
+  onReviewStateChange,
   onLoopPhase,
   onCancelInFlight,
   recorder = defaultAudioRecorder,
   requireTranscriptConfirmation = false,
+  includeTranscriptProvenance = false,
+  onProcessingConsentWithdrawn,
   resetEpoch = 0,
   speakLoopPhase = 'waiting',
   sessionId,
@@ -87,13 +104,20 @@ export function VoicePracticePanel({
 }: VoicePracticePanelProps) {
   const [state, setState] = useState<VoicePanelState>({ kind: 'checking' })
   const [correctedTranscript, setCorrectedTranscript] = useState('')
-  const [correcting, setCorrecting] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(() => {
+    try { return localStorage.getItem('ge.voice-instructions.v1') !== 'seen' } catch { return true }
+  })
   const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
   const [localResetEpoch, setLocalResetEpoch] = useState(0)
   const [uploadError, setUploadError] = useState<MessageKey | null>(null)
+  const pendingAudio = useRef<SavedAudio | undefined>(undefined)
   const uploadCommand = useRef('')
   const reviewCommand = useRef('')
   const uploadAbort = useRef<AbortController | null>(null)
+  const tapToSpeak = compact || isNativeAndroid()
+  const voiceTitle = text(
+    tapToSpeak ? 'learner.recording.tap_speak' : 'conversation.voice.title',
+  )
 
   const setPhase = useCallback((phase: SpeakLoopPhase) => {
     setLoopPhase(phase)
@@ -107,6 +131,7 @@ export function VoicePracticePanel({
 
   const cancelInFlight = useCallback(() => {
     uploadAbort.current?.abort()
+    pendingAudio.current = undefined
     uploadAbort.current = null
     abandonSpeakLoop()
     onCancelInFlight?.()
@@ -125,7 +150,7 @@ export function VoicePracticePanel({
 
     let cancelled = false
 
-    void (async () => {
+    const refreshConsent = async () => {
       try {
         const listing = await api.voiceConsents!(locale)
         if (cancelled) {
@@ -141,12 +166,18 @@ export function VoicePracticePanel({
           setState({ kind: 'unavailable' })
         }
       }
-    })()
-
+    }
+    void refreshConsent()
+    const onChanged = () => { uploadAbort.current?.abort(); void refreshConsent() }
+    window.addEventListener('global-english:voice-consent-changed', onChanged)
     return () => {
       cancelled = true
+      uploadAbort.current?.abort()
+      window.removeEventListener('global-english:voice-consent-changed', onChanged)
     }
   }, [api, locale])
+
+  useEffect(() => { onReviewStateChange?.(state.kind === 'candidate' || state.kind === 'loading') }, [onReviewStateChange, state.kind])
 
   if (
     api.voiceConsents === undefined ||
@@ -165,7 +196,7 @@ export function VoicePracticePanel({
         aria-labelledby="secure-voice-title"
         className="conversation-journey__voice"
       >
-        <h3 id="secure-voice-title">{text('conversation.voice.title')}</h3>
+        <h3 id="secure-voice-title">{voiceTitle}</h3>
         <p role="alert">{text(unavailableMessageKey)}</p>
       </section>
     )
@@ -260,6 +291,7 @@ export function VoicePracticePanel({
         uploadCommand.current = createClientId()
       }
       const wav = await audioToPcmWav(capture, HOLD_MAXIMUM_DURATION_MS)
+      pendingAudio.current = historyEnabled() ? await audioForHistory(wav) : undefined
       markSpeakLoop('wav_ready')
       const recording = await api.uploadVoiceRecording!(
         sessionId,
@@ -296,7 +328,6 @@ export function VoicePracticePanel({
       }
 
       setCorrectedTranscript(recording.transcript)
-      setCorrecting(false)
       setState({ kind: 'candidate', listing, recording })
       releaseHold()
     } catch (error) {
@@ -326,6 +357,7 @@ export function VoicePracticePanel({
         { requested_locale: locale },
         createClientId(),
       )
+      if (purpose === 'conversation_provider_processing') onProcessingConsentWithdrawn?.()
       const refreshed = await api.voiceConsents!(locale)
       setState({ kind: 'consent', listing: refreshed })
     } catch {
@@ -356,17 +388,31 @@ export function VoicePracticePanel({
     const selected =
       action === 'correct'
         ? correctedTranscript.trim()
-        : recording.transcript
+        : includeTranscriptProvenance
+          ? result.transcript_original ?? result.transcript ?? recording.transcript
+          : recording.transcript
 
     if (selected !== null && selected !== '') {
       markSpeakLoop('transcript_ready')
       setPhase('preparing')
-      onTranscriptSelected(selected)
+      if (includeTranscriptProvenance) {
+        onTranscriptSelected(selected, action === 'correct'
+          ? { locale: 'unknown', source: 'typed', audio: pendingAudio.current }
+          : {
+              recordingId: result.id,
+              ...(pendingAudio.current ? { audio: pendingAudio.current } : {}),
+              locale: result.transcript_locale ?? 'unknown',
+              source: result.transcript_source ?? 'translated_speech',
+            })
+      } else {
+        if (pendingAudio.current) onTranscriptSelected(selected, { audio: pendingAudio.current, source: 'original_speech', locale: result.transcript_locale ?? 'unknown' })
+        else onTranscriptSelected(selected)
+      }
     }
 
+    pendingAudio.current = undefined
     reviewCommand.current = createClientId()
     uploadCommand.current = createClientId()
-    setCorrecting(false)
     setState({ kind: 'recording', listing })
 
     return result
@@ -391,8 +437,7 @@ export function VoicePracticePanel({
         )
         reviewCommand.current = createClientId()
         uploadCommand.current = createClientId()
-        setCorrecting(false)
-        setCorrectedTranscript('')
+          setCorrectedTranscript('')
         setState({ kind: 'recording', listing })
         return
       }
@@ -411,6 +456,7 @@ export function VoicePracticePanel({
 
     try {
       await api.deleteVoiceRecording!(recording.id)
+      pendingAudio.current = undefined
       setCorrectedTranscript('')
       uploadCommand.current = createClientId()
       reviewCommand.current = createClientId()
@@ -470,17 +516,12 @@ export function VoicePracticePanel({
         }
         id="secure-voice-title"
       >
-        {text('conversation.voice.title')}
+        {voiceTitle}
       </h3>
       {compact ? null : (
-        <>
-      <p className="conversation-journey__voice-intro">
-        {text('conversation.voice.optional')}
-      </p>
-      <p className="conversation-journey__voice-intro">
-        {text('conversation.voice.hold_help')}
-      </p>
-        </>
+        <p className="conversation-journey__voice-intro">
+          {text('conversation.voice.optional')}
+        </p>
       )}
 
       {state.kind === 'idle' ? (
@@ -517,7 +558,6 @@ export function VoicePracticePanel({
             className="conversation-journey__voice-notice"
             lang={state.listing.notice.resolved_locale}
           >
-            <strong>{text('conversation.voice.notice_draft')}</strong>
             <p>{state.listing.notice.notice}</p>
           </aside>
           <button
@@ -538,8 +578,11 @@ export function VoicePracticePanel({
           ) : null}
           <RecordingTurn
             key={`${resetEpoch}-${localResetEpoch}-${recordingLocked ? 'locked' : 'ready'}`}
-            captureMode={compact ? 'toggle' : 'hold'}
+            captureMode={tapToSpeak ? 'toggle' : 'hold'}
             compact={compact}
+            hideTypingFallback={hideTypingFallback}
+            showPermissionExplanation={showInstructions}
+            permissionRationaleAccepted={!showInstructions}
             createClientId={createClientId}
             labels={{
               backCancelled: text('learner.recording.back_cancelled'),
@@ -547,10 +590,14 @@ export function VoicePracticePanel({
                 blocked:
                   typeof window !== 'undefined' && !window.isSecureContext
                     ? text('conversation.voice.error')
-                    : text('learner.recording.blocked'),
+                    : text(
+                        tapToSpeak
+                          ? 'learner.recording.permission_denied_once'
+                          : 'learner.recording.blocked',
+                      ),
                 cancel: text('learner.recording.cancel'),
                 error: text('learner.recording.error'),
-                hold: compact
+                hold: tapToSpeak
                   ? text('learner.recording.tap_speak')
                   : text('learner.recording.hold'),
                 holding: text('learner.recording.holding'),
@@ -561,7 +608,7 @@ export function VoicePracticePanel({
                 ready: text('learner.recording.ready'),
                 recording: text('learner.recording.recording'),
                 region: text('learner.recording.region'),
-                release: compact
+                release: tapToSpeak
                   ? text('learner.recording.tap_send')
                   : text('learner.recording.release'),
                 requestingPermission: text(
@@ -576,7 +623,9 @@ export function VoicePracticePanel({
                 'conversation.voice.text_fallback',
               ),
               permissionExplanation: text(
-                'conversation.voice.permission',
+                tapToSpeak
+                  ? 'conversation.voice.hold_help'
+                  : 'conversation.voice.permission',
               ),
               permissionContinue: text(
                 'learner.recording.permission_continue',
@@ -614,6 +663,8 @@ export function VoicePracticePanel({
             onContinueWithoutRecording={() => onPreferTyping?.()}
             onHoldPhaseChange={(phase) => {
               if (phase === 'listening') {
+                setShowInstructions(false)
+                try { localStorage.setItem('ge.voice-instructions.v1', 'seen') } catch { /* In-memory preference still works. */ }
                 setPhase('listening')
               } else if (phase === 'processing') {
                 setPhase('processing')
@@ -627,12 +678,6 @@ export function VoicePracticePanel({
             recorder={recorder}
             skipReviewPlayback
           />
-          {compact ? null : (
-          <details className="conversation-journey__consent-details">
-            <summary>{text('conversation.voice.manage_consent')}</summary>
-            {purposeButtons(state.listing)}
-          </details>
-          )}
         </>
       ) : null}
 
@@ -641,37 +686,7 @@ export function VoicePracticePanel({
           <p>
             <strong>{text('conversation.voice.heard')}</strong>
           </p>
-          <p lang="en-IN">{state.recording.transcript}</p>
-          {correcting ? (
-            <>
-              <label htmlFor="voice-transcript-candidate">
-                {text('conversation.voice.transcript_label')}
-              </label>
-              <textarea
-                id="voice-transcript-candidate"
-                maxLength={500}
-                onChange={(event) =>
-                  setCorrectedTranscript(event.currentTarget.value)
-                }
-                rows={4}
-                value={correctedTranscript}
-              />
-            </>
-          ) : (
-            <button
-              onClick={() => setCorrecting(true)}
-              type="button"
-            >
-              {text('conversation.confidence.type_instead')}
-            </button>
-          )}
-          <p>
-            {text('conversation.voice.confidence')}{' '}
-            {Math.round(
-              (state.recording.transcript_confidence ?? 0) * 100,
-            )}
-            %
-          </p>
+          <p lang={includeTranscriptProvenance ? (state.recording.transcript_locale === 'unknown' ? undefined : state.recording.transcript_locale) : 'en-IN'}>{includeTranscriptProvenance ? state.recording.transcript_original ?? state.recording.transcript : state.recording.transcript}</p>
           <div className="conversation-journey__voice-actions">
             <button
               onClick={() =>
@@ -685,19 +700,7 @@ export function VoicePracticePanel({
               }
               type="button"
             >
-              {text('conversation.voice.use_transcript')}
-            </button>
-            <button
-              onClick={() =>
-                void review(
-                  'discard',
-                  state.listing,
-                  state.recording,
-                )
-              }
-              type="button"
-            >
-              {text('conversation.voice.discard')}
+              {text('conversation.voice.send')}
             </button>
             <button
               onClick={() =>
@@ -705,7 +708,7 @@ export function VoicePracticePanel({
               }
               type="button"
             >
-              {text('conversation.voice.delete')}
+              {text('learner.retry')}
             </button>
           </div>
         </>

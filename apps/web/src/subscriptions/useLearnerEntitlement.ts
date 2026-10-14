@@ -28,7 +28,7 @@ function entitlementStatus(
 
   if (
     entitlement.live_ai_seconds_remaining !== null &&
-    entitlement.live_ai_seconds_remaining <= 10
+    entitlement.live_ai_seconds_remaining <= 0
   ) {
     return 'exhausted'
   }
@@ -126,6 +126,17 @@ export function useLearnerEntitlement(
       controller.abort()
     }
   }, [api, applyEntitlement, markUnavailable, scope])
+
+  useEffect(() => {
+    if (scope === null) return
+    const changed = () => { void refreshEntitlement() }
+    window.addEventListener('global-english:ai-usage-changed', changed)
+    window.addEventListener('focus', changed)
+    return () => {
+      window.removeEventListener('global-english:ai-usage-changed', changed)
+      window.removeEventListener('focus', changed)
+    }
+  }, [refreshEntitlement, scope])
 
   return {
     applyEntitlement,

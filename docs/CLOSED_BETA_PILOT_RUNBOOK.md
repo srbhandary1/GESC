@@ -9,8 +9,10 @@
 ## Preconditions
 
 1. API origin reachable from pilot devices (HTTPS preferred).
-2. Passport **public** Android client with redirect
-   `com.globalenglish.app:/oauth/callback`.
+2. Current ADR-0021 in-app password authentication: Android Passport credentials
+   stay in reviewed native secure storage; web uses Sanctum cookies. Retain
+   registered public-client configuration behind the project authentication
+   abstraction; do not instruct learners to use the obsolete browser flow.
 3. Debug or upload-signed APK built from Exact commit under test
    ([PR-014_ANDROID_CLOSED_BETA_BUILD.md](PR-014_ANDROID_CLOSED_BETA_BUILD.md)).
 4. `VITE_MOBILE_API_ORIGIN` baked to that API origin at web build time.
@@ -22,10 +24,13 @@
 
 1. Install sideload APK (or Play **closed testing** track if separately
    authorized — still not public).
-2. Sign in via system-browser PKCE.
+2. Sign in with the in-app phone/username and password screen.
 3. **Learn** — one online mission with mic grant/deny paths.
-4. **Practice** — Confidence Conversation (type turns; live providers only if
-   staging APP-0022 caps apply to that environment).
+4. **Speak** — Friend/free speech, interactive Role-play and Ask Swathi on the
+   tested candidate; voice and typed recovery are recorded separately. Live
+   providers require the existing environment approval and spend caps. Use
+   [the current conversation pilot packet](STUDENT_CONVERSATION_PILOT_2026-09-25.md)
+   for consent, alternation, correction/retry and local-language help tasks.
 5. **Progress** — confirm can-do surfaces load.
 6. Logout → confirm secure store cleared of refresh/pending; installation ULID retained.
 

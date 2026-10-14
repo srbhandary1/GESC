@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Learning\LevelSessions;
 
 use App\Conversation\ConversationSessionService;
+use App\Conversation\Dialogue\ConversationDialogueService;
+use App\Conversation\Dialogue\LessonQuestionContext;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\LessonDrillContext;
@@ -136,6 +138,9 @@ final class LevelSessionDeliveryService
         $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
         $this->assertPartId($partId);
         $this->entitlements->assertSessionPart($learner, $partId);
+        if (! in_array($partId, ['introduction', 'practice'], true)) {
+            $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
+        }
         $media = LessonPracticeMedia::query()
             ->where('organization_id', $context->organizationId)
             ->where('blueprint_id', $blueprint->getKey())
@@ -266,6 +271,14 @@ final class LevelSessionDeliveryService
                 ->lockForUpdate()
                 ->first();
             if ($existing !== null) {
+                if ((int) $existing->level_number !== $levelNumber || $existing->part_id !== $partId
+                    || $existing->blueprint_content_hash !== $blueprint->content_hash) {
+                    throw new ConversationIdempotencyConflict;
+                }
+                if ((bool) $existing->passed) {
+                    $this->recordPracticeCompletion($context, $learner, $levelNumber, $blueprint, (string) $existing->id);
+                }
+
                 return [
                     'replayed' => true,
                     'score' => (int) $existing->score,
@@ -326,6 +339,9 @@ final class LevelSessionDeliveryService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            if ($passed) {
+                $this->recordPracticeCompletion($context, $learner, $levelNumber, $blueprint, $id);
+            }
 
             return [
                 'replayed' => false,
@@ -461,11 +477,31 @@ final class LevelSessionDeliveryService
         string $partId,
         string $uiLocale,
         string $idempotencyKey,
+        string $purpose = 'practice',
+        ?string $recoveryNoticeVersion = null,
+        bool $recoveryNoticeAccepted = false,
     ): array {
         $this->assertPartId($partId);
         $this->assertPartUnlocked($context, $learner, $levelNumber, $partId);
         $this->entitlements->assertSessionPart($learner, $partId);
         $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
+        if ($purpose === 'question_help') {
+            if (! in_array($partId, ['introduction', 'practice'], true)
+                || ! $recoveryNoticeAccepted || $recoveryNoticeVersion !== ConversationDialogueService::NOTICE) {
+                throw new LearningOperationRejected('lesson_tutor_unavailable');
+            }
+            $prototype = config('conversation.prototypes.friend');
+
+            return $this->conversations->start(
+                learner: $learner,
+                personaKey: (string) $prototype['persona_key'],
+                scenarioKey: (string) $prototype['scenario_key'],
+                coachingMode: 'gentle', uiLocale: $uiLocale, idempotencyKey: $idempotencyKey,
+                interactionFlow: 'question_help', recoveryNoticeVersion: $recoveryNoticeVersion,
+                recoveryNoticeAccepted: true,
+                lessonQuestion: LessonQuestionContext::fromBlueprint($blueprint, $levelNumber, $partId),
+            );
+        }
         $binding = config('level_sessions.conversation_bindings.'.$partId);
         if (! is_array($binding)) {
             throw new LearningOperationRejected('conversation_unbound');
@@ -499,6 +535,56 @@ final class LevelSessionDeliveryService
         } catch (ConversationOperationRejected) {
             throw new LearningOperationRejected('conversation_rejected');
         }
+    }
+
+    /** Reconcile genuine prior passes without changing scores or old evidence. */
+    public function reconcilePracticeCompletion(OrganizationContext $context, User $learner, int $levelNumber, bool $apply = false): bool
+    {
+        $blueprint = $this->requireAvailableBlueprint($context, $learner, $levelNumber);
+        $this->assertPartUnlocked($context, $learner, $levelNumber, 'practice');
+        $this->entitlements->assertSessionPart($learner, 'practice');
+        $check = DB::table('level_session_check_submissions')->where('organization_id', $context->organizationId)
+            ->where('membership_id', $context->membershipId)->where('user_id', $learner->getKey())
+            ->where('level_number', $levelNumber)->where('part_id', 'practice')->where('passed', true)
+            ->where('blueprint_id', $blueprint->getKey())->where('blueprint_content_hash', $blueprint->content_hash)
+            ->orderBy('created_at')->first();
+        if ($check === null || DB::table('level_session_completions')->where('organization_id', $context->organizationId)
+            ->where('user_id', $learner->getKey())->where('level_number', $levelNumber)->where('part_id', 'practice')->exists()) {
+            return false;
+        }
+
+        return ! $apply || $this->recordPracticeCompletion($context, $learner, $levelNumber, $blueprint, (string) $check->id);
+    }
+
+    private function recordPracticeCompletion(OrganizationContext $context, User $learner, int $levelNumber, LessonPracticeBlueprint $blueprint, string $checkId): bool
+    {
+        return DB::transaction(function () use ($context, $learner, $levelNumber, $blueprint, $checkId): bool {
+            DB::table('memberships')->where('organization_id', $context->organizationId)->where('id', $context->membershipId)->lockForUpdate()->firstOrFail();
+            $check = DB::table('level_session_check_submissions')->where('organization_id', $context->organizationId)
+                ->where('membership_id', $context->membershipId)->where('user_id', $learner->getKey())
+                ->where('level_number', $levelNumber)->where('part_id', 'practice')->where('passed', true)
+                ->where('blueprint_id', $blueprint->getKey())->where('blueprint_content_hash', $blueprint->content_hash)
+                ->where('id', $checkId)->first();
+            if ($check === null) {
+                throw new LearningOperationRejected('practice_check_required');
+            }
+            $this->assertPartUnlocked($context, $learner, $levelNumber, 'practice');
+            if (DB::table('level_session_completions')->where('organization_id', $context->organizationId)
+                ->where('user_id', $learner->getKey())->where('level_number', $levelNumber)->where('part_id', 'practice')->exists()) {
+                return false;
+            }
+            DB::table('level_session_completions')->insert([
+                'id' => (string) Str::ulid(), 'organization_id' => $context->organizationId,
+                'user_id' => $learner->getKey(), 'membership_id' => $context->membershipId,
+                'level_number' => $levelNumber, 'part_id' => 'practice',
+                'blueprint_id' => $blueprint->getKey(), 'blueprint_content_hash' => $blueprint->content_hash,
+                'completion_kind' => 'passed_check',
+                'result_json' => json_encode(['rule' => 'practice_check_completion_v1', 'check_submission_id' => $checkId], JSON_THROW_ON_ERROR),
+                'idempotency_key' => 'practice-check:'.$checkId, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+
+            return true;
+        });
     }
 
     private function requireAvailableBlueprint(

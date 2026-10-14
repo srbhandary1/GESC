@@ -857,10 +857,14 @@
   --ge-shadow-panel: 0 12px 32px rgb(0 107 63 / 0.08);
   --ge-panel-background: #ffffff;
   --ge-panel-border: #e2e8e5;
+  --ge-input-bg: #ffffff;
+  --ge-input-border: #b8c9c0;
+  --ge-input-text: #1a1a1a;
   --ge-font-family-display: "Inter", var(--ge-font-family-ui);
   --ge-radius-sm: var(--ge-radius-control);
   --ge-nav-bg: #ffffff;
   --ge-shell-header-bg: #ffffff;
+  color-scheme: light;
   color: var(--ge-color-text);
   background: var(--ge-color-canvas);
 }

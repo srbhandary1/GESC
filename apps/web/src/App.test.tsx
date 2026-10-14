@@ -1,3 +1,4 @@
+import { APP_VERSION } from './marketing/androidDownload'
 import {
   DEFAULT_LOCALE,
   INTERFACE_LOCALES,
@@ -263,7 +264,7 @@ describe('localized application shell', () => {
     expect(
       screen.getByText(/Developed by Northstar Enterprise Solutions Private Limited/),
     ).toBeInTheDocument()
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+    expect(screen.queryByLabelText(text('auth.password.identifier'))).toBeNull()
     expect(
       screen
         .getByRole('heading', {
@@ -287,7 +288,7 @@ describe('localized application shell', () => {
     render(<App authentication={authentication} />)
 
     expect(
-      await screen.findByLabelText(text('auth.password.username')),
+      await screen.findByLabelText(text('auth.password.identifier')),
     ).toBeInTheDocument()
     const signInFrame = document.querySelector('.ge-application-frame')
     expect(signInFrame).toHaveClass('ge-application-frame--studio-learner')
@@ -307,7 +308,7 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(document.querySelector('.marketing-landing')).toBeNull()
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+    expect(screen.queryByLabelText(text('auth.password.identifier'))).toBeNull()
     expect(
       screen.getByRole('link', { name: text('session.label') }),
     ).toHaveAttribute('href', '#sign-in')
@@ -387,7 +388,7 @@ describe('localized application shell', () => {
     render(<App authentication={authentication} />)
 
     expect(
-      await screen.findByLabelText(text('auth.password.username')),
+      await screen.findByLabelText(text('auth.password.identifier')),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('heading', {
@@ -412,7 +413,7 @@ describe('localized application shell', () => {
     ).toBeNull()
     expect(
       screen.queryByRole('link', {
-        name: text('shell.android_download'),
+        name: `${text('shell.android_download')} v${APP_VERSION}`,
       }),
     ).toBeNull()
   })
@@ -498,7 +499,7 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
   })
 
-  it('falls back from pending Kannada under the production policy', async () => {
+  it('serves signed-off Kannada under the production policy', async () => {
     const consoleWarning = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => undefined)
@@ -514,7 +515,7 @@ describe('localized application shell', () => {
       name: text('marketing.hero.title', DEFAULT_LOCALE, 'approved-only'),
     })
 
-    expect(heroHeading.querySelector('[lang="en-IN"]')).not.toBeNull()
+    expect(heroHeading.querySelector('[lang="kn-IN"]')).not.toBeNull()
     expect(
       screen.queryByRole('complementary', {
         name: text(
@@ -523,7 +524,7 @@ describe('localized application shell', () => {
           'approved-only',
         ),
       }),
-    ).toBeInTheDocument()
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByText(text('localization.preview_notice')),
     ).not.toBeInTheDocument()
@@ -541,13 +542,13 @@ describe('localized application shell', () => {
         name: text('locale.hi_IN', DEFAULT_LOCALE, 'approved-only'),
       }),
     ).not.toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('lang', 'en-IN')
+    expect(document.documentElement).toHaveAttribute('lang', 'kn-IN')
     expect(document.documentElement).toHaveAttribute(
       'data-requested-locale',
       DEFAULT_LOCALE,
     )
 
-    expect(JSON.stringify(consoleWarning.mock.calls)).toContain(
+    expect(JSON.stringify(consoleWarning.mock.calls)).not.toContain(
       'localization.fallback',
     )
   })
@@ -727,7 +728,7 @@ describe('localized application shell', () => {
     expect(
       await screen.findByRole('link', { name: text('session.label') }),
     ).toHaveAttribute('href', '#sign-in')
-    expect(screen.queryByLabelText(text('auth.password.username'))).toBeNull()
+    expect(screen.queryByLabelText(text('auth.password.identifier'))).toBeNull()
   })
 
   it('returns to guest Mira home after sign out from another destination', async () => {
@@ -907,7 +908,7 @@ describe('localized application shell', () => {
     await user.click(signIn)
 
     expect(
-      await screen.findByLabelText(text('auth.password.username')),
+      await screen.findByLabelText(text('auth.password.identifier')),
     ).toBeInTheDocument()
     expect(window.history.state).toMatchObject({
       __globalEnglishLearnerNavigation: {
@@ -937,17 +938,17 @@ describe('localized application shell', () => {
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('link', {
-        name: text('shell.android_download'),
+        name: `${text('shell.android_download')} v${APP_VERSION}`,
       }),
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole('link', {
-        name: text('marketing.android.download'),
+        name: `${text('marketing.android.download')} v${APP_VERSION}`,
       }),
     ).not.toBeInTheDocument()
   })
 
-  it('switches the native Android development preview to pending Kannada', async () => {
+  it('shows signed-off Kannada on native Android without a preview notice', async () => {
     vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true)
     vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
     const user = userEvent.setup()
@@ -981,8 +982,8 @@ describe('localized application shell', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(text('localization.preview_notice')),
-    ).toBeInTheDocument()
+      screen.queryByText(text('localization.preview_notice')),
+    ).not.toBeInTheDocument()
   })
 
   it('shows account menu for signed-in Android learners', async () => {
@@ -1026,6 +1027,10 @@ describe('localized application shell', () => {
         name: text('session.android_sign_out'),
       }),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('menuitem', { name: text('session.account_settings') }))
+    expect(await screen.findByTestId('app-version')).toHaveTextContent(APP_VERSION)
+    expect(screen.getByTestId('app-version')).toHaveTextContent('ಆ್ಯಪ್ ಆವೃತ್ತಿ')
+
   })
 })
 

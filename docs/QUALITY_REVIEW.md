@@ -1,5 +1,594 @@
 # Quality review
 
+## PHONE-E2E-POLISH-17 — 14 October 2026
+
+Executed an end-to-end UI and UX audit on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`, Android 13 / API 33, `1080x2400`) across Guest, Direct Self-Registration + Razorpay Test Checkout, 10-step First-Use Onboarding, and all five Learner destinations (`Home`, `Learn`, `Speak`, `Progress`, `1:1`) plus `Account` / `Subscriptions` / `Linked Social Accounts` in Kannada (`kn-IN`) and English (`en-IN`), Light and Dark themes, and remediated all 14 discovered issues in **1.0.14 / code 15**:
+- `make verify`: **PASS** (`0` exit code — Composer validate/audit `0` advisories, Pint `0`, PHPStan `0` errors, SQLite `365/365` tests, PostgreSQL `445/445` tests, pnpm audit `0` high/critical advisories, locale check `0`, OpenAPI/contracts `0`, release & soft-launch contracts `0`, ESLint `0`, TypeScript `0`, Vitest `635/635` passed across 123 files).
+- `make e2e`: **PASS** (`0` exit code — `4/4` API reconciliation tests + `48/48` Chromium Playwright journeys).
+- `make android-closed-beta` + `make build` + `adb install -r`: **PASS** (`14` native JVM tests including `keepsHttpAndHttpsInsideChildPaymentWindow`; APK **1.0.14 / code 15**, `15,312,815` bytes, SHA-256 `061eeb29addc277ac7dba350555f4218324dd96a6be753e77fa2f95bb6af542a`, installed on `RMX3085` and verified across Light/Dark and Kannada/English screens; synthetic E2E test data cleaned from VPS after verification).
+
+## VERIFY-FIX-16 — 14 October 2026
+
+Delivered social self-registration and sign-in (`Google`, `Facebook`, `Instagram`) with payment-gated account/entitlement materialization and automatic learner membership selection, remediated `DEFECT-01` through `DEFECT-09`, and verified on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`) over Tailscale/ADB (`ADB_SERVER_SOCKET=tcp:127.0.0.1:5038`):
+- Plain `make verify`: **PASS** (`0` exit code). Composer audit (`0` advisories), Pint (`0`), PHPStan (`0`), SQLite (`365` tests / `3,441` assertions), PostgreSQL (`445` tests / `6,549` assertions), pnpm audit (`0` high/critical), locale validation (`6` catalogues; `ui-kn-IN-2026-09-26.5` hash preserved), OpenAPI/contracts (`0`), release & soft-launch contracts (`0`), ESLint (`0`), TypeScript (`0`), Vitest (`635` tests across 123 files).
+- Plain `make e2e`: **PASS** (`0` exit code; `4` API tests + `48` Chromium browser journeys).
+- `make android-closed-beta` + `make build` + `adb install -r`: **PASS** (`13` native JVM tests; preserve-data install on `RMX3085`; verified Kannada/English `#sign-up/monthly_modules_roleplay` with 3 plans + Google/Facebook/Instagram controls, `#sign-in`, Android Back navigation, and preserved `ge_secure_credentials.xml`).
+- VPS cutover to `verify-fix-20261014-r1`: **PASS** for migration, service restart, public live/ready health, served APK hash and paid-registration plan listing. After the 14 October credential switch, `GET /api/v1/auth/social/providers` returns `{"google":true,"facebook":false,"instagram":false}` and `GET /oauth/social/google/authorize` returns 302 to `accounts.google.com` with client `535443704713-iu951rh65rug0lj295rjg6pb5ubanrlt` on project `global-spoken-english-511614` (In production, External). Live student social signup plus a test payment is **NOT TESTED**. Facebook and Instagram stay false until Meta credentials exist.
+
+## UI-AUDIT-15 — 14 October 2026
+
+Ran a full role-by-role UI and E2E verification audit on commit `b06b7d50ee605e36910c011844ac7825a0bfa23f` (app **1.0.12** / code **13**).
+- `make verify` (with `tmp/toolchain` prepended): Pint (`0`), PHPStan (`0`), PostgreSQL integration (`444/444` passed, 6,474 assertions), locale governance (`0`), OpenAPI/client drift (`0`), release contract (`0`), soft-launch contract (`0`), ESLint (`0`), TypeScript (`0`), and Vitest (`635/635` passed across 123 files) all passed. Plain host `make check-toolchain` exited `2` (`Node 22.22.1` vs `24.18.1`, `DEFECT-03`); `composer audit --locked` exited `1` (5 advisories) and `pnpm audit --audit-level=high` exited `1` (18 advisories, `DEFECT-02`); SQLite `php artisan test` had 362 pass and 2 fail in `Wave38EvidencePreflightTest` due to hardcoded `2026-10-09` expiry dates (`DEFECT-01`).
+- `make e2e`: exited `0` (`MediaTranscriptionReconciliationApiTest` 4/4 passed; 47/47 mocked-API Playwright browser journeys passed).
+- Real-API Playwright audit against isolated `global_english_test` (`4/4` end-to-end role suites passed, 17 screenshots captured in `/tmp/ge-ui-audit/screenshots/`): verified Guest, Direct Learner (all 5 destinations, 4-session Level 1–3 unlock path, Lesson Tutor, Free Speech + Kannada reading, Role-play retry/advance, Ask Swathi, Voice upload/review/delete, Offline bundles/sync, Account/Subscriptions/Privacy), Entitlement gates (`demo`, `monthly_modules`, `ai_exhausted`), Institutional Learner (`Org B`), Multi-Org User, Trainer, Content Reviewer, Support/Speech-Economics Operator, and Org A / Org B Admins with cross-tenant `404` isolation.
+- Identified 9 bounded defects (`DEFECT-01` to `DEFECT-09`) documented in [UI_AUDIT_2026-10-14.md](UI_AUDIT_2026-10-14.md). No connected physical Android phone was present (`adb devices` empty), so hardware-only checks are marked `NOT TESTED`.
+
+## BACKUP-14 — 26 September 2026
+
+Created an encrypted dated backup of live app 1.0.12, database and 67 accepted
+media objects. Isolated database restore (175 tables) and all 16,164 archive file
+hashes passed. Recovery key is stored separately; temporary conversation/audio
+payloads are excluded. The user clarified that Real-Studioz is this local computer. Backup, dated
+recovery key, checksum and restore guide are now in Git-excluded
+`local-backups/2026-09-26/` inside this repository; all copied hashes match. See [scope, evidence, privacy and
+remaining work](BACKUP_14_REVIEW.md). No runtime or schema change.
+
+## MEMBERSHIP-VERIFY-13 — 26 September 2026
+
+Verified the supplied membership journey, corrected checkout ownership and fresh
+current-plan purchase enforcement, and fixed signup error reset on browser Back.
+Deployed `membership-verified-20260926-r2`; Android **1.0.12/code 13** is installed
+on the connected realme phone with its signed-in account preserved. The phone
+shows the current-plan button disabled, replacement warning and two paid plans in
+Kannada without horizontal overflow. No payment or membership change was made.
+
+Verification: PHP/static/security/contracts checks, SQLite 364 tests/3,365
+assertions and PostgreSQL 444/6,473 passed during `make verify`. After frontend
+corrections, final workspace lint/typecheck/tests passed (576 web tests), and all
+47 browser journeys passed. Android/web builds, native tests, signature, live
+readiness and exact web/APK/backend-source hashes passed. No migration, API shape,
+configuration, retention or pricing change. Real-money capture was not exercised;
+provider doubles cover completion, cancellation and rejection. See [changed files,
+commands, limits and next checkpoint](MEMBERSHIP_VERIFY_13_REVIEW.md).
+
+## APP-0110 — Kannada interface sign-off and app update, 26 September 2026
+
+S R Bhandary signed off `ui-kn-IN-2026-09-26.5` at 2026-09-26T13:58:00+05:30.
+The reviewer is distinct from the engineering translator. Catalogue text and
+hashes were not edited. Approved-only Kannada interface resolution is now
+allowed. Hindi, Malayalam, Tamil and Telugu stay pending. APP-0109 lesson
+directions are unchanged. The recorder is not the reviewer.
+
+Public `https://ai.globalspokenenglish.com` serves release
+`signup-plan-20260926`. Live and ready health returned HTTP 200. Homepage
+HTML SHA-256 is
+`ca065430e61bae8f20f78556f8f07bcb10db895090b50c49d8563e9ad548425f`.
+`/downloads/global-spoken-english-1.0.11.apk` is HTTP 200, 15,308,602 bytes,
+SHA-256 `37a59873dd9915c9adac9b3b190b0a4161d3ca97b5c29972e5147280e0b27160`.
+The browser confirmation route answers; an unsigned POST is 401, not 404.
+Kannada guest home shows version 1.0.11, no translation-preview notice, and
+`#sign-up/monthly_modules_roleplay` preselects Premium with Role-play at
+₹590.00 (before GST ₹500.00, GST ₹90.00). The pay control is 60px tall at
+390 CSS px. No payment was submitted. `adb devices` was empty. Pre-switch
+encrypted backup `soft-launch-20260926T083818Z.sql.gz.enc` SHA-256 is
+`6fc9eaf0ba385d03f8d9fe72547eb59157dc714ebbbeea55e2e19e688aa56d2a`.
+Live users and memberships both counted 1,721 after restart. `make verify`
+was not rerun. See [APP-0110](APPROVALS.md#app-0110).
+
+## SIGNUP-PLAN-12 — student signup and plan choice, 26 September 2026
+
+Guest home and `#about` plan cards link to `#sign-up/{code}`. The payment form
+lists the three memberships with benefits and the catalogue’s before-GST, GST
+and payable amounts, and the submit label names the selected plan and total.
+Password confirmation is checked before any checkout. Web pending Razorpay
+registrations are confirmed on
+`POST /api/v1/direct/paid-registrations/{checkout}/confirmations`, which starts
+the cookie session only after completion. An active non-demo month shows the
+replacement warning and disables the current plan’s button. Talk packs are not
+offered at signup.
+
+Local browser check on the dev server, Kannada preview, 390 CSS px: home plan
+cards, `#sign-up/monthly_modules_roleplay` preselection at ₹590.00, switching
+to Premium features at ₹354.00, and a mismatched password stopping before
+payment. No Razorpay payment was submitted. The signed-in Plans panel was
+covered by the component test, not a live account.
+
+Focused web tests passed (sign-in panel 13, plus plan, guest, marketing,
+subscription and web-session adapter tests). `PaidRegistrationTest` passed
+4 tests / 37 assertions. Web typecheck passed. Contracts were regenerated.
+`make verify` was not rerun for that implementation. Kannada interface review
+is recorded later under APP-0110 / D-0358. Hindi, Malayalam, Tamil and Telugu
+remain pending.
+
+## APP-0109 — Kannada lesson-instruction sign-off, 26 September 2026
+
+S R Bhandary signed off `kn-lesson-instructions-2026-09-26.1` at
+2026-09-26T13:18:00+05:30. The pack status is `approved`, the reviewer is
+recorded, and `independentReview` is true. Entry text and source hashes were
+not edited. The resolver still serves Kannada only in the translation-preview
+policy, so this sign-off does not change approved-only learner text. The
+recorder is not the reviewer. See [APP-0109](APPROVALS.md#app-0109).
+
+## KANNADA-CONTENT-11 — 26 September 2026
+
+Deployed `kannada-content-20260926-r1`, Android **1.0.10/code 11**. All 17 current
+foundation lessons now have exact-source-linked Kannada reading variants for
+scenarios, speaking goals, activities, Apply tasks, quiz/checkpoint prompts and
+returned explanations in the explicit pilot preview. English practice sentences
+and answer options remain intact. No published curriculum, marks, progression,
+API, schema, privacy or tenant authorization changes. Independent Kannada review
+was pending at deployment and is signed off later under APP-0109 / D-0356.
+Approved-only builds still retain the English source.
+
+The live Direct curriculum inventory had zero missing instruction translations.
+`make verify` passed (566 web tests; SQLite 363/3,360; PostgreSQL 441/6,441), as did
+47 browser journeys, 4 API tests/103 assertions, both builds, 13 native tests and
+APK signature checks. The connected phone verified Kannada activities, scenario,
+goals and a quiz with original English answers and no horizontal overflow.
+Live readiness and exact web/APK hashes passed after restart retries.
+See [changed files, evidence, limitations and next checkpoint](KANNADA_CONTENT_11_REVIEW.md).
+
+## APP-VERSION-10 — 26 September 2026
+
+Deployed `app-version-20260926-r1`, Android **1.0.9/code 10**. Website download
+links show the version, use `global-spoken-english-1.0.9.apk`, and Account settings
+show the installed version. One manifest supplies Gradle and UI metadata; closed-beta
+builds stage both versioned and compatibility filenames. No API, migration,
+privacy, tenancy or AI-provider changes. A browser-detected dark-mode translation
+notice contrast issue was also corrected.
+
+Verification passed: full `make verify` (561 web tests; SQLite 363/3,360;
+PostgreSQL 441/6,441), 47 browser journeys, 4 API tests/103 assertions, web and
+Android builds, 13 native tests, APK signature and live artifact hashes. The
+connected phone was updated and its Kannada Account version label checked.
+This provides manual version comparison, not automatic update notifications.
+See [files, results and next checkpoint](APP_VERSION_10_REVIEW.md).
+
+## KANNADA-UI-09 — 26 September 2026
+
+Release `kannada-ui-20260926-r2`, Android **1.0.8/code 9**, repairs copied-English
+Kannada learner messages and routes known level concepts, roleplay scenes/roles
+and subscription names through the governed UI resolver. Existing Kannada lesson
+guidance is now primary in Learn and its tutor entry. The shared web account-security
+messages and the Home instruction language tag are corrected. No published content,
+assessment, plan authorization, API, schema, retention or provider prompt changes.
+
+Final `make verify` passed: SQLite 363 tests/3,360 assertions; PostgreSQL 441/6,442;
+561 web tests, static/security/contracts checks. Browser E2E passed 47 journeys and
+four API tests/103 assertions. Web/Android builds, 13 native JVM tests and APK
+signature/installed-hash checks passed. Phone checks verified Kannada Learn,
+roleplay choices/roles, Home and account/plan labels while preserving app data.
+Six language catalogues have current hashes and honest pending-review status.
+
+English examples and AI practice replies remain intentional. Some published
+scenario/check instructions still need source-linked Kannada content variants;
+that governed translation work is the recommended next checkpoint. Operator UI,
+independent language review, provider audio reliability/costs and 1,000-speaker
+capacity are not certified by this interface fix. See [changed files and verification](KANNADA_UI_09_REVIEW.md).
+
+## LEARN-LEVEL-08 deployed — 26 September 2026
+
+Release `lesson-tutor-20260926-r1` and Android **1.0.6/code 7** bind each level's
+Ask AI Tutor to its authorized lesson objective, patterns and examples. Generic
+Speak help stays separate. A passed Practice check now completes Practice in the
+same transaction and enables Conversation immediately, subject to existing plan
+and content gates. One genuine saved Level 1 pass was reconciled; a repeat dry-run
+found no remaining eligible record. No marks or assessment evidence were changed.
+
+`make verify` passed: SQLite 363 tests/3,360 assertions; PostgreSQL 441/6,442;
+557 web tests plus static/security/contracts checks. `make e2e`: 46 browser journeys
+and four API tests/103 assertions passed. `make ai-eval`: 15 locked cases and
+35 tests/282 assertions passed. Shared integration coverage exercises all 17 levels,
+failed/pass/replayed checks, context binding and reconciliation isolation. Web and
+Android builds, 13 native tests, signatures, public readiness/recovery mount and
+installed/downloaded APK hashes passed. Seven live phone tutor replies passed across Levels 1/2, including follow-up
+context, corrections and off-topic redirection. Level 1 Conversation opened after
+repair. One reply had a text-only speech fallback; later audio/playback checks
+passed. Intermittent provider audio failure remains open.
+
+No migration, environment variable or retention change. Master v3.22, ADR-0025/0042
+and D-0352 record the lesson-flow clarification. See [review and changed file groups](LEARN_LEVEL_08_REVIEW.md).
+Existing provider quotas, 1,000-speaker capacity, expense reconciliation and
+independent human review remain open. Next checkpoint: provider cost reconciliation
+and representative funded concurrency testing.
+
+## LEARN-FLOW-07 deployed — 26 September 2026
+
+Invite-only release `learn-flow-20260926-r2` and Android **1.0.5/code 6** deliver
+once-only recording guidance, Send/Retry transcript review, and consent/advisory
+management in Account > Privacy. Exact tutor greetings use a local response with
+zero model tokens. Recovered valid answers play; rejected output offers a new
+submission without misleading replay/recovery controls or TTS dispatch. Live
+synthetic voice testing also found and fixed English rendered in Hindi script:
+original-speech STT now uses mixed-script output for tutor/free speech as well as
+roleplay. Model output can still exceed the brief-answer contract and be rejected;
+one such live failure and a passing retest are documented honestly.
+
+Owner-approved, opt-in Android text/audio history uses account/organization/
+membership-scoped Keystore encryption and no-backup files. It survives app reload,
+retains available audio until deletion/storage loss, and offers free local replay.
+Physical phone checks covered opt-in/off, retained history, learner/reply playback
+with network blocked (zero requests), account isolation, locking and individual/all
+deletion. Synthetic history was removed and saving restored off; the phone is on
+Kannada/dark Learn. Server recovery stays at 15 minutes. This does not add cloud
+history, offline sign-in, assessment authority or a remote offline-device wipe.
+
+Final `make verify`: SQLite 362 tests/3,358 assertions; PostgreSQL 440/5,963;
+553 web tests and static/contracts/security checks pass. `make e2e`: 45 browser
+journeys and four API tests/103 assertions pass. `make ai-eval`: 15 locked cases
+and 35 tests/282 assertions pass. Web/Android builds, 13 native JVM tests, APK
+signatures, public readiness/recovery mount and installed/downloaded APK hashes
+pass. Voice checks used synthetic audio through the real recorder/STT path, not
+a human accent benchmark. No migration, new environment variable or API shape
+change. Master v3.21, ADR-0044 and D-0351 document the history amendment.
+
+See [review, changed file groups and evidence](LEARN_FLOW_07_REVIEW.md) and the
+[independent human review handoff](LEARN_FLOW_07_HUMAN_REVIEW.md). Independent
+review remains unsigned; 1,000-speaker capacity, provider expense reconciliation
+and session-limit UX remain open. Recommended next checkpoint: source-backed
+provider rate cards and all-attempt cost reconciliation, followed by funded
+representative concurrent voice-load testing.
+
+## LEVELS-BRIEF-06 deployed — 25 September 2026
+
+Invite-only release `levels-brief-20260925-r2` makes configured starting Levels
+1 and 2 progress-open for every subscription. Level 3 onward keeps deterministic
+preceding-level completion/checkpoint and review requirements. Content availability,
+active entitlements and per-plan session features remain enforced. No learning
+records were fabricated or rewritten. The phone shows both starting levels and
+successfully opens Level 2's Introduction. Live free speech, selected-language
+reading, tutor and roleplay checks confirmed concise replies and roleplay progression.
+A native-script correction failure was repaired and retested; an adversarial tutor
+request for ten long sentences still returned safe fallback (documented limitation).
+
+AI policy v18 targets one simple sentence (normally 8–15 words), at most two
+sentences/30 words/240 Unicode characters. Correction guidance is one sentence,
+at most 20 words/160 characters, without encouragement paragraphs. Validation
+prevents long output from being read aloud without truncating text or changing
+assessment. Existing Android 1.0.4 receives these server changes without reinstall.
+
+`make verify`: SQLite 361 tests/3,349 assertions, PostgreSQL 438/5,951, 545 web
+tests and static/contracts/security checks pass. `make e2e`: 45 browser journeys
+and four API tests/103 assertions pass. `make ai-eval`: 15 locked cases and
+32 dialogue tests/262 assertions pass. Web build, public readiness/fingerprints
+and private recovery mount checks pass. No migration or new environment variable;
+configuration adds the versioned starting-level set. Master v3.20, ADR-0025/0042,
+D-0350 and API/generated contract documentation are updated.
+
+See [review and live evidence](LEVELS_BRIEF_06_REVIEW.md) for changed files,
+commands, limitations and release hashes. STT input metering and actual audio
+minutes are unchanged. Existing rate-card/fallback accounting, session-limit UX,
+independent language review and 1,000-speaker capacity work remains open.
+Recommended next checkpoint: provider-cost reconciliation.
+
+## DARK-TALK-05 deployed — 25 September 2026
+
+Android **1.0.4/code 5** is installed with data preserved; the invite-only server
+runs `dark-talk-20260925-r3`. Theme-paired tiles, text, notices, buttons, disabled
+lesson controls and navigation fix the reported dark-mode contrast failures.
+Browser fixtures cover learner pages, all Speak modes, lessons/checkpoints,
+subscription/account and sign-in in the relevant light/dark states; installed
+Home, Learn, Progress, Tuition and clean final Speak screenshots have been
+inspected. The phone is restored to Kannada/dark Home with the QA session closed.
+
+Free Speech now offers selected-language reading beneath English AI bubbles.
+The server resolves the exact scoped opening/turn, preserves conversational
+position, and produces text only. Reading uses model tokens, with no TTS dispatch
+or speaking/listening charge. A live quality failure (translating the button's
+meaning instead of the bubble) was fixed with v15 source-only provider input and
+a payload regression. v16 also separates duplicate grammar teaching from the
+main reply before persistence/audio, keeping the correction card. API contracts/generated clients and six locale catalogues
+are updated. Ten live model-backed interactions completed across two sessions;
+reading target/locale, topic recall and correction then correct retry were checked.
+Two extra submissions were blocked by the existing session ceiling before
+provider dispatch. No migration, secret, allowance, price, permission or retention
+change; encrypted 15-minute recovery, tenant scope and exit deletion remain.
+
+Final `make verify`: SQLite 358 tests/3,302 assertions; PostgreSQL 437/5,868;
+545 web tests and static/contracts/security checks pass. `make e2e`: 44 browser
+journeys and four API tests/103 assertions pass. `make ai-eval`: 15 cases and
+30 dialogue tests/244 assertions pass. Web/Android builds, seven native tests
+and APK verification pass. Physical speech benchmarking and independent language
+review remain outside this verification. See [review](DARK_TALK_05_REVIEW.md)
+for file groups, visual audit, live evidence and artifact hashes.
+
+Student minutes include validated recorded speech and actual AI playback; model
+tokens are separate. Provider STT/TTS units are recorded, but the live audit found
+zero installed speech rate cards, so expense reconciliation is incomplete. The
+existing session gate allows eight AI requests and a 12,000-model-token
+pre-dispatch threshold; reading currently counts toward both. Its generic error
+needs a clear session-limit/new-session path in the next checkpoint.
+Next checkpoint: source-backed rate cards and all-attempt fallback accounting,
+then funded vendor capacity and end-to-end 1,000-speaker load verification. The
+existing Azure quota/MFA and capacity limitations remain open.
+
+## CAPACITY-USAGE-04 deployed — 25 September 2026
+
+Active invite-only release: `capacity-usage-20260925-r1` (including the verified
+FPM public-host routing repair). Android 1.0.3/code 4 is installed with data
+preserved and published at `?v=measured-audio-20260925.1`; SHA-256
+`ea00857fb4e71dbfe547859a027274aa498defa2c13d670717daed29abe0227d`.
+
+The owner selected actual speaking/listening minutes and separate token tracking.
+Fixed model-turn/opener charges are replaced by validated recording duration and
+bounded, idempotent playback progress. Student subscription and authorized
+operator views show scoped 30-day model input/output tokens and unknown-usage
+attempts. Shared refresh covers tutor, recordings and playback. New migration
+`000477` adds short-lived playback metadata and durable provider unit kinds;
+historical charges are unchanged. Live conversation requires a compatible client.
+
+Shared Redis admission returns 429/Retry-After before consuming a new turn, fails
+closed on store errors, excludes exact replay/local permission controls, and paces
+the existing Azure 3 RPM/3,000 TPM allocation. Session locking no longer locks
+shared persona/scenario rows. The live API now uses eight bounded PHP-FPM workers
+behind the existing proxy. Provider preflights, Redis and private recovery tmpfs
+checks pass. Sarvam STT/Azure model/Azure neural TTS remain the measured economical
+routes; ElevenLabs remains disabled. Default/runtime cost estimates were corrected
+against current Azure retail meters; they are estimates, not invoice amounts.
+
+`make verify`: SQLite 354 tests/3,268 assertions, PostgreSQL 435/5,839, 543 web
+tests plus static/contracts/security checks pass. `make e2e`: 38 browser and 4 API
+tests/103 assertions pass. `make ai-eval`: 15 cases and 26 tests/189 assertions
+pass. Web/Android builds, seven native unit tests and APK verification pass.
+FPM health-path load: 200/200, concurrency 16, p95 48 ms. Real Redis burst:
+1,000 attempts across eight processes, one admitted/999 limited/no store errors.
+These are overload/runtime checks, not a 1,000-speaker certificate. The first
+cutover exposed host matching that produced empty public responses; the fixed
+loopback-bound wildcard host now passes parsed JSON readiness and public mobile
+authentication-mode checks, including a local public-Host regression request.
+The connected phone then passed sign-in, one live free-speech reply, metered
+playback and visible token totals. Two real TTS plays recorded 18,222 ms and
+charged 19 seconds after per-play rounding; one new model ledger row persisted
+provider-token unit metadata. Phone restored to Kannada/dark Home. No real
+microphone input or 1,000-speaker live load is claimed.
+
+**1,000 simultaneous speakers are not yet supported or certified.** Azure CLI
+still returns AADSTS50076; account permissions/quota cannot be repaired in code.
+Synchronous provider waits still occupy transactions/connections; the remaining
+worker/queue/database sizing and authenticated sustained voice load must be
+completed with allocated provider capacity. Hidden fallback attempts also need
+full invoice reconciliation; do not infer zero expense from unknown usage.
+Next checkpoint: provider-work isolation, bounded queue/connection capacity and
+funded vendor throughput, followed by a representative 1,000-speaker workload.
+See [specification](CAPACITY_USAGE_04_SPEC.md), [operations and prices](CAPACITY_USAGE_04_OPERATIONS.md)
+and [ADR-0043](adr/0043-measured-ai-audio-time-and-capacity-admission.md).
+
+
+## PILOT-CONVERSATION-03 deployed — 25 September 2026
+
+Active invite-only release: `conversation-seven-20260925-r7`, prompt v13.
+Free speech now also uses a strict provider response schema.
+Live seven-interaction baselines found missing free-speech context, a drill wired
+to Learn Ask AI Tutor, stale corrections, explanation-target drift and provider/
+session limits. The bounded repairs add scoped temporary free-speech history,
+real question help from Learn, current-turn correction checks, explicit latest
+explanation context and smaller provider payloads. Coaching choices and existing
+user-managed notes are preserved. Final role-play and free-speech seven-turn runs pass (11,080 and 11,648 model
+tokens respectively); Learn tutor passed seven questions, and the Ask Swathi
+latest-answer explanation recheck passed. Detailed outcomes and remaining limits:
+[seven-turn evidence](CONVERSATION_SEVEN_TURN_CHECK_2026-09-25.md).
+
+Final `make verify` passes: SQLite 351/3,263, PostgreSQL 427/5,801, 539 web tests,
+plus static/contracts checks. `make e2e` passes 38 browser and 4 API tests/103
+assertions; `make ai-eval` passes 15 cases and 24 tests/177 assertions. Web and
+Android builds pass. Published/installed debug APK SHA-256:
+`34ae87fb15d53e34d9e857cbe8d7911b7280fb5a22c3b5efb176c8aaabfeed7f`.
+Phone tutor entry, separate Skill Focus, free-speech consent and coaching selector
+checks pass; data is preserved and the phone is restored to Kannada/dark Home.
+One additive migration (`000476`) extends the existing flow constraint. No new
+secrets/configuration, marks, tenancy or retention rules. Azure management CLI
+still requires authorized MFA; quota remains 3 RPM / 3,000 TPM. Paced synthetic
+checks do not establish concurrent capacity, real microphone quality or independent
+Kannada acceptance. Next checkpoint: authorized Azure capacity remediation and
+representative voice validation.
+
+
+## PILOT-FIX-01 deployed — 25 September 2026
+
+Active invite-only release: `pilot-fix-20260925-r3`. Web usability fixes and
+backend speech/dialogue repairs are live. The homepage download now uses
+`?v=pilot-fix-20260925.1` and matches the preserved-data phone installation:
+`a022a65018ef5d29a5032e387d53191bf438c1025a5b3cc66abe7f6be8cc8b15`.
+English role-play uses original-language `codemix` STT with an en-IN hint;
+question help retains verbatim auto-detection. Prompt v7 separates grammatical
+acceptance from missing scenario details. Live synthetic English STT and clinic
+wrong-answer/corrected-retry/next-partner checks pass. A typed synthetic turn
+on the physical Android phone also advances to the next partner line. No real microphone input
+was captured during this follow-up, and representative speech quality is open.
+
+Pinned-toolchain `make verify` passes with a 1 GiB PHP test limit: SQLite
+347/3,236 and PostgreSQL 424/5,751; 537 web tests. The final prompt-only v7
+refinement additionally passes 33 focused tests/179 assertions, Pint and
+`make ai-eval` (15 cases plus 19 dialogue tests/113 assertions). Browser E2E
+38/38 plus API 4/103 passes; build passes. No new migrations, secrets, deployment
+settings, tenancy, marks or retention changes. Prior releases remain available.
+[Full evidence, failures investigated and remaining checks](PILOT_FIX_01_2026-09-25.md#deployment-and-live-provider-follow-up--25-september-2026).
+
+## PILOT-FIX-01 installed phone candidate — 25 September 2026
+
+Mac ADB connectivity was restored. The final debug APK was installed on the
+realme RMX3085 (Android 13) with data preserved; installed SHA-256 matches
+`a022a65018ef5d29a5032e387d53191bf438c1025a5b3cc66abe7f6be8cc8b15`.
+Physical checks confirm the larger title, bounded account menu, dark streak and
+five navigation items, and Back to app from account-deletion information.
+A remaining native selector oval was reproduced and fixed; the final build
+shows no inner oval. Focused browser regression, lint, Android build, seven
+native tests and APK verification pass. Server changes and public downloads
+were not deployed; live speech remains unverified. Earlier local-only entries
+below describe the pre-installation stage.
+[Evidence and remaining gates](PILOT_FIX_01_2026-09-25.md#connected-phone-follow-up--25-september-2026).
+
+## PILOT-FIX-01 — local candidate evidence, 25 September 2026
+
+- Final `make e2e`: API 4 tests/103 assertions and Chromium 38/38 pass, including
+  viewport-bound menu, dark navigation/streak contrast, Back to app, 320px/390px,
+  English/Kannada 200% text and short landscape. The first larger-brand version
+  failed reflow; wrapping and a compact equal-size name/mark in landscape fixed
+  it without relaxing the existing assertions.
+- Web Vitest: 537/537 tests across 111 files; ESLint and TypeScript pass. New
+  completion tests prove a server-accepted resumed Practice can open Conversation
+  and a rejected completion cannot. Audio coverage checks one quoted-model
+  playback and retention of the next-model path.
+- SQLite: 346 tests/3,232 assertions pass. Focused adapter/dialogue/voice privacy:
+  40 tests/262 assertions pass. PHPStan reports zero errors; changed PHP files
+  pass Pint. Provider contract assertion tracks dialogue prompt version v5.
+- `make ai-eval` on an isolated synthetic SQLite database: 15 locked cases and
+  19 dialogue tests/113 assertions pass. Speech benchmark skipped; no live
+  provider or learner recording was used.
+- `make build` passes with the existing Vite chunk advisory. No APK was built,
+  installed or published. Browser test builds also validate the final source.
+- `make verify` fails at pinned-toolchain preflight (Node 22.22.1 vs 24.18.1;
+  PHP 8.5.4 vs required 8.4.x). Default-database AI eval initially failed because
+  pdo_pgsql is absent; the isolated SQLite run is separate passing evidence.
+  No PostgreSQL/full-verify pass is claimed. Sandboxed browser startup was
+  denied localhost access; the successful final gate ran with that restriction
+  lifted. PHPStan likewise passed outside the restricted sandbox.
+
+No new migration/configuration/public API; unchanged server authority,
+organization scoping, consent and short recovery retention. No raw learner data
+was accessed. Live recognition, model continuation and native tap rendering
+still require an actual-phone retest after candidate publication. Full changed
+file list and next checkpoint: [evidence](PILOT_FIX_01_2026-09-25.md).
+
+## STUDENT-CONVERSATION-02 — live candidate addendum, 25 September 2026
+
+Supersedes the local-only deployment statements below. Release
+`student-conversation-20260925-r2` and Android 1.0.2/code 3 are deployed/installed;
+public APK byte comparison passed. Live role-play retry/acceptance and six
+English/Kannada question-help actions pass. The live checks exposed and repaired
+legacy prompt interference, retry draft leakage, and microphone countdown
+interpolation causing a UI error boundary. The regression failed before the
+interpolation fix and passed afterward. Browser E2E is now 37/37.
+
+Question help uses strict provider JSON schema plus unchanged local validation;
+retry canonicalization uses only the validated correction, never extra draft
+partner text. These do not relax safety, locale, tenant or objective checks.
+Earlier failed provider attempts remain failures, not successful pilot turns.
+
+One unintended microphone upload during testing was deleted using the existing
+deletion service (`completed`, `rejected_deleted`); no content was read/played.
+A safeguarded subsequent cancellation passed in the UI. A later aggregate
+recording/open session is unattributed and prevents claiming a proven zero-upload
+server delta for that check. Human observation results remain pending.
+Production signing, independent locale/academic/accessibility review,
+representative speech/latency and production operational evidence remain open.
+
+Final frozen-source verification exits 0: SQLite 345/3,229, PostgreSQL 424/5,744,
+and static/contract/workspace gates. AI evaluation passes 15 locked plus 19
+dialogue tests/113 assertions; speech benchmark explicitly skipped. Human use
+is confirmed, but the generic affirmative response is not scored as task results.
+
+
+## STUDENT-CONVERSATION-02 — local gates pass, live/human gates open, 25 September 2026
+
+The [bounded specification](STUDENT_CONVERSATION_02_SPEC.md) and ADR-0042 are
+authorized by APP-0107. `make verify` passes SQLite 344/3,221 assertions and
+PostgreSQL 424/5,745, static/security/contract checks and workspace tests.
+The final web run is 534/534, including expiry and packaging regressions. `make e2e`
+passes API 4/103 and Chromium 36/36; new EN/KN flows include scoped axe,
+320px/200%-font stress and keyboard use. `make ai-eval` passes the existing
+15 cases plus 18 new dialogue tests/105 assertions, with fake providers only.
+The governed speech benchmark is explicitly skipped. Web build passes;
+Android assembly, seven native unit tests and APK signature verification pass.
+Twelve isolated packaging tests and final ZIP inspection verify no nested
+APK/AAB downloads; source/website artifacts are preserved. The local debug APK
+hash is recorded in the linked evidence; it is not installed or published.
+
+Encrypted recovery, exact ownership, consent separation, fixed expiry,
+deletion reconciliation, original speech provenance, same-turn retry and
+durable unknown-outcome refusal are covered. The full suite exposed and
+verified repair of legacy request-validation compatibility; review also
+repaired pre-start roles, small-screen clipping and local expiry cleanup.
+Final privacy review also closed late modern recording admission/replay/STT
+after exit, expiry or withdrawal. Fifteen new boundary cases and the existing
+legacy voice suite pass, including expiry during successful/failed provider
+dispatch with usage retained, no usable candidate and durable source deletion.
+Six additive migrations and runtime recovery storage/scheduler checks remain
+undeployed. Two moderate dependency advisories, the existing large-chunk /
+Gradle warnings and five pending independent catalogue reviews remain.
+The [pilot packet](STUDENT_CONVERSATION_PILOT_2026-09-25.md) is prepared, not run.
+No representative human, live-provider, independent-language or production
+quality pass is claimed from local fixtures or coordinator availability.
+ADB port 5038 returned connection refused; no new physical-device pass is
+claimed. [Full candidate evidence](STUDENT_CONVERSATION_02_EVIDENCE_2026-09-25.md).
+
+## STUDENT-E2E-01 complete student-path exercise — 25 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Home, lessons and quiz | Pass in exercised paths | Actual EN/KN Home → Learn on RMX3085; lesson audio; three-question web practice submitted normally; final Home regression at 320px |
+| Recording/recovery UX | Pass | Tap instructions/countdown on native Android; stable retry IDs; optional event-history failure cannot hide a completed reply |
+| Speech UI accessibility | Pass automated and visual | 320px/200% reflow, keyboard disclosure and scoped axe; physical screenshot of readable correction |
+| Live free speech | Pass bounded synthetic path | Real fixture STT, relevant reply and audio; separate physical microphone capture start/cancel; no ambient audio upload |
+| Live grammar correction | Pass after fix | Category-only validation failure isolated; exact output instructions added without relaxing validator; approved Android retest correctly changes go → went, audio ends without error |
+| Role-play | Flow pass; assessment not accepted | Restaurant Observe → Rehearse → Perform → Reflect works; objective met/unmet remains hard-coded synthetic prototype feedback |
+| Full verify | Pass | SQLite 334/3,166 assertions; PostgreSQL 370/5,309; web 491; marketing 4; design system 18; localization 38; all static and contract gates |
+| E2E / AI eval / packaging | Pass | API 4/103; Chromium 32/32; locked fake-provider AI eval 15/15; web build and Android unit/assembly pass |
+| Publication | Pass | Healthy `student-readiness-20260925`; public APK equals installed SHA-256 `8d160212bc4361962bc6254a26ab7c777e70cd9ccfeb4b587f69729a7b255a0b`; symlink-startup no-rebuild regression passes |
+| Human/production gates | Open | Accepted UX-REM-01 residuals, representative learner/speech/latency evidence, five independent locale reviews, payment/booking/Play and excluded credential rollover |
+
+One measured synthetic stop-to-audio sample was 6.051 s; it is not a passed
+median/p95 SLO. Two moderate dependency advisories and the existing large-chunk
+advisory remain. No migration, provider-route, secret, consent, tenancy,
+authoritative-record policy or validation-safeguard change. The first activation
+rolled back safely; the corrected release is healthy. See the
+[screenshot-led evidence and exact release ledger](STUDENT_READINESS_E2E_2026-09-25.md).
+
+## ADR-0041 Android APK installation and homepage download — 25 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Forwarded ADB | Pass | `ADB_SERVER_SOCKET=tcp:127.0.0.1:5038 adb devices -l` shows `J7GUXWEENBNZTW85 device usb:336592896X product:RMX3085 model:RMX3085 device:RMX3085L1` |
+| Preserve-data install | Pass | `adb install -r apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk` returned `Success` |
+| Package identity | Pass | `dumpsys package com.globalenglish.app` reports version `1.0` / `versionCode=1`, min SDK 24, target SDK 36, debug signing v3 and granted microphone permission |
+| Launch smoke | Pass | `monkey -p com.globalenglish.app ...` launched the app; `dumpsys window` focused `com.globalenglish.app/.MainActivity`; `pidof` returned a running process |
+| WebView | Pass | Device WebView is `com.google.android.webview` 153.0.8010.39 |
+| Homepage APK | Pass | Built APK and public download both hash to `2180ba5f25741734dc5620e48458bfff15e88c7ac55a14587e0055bc6f40f7a7`; homepage cache key is `adr0041-rmx3085` |
+| Build | Pass with advisory | `make build` passed; existing large-chunk advisory remains |
+
+This is closed-beta debug-signed evidence only. It does not authorize Play
+publication, live payment cutover, key or credential rollover, or production
+go-live.
+
+## ADR-0041 paid registration creates the Direct account — 24 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Account only after capture | Pass | `PaidRegistrationTest` creates the user inside completed capture; a short password returns 422 and writes no user |
+| Existing phone | Pass | Same test upgrades `monthly_modules` to `monthly_modules_roleplay` without a second user |
+| Live route | Pass | After route-cache rebuild, `GET /api/v1/direct/subscription-plans` is HTTP 200 with three non-talk plans |
+| Live sign-in | Pass | Browser on `https://ai.globalspokenenglish.com` shows Kannada **ಪಾವತಿಸಿ ಖಾತೆ ತೆರೆಯಿರಿ**, loads the three priced plans, and rejects password `short` for phone `7000000091` with users=0 and intents=0 |
+| Live payment | Not run | `PAYMENT_DRIVER=razorpay` was already set; no card or UPI payment was submitted |
+| Android registration | Pass in tests | `MobilePaidRegistrationTest` issues a Passport family and no session cookie; adapter test opens Razorpay only after a pending order and stores the refresh token |
+
+Focused PHPStan on the paid-registration files reported 0 errors. Locale check
+passed with the existing pending-independent-review warnings. Web typecheck
+passed. `WebPasswordSignInPanel` tests passed 10/10. OpenAPI check passed at
+0.50.0 after contract generation. Full pinned `make verify` was not re-run
+after this slice.
+
+## ADR-0040 previous-website phone sign-in and basic onboarding — 24 September 2026
+
+| Check | Result | Evidence |
+|---|---|---|
+| Previous website untouched | Pass | Read-only admin list/edit GETs only; no POST/PUT/PATCH/DELETE to student records |
+| Phone sign-in format | Pass | Policy, OpenAPI `GlobalUsername`, HTML identifier pattern, and live LocalizedMessage chunk include `Phone or username` / Kannada equivalent |
+| Invitation/operator usernames | Pass | Letter-first establishment remains; invitation form pattern excludes phones |
+| bcrypt import + rehash | Pass | PostgreSQL integration authenticates `123` against an imported `$2y$` hash and stores Argon2id after success |
+| Basic entitlement | Pass | Operator grant of `monthly_modules` for one Asia/Kolkata calendar month; replay skips paid memberships |
+| Idempotency | Pass | Second live run replayed 1,716 identities, replayed 1,716 credentials, skipped 1,716 grants |
+| Live health | Pass | `https://ai.globalspokenenglish.com/api/v1/health/{live,ready}` HTTP 200 after `adr0040` switch |
+| Learner data in Git | Pass | Manifest lived in `/tmp` mode 0600 and was deleted on studio and VPS |
+
+Pinned `make verify` passes Composer audit, Pint, PHPStan 0 errors, SQLite
+333/333 (3,161 assertions), PostgreSQL 365/365 (5,256 assertions), locale
+check with five pending-independent-review warnings, OpenAPI/contracts,
+release and soft-launch contracts, lint `--max-warnings=0`, typecheck, and
+web 107 files / 480 tests. `make e2e` passes API 4/4 (103 assertions) and
+Playwright 30/30. Two moderate pnpm advisories remain below the high-severity
+threshold. 10 extracted rows had unusable phones and 1 phone collided; 76 of
+1,803 listed ids lacked a usable phone+bcrypt pair on the edit form.
+
 ## UX-REM-06 retained first-success sequence — 23 September 2026
 
 The decision packet covers both required options and their adult/goal payload,

@@ -429,7 +429,7 @@ describe('RecordingTurn privacy boundaries', () => {
     expect(onCancelInFlight).toHaveBeenCalledOnce()
   })
 
-  it('hold-to-talk auto-stops at the 25 second Speak cap', async () => {
+  it.each(['hold', 'toggle'] as const)('%s auto-stops at the 25 second Speak cap', async (captureMode) => {
     vi.useFakeTimers()
     const session: AudioRecordingSession = {
       cancel: vi.fn(),
@@ -449,7 +449,7 @@ describe('RecordingTurn privacy boundaries', () => {
 
     render(
       <RecordingTurn
-        captureMode="hold"
+        captureMode={captureMode}
         createClientId={() => '018f4f82-6400-7a12-8f4b-20b12bf6b6f3'}
         labels={{
           ...labels,
@@ -470,7 +470,8 @@ describe('RecordingTurn privacy boundaries', () => {
     )
 
     await act(async () => {
-      fireEvent.pointerDown(
+      const trigger = captureMode === 'hold' ? fireEvent.pointerDown : fireEvent.pointerUp
+      trigger(
         screen.getByRole('button', { name: 'Hold to talk' }),
         { button: 0 },
       )
@@ -571,6 +572,18 @@ describe('RecordingTurn privacy boundaries', () => {
     expect(
       screen.getByRole('button', { name: 'Hold to talk' }),
     ).toBeEnabled()
+  })
+
+  it('does not repeat the Android explanation after it was already seen, while permission is still checked', async () => {
+    const recorder: AudioRecorder = {
+      isSupported: () => true,
+      requiresContextualPermissionRationale: () => true,
+      start: vi.fn(async () => { throw new RecordingPermissionDeniedError('denied_once') }),
+    }
+    render(<RecordingTurn createClientId={() => 'capture'} labels={labels} onCaptureChange={vi.fn()} onContinueWithoutRecording={vi.fn()} recorder={recorder} permissionRationaleAccepted showPermissionExplanation={false} />)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Start' }))
+    expect(recorder.start).toHaveBeenCalledOnce()
+    expect(screen.queryByText(labels.permissionExplanation)).not.toBeInTheDocument()
   })
 
   it.each([

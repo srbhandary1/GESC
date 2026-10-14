@@ -417,6 +417,7 @@ export type MobilePasswordSignIn = {
 export type FederatedProviderAvailability = {
     google: boolean;
     facebook: boolean;
+    instagram: boolean;
 };
 
 export type MobileFederatedAuthorizationResponse = {
@@ -775,6 +776,7 @@ export type ProgressActionableDueReview = {
 };
 
 export type LearnerEntitlement = {
+    provider_usage?: LearnerProviderUsage;
     applies: boolean;
     entitlement_id: string | null;
     plan_code: string | null;
@@ -817,6 +819,27 @@ export type LearnerSubscriptionPlanOffer = {
     is_talk_pack: boolean;
     checkout_required: boolean;
     recommended: boolean;
+};
+
+export type MobileDirectPaidRegistrationRequest = {
+    phone: GlobalUsername;
+    plan_id: Ulid;
+    idempotency_key: string;
+    installation_id: Ulid;
+    client_id: string;
+};
+
+export type MobileDirectPaidRegistrationConfirmation = {
+    payment_id: string;
+    signature: string;
+    installation_id: Ulid;
+    client_id: string;
+};
+
+export type DirectPaidRegistrationRequest = {
+    phone: GlobalUsername;
+    plan_id: Ulid;
+    idempotency_key: string;
 };
 
 export type CreateLearnerSubscriptionCheckoutRequest = {
@@ -882,6 +905,7 @@ export type OperatorEntitlementPlan = {
 };
 
 export type OperatorLearnerEntitlementListing = {
+    provider_usage?: LearnerProviderUsage;
     learner_membership_id: Ulid;
     entitlements: Array<OperatorLearnerEntitlement>;
 };
@@ -1245,10 +1269,38 @@ export type LearnerProgress = {
 };
 
 export type StartConversationSessionRequest = {
-    persona_key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
-    scenario_key: 'everyday-friend-prototype' | 'past-tense-skill-focus-prototype' | 'carry-sentence-review-prototype' | 'clinic-reception-roleplay-scenario';
+    persona_key: ConversationPersonaKey;
+    scenario_key: ConversationScenarioKey;
     coaching_mode: 'gentle' | 'tutor' | 'fluency';
     ui_locale: SupportedLocale;
+    interaction_flow?: ConversationInteractionFlow;
+    recovery_notice_version?: 'conversation-recovery-2026-09-25';
+    /**
+     * Explicit, unpreselected acknowledgement required with interaction_flow; does not grant provider, microphone, history or research consent.
+     */
+    recovery_notice_accepted?: true;
+};
+
+export type ConversationPersonaKey = 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype' | 'job-interview-roleplay-prototype' | 'bank-counter-roleplay-prototype' | 'restaurant-order-roleplay-prototype' | 'hotel-checkin-roleplay-prototype' | 'phone-customer-support-roleplay-prototype' | 'grocery-shop-roleplay-prototype' | 'school-parent-meeting-roleplay-prototype' | 'doctor-appointment-roleplay-prototype' | 'airport-checkin-roleplay-prototype' | 'office-meeting-roleplay-prototype' | 'bus-train-ticket-roleplay-prototype';
+
+export type ConversationScenarioKey = 'everyday-friend-prototype' | 'past-tense-skill-focus-prototype' | 'carry-sentence-review-prototype' | 'clinic-reception-roleplay-scenario' | 'job-interview-roleplay-scenario' | 'bank-counter-roleplay-scenario' | 'restaurant-order-roleplay-scenario' | 'hotel-checkin-roleplay-scenario' | 'phone-customer-support-roleplay-scenario' | 'grocery-shop-roleplay-scenario' | 'school-parent-meeting-roleplay-scenario' | 'doctor-appointment-roleplay-scenario' | 'airport-checkin-roleplay-scenario' | 'office-meeting-roleplay-scenario' | 'bus-train-ticket-roleplay-scenario';
+
+export type ConversationInteractionFlow = 'roleplay_dialogue' | 'question_help' | 'free_speech';
+
+export type ConversationReply = {
+    text: string;
+    locale: SupportedLocale;
+};
+
+export type ConversationInteraction = {
+    flow: ConversationInteractionFlow;
+    state: 'awaiting_reply' | 'retry_required' | 'awaiting_question' | 'awaiting_explanation_permission' | 'complete' | 'expired' | 'closed';
+    revision: number;
+    opportunity: number;
+    ai_role: string;
+    learner_role: string;
+    opening_reply: ConversationReply | null;
+    recovery_expires_at: string | null;
 };
 
 export type AdvanceConversationSessionStageRequest = {
@@ -1257,7 +1309,7 @@ export type AdvanceConversationSessionStageRequest = {
 
 export type ConversationPersonaSnapshot = {
     id: Ulid;
-    key: 'patient-friend-prototype' | 'clinic-reception-roleplay-prototype';
+    key: ConversationPersonaKey;
     version_id: Ulid;
     version: number;
     display_name: string;
@@ -1268,10 +1320,10 @@ export type ConversationPersonaSnapshot = {
 
 export type ConversationScenarioSnapshot = {
     id: Ulid;
-    key: 'everyday-friend-prototype' | 'past-tense-skill-focus-prototype' | 'carry-sentence-review-prototype' | 'clinic-reception-roleplay-scenario';
+    key: ConversationScenarioKey;
     version_id: Ulid;
     version: number;
-    topic_code: 'everyday-conversation' | 'grammar-past-simple' | 'carry-sentence-review' | 'clinic-reception';
+    topic_code: 'everyday-conversation' | 'grammar-past-simple' | 'carry-sentence-review' | 'clinic-reception' | 'job-interview' | 'bank-counter' | 'restaurant-order' | 'hotel-checkin' | 'phone-customer-support' | 'grocery-shop' | 'school-parent-meeting' | 'doctor-appointment' | 'airport-checkin' | 'office-meeting' | 'bus-train-ticket';
     definition_hash: Sha256;
     review_status: 'synthetic_unreviewed';
 };
@@ -1286,8 +1338,14 @@ export type ConversationScenarioObjective = {
 export type ConversationRoleplayFeedbackEvidence = {
     id: Ulid;
     scenario_objective_id: Ulid;
+    /**
+     * Stable key from the session's pinned scenario objective.
+     */
+    objective_key?: string;
     evidence_digest: Sha256;
-    completion_state: 'met' | 'unmet' | 'skipped';
+    completion_state: 'met' | 'unmet' | 'skipped' | 'unassessed';
+    source_turn_id?: Ulid | null;
+    advisory?: true;
 };
 
 export type ConversationSession = {
@@ -1301,6 +1359,8 @@ export type ConversationSession = {
     scenario: ConversationScenarioSnapshot;
     objectives?: Array<ConversationScenarioObjective>;
     feedback?: Array<ConversationRoleplayFeedbackEvidence>;
+    interaction?: ConversationInteraction;
+    latest_turn?: ConversationTurn | null;
     replayed: boolean;
 };
 
@@ -1311,13 +1371,35 @@ export type CreateConversationTurnRequest = {
      *
      */
     prototype_utterance: string;
+    /**
+     * Required for interactive flows; validated against server-owned state.
+     */
+    action?: 'reply' | 'retry' | 'question' | 'confused' | 'accept_explanation' | 'decline_explanation';
+    /**
+     * Required only for free_speech accept_explanation. Selects an English AI opening or scoped unexpired reply for text-only explanation. Never accepts client-supplied source text.
+     */
+    explanation_target?: string;
+    /**
+     * Required for interactive flows; stale mutations return conflict.
+     */
+    expected_revision?: number;
+    transcript_locale?: ConversationTranscriptLocale;
+    /**
+     * Advisory only. Speech provenance is verified against the linked recording.
+     */
+    transcript_source?: 'typed' | 'original_speech' | 'translated_speech';
+    voice_recording_id?: Ulid;
 };
+
+export type ConversationTranscriptLocale = SupportedLocale | 'unknown';
 
 export type SynthesizeConversationSpeechRequest = {
     purpose: 'model_en' | 'guidance_l1';
     /**
      * One short model or guidance line. The server does not persist this
-     * text. Soft-launch Azure neural TTS may return a WAV for playback.
+     * standalone text. Interactive sessions accept only a trusted opening
+     * or validated response, with local-language permission enforced.
+     * Soft-launch Azure neural TTS may return a WAV for playback.
      *
      */
     text: string;
@@ -1347,8 +1429,10 @@ export type RealtimeSpeechSocketDenial = {
 };
 
 export type ConversationSpeechResult = {
+    model_playback_grant?: string;
+    guidance_playback_grant?: string;
     playback_available: boolean;
-    rendering_mode: 'deterministic-fake-text-only' | 'client-text-to-speech-fallback' | 'azure-soft-launch-guidance-wav' | 'azure-private-wav';
+    rendering_mode: 'deterministic-fake-text-only' | 'text-only-explanation' | 'client-text-to-speech-fallback' | 'azure-soft-launch-guidance-wav' | 'azure-private-wav';
     /**
      * Optional base64 WAV for session /speech lines only. Turn replies
      * use model_audio_stream_path instead and keep this null.
@@ -1556,13 +1640,28 @@ export type PriorityCorrection = {
 };
 
 export type ConversationTurn = {
+    explanation_source?: ConversationReply;
+    /**
+     * Present only on free-speech text-only explanation results; identifies the source English bubble.
+     */
+    explanation_target?: string;
     id: Ulid;
     conversation_session_id: Ulid;
     turn_number: number;
     status: 'completed' | 'failed';
     transcript: string | null;
     understood_intent: string | null;
+    /**
+     * English-only compatibility field; null for a local-language reply.
+     */
     assistant_reply: string | null;
+    reply?: ConversationReply | null;
+    interaction?: ConversationInteraction;
+    original_turn_id?: Ulid | null;
+    /**
+     * Advisory dialogue assessment; never authoritative marks or mastery.
+     */
+    assessment?: 'accepted' | 'retry_required' | 'unassessed' | null;
     priority_correction: PriorityCorrection | null;
     safety_state: 'ok' | 'fallback' | null;
     speech: ConversationSpeechResult | null;
@@ -1655,6 +1754,10 @@ export type VoiceRecording = {
     status: 'processing' | 'awaiting_learner_confirmation' | 'confirmed' | 'corrected' | 'discarded' | 'provider_failed_recoverable' | 'expired_deleted' | 'withdrawn_deleted';
     transcript: string | null;
     transcript_confidence: number | null;
+    transcript_original?: string | null;
+    transcript_locale?: ConversationTranscriptLocale;
+    transcript_source?: 'original_speech' | 'translated_speech';
+    english_intent_text?: string | null;
     transcript_review_url: string;
 };
 
@@ -3021,6 +3124,34 @@ export type MediaLibraryProblemDetails = ProblemDetails & {
     message_key: 'problem.bad_request' | 'problem.unauthenticated' | 'problem.forbidden' | 'problem.not_found' | 'problem.method_not_allowed' | 'problem.conflict' | 'problem.validation_failed' | 'problem.too_many_requests' | 'problem.service_unavailable' | 'problem.internal_error' | 'problem.request_failed' | 'problem.media_library.not_found' | 'problem.media_library.stale_upload' | 'problem.media_library.stale_metadata' | 'problem.media_library.stale_lifecycle' | 'problem.media_library.stale_workspace' | 'problem.media_library.idempotency_conflict' | 'problem.media_library.duplicate_use' | 'problem.media_library.storage_failure' | 'problem.media_library.concurrent_change';
 };
 
+export type ConversationPlaybackProgressRequest = {
+    grant: string;
+    playback_key: string;
+    played_ms: number;
+};
+
+export type ConversationPlaybackProgress = {
+    played_ms: number;
+    charged_seconds: number;
+    allowed_ms: number;
+    remaining_seconds: number | null;
+};
+
+export type LearnerProviderUsage = {
+    period_start: string;
+    period_days: 30;
+    input_tokens: number;
+    output_tokens: number;
+    unknown_usage_attempts: number;
+    providers: Array<{
+        provider: string;
+        attempts: number;
+        input_tokens: number;
+        output_tokens: number;
+        unknown_usage_attempts: number;
+    }>;
+};
+
 export type PasswordSignInWritable = {
     username: GlobalUsername;
     password: string;
@@ -3081,6 +3212,24 @@ export type PlatformRecoveryContactReplacementWritable = {
     reason_key: 'account_recovery.verified_contact_replacement';
     evidence_reference: string;
 };
+
+export type MobileDirectPaidRegistrationRequestWritable = {
+    phone: GlobalUsername;
+    password: string;
+    plan_id: Ulid;
+    idempotency_key: string;
+    installation_id: Ulid;
+    client_id: string;
+};
+
+export type DirectPaidRegistrationRequestWritable = {
+    phone: GlobalUsername;
+    password: string;
+    plan_id: Ulid;
+    idempotency_key: string;
+};
+
+export type ConversationTranscriptLocaleWritable = SupportedLocale | 'unknown';
 
 /**
  * Optional caller-provided UUID used to correlate one request. Invalid
@@ -3344,10 +3493,12 @@ export type BeginMobileAuthorizationResponse = BeginMobileAuthorizationResponses
 export type BeginFederatedAuthorizationData = {
     body?: never;
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query?: {
-        intent?: 'sign_in' | 'link';
+        intent?: 'sign_in' | 'link' | 'register';
+        plan_id?: Ulid;
+        plan_code?: string;
         client_id?: string;
         installation_id?: Ulid;
         link_request?: string;
@@ -3384,7 +3535,7 @@ export type BeginFederatedAuthorizationResponse = BeginFederatedAuthorizationRes
 export type CompleteFederatedAuthorizationData = {
     body?: never;
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query?: {
         code?: string;
@@ -3505,6 +3656,86 @@ export type SignInWithMobilePasswordResponses = {
 };
 
 export type SignInWithMobilePasswordResponse = SignInWithMobilePasswordResponses[keyof SignInWithMobilePasswordResponses];
+
+export type CreateMobileDirectPaidRegistrationData = {
+    body: MobileDirectPaidRegistrationRequestWritable;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mobile/direct/paid-registrations';
+};
+
+export type CreateMobileDirectPaidRegistrationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateMobileDirectPaidRegistrationError = CreateMobileDirectPaidRegistrationErrors[keyof CreateMobileDirectPaidRegistrationErrors];
+
+export type CreateMobileDirectPaidRegistrationResponses = {
+    /**
+     * Idempotent replay without a new token family.
+     */
+    200: LearnerSubscriptionCheckout;
+    /**
+     * Token family after capture, or a pending Razorpay order.
+     */
+    201: MobileTokenResponse | LearnerSubscriptionCheckout;
+};
+
+export type CreateMobileDirectPaidRegistrationResponse = CreateMobileDirectPaidRegistrationResponses[keyof CreateMobileDirectPaidRegistrationResponses];
+
+export type ConfirmMobileDirectPaidRegistrationData = {
+    body: MobileDirectPaidRegistrationConfirmation;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        checkout: Ulid;
+    };
+    query?: never;
+    url: '/auth/mobile/direct/paid-registrations/{checkout}/confirmations';
+};
+
+export type ConfirmMobileDirectPaidRegistrationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmMobileDirectPaidRegistrationError = ConfirmMobileDirectPaidRegistrationErrors[keyof ConfirmMobileDirectPaidRegistrationErrors];
+
+export type ConfirmMobileDirectPaidRegistrationResponses = {
+    /**
+     * Token family after a verified capture, or a still-pending checkout.
+     */
+    200: MobileTokenResponse | LearnerSubscriptionCheckout;
+};
+
+export type ConfirmMobileDirectPaidRegistrationResponse = ConfirmMobileDirectPaidRegistrationResponses[keyof ConfirmMobileDirectPaidRegistrationResponses];
 
 export type EnrollWithMobilePasswordInvitationData = {
     body: PasswordInvitationEnrollmentWritable;
@@ -3670,11 +3901,14 @@ export type GetMobileFederatedProvidersResponse = GetMobileFederatedProvidersRes
 export type GetMobileFederatedAuthorizationData = {
     body?: never;
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query: {
         client_id: string;
         installation_id: Ulid;
+        intent?: 'sign_in' | 'register';
+        plan_id?: Ulid;
+        plan_code?: string;
     };
     url: '/auth/mobile/social/{provider}/authorization';
 };
@@ -3765,7 +3999,7 @@ export type StartMobileFederatedLinkData = {
         'X-Correlation-ID'?: string;
     };
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query?: never;
     url: '/auth/mobile/social/{provider}/link-starts';
@@ -3837,7 +4071,7 @@ export type GetMobileFederatedLinksResponse = GetMobileFederatedLinksResponses[k
 export type UnlinkMobileFederatedProviderData = {
     body?: never;
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query?: never;
     url: '/auth/mobile/social/{provider}/links';
@@ -3897,7 +4131,7 @@ export type GetFederatedLinksResponse = GetFederatedLinksResponses[keyof GetFede
 export type UnlinkFederatedProviderData = {
     body?: never;
     path: {
-        provider: 'google' | 'facebook';
+        provider: 'google' | 'facebook' | 'instagram';
     };
     query?: never;
     url: '/auth/social/{provider}/links';
@@ -5090,6 +5324,43 @@ export type GetLearnerProgressDashboardResponses = {
 
 export type GetLearnerProgressDashboardResponse = GetLearnerProgressDashboardResponses[keyof GetLearnerProgressDashboardResponses];
 
+export type RecordConversationPlaybackProgressData = {
+    body: ConversationPlaybackProgressRequest;
+    path?: never;
+    query?: never;
+    url: '/conversation-playback-progress';
+};
+
+export type RecordConversationPlaybackProgressErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+};
+
+export type RecordConversationPlaybackProgressError = RecordConversationPlaybackProgressErrors[keyof RecordConversationPlaybackProgressErrors];
+
+export type RecordConversationPlaybackProgressResponses = {
+    /**
+     * Monotonic played time, charged seconds and remaining allowance
+     */
+    200: ConversationPlaybackProgress;
+};
+
+export type RecordConversationPlaybackProgressResponse = RecordConversationPlaybackProgressResponses[keyof RecordConversationPlaybackProgressResponses];
+
 export type GetLearnerEntitlementData = {
     body?: never;
     headers?: {
@@ -5163,6 +5434,115 @@ export type ListLearnerSubscriptionPlansResponses = {
 };
 
 export type ListLearnerSubscriptionPlansResponse = ListLearnerSubscriptionPlansResponses[keyof ListLearnerSubscriptionPlansResponses];
+
+export type ListDirectSubscriptionPlansData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/direct/subscription-plans';
+};
+
+export type ListDirectSubscriptionPlansErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ListDirectSubscriptionPlansError = ListDirectSubscriptionPlansErrors[keyof ListDirectSubscriptionPlansErrors];
+
+export type ListDirectSubscriptionPlansResponses = {
+    /**
+     * Public Direct plan catalogue.
+     */
+    200: LearnerSubscriptionCatalogue;
+};
+
+export type ListDirectSubscriptionPlansResponse = ListDirectSubscriptionPlansResponses[keyof ListDirectSubscriptionPlansResponses];
+
+export type CreateDirectPaidRegistrationData = {
+    body: DirectPaidRegistrationRequestWritable;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/direct/paid-registrations';
+};
+
+export type CreateDirectPaidRegistrationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type CreateDirectPaidRegistrationError = CreateDirectPaidRegistrationErrors[keyof CreateDirectPaidRegistrationErrors];
+
+export type CreateDirectPaidRegistrationResponses = {
+    /**
+     * Idempotent replay of the same registration checkout.
+     */
+    200: LearnerSubscriptionCheckout;
+    /**
+     * Payment completed and the account or plan grant was applied.
+     */
+    201: LearnerSubscriptionCheckout;
+};
+
+export type CreateDirectPaidRegistrationResponse = CreateDirectPaidRegistrationResponses[keyof CreateDirectPaidRegistrationResponses];
+
+export type ConfirmDirectPaidRegistrationData = {
+    body: ConfirmLearnerSubscriptionCheckoutRequest;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        checkout: Ulid;
+    };
+    query?: never;
+    url: '/direct/paid-registrations/{checkout}/confirmations';
+};
+
+export type ConfirmDirectPaidRegistrationErrors = {
+    /**
+     * The request could not be completed.
+     */
+    422: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmDirectPaidRegistrationError = ConfirmDirectPaidRegistrationErrors[keyof ConfirmDirectPaidRegistrationErrors];
+
+export type ConfirmDirectPaidRegistrationResponses = {
+    /**
+     * Confirmed checkout. A completed payment includes the session cookie.
+     */
+    200: LearnerSubscriptionCheckout;
+};
+
+export type ConfirmDirectPaidRegistrationResponse = ConfirmDirectPaidRegistrationResponses[keyof ConfirmDirectPaidRegistrationResponses];
 
 export type CreateLearnerSubscriptionCheckoutData = {
     body: CreateLearnerSubscriptionCheckoutRequest;
@@ -5806,12 +6186,112 @@ export type StartConversationSessionResponses = {
      */
     200: ConversationSession;
     /**
-     * A deterministic fake-provider conversation session was started.
+     * A learner-owned conversation session was started.
      */
     201: ConversationSession;
 };
 
 export type StartConversationSessionResponse = StartConversationSessionResponses[keyof StartConversationSessionResponses];
+
+export type ReadConversationSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}';
+};
+
+export type ReadConversationSessionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ReadConversationSessionError = ReadConversationSessionErrors[keyof ReadConversationSessionErrors];
+
+export type ReadConversationSessionResponses = {
+    /**
+     * Current learner-owned session state.
+     */
+    200: ConversationSession;
+};
+
+export type ReadConversationSessionResponse = ReadConversationSessionResponses[keyof ReadConversationSessionResponses];
+
+export type ExitConversationSessionData = {
+    body?: never;
+    headers: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+        /**
+         * Opaque UUID or ULID identifying one replayable command.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        /**
+         * Learner-owned deterministic Friend-session ULID.
+         */
+        conversation_session_id: Ulid;
+    };
+    query?: never;
+    url: '/conversation-sessions/{conversation_session_id}/exit';
+};
+
+export type ExitConversationSessionErrors = {
+    /**
+     * The request could not be completed.
+     */
+    401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type ExitConversationSessionError = ExitConversationSessionErrors[keyof ExitConversationSessionErrors];
+
+export type ExitConversationSessionResponses = {
+    /**
+     * Closed interaction with advisory reflection.
+     */
+    200: ConversationSession;
+};
+
+export type ExitConversationSessionResponse = ExitConversationSessionResponses[keyof ExitConversationSessionResponses];
 
 export type AdvanceConversationSessionStageData = {
     body: AdvanceConversationSessionStageRequest;
@@ -5915,6 +6395,10 @@ export type CreateConversationTurnErrors = {
     /**
      * The request could not be completed.
      */
+    403: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
     404: ProblemDetails;
     /**
      * The request could not be completed.
@@ -5942,11 +6426,11 @@ export type CreateConversationTurnError = CreateConversationTurnErrors[keyof Cre
 
 export type CreateConversationTurnResponses = {
     /**
-     * Exact command replay returned the original deterministic result.
+     * Exact command replay returned the original result.
      */
     200: ConversationTurn;
     /**
-     * The deterministic fake-provider turn reached a terminal state.
+     * The conversation turn reached a terminal state.
      */
     201: ConversationTurn;
 };
@@ -5982,6 +6466,10 @@ export type SynthesizeConversationSpeechErrors = {
      * The request could not be completed.
      */
     401: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    403: ProblemDetails;
     /**
      * The request could not be completed.
      */
@@ -7165,6 +7653,9 @@ export type ListLearnerLevelsResponses = {
             concept_key?: string | null;
             availability: 'available' | 'commissioning_pending';
             entitlement_access: 'allowed' | 'upgrade_required';
+            /**
+             * Configured starting levels (1 and 2 by default) are progress-open for every subscription; later levels require the preceding level's deterministic completion. Entitlement and content availability remain separate gates.
+             */
             progress_access: 'allowed' | 'locked' | 'not_applicable';
             unlock_after_level_number?: number | null;
             checkpoint_status?: 'not_applicable' | 'not_ready' | 'ready' | 'passed' | 'attempts_exhausted' | 'review_due_blocked';
@@ -7460,10 +7951,76 @@ export type StreamLearnerLevelSessionAudioResponses = {
 
 export type StreamLearnerLevelSessionAudioResponse = StreamLearnerLevelSessionAudioResponses[keyof StreamLearnerLevelSessionAudioResponses];
 
+export type SubmitLearnerLevelSessionCheckData = {
+    body: {
+        idempotency_key: string;
+        answers: {
+            [key: string]: number;
+        };
+    };
+    headers?: {
+        /**
+         * Optional caller-provided UUID used to correlate one request. Invalid
+         * values are ignored and replaced with a server-generated UUID.
+         *
+         */
+        'X-Correlation-ID'?: string;
+    };
+    path: {
+        levelNumber: number;
+        partId: 'practice';
+    };
+    query?: never;
+    url: '/me/levels/{levelNumber}/sessions/{partId}/check-submissions';
+};
+
+export type SubmitLearnerLevelSessionCheckErrors = {
+    /**
+     * The request could not be completed.
+     */
+    404: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    409: ProblemDetails;
+    /**
+     * The request could not be completed.
+     */
+    default: ProblemDetails;
+};
+
+export type SubmitLearnerLevelSessionCheckError = SubmitLearnerLevelSessionCheckErrors[keyof SubmitLearnerLevelSessionCheckErrors];
+
+export type SubmitLearnerLevelSessionCheckResponses = {
+    /**
+     * Idempotent replay of the same check result.
+     */
+    200: {
+        [key: string]: unknown;
+    };
+    /**
+     * Check graded and Practice completed when passed.
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type SubmitLearnerLevelSessionCheckResponse = SubmitLearnerLevelSessionCheckResponses[keyof SubmitLearnerLevelSessionCheckResponses];
+
 export type StartLearnerLevelSessionConversationData = {
     body: {
         idempotency_key: string;
         ui_locale: string;
+        purpose?: 'practice' | 'question_help';
+        /**
+         * Required for question_help.
+         */
+        recovery_notice_version?: 'conversation-recovery-2026-09-25';
+        /**
+         * Required for question_help; explicit acknowledgement.
+         */
+        recovery_notice_accepted?: true;
     };
     headers?: {
         /**

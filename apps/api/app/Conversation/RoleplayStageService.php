@@ -95,6 +95,9 @@ final readonly class RoleplayStageService
                 organizationId: $context->organizationId,
                 sessionId: $sessionId,
             );
+            if (DB::table('conversation_dialogue_states')->where('organization_id', $context->organizationId)->where('conversation_session_id', $sessionId)->exists()) {
+                throw new ConversationOperationRejected('interactive_dialogue_owns_stage');
+            }
             $expected = RoleplayStages::nextStage($currentStage);
 
             if ($expected === null || $expected !== $toStage) {

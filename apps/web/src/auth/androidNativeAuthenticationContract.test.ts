@@ -72,6 +72,7 @@ describe('production Android native authentication contract', () => {
     expect(source).toContain('"/oauth/authorize".equals(path)')
     expect(source).toContain('"/oauth/social/google/authorize".equals(path)')
     expect(source).toContain('"/oauth/social/facebook/authorize".equals(path)')
+    expect(source).toContain('"/oauth/social/instagram/authorize".equals(path)')
     expect(source).toContain('customTabsIntent.launchUrl(activity, uri)')
     expect(source).not.toContain('Intent.FLAG_ACTIVITY_NEW_TASK')
     expect(source).not.toContain('launchUrl(getContext(), uri)')

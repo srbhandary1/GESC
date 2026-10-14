@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AccountRecoveryManagementController;
 use App\Http\Controllers\AuthenticationSessionController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\ConversationPlaybackController;
 use App\Http\Controllers\CurrentIdentityController;
 use App\Http\Controllers\FederatedAuthenticationController;
 use App\Http\Controllers\HealthController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\LearnerSubscriptionController;
 use App\Http\Controllers\LearnerTuitionRequestController;
 use App\Http\Controllers\LocalPasswordEstablishmentController;
 use App\Http\Controllers\MobileAuthenticationController;
+use App\Http\Controllers\MobilePaidRegistrationController;
 use App\Http\Controllers\MobilePasswordAuthenticationController;
 use App\Http\Controllers\OperatorContentController;
 use App\Http\Controllers\OperatorContentWorkspaceController;
@@ -37,6 +39,7 @@ use App\Http\Controllers\OperatorShellController;
 use App\Http\Controllers\OperatorSpeechEconomicsController;
 use App\Http\Controllers\OperatorTuitionRequestController;
 use App\Http\Controllers\OtpAuthenticationController;
+use App\Http\Controllers\PaidRegistrationController;
 use App\Http\Controllers\PasswordAuthenticationController;
 use App\Http\Controllers\PrivilegedMfaController;
 use App\Http\Controllers\RazorpayWebhookController;
@@ -59,6 +62,15 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/otp/verifications', [OtpAuthenticationController::class, 'verifyChallenge'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:otp-verifications'])
         ->name('api.v1.auth.otp.verifications.store');
+    Route::get('/direct/subscription-plans', [PaidRegistrationController::class, 'plans'])
+        ->middleware('throttle:password-sign-ins')
+        ->name('api.v1.direct.subscription-plans.index');
+    Route::post('/direct/paid-registrations', [PaidRegistrationController::class, 'store'])
+        ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-sign-ins'])
+        ->name('api.v1.direct.paid-registrations.store');
+    Route::post('/direct/paid-registrations/{checkout}/confirmations', [PaidRegistrationController::class, 'confirm'])
+        ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-sign-ins'])
+        ->name('api.v1.direct.paid-registrations.confirm');
     Route::post('/auth/password/sign-ins', [PasswordAuthenticationController::class, 'signIn'])
         ->middleware([RequireStatefulBrowserRequest::class, 'throttle:password-sign-ins'])
         ->name('api.v1.auth.password.sign-ins.store');
@@ -74,6 +86,12 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/mobile/password/sign-ins', [MobilePasswordAuthenticationController::class, 'signIn'])
         ->middleware('throttle:password-sign-ins')
         ->name('api.v1.auth.mobile.password.sign-ins.store');
+    Route::post('/auth/mobile/direct/paid-registrations', [MobilePaidRegistrationController::class, 'store'])
+        ->middleware('throttle:password-sign-ins')
+        ->name('api.v1.auth.mobile.direct.paid-registrations.store');
+    Route::post('/auth/mobile/direct/paid-registrations/{checkout}/confirmations', [MobilePaidRegistrationController::class, 'confirm'])
+        ->middleware('throttle:password-sign-ins')
+        ->name('api.v1.auth.mobile.direct.paid-registrations.confirm');
     Route::post('/auth/mobile/password/invitation-enrollments', [PasswordAuthenticationController::class, 'enrollWithInvitation'])
         ->middleware('throttle:password-recoveries')
         ->name('api.v1.auth.mobile.password.invitation-enrollments.store');
@@ -124,7 +142,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/auth/social/links', [FederatedAuthenticationController::class, 'links'])
             ->name('api.v1.auth.social.links.index');
         Route::delete('/auth/social/{provider}/links', [FederatedAuthenticationController::class, 'unlink'])
-            ->whereIn('provider', ['google', 'facebook'])
+            ->whereIn('provider', ['google', 'facebook', 'instagram'])
             ->name('api.v1.auth.social.links.destroy');
         Route::post('/auth/logout', [AuthenticationSessionController::class, 'logout'])
             ->name('api.v1.auth.logout');
@@ -198,7 +216,7 @@ Route::prefix('v1')->group(function (): void {
             [FederatedAuthenticationController::class, 'mobileLinkStart'],
         )
             ->middleware('throttle:password-sign-ins')
-            ->whereIn('provider', ['google', 'facebook'])
+            ->whereIn('provider', ['google', 'facebook', 'instagram'])
             ->name('api.v1.auth.mobile.social.link-starts.store');
         Route::get('/auth/mobile/social/links', [FederatedAuthenticationController::class, 'links'])
             ->name('api.v1.auth.mobile.social.links.index');
@@ -206,7 +224,7 @@ Route::prefix('v1')->group(function (): void {
             '/auth/mobile/social/{provider}/links',
             [FederatedAuthenticationController::class, 'unlink'],
         )
-            ->whereIn('provider', ['google', 'facebook'])
+            ->whereIn('provider', ['google', 'facebook', 'instagram'])
             ->name('api.v1.auth.mobile.social.links.destroy');
     });
 
@@ -214,6 +232,7 @@ Route::prefix('v1')->group(function (): void {
         'auth.first-party',
         'organization.context',
     ])->group(function (): void {
+        Route::post('/conversation-playback-progress', ConversationPlaybackController::class)->name('api.v1.conversation-playback-progress.store');
         Route::get('/home', [LearnerHomeController::class, 'show'])
             ->name('api.v1.home.show');
         Route::get(
@@ -389,6 +408,10 @@ Route::prefix('v1')->group(function (): void {
         )->whereUlid('session')
             ->middleware('throttle:conversation-prototype')
             ->name('api.v1.conversation-sessions.stages.store');
+        Route::get('/conversation-sessions/{session}', [ConversationController::class, 'show'])
+            ->whereUlid('session')->name('api.v1.conversation-sessions.show');
+        Route::post('/conversation-sessions/{session}/exit', [ConversationController::class, 'exit'])
+            ->whereUlid('session')->middleware('throttle:conversation-prototype')->name('api.v1.conversation-sessions.exit');
         Route::post(
             '/conversation-sessions/{session}/turns',
             [ConversationController::class, 'turn'],

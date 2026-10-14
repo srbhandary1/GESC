@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Authentication\Mobile\MobileTokenFamilyService;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Laravel\Passport\AccessToken;
@@ -13,7 +14,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class MobileAuthenticationController extends Controller
 {
-    public function __construct(private readonly MobileTokenFamilyService $families) {}
+    public function __construct(
+        private readonly MobileTokenFamilyService $families,
+        private readonly ConversationRecoveryStore $recovery,
+    ) {}
 
     public function revoke(Request $request): Response
     {
@@ -39,6 +43,7 @@ final class MobileAuthenticationController extends Controller
             $accessToken->oauth_access_token_id,
             (string) $validated['installation_id'],
         );
+        $this->recovery->deleteForUser((string) $user->getAuthIdentifier());
 
         return response()->noContent()->header('Cache-Control', 'no-store');
     }

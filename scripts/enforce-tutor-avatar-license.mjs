@@ -1,18 +1,21 @@
-import { existsSync, readFileSync, rmSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, lstatSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const webRoot = resolve(repositoryRoot, 'apps/web')
 const outputName = process.argv[2] ?? 'dist'
 
-if (!/^[a-z0-9-]+$/u.test(outputName)) {
-  throw new Error('Avatar bundle output must be a simple directory name.')
+if (!['dist', 'dist-demo'].includes(outputName)) {
+  throw new Error('Avatar bundle output must be dist or dist-demo, never source assets.')
 }
 
 const outputRoot = resolve(webRoot, outputName)
 if (!outputRoot.startsWith(`${webRoot}/`)) {
   throw new Error('Avatar bundle output escaped the web workspace.')
+}
+if (existsSync(outputRoot) && (lstatSync(outputRoot).isSymbolicLink() || !lstatSync(outputRoot).isDirectory())) {
+  throw new Error('Generated bundle output must be a real directory, not a symlink.')
 }
 
 const sourceLicense = resolve(
@@ -22,17 +25,16 @@ const sourceLicense = resolve(
 const bundledTutorRoot = resolve(outputRoot, 'tutor')
 
 // A production Android web bundle starts from the same public directory as the
-// website. Never package the website's downloadable APK inside the APK being
-// assembled. Website and soft-launch builds must keep the download artifact.
+// website. Exclude every downloadable Android package, including historical
+// filenames, from the generated Android bundle only. Source downloads and
+// website/soft-launch builds retain their artifacts.
 const androidWebBundle =
   process.env.GE_ANDROID_WEB_BUNDLE === '1' ||
   process.env.CAPACITOR_APP === 'production'
 if (androidWebBundle) {
-  remove(
-    resolve(outputRoot, 'downloads/global-spoken-english-android.apk'),
-  )
+  removeAndroidDownloads(resolve(outputRoot, 'downloads'))
   process.stdout.write(
-    'Android bundle: excluded the website APK download artifact.\n',
+    'Android bundle: excluded website APK/AAB download artifacts.\n',
   )
 }
 
@@ -56,8 +58,44 @@ if (!completedLicense) {
 }
 
 function remove(path) {
+  assertGeneratedPath(path)
   if (existsSync(path)) {
     rmSync(path, { force: true, recursive: true })
+  }
+}
+
+function assertGeneratedPath(path) {
+  const child = relative(outputRoot, path)
+  if (child === '' || child === '..' || child.startsWith(`..${sep}`)) {
+    throw new Error('Bundle filtering may only touch descendants of generated output.')
+  }
+  let current = outputRoot
+  for (const part of child.split(sep)) {
+    current = resolve(current, part)
+    // Never follow a generated path back into public/ or another directory.
+    // A broken symlink also fails closed instead of being mistaken for absence.
+    try {
+      if (lstatSync(current).isSymbolicLink()) {
+        throw new Error('Bundle filtering refuses symbolic links in generated paths.')
+      }
+    } catch (error) {
+      if (error.code === 'ENOENT') return
+      throw error
+    }
+  }
+}
+
+function removeAndroidDownloads(directory) {
+  assertGeneratedPath(directory)
+  if (!existsSync(directory)) return
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name)
+    assertGeneratedPath(path)
+    if (entry.isDirectory()) {
+      removeAndroidDownloads(path)
+    } else if (entry.isFile() && /\.(?:apk|aab)$/iu.test(entry.name)) {
+      rmSync(path)
+    }
   }
 }
 

@@ -34,4 +34,14 @@ public class GlobalEnglishWebChromeClientTest {
             }
         ));
     }
+
+    @Test
+    public void keepsHttpAndHttpsInsideChildPaymentWindow() {
+        assertTrue(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme("https"));
+        assertTrue(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme("HTTPS"));
+        assertTrue(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme("http"));
+        assertFalse(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme("upi"));
+        assertFalse(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme("intent"));
+        assertFalse(GlobalEnglishWebChromeClient.isAllowedPopupHttpScheme(null));
+    }
 }

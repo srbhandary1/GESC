@@ -1,8 +1,13 @@
 SHELL := /bin/sh
 
-PHP ?= php
-PNPM ?= pnpm
-COMPOSER_CMD ?= composer
+export PATH := $(CURDIR)/tmp/toolchain/php:$(CURDIR)/tmp/toolchain/node/bin:$(PATH)
+export PLAYWRIGHT_BROWSERS_PATH ?= $(CURDIR)/tmp/toolchain/playwright
+export JAVA_HOME ?= $(CURDIR)/tmp/toolchain/jdk21
+export ANDROID_HOME ?= $(HOME)/Android/Sdk
+
+PHP ?= $(if $(wildcard $(CURDIR)/tmp/toolchain/php/php),$(CURDIR)/tmp/toolchain/php/php,php)
+PNPM ?= $(if $(wildcard $(CURDIR)/tmp/toolchain/node/bin/pnpm),$(CURDIR)/tmp/toolchain/node/bin/pnpm,pnpm)
+COMPOSER_CMD ?= $(if $(wildcard $(CURDIR)/tmp/toolchain/composer/composer.phar),$(PHP) $(CURDIR)/tmp/toolchain/composer/composer.phar,composer)
 DOCKER_COMPOSE ?= docker compose
 
 API_DIR := apps/api
@@ -12,6 +17,10 @@ COMPOSER_VERSION := 2.10.2
 PHPUNIT_STORAGE_DIR ?= /tmp/global-spoken-english-phpunit-$(shell id -u)
 
 .DEFAULT_GOAL := help
+
+.PHONY: soft-launch-fpm-image
+soft-launch-fpm-image:
+	docker build -f infra/soft-launch/Dockerfile.api-fpm -t global-english-api-fpm:8.4.23 infra/soft-launch
 
 .PHONY: help bootstrap check-toolchain check-local-auth-env dev demo demo-build demo-serve demo-client demo-client-check demo-client-status demo-client-stop demo-client-tunnel demo-client-tunnel-status demo-client-tunnel-stop demo-android android-closed-beta android-release-bundle services-up services-down media-tools media-services-up verify test e2e demo-e2e demo-dist-e2e ai-eval ai-eval-review-export ai-eval-human-review openapi release-contract soft-launch-contract-test migrate seed build load-soak backup-restore-drill staged-deploy-dry-run soft-launch-setup soft-launch-start soft-launch-stop soft-launch-restart soft-launch-refresh-web soft-launch-reload-public-http soft-launch-status soft-launch-tunnel soft-launch-tunnel-stop soft-launch-configure-stable soft-launch-health soft-launch-ready soft-launch-backup soft-launch-restore-drill soft-launch-observe soft-launch-observe-install soft-launch-stable-prereq soft-launch-systemd-install wave6-indic-preflight lpl-07-rollout-gate import-tutor-glb verify-tutor-glb staff-closed-beta-smoke
 
@@ -142,6 +151,7 @@ android-closed-beta:
 	cd $(WEB_DIR) && GE_ANDROID_WEB_BUNDLE=1 VITE_UI_TRANSLATION_PREVIEW=true VITE_MOBILE_API_ORIGIN="$${VITE_MOBILE_API_ORIGIN}" VITE_MOBILE_OAUTH_CLIENT_ID="$${VITE_MOBILE_OAUTH_CLIENT_ID}" VITE_MOBILE_OAUTH_REDIRECT_URI="$${VITE_MOBILE_OAUTH_REDIRECT_URI}" VITE_MOBILE_OAUTH_AUTHORIZE_URL="$${VITE_MOBILE_OAUTH_AUTHORIZE_URL}" VITE_MOBILE_OAUTH_TOKEN_URL="$${VITE_MOBILE_OAUTH_TOKEN_URL}" $(PNPM) run build
 	cd $(WEB_DIR) && CAPACITOR_APP=production $(PNPM) exec cap sync android
 	cd $(WEB_DIR)/android-app && ./gradlew --no-daemon testDebugUnitTest assembleDebug
+	node scripts/stage-android-apk.mjs
 
 # Fail-closed Play/closed-track bundle. Signing secrets are accepted only from
 # process environment and the keystore must live outside this repository.
@@ -187,6 +197,7 @@ demo-dist-e2e:
 
 ai-eval:
 	cd $(API_DIR) && APP_ENV=local CONVERSATION_PROVIDER_DRIVER=fake CONVERSATION_AZURE_OPENAI_LIVE_REQUESTS_ENABLED=false $(PHP) artisan ai:evaluate
+	cd $(API_DIR) && $(PHP) vendor/bin/phpunit --configuration=phpunit.xml tests/Unit/Conversation/DialogueModelPolicyTest.php tests/Integration/InteractiveConversationTest.php
 	@if [ -n "$${SPEECH_BENCHMARK_RUN_ID}" ]; then \
 		cd $(API_DIR) && $(PHP) artisan speech:benchmark --phase=complete --run="$${SPEECH_BENCHMARK_RUN_ID}"; \
 	else \

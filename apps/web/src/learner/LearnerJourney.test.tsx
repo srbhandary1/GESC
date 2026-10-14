@@ -824,6 +824,89 @@ describe('deterministic learner journey', () => {
     })
   })
 
+  it.each([
+    { locale: 'en-IN', policy: 'approved-only' },
+    { locale: 'kn-IN', policy: 'development-preview' },
+  ] as const)('offers the level path when an enrolled learner has no assigned mission ($locale)', async ({ locale, policy }) => {
+    const user = userEvent.setup()
+    const api = fakeApi({ ...completeHome(), next_mission: null })
+    const onOpenLearn = vi.fn()
+    const learnLabel = resolveMessage('nav.learn', {
+      policy,
+      requestedLocale: locale,
+    }).text
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={locale}
+        localizationPolicy={policy}
+        onOpenLearn={onOpenLearn}
+      />,
+    )
+
+    const action = await screen.findByRole('button', { name: learnLabel })
+    expect(action).toBeVisible()
+    expect(action).toHaveClass('ge-button--primary')
+    expect(within(action).getByText(learnLabel)).toHaveAttribute('lang', locale)
+    expect(
+      screen.getByRole('heading', {
+        name: resolveMessage('level.path.title', {
+          policy,
+          requestedLocale: locale,
+        }).text,
+      }),
+    ).toBeVisible()
+    expect(document.querySelectorAll('.learner-home .ge-button--primary')).toHaveLength(1)
+
+    await user.click(action)
+
+    expect(onOpenLearn).toHaveBeenCalledOnce()
+    expect(api.mission).not.toHaveBeenCalled()
+    expect(api.startAttempt).not.toHaveBeenCalled()
+    expect(api.submitAttempt).not.toHaveBeenCalled()
+  })
+
+  it('offers the level path without a published-mission enrollment', async () => {
+    const user = userEvent.setup()
+    const api = fakeApi({ ...completeHome(), enrollment: null, next_mission: null })
+    const onOpenLearn = vi.fn()
+
+    render(
+      <LearnerJourney
+        api={api}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+        onOpenLearn={onOpenLearn}
+      />,
+    )
+
+    const action = await screen.findByRole('button', { name: t('nav.learn') })
+    expect(action).toBeVisible()
+    expect(action).toHaveClass('ge-button--primary')
+    expect(screen.queryByText(t('learner.home.no_mission'))).not.toBeInTheDocument()
+
+    await user.click(action)
+
+    expect(onOpenLearn).toHaveBeenCalledOnce()
+    expect(api.mission).not.toHaveBeenCalled()
+    expect(api.startAttempt).not.toHaveBeenCalled()
+    expect(api.submitAttempt).not.toHaveBeenCalled()
+  })
+
+  it('keeps the no-mission state when the level path is not available', async () => {
+    render(
+      <LearnerJourney
+        api={fakeApi({ ...completeHome(), next_mission: null })}
+        locale={DEFAULT_LOCALE}
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    expect(await screen.findByText(t('learner.home.no_mission'))).toBeVisible()
+    expect(screen.queryByRole('button', { name: t('nav.learn') })).not.toBeInTheDocument()
+  })
+
   it('presents a due review before the next mission and keeps streak secondary', async () => {
     const user = userEvent.setup()
     const longKnTitle =
@@ -842,12 +925,14 @@ describe('deterministic learner journey', () => {
       },
     } satisfies LearnerHome
     const api = fakeApi(home)
+    const onOpenLearn = vi.fn()
 
     render(
       <LearnerJourney
         api={api}
         locale={DEFAULT_LOCALE}
         localizationPolicy="development-preview"
+        onOpenLearn={onOpenLearn}
       />,
     )
 
@@ -902,6 +987,7 @@ describe('deterministic learner journey', () => {
       screen.getByRole('button', { name: HOME_ACTION_NAME }),
     )
     expect(api.mission).toHaveBeenCalledWith(ids.mission, ids.enrollment)
+    expect(onOpenLearn).not.toHaveBeenCalled()
   })
 
   it('lists upcoming reviews beneath the dominant action', async () => {
@@ -965,6 +1051,7 @@ describe('deterministic learner journey', () => {
         api={api}
         locale={DEFAULT_LOCALE}
         localizationPolicy="development-preview"
+        onOpenLearn={vi.fn()}
       />,
     )
 
@@ -974,13 +1061,14 @@ describe('deterministic learner journey', () => {
     expect(
       screen.getByRole('button', { name: HOME_ACTION_NAME }),
     ).toBeVisible()
+    expect(screen.queryByRole('button', { name: t('nav.learn') })).not.toBeInTheDocument()
     expect(screen.getByText(t('learner.home.guidance_kn'))).toHaveAttribute(
       'lang',
       'kn-IN',
     )
     expect(screen.getByText(t('learner.home.guidance_en'))).toHaveAttribute(
       'lang',
-      'en-IN',
+      'kn-IN',
     )
   })
 })

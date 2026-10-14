@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Authentication\AuthenticatedPrincipal;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
+use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Providers\ConversationProviderException;
 use App\Learning\Exceptions\LearningOperationRejected;
 use App\Learning\LevelSessions\LevelSessionAudioStreamer;
@@ -13,6 +14,7 @@ use App\Learning\LevelSessions\LevelSessionDeliveryService;
 use App\Tenancy\OrganizationContextManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -145,6 +147,8 @@ final class LearnerLevelSessionController extends Controller
                 $validated['answers'],
                 (string) $validated['idempotency_key'],
             );
+        } catch (ConversationIdempotencyConflict) {
+            abort(Response::HTTP_CONFLICT);
         } catch (LearningOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }
@@ -208,6 +212,10 @@ final class LearnerLevelSessionController extends Controller
         $validated = $request->validate([
             'idempotency_key' => ['required', 'string', 'max:120'],
             'ui_locale' => ['required', 'string', 'max:16'],
+            'purpose' => ['sometimes', 'string', 'in:practice,question_help'],
+            'recovery_notice_version' => ['required_if:purpose,question_help', 'string', 'in:conversation-recovery-2026-09-25'],
+            'recovery_notice_accepted' => ['required_if:purpose,question_help', 'boolean', Rule::when($request->input('purpose') === 'question_help', 'accepted')],
+            'lesson' => ['prohibited'],
         ]);
 
         try {
@@ -218,12 +226,15 @@ final class LearnerLevelSessionController extends Controller
                 $partId,
                 (string) $validated['ui_locale'],
                 (string) $validated['idempotency_key'],
+                (string) ($validated['purpose'] ?? 'practice'),
+                $validated['recovery_notice_version'] ?? null,
+                isset($validated['recovery_notice_accepted']),
             );
         } catch (ConversationIdempotencyConflict) {
             abort(Response::HTTP_CONFLICT);
         } catch (ConversationProviderException) {
             abort(Response::HTTP_SERVICE_UNAVAILABLE);
-        } catch (LearningOperationRejected) {
+        } catch (LearningOperationRejected|ConversationOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         }
 

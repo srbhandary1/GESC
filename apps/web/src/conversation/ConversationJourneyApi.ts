@@ -41,6 +41,17 @@ export type LearnerMemoryFactResult = LearnerAiMemoryFact
 export type LearnerMemoryListing = LearnerAiMemoryListing
 
 export interface ConversationJourneyApi {
+  readSession?(
+    sessionId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession>
+
+  exitSession?(
+    sessionId: string,
+    commandId: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession>
+
   startSession(
     input: StartFriendSessionInput,
     commandId: string,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Conversation\Voice;
 
 use App\Conversation\ConversationCommandIdempotency;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
 use App\Learning\LearnerAuthority;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
@@ -24,6 +25,7 @@ final readonly class VoiceConsentService
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
         private VoiceFeatureGate $gate,
+        private ConversationRecoveryStore $recovery,
     ) {}
 
     /**
@@ -123,13 +125,22 @@ final readonly class VoiceConsentService
         string $requestedLocale,
         string $idempotencyKey,
     ): array {
-        return $this->record(
+        $result = $this->record(
             learner: $learner,
             purpose: $purpose,
             state: 'withdrawn',
             requestedLocale: $requestedLocale,
             idempotencyKey: $idempotencyKey,
         );
+
+        if ($purpose === self::PROVIDER) {
+            $context = $this->authority->require($learner);
+            // Run after the consent commit, including command replays. A
+            // storage outage must never restore withdrawn processing consent.
+            $this->recovery->deleteMembership($context->organizationId, (string) $context->membershipId);
+        }
+
+        return $result;
     }
 
     public function activeEvent(

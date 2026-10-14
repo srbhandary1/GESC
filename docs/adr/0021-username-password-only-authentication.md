@@ -26,6 +26,11 @@ Amended on 1 September 2026 by
 [ADR-0034](0034-federated-google-facebook-sign-in.md): Google and Facebook are
 extra sign-in methods for already-enrolled users. Username/password remains
 the enrollment credential and the only privileged freshness factor.
+Amended on 24 September 2026 by
+[ADR-0040](0040-legacy-website-phone-sign-in-and-basic-onboarding.md): Direct
+learners imported from the previous website sign in with that site's phone
+number and existing password. New operator and invitation usernames retain
+the letter-first pattern. New passwords retain the 15–128 policy.
 
 Acceptance authorizes this ADR, its same-change master-plan amendment and the
 bounded AUTH-PASSWORD-01 specification. It does not directly authorize runtime

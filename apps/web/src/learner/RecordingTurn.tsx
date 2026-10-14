@@ -40,6 +40,9 @@ export type HoldPhase = 'idle' | 'listening' | 'processing'
 interface RecordingTurnProps {
   readonly captureMode?: RecordingCaptureMode
   readonly compact?: boolean
+  readonly hideTypingFallback?: boolean
+  readonly showPermissionExplanation?: boolean
+  readonly permissionRationaleAccepted?: boolean
   readonly createClientId: () => string
   readonly labels: RecordingTurnLabels
   readonly onAudioCaptureChange?: (audio: CapturedAudio | null) => void
@@ -65,6 +68,9 @@ interface LocalCapture {
 export function RecordingTurn({
   captureMode = 'tap',
   compact = false,
+  hideTypingFallback = false,
+  showPermissionExplanation = true,
+  permissionRationaleAccepted = false,
   createClientId,
   labels,
   onAudioCaptureChange,
@@ -100,7 +106,7 @@ export function RecordingTurn({
   const [permissionDenial, setPermissionDenial] = useState<
     'denied_once' | 'denied_permanently' | null
   >(null)
-  const contextualRationaleAccepted = useRef(false)
+  const contextualRationaleAccepted = useRef(permissionRationaleAccepted)
 
   useEffect(() => {
     active.current = true
@@ -372,7 +378,7 @@ export function RecordingTurn({
       >
         {labels.controls.region}
       </h3>
-      {compact ? null : <p>{labels.permissionExplanation}</p>}
+      {compact || !showPermissionExplanation ? null : <p>{labels.permissionExplanation}</p>}
       {permissionRationale ? (
         <div className="learner-recording__permission" role="group">
           {compact ? <p>{labels.permissionExplanation}</p> : null}
@@ -383,6 +389,7 @@ export function RecordingTurn({
           >
             {labels.permissionContinue ?? labels.controls.start}
           </button>
+          {hideTypingFallback ? null : (
           <button
             className="ge-button"
             onClick={onContinueWithoutRecording}
@@ -390,6 +397,7 @@ export function RecordingTurn({
           >
             {labels.continueWithout}
           </button>
+          )}
         </div>
       ) : (
         <RecordingControls
@@ -427,7 +435,7 @@ export function RecordingTurn({
         <LiveLevelMeter session={liveSession} />
       ) : null}
       {state === 'recording' &&
-      captureMode === 'hold' &&
+      (captureMode === 'hold' || captureMode === 'toggle') &&
       holdRemainingText !== null &&
       !compact ? (
         <p role="status">{holdRemainingText}</p>
@@ -484,6 +492,7 @@ export function RecordingTurn({
             </button>
           ) : null}
           <p>{labels.continueWithoutExplanation}</p>
+          {hideTypingFallback ? null : (
           <button
             className="ge-button"
             onClick={onContinueWithoutRecording}
@@ -491,6 +500,7 @@ export function RecordingTurn({
           >
             {labels.continueWithout}
           </button>
+          )}
         </div>
       ) : null}
     </section>

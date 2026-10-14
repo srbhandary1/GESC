@@ -361,6 +361,135 @@ describe('Friend practice journey', () => {
     )
   })
 
+  it('retries a failed start and gives changed session choices a new command', async () => {
+    const startSession = vi.fn<ConversationJourneyApi['startSession']>()
+      .mockRejectedValueOnce(new ConversationJourneyUnavailableError())
+      .mockRejectedValueOnce(new ConversationJourneyUnavailableError())
+      .mockResolvedValue(fakeSession())
+    const api: ConversationJourneyApi = {
+      startSession,
+      createTurn: vi.fn(),
+      events: vi.fn(),
+    }
+    let commandNumber = 0
+    const user = userEvent.setup()
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => `command-${++commandNumber}`}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Talk with Swathi' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Swathi is unavailable. Try again.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Talk with Swathi' }))
+    await vi.waitFor(() => expect(startSession).toHaveBeenCalledTimes(2))
+    expect(startSession.mock.calls[1]).toEqual(startSession.mock.calls[0])
+
+    await user.selectOptions(screen.getByLabelText('Coaching mode'), 'tutor')
+    await user.click(screen.getByRole('button', { name: 'Talk with Swathi' }))
+    expect(await screen.findByRole('button', { name: 'Type instead' })).toBeEnabled()
+    expect(startSession.mock.calls[2]?.[0].coaching_mode).toBe('tutor')
+    expect(startSession.mock.calls[2]?.[1]).not.toBe(startSession.mock.calls[0]?.[1])
+  })
+
+  it.each([false, true])(
+    'recovers a failed turn with safe replay identity (edited: %s)',
+    async (edited) => {
+      const session = fakeSession()
+      const createTurn = vi.fn<ConversationJourneyApi['createTurn']>()
+        .mockRejectedValueOnce(new ConversationJourneyUnavailableError())
+        .mockResolvedValue(fakeTurn(session.id))
+      const api: ConversationJourneyApi = {
+        startSession: vi.fn(),
+        createTurn,
+        events: vi.fn(async () => fakeEvents()),
+      }
+      let commandNumber = 0
+      const user = userEvent.setup()
+      render(
+        <ConversationJourney
+          api={api}
+          createClientId={() => `command-${++commandNumber}`}
+          initialSession={session}
+          locale="en-IN"
+          localizationPolicy="development-preview"
+        />,
+      )
+      await user.click(screen.getByRole('button', { name: 'Type instead' }))
+      const field = screen.getByRole('textbox', { name: 'Type one English practice turn' })
+      await user.type(field, 'I practise English after work.')
+      await user.click(screen.getByRole('button', { name: 'Send turn' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Swathi is unavailable. Try again.',
+      )
+      expect(field).toHaveValue('I practise English after work.')
+
+      if (edited) {
+        await user.clear(field)
+        await user.type(field, 'I practise English in the morning.')
+      }
+      await user.click(screen.getByRole('button', { name: 'Send turn' }))
+      expect(await screen.findByText(fakeTurn(session.id).assistant_reply!)).toBeInTheDocument()
+      expect(createTurn).toHaveBeenCalledTimes(2)
+      expect(createTurn.mock.calls[1]?.[0]).toBe(session.id)
+      expect(createTurn.mock.calls[1]?.[1]).toEqual({
+        prototype_utterance: edited
+          ? 'I practise English in the morning.'
+          : 'I practise English after work.',
+      })
+      if (edited) {
+        expect(createTurn.mock.calls[1]?.[2]).not.toBe(createTurn.mock.calls[0]?.[2])
+      } else {
+        expect(createTurn.mock.calls[1]?.[2]).toBe(createTurn.mock.calls[0]?.[2])
+      }
+      expect(screen.queryByText('Swathi is unavailable. Try again.')).not.toBeInTheDocument()
+    },
+  )
+
+  it('retains a completed reply and accepts the next turn when event history fails', async () => {
+    const session = fakeSession()
+    const turn = fakeTurn(session.id)
+    const nextReply = 'What do you enjoy about learning English?'
+    const createTurn = vi.fn<ConversationJourneyApi['createTurn']>()
+      .mockResolvedValueOnce(turn)
+      .mockResolvedValueOnce({ ...turn, id: 'next-turn', assistant_reply: nextReply })
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(),
+      createTurn,
+      events: vi.fn(async () => { throw new ConversationJourneyUnavailableError() }),
+    }
+    let commandNumber = 0
+    const user = userEvent.setup()
+    render(
+      <ConversationJourney
+        api={api}
+        createClientId={() => `command-${++commandNumber}`}
+        initialSession={session}
+        locale="en-IN"
+        localizationPolicy="development-preview"
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Type instead' }))
+    const field = screen.getByRole('textbox', { name: 'Type one English practice turn' })
+    await user.type(field, 'I practise English after work.')
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    expect(await screen.findByText(turn.assistant_reply!)).toBeInTheDocument()
+    expect(field).toHaveValue('')
+    expect(screen.queryByText('Swathi is unavailable. Try again.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Turn status')).not.toBeInTheDocument()
+
+    await user.type(field, 'It helps me at work.')
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    expect(await screen.findByText(nextReply)).toBeInTheDocument()
+    expect(screen.getByText(turn.assistant_reply!)).toBeInTheDocument()
+    expect(createTurn.mock.calls[1]?.[2]).not.toBe(createTurn.mock.calls[0]?.[2])
+  })
+
   it('uses a bound level-session without starting a second generic Friend', async () => {
     const session = fakeSession()
     const startSession = vi.fn()
@@ -597,6 +726,7 @@ describe('Friend practice journey', () => {
         'telemetry-command',
       )
     })
+    expect(screen.getByText(turn.assistant_reply!)).toBeInTheDocument()
     expect(screen.queryByText('Turn completed')).not.toBeInTheDocument()
     releaseEvents(events)
     expect(await screen.findByText('Turn completed')).toBeInTheDocument()
@@ -607,6 +737,39 @@ describe('Friend practice journey', () => {
         onStarted: expect.any(Function),
       }),
     )
+  })
+
+  it('speaks a retry model only once when guidance already quotes it', async () => {
+    const session = fakeSession()
+    const turn: FriendTurn = {
+      ...fakeTurn(session.id),
+      assistant_reply: 'Good try. Listen again. Say: I can drink water. Your turn.',
+      priority_correction: {
+        ...fakeTurn(session.id).priority_correction!,
+        explanation_l1: 'Say the model sentence: "I can drink water."',
+        explanation_locale: 'en-IN',
+      },
+      speech: { playback_available: false, rendering_mode: 'deterministic-fake-text-only' },
+    }
+    vi.spyOn(playBase64AudioModule, 'playBase64Audio').mockResolvedValue(undefined)
+    const synthesizeSpeech = vi.fn(async () => ({ playback_available: true,
+      rendering_mode: 'azure-soft-launch-guidance-wav' as const,
+      guidance_audio_base64: 'Qg==', guidance_audio_mime_type: 'audio/wav' as const }))
+    const api: ConversationJourneyApi = {
+      startSession: vi.fn(), createTurn: vi.fn(async () => turn),
+      events: vi.fn(async () => fakeEvents()), synthesizeSpeech,
+    }
+    const user = userEvent.setup()
+    render(<ConversationJourney api={api} createClientId={() => 'command'} embedded grammarDrill
+      initialSession={session} lessonRoom="introduction" locale="en-IN" localizationPolicy="development-preview" />)
+    expect(screen.getAllByRole('button', { name: 'Type instead' })).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Type instead' }))
+    await user.type(screen.getByRole('textbox'), 'I cans drink water.')
+    await user.click(screen.getByRole('button', { name: 'Send turn' }))
+    await vi.waitFor(() => expect(synthesizeSpeech).toHaveBeenCalledTimes(1))
+    await screen.findByText('I can drink water.')
+    expect(synthesizeSpeech).toHaveBeenCalledWith(session.id,
+      { purpose: 'guidance_l1', text: 'Say the model sentence: "I can drink water."' }, expect.any(String))
   })
 
   it('speaks the next model and L1 correction when turn audio is missing', async () => {

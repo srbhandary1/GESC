@@ -1,3 +1,4 @@
+import { bindDeviceHistory } from './conversation/deviceConversationHistory'
 import { Capacitor } from '@capacitor/core'
 import {
   ApplicationFrame,
@@ -40,9 +41,11 @@ import {
 import { bindAndroidPkceDeepLink } from './auth/bindAndroidPkceDeepLink'
 import { defaultAuthentication } from './auth/defaultAuthentication'
 import { FederatedAccountsPanel } from './auth/FederatedAccountsPanel'
+import { paidRegistrationPlanFromHash } from './auth/directRegistrationPlan'
 import { WebPasswordSignInPanel } from './auth/WebPasswordSignInPanel'
 import { SessionAccountMenu, ACCOUNT_MENU_TRIGGER_ID } from './auth/SessionAccountMenu'
 import type { ConversationJourneyApi, FriendSession } from './conversation/ConversationJourneyApi'
+import { ConversationPrivacyPanel } from './conversation/ConversationPrivacyPanel'
 import { defaultConversationJourneyApi } from './conversation/WebConversationJourneyApi'
 import {
   INTERFACE_RESOLUTION_POLICY,
@@ -87,6 +90,7 @@ import {
   initializeLearnerNavigation,
   navigateToLearnerDestination,
   navigateToLearnerSignIn,
+  navigateToPaidSignUp,
   readLearnerNavigationState,
   restoreLearnerNavigationFocus,
   subscribeToLearnerNavigation,
@@ -95,6 +99,7 @@ import {
 } from './learner/LearnerNavigationHistory'
 import { defaultLevelSessionsApi } from './learner/WebLevelSessionsApi'
 import {
+  APP_VERSION,
   ANDROID_APK_FILENAME,
   ANDROID_APK_HREF,
 } from './marketing/androidDownload'
@@ -275,6 +280,14 @@ function App({
   const [session, setSession] = useState<SessionState>({
     status: 'checking',
   })
+  const historyUser = session.status === 'authenticated' ? session.identity.user.id : null
+  const historyMember = session.status === 'authenticated' ? session.identity.current_membership?.id : null
+  const historyOrganization = session.status === 'authenticated' ? session.identity.current_membership?.organization.id : null
+  useEffect(() => {
+    void bindDeviceHistory(session.status === 'authenticated' ? session.identity : null)
+    // Bind only identity changes, not background entitlement/session refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyUser, historyMember, historyOrganization])
   const [locale, setLocale] = useState<SupportedLocale>(DEFAULT_LOCALE)
   const [offlineResume, setOfflineResume] =
     useState<OfflinePersonalDeviceResume | null>(null)
@@ -322,8 +335,8 @@ function App({
     Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const destinationTitle = useRef<HTMLHeadingElement>(null)
   const previousDestination = useRef(destination)
-  const message = (key: MessageKey) =>
-    resolveInterfaceMessage(key, locale, localizationPolicy)
+  const message = (key: MessageKey, parameters: Record<string, string> = {}) =>
+    resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
   const documentLanguage = message('app.description').resolvedLocale
   const learnAllowedSessionParts = useMemo(():
     | readonly SessionPartId[]
@@ -502,7 +515,11 @@ function App({
   }, [])
 
   useEffect(() => {
-    if (session.status !== 'authenticated' || locationHash !== '#sign-in') {
+    if (
+      session.status !== 'authenticated' ||
+      (locationHash !== '#sign-in' &&
+        paidRegistrationPlanFromHash(locationHash) === null)
+    ) {
       return
     }
 
@@ -644,9 +661,12 @@ function App({
 
   const showDemoPhase1 = demoMode && destination === 'home'
   const isOperatorWorkspaceHash = operatorWorkspaceHashFromLocation(locationHash)
+  const paidPlanCode = paidRegistrationPlanFromHash(locationHash)
   const showDedicatedSignIn =
     isGuestSession &&
-    (locationHash === '#sign-in' || isOperatorWorkspaceHash)
+    (locationHash === '#sign-in' ||
+      paidPlanCode !== null ||
+      isOperatorWorkspaceHash)
   const showMarketingLanding =
     isGuestSession &&
     isMarketingLandingHash(locationHash) &&
@@ -704,7 +724,13 @@ function App({
   }
   const openAccountSettings = () => {
     plansReturnFocusIdRef.current = ACCOUNT_MENU_TRIGGER_ID
+    setSubscriptionContext(null)
     setAccountSecurityOpen(true)
+    window.setTimeout(() => {
+      document
+        .getElementById('session-account-security')
+        ?.scrollIntoView({ block: 'start' })
+    }, 0)
   }
   useEffect(() => {
     const onPlansBack = (event: Event) => {
@@ -795,10 +821,12 @@ function App({
 
     const focusSignIn = () => {
       window.scrollTo(0, 0)
-      const username = document.getElementById('web-password-username')
-      if (username instanceof HTMLElement) {
-        username.focus()
-        return
+      if (!isNativeAndroid && paidPlanCode === null) {
+        const username = document.getElementById('web-password-username')
+        if (username instanceof HTMLElement) {
+          username.focus()
+          return
+        }
       }
       document.getElementById('sign-in-title')?.focus()
     }
@@ -808,7 +836,7 @@ function App({
     return () => {
       window.cancelAnimationFrame(frame)
     }
-  }, [showDedicatedSignIn])
+  }, [isNativeAndroid, paidPlanCode, showDedicatedSignIn])
   useEffect(() => {
     if (previousDestination.current !== destination) {
       if (showMarketingLanding) {
@@ -914,6 +942,8 @@ function App({
       hidePrimaryNavigation={isOperatorSession || isGuestSession}
       onNavigate={(nextDestination) => {
         setAndroidBackPreview(null)
+        setAccountSecurityOpen(false)
+        setSubscriptionContext(null)
         navigateToLearnerDestination(nextDestination)
       }}
       headerActions={
@@ -1082,6 +1112,7 @@ function App({
                 <LocalizedMessage
                   resolution={message('shell.android_download')}
                 />
+                <span className="shell-android-download__version">v{APP_VERSION}</span>
               </a>
             ) : null}
             <InterfaceThemeControl
@@ -1287,15 +1318,24 @@ function App({
                   />
                 </p>
                 <h1 id="sign-in-title" tabIndex={-1}>
-                  <LocalizedMessage resolution={message('session.label')} />
+                  <LocalizedMessage
+                    resolution={message(
+                      paidPlanCode === null ? 'session.label' : 'auth.paid.title',
+                    )}
+                  />
                 </h1>
                 <p className="shell-sign-in-page__lede">
                   <LocalizedMessage
-                    resolution={message('marketing.join.body')}
+                    resolution={message(
+                      paidPlanCode === null
+                        ? 'marketing.join.body'
+                        : 'auth.paid.lead',
+                    )}
                   />
                 </p>
               </header>
               <SessionSummary
+                conversationApi={conversationApi}
                 accountSecurityOpen={accountSecurityVisible}
                 applyEntitlement={applyEntitlement}
                 authentication={authentication}
@@ -1304,7 +1344,10 @@ function App({
                 localizationPolicy={localizationPolicy}
                 message={message}
                 onAccountSecurityOpenChange={setAccountSecurityOpen}
+                onLeavePaidRegistration={navigateToLearnerSignIn}
                 onSessionChange={setSession}
+                onStartPaidRegistration={() => navigateToPaidSignUp()}
+                paidPlanCode={paidPlanCode}
                 session={session}
               />
             </div>
@@ -1340,6 +1383,7 @@ function App({
             createClientId={createClientId}
             locale={locale}
             localizationPolicy={localizationPolicy}
+            onOpenLearn={() => navigateToLearnerDestination('learn')}
             onLocaleChange={(nextLocale) => {
               setLocale(nextLocale)
               setAnnouncedLocale(nextLocale)
@@ -1410,7 +1454,7 @@ function App({
               voiceUnavailableMessageKey={
                 entitlement?.live_ai_seconds_remaining !== null &&
                 entitlement?.live_ai_seconds_remaining !== undefined &&
-                entitlement.live_ai_seconds_remaining <= 10
+                entitlement.live_ai_seconds_remaining <= 0
                   ? entitlement.is_demo
                     ? 'entitlement.demo_ai_exhausted'
                     : 'entitlement.ai_exhausted'
@@ -1481,6 +1525,44 @@ function App({
               />
             </a>
           </p>
+        ) : session.status === 'authenticated' &&
+          session.identity.current_membership === null &&
+          session.identity.memberships.length > 0 ? (
+          <section
+            aria-labelledby="membership-selection-title"
+            className="learner-card learner-stack shell-membership-selection"
+          >
+            <h2 id="membership-selection-title">
+              <LocalizedMessage
+                resolution={message('session.select_membership')}
+              />
+            </h2>
+            <div className="learner-stack">
+              {session.identity.memberships.map((item) => (
+                <button
+                  className="ge-button ge-button--primary"
+                  key={item.id}
+                  onClick={() => {
+                    if (typeof authentication.selectMembership === 'function') {
+                      void authentication
+                        .selectMembership(item.id)
+                        .then((nextSnapshot) => {
+                          setSession(nextSnapshot)
+                        })
+                        .catch(() => {
+                          setSession({ status: 'unavailable' })
+                        })
+                    }
+                  }}
+                  type="button"
+                >
+                  <bdi lang="">{item.organization.name}</bdi>
+                  {' · '}
+                  <bdi lang="">{item.membership_type}</bdi>
+                </button>
+              ))}
+            </div>
+          </section>
         ) : (
           <p className="shell-checkpoint-notice">
             <LocalizedMessage
@@ -1494,7 +1576,8 @@ function App({
           : showAuthenticatedAccountPanel
             ? (
                 <SessionSummary
-                  accountSecurityOpen={accountSecurityVisible}
+                  conversationApi={conversationApi}
+                accountSecurityOpen={accountSecurityVisible}
                   applyEntitlement={applyEntitlement}
                   authentication={authentication}
                   locale={locale}
@@ -1534,15 +1617,19 @@ function App({
 }
 
 interface SessionSummaryProps {
+  conversationApi?: ConversationJourneyApi
   accountSecurityOpen: boolean
   applyEntitlement: (entitlement: LearnerEntitlement) => void
   authentication: AuthenticationAdapter
   embedded?: boolean
   locale: SupportedLocale
   localizationPolicy: ResolutionPolicy
-  message: (key: MessageKey) => InterfaceMessageResolution
+  message: (key: MessageKey, parameters?: Record<string, string>) => InterfaceMessageResolution
   onAccountSecurityOpenChange: (open: boolean) => void
+  onLeavePaidRegistration?: () => void
   onSessionChange: (session: SessionState) => void
+  onStartPaidRegistration?: () => void
+  paidPlanCode?: string | null
   onSubscriptionClose?: () => void
   session: SessionState
   showSubscriptionPanel?: boolean
@@ -1551,6 +1638,7 @@ interface SessionSummaryProps {
 }
 
 function SessionSummary({
+  conversationApi = defaultConversationJourneyApi,
   accountSecurityOpen,
   applyEntitlement,
   authentication,
@@ -1559,7 +1647,10 @@ function SessionSummary({
   localizationPolicy,
   message,
   onAccountSecurityOpenChange,
+  onLeavePaidRegistration,
   onSessionChange,
+  onStartPaidRegistration,
+  paidPlanCode = null,
   onSubscriptionClose,
   session,
   showSubscriptionPanel = false,
@@ -1647,8 +1738,12 @@ function SessionSummary({
           embedded={embedded}
           message={message}
           onAuthenticated={onSessionChange}
+          onLeavePaidRegistration={onLeavePaidRegistration}
+          onStartPaidRegistration={onStartPaidRegistration}
+          paidPlanCode={paidPlanCode}
         />
       ) : null}
+      {isAuthenticated && accountSecurityOpen ? <p className="shell-session__version" data-testid="app-version"><LocalizedMessage resolution={resolveInterfaceMessage('app.version', locale, localizationPolicy, { version: APP_VERSION })} /></p> : null}
       {showSubscriptionPanel && isAuthenticated && accountSecurityOpen ? (
         <SubscriptionPanel
           api={subscriptionApi}
@@ -1659,6 +1754,7 @@ function SessionSummary({
           onClose={onSubscriptionClose}
         />
       ) : null}
+      {isAuthenticated && accountSecurityOpen && subscriptionContext === null ? <ConversationPrivacyPanel api={conversationApi} locale={locale} localizationPolicy={localizationPolicy} /> : null}
       {webAuth !== null &&
       isAuthenticated &&
       accountSecurityOpen &&

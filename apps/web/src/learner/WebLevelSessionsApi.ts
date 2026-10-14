@@ -24,8 +24,10 @@ export interface WebLevelSessionsApiOptions {
 
 const LEVEL_SESSION_AUDIO_PATH =
   /^\/api\/v1\/me\/levels\/[1-9]\d{0,2}\/sessions\/(?:introduction|practice|conversation|interaction)\/audio$/u
+const MAX_CACHED_AUDIO_BLOBS = 6
 
 export class WebLevelSessionsApi implements LevelSessionsApi {
+  readonly #audioBlobCache = new Map<string, Blob>()
   readonly #baseUrl: string
   readonly #csrfProtection: ApiCsrfProtection
   readonly #fetch: typeof fetch
@@ -135,6 +137,14 @@ export class WebLevelSessionsApi implements LevelSessionsApi {
     )
   }
 
+  startTutorHelp(levelNumber: number, partId: SessionPartId, uiLocale: string, idempotencyKey: string, signal?: AbortSignal) {
+    return this.#mutation<FriendSession>(
+      `/me/levels/${levelNumber}/sessions/${partId}/conversation-sessions`,
+      { method: 'POST', signal, body: JSON.stringify({ idempotency_key: idempotencyKey, ui_locale: uiLocale,
+        purpose: 'question_help', recovery_notice_accepted: true, recovery_notice_version: 'conversation-recovery-2026-09-25' }) },
+    )
+  }
+
   offlineLevelBundle(levelNumber: number, signal?: AbortSignal) {
     return this.#json<import('../offline/OfflineLearningStore').OfflineLevelBundle>(
       `/me/levels/${levelNumber}/offline-bundle`,
@@ -190,6 +200,11 @@ export class WebLevelSessionsApi implements LevelSessionsApi {
       throw new Error('level_sessions_audio_path_rejected')
     }
 
+    const cached = this.#audioBlobCache.get(url)
+    if (cached !== undefined) {
+      return cached
+    }
+
     let response: Response
 
     try {
@@ -216,7 +231,16 @@ export class WebLevelSessionsApi implements LevelSessionsApi {
       throw new Error('level_sessions_audio_type_rejected')
     }
 
-    return response.blob()
+    const blob = await response.blob()
+    if (this.#audioBlobCache.size >= MAX_CACHED_AUDIO_BLOBS) {
+      const oldestKey = this.#audioBlobCache.keys().next().value
+      if (oldestKey !== undefined) {
+        this.#audioBlobCache.delete(oldestKey)
+      }
+    }
+    this.#audioBlobCache.set(url, blob)
+
+    return blob
   }
 
   async #mutation<T>(path: string, init: RequestInit): Promise<T> {

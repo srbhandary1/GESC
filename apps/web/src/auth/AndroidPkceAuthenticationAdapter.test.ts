@@ -953,6 +953,125 @@ describe('AndroidPkceAuthenticationAdapter', () => {
     ])
     expect(secureStore.refreshToken).toBeNull()
   })
+
+  it('registers with a captured Razorpay payment and stores only the refresh token', async () => {
+    const secureStore = new InMemoryReviewedSecureStore()
+    const opened: string[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+
+      if (request.url.endsWith('/direct/subscription-plans')) {
+        return Response.json({
+          plans: [
+            {
+              id: '01J00000000000000000000021',
+              is_talk_pack: false,
+              name: 'Premium features',
+              total_paise: 35400,
+            },
+            {
+              id: '01J00000000000000000000022',
+              is_talk_pack: true,
+              name: 'Talk pack',
+              total_paise: 10000,
+            },
+          ],
+        })
+      }
+
+      if (request.url.endsWith('/auth/mobile/direct/paid-registrations')) {
+        const body = (await request.json()) as Record<string, unknown>
+        expect(body).toMatchObject({
+          client_id: APPROVED_ANDROID_CLIENT_ID,
+          installation_id: secureStore.installationId,
+          password: 'Correct horse battery 2026!',
+          phone: '7439091943',
+          plan_id: '01J00000000000000000000021',
+        })
+        expect(request.credentials).toBe('omit')
+
+        return Response.json(
+          {
+            id: '01J00000000000000000000031',
+            provider: 'razorpay',
+            provider_order_id: 'order_test12345678',
+            provider_public_key: 'rzp_test_public123456',
+            status: 'pending',
+            total_paise: 35400,
+          },
+          { status: 201 },
+        )
+      }
+
+      if (request.url.endsWith('/confirmations')) {
+        const body = (await request.json()) as Record<string, unknown>
+        expect(body).toEqual({
+          client_id: APPROVED_ANDROID_CLIENT_ID,
+          installation_id: secureStore.installationId,
+          payment_id: 'pay_test12345678',
+          signature: 'a'.repeat(64),
+        })
+
+        return Response.json({
+          access_token: 'memory-only-access-token',
+          expires_in: 900,
+          refresh_token: 'secure-refresh-token',
+          token_type: 'Bearer',
+        })
+      }
+
+      throw new Error(`Unexpected request: ${request.url}`)
+    })
+    const adapter = new AndroidPkceAuthenticationAdapter({
+      apiBaseUrl: 'https://api.global-english.test/api/v1',
+      authorizationEndpoint:
+        'https://api.global-english.test/oauth/authorize',
+      clientId: APPROVED_ANDROID_CLIENT_ID,
+      fetch: fetcher,
+      openCheckout: async (request) => {
+        opened.push(request.orderId)
+        return {
+          orderId: request.orderId,
+          paymentId: 'pay_test12345678',
+          signature: 'a'.repeat(64),
+        }
+      },
+      redirectUri: 'com.globalenglish.app:/oauth/callback',
+      secureStore,
+      systemBrowser: { open: vi.fn(async () => undefined) },
+      tokenEndpoint: 'https://api.global-english.test/oauth/token',
+    })
+
+    const plans = await adapter.listDirectPlans()
+    expect(plans).toEqual([
+      {
+        allowsRoleplay: false,
+        amountExGstPaise: 35400,
+        billingPeriod: '',
+        code: '',
+        gstPaise: 0,
+        id: '01J00000000000000000000021',
+        isDemo: false,
+        isTalkPack: false,
+        liveAiCapSeconds: null,
+        maxLevelNumber: null,
+        name: 'Premium features',
+        recommended: false,
+        totalPaise: 35400,
+      },
+    ])
+
+    await adapter.registerWithPayment(
+      '7439091943',
+      'Correct horse battery 2026!',
+      '01J00000000000000000000021',
+    )
+
+    expect(opened).toEqual(['order_test12345678'])
+    expect(secureStore.refreshToken).toBe('secure-refresh-token')
+    expect(JSON.stringify(secureStore)).not.toContain('memory-only-access-token')
+    expect(JSON.stringify(secureStore)).not.toContain('Correct horse battery 2026!')
+  })
 })
 
 function createAdapter(

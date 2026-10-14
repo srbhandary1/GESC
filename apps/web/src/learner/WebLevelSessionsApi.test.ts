@@ -2,6 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { WebLevelSessionsApi } from './WebLevelSessionsApi'
 
 describe('WebLevelSessionsApi', () => {
+  it.each([1, 2, 17])('starts lesson tutor through the authorized level %s endpoint', async (level) => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ id: 'lesson-help' }), { headers: { 'Content-Type': 'application/json' } }))
+    const api = new WebLevelSessionsApi({ csrfProtection: 'none', fetch: fetcher as typeof fetch })
+    await api.startTutorHelp(level, 'practice', 'en-IN', 'help-command')
+    expect(fetcher).toHaveBeenCalledWith(`/api/v1/me/levels/${level}/sessions/practice/conversation-sessions`, expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ idempotency_key: 'help-command', ui_locale: 'en-IN', purpose: 'question_help', recovery_notice_accepted: true, recovery_notice_version: 'conversation-recovery-2026-09-25' }),
+    }))
+  })
+
   it('loads Android private lesson audio through the injected authenticated fetch', async () => {
     const audio = new Blob(['private-lesson-audio'], { type: 'audio/mpeg' })
     const fetcher = vi.fn(
@@ -20,6 +29,11 @@ describe('WebLevelSessionsApi', () => {
       fetch: fetcher as typeof fetch,
     })
 
+    await expect(
+      api.downloadAudio?.(
+        '/api/v1/me/levels/1/sessions/introduction/audio',
+      ),
+    ).resolves.toEqual(audio)
     await expect(
       api.downloadAudio?.(
         '/api/v1/me/levels/1/sessions/introduction/audio',

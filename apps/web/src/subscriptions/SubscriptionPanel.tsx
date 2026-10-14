@@ -1,3 +1,4 @@
+import { ProviderUsageSummary } from './ProviderUsageSummary'
 import type {
   MessageKey,
   ResolutionPolicy,
@@ -91,6 +92,16 @@ export function SubscriptionPanel({
 }: SubscriptionPanelProps) {
   const message = (key: MessageKey, parameters: Record<string, string> = {}) =>
     resolveInterfaceMessage(key, locale, localizationPolicy, parameters)
+  const planLabel = (code: string | null, fallback: string) => {
+    const key: MessageKey | undefined = ({
+      demo: 'marketing.plan.demo.name',
+      monthly_modules: 'marketing.plan.modules.name',
+      monthly_modules_roleplay: 'marketing.plan.premium.name',
+    } as const)[code as 'demo' | 'monthly_modules' | 'monthly_modules_roleplay']
+    if (key) return message(key).text
+    const minutes = { talk_pack_30: '30', talk_pack_60: '60', talk_pack_180: '180' }[code ?? '']
+    return minutes ? message('subscription.talk_pack_name', { minutes }).text : fallback
+  }
   const [entitlement, setEntitlement] = useState<LearnerEntitlement | null>(null)
   const [plans, setPlans] = useState<readonly SubscriptionPlanOffer[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
@@ -209,7 +220,7 @@ export function SubscriptionPanel({
               const completed = await paymentCheckout({
                 amount: result.total_paise,
                 currency: 'INR',
-                description: plan.name,
+                description: planLabel(plan.code, plan.name),
                 key: result.provider_public_key,
                 name: 'Global Spoken English App',
                 orderId: result.provider_order_id,
@@ -327,7 +338,7 @@ export function SubscriptionPanel({
           {loadState === 'unavailable' ? (
             <button onClick={() => void load()} type="button"><LocalizedMessage resolution={message('subscription.retry_load')} /></button>
           ) : checkoutState === 'ambiguous' || checkoutState === 'pending' ? (
-            <button onClick={() => void reconcile()} type="button"><LocalizedMessage resolution={message('subscription.check_access')} /></button>
+            <button className="ge-button ge-button--secondary" onClick={() => void reconcile()} type="button"><LocalizedMessage resolution={message('subscription.check_access')} /></button>
           ) : null}
         </div>
       ) : null}
@@ -336,7 +347,8 @@ export function SubscriptionPanel({
         <>
           <section className="subscription-panel__current" aria-labelledby="subscription-current-title">
             <h3 id="subscription-current-title"><LocalizedMessage resolution={message('subscription.current_title')} /></h3>
-            <strong>{entitlement.plan_name ?? message('subscription.current_free').text}</strong>
+            <ProviderUsageSummary usage={entitlement.provider_usage} locale={locale} localizationPolicy={localizationPolicy} />
+            <strong>{planLabel(entitlement.plan_code, entitlement.plan_name ?? message('subscription.current_free').text)}</strong>
             <p><LocalizedMessage resolution={message(entitlement.status === 'active' ? 'subscription.state.active' : 'subscription.state.inactive')} /></p>
             {entitlement.expires_at !== null ? (
               <p><LocalizedMessage resolution={message('subscription.active_until')} />{' '}{new Date(entitlement.expires_at).toLocaleDateString(locale)}</p>
@@ -350,16 +362,20 @@ export function SubscriptionPanel({
             <section aria-labelledby="subscription-memberships-title">
               <h3 id="subscription-memberships-title"><LocalizedMessage resolution={message('subscription.memberships_title')} /></h3>
               <p><LocalizedMessage resolution={message('subscription.memberships_lead')} /></p>
+              {entitlement.status === 'active' && !entitlement.is_demo ? (
+                <p><LocalizedMessage resolution={message('subscription.replace_warning')} /></p>
+              ) : null}
               <ul className="subscription-panel__plans">
                 {membershipPlans.map((plan) => {
                   const capMinutes = minutes(plan.live_ai_cap_seconds)
                   return (
                     <li className={`subscription-panel__plan${plan.recommended ? ' subscription-panel__plan--premium' : ''}`} key={plan.id}>
                       {plan.recommended ? <p className="subscription-panel__flag"><LocalizedMessage resolution={message('subscription.premium')} /></p> : null}
-                      <h4>{plan.name}</h4>
+                      <h4>{planLabel(plan.code, plan.name)}</h4>
                       <ul className="subscription-panel__benefits">
                         {plan.max_level_number !== null ? <li><LocalizedMessage resolution={message('subscription.benefit.levels', { level: String(plan.max_level_number) })} /></li> : null}
                         <li><LocalizedMessage resolution={message(plan.allows_roleplay ? 'subscription.benefit.roleplay' : 'subscription.benefit.modules')} /></li>
+                        {plan.allows_roleplay ? null : <li><LocalizedMessage resolution={message('subscription.benefit.no_roleplay')} /></li>}
                         {capMinutes !== null ? <li><LocalizedMessage resolution={message('subscription.benefit.live_ai', { minutes: capMinutes })} /></li> : null}
                       </ul>
                       <details className="subscription-panel__tax">
@@ -371,8 +387,13 @@ export function SubscriptionPanel({
                           <div className="subscription-panel__total"><dt><LocalizedMessage resolution={message('subscription.total')} /></dt><dd>{currency(locale, plan.total_paise)}</dd></div>
                         </dl>
                       </details>
-                      <button className="ge-button ge-button--primary" disabled={checkoutState === 'pending' || checkoutState === 'submitting'} onClick={() => pay(plan)} type="button">
-                        <LocalizedMessage resolution={message('subscription.choose_plan', { plan: plan.name })} />
+                      <button className="ge-button ge-button--primary" disabled={checkoutState === 'pending' || checkoutState === 'submitting' || (entitlement.status === 'active' && entitlement.plan_code === plan.code)} onClick={() => pay(plan)} type="button">
+                        <LocalizedMessage resolution={message(
+                          entitlement.status === 'active' && entitlement.plan_code === plan.code
+                            ? 'subscription.current_plan_action'
+                            : 'subscription.choose_plan',
+                          { plan: planLabel(plan.code, plan.name) },
+                        )} />
                       </button>
                     </li>
                   )
@@ -390,7 +411,7 @@ export function SubscriptionPanel({
               <ul className="subscription-panel__talk-packs">
                 {talkPacks.map((plan) => (
                   <li key={plan.id}>
-                    <span>{plan.name}</span>
+                    <span>{planLabel(plan.code, plan.name)}</span>
                     <details className="subscription-panel__tax">
                       <summary><LocalizedMessage resolution={message('subscription.price_summary', { total: currency(locale, plan.total_paise) })} /></summary>
                       <dl>
@@ -400,7 +421,7 @@ export function SubscriptionPanel({
                         <div className="subscription-panel__total"><dt><LocalizedMessage resolution={message('subscription.total')} /></dt><dd>{currency(locale, plan.total_paise)}</dd></div>
                       </dl>
                     </details>
-                    <button disabled={checkoutState === 'pending' || checkoutState === 'submitting'} onClick={() => pay(plan)} type="button"><LocalizedMessage resolution={message('subscription.pay_talk')} /></button>
+                    <button className="ge-button ge-button--secondary" disabled={checkoutState === 'pending' || checkoutState === 'submitting'} onClick={() => pay(plan)} type="button"><LocalizedMessage resolution={message('subscription.pay_talk')} /></button>
                   </li>
                 ))}
               </ul>

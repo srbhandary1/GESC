@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Conversation\Routing\Wave38EvidencePreflight;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\PendingCommand;
 use Tests\TestCase;
@@ -17,8 +18,15 @@ final class Wave38EvidencePreflightTest extends TestCase
     /** @var list<string> */
     private array $temporaryDirectories = [];
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Date::setTestNow('2026-09-15T12:00:00Z');
+    }
+
     protected function tearDown(): void
     {
+        Date::setTestNow();
         foreach ($this->temporaryFiles as $path) {
             if (is_file($path)) {
                 unlink($path);
@@ -176,7 +184,7 @@ final class Wave38EvidencePreflightTest extends TestCase
             'approved' => true,
             'cap_inr' => 500,
             'reviewed_at' => '2026-09-09T00:00:00Z',
-            'valid_until' => '2026-10-09T00:00:00Z',
+            'valid_until' => '2026-12-09T00:00:00Z',
             'content_dispatch_authorized' => false,
         ]);
         $this->writeJson($directory.'/sarvam-vendor-evidence.json', [
@@ -191,7 +199,7 @@ final class Wave38EvidencePreflightTest extends TestCase
             'approved' => true,
             'cap_inr' => 500,
             'reviewed_at' => '2026-09-09T00:00:00Z',
-            'valid_until' => '2026-10-09T00:00:00Z',
+            'valid_until' => '2026-12-09T00:00:00Z',
             'content_dispatch_authorized' => false,
         ]);
 
@@ -251,7 +259,7 @@ final class Wave38EvidencePreflightTest extends TestCase
             'approved' => true,
             'cap_inr' => 500,
             'reviewed_at' => '2026-09-09T00:00:00Z',
-            'valid_until' => '2026-10-09T00:00:00Z',
+            'valid_until' => '2026-12-09T00:00:00Z',
             'content_dispatch_authorized' => false,
         ]);
         $this->writeJson($directory.'/elevenlabs-rotation-receipt.json', [
@@ -279,7 +287,7 @@ final class Wave38EvidencePreflightTest extends TestCase
             'approved' => true,
             'cap_inr' => 500,
             'reviewed_at' => '2026-09-09T00:00:00Z',
-            'valid_until' => '2026-10-09T00:00:00Z',
+            'valid_until' => '2026-12-09T00:00:00Z',
             'content_dispatch_authorized' => false,
         ]);
 

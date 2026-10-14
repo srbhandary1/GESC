@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Conversation;
 
 use App\Conversation\Avatar\ConversationSpeechPayloadBuilder;
+use App\Conversation\Dialogue\DialogueSpeechService;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Providers\TextToSpeechProvider;
 use App\Conversation\Providers\TextToSpeechRequest;
@@ -28,6 +29,7 @@ final readonly class GuidanceSpeechService
         private TextToSpeechProvider $textToSpeech,
         private EntitlementAccess $entitlements,
         private ConversationSpeechPayloadBuilder $speechPayloadBuilder,
+        private DialogueSpeechService $dialogueSpeech,
     ) {}
 
     /**
@@ -48,6 +50,17 @@ final readonly class GuidanceSpeechService
     ): array {
         $this->environment->requireAuthorizedConversationProvider();
         $utterance = trim($text);
+        try {
+            $context = $this->authority->require($learner);
+        } catch (LearningOperationRejected) {
+            throw new ConversationOperationRejected;
+        }
+        $membershipId = (string) $context->membershipId;
+        $this->entitlements->assertLiveAiAvailable($learner);
+        $modern = $this->dialogueSpeech->synthesizeIfModern($learner, $context->organizationId, $membershipId, $sessionId, $utterance, $purpose);
+        if ($modern !== null) {
+            return $modern;
+        }
         $maximumCharacters = min(
             (int) config('conversation.maximum_utterance_characters', 500),
             (int) config('conversation.guidance_tts.maximum_characters', 400),
@@ -62,13 +75,6 @@ final readonly class GuidanceSpeechService
             throw new ConversationOperationRejected;
         }
 
-        try {
-            $context = $this->authority->require($learner);
-        } catch (LearningOperationRejected) {
-            throw new ConversationOperationRejected;
-        }
-
-        $membershipId = (string) $context->membershipId;
         $session = $this->session(
             organizationId: $context->organizationId,
             membershipId: $membershipId,
@@ -94,14 +100,6 @@ final readonly class GuidanceSpeechService
             uiLocale: $this->string($session, 'ui_locale'),
         ));
         $this->usagePolicy->assertAllowed('tts', $result->usage());
-
-        if ($result->playbackAvailable) {
-            $this->entitlements->consumeLiveAi(
-                $learner,
-                hash('sha256', $sessionId."\0".$purpose."\0".$utterance),
-                (int) config('billing.live_ai_speech_seconds', 5),
-            );
-        }
 
         return $this->speechPayloadBuilder->buildForPurpose(
             result: $result,

@@ -25,12 +25,47 @@ final class FederatedSignInService
      */
     public static function providers(): array
     {
-        return [FederatedIdentity::PROVIDER_GOOGLE, FederatedIdentity::PROVIDER_FACEBOOK];
+        return [
+            FederatedIdentity::PROVIDER_GOOGLE,
+            FederatedIdentity::PROVIDER_FACEBOOK,
+            FederatedIdentity::PROVIDER_INSTAGRAM,
+        ];
     }
 
     public function isProvider(string $provider): bool
     {
         return in_array($provider, self::providers(), true);
+    }
+
+    public function existingUserFor(FederatedAccount $account): ?User
+    {
+        $identity = $this->findIdentity($account);
+
+        if (! $identity instanceof FederatedIdentity) {
+            return null;
+        }
+
+        /** @var User|null $user */
+        $user = User::query()
+            ->whereKey($identity->user_id)
+            ->where('status', User::STATUS_ACTIVE)
+            ->first();
+
+        return $user instanceof User && $this->hasPasswordCredential($user)
+            ? $user
+            : null;
+    }
+
+    public function generatedUsernameFor(FederatedAccount $account): string
+    {
+        $prefix = match ($account->provider) {
+            FederatedIdentity::PROVIDER_GOOGLE => 'gg',
+            FederatedIdentity::PROVIDER_FACEBOOK => 'fb',
+            FederatedIdentity::PROVIDER_INSTAGRAM => 'ig',
+            default => 'sc',
+        };
+
+        return $prefix.'.'.substr($this->subjectDigest($account), 0, 20);
     }
 
     public function userFor(FederatedAccount $account): User
@@ -115,7 +150,7 @@ final class FederatedSignInService
     }
 
     /**
-     * @return array{google: bool, facebook: bool}
+     * @return array{google: bool, facebook: bool, instagram: bool}
      */
     public function linksFor(User $user): array
     {
@@ -127,6 +162,7 @@ final class FederatedSignInService
         return [
             'google' => in_array(FederatedIdentity::PROVIDER_GOOGLE, $linked, true),
             'facebook' => in_array(FederatedIdentity::PROVIDER_FACEBOOK, $linked, true),
+            'instagram' => in_array(FederatedIdentity::PROVIDER_INSTAGRAM, $linked, true),
         ];
     }
 

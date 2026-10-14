@@ -1,0 +1,10 @@
+[Unit]
+Description=Private conversation recovery expiry backstop
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target

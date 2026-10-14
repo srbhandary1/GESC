@@ -416,18 +416,30 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-sign-ins', function (Request $request): array {
             $digester = $this->app->make(AuthenticationSecretDigester::class);
-            $account = strtolower(trim((string) $request->input('username', '')));
+            $account = strtolower(trim((string) (
+                $request->input('username')
+                ?? $request->input('phone')
+                ?? ''
+            )));
             $ip = (string) ($request->ip() ?? 'unknown');
 
-            return [
-                Limit::perMinutes(15, 5)->by(
-                    $digester->digest('password-sign-in-account', $account),
-                ),
+            $limits = [
                 Limit::perMinutes(15, 20)->by(
                     $digester->digest('password-sign-in-ip', $ip),
                 ),
                 Limit::perMinute(100)->by('password-sign-in-global'),
             ];
+
+            if ($account !== '') {
+                array_unshift(
+                    $limits,
+                    Limit::perMinutes(15, 5)->by(
+                        $digester->digest('password-sign-in-account', $account),
+                    ),
+                );
+            }
+
+            return $limits;
         });
 
         RateLimiter::for('password-confirmations', function (Request $request): array {

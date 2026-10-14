@@ -60,11 +60,6 @@ final readonly class VoiceRecordingService
         }
 
         $metadata = $this->wav->inspect($audioBytes);
-        $this->entitlements->consumeLiveAi(
-            $learner,
-            $idempotencyKey,
-            max(1, (int) ceil($metadata->durationMs / 1000)),
-        );
         $digest = hash('sha256', $audioBytes);
         $fingerprint = $this->commands->fingerprint([
             'audio_sha256' => $digest,
@@ -76,7 +71,10 @@ final readonly class VoiceRecordingService
             $sessionId,
             $fingerprint,
             $idempotencyKey,
+            $context,
+            $membershipId,
         ): ?stdClass {
+            $this->requireActiveModernSession($context->organizationId, $membershipId, $sessionId);
             $replay = $this->commands->replay(
                 actor: $learner,
                 operation: 'voice.recording.create',
@@ -151,6 +149,12 @@ final readonly class VoiceRecordingService
                 if (! $session instanceof stdClass) {
                     throw new VoiceOperationRejected;
                 }
+                $this->requireActiveModernSession($context->organizationId, $membershipId, $sessionId);
+                $this->entitlements->consumeLiveAi(
+                    $learner,
+                    $idempotencyKey,
+                    max(1, (int) ceil($metadata->durationMs / 1000)),
+                );
 
                 $now = Date::now()->toImmutable();
                 $ciphertext = Crypt::encryptString(base64_encode($audioBytes));
@@ -226,7 +230,12 @@ final readonly class VoiceRecordingService
      */
     public function show(User $learner, string $recordingId): array
     {
-        return $this->present($this->owned($learner, $recordingId), false);
+        return DB::transaction(function () use ($learner, $recordingId): array {
+            $row = $this->owned($learner, $recordingId);
+            $this->requireActiveModernSession((string) $row->organization_id, (string) $row->learner_membership_id, (string) $row->conversation_session_id);
+
+            return $this->present($this->owned($learner, $recordingId, lock: true), false);
+        });
     }
 
     /**
@@ -253,6 +262,8 @@ final readonly class VoiceRecordingService
             $idempotencyKey,
         ): array {
             $context = $this->authority->require($learner);
+            $unlocked = $this->owned($learner, $recordingId);
+            $this->requireActiveModernSession((string) $unlocked->organization_id, (string) $unlocked->learner_membership_id, (string) $unlocked->conversation_session_id);
             $row = $this->owned($learner, $recordingId, lock: true);
             $fingerprint = $this->commands->fingerprint([
                 'action' => $action,
@@ -313,6 +324,7 @@ final readonly class VoiceRecordingService
                         ? Crypt::encryptString($selected)
                         : null,
                     'transcript_action' => $action,
+                    'confirmed_transcript_sha256' => $selected === null ? null : hash('sha256', $selected),
                     'transcript_expires_at' => $selected !== null && $history
                         ? $now->addDays((int) config('voice.history_days', 30))
                         : $now,
@@ -335,6 +347,8 @@ final readonly class VoiceRecordingService
                 false,
             );
             $result['transcript'] = $selected;
+            $result['transcript_original'] = ($result['transcript_source'] ?? null) === 'original_speech' ? $selected : null;
+            $result['english_intent_text'] = ($result['transcript_source'] ?? null) === 'translated_speech' ? $selected : null;
 
             return $result;
         }, 3);
@@ -407,7 +421,33 @@ final readonly class VoiceRecordingService
         string $recordingId,
         string $audioBytes,
     ): array {
+        try {
+            $result = $this->processAttempts($learner, $recordingId, $audioBytes);
+            if (($result['modern_boundary_rejected'] ?? false) === true) {
+                throw new VoiceOperationRejected;
+            }
+
+            return $result;
+        } catch (VoiceOperationRejected $exception) {
+            $row = $this->owned($learner, $recordingId);
+            if ($row->status === 'processing' && DB::table('conversation_dialogue_states')
+                ->where('organization_id', $row->organization_id)->where('learner_membership_id', $row->learner_membership_id)
+                ->where('conversation_session_id', $row->conversation_session_id)->exists()) {
+                // Commit a durable deletion intent after the rejected work
+                // transaction, so a storage outage cannot revive processing.
+                $this->deletions->requestAndProcess((string) $row->organization_id, (string) $row->learner_membership_id, $recordingId, 'rejection');
+            }
+            throw $exception;
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function processAttempts(User $learner, string $recordingId, string $audioBytes): array
+    {
         $maximumAttempts = (int) config('voice.maximum_provider_attempts', 2);
+        $recording = $this->owned($learner, $recordingId);
+        $modernSession = DB::table('conversation_dialogue_states')->where('organization_id', $recording->organization_id)
+            ->where('learner_membership_id', $recording->learner_membership_id)->where('conversation_session_id', $recording->conversation_session_id)->exists();
 
         for ($attempt = 1; $attempt <= $maximumAttempts; $attempt++) {
             $terminal = DB::transaction(function () use (
@@ -418,6 +458,9 @@ final readonly class VoiceRecordingService
                 $maximumAttempts,
             ): ?array {
                 $context = $this->authority->require($learner);
+                $unlocked = $this->owned($learner, $recordingId);
+                // Match exit/withdrawal: parent session before recording.
+                $modern = $this->requireActiveModernSession((string) $unlocked->organization_id, (string) $unlocked->learner_membership_id, (string) $unlocked->conversation_session_id);
                 $row = $this->owned($learner, $recordingId, lock: true);
 
                 if ($this->string($row, 'status') !== 'processing') {
@@ -442,6 +485,12 @@ final readonly class VoiceRecordingService
                             audioBytes: $audioBytes,
                             mimeType: 'audio/wav',
                             language: 'en-IN',
+                            preserveOriginal: $modern,
+                            recognitionLanguage: $modern && DB::table('conversation_dialogue_states')
+                                ->where('organization_id', $row->organization_id)
+                                ->where('learner_membership_id', $row->learner_membership_id)
+                                ->where('conversation_session_id', $row->conversation_session_id)
+                                ->whereIn('flow', ['roleplay_dialogue', 'free_speech'])->exists() ? 'en-IN' : null,
                         ),
                     );
                     $transcript = trim($result->transcript);
@@ -450,8 +499,8 @@ final readonly class VoiceRecordingService
                         $transcript === ''
                         || preg_match('//u', $transcript) !== 1
                         || mb_strlen($transcript) > 500
-                        || $result->confidenceBps < 0
-                        || $result->confidenceBps > 10000
+                        || ($result->confidenceBps !== null && ($result->confidenceBps < 0
+                            || $result->confidenceBps > 10000))
                     ) {
                         throw new ConversationProviderException(
                             safeCode: 'malformed_response',
@@ -470,6 +519,15 @@ final readonly class VoiceRecordingService
                         null,
                         $result->usage,
                     );
+                    if ($modern) {
+                        try {
+                            $this->requireActiveModernSession((string) $row->organization_id, (string) $row->learner_membership_id, (string) $row->conversation_session_id);
+                        } catch (VoiceOperationRejected) {
+                            // Retain known usage, but never store a candidate
+                            // after expiry/withdrawal during provider I/O.
+                            return ['modern_boundary_rejected' => true];
+                        }
+                    }
                     $now = Date::now()->toImmutable();
                     DB::table('voice_recordings')
                         ->where('organization_id', $row->organization_id)
@@ -484,6 +542,8 @@ final readonly class VoiceRecordingService
                                 $transcript,
                             ),
                             'transcript_confidence_bps' => $result->confidenceBps,
+                            'transcript_source' => $result->transcriptSource,
+                            'transcript_locale' => $result->transcriptLocale,
                             'transcript_expires_at' => $now->addHours(
                                 (int) config(
                                     'voice.candidate_expiry_hours',
@@ -527,6 +587,13 @@ final readonly class VoiceRecordingService
                         $error->safeCode,
                         $usage,
                     );
+                    if ($modern) {
+                        try {
+                            $this->requireActiveModernSession((string) $row->organization_id, (string) $row->learner_membership_id, (string) $row->conversation_session_id);
+                        } catch (VoiceOperationRejected) {
+                            return ['modern_boundary_rejected' => true];
+                        }
+                    }
 
                     if (
                         $error->retryable
@@ -555,7 +622,7 @@ final readonly class VoiceRecordingService
                         false,
                     );
                 }
-            }, 3);
+            }, $modernSession ? 1 : 3);
 
             if (is_array($terminal)) {
                 return $terminal;
@@ -563,6 +630,28 @@ final readonly class VoiceRecordingService
         }
 
         throw new VoiceOperationRejected;
+    }
+
+    /** Legacy sessions retain their existing lifecycle; modern sessions share the dialogue barrier. */
+    private function requireActiveModernSession(string $organizationId, string $membershipId, string $sessionId): bool
+    {
+        $scope = DB::table('conversation_dialogue_states')->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)->where('conversation_session_id', $sessionId);
+        if (! (clone $scope)->exists()) {
+            return false;
+        }
+        $session = DB::table('conversation_sessions')->where('organization_id', $organizationId)
+            ->where('learner_membership_id', $membershipId)->where('id', $sessionId)->where('status', 'active')->lockForUpdate()->first(['id']);
+        $state = $scope->first();
+        if (! $session instanceof stdClass || ! $state instanceof stdClass || $state->closed_at !== null
+            || ! in_array($state->state, ['awaiting_reply', 'retry_required', 'awaiting_question', 'awaiting_explanation_permission'], true)
+            || Date::parse((string) $state->expires_at)->lessThanOrEqualTo(Date::now())) {
+            throw new VoiceOperationRejected;
+        }
+        $this->consents->activeEvent($organizationId, $membershipId, VoiceConsentService::UPLOAD);
+        $this->consents->activeEvent($organizationId, $membershipId, VoiceConsentService::PROVIDER);
+
+        return true;
     }
 
     private function recordProviderRun(
@@ -703,6 +792,10 @@ final readonly class VoiceRecordingService
             'source_deleted' => $row->source_deleted_at !== null,
             'status' => $this->string($row, 'status'),
             'transcript' => $transcript,
+            'transcript_original' => ($row->transcript_source ?? 'translated_speech') === 'original_speech' ? $transcript : null,
+            'transcript_source' => $row->transcript_source ?? 'translated_speech',
+            'transcript_locale' => $row->transcript_locale ?? 'unknown',
+            'english_intent_text' => ($row->transcript_source ?? 'translated_speech') === 'translated_speech' ? $transcript : null,
             'transcript_confidence' => $row->transcript_confidence_bps === null
                 ? null
                 : ((int) $row->transcript_confidence_bps) / 10000,

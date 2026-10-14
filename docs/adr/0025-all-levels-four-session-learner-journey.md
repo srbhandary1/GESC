@@ -84,3 +84,24 @@ binds AI roles without replacing deterministic scoring or publication gates.
 - Later levels reuse the same contract when their media and reviews exist.
 - A continuous Supernova-style chat-only primary path is rejected for level
   progression.
+
+## Owner clarification — 25 September 2026, LEVELS-BRIEF-06
+
+The owner explicitly requested Levels 1 and 2 open by default for all
+subscriptions, with later levels progressing normally. Master-plan §4.2 now
+records this amendment. Configure the starting set independently of plan tier;
+version/hash the progression policy and retain deterministic prerequisite gates
+from Level 3 onward. Do not manufacture completions or rewrite historical unlock
+decisions. Content commissioning, active entitlements and per-plan session
+features remain separate requirements. No schema or assessment authority changes.
+
+## Owner clarification — 26 September 2026, LEARN-LEVEL-08
+
+The owner requires Ask AI Tutor to stay appropriate to the lesson in every level,
+and reports a passed Practice check that did not unlock Conversation. Master §4.2
+now explicitly pins lesson help to the server-resolved authorized blueprint and
+records Practice completion in the passing-check transaction. Reconcile older
+matching passes with Introduction completed, exact tenant/learner ownership and
+content hash; never manufacture marks or rewrite submitted evidence. Speak's
+unscoped question help, plan/content gates and later-level prerequisites remain.
+No schema, AI assessment authority or retention amendment is introduced.

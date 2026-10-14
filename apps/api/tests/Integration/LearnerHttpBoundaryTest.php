@@ -213,6 +213,15 @@ final class LearnerHttpBoundaryTest extends TenancyIntegrationTestCase
         }
     }
 
+    public function test_live_metering_requires_a_compatible_authenticated_client(): void
+    {
+        $this->signInWeb();
+        config()->set('conversation.playback.require_client_support', true);
+        $path = '/api/v1/conversation-sessions/'.Str::ulid();
+        $this->getJson($path)->assertStatus(426)->assertJsonPath('message_key', 'conversation.playback_update_required');
+        $this->withHeader('X-Conversation-Playback', '1')->getJson($path)->assertNotFound();
+    }
+
     public function test_fake_friend_turn_runs_through_http_and_streams_safe_events(): void
     {
         $this->signInWeb();

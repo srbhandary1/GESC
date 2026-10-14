@@ -254,7 +254,13 @@ final readonly class VoiceDeletionService
             $restricted = $statuses->contains(
                 static fn (mixed $status): bool => $status === 'restricted',
             );
+            $recoveryPending = DB::table('conversation_recovery_artifacts')
+                ->where('organization_id', $organizationId)
+                ->where('learner_membership_id', (string) $privacy->target_membership_id)
+                ->where('status', '!=', 'deleted')
+                ->exists();
             $status = match (true) {
+                $recoveryPending => 'partially_completed',
                 $restricted => 'restricted',
                 $completed === $total => 'completed',
                 $statuses->every(

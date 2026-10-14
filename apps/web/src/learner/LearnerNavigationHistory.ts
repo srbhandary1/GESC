@@ -312,6 +312,11 @@ export function navigateToLearnerSignIn(): LearnerNavigationState {
   return pushTarget({ destination: 'home' }, null, '#sign-in')
 }
 
+export function navigateToPaidSignUp(planCode = ''): LearnerNavigationState {
+  const hash = planCode === '' ? '#sign-up' : `#sign-up/${planCode}`
+  return pushTarget({ destination: 'home' }, null, hash)
+}
+
 export function openLearnerLevel(
   levelNumber: number,
   restoreFocusId: string,

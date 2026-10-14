@@ -38,6 +38,191 @@ does not constitute independent review. Security-, privacy- and tenancy-
 relevant behavior still requires independent specialist review before
 production, even when one human held those development roles.
 
+<a id="app-0110"></a>
+
+## APP-0110 — Named sign-off of Kannada interface catalogue `ui-kn-IN-2026-09-26.5`
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-26 |
+| Time zone | Asia/Kolkata |
+| Approval time | 2026-09-26T13:58:00+05:30, captured from the owner's sign-off message |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as named Kannada reviewer of this interface catalogue |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [D-0357](DECISIONS.md); [APP-0109](#app-0109) |
+| Related decision | [D-0358](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+Confirm and sign off the review.
+update the web and android app.
+```
+
+### Context and interpretation
+
+SIGNUP-PLAN-12 left interface catalogue revision `ui-kn-IN-2026-09-26.5`
+at `pending-independent-review`. The owner confirms and signs off that review,
+and asks for the web and Android app to be updated. The Kannada text remains
+an engineering draft; the reviewer is the Accountable Product Owner, so
+translator and reviewer are distinct. This is not a separately commissioned
+linguist firm.
+
+Accepted interpretation:
+
+1. `kn-IN` review metadata for revision `ui-kn-IN-2026-09-26.5` is `approved`,
+   with `reviewedBy=S R Bhandary`, `approvedAt=2026-09-26T13:58:00+05:30` and
+   `independentReview=true`. Catalogue entries and hashes are unchanged.
+2. Approved-only resolution may show this Kannada interface. Hindi, Malayalam,
+   Tamil and Telugu stay pending. English remains the source catalogue.
+3. The lesson-instruction pack signed off under APP-0109 is unchanged, and
+   approved-only lesson directions still show the English source.
+4. The same instruction authorizes updating the invite-only web app and the
+   closed-beta Android package to this workspace. It does not authorize Play
+   publication, production, or a live payment.
+
+<a id="app-0109"></a>
+
+## APP-0109 — Named sign-off of Kannada lesson-instruction pack `kn-lesson-instructions-2026-09-26.1`
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted |
+| Decision date | 2026-09-26 |
+| Time zone | Asia/Kolkata |
+| Approval time | 2026-09-26T13:18:00+05:30, captured from the owner's sign-off message |
+| Human approver identifier | `S R Bhandary` |
+| Roles exercised | Accountable Product Owner acting as named Kannada reviewer of this instruction pack |
+| Evidence source | Exact human instruction in the active Cursor conversation |
+| Related prior approvals | [D-0355](DECISIONS.md); [KANNADA-CONTENT-11](KANNADA_CONTENT_11_REVIEW.md) |
+| Related decision | [D-0356](DECISIONS.md) |
+| Recorder | Cursor agent, acting only as author and evidence recorder |
+| Master-plan amendment | No |
+
+### Exact human statement
+
+```text
+I want to sign it off now. Update the records as signed off.
+```
+
+### Context and interpretation
+
+KANNADA-CONTENT-11 left `apps/web/src/learner/content/kannadaInstructions.json`
+revision `kn-lesson-instructions-2026-09-26.1` at `pending-independent-review`
+with `reviewer` null. The owner signs off that exact revision. The Kannada
+text was an engineering draft; the reviewer is the Accountable Product Owner,
+so translator and reviewer are distinct. This is not a separately commissioned
+linguist firm.
+
+Accepted interpretation:
+
+1. This revision's review metadata is `approved`, with `reviewer=S R Bhandary`,
+   `approvedAt=2026-09-26T13:18:00+05:30` and `independentReview=true`.
+2. The 187 entries and pinned source hashes are unchanged.
+3. `lessonInstruction` still returns these variants only under the explicit
+   translation-preview policy. Approved-only builds continue to show the
+   English source until a later change.
+4. Malayalam, Tamil, Telugu and Hindi catalogues, Role-play scripts, curriculum
+   publication and other UI revisions are outside this sign-off.
+
+### Accepted scope
+
+- Review metadata on `kn-lesson-instructions-2026-09-26.1` only.
+- The test that asserts that metadata.
+- STATUS, DECISIONS, QUALITY_REVIEW and the KANNADA-CONTENT-11 review note.
+
+### Conditions and limitations
+
+- Not a separately commissioned linguist firm.
+- A later edit to any entry or source hash needs a new revision and a new review.
+- This record does not change APIs, schemas, marks, progression, entitlements
+  or approved-only resolution.
+
+<a id="app-0108"></a>
+
+## APP-0108 — Android local conversation archive and free replay
+
+- Status: explicit implementation authorization; independent review pending.
+- Date: 26 September 2026, Asia/Kolkata; exact approval time not recorded.
+- Human: S R Bhandary, Accountable Product Owner and Technical Decision Owner.
+- Context: the owner requested less persistent Learn-flow clutter and questioned
+  15-minute deletion. Codex asked whether to retain encrypted text or text/audio
+  on the phone until user deletion, then whether replay should spend live minutes.
+- Exact choices: **“Encrypted text and audio history”** and
+  **“Free offline replay (recommended)”**.
+- Scope: LEARN-FLOW-07, ADR-0044, master v3.21: optional native encrypted local
+  archive, future successful text/audio, account isolation, deletion, no backup,
+  free saved replay. Existing server raw-audio/recovery deletion, marks,
+  authentication and provider pricing are unchanged.
+- Limits: no independent human review or production/capacity certification is
+  inferred. Codex records evidence only; no reviewer signature is fabricated.
+
+<a id="app-0107"></a>
+
+## APP-0107 — Interactive Role-play, question help and temporary encrypted recovery
+
+| Field | Evidence |
+|---|---|
+| Status | Accepted for bounded implementation; results not yet accepted |
+| Decision date / time zone | 2026-09-25 / Asia/Kolkata; time of day not recorded |
+| Human approver identifier | S.R.Bhandary, supplied by the user as pilot coordinator |
+| Roles exercised | Accountable Product Owner and Technical Decision Owner; not independent specialist review |
+| Evidence source | User messages in the current Codex task |
+| Checkpoint | STUDENT-CONVERSATION-02 / D-0345 / ADR-0042 |
+| Master-plan amendment | Version 3.17, §§1.1, 4.1, 4.4, 14.2 and §32 summary; ADR-0042 impact note |
+| Recorder / repository revision | Codex as author and evidence recorder only; the commit containing this record, SHA unavailable while authored |
+
+### Exact statements and immediate context
+
+The user requested: “Replace the prototype assessment and run a representative
+student pilot.” Their accompanying requirement states: “The Roleplay should be
+as AI Speaks first, i speak next.” They require local-language correction and a
+grammatically acceptable retry before the next AI response, English-first
+answers to English/local-language questions, an offer followed by Yes before
+local-language explanation, and: “The features, flow etc on the app should
+also reflect on the web app.”
+
+Asked who can coordinate consenting adults and when (without participant
+names, phones or recordings), the user answered: “S.R.Bhandary and available
+now.” This identifies a coordinator, not participants or their consent.
+
+The immediately preceding privacy proposal was: “May I add encrypted, private
+conversation-recovery storage for up to 15 minutes per turn, with deletion on
+exit/withdrawal and automatic expiry? It would support dialogue context and
+exact retries, include an updated in-app notice, and exclude ordinary logs,
+caches, backups, training and long-term memory.” The exact response was:
+“Approve temporary encrypted recovery”. The user then instructed: “continue.”
+
+### Authorized scope and limits
+
+- Deployment continuation, 25 September 2026: the user explicitly requested
+  valid homepage links to the updated APK and immediate deployment, device
+  checks and the consenting student pilot. This authorizes the matching
+  existing-VPS API/migration/web/APK rollout and bounded synthetic smoke checks
+  under existing spend caps, not credential rollover or invented human results.
+  The coordinator reports one Kannada-to-English student testing both web and
+  the Mac-connected Android phone; that is a one-person formative pilot, not
+  representative population evidence.
+- Implement the bounded shared-client/API vertical slice in
+  [the specification](STUDENT_CONVERSATION_02_SPEC.md) and
+  [ADR-0042](adr/0042-interactive-roleplay-and-consented-question-help.md).
+- The privacy exception covers only encrypted, scoped, expiring private
+  context and exact replay. Explicit learner acknowledgement remains required.
+  No ordinary raw-content cache, training, long-term memory or research use.
+- Pilot preparation and coordination are requested. Real participants must
+  give separate observation/research consent; actual evidence cannot be
+  replaced by synthetic tests, coordinator availability or invented ratings.
+- Marks, mastery, retention schedules, tenancy and entitlements remain under
+  their existing deterministic authority. Independent academic, language,
+  accessibility, privacy/security and production-quality gates remain.
+- This entry does not retract previously granted deployment/production/Play
+  authority recorded by APP-0106, nor does it assert that new technical gates,
+  device checks, live provider validation or a representative pilot passed.
+
 ## Approval roles
 
 The role authority is defined by

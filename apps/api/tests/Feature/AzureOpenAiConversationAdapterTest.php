@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Conversation\Dialogue\DialogueModelPolicy;
+use App\Conversation\Orchestration\ConversationOutputValidator;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationConfiguration;
 use App\Conversation\Providers\AzureOpenAi\AzureOpenAiConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
@@ -27,6 +29,19 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         }
 
         parent::tearDown();
+    }
+
+    public function test_rate_limiting_is_distinct_from_an_unknown_provider_failure(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::fake(['*' => Http::response([], 429)]);
+        try {
+            $this->app->make(AzureOpenAiConversationModelProvider::class)->respond($this->sampleRequest());
+            self::fail('Expected a rate-limited failure.');
+        } catch (ConversationProviderException $exception) {
+            $this->assertSame('provider_rate_limited', $exception->safeCode);
+            $this->assertTrue($exception->retryable);
+        }
     }
 
     public function test_default_configuration_fails_before_any_http_request(): void
@@ -207,6 +222,76 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
         });
     }
 
+    public function test_correction_contract_matches_validator_without_weakening_its_category_guard(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        $sequence = Http::sequence();
+        foreach (['past tense', 'grammar.tense.past'] as $category) {
+            $sequence->push([
+                'choices' => [[
+                    'message' => ['content' => json_encode([
+                        'understood_intent' => 'describe_yesterday',
+                        'assistant_reply_en' => 'What did you buy at the market?',
+                        'safety_state' => 'ok',
+                        'priority_correction' => [
+                            'needed' => true,
+                            'error_category' => $category,
+                            'correction_en' => 'Yesterday I went to the market.',
+                            'explanation_l1' => 'Use went for an action yesterday.',
+                            'explanation_locale' => 'en-IN',
+                            'retry_recommended' => true,
+                            'learner_span' => 'go',
+                        ],
+                    ], JSON_THROW_ON_ERROR)],
+                ]],
+            ]);
+        }
+        Http::fake(['https://conv-test.openai.azure.com/*' => $sequence]);
+        $sample = $this->sampleRequest();
+        $request = new ConversationModelRequest(
+            interactionId: 'synthetic-grammar-contract',
+            transcript: 'Yesterday I go to market.',
+            personaStyleCode: $sample->personaStyleCode,
+            scenarioResponseCode: $sample->scenarioResponseCode,
+            coachingMode: 'gentle',
+            uiLocale: 'en-IN',
+            promptVersionId: $sample->promptVersionId,
+            promptBodySha256: $sample->promptBodySha256,
+            promptBody: $sample->promptBody,
+        );
+        $provider = $this->app->make(AzureOpenAiConversationModelProvider::class);
+        $validator = new ConversationOutputValidator;
+
+        $this->assertFalse($validator->validate($provider->respond($request)));
+        $valid = $provider->respond($request);
+        $this->assertTrue($validator->validate($valid));
+        $this->assertSame('grammar.tense.past', $valid->priorityCorrection?->errorCategory);
+
+        Http::assertSent(function (Request $httpRequest) use ($sample): bool {
+            $payload = $httpRequest->data();
+            $this->assertSame(1024, $payload['max_tokens'] ?? null);
+            $system = (string) ($payload['messages'][0]['content'] ?? '');
+            $user = (string) ($payload['messages'][1]['content'] ?? '');
+            $contract = explode("\n\nOutput contract version: confidence-turn-output-2026-09-25.4\n", $system, 2)[1] ?? '';
+            foreach (['100', '1000', '500', '200'] as $maximum) {
+                if (! str_contains($contract, 'at most '.$maximum.' characters')) {
+                    return false;
+                }
+            }
+
+            return str_contains($contract, '30 words/240 characters')
+                && str_contains($contract, '^[a-z0-9][a-z0-9._-]{0,63}$')
+                && str_contains($contract, '"grammar.tense.past"')
+                && str_contains($contract, 'must exactly equal session ui_locale')
+                && str_contains($contract, 'no < or > characters')
+                && str_contains($contract, 'Never use shame language')
+                && str_contains($user, '"output_contract_sha256":"'.hash('sha256', $contract).'"')
+                && str_contains($user, '"prompt_body_sha256":"'.$sample->promptBodySha256.'"');
+        });
+        Http::assertSentCount(2);
+    }
+
     public function test_streaming_chat_records_first_content_and_completion_separately(): void
     {
         $this->configureAuthorizedBoundary();
@@ -277,6 +362,144 @@ final class AzureOpenAiConversationAdapterTest extends TestCase
             return ($payload['stream'] ?? null) === true
                 && ($payload['stream_options']['include_usage'] ?? null) === true
                 && $request->hasHeader('Accept', 'text/event-stream');
+        });
+    }
+
+    public function test_lesson_question_payload_pins_scope_without_switching_to_a_drill(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://conv-test.openai.azure.com/*' => Http::response(['choices' => [['message' => ['content' => json_encode([
+            'understood_intent' => 'lesson_help', 'assistant_reply' => ['text' => 'Use should to give advice, such as "You should rest."', 'locale' => 'en-IN'],
+            'safety_state' => 'ok', 'priority_correction' => null, 'dialogue' => ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+        ], JSON_THROW_ON_ERROR)]]]], 200, ['Content-Type' => 'application/json'])]);
+        $sample = $this->sampleRequest();
+        $lesson = ['level_number' => 2, 'part_id' => 'practice', 'concept_key' => 'should', 'objective' => 'Use should for advice.', 'target_patterns' => ['You should + base verb.']];
+        $request = new ConversationModelRequest('lesson-help', 'Explain this lesson', $sample->personaStyleCode, $sample->scenarioResponseCode, 'gentle', 'en-IN', $sample->promptVersionId, $sample->promptBodySha256, $sample->promptBody,
+            dialogue: ['flow' => 'question_help', 'action' => 'question', 'requested_reply_locale' => 'en-IN', 'lesson' => $lesson]);
+        $result = app(AzureOpenAiConversationModelProvider::class)->respond($request);
+        self::assertTrue((new DialogueModelPolicy)->valid($result, $request->dialogue));
+        Http::assertSent(function (Request $sent): bool {
+            $system = $sent->data()['messages'][0]['content'];
+            $payload = $sent->data()['messages'][1]['content'];
+
+            return str_contains($system, 'tutor for that exact lesson') && str_contains($system, 'redirect to the current concept')
+                && str_contains($payload, 'You should + base verb.') && str_contains($payload, 'Explain this lesson')
+                && ! str_contains($payload, 'correct_option') && ! str_contains($system, 'strict-pattern-gate');
+        });
+    }
+
+    public function test_dialogue_maps_locale_bearing_reply_and_separate_outcome_contract(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://conv-test.openai.azure.com/*' => Http::response(['choices' => [['message' => ['content' => json_encode([
+            'understood_intent' => 'explain_past_tense', 'assistant_reply' => ['text' => 'ಈಗಾಗಲೇ ನಡೆದ ಕೆಲಸವನ್ನು ಹೇಳಲು ಭೂತಕಾಲವನ್ನು ಬಳಸುತ್ತೇವೆ.', 'locale' => 'kn-IN'],
+            'safety_state' => 'ok', 'priority_correction' => null, 'dialogue' => ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+        ], JSON_THROW_ON_ERROR)]]]], 200, ['Content-Type' => 'application/json'])]);
+        $sample = $this->sampleRequest();
+        $request = new ConversationModelRequest('synthetic-help', 'Yes', $sample->personaStyleCode, $sample->scenarioResponseCode, 'gentle', 'kn-IN', $sample->promptVersionId, $sample->promptBodySha256, $sample->promptBody,
+            dialogue: ['flow' => 'question_help', 'action' => 'accept_explanation', 'ui_locale' => 'kn-IN', 'requested_reply_locale' => 'kn-IN',
+                'history' => [['id' => 'synthetic-private-turn-id', 'learner' => 'What is past tense?', 'reply' => ['text' => 'It describes past actions.', 'locale' => 'en-IN'], 'assessment' => 'unassessed', 'action' => 'question']],
+                'objective_progress' => [['objective_key' => 'synthetic-objective', 'completion_state' => 'unassessed', 'evidence_digest' => 'synthetic-private-evidence-digest']]]);
+        $result = app(AzureOpenAiConversationModelProvider::class)->respond($request);
+        $this->assertSame('kn-IN', $result->replyLocale);
+        $this->assertTrue((new DialogueModelPolicy)->valid($result, $request->dialogue));
+        Http::assertSent(function (Request $sent): bool {
+            $system = $sent->data()['messages'][0]['content'];
+            $format = $sent->data()['response_format'];
+            $properties = $format['json_schema']['schema']['properties'];
+
+            return $format['type'] === 'json_schema'
+                && $format['json_schema']['strict'] === true
+                && $format['json_schema']['schema']['additionalProperties'] === false
+                && $properties['priority_correction']['type'] === 'null'
+                && $properties['assistant_reply']['properties']['locale']['enum'] === ['kn-IN']
+                && $properties['dialogue']['properties']['assessment']['enum'] === ['unassessed']
+                && $properties['dialogue']['properties']['objective_evidence']['maxItems'] === 0
+                && str_contains($sent->body(), 'dialogue_contract_sha256')
+                && str_contains($sent->body(), DialogueModelPolicy::VERSION)
+                && ! str_contains($system, 'assistant_reply_en (nonempty string')
+                && ! str_contains($system, 'Speak only as Swathi, the on-screen English teacher.')
+                && str_contains($system, 'assistant_reply (object with text:')
+                && str_contains($system, 'objective_evidence MUST be []')
+                && ! str_contains($system, 'COPY priority_correction.correction_en character-for-character')
+                && ! str_contains($system, 'next meaningful line from the AI role')
+                && str_contains($system, "answer the learner's actual question")
+                && str_contains($system, 'AI English practice partner, not a human')
+                && str_contains($system, 'Never change learning records.')
+                && str_ends_with($sent->data()['messages'][1]['content'], '"Yes"')
+                && str_contains($sent->body(), 'What is past tense?')
+                && str_contains($sent->body(), 'It describes past actions.')
+                && str_contains($sent->body(), 'synthetic-objective')
+                && ! str_contains($sent->body(), 'synthetic-private-turn-id')
+                && ! str_contains($sent->body(), 'synthetic-private-evidence-digest')
+                && ! str_contains($sent->body(), 'synthetic-help')
+                && ! str_contains($sent->body(), 'prompt_version_id');
+        });
+    }
+
+    public function test_free_reading_translates_only_the_server_resolved_bubble_not_the_button_or_history(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://conv-test.openai.azure.com/*' => Http::response(['choices' => [['message' => ['content' => json_encode([
+            'understood_intent' => 'read_translation', 'assistant_reply' => ['text' => 'ನಮಸ್ಕಾರ! ಇಂದು ನೀವು ಏನು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ?', 'locale' => 'kn-IN'],
+            'safety_state' => 'ok', 'priority_correction' => null, 'dialogue' => ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+        ], JSON_THROW_ON_ERROR)]]]], 200, ['Content-Type' => 'application/json'])]);
+        $sample = $this->sampleRequest();
+        $source = ['text' => 'Hello! What would you like to talk about today?', 'locale' => 'en-IN'];
+        $request = new ConversationModelRequest('synthetic-reading', 'Read in my selected language', $sample->personaStyleCode, $sample->scenarioResponseCode, 'gentle', 'kn-IN', $sample->promptVersionId, $sample->promptBodySha256, $sample->promptBody,
+            memoryFacts: ['Unrelated private note'],
+            dialogue: ['flow' => 'free_speech', 'action' => 'accept_explanation', 'requested_reply_locale' => 'kn-IN',
+                'explanation_target' => ['question' => '', 'answer' => $source],
+                'history' => [['learner' => 'Unrelated learner utterance', 'reply' => ['text' => 'Unrelated reply']]]]);
+        $result = app(AzureOpenAiConversationModelProvider::class)->respond($request);
+        $this->assertSame('kn-IN', $result->replyLocale);
+        Http::assertSent(function (Request $sent) use ($source): bool {
+            $data = $sent->data();
+
+            return json_decode($data['messages'][1]['content'], true) === ['target_locale' => 'kn-IN', 'source_reply' => $source]
+                && str_contains($data['messages'][0]['content'], 'ONLY a faithful translation')
+                && $data['response_format']['json_schema']['schema']['properties']['priority_correction']['type'] === 'null'
+                && ! str_contains($sent->body(), 'Read in my selected language')
+                && ! str_contains($sent->body(), 'Unrelated');
+        });
+    }
+
+    public function test_free_speech_constrains_unassessed_outcome_and_optional_nonblocking_correction(): void
+    {
+        $this->configureAuthorizedBoundary();
+        Http::preventStrayRequests();
+        Http::fake(['https://conv-test.openai.azure.com/*' => Http::response(['choices' => [['message' => ['content' => json_encode([
+            'understood_intent' => 'gardening', 'assistant_reply' => ['text' => 'How long have you grown tomatoes?', 'locale' => 'en-IN'],
+            'safety_state' => 'ok', 'priority_correction' => null, 'dialogue' => ['assessment' => 'unassessed', 'complete' => false, 'objective_evidence' => []],
+        ], JSON_THROW_ON_ERROR)]]]], 200, ['Content-Type' => 'application/json'])]);
+        $sample = $this->sampleRequest();
+        $request = new ConversationModelRequest('synthetic-free', 'I grow tomatoes.', $sample->personaStyleCode, $sample->scenarioResponseCode, 'gentle', 'kn-IN', $sample->promptVersionId, $sample->promptBodySha256, $sample->promptBody,
+            dialogue: ['flow' => 'free_speech', 'action' => 'reply', 'ui_locale' => 'kn-IN', 'requested_reply_locale' => 'en-IN']);
+        $result = app(AzureOpenAiConversationModelProvider::class)->respond($request);
+        $this->assertTrue((new DialogueModelPolicy)->valid($result, $request->dialogue));
+        Http::assertSent(function (Request $sent): bool {
+            $format = $sent->data()['response_format'];
+            $properties = $format['json_schema']['schema']['properties'];
+            $correction = $properties['priority_correction']['anyOf'];
+
+            return $format['type'] === 'json_schema'
+                && $format['json_schema']['strict'] === true
+                && $format['json_schema']['name'] === 'free_speech_v1'
+                && $properties['assistant_reply']['properties']['locale']['enum'] === ['en-IN']
+                && $properties['dialogue']['properties']['assessment']['enum'] === ['unassessed']
+                && $properties['dialogue']['properties']['complete']['enum'] === [false]
+                && $properties['dialogue']['properties']['objective_evidence']['maxItems'] === 0
+                && $correction[0]['type'] === 'null'
+                && $correction[1]['additionalProperties'] === false
+                && $correction[1]['properties']['needed']['enum'] === [true]
+                && $correction[1]['properties']['explanation_locale']['enum'] === ['kn-IN']
+                && $correction[1]['properties']['retry_recommended']['enum'] === [false]
+                && str_contains($sent->data()['messages'][0]['content'], 'Kannada using Kannada script')
+                && str_contains($sent->data()['messages'][0]['content'], 'I ಜೊತೆಗೆ water ಬಳಸಿ.')
+                && ! str_contains($sent->data()['messages'][0]['content'], 'This turn is QUESTION HELP');
         });
     }
 

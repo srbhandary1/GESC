@@ -127,3 +127,7 @@ authorization to implement this checkpoint.
 
 - Register live Google and Facebook OAuth clients for the HTTPS origin.
 - Physical-device Google/Facebook sign-in after an HTTPS APK rebuild.
+
+## Owner amendment — 14 October 2026 (`VERIFY-FIX-16`)
+
+The Accountable Product Owner directed that students must be able to self-register and sign in with **Google, Facebook, or Instagram** credentials, and that once payment succeeds the student is signed in to their appropriate account type (`ADR-0041` + `ADR-0034` integration). `federated_identities` now allows `instagram` alongside `google` and `facebook`. Paid self-registration (`intent=register&plan_id=...`) stores the encrypted social subject on `paid_registration_intents`, materializes the user account, `FederatedIdentity`, Direct learner membership, and purchased plan entitlement only when payment capture succeeds, and immediately selects that membership on the web session or Android token family.

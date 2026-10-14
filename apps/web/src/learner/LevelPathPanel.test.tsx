@@ -446,12 +446,17 @@ describe('LevelPathPanel', () => {
       />,
     )
 
+    expect(await screen.findByText('Can — ಸಾಮರ್ಥ್ಯ ಮತ್ತು ಅನುಮತಿ')).toBeInTheDocument()
+    expect(screen.queryByText('Can — ability and permission')).not.toBeInTheDocument()
     await user.click(await screen.findByRole('button', { name: /ಮಟ್ಟ 1/ }))
     await waitFor(() => {
-      expect(document.querySelector('.level-session__kannada')).toHaveTextContent(
+      expect(document.querySelector('.level-session__objective')).toHaveTextContent(
         'ಕನ್ನಡ ವಿವರಣೆ',
       )
+      expect(document.querySelector('.level-session__objective')).toHaveAttribute('lang', 'kn-IN')
+      expect(screen.queryByText('Use can and cannot.')).not.toBeInTheDocument()
     })
+    expect(screen.getByText('ಅರ್ಥ ತಿಳಿಯಲು ಪರಿಚಯದ ಆಡಿಯೋವನ್ನು ಒಮ್ಮೆ ಕೇಳಿ.')).toHaveAttribute('lang', 'kn-IN')
     unmount()
   })
 
@@ -762,6 +767,38 @@ describe('LevelPathPanel', () => {
     expect(
       screen.getByText('This session needs a paid monthly plan.'),
     ).toBeInTheDocument()
+  })
+
+  it('completes saved Practice without an in-memory Check and opens Conversation', async () => {
+    const user = userEvent.setup()
+    const api = apiWithQuickCheck(vi.fn())
+    vi.mocked(api.listSessions).mockResolvedValue({ ...completedSessionsList,
+      sessions: completedSessionsList.sessions.map((session) => ({ ...session, completed: session.part_id === 'introduction' })) })
+    render(<LevelPathPanel api={api} locale="en-IN" />)
+    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: /^Practice(?:, Completed)?$/i }))
+    await screen.findByRole('heading', { name: 'Practice' })
+    expect(screen.getByRole('button', { name: 'Conversation' })).toHaveAttribute('aria-disabled', 'true')
+    await user.click(screen.getByRole('button', { name: 'Mark session complete' }))
+    expect(api.completeSession).toHaveBeenCalledWith(1, 'practice', expect.any(String))
+    await user.click(await screen.findByRole('button', { name: 'Continue · Conversation' }))
+    expect(await screen.findByRole('heading', { name: 'Conversation' })).toBeVisible()
+  })
+
+  it('does not unlock Conversation when the server rejects Practice completion', async () => {
+    const user = userEvent.setup()
+    const api = apiWithQuickCheck(vi.fn())
+    vi.mocked(api.listSessions).mockResolvedValue({ ...completedSessionsList,
+      sessions: completedSessionsList.sessions.map((session) => ({ ...session, completed: session.part_id === 'introduction' })) })
+    vi.mocked(api.completeSession).mockRejectedValue(new Error('level_sessions_http_404'))
+    render(<LevelPathPanel api={api} locale="en-IN" />)
+    await user.click(await screen.findByRole('button', { name: /Level 1/i }))
+    await user.click(await screen.findByRole('button', { name: 'Practice' }))
+    await screen.findByRole('heading', { name: 'Practice' })
+    await user.click(screen.getByRole('button', { name: 'Mark session complete' }))
+    await vi.waitFor(() => expect(api.completeSession).toHaveBeenCalledOnce())
+    expect(screen.getByRole('button', { name: 'Conversation' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.queryByRole('button', { name: 'Continue · Conversation' })).not.toBeInTheDocument()
   })
 
   it('opens Conversation on the lesson scenario, not the Introduction drill', async () => {
@@ -1096,6 +1133,7 @@ describe('LevelPathPanel', () => {
       completeSession: vi.fn(),
       submitCheck: vi.fn(),
       startConversation: vi.fn(async () => session),
+      startTutorHelp: vi.fn(async () => session),
     }
 
     render(
@@ -1111,6 +1149,10 @@ describe('LevelPathPanel', () => {
     )
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
     await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
+    expect(await screen.findByRole('heading', { name: 'Ask Swathi' })).toBeInTheDocument()
+    expect(api.startConversation).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await user.click(await screen.findByRole('button', { name: 'Start Skill Focus' }))
     expect(api.startConversation).toHaveBeenCalled()
     expect(
       await screen.findByText('I can drink water.'),
@@ -1261,7 +1303,7 @@ describe('LevelPathPanel', () => {
       />,
     )
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
-    await user.click(await screen.findByRole('button', { name: 'Ask AI Tutor' }))
+    await user.click(await screen.findByRole('button', { name: 'Start Skill Focus' }))
 
     expect(screen.getByText('I can + base verb.')).toBeInTheDocument()
     expect(screen.getByText('I can drink water.')).toBeInTheDocument()
@@ -1301,6 +1343,29 @@ describe('LevelPathPanel', () => {
         'A clearer sentence is: "I enjoy learning English after work."',
       ),
     ).not.toBeInTheDocument()
+  })
+
+  it('renders Kannada quiz directions and feedback while submitting unchanged English option identities', async () => {
+    const user = userEvent.setup()
+    const submit = vi.fn().mockResolvedValue({ replayed: false, score: 1, threshold: 0.8, passed: true,
+      item_results: [{ id: 'can-01', selected_option: 1, correct: true, rationale: 'Can is followed by the base verb speak.' }] })
+    const api = apiWithQuickCheck(submit)
+    const detail = api.sessionDetail
+    api.sessionDetail = vi.fn(async (...args: Parameters<LevelSessionsApi['sessionDetail']>) => {
+      const value = await detail(...args)
+      return { ...value, check: value.check ? { ...value.check, items: [{ id: 'can-01', weight: 1,
+        prompt: 'Choose the correct sentence.', options: ['I can speaking English.', 'I can speak English.'] }] } : null }
+    })
+    render(<LevelPathPanel api={api} locale="kn-IN" localizationPolicy="development-preview" />)
+    await user.click(await screen.findByRole('button', { name: /ಮಟ್ಟ 1/ }))
+    await user.click(document.querySelector('#level-1-part-practice')!)
+    expect(await screen.findByText('ಸರಿಯಾದ ವಾಕ್ಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.')).toHaveAttribute('lang', 'kn-IN')
+    await user.click(screen.getByRole('radio', { name: 'I can speak English.' }))
+    const form = document.querySelector('.level-session__assessment')!
+    await user.click(form.querySelector('button[type="submit"]')!)
+    await waitFor(() => expect(submit).toHaveBeenCalled())
+    expect(submit.mock.calls[0]?.[2]).toEqual({ 'can-01': 1 })
+    expect(await screen.findByText(/Can ನಂತರ speak ಎಂಬ ಮೂಲ ಕ್ರಿಯಾಪದ ಬರುತ್ತದೆ/)).toHaveAttribute('lang', 'kn-IN')
   })
 
   it('shows one quick-check question at a time, item feedback, and a focused retry', async () => {
@@ -1355,7 +1420,7 @@ describe('LevelPathPanel', () => {
 
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
     await user.click(
-      await screen.findByRole('button', { name: /Practice/i }),
+      await screen.findByRole('button', { name: /^Practice(?:, Completed)?$/i }),
     )
 
     expect(await screen.findByText('Question 1 of 2')).toBeInTheDocument()
@@ -1425,6 +1490,9 @@ describe('LevelPathPanel', () => {
     expect(screen.queryByText(/^Score /)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Done' }))
     expect(screen.getByText('Score 1% — passed')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Conversation' })).not.toHaveAttribute('aria-disabled', 'true')
+    await user.click(screen.getByRole('button', { name: 'Continue · Conversation' }))
+    expect(await screen.findByRole('heading', { name: 'Conversation' })).toBeVisible()
 
     expect(submitCheck).toHaveBeenNthCalledWith(
       1,
@@ -1496,7 +1564,7 @@ describe('LevelPathPanel', () => {
     )
 
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
-    await user.click(await screen.findByRole('button', { name: /Practice/i }))
+    await user.click(await screen.findByRole('button', { name: /^Practice(?:, Completed)?$/i }))
     await user.click(
       await screen.findByRole('radio', { name: 'I can swim.' }),
     )
@@ -1605,7 +1673,7 @@ describe('LevelPathPanel', () => {
       />,
     )
     await user.click(await screen.findByRole('button', { name: /Level 1/i }))
-    await user.click(await screen.findByRole('button', { name: /Practice/i }))
+    await user.click(await screen.findByRole('button', { name: /^Practice(?:, Completed)?$/i }))
 
     expect(await screen.findByText('Question 1 of 2')).toBeInTheDocument()
     expect(

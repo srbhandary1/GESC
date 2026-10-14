@@ -104,6 +104,7 @@ final readonly class AzureOpenAiConversationHttpBoundary
             $status === 401 => 'provider_authentication_failed',
             $status === 403 => 'provider_authorization_failed',
             $status === 413 => 'provider_request_too_large',
+            $status === 429 => 'provider_rate_limited',
             $retryable => 'provider_transient_failure',
             default => 'provider_http_failure',
         };

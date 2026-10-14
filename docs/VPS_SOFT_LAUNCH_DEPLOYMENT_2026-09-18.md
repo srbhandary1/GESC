@@ -1,5 +1,56 @@
 # VPS soft-launch deployment evidence — 18 September 2026
 
+## Signup plan and Kannada interface sign-off — 26 September 2026
+
+Current release is `/srv/global-spoken-english/releases/signup-plan-20260926`.
+Prior `kannada-content-20260926-r1` remains the rollback target. The working
+tree overlay adds the signed-off Kannada interface catalogue
+`ui-kn-IN-2026-09-26.5` and the plan-choice signup. No migration was pending.
+Android **1.0.11/code 12** is the closed-beta debug package. No phone was
+attached.
+
+Pre-switch encrypted backup `soft-launch-20260926T083818Z.sql.gz.enc` SHA-256
+`6fc9eaf0ba385d03f8d9fe72547eb59157dc714ebbbeea55e2e19e688aa56d2a`.
+Public homepage SHA-256
+`ca065430e61bae8f20f78556f8f07bcb10db895090b50c49d8563e9ad548425f`.
+Public APK SHA-256
+`37a59873dd9915c9adac9b3b190b0a4161d3ca97b5c29972e5147280e0b27160`
+(15,308,602 bytes). Public live and ready health returned HTTP 200. After
+restart, users and memberships both counted 1,721.
+
+## Student readiness release — 25 September 2026
+
+Current release is `/srv/global-spoken-english/releases/student-readiness-20260925`.
+It contains the verified student UX bundle, matching closed-beta APK, a bounded
+grammar-output instruction correction and canonical release-path startup fix.
+The user explicitly approved the grammar deployment to the existing host and
+one synthetic test; the ordinary Android test returned correct past-tense
+feedback and completed both reply/guidance audio clips without media error.
+
+The first guarded switch rolled back safely after the release-symlink
+fingerprint bug triggered an unexpected rebuild. `pwd -P` and a real-Node
+no-builder regression fixed the cause. The final switch passed public
+live/ready health, exact HTML, and active-service checks with zero restarts.
+
+- Public HTML SHA-256:
+  `bb664199740b3886c001199249fd27afc1014ab27678ff4aa42aafc8045d8f52`.
+- Downloaded and installed APK SHA-256:
+  `8d160212bc4361962bc6254a26ab7c777e70cd9ccfeb4b587f69729a7b255a0b`.
+  Homepage cache key: `student-readiness-20260925`.
+- Pre-switch encrypted backup `soft-launch-20260925T070254Z.sql.gz.enc`:
+  `1d89b4f1c67f9d30010093930b27fdc0901e8416a5bba1bdc0fb92a466f3322c`.
+  Existing same-VPS custody is not off-box/PITR evidence.
+- Backend and vendor are independent copies of `adr0041`; only the reviewed
+  adapter and its test differ. Storage remains a symlink to
+  `/srv/global-spoken-english/releases/adr0041/apps/api/storage`.
+- **Retain `adr0041`: it is both rollback and the current private storage
+  backing directory.** Rollback stops the user service, atomically restores
+  `current` to `adr0041`, and restarts it. No database restore is needed.
+
+No migration, environment, credentials, provider route, retention, tenancy or
+authoritative learning-rule change. Production/Play/payment gates remain
+separate. [Full verification and student-quality limits](STUDENT_READINESS_E2E_2026-09-25.md).
+
 **Checkpoint:** `VPS-SOFT-LAUNCH-01`  
 **Authority:** APP-0095 / D-0303  
 **Deployed source revision:** `56f2caa74eed978ba4b20ef20dd14e93e21f6b2c`  
@@ -663,3 +714,21 @@ debug APK at SHA-256
 `aapt2` verifies package `com.globalenglish.app`, min SDK 24 and target SDK 36.
 Public live and ready endpoints return HTTP 200. This remains an invite-only,
 debug-signed closed-beta artifact, not a Play release.
+
+## ADR-0040 previous-website basic onboarding — 24 September 2026
+
+Working-tree overlay `adr0040` is active at immutable release
+`/srv/global-spoken-english/releases/adr0040`; prior `cc02500` remains the
+rollback target. Before cutover, encrypted backup
+`soft-launch-20260924T144437Z.sql.gz.enc` was created and verified with SHA-256
+`61d6bc50ff9622bdcf9f20dd2e30af32e82099ab209a8d5ddb2b4210b6a99240`.
+
+The staged release copied `cc02500`, overlaid phone-sign-in, bcrypt import,
+catalogue identifier copy and the onboarding command, rebuilt the translation-
+preview web bundle (fingerprint
+`57820ecf952f3f7d1aa591577416245c56dad45c5011ea54f91e9147ba0c8540`), and
+applied migration `2026_09_24_000450`. Public `/api/v1/health/live` and
+`/health/ready` return HTTP 200. Live import provisioned 1,716 Direct basic
+memberships from a read-only previous-website extract; the extract was deleted
+from `/tmp` on both hosts and was not committed. `https://globalspokenenglish.com`
+was not written. This is not a Play release.

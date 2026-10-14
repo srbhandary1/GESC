@@ -7,6 +7,9 @@ const ENTITLEMENT_TURN_KEYS = new Set<string>([
   'entitlement.expired',
   'entitlement.free_speech_locked',
   'entitlement.session_locked',
+  'conversation.turn_outcome_unknown',
+  'conversation.capacity_busy',
+  'conversation.playback_update_required',
 ])
 
 export function conversationErrorMessageKey(

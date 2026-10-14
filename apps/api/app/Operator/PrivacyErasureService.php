@@ -6,6 +6,8 @@ namespace App\Operator;
 
 use App\Audit\AuditEventRecorder;
 use App\Authentication\Mobile\MobileTokenFamilyService;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
+use App\Conversation\Dialogue\ConversationRecoveryUnavailable;
 use App\Conversation\Voice\VoiceDeletionService;
 use App\Models\Membership;
 use App\Models\User;
@@ -30,6 +32,7 @@ final readonly class PrivacyErasureService
         private VoiceDeletionService $voiceDeletions,
         private MobileTokenFamilyService $mobileCredentials,
         private LearnerPrivacyInventory $inventory,
+        private ConversationRecoveryStore $recovery,
     ) {}
 
     /**
@@ -128,6 +131,16 @@ final readonly class PrivacyErasureService
 
             return $id;
         }, 3);
+
+        if (Schema::hasTable('conversation_playback_meters')) {
+            DB::table('conversation_playback_meters')->where('organization_id', $organizationId)->where('learner_membership_id', $targetMembershipId)->delete();
+        }
+        try {
+            $this->recovery->deleteMembership($organizationId, $targetMembershipId);
+        } catch (ConversationRecoveryUnavailable) {
+            // Durable deletion_pending metadata remains unavailable to reads.
+            // Reconciliation below must keep erasure incomplete until retry.
+        }
 
         $this->voiceDeletions->processForPrivacyErasure(
             $organizationId,

@@ -224,22 +224,28 @@
 }
 
 .conversation-journey__explanation {
-  position: relative;
-  flex: 0 0 auto;
+  min-inline-size: 0;
+  max-inline-size: 100%;
   margin: 0;
 }
 
 .conversation-journey__explanation-toggle {
-  display: grid;
-  place-items: center;
-  width: var(--ge-target-minimum);
-  height: var(--ge-target-minimum);
+  display: flex;
+  align-items: center;
+  gap: var(--ge-space-2);
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-block-size: var(--ge-target-minimum);
   margin: 0;
-  padding: 0;
+  padding: var(--ge-space-2) var(--ge-space-3);
   list-style: none;
   border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
-  border-radius: 999px;
+  border-radius: var(--ge-radius-sm);
   background: color-mix(in srgb, currentColor 8%, transparent);
+  line-height: 1.4;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -249,6 +255,7 @@
 
 .conversation-journey__explanation-toggle::before {
   content: '';
+  flex: 0 0 0.45rem;
   width: 0.45rem;
   height: 0.45rem;
   border-inline-end: 2px solid currentColor;
@@ -263,10 +270,8 @@
 }
 
 .conversation-journey__explanation-body {
-  position: absolute;
-  inset-inline-end: 0;
-  z-index: 2;
-  width: min(18rem, calc(100vw - 2rem));
+  min-inline-size: 0;
+  max-inline-size: 100%;
   margin-block-start: var(--ge-space-2);
   padding: var(--ge-space-3);
   border: 1px solid var(--ge-correction-border, var(--ge-panel-border));

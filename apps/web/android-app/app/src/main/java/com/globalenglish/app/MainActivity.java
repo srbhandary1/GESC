@@ -23,6 +23,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.AppTheme_NoActionBar);
         registerPlugin(GlobalEnglishSecureCredentialsPlugin.class);
+        registerPlugin(GlobalEnglishConversationHistoryPlugin.class);
         registerPlugin(GlobalEnglishSystemBrowserPlugin.class);
         registerPlugin(GlobalEnglishMicrophonePermissionPlugin.class);
         GlobalEnglishAndroidShell.enableEdgeToEdge(this);

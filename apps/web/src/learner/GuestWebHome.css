@@ -91,6 +91,23 @@
   margin-block-start: 1.5rem;
 }
 
+.guest-web-home__plans {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guest-web-home__plan-price {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+
+.guest-web-home__plans .ge-button {
+  inline-size: 100%;
+  min-block-size: var(--ge-mira-chrome-target, 3rem);
+  white-space: normal;
+}
+
 .guest-web-home__hero-actions .ge-button {
   flex: 1 1 12rem;
   width: auto;
@@ -243,6 +260,10 @@
   .guest-web-home__trust,
   .guest-web-home__step-row {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .guest-web-home__plans {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .guest-web-home__trust {

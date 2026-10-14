@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Conversation\ConversationTurnStateMachine;
+use App\Conversation\Dialogue\ConversationDialogueService;
 use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
@@ -17,6 +18,18 @@ use Tests\TestCase;
 
 final class ConversationRequestValidationTest extends TestCase
 {
+    public function test_reading_target_accepts_only_an_opaque_turn_or_opening(): void
+    {
+        foreach (['opening', (string) Str::ulid()] as $target) {
+            $request = CreateConversationTurnRequest::create('/turns', 'POST', ['prototype_utterance' => 'Read', 'action' => 'accept_explanation', 'expected_revision' => 1, 'explanation_target' => $target]);
+            $this->assertFalse($this->validator($request)->fails());
+        }
+        foreach (['Translate arbitrary client text', '../private-file', '', 42] as $target) {
+            $request = CreateConversationTurnRequest::create('/turns', 'POST', ['prototype_utterance' => 'Read', 'action' => 'accept_explanation', 'expected_revision' => 1, 'explanation_target' => $target]);
+            $this->assertTrue($this->validator($request)->fails());
+        }
+    }
+
     public function test_session_request_is_strict_and_header_idempotent(): void
     {
         $valid = StartConversationSessionRequest::create(
@@ -68,6 +81,31 @@ final class ConversationRequestValidationTest extends TestCase
             ],
         );
         $this->assertTrue($this->validator($realProviderField)->fails());
+    }
+
+    public function test_modern_session_requires_current_notice_acceptance_without_weakening_legacy_validation(): void
+    {
+        $base = ['persona_key' => 'patient-friend-prototype', 'scenario_key' => 'everyday-friend-prototype', 'coaching_mode' => 'gentle', 'ui_locale' => 'kn-IN'];
+        $notice = ['recovery_notice_version' => ConversationDialogueService::NOTICE, 'recovery_notice_accepted' => true];
+        foreach (['question_help', 'roleplay_dialogue', 'free_speech'] as $flow) {
+            $modern = [...$base, 'interaction_flow' => $flow, ...$notice];
+            $request = StartConversationSessionRequest::create('/api/v1/conversation-sessions', 'POST', $modern);
+            $this->assertFalse($this->validator($request)->fails());
+            foreach ([
+                array_diff_key($modern, ['recovery_notice_version' => true]),
+                array_diff_key($modern, ['recovery_notice_accepted' => true]),
+                [...$modern, 'recovery_notice_accepted' => false],
+                [...$modern, 'recovery_notice_version' => 'obsolete-notice'],
+                [...$modern, 'organization_id' => (string) Str::ulid()],
+            ] as $invalid) {
+                $request = StartConversationSessionRequest::create('/api/v1/conversation-sessions', 'POST', $invalid);
+                $this->assertTrue($this->validator($request)->fails());
+            }
+        }
+        foreach ([$notice, ['recovery_notice_accepted' => false], ['recovery_notice_version' => ConversationDialogueService::NOTICE]] as $orphanNotice) {
+            $request = StartConversationSessionRequest::create('/api/v1/conversation-sessions', 'POST', [...$base, ...$orphanNotice]);
+            $this->assertTrue($this->validator($request)->fails());
+        }
     }
 
     public function test_stage_advance_request_accepts_only_linear_stages(): void

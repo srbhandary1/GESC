@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 final class LevelSessionProgressDemoPlanTest extends TestCase
 {
-    public function test_demo_plan_opens_levels_one_and_two_without_prior_completion(): void
+    public function test_all_subscription_plans_open_levels_one_and_two_without_prior_completion(): void
     {
         $progress = $this->app->make(LevelSessionProgressService::class);
         $context = new OrganizationContext(
@@ -21,37 +21,34 @@ final class LevelSessionProgressDemoPlanTest extends TestCase
             membershipId: '01J00000000000000000000003',
             source: OrganizationContextSource::Membership,
         );
-        $snapshot = [
-            'is_demo' => true,
-            'max_level_number' => DirectPlanDefaults::DEMO_MAX_LEVEL,
-            'allowed_session_parts' => DirectPlanDefaults::DEMO_SESSION_PARTS,
-        ];
+        foreach (DirectPlanDefaults::plans() as $snapshot) {
+            $levelOne = $progress->projection(
+                $context,
+                '01J00000000000000000000004',
+                1,
+                'available',
+                $snapshot,
+            );
+            $levelTwo = $progress->projection(
+                $context,
+                '01J00000000000000000000004',
+                2,
+                'available',
+                $snapshot,
+            );
 
-        $levelOne = $progress->projection(
-            $context,
-            '01J00000000000000000000004',
-            1,
-            'available',
-            $snapshot,
-        );
-        $levelTwo = $progress->projection(
-            $context,
-            '01J00000000000000000000004',
-            2,
-            'available',
-            $snapshot,
-        );
+            self::assertSame('allowed', $levelOne['progress_access']);
+            self::assertSame('allowed', $levelTwo['progress_access']);
+            self::assertNull($levelTwo['unlock_after_level_number']);
 
-        self::assertSame('allowed', $levelOne['progress_access']);
-        self::assertSame('allowed', $levelTwo['progress_access']);
-        self::assertNull($levelTwo['unlock_after_level_number']);
-
-        $progress->assertUnlocked(
-            $context,
-            '01J00000000000000000000004',
-            2,
-            $snapshot,
-        );
-        $this->addToAssertionCount(1);
+            $progress->assertUnlocked(
+                $context,
+                '01J00000000000000000000004',
+                2,
+                $snapshot,
+            );
+            $this->addToAssertionCount(1);
+            self::assertNull($progress->recordUnlockAfterLevelCompletion($context, $context->actorUserId, 1));
+        }
     }
 }

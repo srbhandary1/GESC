@@ -87,6 +87,16 @@ final readonly class EntitlementAccess
         }
     }
 
+    public function assertLiveAiAvailable(User $learner): void
+    {
+        $snapshot = $this->snapshot($learner);
+        if (($snapshot['applies'] ?? false) === true && (($snapshot['status'] ?? '') !== 'active'
+            || ($snapshot['live_ai_seconds_remaining'] !== null && $snapshot['live_ai_seconds_remaining'] <= 0))) {
+            throw new EntitlementDenied(($snapshot['is_demo'] ?? false) === true
+                ? EntitlementDenied::DEMO_AI_EXHAUSTED : EntitlementDenied::AI_EXHAUSTED);
+        }
+    }
+
     public function consumeLiveAi(User $learner, string $chargeKey, int $seconds): void
     {
         $context = $this->authority->require($learner);

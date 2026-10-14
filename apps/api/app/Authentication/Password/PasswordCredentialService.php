@@ -61,6 +61,7 @@ final class PasswordCredentialService
         if ($this->needsRehash($credential->password_hash)) {
             $credential->forceFill([
                 'password_hash' => $this->hash($password),
+                'algorithm' => 'argon2id',
                 'policy_version' => (int) config('authentication.password.policy_version', 1),
                 'changed_at' => Date::now(),
             ])->save();
@@ -71,7 +72,7 @@ final class PasswordCredentialService
 
     public function establish(User $user, string $username, string $password, Request $request): void
     {
-        $canonical = $this->policy->normalizeUsername($username);
+        $canonical = $this->policy->normalizeEstablishmentUsername($username);
         $normalized = $this->policy->normalizeAndValidatePassword($password, $canonical);
 
         DB::transaction(function () use ($user, $canonical, $normalized): void {
@@ -112,6 +113,152 @@ final class PasswordCredentialService
         }, 3);
 
         $this->record((string) $user->getKey(), 'password.established', 'succeeded', $canonical, $request);
+    }
+
+    public function importLegacyHash(
+        User $user,
+        string $username,
+        string $passwordHash,
+        Request $request,
+    ): bool {
+        $canonical = $this->policy->normalizeUsername($username);
+
+        if (! $this->policy->isImportablePasswordHash($passwordHash)) {
+            throw new PasswordPolicyViolation('The password hash is not valid.');
+        }
+
+        $replayed = false;
+
+        DB::transaction(function () use ($user, $canonical, $passwordHash, &$replayed): void {
+            /** @var User|null $locked */
+            $locked = User::query()->whereKey($user->getKey())->lockForUpdate()->first();
+
+            if (! $locked instanceof User || $locked->status !== User::STATUS_ACTIVE) {
+                throw new PasswordAuthenticationFailed;
+            }
+
+            $occupant = User::query()
+                ->where('username', $canonical)
+                ->where('id', '<>', $locked->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($occupant instanceof User) {
+                throw new PasswordPolicyViolation('The username is unavailable.');
+            }
+
+            /** @var PasswordCredential|null $existing */
+            $existing = PasswordCredential::query()->whereKey($locked->getKey())->lockForUpdate()->first();
+
+            if ($existing instanceof PasswordCredential) {
+                if ((string) $locked->username === $canonical) {
+                    $replayed = true;
+
+                    return;
+                }
+
+                throw new PasswordPolicyViolation('A password is already established.');
+            }
+
+            $now = Date::now();
+            $version = max(1, ((int) $locked->credential_version) + 1);
+            $locked->forceFill([
+                'username' => $canonical,
+                'username_established_at' => $now,
+                'credential_version' => $version,
+            ])->save();
+            PasswordCredential::query()->forceCreate([
+                'user_id' => (string) $locked->getKey(),
+                'password_hash' => $passwordHash,
+                'algorithm' => 'bcrypt',
+                'policy_version' => (int) config('authentication.password.policy_version', 1),
+                'credential_version' => $version,
+                'established_at' => $now,
+                'changed_at' => $now,
+            ]);
+        }, 3);
+
+        $this->record(
+            (string) $user->getKey(),
+            $replayed ? 'password.legacy_imported' : 'password.established',
+            'succeeded',
+            $canonical,
+            $request,
+        );
+
+        return $replayed;
+    }
+
+    public function passwordMatches(User $user, string $password): bool
+    {
+        $credential = PasswordCredential::query()->whereKey($user->getKey())->first();
+
+        return $credential instanceof PasswordCredential
+            && password_verify($password, $credential->password_hash);
+    }
+
+    public function storePreparedHash(
+        User $user,
+        string $username,
+        string $passwordHash,
+        Request $request,
+    ): void {
+        $canonical = $this->policy->normalizeUsername($username);
+
+        if (! $this->isArgon2idHash($passwordHash)) {
+            throw new PasswordPolicyViolation('The password hash is not valid.');
+        }
+
+        DB::transaction(function () use ($user, $canonical, $passwordHash): void {
+            /** @var User|null $locked */
+            $locked = User::query()->whereKey($user->getKey())->lockForUpdate()->first();
+
+            if (! $locked instanceof User || $locked->status !== User::STATUS_ACTIVE) {
+                throw new PasswordAuthenticationFailed;
+            }
+
+            if (PasswordCredential::query()->whereKey($locked->getKey())->exists()) {
+                throw new PasswordPolicyViolation('A password is already established.');
+            }
+
+            $now = Date::now();
+            $version = max(1, ((int) $locked->credential_version) + 1);
+            $locked->forceFill([
+                'username' => $canonical,
+                'username_established_at' => $now,
+                'credential_version' => $version,
+            ])->save();
+            PasswordCredential::query()->forceCreate([
+                'user_id' => (string) $locked->getKey(),
+                'password_hash' => $passwordHash,
+                'algorithm' => 'argon2id',
+                'policy_version' => (int) config('authentication.password.policy_version', 1),
+                'credential_version' => $version,
+                'established_at' => $now,
+                'changed_at' => $now,
+            ]);
+        }, 3);
+
+        $this->record((string) $user->getKey(), 'password.established', 'succeeded', $canonical, $request);
+    }
+
+    public function hashNewPassword(string $password, string $username): string
+    {
+        $canonical = $this->policy->normalizeUsername($username);
+        $normalized = $this->policy->normalizeAndValidatePassword($password, $canonical);
+
+        return $this->hash($normalized);
+    }
+
+    private function isArgon2idHash(string $hash): bool
+    {
+        if ($hash === '' || strlen($hash) > 255) {
+            return false;
+        }
+
+        $info = password_get_info($hash);
+
+        return ($info['algo'] ?? null) === PASSWORD_ARGON2ID;
     }
 
     public function confirm(
@@ -212,7 +359,7 @@ final class PasswordCredentialService
             throw new FreshPasswordConfirmationRequired;
         }
 
-        $canonical = $this->policy->normalizeUsername($username);
+        $canonical = $this->policy->normalizeEstablishmentUsername($username);
 
         DB::transaction(function () use ($user, $canonical): void {
             /** @var User|null $locked */

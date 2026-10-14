@@ -26,6 +26,27 @@ const ids = {
 const blueprintContentHash = 'a'.repeat(64)
 const checkpointRuleHash = 'b'.repeat(64)
 
+test('opens the two starting levels while keeping later progress locked', async ({ page }) => {
+  await mockLevelPathLearnerApi(page, true)
+  await page.route('**/api/v1/me/levels', async (route) => {
+    await json(route, { levels: levelSummaries().map((level) => ({
+      ...level,
+      entitlement_access: 'allowed',
+      progress_access: level.level_number <= 2 ? 'allowed' : 'locked',
+      unlock_after_level_number: level.level_number <= 2 ? null : level.level_number - 1,
+    })) })
+  })
+  await page.route('**/api/v1/me/levels/2/sessions', async (route) => {
+    await json(route, { ...completedSessionsList(), level_number: 2, concept_key: 'should' })
+  })
+  await page.goto('/#learn')
+  await expect(page.locator('#level-path-level-1')).toBeEnabled()
+  await expect(page.locator('#level-path-level-2')).toBeEnabled()
+  await expect(page.locator('#level-path-level-3')).toHaveCount(0)
+  await page.locator('#level-path-level-2').click()
+  await expect(page.locator('#level-2-part-introduction')).toBeVisible()
+})
+
 test('opens contextual plans from a locked level and returns without losing level context', async ({
   page,
 }) => {
@@ -1308,3 +1329,24 @@ function message(key: MessageKey, parameters: Record<string, string> = {}): stri
     requestedLocale: DEFAULT_LOCALE,
   }).text
 }
+
+test('checks dark lesson, checkpoint and subscription text contrast', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockLevelPathLearnerApi(page, true, 4920)
+  await page.setViewportSize({ height: 844, width: 390 })
+  await page.goto('/#learn')
+  await page.locator('#interface-theme').selectOption('dark')
+  const check = async (step: string) => {
+    await expect(page.locator('html')).toHaveAttribute('data-ge-theme', 'dark')
+    await expect(page.locator('html')).toHaveAttribute('data-ge-theme-preference', 'dark')
+    const result = await new AxeBuilder({ page }).setLegacyMode().withRules(['color-contrast']).analyze()
+    expect(result.violations, JSON.stringify(result.violations.map(v => v.nodes.map(n => ({target:n.target, summary:n.failureSummary}))))).toEqual([])
+    await page.screenshot({ path: testInfo.outputPath(`dark-${step}.png`), fullPage: true })
+  }
+  await check('levels')
+  await page.getByRole('button', { name: message('level.path.checkpoint_open', { number: '1' }) }).click()
+  await check('checkpoint')
+  await page.locator('#shell-live-ai-minutes').click()
+  await expect(page.locator('#subscription-panel')).toBeVisible()
+  await check('subscription')
+})

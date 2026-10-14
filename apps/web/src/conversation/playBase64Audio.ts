@@ -62,6 +62,7 @@ export async function playBase64Audio(
         .catch(reject)
     })
   } finally {
+    options?.onTimeUpdate?.(Math.round(audio.currentTime * 1000))
     unregisterSpeechAudio(audio)
     URL.revokeObjectURL(url)
   }

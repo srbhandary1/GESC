@@ -1,0 +1,11 @@
+[Unit]
+Description=Expiry cleanup retained across conversation release rollback
+Requires=global-english-conversation-recovery.service
+After=global-english-conversation-recovery.service
+
+[Service]
+Type=oneshot
+User=globalenglish
+ExecStart=/usr/local/libexec/ge-conversation-recovery-purge
+TimeoutStartSec=50
+UMask=0077

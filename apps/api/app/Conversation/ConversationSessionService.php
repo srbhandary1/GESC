@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Conversation;
 
+use App\Conversation\Dialogue\ConversationDialogueService;
+use App\Conversation\Dialogue\LessonQuestionContext;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Support\ConversationUiLocales;
 use App\Conversation\Support\RoleplayCatalog;
@@ -24,6 +26,7 @@ final readonly class ConversationSessionService
         private LearnerAuthority $authority,
         private ConversationCommandIdempotency $commands,
         private EntitlementAccess $entitlements,
+        private ConversationDialogueService $dialogue,
     ) {}
 
     /**
@@ -37,9 +40,19 @@ final readonly class ConversationSessionService
         string $uiLocale,
         string $idempotencyKey,
         ?LessonDrillContext $lessonDrill = null,
+        ?string $interactionFlow = null,
+        ?string $recoveryNoticeVersion = null,
+        bool $recoveryNoticeAccepted = false,
+        ?LessonQuestionContext $lessonQuestion = null,
     ): array {
         $this->environment->requireDeterministicFakes();
         $this->commands->assertIdempotencyKey($idempotencyKey);
+        if ($interactionFlow !== null && (! $recoveryNoticeAccepted || $recoveryNoticeVersion !== ConversationDialogueService::NOTICE || $lessonDrill !== null)) {
+            throw new ConversationOperationRejected('recovery_notice_required');
+        }
+        if ($lessonQuestion !== null && $interactionFlow !== 'question_help') {
+            throw new ConversationOperationRejected;
+        }
 
         return DB::transaction(function () use (
             $learner,
@@ -49,6 +62,9 @@ final readonly class ConversationSessionService
             $uiLocale,
             $idempotencyKey,
             $lessonDrill,
+            $interactionFlow,
+            $recoveryNoticeVersion,
+            $lessonQuestion,
         ): array {
             $context = $this->authority->require($learner);
             $membershipId = (string) $context->membershipId;
@@ -56,7 +72,7 @@ final readonly class ConversationSessionService
 
             if ($mode === 'roleplay') {
                 $this->entitlements->assertRoleplay($learner);
-            } elseif ($mode === 'friend' && $lessonDrill === null) {
+            } elseif ($mode === 'friend' && $lessonDrill === null && $lessonQuestion === null) {
                 $this->entitlements->assertFreeSpeech($learner);
             }
             $fingerprint = $this->commands->fingerprint([
@@ -66,6 +82,9 @@ final readonly class ConversationSessionService
                 'scenario_key' => $scenarioKey,
                 'ui_locale' => $uiLocale,
                 'lesson_drill' => $lessonDrill?->fingerprint(),
+                'interaction_flow' => $interactionFlow,
+                'recovery_notice_version' => $recoveryNoticeVersion,
+                ...($lessonQuestion === null ? [] : ['lesson_question' => $lessonQuestion->content]),
             ]);
             $replay = $this->commands->replay(
                 actor: $learner,
@@ -158,10 +177,14 @@ final readonly class ConversationSessionService
                     'conversation_session_id' => $sessionId,
                     'learner_membership_id' => $membershipId,
                     'from_stage' => null,
-                    'to_stage' => RoleplayStages::OBSERVE,
+                    'to_stage' => $interactionFlow === 'roleplay_dialogue' ? RoleplayStages::PERFORM : RoleplayStages::OBSERVE,
                     'sequence' => 1,
                     'created_at' => $now,
                 ]);
+            }
+
+            if ($interactionFlow !== null) {
+                $this->dialogue->initialize($context->organizationId, $membershipId, $sessionId, $interactionFlow, $mode, $scenarioKey, (string) $prototype->scenario_version_id, $uiLocale, $lessonQuestion);
             }
 
             $this->commands->record(
@@ -200,6 +223,30 @@ final readonly class ConversationSessionService
             sessionId: $sessionId,
             replayed: $replayed,
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function show(User $learner, string $sessionId): array
+    {
+        $context = $this->authority->require($learner);
+
+        return $this->existing($context->organizationId, (string) $context->membershipId, $sessionId, false);
+    }
+
+    /** @return array<string, mixed> */
+    public function exit(User $learner, string $sessionId, string $idempotencyKey): array
+    {
+        $this->commands->assertIdempotencyKey($idempotencyKey);
+        $context = $this->authority->require($learner);
+        $membershipId = (string) $context->membershipId;
+        $state = $this->dialogue->state($context->organizationId, $membershipId, $sessionId);
+        if ($state === null) {
+            throw new ConversationOperationRejected;
+        }
+        // Close commits before deletion; a failed delete is retryable and cannot reopen processing.
+        $this->dialogue->close($state);
+
+        return $this->existing($context->organizationId, $membershipId, $sessionId, false);
     }
 
     private function resolveMode(string $personaKey, string $scenarioKey): string
@@ -506,6 +553,15 @@ final readonly class ConversationSessionService
                 organizationId: $organizationId,
                 sessionId: $sessionId,
             );
+        }
+
+        $dialogue = $this->dialogue->state($organizationId, $membershipId, $sessionId);
+        if ($dialogue !== null) {
+            $payload['interaction'] = $this->dialogue->present($dialogue);
+            $payload['latest_turn'] = $this->dialogue->latest($dialogue);
+            $payload['stage'] = $mode === 'roleplay' ? (in_array($payload['interaction']['state'], ['complete', 'closed'], true) ? 'reflect' : 'perform') : null;
+            $payload['feedback'] = $this->dialogue->feedback($dialogue);
+            $payload['persona']['disclosure'] = 'Swathi is an AI practice partner. Feedback is advisory, not a mark.';
         }
 
         return $payload;

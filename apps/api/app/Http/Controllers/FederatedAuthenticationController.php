@@ -14,6 +14,9 @@ use App\Authentication\Mobile\MobileTokenFamilyService;
 use App\Authentication\Password\PasswordAuthenticationFailed;
 use App\Authentication\Password\PasswordCredentialService;
 use App\Authentication\Sessions\AuthenticationSessionService;
+use App\Entitlements\Exceptions\EntitlementDenied;
+use App\Entitlements\LearnerSubscriptionService;
+use App\Identity\OrganizationSelectionStore;
 use App\Models\FederatedIdentity;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +26,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use stdClass;
 use Symfony\Component\HttpFoundation\Response;
 
 final class FederatedAuthenticationController extends Controller
@@ -34,6 +38,7 @@ final class FederatedAuthenticationController extends Controller
         private readonly AuthenticationSessionService $sessions,
         private readonly MobilePasswordTokenIssuer $issuer,
         private readonly MobileTokenFamilyService $families,
+        private readonly LearnerSubscriptionService $subscriptions,
     ) {}
 
     public function providers(): JsonResponse
@@ -73,8 +78,24 @@ final class FederatedAuthenticationController extends Controller
             abort(Response::HTTP_NOT_FOUND);
         }
 
-        $intent = $request->query->get('intent') === 'link' ? 'link' : 'sign_in';
+        $intentRaw = $request->query->get('intent');
+        $intent = is_string($intentRaw) && in_array($intentRaw, ['link', 'register'], true)
+            ? $intentRaw
+            : 'sign_in';
         $user = $this->authorizeUser($request, $intent);
+
+        $planId = null;
+        $planCode = null;
+        if ($intent === 'register') {
+            $regValidated = $request->validate([
+                'plan_id' => ['required', 'ulid'],
+                'plan_code' => ['nullable', 'string', 'max:64'],
+            ]);
+            $planId = (string) $regValidated['plan_id'];
+            $planCode = is_string($regValidated['plan_code'] ?? null)
+                ? $regValidated['plan_code']
+                : null;
+        }
 
         $installationId = $request->query->get('installation_id');
         $clientId = $request->query->get('client_id');
@@ -99,6 +120,8 @@ final class FederatedAuthenticationController extends Controller
             [
                 'provider' => $provider,
                 'intent' => $intent,
+                'plan_id' => $planId,
+                'plan_code' => $planCode,
                 'user_id' => $user instanceof User ? (string) $user->getKey() : null,
                 'installation_id' => $installationId,
                 'client_id' => $clientId,
@@ -163,6 +186,63 @@ final class FederatedAuthenticationController extends Controller
                     : redirect($this->webReturnUrl());
             }
 
+            if ($intent === 'register') {
+                $planId = is_string($pending['plan_id'] ?? null) ? $pending['plan_id'] : null;
+                $planCode = is_string($pending['plan_code'] ?? null) && $pending['plan_code'] !== ''
+                    ? $pending['plan_code']
+                    : 'monthly_modules_roleplay';
+
+                if ($planId === null) {
+                    throw new PasswordAuthenticationFailed;
+                }
+
+                $payload = $this->subscriptions->beginSocialPaidRegistration(
+                    $account,
+                    $planId,
+                    'social-reg-'.$state,
+                    $request,
+                );
+
+                if (($payload['status'] ?? null) === 'completed') {
+                    $user = $this->federated->userFor($account);
+                    $this->federated->record((string) $user->getKey(), 'succeeded', $provider, $request);
+
+                    if ($return === 'android') {
+                        return $this->androidTicketRedirect($user, $pending, $state);
+                    }
+
+                    $session = $this->sessions->start($user, $request);
+                    $this->selectCheckoutMembership($request, (string) $session->getKey(), $payload['id'] ?? null);
+
+                    return redirect($this->webReturnUrl());
+                }
+
+                if (($payload['status'] ?? null) === 'pending') {
+                    if ($return === 'android') {
+                        return redirect()->away(
+                            'com.globalenglish.app:/oauth/callback?'.http_build_query([
+                                'checkout_id' => (string) ($payload['id'] ?? ''),
+                                'order_id' => (string) ($payload['provider_order_id'] ?? ''),
+                                'public_key' => (string) ($payload['provider_public_key'] ?? ''),
+                                'total_paise' => (string) ($payload['total_paise'] ?? ''),
+                                'state' => $state,
+                            ]),
+                        );
+                    }
+
+                    return redirect(
+                        rtrim($this->webReturnUrl(), '/').'/?'.http_build_query([
+                            'social_checkout_id' => (string) ($payload['id'] ?? ''),
+                            'social_order_id' => (string) ($payload['provider_order_id'] ?? ''),
+                            'social_public_key' => (string) ($payload['provider_public_key'] ?? ''),
+                            'social_total_paise' => (string) ($payload['total_paise'] ?? ''),
+                        ]).'#sign-up/'.$planCode,
+                    );
+                }
+
+                throw new PasswordAuthenticationFailed;
+            }
+
             $user = $this->federated->userFor($account);
             $this->federated->record((string) $user->getKey(), 'succeeded', $provider, $request);
 
@@ -173,7 +253,7 @@ final class FederatedAuthenticationController extends Controller
             $this->sessions->start($user, $request);
 
             return redirect($this->webReturnUrl());
-        } catch (FederatedIdentityUnavailable|PasswordAuthenticationFailed) {
+        } catch (FederatedIdentityUnavailable|PasswordAuthenticationFailed|EntitlementDenied) {
             $this->federated->record(null, 'failed', $provider, $request);
 
             return $this->federatedFailureRedirect($return, $state);
@@ -189,13 +269,25 @@ final class FederatedAuthenticationController extends Controller
         $validated = $request->validate([
             'installation_id' => ['required', 'ulid'],
             'client_id' => ['required', 'uuid'],
+            'intent' => ['nullable', 'string', 'in:sign_in,register'],
+            'plan_id' => ['required_if:intent,register', 'nullable', 'ulid'],
+            'plan_code' => ['nullable', 'string', 'max:64'],
         ]);
 
-        $url = url('/oauth/social/'.$provider.'/authorize').'?'.http_build_query([
+        $intent = is_string($validated['intent'] ?? null) ? $validated['intent'] : 'sign_in';
+        $query = [
             'client_id' => $validated['client_id'],
             'installation_id' => $validated['installation_id'],
-            'intent' => 'sign_in',
-        ]);
+            'intent' => $intent,
+        ];
+        if ($intent === 'register' && is_string($validated['plan_id'] ?? null)) {
+            $query['plan_id'] = $validated['plan_id'];
+            if (is_string($validated['plan_code'] ?? null) && $validated['plan_code'] !== '') {
+                $query['plan_code'] = $validated['plan_code'];
+            }
+        }
+
+        $url = url('/oauth/social/'.$provider.'/authorize').'?'.http_build_query($query);
 
         return response()->json(['authorization_url' => $url])
             ->header('Cache-Control', 'private, no-store');
@@ -312,7 +404,7 @@ final class FederatedAuthenticationController extends Controller
 
     private function authorizeUser(Request $request, string $intent): ?User
     {
-        if ($intent === 'sign_in') {
+        if ($intent === 'sign_in' || $intent === 'register') {
             $user = $request->user();
 
             return $user instanceof User ? $user : null;
@@ -345,14 +437,55 @@ final class FederatedAuthenticationController extends Controller
     }
 
     /**
-     * @return array{google: bool, facebook: bool}
+     * @return array{google: bool, facebook: bool, instagram: bool}
      */
     private function enabledProviders(): array
     {
         return [
             'google' => $this->providers->enabled(FederatedIdentity::PROVIDER_GOOGLE),
             'facebook' => $this->providers->enabled(FederatedIdentity::PROVIDER_FACEBOOK),
+            'instagram' => $this->providers->enabled(FederatedIdentity::PROVIDER_INSTAGRAM),
         ];
+    }
+
+    private function selectCheckoutMembership(
+        Request $request,
+        string $sessionId,
+        mixed $checkoutId,
+    ): void {
+        if (! is_string($checkoutId) || $checkoutId === '') {
+            return;
+        }
+
+        $checkoutRow = DB::table('subscription_checkouts')
+            ->join('memberships', 'memberships.id', '=', 'subscription_checkouts.learner_membership_id')
+            ->where('subscription_checkouts.id', $checkoutId)
+            ->first([
+                'memberships.id as membership_id',
+                'memberships.organization_id',
+            ]);
+
+        if (
+            ! $checkoutRow instanceof stdClass
+            || ! is_string($checkoutRow->membership_id ?? null)
+            || ! is_string($checkoutRow->organization_id ?? null)
+        ) {
+            return;
+        }
+
+        DB::table('authentication_sessions')
+            ->where('id', $sessionId)
+            ->update([
+                'selected_organization_id' => $checkoutRow->organization_id,
+                'selected_membership_id' => $checkoutRow->membership_id,
+                'updated_at' => now(),
+            ]);
+        if ($request->hasSession()) {
+            $request->session()->put(
+                OrganizationSelectionStore::WEB_SESSION_KEY,
+                $checkoutRow->membership_id,
+            );
+        }
     }
 
     /**

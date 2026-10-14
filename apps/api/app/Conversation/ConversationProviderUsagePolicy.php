@@ -31,6 +31,11 @@ final readonly class ConversationProviderUsagePolicy
         if ($this->isAllowedLessonDrillStage($stage, $usage)) {
             return;
         }
+        if ($stage === 'model' && $usage->providerKey === 'local-dialogue-control'
+            && $usage->modelVersion === 'dialogue-control-v1' && $usage->dispatchKind === 'local_execution'
+            && $usage->estimatedCostMicrounits === 0 && $usage->inputUnits === 0 && $usage->outputUnits === 0) {
+            return;
+        }
 
         $driver = (string) config('conversation.provider_driver');
 

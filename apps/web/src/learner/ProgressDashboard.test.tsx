@@ -158,7 +158,7 @@ describe('ProgressDashboard', () => {
     expect(improvementList).toHaveTextContent('grammar')
     expect(improvementList).toHaveTextContent('reducing trend')
 
-    const masteryList = screen.getByLabelText('can')
+    const masteryList = screen.getByLabelText('Can — ability and permission')
     expect(masteryList).toHaveTextContent('Mastered')
   })
 

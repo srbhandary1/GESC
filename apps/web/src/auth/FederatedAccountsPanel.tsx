@@ -21,10 +21,12 @@ export function FederatedAccountsPanel({
   const [providers, setProviders] = useState<FederatedProviderAvailability>({
     google: false,
     facebook: false,
+    instagram: false,
   })
   const [links, setLinks] = useState<FederatedProviderAvailability>({
     google: false,
     facebook: false,
+    instagram: false,
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
@@ -60,8 +62,16 @@ export function FederatedAccountsPanel({
     }
   }, [authentication])
 
-  if (!providers.google && !providers.facebook) {
+  if (!providers.google && !providers.facebook && !providers.instagram) {
     return null
+  }
+
+  const instagramMessage = (key: MessageKey): InterfaceMessageResolution => {
+    const base = message(key)
+    return {
+      ...base,
+      text: base.text.replace(/Google/gu, 'Instagram'),
+    }
   }
 
   const run = (operation: () => Promise<void>) => {
@@ -86,6 +96,7 @@ export function FederatedAccountsPanel({
                 resolution={message('auth.social.linked_google')}
               />{' '}
               <button
+                className="ge-button ge-button--quiet"
                 disabled={busy}
                 onClick={() =>
                   run(() => authentication.unlinkFederated('google'))
@@ -99,6 +110,7 @@ export function FederatedAccountsPanel({
             </>
           ) : (
             <button
+              className="ge-button ge-button--secondary"
               disabled={busy}
               onClick={() =>
                 run(() => authentication.beginFederatedLink('google'))
@@ -120,6 +132,7 @@ export function FederatedAccountsPanel({
                 resolution={message('auth.social.linked_facebook')}
               />{' '}
               <button
+                className="ge-button ge-button--quiet"
                 disabled={busy}
                 onClick={() =>
                   run(() => authentication.unlinkFederated('facebook'))
@@ -133,6 +146,7 @@ export function FederatedAccountsPanel({
             </>
           ) : (
             <button
+              className="ge-button ge-button--secondary"
               disabled={busy}
               onClick={() =>
                 run(() => authentication.beginFederatedLink('facebook'))
@@ -141,6 +155,42 @@ export function FederatedAccountsPanel({
             >
               <LocalizedMessage
                 resolution={message('auth.social.link_facebook')}
+              />
+            </button>
+          )}
+        </p>
+      ) : null}
+      {providers.instagram ? (
+        <p>
+          {links.instagram ? (
+            <>
+              <LocalizedMessage
+                resolution={instagramMessage('auth.social.linked_google')}
+              />{' '}
+              <button
+                className="ge-button ge-button--quiet"
+                disabled={busy}
+                onClick={() =>
+                  run(() => authentication.unlinkFederated('instagram'))
+                }
+                type="button"
+              >
+                <LocalizedMessage
+                  resolution={instagramMessage('auth.social.unlink_google')}
+                />
+              </button>
+            </>
+          ) : (
+            <button
+              className="ge-button ge-button--secondary"
+              disabled={busy}
+              onClick={() =>
+                run(() => authentication.beginFederatedLink('instagram'))
+              }
+              type="button"
+            >
+              <LocalizedMessage
+                resolution={instagramMessage('auth.social.link_google')}
               />
             </button>
           )}

@@ -1,3 +1,5 @@
+import { archiveConversationTurn, type SavedAudio } from './deviceConversationHistory'
+import { DeviceHistorySaveStatus } from './DeviceConversationHistoryPanel'
 import type {
   MessageKey,
   MessageParameters,
@@ -25,6 +27,7 @@ import type {
   FriendSession,
   FriendTurn,
   FriendTurnEvent,
+  StartFriendSessionInput,
 } from './ConversationJourneyApi'
 import { playConversationSpeechResult } from './speakSessionSpeech'
 import { speakSessionSpeech } from './speakSessionSpeech'
@@ -210,9 +213,12 @@ export function ConversationJourney({
   const [inputMode, setInputMode] = useState<'type' | 'speak'>('speak')
   const [loopPhase, setLoopPhase] = useState<SpeakLoopPhase>('waiting')
   const [holdResetEpoch, setHoldResetEpoch] = useState(0)
+  const pendingHistoryAudio = useRef<SavedAudio | undefined>(undefined)
   const [chatTurns, setChatTurns] = useState<readonly FriendTurn[]>([])
   const sessionCommandId = useRef(createClientId())
   const turnCommandId = useRef(createClientId())
+  const sessionRequestFingerprint = useRef<string | null>(null)
+  const submittedUtterance = useRef<string | null>(null)
   const stopRecognition = useRef<(() => void) | null>(null)
   const utteranceFieldRef = useRef<HTMLTextAreaElement | null>(null)
   const openingSpoken = useRef(false)
@@ -436,17 +442,19 @@ export function ConversationJourney({
       }
 
       if (grammarDrill) {
-        if (guidanceText !== '') {
-          await playClip('guidance_l1', guidanceText, hasGuidanceAudio)
-        }
+        // Drill guidance already quotes the target sentence. Play it once,
+        // then leave the model visible for the learner to retry.
+        const guidanceIncludesModel = modelLine.trim() !== '' &&
+          guidanceText.includes(modelLine.trim())
+        const playedGuidance = guidanceText !== ''
+          ? await playClip('guidance_l1', guidanceText, hasGuidanceAudio)
+          : false
         if (signal?.aborted) {
           return
         }
-        const playedModel = await playClip(
-          'model_en',
-          modelLine,
-          false,
-        )
+        const playedModel = playedGuidance && guidanceIncludesModel
+          ? true
+          : await playClip('model_en', modelLine, false)
         if (!playedModel && guidanceText === '') {
           setVoiceUnavailable(true)
           const snapshot = completeSpeakLoop()
@@ -525,20 +533,26 @@ export function ConversationJourney({
   }
 
   const start = () => {
+    const input: StartFriendSessionInput = {
+      coaching_mode: coachingMode,
+      persona_key: 'patient-friend-prototype',
+      scenario_key: sessionContent.scenarioKey,
+      ui_locale: locale,
+    }
+    const fingerprint = JSON.stringify(input)
+    if (
+      sessionRequestFingerprint.current !== null &&
+      sessionRequestFingerprint.current !== fingerprint
+    ) {
+      sessionCommandId.current = createClientId()
+    }
+    sessionRequestFingerprint.current = fingerprint
     setState({ kind: 'starting' })
     setShowHint(false)
     setUtterance('')
     setChatTurns([])
     api
-      .startSession(
-        {
-          coaching_mode: coachingMode,
-          persona_key: 'patient-friend-prototype',
-          scenario_key: sessionContent.scenarioKey,
-          ui_locale: locale,
-        },
-        sessionCommandId.current,
-      )
+      .startSession(input, sessionCommandId.current)
       .then((session) => {
         setState({
           kind: 'ready',
@@ -566,7 +580,10 @@ export function ConversationJourney({
   const submitTurn = (prototypeUtterance: string) => {
     const current = stateRef.current
     if (
-      (current.kind !== 'ready' && current.kind !== 'result') ||
+      (current.kind !== 'ready' &&
+        current.kind !== 'result' &&
+        current.kind !== 'error') ||
+      current.session === undefined ||
       current.stage !== 'talk' ||
       prototypeUtterance.trim() === ''
     ) {
@@ -574,9 +591,18 @@ export function ConversationJourney({
     }
 
     const session = current.session
-    const completedTurns = current.completedTurns
+    const completedTurns = current.completedTurns ?? 0
     const nextUtterance = prototypeUtterance.trim()
     const lastTurn = current.kind === 'result' ? current.turn : current.lastTurn
+    // A retry after a lost response must replay the same logical turn. An
+    // explicitly edited submission is a new command, not a conflicting replay.
+    if (
+      submittedUtterance.current !== null &&
+      submittedUtterance.current !== nextUtterance
+    ) {
+      turnCommandId.current = createClientId()
+    }
+    submittedUtterance.current = nextUtterance
     inFlightAbort.current?.abort()
     const controller = new AbortController()
     inFlightAbort.current = controller
@@ -602,13 +628,15 @@ export function ConversationJourney({
         turnCommandId.current,
         controller.signal,
       )
-      .then(async (turn) => {
+      .then((turn) => {
         if (controller.signal.aborted) {
           return
         }
 
         onLiveAiUsageChanged?.()
 
+        void archiveConversationTurn(session, turn, pendingHistoryAudio.current)
+        pendingHistoryAudio.current = undefined
         markSpeakLoop('turn_json_ready')
         const drillPatternAdvanced =
           turn.understood_intent === 'lesson_drill_pattern_accepted'
@@ -618,8 +646,6 @@ export function ConversationJourney({
           && (!grammarDrill || drillPatternAdvanced)
             ? completedTurns + 1
             : completedTurns
-        const eventsPromise = api.events(turn.events_url, controller.signal)
-
         if (turn.status === 'completed' && turn.assistant_reply !== null) {
           void speakTurnAudio(turn, controller.signal)
         } else {
@@ -627,13 +653,8 @@ export function ConversationJourney({
           settleHold()
         }
 
-        const events = await eventsPromise
-        if (controller.signal.aborted) {
-          return
-        }
-
         setState({
-          events,
+          events: [],
           kind: 'result',
           session,
           stage: 'talk',
@@ -644,7 +665,24 @@ export function ConversationJourney({
           setChatTurns((previous) => [...previous, turn])
         }
         setUtterance('')
+        submittedUtterance.current = null
         turnCommandId.current = createClientId()
+
+        // The completed response is sufficient to continue. Optional event
+        // history must not discard it or hold the next turn behind the stream.
+        void api
+          .events(turn.events_url, controller.signal)
+          .then((events) => {
+            if (controller.signal.aborted) {
+              return
+            }
+            setState((latest) =>
+              latest.kind === 'result' && latest.turn.id === turn.id
+                ? { ...latest, events }
+                : latest,
+            )
+          })
+          .catch(() => undefined)
       })
       .catch((error: unknown) => {
         if (isAbortError(error) || controller.signal.aborted) {
@@ -653,6 +691,7 @@ export function ConversationJourney({
             session,
             stage: 'talk',
             completedTurns,
+            lastTurn,
           })
           return
         }
@@ -664,6 +703,7 @@ export function ConversationJourney({
           session,
           stage: 'talk',
           completedTurns,
+          lastTurn,
           messageKey: conversationErrorMessageKey(
             error,
             'conversation.error',
@@ -790,6 +830,8 @@ export function ConversationJourney({
   const restart = () => {
     sessionCommandId.current = createClientId()
     turnCommandId.current = createClientId()
+    sessionRequestFingerprint.current = null
+    submittedUtterance.current = null
     setState({ kind: 'idle' })
     setUtterance('')
     setShowHint(false)
@@ -817,15 +859,18 @@ export function ConversationJourney({
   const lastTurn =
     state.kind === 'result'
       ? state.turn
-      : state.kind === 'ready' || state.kind === 'sending'
+      : state.kind === 'ready' ||
+          state.kind === 'sending' ||
+          state.kind === 'error'
         ? state.lastTurn
         : undefined
 
   const completedTurns =
     state.kind === 'ready' ||
     state.kind === 'sending' ||
-    state.kind === 'result'
-      ? state.completedTurns
+    state.kind === 'result' ||
+    state.kind === 'error'
+      ? state.completedTurns ?? 0
       : 0
 
   const carrySentence =
@@ -988,7 +1033,9 @@ export function ConversationJourney({
       </aside>
       )}
 
-      {state.kind === 'idle' || state.kind === 'starting' ? (
+      {state.kind === 'idle' ||
+      state.kind === 'starting' ||
+      (state.kind === 'error' && state.session === undefined) ? (
         <div className="conversation-journey__start">
           <label htmlFor="friend-session-type">
             <LocalizedMessage
@@ -1197,13 +1244,16 @@ export function ConversationJourney({
           ) : null}
           {demoMode ? null : (
             <>
+              <DeviceHistorySaveStatus text={text} />
               <VoicePracticePanel
                 api={api}
                 compact={drillRoom || embedded}
+                hideTypingFallback
                 createClientId={createClientId}
                 locale={locale}
                 onPreferTyping={typeInstead}
-                onTranscriptSelected={(transcript) => {
+                onTranscriptSelected={(transcript, metadata) => {
+                  pendingHistoryAudio.current = metadata?.audio
                   setUtterance(transcript)
                   submitTurn(transcript)
                 }}
@@ -1453,25 +1503,27 @@ export function ConversationJourney({
             </h3>
           )}
 
-          <details className="conversation-journey__turn-events">
-            <summary>
-              <LocalizedMessage
-                resolution={message('conversation.events_title')}
-              />
-            </summary>
-            <ol className="conversation-journey__events">
-              {state.events.map((turnEvent) => (
-                <li key={turnEvent.sequence}>
-                  <LocalizedMessage
-                    resolution={message(
-                      eventMessages[turnEvent.state] ??
-                        'conversation.state.failed',
-                    )}
-                  />
-                </li>
-              ))}
-            </ol>
-          </details>
+          {state.events.length > 0 ? (
+            <details className="conversation-journey__turn-events">
+              <summary>
+                <LocalizedMessage
+                  resolution={message('conversation.events_title')}
+                />
+              </summary>
+              <ol className="conversation-journey__events">
+                {state.events.map((turnEvent) => (
+                  <li key={turnEvent.sequence}>
+                    <LocalizedMessage
+                      resolution={message(
+                        eventMessages[turnEvent.state] ??
+                          'conversation.state.failed',
+                      )}
+                    />
+                  </li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
         </article>
       ) : null}
 
@@ -1690,8 +1742,11 @@ function TurnExplanationAside({
           </>
         ) : null}
         <p lang={correction.explanation_locale}>
-          {correction.encouragement_l1 ?? correction.explanation_l1}
+          {correction.explanation_l1}
         </p>
+        {correction.encouragement_l1 ? (
+          <p lang={correction.explanation_locale}>{correction.encouragement_l1}</p>
+        ) : null}
         {correction.needed && correction.retry_recommended ? (
           <p>
             <LocalizedMessage

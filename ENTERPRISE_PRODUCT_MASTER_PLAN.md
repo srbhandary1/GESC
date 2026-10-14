@@ -1,8 +1,8 @@
 ---
 title: "Global English — Enterprise Product and Implementation Master Plan"
-version: "3.15"
+version: "3.22"
 status: "Canonical implementation baseline"
-prepared: "14 August 2026"
+prepared: "26 September 2026"
 classification: "Confidential — Product, architecture and delivery plan"
 supersedes:
   - "Global_English_High_Level_Plan_v2.md"
@@ -91,10 +91,10 @@ The product promise is:
 | Primary experience | Structured Tutor + AI Friend + Role-play Studio |
 | Learning language | English |
 | Explanation and default UI | Kannada explanation and `kn-IN` default UI; Phase 1 UI-only preview catalogues for `ml-IN`, `ta-IN`, `te-IN` and `hi-IN`; `en-IN` source/fallback |
-| Kannada Help | **Kannada Help — Ask Swathi** is an explicit Free-Speech-entitled advisory support path: concise Kannada answer plus an actionable English bridge; it is not an authoritative learning or assessment mode |
+| Question help | **Ask Swathi** is an explicit Free-Speech-entitled advisory support path: English/local-language question → English answer → offer explanation on non-understanding → local-language explanation only after affirmative acceptance (ADR-0042); never authoritative assessment |
 | Delivery | Mobile-first PWA, Capacitor Android app, web operator console |
 | Architecture | Laravel modular monolith with external AI/speech adapters |
-| Authentication | One platform-global username/password credential for enrollment and privileged freshness; Google and Facebook may sign in already-enrolled users and issue the same web session or Android Passport family; roles and permission groups authorize work after sign-in; invitations/admission workflows authorize enrollment but not ongoing sign-in; Sanctum same-origin cookies for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with Passport refresh_token thereafter; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
+| Authentication | One platform-global username/password credential for enrollment and privileged freshness; Direct learners imported from the previous website may sign in with that site's phone number and existing password (ADR-0040); Google, Facebook and Instagram may register (with captured Direct plan payment) and sign in users and issue the same web session or Android Passport family; roles and permission groups authorize work after sign-in; a captured Direct payment registers the learner and grants the purchased plan; invitations/admission workflows authorize staff and institution enrollment; Sanctum same-origin cookies for web/PWA; Android first issue is first-party in-app password or Custom-Tab social OAuth that issues the Passport token family, with Passport refresh_token thereafter; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Authoritative records | Deterministic, versioned, explainable and auditable |
 | AI authority | Advisory only; never writes marks, mastery, attendance or unlocks |
 | Offline | Downloaded deterministic mission, recording/playback and queued progress; no offline AI in Phase 1 |
@@ -226,6 +226,15 @@ Phase 1 will not promise:
 
 ### 4.1 The three learner modes
 
+Owner clarification (25 September 2026, LEVELS-BRIEF-06): generated replies
+should normally be one simple sentence of 8–15 words. Allow at most two short
+sentences, 30 words and 240 Unicode characters per main reply. Use one idea or
+question, familiar words and no filler/list of follow-ups. Correction guidance
+is one short sentence (20 words/160 characters), without extra encouragement
+paragraphs. Validate before speech generation; do not truncate mid-sentence or
+change assessment to force brevity. Authored lesson media is not rewritten.
+
+
 #### A. Structured Tutor
 
 The Tutor provides a progressive learning path from the basics. It can:
@@ -286,24 +295,66 @@ Role-play stages:
 3. **Perform:** complete an open-ended exchange.
 4. **Reflect:** review task completion, priority corrections, stronger vocabulary and a retry task.
 
-#### Kannada Help — Ask Swathi support path
+Under ADR-0042, interactive practice is AI-first and strictly alternating. The
+AI speaks only its partner role; the learner supplies their own line. A genuine
+grammar error produces corrected English and selected-local-language guidance,
+then a retry of the same conversational opportunity. The next AI partner line
+is withheld until an acceptable response. Valid alternatives and contextual
+short answers are accepted; style preferences must not impose endless retries.
+Observe remains an optional, clearly labelled example, not a simulation of the
+learner having spoken. Reflection links advisory objective outcomes to actual
+turn evidence; ordinal synthetic results are not assessment. None of this
+changes deterministic marks, mastery or level access.
 
-Kannada Help is not a fourth authoritative learning or assessment mode. It is
+Free Speech also offers an explicit, optional reading aid below an English AI
+reply (owner instruction, 25 September 2026; DARK-TALK-05). Selecting it requests
+a text-only explanation in the dialogue's selected guidance language, bound to
+that exact server-held reply. It preserves the English conversation position,
+uses the existing private 15-minute recovery policy, and generates no TTS or
+listening-time charge. Provider model usage remains separately metered.
+
+#### Ask Swathi — English-first question help
+
+Ask Swathi is not a fourth authoritative learning or assessment mode. It is
 an explicit, authenticated support path under the same server-side Free Speech
 entitlement as Friend/free-speech sessions. A learner may ask a genuine
-question in Kannada, English or expected Kannada-English code mix. Swathi gives
-a concise Kannada answer and an actionable English bridge that invites or
-models the next English utterance.
+question in English, Kannada or another supported local language/code mix.
+Swathi answers in simple English first. When the learner indicates they did
+not understand, in either language or through an explicit control, Swathi asks
+whether to explain in the selected local language. Only affirmative acceptance
+enables that explanation; decline keeps English. Each new question starts
+English-first again. This amends ADR-0038's Kannada-answer-first behavior under
+ADR-0042. Unsupported or unevaluated language/provider coverage is disclosed,
+not fabricated.
 
 Tutor, Friend and Role-play remain English-practice modes. They may provide one
 short Kannada repair or explanation when needed, then return to English. Input
-language detection alone cannot switch a session into Kannada Help. The server
+language detection alone cannot switch a session into local-language help. The server
 derives mode and reply locale from the authorized session, learner intent,
-supported locale policy and safety state. Kannada Help is advisory and cannot
+supported locale policy, explicit explanation acceptance and safety state. Help is advisory and cannot
 write marks, mastery, progression, review schedules, certificates,
 entitlements or curriculum records.
 
 ### 4.2 All-levels four-session path
+
+Ask AI Tutor opened from a level is scoped to that authorized lesson's pinned
+blueprint, objective and patterns. It explains that concept and redirects unrelated
+questions briefly; it must not start general question help without lesson context.
+Speak's general Ask Swathi remains separate. A passing Practice check records
+Practice completion atomically, so Conversation opens without another completion
+tap. Existing genuine passes may be reconciled against the matching current
+blueprint after Introduction; scores and submitted evidence are never rewritten.
+Plan/content gates and subsequent level progression remain deterministic
+(LEARN-LEVEL-08 / ADR-0025 clarification, 26 September 2026).
+
+
+Owner clarification (25 September 2026, LEVELS-BRIEF-06): the configured starting
+levels are **Level 1 and Level 2**, progress-open by default for every subscription.
+Level 3 onward retains deterministic preceding-level completion/checkpoint gates.
+The starting set is configuration, not a plan-specific exception or a fabricated
+completion. Active entitlements, plan session features, commissioned content and
+review requirements still apply. Historical learning/unlock records remain intact.
+
 
 Every configured level uses the same learner-facing sessions, accepted under
 ADR-0025 / APP-0061:
@@ -364,6 +415,7 @@ Coaching modes:
 | Tutor | Explain important errors, request a retry and provide guided practice |
 | Fluency | Do not interrupt; summarize feedback after the conversation |
 | Interview | Conduct the interview first; issue a structured report afterward |
+| Interactive Role-play | Explain a genuine grammar error in the selected local language; retry the same learner turn before continuing only the AI partner role; accept valid alternatives |
 
 A correction object should contain:
 
@@ -691,6 +743,8 @@ learning records, and no streak freeze, repair or purchase in Phase 1. See
 
 Authentication before Home is one platform-global username/password surface
 for every role, with optional Google or Facebook for already-enrolled users.
+Direct learners imported from the previous website may use that site's phone
+number as the identifier (ADR-0040).
 Organization, role, cohort, program, level and tier are
 resolved only after sign-in. Every role uses the same enumeration-safe,
 verified-contact password setup/recovery path under ADR-0022; a privileged
@@ -1162,6 +1216,16 @@ always-on capture remains excluded. Reply status continues through
 authenticated SSE/polling and private no-store or short-lived signed media
 unless a later accepted ADR changes it.
 
+ADR-0042 permits a dedicated encrypted private conversation-recovery artifact
+for bounded same-session context and the validated response, expiring no later
+than 15 minutes per artifact. This is not ordinary caching or transcript
+history. Explicit updated notice acknowledgement is required; exit/withdrawal
+deletes it, replay does not extend expiry or redispatch providers, and content
+is excluded from ordinary caches, logs and backups. Persistent client storage is
+limited to the separate explicitly opted-in Android archive under ADR-0044;
+the recovery artifact itself is never a persistent client cache.
+It does not authorize research, training or long-term learner memory.
+
 ### 14.3 Audio handling
 
 - Use the best supported browser/native recording codec and capture metadata.
@@ -1499,6 +1563,16 @@ The product must be designed for India’s Digital Personal Data Protection Act,
 - cancellation and consent withdrawal stop queued dispatch and retry while
   deletion reconciliation continues.
 
+Owner clarification, 26 September 2026 (ADR-0044): offer optional encrypted
+Android text and audio history until the learner deletes it. Save only after
+explicit opt-in, in account-scoped Keystore-protected app-private no-backup files;
+keep existing server recovery/deletion limits. Saved audio replay is free of
+live-AI minutes and invokes no provider. Privacy contains consent, AI-advisory
+information, history controls and deletion; these details need not clutter every
+turn. A generic non-sensitive recording-help preference may remember that the
+student has already seen the instructions. Human review status stays truthful
+in governance records rather than appearing as an engineering draft banner.
+
 ### 18.2 Application security baseline
 
 Use OWASP ASVS 5.0.0 Level 2 as the primary application-security verification target where applicable.
@@ -1605,12 +1679,14 @@ policies. Missing, partial and cancelled samples remain visible in denominators.
 Validate at minimum:
 
 - 1,000 registered learners;
-- 250 daily active learners;
+- at least 1,000 daily active learners on days reaching the owner-selected peak;
 - 10–15 speaking minutes per active learner per day;
-- 50 concurrent voice sessions at peak;
+- 1,000 simultaneous active speakers at peak (ADR-0043, 25 September 2026);
 - one staging and one production environment.
 
 These are finite planning assumptions, not unlimited service commitments.
+The former 250-daily/50-concurrent pilot reference is superseded for scale
+planning. Passing the smaller pilot does not certify the new peak target.
 
 ### 20.3 Operational controls
 
@@ -1626,6 +1702,15 @@ These are finite planning assumptions, not unlimited service commitments.
 - runbooks for AI outage, media outage, queue backlog, database degradation, sync incidents, privacy requests and security incidents.
 
 ### 20.4 Cost controls
+
+ADR-0043 (owner instruction, 25 September 2026) replaces fixed per-turn/opener
+student time deductions with validated submitted speaking duration and bounded
+actual playback progress, rounded to seconds. Provider tokens/costs are tracked
+separately and never implicitly converted to minutes. Prices, allowance sizes and
+historical charges are unchanged. Shared capacity admission must reject overload
+before billable work; the owner-selected planning target is 1,000 simultaneous
+speakers, subject to measured infrastructure and purchased provider throughput.
+
 
 Meter:
 
@@ -1721,7 +1806,7 @@ Use deterministic provider fakes for routine CI. Run paid/live provider evaluati
 Before production speech selection, run a frozen controlled bake-off with at
 least 200 STT items and 20–50 TTS scripts, Kannada/English/code-mix and
 supported dialect/noise/device/network subgroups, blind bilingual review,
-accessibility review, failure/deletion drills, 50 concurrent voice turns and
+accessibility review, failure/deletion drills, the 1,000-speaker target workload and
 the approved 2× burst profile. Select on cost per successful usable turn,
 quality, first-audible latency, reliability, privacy/residency/retention and
 recovery—not vendor claims alone.
@@ -2521,13 +2606,13 @@ These decisions are approved for Step 1 unless an accepted ADR changes them:
 | Architecture | Modular monolith with external inference adapters |
 | API | `/api/v1`, OpenAPI 3.1.1, generated clients |
 | Tenancy | Shared schema with mandatory organization scoping |
-| Authentication | Every role uses one platform-global username/password credential for enrollment and privileged freshness, with optional Google/Facebook for already-enrolled users; institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; role and permission groups authorize routine work after sign-in; Sanctum cookie sessions for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with transport credentials only in native secure storage; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
+| Authentication | Every role uses one platform-global username/password credential for enrollment and privileged freshness, with optional Google/Facebook for already-enrolled users; Direct learners imported from the previous website may sign in with that site's phone number (ADR-0040); institution invite/code or admission workflows authorize enrollment and one-time setup rather than ongoing sign-in; role and permission groups authorize routine work after sign-in; Sanctum cookie sessions for web/PWA; Android first issue is first-party in-app password that issues the Passport token family, with transport credentials only in native secure storage; current-password confirmation is limited to credential changes, recovery-contact management and administrator-authority changes |
 | Localization | `kn-IN` explanation/default UI; `ml-IN`, `ta-IN`, `te-IN`, `hi-IN` UI-only review previews; `en-IN` learning/source/fallback |
 | Curriculum | Immutable versions; enrollments pinned to a version |
 | Progression | Deterministic and evidence-based |
 | Voice | Online, turn-based, user-visible state; no full-duplex or offline AI |
 | Speech routing | ADR-0038 server-owned versioned primary plus one reviewed fallback; two-dispatch cap; no routine learner-audio shadowing; production provider choice requires the governed bake-off |
-| Kannada Help | Explicit Free-Speech-entitled Ask Swathi support path with Kannada reply and English bridge; English remains the learning language; advisory only |
+| Ask Swathi question help | Explicit Free-Speech-entitled support path: answer English/local-language questions in English first; offer a local-language explanation on non-understanding and provide it only after affirmative acceptance; advisory only (ADR-0042) |
 | AI | Grounded, structured, provider-adapted, evaluated and non-authoritative |
 | Memory | Explicit, purpose-bound, user-visible and deletable |
 | Offline | Downloaded deterministic mission and idempotent outbox |

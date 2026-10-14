@@ -8,7 +8,10 @@ overrides:
   js-yaml: 4.3.2
   '@xmldom/xmldom': 0.9.12
   uuid@<11.1.1: 11.1.1
-  brace-expansion: 5.0.9
+  brace-expansion: 5.0.11
+  shell-quote: 1.11.0
+  undici: 8.10.2
+  source-map-js: 1.2.2
 
 importers:
 
@@ -63,8 +66,8 @@ importers:
   apps/web:
     dependencies:
       '@capacitor/core':
-        specifier: 8.5.0
-        version: 8.5.0
+        specifier: 8.5.1
+        version: 8.5.1
       '@global-english/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -94,11 +97,11 @@ importers:
         specifier: 4.12.1
         version: 4.12.1(playwright-core@1.62.0)
       '@capacitor/android':
-        specifier: 8.5.0
-        version: 8.5.0(@capacitor/core@8.5.0)
+        specifier: 8.5.1
+        version: 8.5.1(@capacitor/core@8.5.1)
       '@capacitor/cli':
-        specifier: 8.5.0
-        version: 8.5.0(supports-color@10.2.2)
+        specifier: 8.5.1
+        version: 8.5.1(supports-color@10.2.2)
       '@playwright/test':
         specifier: 1.62.0
         version: 1.62.0
@@ -302,18 +305,18 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@capacitor/android@8.5.0':
-    resolution: {integrity: sha512-Rb3prJeQiTp0pQhSSOReJuG9VgibOGMG4ECs+UhMwr6TCCHZ3NCZO811bDA0HxD0xrT/gCrJAsY5yfEATu84JQ==}
+  '@capacitor/android@8.5.1':
+    resolution: {integrity: sha512-o8fUIPDSEASeXHHrDz26WU7OlyiRb+QqtI9KFdnLS1jUL77o5iGrvegibaZX8rWpiCyDJ6jlUhhhHlfeq3ou9A==}
     peerDependencies:
       '@capacitor/core': ^8.5.0
 
-  '@capacitor/cli@8.5.0':
-    resolution: {integrity: sha512-rLdzMUM5QV4WITcqoWv04p32i14BXgUH2diqEH6MWQlWaJfiyNrvOyt/+d5vHAfOxOm1klBu637VDEobctlwBA==}
+  '@capacitor/cli@8.5.1':
+    resolution: {integrity: sha512-LKQFSyLg1QbTN6CGDoFqeRtAlj8C3c9OymP8OuhwlmkbSQwh9i1HQjwUCaNyVem2XkY9rv0v2UOfVlgoxH5pAw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
-  '@capacitor/core@8.5.0':
-    resolution: {integrity: sha512-Ca4krtqH1hothjtBIwf2J2TW7IhYq1ujp8QeItTiJohNsqij8ja2DYYH3DU0l8RmxCWaBAFTGA2TgOgOMCSNsQ==}
+  '@capacitor/core@8.5.1':
+    resolution: {integrity: sha512-IOQ7ynG1qgrJ/RLuCO3WgyRGmkmmG/cdStRR4ftU2dWEN1FdtLrnI/XpZmZuUsOEHEnzBRJY/PmRH8eTLiXfhA==}
 
   '@csstools/color-helpers@6.1.0':
     resolution: {integrity: sha512-064IFJdjTfUqnjpCVpMOdbr8FLQBhinbZj6yRv2An2E41O/pLEXqfFRWqGq/SxlE5PEUYTlvWsG2r8MswAVvkg==}
@@ -902,7 +905,6 @@ packages:
   '@xmldom/xmldom@0.9.12':
     resolution: {integrity: sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A==}
     engines: {node: '>=14.6'}
-    deprecated: this version has critical issues, please update to the latest version
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -997,8 +999,8 @@ packages:
     resolution: {integrity: sha512-apC2+fspHGI3mMKj+dGevkGo/tCqVB8jMb6i+OX+E29p0Iposz07fABkRIfVUPNd5A5VbuOz1bZbnmkKLYF+wQ==}
     engines: {node: '>= 5.10.0'}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
+  brace-expansion@5.0.11:
+    resolution: {integrity: sha512-awigjhi6cLTh90bdw6+QJ9CtmJmyYhEIi70iCbc8Rozn04Fw9FeQIBjv/E22FFGuCGx1bLJyUfB64x/szUSXUg==}
     engines: {node: 20 || >=22}
 
   browserslist@4.28.7:
@@ -1866,8 +1868,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.9.0:
-    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
+  shell-quote@1.11.0:
+    resolution: {integrity: sha512-JdxDPD0DBTyu08pq0kPC0xSNet/qsU07qT6IsX1AS8oO2ICNRY4ldNa8OAI6PuwAH8tG3lxEhbqmyp4Dw4036g==}
     engines: {node: '>= 0.4'}
 
   siginfo@2.0.0:
@@ -1886,8 +1888,8 @@ packages:
     resolution: {integrity: sha512-qMCMfhY040cVHT43K9BFygqYbUPFZKHOg7K73mtTWJRb8pyP3fzf4Ixd5SzdEJQ6MRUg/WBnOLxghZtKKurENQ==}
     engines: {node: '>=10'}
 
-  source-map-js@1.2.1:
-    resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
+  source-map-js@1.2.2:
+    resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
 
   split2@4.2.0:
@@ -2046,8 +2048,8 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@8.9.0:
-    resolution: {integrity: sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==}
+  undici@8.10.2:
+    resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
     engines: {node: '>=22.19.0'}
 
   universalify@2.0.1:
@@ -2440,11 +2442,11 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@capacitor/android@8.5.0(@capacitor/core@8.5.0)':
+  '@capacitor/android@8.5.1(@capacitor/core@8.5.1)':
     dependencies:
-      '@capacitor/core': 8.5.0
+      '@capacitor/core': 8.5.1
 
-  '@capacitor/cli@8.5.0(supports-color@10.2.2)':
+  '@capacitor/cli@8.5.1(supports-color@10.2.2)':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8(supports-color@10.2.2)
       '@ionic/utils-subprocess': 3.0.1(supports-color@10.2.2)
@@ -2467,7 +2469,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@8.5.0':
+  '@capacitor/core@8.5.1':
     dependencies:
       tslib: 2.8.1
 
@@ -3167,7 +3169,7 @@ snapshots:
     dependencies:
       big-integer: 1.6.52
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.11:
     dependencies:
       balanced-match: 4.0.4
 
@@ -3243,7 +3245,7 @@ snapshots:
     dependencies:
       chalk: 5.6.2
       rxjs: 7.8.2
-      shell-quote: 1.9.0
+      shell-quote: 1.11.0
       supports-color: 10.2.2
       tree-kill: 1.2.2
       yargs: 18.0.0
@@ -3265,7 +3267,7 @@ snapshots:
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   css.escape@1.5.1: {}
 
@@ -3603,7 +3605,7 @@ snapshots:
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.2
-      undici: 8.9.0
+      undici: 8.10.2
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -3727,7 +3729,7 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.11
 
   minipass@7.1.3: {}
 
@@ -3844,7 +3846,7 @@ snapshots:
     dependencies:
       nanoid: 3.3.18
       picocolors: 1.1.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   potpack@1.0.2: {}
 
@@ -3963,7 +3965,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.9.0: {}
+  shell-quote@1.11.0: {}
 
   siginfo@2.0.0: {}
 
@@ -3983,7 +3985,7 @@ snapshots:
       astral-regex: 2.0.0
       is-fullwidth-code-point: 3.0.0
 
-  source-map-js@1.2.1: {}
+  source-map-js@1.2.2: {}
 
   split2@4.2.0: {}
 
@@ -4138,7 +4140,7 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@8.9.0: {}
+  undici@8.10.2: {}
 
   universalify@2.0.1: {}
 

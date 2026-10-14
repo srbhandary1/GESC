@@ -34,26 +34,11 @@ test('completes the disclosed voice-first AI conversation journey', async ({
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
 
-  await expect(
-    page.getByText(
-      'Swathi is an AI English teacher, not a human. Her advice never changes marks, mastery, or progress.',
-    ),
-  ).toBeVisible()
-  await expect(
-    page.getByText(
-      'Speak English after you consent. Type instead is optional. Only content-free digests are kept.',
-    ),
-  ).toBeVisible()
-
+  await page.getByRole('checkbox', { name: 'I agree to this temporary conversation processing.' }).check()
   await page
     .getByRole('button', { name: 'Talk with Swathi' })
     .click()
-  await expect(
-    page.getByText(
-      'I am Swathi, your AI English teacher. Feedback is advisory.',
-    ),
-  ).toBeVisible()
-  await expect(page.getByText('Hear an example')).toBeVisible()
+  await expect(page.getByText('Hello! What would you like to talk about today?')).toBeVisible()
   await page.getByRole('button', { name: 'Type instead' }).click()
   await expect(
     page.getByRole('textbox', { name: 'Type one English practice turn' }),
@@ -82,8 +67,7 @@ test('completes the disclosed voice-first AI conversation journey', async ({
       'Thank you for sharing that. What would you like to talk about next?',
     ),
   ).toBeVisible()
-  await page.getByText('Turn status', { exact: true }).click()
-  await expect(page.getByText('Turn completed')).toBeVisible()
+  await expect(page.getByRole('textbox')).toHaveValue('')
 
   expect(
     requests.every(({ url }) => new URL(url).hostname === '127.0.0.1'),
@@ -125,6 +109,7 @@ test('shows separate optional voice purposes before microphone capture', async (
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
+  await page.getByRole('checkbox', { name: 'I agree to this temporary conversation processing.' }).check()
   await page
     .getByRole('button', { name: 'Talk with Swathi' })
     .click()
@@ -138,7 +123,7 @@ test('shows separate optional voice purposes before microphone capture', async (
   ).toBeVisible()
   await expect(
     page.getByRole('button', {
-      name: 'Allow automated conversation processing',
+      name: 'Withdraw automated processing consent',
     }),
   ).toBeVisible()
   expect(
@@ -152,6 +137,39 @@ test('shows separate optional voice purposes before microphone capture', async (
   expect(accessibility.violations).toEqual([])
 })
 
+test('keeps correction disclosure readable and in flow at narrow enlarged text', async ({ page }) => {
+  await mockConversationApi(page, [])
+  await page.goto('/#speak')
+  await page
+    .getByRole('combobox', { name: message('shell.locale_label') })
+    .selectOption('en-IN')
+  await page.getByRole('checkbox', { name: 'I agree to this temporary conversation processing.' }).check()
+  await page.getByRole('button', { name: 'Talk with Swathi' }).click()
+  await page.getByRole('button', { name: 'Type instead' }).click()
+  await page.getByRole('textbox', { name: 'Type one English practice turn' })
+    .fill('I practise English after work.')
+  await page.getByRole('button', { name: 'Send turn' }).click()
+  const correction = page.locator('.conversation-journey__correction')
+  await expect(correction).toBeVisible()
+  await page.setViewportSize({ width: 320, height: 700 })
+  for (const textSize of ['100%', '200%']) {
+    await page.evaluate((value) => { document.documentElement.style.fontSize = value }, textSize)
+    await correction.scrollIntoViewIfNeeded()
+    const bounds = await correction.evaluate((element) => ({
+      right: element.getBoundingClientRect().right,
+      scroll: element.scrollWidth, width: element.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }))
+    expect(bounds.right).toBeLessThanOrEqual(320)
+    expect(bounds.scroll).toBeLessThanOrEqual(bounds.width)
+    expect(bounds.documentWidth).toBeLessThanOrEqual(320)
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .include('.conversation-journey__chat')
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+})
+
 test('completes the disclosed synthetic Role-play stage journey', async ({
   page,
 }) => {
@@ -162,13 +180,14 @@ test('completes the disclosed synthetic Role-play stage journey', async ({
     postData: string | null
     url: string
   }> = []
-  await mockConversationApi(page, requests)
+  await mockConversationApi(page, requests, true)
 
   await page.goto('/#speak')
   await page
     .getByRole('combobox', { name: message('shell.locale_label') })
     .selectOption('en-IN')
   await page.getByRole('tab', { name: 'A situation' }).click()
+  await page.getByRole('checkbox', { name: 'I agree to this temporary conversation processing.' }).check()
   await page.getByRole('button', { name: 'Start this situation' }).click()
   await expect(page.getByRole('heading', { exact: true, name: 'Observe' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click()
@@ -213,6 +232,7 @@ async function mockConversationApi(
     postData: string | null
     url: string
   }>,
+  providerGranted = true,
 ): Promise<void> {
   await page.context().addCookies([
     {
@@ -238,6 +258,8 @@ async function mockConversationApi(
     if (await fulfillPasswordSecurity(route, path)) {
       return
     }
+
+    if (path === '/api/v1/me/ai-memory') { await json(route, { facts: [] }); return }
 
     if (path === '/api/v1/me') {
       await json(route, {
@@ -345,7 +367,7 @@ async function mockConversationApi(
       path === '/api/v1/voice-consents' &&
       request.method() === 'GET'
     ) {
-      await json(route, voiceConsents())
+      await json(route, voiceConsents(providerGranted))
       return
     }
 
@@ -464,12 +486,20 @@ function session() {
       version_id: ids.scenarioVersion,
     },
     status: 'active',
-    ui_locale: 'kn-IN',
+    ui_locale: 'en-IN',
+    interaction: freeInteraction(),
   }
+}
+
+function freeInteraction() {
+  return { flow: 'free_speech', state: 'awaiting_reply', revision: 0, opportunity: 1, ai_role: 'Swathi', learner_role: 'Learner', opening_reply: { text: 'Hello! What would you like to talk about today?', locale: 'en-IN' }, recovery_expires_at: new Date(Date.now() + 15 * 60_000).toISOString() }
 }
 
 function turn() {
   return {
+    interaction: { ...freeInteraction(), revision: 1 },
+    assessment: 'unassessed',
+    reply: { text: 'Thank you for sharing that. What would you like to talk about next?', locale: 'en-IN' },
     assistant_reply:
       'Thank you for sharing that. What would you like to talk about next?',
     conversation_session_id: ids.session,
@@ -529,7 +559,7 @@ function events(): string {
     .join('')
 }
 
-function voiceConsents() {
+function voiceConsents(providerGranted = true) {
   return {
     consents: [
       {
@@ -540,7 +570,7 @@ function voiceConsents() {
       {
         effective_at: null,
         purpose: 'conversation_provider_processing',
-        state: 'not_granted',
+        state: providerGranted ? 'granted' : 'not_granted',
       },
       {
         effective_at: null,

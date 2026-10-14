@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Authentication\AuthenticatedPrincipal;
+use App\Conversation\Metering\LearnerProviderUsageQuery;
 use App\Entitlements\EntitlementAccess;
 use App\Entitlements\LearnerSubscriptionService;
 use App\Http\Requests\Learner\ConfirmSubscriptionCheckoutRequest;
 use App\Http\Requests\Learner\CreateSubscriptionCheckoutRequest;
+use App\Learning\LearnerAuthority;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +26,11 @@ final class LearnerSubscriptionController extends Controller
     {
         $principal = AuthenticatedPrincipal::fromRequest($request);
 
-        return response()->json($this->access->snapshot($principal->user))
+        $context = app(LearnerAuthority::class)->require($principal->user);
+        $snapshot = $this->access->snapshot($principal->user);
+        $snapshot['provider_usage'] = app(LearnerProviderUsageQuery::class)->read($context->organizationId, (string) $context->membershipId);
+
+        return response()->json($snapshot)
             ->header('Cache-Control', 'private, no-store');
     }
 

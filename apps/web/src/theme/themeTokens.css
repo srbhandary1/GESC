@@ -558,7 +558,7 @@
   --ge-bubble-learner-text: #f4f8f5;
   --ge-bubble-teacher-bg: var(--ge-color-surface-elevated);
   --ge-bubble-teacher-text: var(--ge-color-ink);
-  --ge-correction-bg: linear-gradient(180deg, #fff7dc, #fff);
+  --ge-correction-bg: var(--ge-color-surface-elevated);
   --ge-correction-shadow: 0 12px 28px rgb(143 111 40 / 0.16);
   --ge-roleplay-scene-bg: linear-gradient(
     165deg,
@@ -567,7 +567,7 @@
   );
   --ge-roleplay-scene-selected-shadow: 0 14px 28px rgb(227 28 35 / 0.18);
   --ge-audio-eq-gradient: linear-gradient(90deg, #0f7a3a, #e31c23, #c4a45a);
-  --ge-practice-switch-bg: rgb(255 255 255 / 0.78);
+  --ge-practice-switch-bg: var(--ge-color-surface-elevated);
   --ge-practice-switch-active-bg: linear-gradient(180deg, #1d4d3f, #0a1f18);
   --ge-speak-button-ring: rgb(227 28 35 / 0.16);
   --ge-speak-button-shadow: 0 16px 32px rgb(227 28 35 / 0.32);

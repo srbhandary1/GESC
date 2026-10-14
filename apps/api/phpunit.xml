@@ -18,6 +18,7 @@
         </include>
     </source>
     <php>
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_URL" value="https://localhost" force="true"/>
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,localhost:3000,localhost:5174,127.0.0.1,127.0.0.1:5174,127.0.0.1:8000" force="true"/>

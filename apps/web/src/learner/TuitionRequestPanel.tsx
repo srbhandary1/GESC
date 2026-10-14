@@ -179,7 +179,7 @@ export function TuitionRequestPanel({
           rows={3}
           value={notes}
         />
-        <button disabled={busy} type="submit">
+        <button className="ge-button ge-button--primary" disabled={busy} type="submit">
           <LocalizedMessage
             resolution={message(busy ? 'tuition.submitting' : 'tuition.submit')}
           />

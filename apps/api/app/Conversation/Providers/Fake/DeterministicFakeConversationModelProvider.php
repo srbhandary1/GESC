@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Providers\Fake;
 
+use App\Conversation\Dialogue\FakeDialogueResponder;
 use App\Conversation\Orchestration\PriorityCorrection;
 use App\Conversation\Providers\ConversationModelProvider;
 use App\Conversation\Providers\ConversationModelRequest;
@@ -19,6 +20,9 @@ final class DeterministicFakeConversationModelProvider implements ConversationMo
     public function respond(
         ConversationModelRequest $request,
     ): ConversationModelResult {
+        if ($request->dialogue !== []) {
+            return (new FakeDialogueResponder)->respond($request);
+        }
         if (
             $request->personaStyleCode !== 'patient-friend-v1'
             || ! in_array(

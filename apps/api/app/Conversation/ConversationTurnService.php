@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Conversation;
 
 use App\Conversation\Avatar\ConversationSpeechPayloadBuilder;
+use App\Conversation\Capacity\ConversationCapacityAdmission;
+use App\Conversation\Dialogue\ConversationDialogueService;
+use App\Conversation\Dialogue\DialogueTurnReservationService;
+use App\Conversation\Dialogue\LocalDialogueGreeting;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Observability\ProviderAttemptObservationRecorder;
 use App\Conversation\Orchestration\ConversationOrchestrator;
@@ -24,6 +28,7 @@ use App\Conversation\Speech\SynthesizeDeferredGuidanceSpeech;
 use App\Conversation\Support\GuidanceTtsPolicy;
 use App\Conversation\Support\LessonDrillStrictTurnResponder;
 use App\Conversation\Support\SpokenGrammarNotation;
+use App\Conversation\Voice\VoiceConsentService;
 use App\Entitlements\EntitlementAccess;
 use App\Learning\Home\MeaningfulSpeakingDayProjector;
 use App\Learning\LearnerAuthority;
@@ -52,9 +57,14 @@ final readonly class ConversationTurnService
         private ProviderAttemptObservationRecorder $observations,
         private ConversationSpeechArtifactStore $speechArtifacts,
         private ConversationSessionBudget $sessionBudget,
+        private ConversationDialogueService $dialogue,
+        private VoiceConsentService $consents,
+        private DialogueTurnReservationService $reservations,
+        private ConversationCapacityAdmission $capacity,
     ) {}
 
     /**
+     * @param  array<string, mixed>  $dialogueInput
      * @return array<string, mixed>
      */
     public function create(
@@ -62,6 +72,7 @@ final readonly class ConversationTurnService
         string $sessionId,
         string $prototypeUtterance,
         string $idempotencyKey,
+        array $dialogueInput = [],
     ): array {
         $this->environment->requireDeterministicFakes();
         $this->commands->assertIdempotencyKey($idempotencyKey);
@@ -78,11 +89,29 @@ final readonly class ConversationTurnService
             throw new ConversationOperationRejected;
         }
 
+        $reservationId = $this->reservations->reserve(
+            $learner, $sessionId, $idempotencyKey,
+            $this->commands->fingerprint(['prototype_utterance' => $utterance, 'dialogue_input' => $dialogueInput]),
+            function (stdClass $state, stdClass $session) use ($learner, $sessionId, $utterance, $dialogueInput): int {
+                $prepared = $this->dialogue->prepare($state, $dialogueInput, $utterance, (string) $session->ui_locale);
+                $this->sessionBudget->assertCanAcceptLearnerTurn((string) $state->organization_id, $sessionId);
+                $this->entitlements->assertLiveAiAvailable($learner);
+                if (! in_array($dialogueInput['action'] ?? '', ['confused', 'decline_explanation'], true)
+                    && LocalDialogueGreeting::reply($utterance, $prepared) === null) {
+                    $this->capacity->admit((string) $state->organization_id, (string) $state->learner_membership_id);
+                }
+
+                return (int) $state->revision;
+            },
+        );
+
         return DB::transaction(function () use (
             $learner,
             $sessionId,
             $utterance,
             $idempotencyKey,
+            $dialogueInput,
+            $reservationId,
         ): array {
             $context = $this->authority->require($learner);
             $membershipId = (string) $context->membershipId;
@@ -91,17 +120,13 @@ final readonly class ConversationTurnService
                 membershipId: $membershipId,
                 sessionId: $sessionId,
             );
-            $this->sessionBudget->assertCanAcceptLearnerTurn(
-                $context->organizationId,
-                $sessionId,
-            );
-            $this->entitlements->consumeLiveAi(
-                $learner,
-                $idempotencyKey,
-                (int) config('billing.live_ai_turn_seconds', 10),
-            );
+            $dialogueState = $this->dialogue->state($context->organizationId, $membershipId, $sessionId);
+            if ($dialogueState !== null) {
+                $this->consents->activeEvent($context->organizationId, $membershipId, VoiceConsentService::PROVIDER);
+            }
             $fingerprint = $this->commands->fingerprint([
                 'prototype_utterance' => $utterance,
+                ...($dialogueState !== null ? ['dialogue_input' => $dialogueInput] : []),
             ]);
             $replay = $this->commands->replay(
                 actor: $learner,
@@ -113,6 +138,10 @@ final readonly class ConversationTurnService
             );
 
             if ($replay instanceof stdClass) {
+                if ($dialogueState !== null) {
+                    return $this->dialogue->replay($dialogueState, $this->string($replay, 'result_id'));
+                }
+
                 return $this->existing(
                     organizationId: $context->organizationId,
                     membershipId: $membershipId,
@@ -121,6 +150,16 @@ final readonly class ConversationTurnService
                     utterance: $utterance,
                     replayed: true,
                 );
+            }
+            $dialogueContext = $dialogueState === null ? [] : $this->dialogue->prepare($dialogueState, $dialogueInput, $utterance, $this->string($session, 'ui_locale'));
+            if (is_array($dialogueContext['lesson'] ?? null)) {
+                $this->entitlements->assertLevel($learner, (int) $dialogueContext['lesson']['level_number']);
+                $this->entitlements->assertSessionPart($learner, (string) $dialogueContext['lesson']['part_id']);
+            }
+            $this->sessionBudget->assertCanAcceptLearnerTurn($context->organizationId, $sessionId);
+            $this->entitlements->assertLiveAiAvailable($learner);
+            if ($dialogueState === null && ! (new LessonDrillStrictTurnResponder)->applies($this->lessonDrillFor($context->organizationId, $membershipId, $sessionId))) {
+                $this->capacity->admit($context->organizationId, $membershipId);
             }
 
             $now = Date::now()->toImmutable();
@@ -163,6 +202,7 @@ final readonly class ConversationTurnService
             $priorityCorrection = null;
             $safetyState = null;
             $speech = null;
+            $modelResult = null;
 
             try {
                 $state = $this->transition(
@@ -188,6 +228,7 @@ final readonly class ConversationTurnService
                             interactionId: $turnId,
                             prototypeUtterance: $utterance,
                         )),
+                    attemptLimit: $dialogueState === null ? null : 1,
                 );
 
                 if (! $speechResult instanceof SpeechToTextResult) {
@@ -246,7 +287,9 @@ final readonly class ConversationTurnService
                                 'ui_locale',
                             ),
                             lessonDrill: $lessonDrill,
+                            dialogue: $dialogueContext,
                         ),
+                    attemptLimit: $dialogueState === null ? null : 1,
                 );
 
                 if (! $modelResult instanceof ConversationModelResult) {
@@ -283,36 +326,63 @@ final readonly class ConversationTurnService
                         ),
                     ],
                 );
-                $textToSpeechResult = $this->provider(
-                    organizationId: $context->organizationId,
-                    membershipId: $membershipId,
-                    sessionId: $sessionId,
-                    turnId: $turnId,
-                    state: $state,
-                    stage: 'tts',
-                    operation: fn (): TextToSpeechResult => $this
-                        ->synthesizeSpeech(
+                $textOnlyExplanation = $dialogueState !== null && ($modelResult->safetyState !== 'ok'
+                    || (($dialogueContext['flow'] ?? '') === 'free_speech'
+                        && ($dialogueContext['action'] ?? '') === 'accept_explanation'));
+                try {
+                    $textToSpeechResult = $textOnlyExplanation
+                        ? new TextToSpeechResult(false, 'text-only-explanation', new ProviderUsage('project-text-only', 'text-only-v1', 0, 0, 0, 0, dispatchKind: 'local_execution'))
+                        : $this->provider(
+                            organizationId: $context->organizationId,
+                            membershipId: $membershipId,
+                            sessionId: $sessionId,
                             turnId: $turnId,
-                            text: $assistantReply,
-                            purpose: GuidanceTtsPolicy::PURPOSE_MODEL_EN,
-                            uiLocale: $this->string($session, 'ui_locale'),
-                            grammarDrill: $grammarDrill,
-                        ),
-                );
+                            state: $state,
+                            stage: 'tts',
+                            operation: fn (): TextToSpeechResult => $this
+                                ->synthesizeSpeech(
+                                    turnId: $turnId,
+                                    text: $assistantReply,
+                                    purpose: $modelResult->replyLocale === 'en-IN' ? GuidanceTtsPolicy::PURPOSE_MODEL_EN : GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1,
+                                    uiLocale: $modelResult->replyLocale,
+                                    grammarDrill: $grammarDrill,
+                                ),
+                            attemptLimit: $dialogueState === null ? null : 1,
+                        );
+                } catch (ConversationProviderException $exception) {
+                    if ($dialogueState === null) {
+                        throw $exception;
+                    }
+                    $textToSpeechResult = new TextToSpeechResult(false, 'text-first', new ProviderUsage('project-text-first', 'text-first-v1', 0, 0, 0, 0));
+                }
 
                 if (! $textToSpeechResult instanceof TextToSpeechResult) {
                     throw new ConversationOperationRejected;
                 }
 
                 $guidanceText = $priorityCorrection?->explanationL1;
-                $modelArtifact = $this->speechArtifacts->persist(
+                $guidanceSpeech = null;
+                if ($dialogueState !== null && is_string($guidanceText) && $guidanceText !== '') {
+                    try {
+                        $candidate = $this->provider(
+                            organizationId: $context->organizationId, membershipId: $membershipId,
+                            sessionId: $sessionId, turnId: $turnId, state: $state, stage: 'tts',
+                            operation: fn (): TextToSpeechResult => $this->synthesizeSpeech($turnId, $guidanceText, GuidanceTtsPolicy::PURPOSE_GUIDANCE_L1, $this->string($session, 'ui_locale')),
+                            attemptOffset: 1, attemptLimit: 1,
+                        );
+                        $guidanceSpeech = $candidate instanceof TextToSpeechResult ? $candidate : null;
+                    } catch (ConversationProviderException) {
+                        // The failed dispatch is metered; validated correction text still works.
+                    }
+                }
+                $modelArtifact = $dialogueState !== null ? null : $this->speechArtifacts->persist(
                     $context->organizationId,
                     $membershipId,
                     $turnId,
                     ConversationSpeechArtifactStore::KIND_MODEL,
                     $textToSpeechResult,
                 );
-                $guidancePending = is_string($guidanceText) && trim($guidanceText) !== '';
+                $guidancePending = $dialogueState === null && is_string($guidanceText) && trim($guidanceText) !== '';
                 if ($guidancePending) {
                     $this->deferGuidance(
                         organizationId: $context->organizationId,
@@ -326,7 +396,7 @@ final readonly class ConversationTurnService
 
                 $speech = $this->speechPayloadBuilder->build(
                     modelSpeech: $textToSpeechResult,
-                    guidanceSpeech: null,
+                    guidanceSpeech: $guidanceSpeech,
                     modelText: $assistantReply,
                     guidanceText: $guidanceText,
                     modelAudioStreamPath: $modelArtifact['stream_path'] ?? null,
@@ -336,7 +406,7 @@ final readonly class ConversationTurnService
                             ConversationSpeechArtifactStore::KIND_GUIDANCE,
                         )
                         : null,
-                    guidanceSpeechStatus: $guidancePending ? 'deferred' : 'unavailable',
+                    guidanceSpeechStatus: $guidanceSpeech?->playbackAvailable === true ? 'ready' : ($guidancePending ? 'deferred' : 'unavailable'),
                 );
                 $state = $this->transition(
                     organizationId: $context->organizationId,
@@ -395,7 +465,7 @@ final readonly class ConversationTurnService
                 completedAt: $completedAt,
             );
 
-            return $this->result(
+            $result = $this->result(
                 organizationId: $context->organizationId,
                 membershipId: $membershipId,
                 sessionId: $sessionId,
@@ -410,7 +480,16 @@ final readonly class ConversationTurnService
                 speech: $speech,
                 replayed: false,
             );
-        }, 3);
+
+            if ($dialogueState !== null) {
+                $result = $this->dialogue->complete($dialogueState, $dialogueContext, $modelResult, $result);
+                if ($reservationId !== null) {
+                    $this->reservations->complete($context->organizationId, $membershipId, $sessionId, $reservationId, $turnId);
+                }
+            }
+
+            return $result;
+        }, $reservationId === null ? 3 : 1);
     }
 
     private function session(
@@ -459,7 +538,7 @@ final readonly class ConversationTurnService
             ->where('session.learner_membership_id', $membershipId)
             ->where('session.id', $sessionId)
             ->where('session.status', 'active')
-            ->lockForUpdate()
+            ->lock(DB::getDriverName() === 'pgsql' ? 'for update of session' : true)
             ->first([
                 'session.id',
                 'session.coaching_mode',
@@ -605,10 +684,12 @@ final readonly class ConversationTurnService
         string $state,
         string $stage,
         callable $operation,
+        int $attemptOffset = 0,
+        ?int $attemptLimit = null,
     ): ProviderResult {
         $maximumAttempts = max(
             1,
-            (int) config('conversation.maximum_provider_attempts', 2),
+            $attemptLimit ?? (int) config('conversation.maximum_provider_attempts', 2),
         );
 
         for ($attempt = 1; $attempt <= $maximumAttempts; $attempt++) {
@@ -621,7 +702,7 @@ final readonly class ConversationTurnService
                     sessionId: $sessionId,
                     turnId: $turnId,
                     stage: $stage,
-                    attempt: $attempt,
+                    attempt: $attempt + $attemptOffset,
                     usage: $result->usage(),
                     resultStatus: 'succeeded',
                     safeFailureCode: null,
@@ -645,7 +726,7 @@ final readonly class ConversationTurnService
                     sessionId: $sessionId,
                     turnId: $turnId,
                     stage: $stage,
-                    attempt: $attempt,
+                    attempt: $attempt + $attemptOffset,
                     usage: $usage,
                     resultStatus: 'failed',
                     safeFailureCode: $exception->safeCode,
@@ -775,6 +856,8 @@ final readonly class ConversationTurnService
             'latency_ms' => $usage->latencyMilliseconds,
             'input_units' => $usage->inputUnits,
             'output_units' => $usage->outputUnits,
+            'input_unit_kind' => $usage->inputUnitKind,
+            'output_unit_kind' => $usage->outputUnitKind,
             'estimated_cost_microunits' => $usage
                 ->estimatedCostMicrounits,
             'result_status' => $resultStatus,

@@ -1,3 +1,5 @@
+import type { LearnerProviderUsage } from '@global-english/contracts'
+import { ProviderUsageSummary } from '../subscriptions/ProviderUsageSummary'
 import type {
   MessageKey,
   ResolutionPolicy,
@@ -39,6 +41,7 @@ export function OperatorEntitlementAdministration({
   const [entitlements, setEntitlements] = useState<
     readonly OperatorLearnerEntitlement[]
   >([])
+  const [providerUsage, setProviderUsage] = useState<LearnerProviderUsage | undefined>()
   const [error, setError] = useState(false)
 
   const applyWorkspace = useCallback(
@@ -237,6 +240,7 @@ export function OperatorEntitlementAdministration({
             .then(async () => {
               const listed = await api.learner(learnerId)
               setEntitlements(listed.entitlements)
+          setProviderUsage(listed.provider_usage)
             })
             .catch(() => setError(true))
         }}
@@ -267,6 +271,7 @@ export function OperatorEntitlementAdministration({
         </button>
       </form>
       <ul>
+        <ProviderUsageSummary usage={providerUsage} locale={locale} localizationPolicy={localizationPolicy} />
         {entitlements.map((row) => (
           <li key={row.id}>
             {row.plan_code} {row.status} {String(row.live_ai_seconds_used)}s
@@ -278,6 +283,7 @@ export function OperatorEntitlementAdministration({
                   .then(async () => {
                     const listed = await api.learner(learnerId)
                     setEntitlements(listed.entitlements)
+          setProviderUsage(listed.provider_usage)
                   })
               }}
             >
@@ -293,6 +299,7 @@ export function OperatorEntitlementAdministration({
                   .then(async () => {
                     const listed = await api.learner(learnerId)
                     setEntitlements(listed.entitlements)
+          setProviderUsage(listed.provider_usage)
                   })
               }}
             >
@@ -306,6 +313,7 @@ export function OperatorEntitlementAdministration({
                 void api.revoke(row.id, createCommandId()).then(async () => {
                   const listed = await api.learner(learnerId)
                   setEntitlements(listed.entitlements)
+          setProviderUsage(listed.provider_usage)
                 })
               }}
             >

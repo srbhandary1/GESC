@@ -11,6 +11,8 @@ use App\Conversation\ConversationTurnService;
 use App\Conversation\Exceptions\ConversationIdempotencyConflict;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\GuidanceSpeechService;
+use App\Conversation\Metering\ConversationPlaybackMeter;
+use App\Conversation\Metering\PlaybackClientUpgradeRequired;
 use App\Conversation\Observability\SpeechLatencyTelemetryService;
 use App\Conversation\Observability\SpeechTelemetryIdempotencyConflict;
 use App\Conversation\Providers\ConversationProviderException;
@@ -21,6 +23,7 @@ use App\Conversation\Voice\VoiceOperationRejected;
 use App\Http\Requests\Conversation\AdvanceConversationSessionStageRequest;
 use App\Http\Requests\Conversation\ConversationTurnEventsRequest;
 use App\Http\Requests\Conversation\CreateConversationTurnRequest;
+use App\Http\Requests\Conversation\ExitConversationSessionRequest;
 use App\Http\Requests\Conversation\IssueRealtimeSpeechTicketRequest;
 use App\Http\Requests\Conversation\RecordSpeechLatencyTelemetryRequest;
 use App\Http\Requests\Conversation\StartConversationSessionRequest;
@@ -34,6 +37,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class ConversationController extends Controller
 {
     public function __construct(
+        private readonly ConversationPlaybackMeter $playbackMeter,
         private readonly ConversationSessionService $sessions,
         private readonly ConversationTurnService $turns,
         private readonly ConversationEventService $events,
@@ -47,6 +51,7 @@ final class ConversationController extends Controller
     public function start(
         StartConversationSessionRequest $request,
     ): JsonResponse {
+        $this->requirePlaybackClient($request);
         $principal = AuthenticatedPrincipal::fromRequest($request);
 
         try {
@@ -56,6 +61,9 @@ final class ConversationController extends Controller
                 scenarioKey: (string) $request->validated('scenario_key'),
                 coachingMode: (string) $request->validated('coaching_mode'),
                 uiLocale: (string) $request->validated('ui_locale'),
+                interactionFlow: $request->validated('interaction_flow'),
+                recoveryNoticeVersion: $request->validated('recovery_notice_version'),
+                recoveryNoticeAccepted: (bool) $request->validated('recovery_notice_accepted', false),
                 idempotencyKey: (string) $request->validated(
                     'idempotency_key',
                 ),
@@ -111,6 +119,7 @@ final class ConversationController extends Controller
         CreateConversationTurnRequest $request,
         string $session,
     ): JsonResponse {
+        $this->requirePlaybackClient($request);
         $principal = AuthenticatedPrincipal::fromRequest($request);
 
         try {
@@ -120,16 +129,23 @@ final class ConversationController extends Controller
                 prototypeUtterance: (string) $request->validated(
                     'prototype_utterance',
                 ),
+                dialogueInput: $request->safe()->except(['prototype_utterance', 'idempotency_key']),
                 idempotencyKey: (string) $request->validated(
                     'idempotency_key',
                 ),
             );
+        } catch (VoiceOperationRejected) {
+            abort(Response::HTTP_FORBIDDEN);
         } catch (ConversationIdempotencyConflict) {
             abort(Response::HTTP_CONFLICT);
         } catch (ConversationOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         } catch (ConversationProviderException) {
             abort(Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        if (is_array($result['speech'] ?? null)) {
+            $result['speech'] = $this->playbackMeter->decorate($principal->user, $result['speech']);
         }
 
         return response()->json(
@@ -140,10 +156,38 @@ final class ConversationController extends Controller
         )->header('Cache-Control', 'private, no-store');
     }
 
+    public function show(Request $request, string $session): JsonResponse
+    {
+        $this->requirePlaybackClient($request);
+        try {
+            $result = $this->sessions->show(AuthenticatedPrincipal::fromRequest($request)->user, $session);
+        } catch (ConversationOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        if (is_array($result['latest_turn']['speech'] ?? null)) {
+            $result['latest_turn']['speech'] = $this->playbackMeter->decorate(AuthenticatedPrincipal::fromRequest($request)->user, $result['latest_turn']['speech']);
+        }
+
+        return response()->json($result)->header('Cache-Control', 'private, no-store');
+    }
+
+    public function exit(ExitConversationSessionRequest $request, string $session): JsonResponse
+    {
+        try {
+            $result = $this->sessions->exit(AuthenticatedPrincipal::fromRequest($request)->user, $session, (string) $request->validated('idempotency_key'));
+        } catch (ConversationOperationRejected) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json($result)->header('Cache-Control', 'private, no-store');
+    }
+
     public function speak(
         SynthesizeConversationSpeechRequest $request,
         string $session,
     ): JsonResponse {
+        $this->requirePlaybackClient($request);
         $principal = AuthenticatedPrincipal::fromRequest($request);
 
         try {
@@ -153,13 +197,15 @@ final class ConversationController extends Controller
                 text: (string) $request->validated('text'),
                 purpose: (string) $request->validated('purpose'),
             );
+        } catch (VoiceOperationRejected) {
+            abort(Response::HTTP_FORBIDDEN);
         } catch (ConversationOperationRejected) {
             abort(Response::HTTP_NOT_FOUND);
         } catch (ConversationProviderException) {
             abort(Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
-        return response()->json($result)
+        return response()->json($this->playbackMeter->decorate($principal->user, $result))
             ->header('Cache-Control', 'private, no-store');
     }
 
@@ -308,6 +354,13 @@ final class ConversationController extends Controller
 
         return response()->json($result, Response::HTTP_ACCEPTED)
             ->header('Cache-Control', 'private, no-store');
+    }
+
+    private function requirePlaybackClient(Request $request): void
+    {
+        if (config('conversation.playback.require_client_support') && $request->header('X-Conversation-Playback') !== '1') {
+            throw new PlaybackClientUpgradeRequired;
+        }
     }
 
     private function nullableInteger(mixed $value): ?int

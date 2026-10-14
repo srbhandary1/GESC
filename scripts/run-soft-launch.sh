@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Match Node's canonical module path when launched through a release symlink.
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 ENVIRONMENT_LOADER="${ROOT_DIR}/scripts/lib/soft-launch-environment.sh"
 PUBLIC_HTTP_CONFIGURATOR="${ROOT_DIR}/scripts/lib/soft-launch-public-http.sh"
 PHP_BIN="${GE_SOFT_LAUNCH_PHP:-${ROOT_DIR}/tmp/toolchain/php/php}"
@@ -96,7 +97,15 @@ stop_pidfile() {
   local pid_file="${PID_DIR}/${name}.pid"
   if pid_alive "${pid_file}"; then
     kill "$(cat "${pid_file}")" 2>/dev/null || true
-    sleep 0.5
+    if [[ "${name}" == "api" ]]; then
+      # The API wrapper gracefully stops FPM children before removing its files.
+      for attempt in {1..24}; do
+        pid_alive "${pid_file}" || break
+        sleep 0.5
+      done
+    else
+      sleep 0.5
+    fi
     if pid_alive "${pid_file}"; then
       kill -9 "$(cat "${pid_file}")" 2>/dev/null || true
     fi
@@ -212,7 +221,10 @@ PY
 }
 
 api_health_ok() {
-  curl --silent --fail --max-time 2 "http://127.0.0.1:${1}/api/v1/health/live" >/dev/null 2>&1
+  curl --silent --fail --max-time 2 \
+    --header "Host: ${GE_SOFT_LAUNCH_STABLE_HOST:-127.0.0.1}" \
+    "http://127.0.0.1:${1}/api/v1/health/live" 2>/dev/null \
+    | python3 -c 'import json,sys; body=json.load(sys.stdin); sys.exit(0 if body.get("status") == "ok" and body.get("service") == "global-english-api" else 1)' 2>/dev/null
 }
 
 api_listener_pid() {
@@ -224,6 +236,7 @@ api_listener_pid() {
 
 record_api_pid() {
   local pid="$1"
+  pid_alive "${PID_DIR}/api.pid" && return
   if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
     printf '%s\n' "${pid}" >"${PID_DIR}/api.pid"
   fi
@@ -294,6 +307,11 @@ start_api() {
     return
   fi
   stop_pidfile api
+  if [[ "${GE_SOFT_LAUNCH_API_RUNTIME:-development}" == "fpm" ]]; then
+    nohup bash "${ROOT_DIR}/scripts/run-fpm-api.sh" >"${LOG_DIR}/api.log" 2>&1 &
+    echo $! >"${PID_DIR}/api.pid"
+    return
+  fi
   (
     cd "${API_PUBLIC}"
     source_soft_launch_env
@@ -506,8 +524,7 @@ configure_stable_host() {
 wait_health() {
   local deadline=$(($(date +%s) + 60))
   while (( $(date +%s) < deadline )); do
-    if curl --silent --show-error --fail --max-time 2 \
-      "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null 2>&1; then
+    if api_health_ok "${PROXY_PORT}"; then
       return 0
     fi
     sleep 0.5
@@ -584,8 +601,7 @@ supervise() {
       die "Soft-launch supervisor detected stopped process: tunnel"
     fi
 
-    if curl --silent --fail --max-time 2 \
-      "http://127.0.0.1:${PROXY_PORT}/api/v1/health/live" >/dev/null 2>&1; then
+    if api_health_ok "${PROXY_PORT}"; then
       health_failures=0
     else
       health_failures=$((health_failures + 1))

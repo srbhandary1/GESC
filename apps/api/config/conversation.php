@@ -3,6 +3,17 @@
 declare(strict_types=1);
 
 return [
+    'playback' => [
+        'require_client_support' => env('CONVERSATION_REQUIRE_MEASURED_PLAYBACK_CLIENT', env('CONVERSATION_PROVIDER_DRIVER') === 'azure-openai-dev'),
+    ],
+    'capacity' => [
+        'enabled' => env('CONVERSATION_CAPACITY_ENABLED', env('CONVERSATION_PROVIDER_DRIVER') === 'azure-openai-dev'),
+        'store' => env('CONVERSATION_CAPACITY_STORE', 'redis'),
+        'model_rpm' => (int) env('CONVERSATION_CAPACITY_MODEL_RPM', 3),
+        'model_tpm' => (int) env('CONVERSATION_CAPACITY_MODEL_TPM', 3000),
+        'reserved_tokens_per_turn' => (int) env('CONVERSATION_CAPACITY_RESERVED_TOKENS_PER_TURN', 2000),
+        'learner_rpm' => (int) env('CONVERSATION_CAPACITY_LEARNER_RPM', 6),
+    ],
     'provider_driver' => env(
         'CONVERSATION_PROVIDER_DRIVER',
         'disabled',
@@ -412,9 +423,10 @@ return [
             ),
         ],
         'pricing' => [
+            // Central India neural retail estimate, 2026-09-25; see CAPACITY_USAGE_04_OPERATIONS.md.
             'inr_per_tts_character' => (float) env(
                 'CONVERSATION_GUIDANCE_TTS_INR_PER_CHARACTER',
-                0.0003814041,
+                0.0014331938,
             ),
         ],
     ],
@@ -495,13 +507,15 @@ return [
             ),
         ],
         'pricing' => [
+            // Conservative uncached regional gpt-4.1-mini INR estimate, rounded up.
+            // Account-specific configuration overrides this; never an invoice amount.
             'microunits_per_input_token' => (int) env(
                 'CONVERSATION_AZURE_OPENAI_MICROUNITS_PER_INPUT_TOKEN',
-                2,
+                42,
             ),
             'microunits_per_output_token' => (int) env(
                 'CONVERSATION_AZURE_OPENAI_MICROUNITS_PER_OUTPUT_TOKEN',
-                8,
+                169,
             ),
         ],
     ],

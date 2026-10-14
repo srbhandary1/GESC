@@ -16,6 +16,7 @@ import type { AvatarPlaybackState } from '../tutor/avatar/types'
 import type { ConversationJourneyApi } from './ConversationJourneyApi'
 import { playBase64Audio } from './playBase64Audio'
 import { playPrivateSpeechStream } from './playPrivateSpeechStream'
+import { meterSpeechPlayback } from './meterSpeechPlayback'
 import { spokenGrammarNotation } from './spokenGrammarNotation'
 
 const MAXIMUM_SPEECH_CHARACTERS = 400
@@ -167,21 +168,19 @@ export async function playConversationSpeechResult(options: {
     options.onPlaybackChange?.({ timeline, timeMs: 0 })
   }
 
+  const meter = await meterSpeechPlayback(
+    purpose === 'guidance_l1' ? speech.guidance_playback_grant : speech.model_playback_grant,
+    options.signal,
+  )
   try {
-    const playbackOptions =
-      options.onPlaybackChange === undefined &&
-      options.onPlaybackStarted === undefined &&
-      options.signal === undefined
-        ? undefined
-        : {
-            signal: options.signal,
-            onStarted: options.onPlaybackStarted,
-            onTimeUpdate: (timeMs: number) => {
-              if (timeline !== null) {
-                options.onPlaybackChange?.({ timeline, timeMs })
-              }
-            },
-          }
+    const playbackOptions = {
+      signal: meter.signal,
+      onStarted: options.onPlaybackStarted,
+      onTimeUpdate: (timeMs: number) => {
+        meter.update(timeMs)
+        if (timeline !== null) options.onPlaybackChange?.({ timeline, timeMs })
+      },
+    }
 
     if (typeof streamPath === 'string' && streamPath !== '') {
       await playPrivateSpeechStream(
@@ -189,8 +188,6 @@ export async function playConversationSpeechResult(options: {
         mimeType ?? 'audio/wav',
         playbackOptions,
       )
-    } else if (playbackOptions === undefined) {
-      await playBase64Audio(audio as string, mimeType ?? 'audio/wav')
     } else {
       await playBase64Audio(
         audio as string,
@@ -199,6 +196,7 @@ export async function playConversationSpeechResult(options: {
       )
     }
   } finally {
+    await meter.finish()
     options.onPlaybackChange?.(null)
   }
 

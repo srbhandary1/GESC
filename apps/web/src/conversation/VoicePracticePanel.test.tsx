@@ -11,9 +11,11 @@ import { VoicePracticePanel } from './VoicePracticePanel'
 import * as audioToPcmWav from './audioToPcmWav'
 import { encodeMonoPcmWav } from '../shared/pcmWav'
 import { ANDROID_BACK_REQUEST_EVENT } from '../learner/LearnerNavigationHistory'
+import * as nativeMicrophonePermission from '../auth/nativeMicrophonePermissionPlugin'
 
 afterEach(() => {
   cleanup()
+  localStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -83,12 +85,14 @@ describe('secure voice practice consent boundary', () => {
       }),
     }
     const user = userEvent.setup()
+    const onProcessingConsentWithdrawn = vi.fn()
 
     render(
       <VoicePracticePanel
         api={api}
         createClientId={() => crypto.randomUUID()}
         locale="en-IN"
+        onProcessingConsentWithdrawn={onProcessingConsentWithdrawn}
         onTranscriptSelected={vi.fn()}
         sessionId="01J00000000000000000000001"
         text={(key) => key}
@@ -138,24 +142,8 @@ describe('secure voice practice consent boundary', () => {
       )
     })
 
-    await user.click(
-      screen.getByText('conversation.voice.manage_consent'),
-    )
-    await user.click(
-      screen.getByRole('button', {
-        name: 'conversation.voice.withdraw_provider',
-      }),
-    )
-    expect(api.withdrawVoiceConsent).toHaveBeenCalledWith(
-      'conversation_provider_processing',
-      { requested_locale: 'en-IN' },
-      expect.any(String),
-    )
-    expect(
-      await screen.findByRole('button', {
-        name: 'conversation.voice.consent_provider',
-      }),
-    ).toBeVisible()
+    expect(screen.queryByText('conversation.voice.manage_consent')).not.toBeInTheDocument()
+    expect(api.withdrawVoiceConsent).not.toHaveBeenCalled()
   })
 
   it('opens Type instead when the learner continues without recording', async () => {
@@ -228,7 +216,7 @@ describe('secure voice practice consent boundary', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText('ಧ್ವನಿ ಸಮ್ಮತಿಯನ್ನು ನಿರ್ವಹಿಸಿ'),
+        screen.getByRole('heading', { name: text('learner.recording.region') }),
       ).toBeInTheDocument(),
     )
   })
@@ -396,7 +384,8 @@ describe('secure voice practice consent boundary', () => {
     expect(api.uploadVoiceRecording).not.toHaveBeenCalled()
   })
 
-  it('accepts a high-confidence clip and hands the transcript to the journey', async () => {
+  it.each([[false, 0.92], [true, 0.92], [false, null], [true, null]] as const)('records with matching instructions and reviews unknown confidence (Android: %s, confidence: %s)', async (nativeAndroid, confidence) => {
+    vi.spyOn(nativeMicrophonePermission, 'isNativeAndroid').mockReturnValue(nativeAndroid)
     vi.spyOn(audioToPcmWav, 'audioToPcmWav').mockResolvedValue(
       new Blob(['RIFF'.padEnd(128, 'x')], { type: 'audio/wav' }),
     )
@@ -415,7 +404,10 @@ describe('secure voice practice consent boundary', () => {
       source_deleted: true,
       status: 'awaiting_learner_confirmation',
       transcript: 'I practise English after work.',
-      transcript_confidence: 0.92,
+      transcript_original: 'I practise English after work.',
+      transcript_locale: 'en-IN',
+      transcript_source: 'original_speech',
+      transcript_confidence: confidence,
       transcript_review_url:
         '/api/v1/voice-recordings/01JRECORDING000000000000001/transcript-review',
     } as const satisfies SecureVoiceRecording
@@ -455,40 +447,69 @@ describe('secure voice practice consent boundary', () => {
         createClientId={() => 'voice-command'}
         locale="en-IN"
         onTranscriptSelected={onTranscriptSelected}
+        includeTranscriptProvenance={nativeAndroid || confidence === null}
+        requireTranscriptConfirmation
         recorder={recorder}
         sessionId="01J00000000000000000000001"
         text={(key) => key}
       />,
     )
 
-    const hold = await screen.findByRole('button', {
-      name: 'learner.recording.hold',
+    const record = await screen.findByRole('button', {
+      name: nativeAndroid ? 'learner.recording.tap_speak' : 'learner.recording.hold',
     })
-    await user.pointer({ keys: '[MouseLeft>]', target: hold })
-    await screen.findByRole('button', {
-      name: 'learner.recording.release',
-    })
-    await user.pointer({ keys: '[/MouseLeft]', target: hold })
-    const send = screen.getByRole('button', {
-      name: 'learner.recording.release',
-    })
-    await user.pointer({ keys: '[MouseLeft>]', target: send })
-    await user.pointer({ keys: '[/MouseLeft]', target: send })
+    expect(screen.getByText(
+      nativeAndroid ? 'conversation.voice.hold_help' : 'conversation.voice.permission',
+    )).toBeVisible()
+    expect(screen.queryByText(
+      nativeAndroid ? 'conversation.voice.permission' : 'conversation.voice.hold_help',
+    )).not.toBeInTheDocument()
+    if (nativeAndroid) {
+      expect(screen.queryByText('conversation.voice.title')).not.toBeInTheDocument()
+      await user.click(record)
+      const send = await screen.findByRole('button', { name: 'learner.recording.tap_send' })
+      expect(session.stop).not.toHaveBeenCalled()
+      expect(api.uploadVoiceRecording).not.toHaveBeenCalled()
+      await user.click(send)
+    } else {
+      record.focus()
+      await user.keyboard('[Space>]')
+      await screen.findByRole('button', { name: 'learner.recording.release' })
+      expect(session.stop).not.toHaveBeenCalled()
+      await user.keyboard('[/Space]')
+    }
 
+    if (confidence === null) {
+      const confirm = await screen.findByRole('button', { name: 'conversation.voice.send' })
+      expect(onTranscriptSelected).not.toHaveBeenCalled()
+      expect(api.reviewVoiceTranscript).not.toHaveBeenCalled()
+      expect(screen.queryByText('conversation.voice.confidence')).not.toBeInTheDocument()
+      expect(screen.queryByText('0%')).not.toBeInTheDocument()
+      expect(screen.getByText(recording.transcript)).toHaveAttribute('lang', 'en-IN')
+      await user.click(confirm)
+    }
     await waitFor(() => {
-      expect(onTranscriptSelected).toHaveBeenCalledWith(
-        'I practise English after work.',
-      )
+      if (nativeAndroid || confidence === null) {
+        expect(onTranscriptSelected).toHaveBeenCalledWith('I practise English after work.', {
+          recordingId: recording.id, locale: 'en-IN', source: 'original_speech',
+        })
+      } else {
+        expect(onTranscriptSelected).toHaveBeenCalledWith('I practise English after work.')
+      }
     })
+    expect(session.stop).toHaveBeenCalledOnce()
+    expect(api.uploadVoiceRecording).toHaveBeenCalledOnce()
     expect(api.reviewVoiceTranscript).toHaveBeenCalledWith(
       recording.id,
       { action: 'accept', corrected_transcript: null },
       'voice-command',
-      expect.any(AbortSignal),
+      confidence === null ? undefined : expect.any(AbortSignal),
     )
-    expect(
-      screen.getByRole('button', { name: 'learner.recording.processing' }),
-    ).toBeDisabled()
+    if (confidence !== null) {
+      expect(screen.getByRole('button', { name: 'learner.recording.processing' })).toBeDisabled()
+    } else {
+      expect(screen.getByRole('status')).toHaveTextContent('conversation.loop.preparing')
+    }
     expect(
       screen.queryByRole('button', { name: 'conversation.voice.use_transcript' }),
     ).not.toBeInTheDocument()

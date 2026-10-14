@@ -175,6 +175,35 @@ fi
 grep -Fq 'the rotating Quick Tunnel is disabled' "$soft_launch_runner"
 grep -Fq 'WAN 80 -> this host:%s; WAN 443 -> this host:%s' "$soft_launch_runner"
 
+# Production starts through a `current` symlink. Node canonicalizes the module
+# URL, so the runner must pass its physical path to the fingerprint CLI. A
+# validated artifact must survive that startup without invoking the builder.
+fixture_release="$test_root/releases/prebuilt"
+mkdir -p "$fixture_release/scripts" "$fixture_release/apps/web/dist"
+cp "$soft_launch_runner" "$fixture_release/scripts/run-soft-launch.sh"
+cp "$root_dir/apps/web/buildFingerprint.ts" "$fixture_release/apps/web/buildFingerprint.ts"
+printf '%s\n' '{"type":"module"}' > "$fixture_release/package.json"
+printf '%s\n' '<html>validated prebuilt artifact</html>' > "$test_root/expected-index.html"
+cp "$test_root/expected-index.html" "$fixture_release/apps/web/dist/index.html"
+fixture_node="$root_dir/tmp/toolchain/node/bin/node"
+if [ ! -x "$fixture_node" ]; then
+  fixture_node="$(command -v node)"
+fi
+fixture_fingerprint="$("$fixture_node" "$fixture_release/apps/web/buildFingerprint.ts")"
+test "${#fixture_fingerprint}" -eq 64
+printf '%s\n' "$fixture_fingerprint" > "$fixture_release/apps/web/dist/.soft-launch-web-build"
+ln -s "$fixture_release" "$test_root/current"
+fixture_refresh_output="$(
+  GE_SOFT_LAUNCH_RUNTIME="$test_root/prebuilt-runtime" \
+  GE_SOFT_LAUNCH_NODE="$fixture_node" \
+  GE_SOFT_LAUNCH_PHP=/bin/false \
+  GE_SOFT_LAUNCH_PNPM=/bin/false \
+    bash "$test_root/current/scripts/run-soft-launch.sh" refresh-web
+)"
+printf '%s\n' "$fixture_refresh_output" | grep -Fxq "web build: $fixture_fingerprint"
+test "$(cat "$fixture_release/apps/web/dist/.soft-launch-web-build")" = "$fixture_fingerprint"
+cmp "$test_root/expected-index.html" "$fixture_release/apps/web/dist/index.html"
+
 readiness_check="$root_dir/scripts/check-soft-launch-readiness.sh"
 grep -Fq 'Passport signing key pair configured through the runtime environment' \
   "$readiness_check"

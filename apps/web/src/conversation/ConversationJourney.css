@@ -5,6 +5,109 @@
   max-width: none;
 }
 
+.conversation-interactive__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ge-space-3);
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.conversation-interactive__consent input {
+  flex: 0 0 auto;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.conversation-interactive__exchange {
+  display: grid;
+  min-width: 0;
+  gap: var(--ge-space-3);
+  overflow-wrap: anywhere;
+}
+
+.conversation-interactive .conversation-journey__form {
+  position: static;
+}
+
+/* Android overlays the keyboard: retain the shared IME-aware bottom offset. */
+.ge-application-frame--native-android .conversation-interactive[data-mode="free_speech"] .conversation-journey__form {
+  position: sticky;
+}
+
+.ge-application-frame .speak-room .speak-room__modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 8px;
+  border-radius: var(--ge-radius-lg);
+}
+
+.ge-application-frame .speak-room .speak-room__modes button {
+  min-width: 0;
+  padding-inline: 8px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.ge-application-frame--jezweb .speak-room .speak-room__modes button:not([aria-selected='true']) {
+  border: 1px solid var(--ge-color-border, #e2e8e5);
+  background: color-mix(in srgb, var(--ge-color-action, #006b3f) 5%, var(--ge-color-surface, #ffffff));
+}
+
+@media (max-width: 30rem) {
+  .ge-application-frame .speak-room .speak-room__modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ge-application-frame .speak-room .speak-room__modes button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  /* Keep enlarged text readable: nested rem padding must not consume the
+     entire phone width, and sticky chrome must not cover Exit or the form. */
+  .ge-application-frame .ge-application-frame__main:has(.speak-room),
+  .ge-application-frame .shell-content:has(.speak-room) {
+    padding-inline: 8px;
+  }
+
+  .ge-application-frame:has(.conversation-interactive) .ge-application-frame__header {
+    position: static;
+  }
+
+  .ge-application-frame .speak-room .conversation-journey__heading,
+  .ge-application-frame .speak-room .conversation-journey__notice,
+  .ge-application-frame .speak-room .conversation-journey__start,
+  .ge-application-frame .speak-room .conversation-journey__result,
+  .ge-application-frame .speak-room .conversation-journey__correction,
+  .ge-application-frame .speak-room .conversation-journey__voice {
+    padding: 12px;
+  }
+
+  .conversation-interactive .conversation-journey__heading {
+    justify-items: stretch;
+    text-align: start;
+  }
+
+  .conversation-interactive .tutor-presence {
+    justify-self: center;
+    max-inline-size: 72px;
+  }
+
+  .conversation-interactive .conversation-journey__bubble {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    padding: 12px;
+  }
+
+  .conversation-interactive .conversation-journey__controls > button,
+  .conversation-interactive .conversation-journey__heading > button {
+    inline-size: 100%;
+    padding-inline: 12px;
+  }
+}
+
 .conversation-journey__form {
   position: sticky;
   z-index: 2;
@@ -490,3 +593,15 @@
     transform: none;
   }
 }
+
+.conversation-interactive__reading-aid {
+  margin-block-start: 0.75rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--ge-color-border);
+  color: inherit;
+}
+.conversation-interactive__reading-aid p { margin: 0; }
+
+.conversation-interactive__options { position: relative; margin-inline-start: auto; }
+.conversation-interactive__options summary { cursor: pointer; padding: .6rem; min-height: 44px; }
+.conversation-interactive__options[open] { border: 1px solid var(--ge-border, #888); border-radius: .5rem; padding: .35rem; }

@@ -24,6 +24,8 @@ export interface AuthenticationAdapter {
   current(): Promise<AuthenticationSnapshot>
 
   logout(): Promise<void>
+
+  selectMembership?(membershipId: string): Promise<AuthenticationSnapshot>
 }
 
 export interface PasswordAuthenticationStatus {
@@ -48,14 +50,22 @@ export interface PasswordFormAuthentication {
 
   federatedProviders(): Promise<FederatedProviderAvailability>
 
-  beginFederatedSignIn(provider: FederatedProvider): Promise<void>
+  beginFederatedSignIn(
+    provider: FederatedProvider,
+    options?: {
+      readonly intent?: 'sign_in' | 'register'
+      readonly planCode?: string
+      readonly planId?: string
+    },
+  ): Promise<void>
 }
 
-export type FederatedProvider = 'google' | 'facebook'
+export type FederatedProvider = 'google' | 'facebook' | 'instagram'
 
 export interface FederatedProviderAvailability {
   readonly google: boolean
   readonly facebook: boolean
+  readonly instagram?: boolean
 }
 
 export interface FederatedAccountAuthentication {
@@ -180,16 +190,22 @@ export function parseFederatedProviderAvailability(
   }
 
   const candidate = value as Record<string, unknown>
+  const keys = Object.keys(candidate)
 
   if (
-    Object.keys(candidate).length !== 2 ||
+    (keys.length !== 2 && keys.length !== 3) ||
     typeof candidate.google !== 'boolean' ||
-    typeof candidate.facebook !== 'boolean'
+    typeof candidate.facebook !== 'boolean' ||
+    (keys.length === 3 && typeof candidate.instagram !== 'boolean')
   ) {
     return null
   }
 
-  return { google: candidate.google, facebook: candidate.facebook }
+  return {
+    google: candidate.google,
+    facebook: candidate.facebook,
+    instagram: candidate.instagram === true,
+  }
 }
 
 export class AuthenticationUnavailableError extends Error {

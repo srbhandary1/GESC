@@ -44,6 +44,15 @@ describe('GuestMiraHome web layout', () => {
       screen.getAllByRole('link', { name: 'Sign in to start' }),
     ).toHaveLength(1)
     expect(
+      screen.getByRole('link', { name: 'Pay and create an account' }),
+    ).toHaveAttribute('href', '#guest-plans')
+    expect(
+      screen.getByRole('link', { name: 'Pay and create an account 5-day start' }),
+    ).toHaveAttribute('href', '#sign-up/demo')
+    expect(
+      screen.getByRole('link', { name: 'Pay and create an account Premium with Role-play' }),
+    ).toHaveAttribute('href', '#sign-up/monthly_modules_roleplay')
+    expect(
       screen.getByRole('link', { name: 'See the four sessions' }),
     ).toHaveAttribute('href', '#guest-sessions')
     expect(

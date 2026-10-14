@@ -2,6 +2,11 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import {
+  APP_VERSION,
+  ANDROID_APK_FILENAME,
+  ANDROID_APK_HREF,
+} from '../marketing/androidDownload'
 
 const themeDir = dirname(fileURLToPath(import.meta.url))
 
@@ -10,10 +15,7 @@ describe('Jezweb Variant C learner chrome', () => {
     const jezweb = readFileSync(resolve(themeDir, 'jezwebLearnerChrome.css'), 'utf8')
     const app = readFileSync(resolve(themeDir, '../App.tsx'), 'utf8')
     const appStyles = readFileSync(resolve(themeDir, '../App.css'), 'utf8')
-    const androidDownload = readFileSync(
-      resolve(themeDir, '../marketing/androidDownload.ts'),
-      'utf8',
-    )
+    const androidDownload = new URL(ANDROID_APK_HREF, 'https://example.test')
     const colors = readFileSync(
       resolve(
         themeDir,
@@ -94,7 +96,8 @@ describe('Jezweb Variant C learner chrome', () => {
     expect(chromeImport).toBeGreaterThan(-1)
     expect(jezwebImport).toBeGreaterThan(chromeImport)
 
-    expect(androidDownload).toMatch(/\?v=jezweb-c\d+'/u)
+    expect(androidDownload.pathname).toBe(`/downloads/${ANDROID_APK_FILENAME}`)
+    expect(ANDROID_APK_FILENAME).toBe(`global-spoken-english-${APP_VERSION}.apk`)
     expect(colors).toContain('#FAFBFA')
     expect(colors).toContain('#006B3F')
     expect(styles).toContain('windowLightStatusBar')

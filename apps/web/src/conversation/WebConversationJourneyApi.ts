@@ -1,4 +1,4 @@
-import type { ConversationSpeechResult, ConversationTurnEvent, RealtimeSpeechTicket, SpeechLatencySampleRequest, SpeechLatencySampleResult, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
+import type { ConversationPlaybackProgress, ConversationPlaybackProgressRequest, ConversationSpeechResult, ConversationTurnEvent, RealtimeSpeechTicket, SpeechLatencySampleRequest, SpeechLatencySampleResult, SynthesizeConversationSpeechRequest } from '@global-english/contracts'
 import type {
   CreateLearnerAiMemoryFactRequest,
   GrantVoiceConsentRequest,
@@ -55,6 +55,15 @@ export class WebConversationJourneyApi
       (() => (typeof document === 'undefined' ? '' : document.cookie))
   }
 
+  recordPlayback(input: ConversationPlaybackProgressRequest): Promise<ConversationPlaybackProgress> {
+    return this.#mutation<ConversationPlaybackProgress>('/conversation-playback-progress', {
+      method: 'POST', body: JSON.stringify(input),
+    }).then(result => {
+      window.dispatchEvent(new Event('global-english:ai-usage-changed'))
+      return result
+    })
+  }
+
   startSession(
     input: StartFriendSessionInput,
     commandId: string,
@@ -66,6 +75,20 @@ export class WebConversationJourneyApi
       method: 'POST',
       signal,
     })
+  }
+
+  readSession(sessionId: string, signal?: AbortSignal): Promise<FriendSession> {
+    return this.#json<FriendSession>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}`,
+      { method: 'GET', signal },
+    )
+  }
+
+  exitSession(sessionId: string, commandId: string, signal?: AbortSignal): Promise<FriendSession> {
+    return this.#mutation<FriendSession>(
+      `/conversation-sessions/${encodeURIComponent(sessionId)}/exit`,
+      { headers: { 'Idempotency-Key': commandId }, method: 'POST', signal },
+    )
   }
 
   advanceStage(
@@ -351,6 +374,7 @@ export class WebConversationJourneyApi
         credentials: 'include',
         headers: {
           Accept: 'application/json',
+          'X-Conversation-Playback': '1',
           ...(init.body === undefined
             || init.body instanceof FormData
             ? {}
@@ -371,7 +395,11 @@ export class WebConversationJourneyApi
     }
 
     try {
-      return (await response.json()) as T
+      const result = (await response.json()) as T
+      if (init.method === 'POST' && (path.endsWith('/recordings') || path.endsWith('/turns'))) {
+        window.dispatchEvent(new Event('global-english:ai-usage-changed'))
+      }
+      return result
     } catch (error) {
       if (isAbortError(error)) {
         throw error

@@ -173,6 +173,13 @@ export interface LevelSessionsApi {
     idempotencyKey: string,
     signal?: AbortSignal,
   ): Promise<FriendSession>
+  startTutorHelp?(
+    levelNumber: number,
+    partId: SessionPartId,
+    uiLocale: string,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<FriendSession>
   checkpointDetail?(
     levelNumber: number,
     signal?: AbortSignal,

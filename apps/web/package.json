@@ -18,7 +18,7 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
-    "@capacitor/core": "8.5.0",
+    "@capacitor/core": "8.5.1",
     "@global-english/contracts": "workspace:*",
     "@global-english/design-system": "workspace:*",
     "@global-english/localization": "workspace:*",
@@ -30,8 +30,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
-    "@capacitor/android": "8.5.0",
-    "@capacitor/cli": "8.5.0",
+    "@capacitor/android": "8.5.1",
+    "@capacitor/cli": "8.5.1",
     "@playwright/test": "1.62.0",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",

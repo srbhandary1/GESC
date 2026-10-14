@@ -25,6 +25,9 @@ final class GlobalEnglishAndroidShell {
     }
 
     static void install(BridgeActivity activity, WebView webView) {
+        webView.getSettings().setSupportMultipleWindows(true);
+        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+
         if (!Boolean.TRUE.equals(webView.getTag(TAG_BACK_INSTALLED))) {
             installBack(activity, webView);
             webView.setTag(TAG_BACK_INSTALLED, true);

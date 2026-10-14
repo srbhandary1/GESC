@@ -10,8 +10,11 @@ overrides:
   # Patches the moderate uuid advisory in the dev-only Capacitor CLI
   # dependency path (xcode>uuid); xcode uses the stable root uuid API.
   'uuid@<11.1.1': 11.1.1
-  # Patches GHSA-rgw5-rvv9-x895 in eslint/minimatch dependency paths.
-  brace-expansion: 5.0.9
+  # Patches GHSA-rgw5-rvv9-x895, GHSA-qhr7-859c-m2p7 and GHSA-6j4f-fj2g-mc7p in eslint/minimatch dependency paths.
+  brace-expansion: 5.0.11
+  shell-quote: 1.11.0
+  undici: 8.10.2
+  source-map-js: 1.2.2
 
 minimumReleaseAgeExclude:
   - jsdom@30.0.1
@@ -19,3 +22,10 @@ minimumReleaseAgeExclude:
   - js-yaml@4.3.2
   - '@xmldom/xmldom@0.9.12'
   - nanoid@3.3.17
+  - '@capacitor/android@8.5.1'
+  - '@capacitor/core@8.5.1'
+  - '@capacitor/cli@8.5.1'
+  - brace-expansion@5.0.11
+  - shell-quote@1.11.0
+  - undici@8.10.2
+  - source-map-js@1.2.2

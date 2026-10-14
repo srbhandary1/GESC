@@ -260,6 +260,36 @@ final class LevelSessionDeliveryTest extends TenancyIntegrationTestCase
         );
         self::assertTrue($check['passed']);
         self::assertSame(100, $check['score']);
+        $practiceRows = fn () => DB::table('level_session_completions')->where('organization_id', $organization->getKey())->where('user_id', $learner->getKey())->where('level_number', 1)->where('part_id', 'practice');
+        self::assertSame(1, $practiceRows()->count());
+        self::assertSame('passed_check', $practiceRows()->value('completion_kind'));
+        // Simulate the historical bug: a genuine passed check without completion.
+        $practiceRows()->delete();
+        self::assertTrue($this->contexts()->run($learnerContext, fn () => $delivery->reconcilePracticeCompletion($learnerContext, $learner, 1)));
+        self::assertSame(0, $practiceRows()->count());
+        self::assertTrue($this->contexts()->run($learnerContext, fn () => $delivery->reconcilePracticeCompletion($learnerContext, $learner, 1, true)));
+        self::assertFalse($this->contexts()->run($learnerContext, fn () => $delivery->reconcilePracticeCompletion($learnerContext, $learner, 1, true)));
+        self::assertSame(1, $practiceRows()->count());
+        $otherLearner = $this->createUser();
+        [$otherMembership, $otherContext] = $this->createMembership($organization, $otherLearner, Membership::TYPE_LEARNER);
+        $this->grantTestPermissions($otherMembership, $otherContext, ['learning.participate'], 'other-practice-learner');
+        $this->grantDemoEntitlement($otherLearner, $otherContext);
+        $this->contexts()->run($otherContext, fn () => $delivery->completeSession($otherContext, $otherLearner, 1, 'introduction', (string) Str::uuid()));
+        self::assertFalse($this->contexts()->run($otherContext, fn () => $delivery->reconcilePracticeCompletion($otherContext, $otherLearner, 1, true)));
+        self::assertSame(0, DB::table('level_session_completions')->where('organization_id', $organization->getKey())->where('user_id', $otherLearner->getKey())->where('part_id', 'practice')->count());
+        $stale = (array) DB::table('level_session_check_submissions')->where('organization_id', $organization->getKey())->where('user_id', $learner->getKey())->firstOrFail();
+        DB::table('level_session_check_submissions')->insert([...$stale, 'id' => (string) Str::ulid(), 'user_id' => $otherLearner->getKey(),
+            'membership_id' => $otherMembership->getKey(), 'blueprint_content_hash' => str_repeat('b', 64), 'idempotency_key' => (string) Str::uuid()]);
+        self::assertFalse($this->contexts()->run($otherContext, fn () => $delivery->reconcilePracticeCompletion($otherContext, $otherLearner, 1, true)));
+        $foreignOrganization = $this->createOrganization('Synthetic foreign lesson tenant');
+        [$foreignMembership, $foreignContext] = $this->createMembership($foreignOrganization, $learner, Membership::TYPE_LEARNER);
+        $this->grantTestPermissions($foreignMembership, $foreignContext, ['learning.participate'], 'foreign-practice');
+        try {
+            $this->contexts()->run($foreignContext, fn () => $delivery->reconcilePracticeCompletion($foreignContext, $learner, 1, true));
+            self::fail('Another organization must not adopt a learner pass or blueprint.');
+        } catch (LearningOperationRejected) {
+            self::assertSame(0, DB::table('level_session_completions')->where('organization_id', $foreignOrganization->getKey())->count());
+        }
 
         try {
             $this->contexts()->run(

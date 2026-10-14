@@ -1,3 +1,4 @@
+import type { LearnerProviderUsage } from '@global-english/contracts'
 export type OperatorEntitlementPanelKey =
   | 'entitlement_plans'
   | 'entitlement_directory'
@@ -39,6 +40,7 @@ export interface OperatorEntitlementApi {
   }>
   learner(learnerId: string): Promise<{
     entitlements: readonly OperatorLearnerEntitlement[]
+    provider_usage?: LearnerProviderUsage
   }>
   updateTax(
     body: {
@@ -114,6 +116,7 @@ export const defaultOperatorEntitlementApi: OperatorEntitlementApi = {
   learner: (learnerId) =>
     read(`/api/v1/operator/learners/${learnerId}/entitlements`) as Promise<{
       entitlements: readonly OperatorLearnerEntitlement[]
+    provider_usage?: LearnerProviderUsage
     }>,
   updateTax: (body, key) =>
     command('/api/v1/operator/tax-settings/updates', body, key),

@@ -29,11 +29,23 @@ import {
   type FederatedProviderAvailability,
   type WebSessionAuthentication,
 } from './AuthenticationAdapter'
+import {
+  parseDirectRegistrationPlans,
+  type DirectRegistrationPlan,
+} from './directRegistrationPlan'
+import {
+  openRazorpayCheckout,
+  type RazorpayCheckoutRequest,
+  type RazorpayCheckoutSuccess,
+} from '../subscriptions/RazorpayCheckout'
 
 export interface WebSessionAuthenticationOptions {
   baseUrl?: string
   beforeLogout?: () => Promise<void>
   fetch?: typeof fetch
+  openCheckout?: (
+    request: RazorpayCheckoutRequest,
+  ) => Promise<RazorpayCheckoutSuccess | null>
   readCookie?: () => string
 }
 
@@ -45,12 +57,16 @@ export class WebSessionAuthenticationAdapter
   readonly #baseUrl?: string
   readonly #beforeLogout: () => Promise<void>
   readonly #fetch: typeof fetch
+  readonly #openCheckout: (
+    request: RazorpayCheckoutRequest,
+  ) => Promise<RazorpayCheckoutSuccess | null>
   readonly #readCookie: () => string
 
   constructor(options: WebSessionAuthenticationOptions = {}) {
     this.#baseUrl = options.baseUrl
     this.#beforeLogout = options.beforeLogout ?? (() => Promise.resolve())
     this.#fetch = options.fetch ?? globalThis.fetch
+    this.#openCheckout = options.openCheckout ?? openRazorpayCheckout
     this.#readCookie =
       options.readCookie ??
       (() => (typeof document === 'undefined' ? '' : document.cookie))
@@ -74,6 +90,121 @@ export class WebSessionAuthenticationAdapter
     }
 
     throw new AuthenticationUnavailableError()
+  }
+
+  async selectMembership(
+    membershipId: string,
+  ): Promise<AuthenticationSnapshot> {
+    const response = await this.#fetch(
+      `${this.#baseUrl ?? ''}/me/organization-context`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          ...(await this.#csrfHeaders()),
+        },
+        body: JSON.stringify({ membership_id: membershipId }),
+      },
+    )
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+    return this.current()
+  }
+
+  async listDirectPlans(): Promise<readonly DirectRegistrationPlan[]> {
+    const response = await this.#fetch(
+      `${this.#baseUrl ?? ''}/direct/subscription-plans`,
+      {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      },
+    )
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+    const body = (await response.json()) as { plans?: unknown }
+    return parseDirectRegistrationPlans(body.plans)
+  }
+
+  async registerWithPayment(
+    phone: string,
+    password: string,
+    planId: string,
+  ): Promise<void> {
+    const response = await this.#fetch(
+      `${this.#baseUrl ?? ''}/direct/paid-registrations`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          ...(await this.#csrfHeaders()),
+        },
+        body: JSON.stringify({
+          phone,
+          password,
+          plan_id: planId,
+          idempotency_key: createRegistrationKey(),
+        }),
+      },
+    )
+    if (!response.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+    const body = (await response.json()) as PendingPaidRegistration
+    if (body.status === 'completed') {
+      return
+    }
+    if (
+      body.status !== 'pending' ||
+      body.provider !== 'razorpay' ||
+      typeof body.id !== 'string' ||
+      typeof body.provider_order_id !== 'string' ||
+      typeof body.provider_public_key !== 'string' ||
+      typeof body.total_paise !== 'number'
+    ) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const completed = await this.#openCheckout({
+      amount: body.total_paise,
+      currency: 'INR',
+      description: 'Global Spoken English App',
+      key: body.provider_public_key,
+      name: 'Global Spoken English App',
+      orderId: body.provider_order_id,
+    })
+    if (completed === null || completed.orderId !== body.provider_order_id) {
+      throw new AuthenticationUnavailableError()
+    }
+
+    const confirmation = await this.#fetch(
+      `${this.#baseUrl ?? ''}/direct/paid-registrations/${body.id}/confirmations`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          ...(await this.#csrfHeaders()),
+        },
+        body: JSON.stringify({
+          payment_id: completed.paymentId,
+          signature: completed.signature,
+        }),
+      },
+    )
+    if (!confirmation.ok) {
+      throw new AuthenticationUnavailableError()
+    }
+    const confirmed = (await confirmation.json()) as { status?: string }
+    if (confirmed.status !== 'completed') {
+      throw new AuthenticationUnavailableError()
+    }
   }
 
   async signIn(username: string, password: string): Promise<void> {
@@ -137,7 +268,25 @@ export class WebSessionAuthenticationAdapter
     return this.#federatedAvailability('/auth/social/providers')
   }
 
-  async beginFederatedSignIn(provider: FederatedProvider): Promise<void> {
+  async beginFederatedSignIn(
+    provider: FederatedProvider,
+    options?: {
+      readonly intent?: 'sign_in' | 'register'
+      readonly planCode?: string
+      readonly planId?: string
+    },
+  ): Promise<void> {
+    if (options?.intent === 'register' && options.planId) {
+      const params = new URLSearchParams({
+        intent: 'register',
+        plan_id: options.planId,
+        ...(options.planCode ? { plan_code: options.planCode } : {}),
+      })
+      assignFederatedLocation(
+        `/oauth/social/${provider}/authorize?${params.toString()}`,
+      )
+      return
+    }
     assignFederatedLocation(`/oauth/social/${provider}/authorize`)
   }
 
@@ -514,6 +663,23 @@ export class WebSessionAuthenticationAdapter
 
     return '/sanctum/csrf-cookie'
   }
+}
+
+interface PendingPaidRegistration {
+  readonly id?: string
+  readonly provider?: string
+  readonly provider_order_id?: string
+  readonly provider_public_key?: string
+  readonly status?: string
+  readonly total_paise?: number
+}
+
+function createRegistrationKey(): string {
+  const webCrypto = globalThis.crypto
+  if (typeof webCrypto?.randomUUID === 'function') {
+    return webCrypto.randomUUID()
+  }
+  return `paid-${Date.now().toString(16)}`
 }
 
 function readCookieValue(

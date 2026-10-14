@@ -13,6 +13,7 @@ import {
   unregisterSpeechAudio,
 } from '../shared/stopSpeechPlayback'
 import { AvatarSlot } from '../ui/AvatarSlot'
+import { directSignupHref, directSignupPlans } from '../marketing/directSignupPlans'
 import { guestSampleAudioSrc } from './guestSampleAudio'
 import './GuestWebHome.css'
 
@@ -112,6 +113,9 @@ export function GuestWebHome({
             <a className="ge-button ge-button--primary" href="#sign-in">
               <LocalizedMessage resolution={message('marketing.hero.cta_sign_in')} />
             </a>
+            <a className="ge-button ge-button--ghost" href="#guest-plans">
+              <LocalizedMessage resolution={message('auth.paid.open')} />
+            </a>
             <a className="ge-button ge-button--ghost" href="#guest-sessions">
               <LocalizedMessage resolution={message('marketing.hero.cta_learn')} />
             </a>
@@ -144,6 +148,45 @@ export function GuestWebHome({
           </p>
         </aside>
       </div>
+
+      <section aria-labelledby="guest-plans-title" className="guest-web-home__block" id="guest-plans">
+        <h2 className="guest-web-home__section-title" id="guest-plans-title">
+          <LocalizedMessage resolution={message('subscription.memberships_title')} />
+        </h2>
+        <p className="guest-web-home__lede">
+          <LocalizedMessage resolution={message('subscription.gst_exclusive')} />
+        </p>
+        <div className="guest-web-home__plans">
+          {directSignupPlans.map((plan) => (
+            <article className="guest-web-home__card" key={plan.code}>
+              {plan.recommended === true ? (
+                <p className="guest-web-home__eyebrow">
+                  <LocalizedMessage resolution={message('subscription.recommended')} />
+                </p>
+              ) : null}
+              <h3 className="guest-web-home__card-title">
+                <LocalizedMessage resolution={message(plan.name)} />
+              </h3>
+              <p className="guest-web-home__plan-price">
+                <LocalizedMessage resolution={message(plan.price)} />
+              </p>
+              <p>
+                <LocalizedMessage resolution={message(plan.lead)} />
+              </p>
+              <p className="guest-web-home__muted">
+                <LocalizedMessage resolution={message(plan.extra)} />
+              </p>
+              <a className="ge-button ge-button--primary" href={directSignupHref(plan.code)}>
+                <LocalizedMessage resolution={message('auth.paid.open')} />
+                {' '}
+                <span className="visually-hidden">
+                  <LocalizedMessage resolution={message(plan.name)} />
+                </span>
+              </a>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {sample ? (
         <section className="guest-web-home__sample" id="guest-sample">

@@ -11,6 +11,38 @@ Sequential execution authority is recorded as D-0319. It does not convert a
 later decision, human-review, analytics, payment, Play or production gate into
 an implementation PASS.
 
+## ADR-0041 APK installation and homepage download — 25 September 2026
+
+The connected path is restored through the owner-established reverse ADB
+tunnel at `ADB_SERVER_SOCKET=tcp:127.0.0.1:5038`. The Linux host saw the
+realme RMX3085 as:
+
+```text
+J7GUXWEENBNZTW85 device usb:336592896X product:RMX3085 model:RMX3085 device:RMX3085L1 transport_id:3
+```
+
+The ADR-0041 closed-beta debug APK installed preserve-data with `adb install
+-r` and launched successfully. Device package metadata reports
+`com.globalenglish.app`, version `1.0` (`versionCode=1`), min SDK 24, target
+SDK 36, Android 13/API 33 and granted microphone permission. The current
+window focused `com.globalenglish.app/.MainActivity`, the app process was
+running, and the device WebView was `com.google.android.webview`
+153.0.8010.39.
+
+The installed candidate and the public homepage download are byte-identical:
+
+```text
+Path:     apps/web/android-app/app/build/outputs/apk/debug/app-debug.apk
+Public:   apps/web/public/downloads/global-spoken-english-android.apk
+SHA-256:  2180ba5f25741734dc5620e48458bfff15e88c7ac55a14587e0055bc6f40f7a7
+Bytes:    82,944,538
+```
+
+The homepage download cache key is `adr0041-rmx3085`. `make build` passed
+after the APK asset/link update with the existing large-chunk advisory. This
+remains a debug-signed closed-beta APK and is not Play publication or
+production go-live evidence.
+
 ## UX-REM-06 retained first-success sequence — 23 September 2026
 
 The Accountable Product Owner accepted Option A. The refined current ten-stage

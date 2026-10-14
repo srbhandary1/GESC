@@ -21,7 +21,7 @@ use stdClass;
  */
 final class LearnerPrivacyInventory
 {
-    public const string VERSION = 'learner-privacy-v12';
+    public const string VERSION = 'learner-privacy-v13';
 
     /**
      * Membership-linked governance records are not creatable by an authorized
@@ -918,6 +918,53 @@ final class LearnerPrivacyInventory
                 ],
                 'retain_immutable_conversation_evidence',
                 'Turn state is immutable; utterance, transcript, and reply digests are excluded.',
+            ),
+            $this->directGroup(
+                'conversation_playback_meters', $organizationId, $membershipId,
+                ['id', 'duration_ms', 'played_ms', 'charged_seconds', 'started_at', 'expires_at'],
+                'delete_temporary_playback_meter', 'Content-free, short-lived playback progress; billing charges remain in the existing usage ledger.',
+            ),
+            $this->directGroup(
+                'conversation_dialogue_states',
+                $organizationId,
+                $membershipId,
+                ['conversation_session_id', 'flow', 'state', 'revision', 'opportunity', 'notice_version', 'notice_accepted_at', 'expires_at', 'closed_at', 'created_at', 'updated_at'],
+                'retain_immutable_conversation_evidence',
+                'Content-free dialogue state and notice evidence; temporary context bodies are separately deleted.',
+                'conversation_session_id',
+            ),
+            $this->directGroup(
+                'conversation_dialogue_outcomes',
+                $organizationId,
+                $membershipId,
+                ['conversation_turn_id', 'conversation_session_id', 'assessment', 'action', 'revision', 'opportunity', 'created_at'],
+                'retain_immutable_conversation_evidence',
+                'Content-free advisory dialogue outcomes; no learner or model message body.',
+                'conversation_turn_id',
+            ),
+            $this->directGroup(
+                'conversation_dialogue_turn_reservations',
+                $organizationId,
+                $membershipId,
+                ['id', 'conversation_session_id', 'expected_revision', 'status', 'completed_turn_id', 'created_at', 'completed_at'],
+                'retain_content_free_replay_evidence',
+                'Durable logical-turn admission metadata prevents redispatch after unknown outcome; no body or fabricated zero-cost usage.',
+            ),
+            $this->directGroup(
+                'conversation_session_speech_calls',
+                $organizationId,
+                $membershipId,
+                ['id', 'conversation_session_id', 'operation', 'status', 'provider_key', 'model_version', 'input_units', 'output_units', 'input_unit_kind', 'output_unit_kind', 'estimated_cost_microunits', 'safe_failure_code', 'created_at', 'completed_at'],
+                'retain_content_free_cost_evidence',
+                'At-most-once opener speech usage metadata; no input text or audio. Unknown costs remain null, never represented as free.',
+            ),
+            $this->directGroup(
+                'conversation_recovery_artifacts',
+                $organizationId,
+                $membershipId,
+                ['id', 'conversation_session_id', 'conversation_turn_id', 'kind', 'status', 'created_at', 'expires_at', 'deleted_at'],
+                'delete_temporary_conversation_recovery',
+                'Encrypted private bodies expire within 15 minutes and are deleted on exit, withdrawal, logout and erasure; only content-free metadata is exported.',
             ),
             $this->directGroup(
                 'conversation_turn_speech_artifacts',

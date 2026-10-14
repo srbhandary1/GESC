@@ -6,6 +6,9 @@ namespace App\Http\Problems;
 
 use App\Authentication\Mfa\FreshPrivilegedMfaRequired;
 use App\Authentication\Password\FreshPasswordConfirmationRequired;
+use App\Conversation\Capacity\ConversationCapacityUnavailable;
+use App\Conversation\Dialogue\DialogueTurnOutcomeUnknown;
+use App\Conversation\Metering\PlaybackClientUpgradeRequired;
 use App\Entitlements\Exceptions\EntitlementDenied;
 use App\Observability\CorrelationId;
 use App\Operator\ContentWorkspace\Exceptions\ContentWorkspaceConflict;
@@ -108,6 +111,23 @@ final class ProblemDetailsFactory
      */
     private function definition(int $status, ?Throwable $exception = null): array
     {
+        if ($exception instanceof PlaybackClientUpgradeRequired) {
+            return ['type' => 'urn:global-english:problem:playback-client-upgrade', 'title' => 'App update required',
+                'detail' => $exception->getMessage(), 'message_key' => 'conversation.playback_update_required'];
+        }
+        if ($exception instanceof ConversationCapacityUnavailable) {
+            return ['type' => 'urn:global-english:problem:conversation-capacity', 'title' => 'AI tutor is busy',
+                'detail' => 'Please wait briefly and retry. Your conversation turn has not been consumed.',
+                'message_key' => 'conversation.capacity_busy'];
+        }
+        if ($exception instanceof DialogueTurnOutcomeUnknown) {
+            return [
+                'type' => 'urn:global-english:problem:conversation-turn-outcome-unknown',
+                'title' => 'Previous turn outcome uncertain',
+                'detail' => 'End this practice and start a new session. The previous command will not be sent again.',
+                'message_key' => 'conversation.turn_outcome_unknown',
+            ];
+        }
         if ($exception instanceof EntitlementDenied) {
             return match ($exception->messageKey) {
                 EntitlementDenied::LEVEL_LOCKED => [
@@ -145,6 +165,18 @@ final class ProblemDetailsFactory
                     'title' => 'Subscription expired',
                     'detail' => 'The current plan is no longer active.',
                     'message_key' => EntitlementDenied::EXPIRED,
+                ],
+                EntitlementDenied::FREE_SPEECH_LOCKED => [
+                    'type' => 'urn:global-english:problem:entitlement-free-speech-locked',
+                    'title' => 'Free speech requires an upgrade',
+                    'detail' => 'Free speech is not included in the current plan.',
+                    'message_key' => EntitlementDenied::FREE_SPEECH_LOCKED,
+                ],
+                EntitlementDenied::SESSION_LOCKED => [
+                    'type' => 'urn:global-english:problem:entitlement-session-locked',
+                    'title' => 'Session requires an upgrade',
+                    'detail' => 'This session is not included in the current plan.',
+                    'message_key' => EntitlementDenied::SESSION_LOCKED,
                 ],
                 default => [
                     'type' => 'urn:global-english:problem:entitlement-checkout-unavailable',

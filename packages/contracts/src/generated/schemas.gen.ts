@@ -2118,13 +2118,17 @@ export const FederatedProviderAvailabilitySchema = {
     additionalProperties: false,
     required: [
         'google',
-        'facebook'
+        'facebook',
+        'instagram'
     ],
     properties: {
         google: {
             type: 'boolean'
         },
         facebook: {
+            type: 'boolean'
+        },
+        instagram: {
             type: 'boolean'
         }
     }
@@ -2408,7 +2412,7 @@ export const GlobalUsernameSchema = {
     type: 'string',
     minLength: 4,
     maxLength: 64,
-    pattern: '^[a-z][a-z0-9._-]{3,63}$'
+    pattern: '^([a-z][a-z0-9._-]{3,63}|\\+?[0-9]{7,20})$'
 } as const;
 
 export const NewPasswordSchema = {
@@ -3554,6 +3558,9 @@ export const LearnerEntitlementSchema = {
         'gstin_is_placeholder'
     ],
     properties: {
+        provider_usage: {
+            $ref: '#/components/schemas/LearnerProviderUsage'
+        },
         applies: {
             type: 'boolean'
         },
@@ -3758,6 +3765,89 @@ export const LearnerSubscriptionPlanOfferSchema = {
         },
         recommended: {
             type: 'boolean'
+        }
+    }
+} as const;
+
+export const MobileDirectPaidRegistrationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'phone',
+        'plan_id',
+        'idempotency_key',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        phone: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        idempotency_key: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 64
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const MobileDirectPaidRegistrationConfirmationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'payment_id',
+        'signature',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        payment_id: {
+            type: 'string',
+            pattern: '^pay_[A-Za-z0-9]{8,64}$'
+        },
+        signature: {
+            type: 'string',
+            pattern: '^[a-f0-9]{64}$'
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const DirectPaidRegistrationRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'phone',
+        'plan_id',
+        'idempotency_key'
+    ],
+    properties: {
+        phone: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        idempotency_key: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 64
         }
     }
 } as const;
@@ -4047,6 +4137,9 @@ export const OperatorLearnerEntitlementListingSchema = {
         'entitlements'
     ],
     properties: {
+        provider_usage: {
+            $ref: '#/components/schemas/LearnerProviderUsage'
+        },
         learner_membership_id: {
             $ref: '#/components/schemas/Ulid'
         },
@@ -5448,20 +5541,10 @@ export const StartConversationSessionRequestSchema = {
     ],
     properties: {
         persona_key: {
-            type: 'string',
-            enum: [
-                'patient-friend-prototype',
-                'clinic-reception-roleplay-prototype'
-            ]
+            $ref: '#/components/schemas/ConversationPersonaKey'
         },
         scenario_key: {
-            type: 'string',
-            enum: [
-                'everyday-friend-prototype',
-                'past-tense-skill-focus-prototype',
-                'carry-sentence-review-prototype',
-                'clinic-reception-roleplay-scenario'
-            ]
+            $ref: '#/components/schemas/ConversationScenarioKey'
         },
         coaching_mode: {
             type: 'string',
@@ -5473,6 +5556,151 @@ export const StartConversationSessionRequestSchema = {
         },
         ui_locale: {
             $ref: '#/components/schemas/SupportedLocale'
+        },
+        interaction_flow: {
+            $ref: '#/components/schemas/ConversationInteractionFlow'
+        },
+        recovery_notice_version: {
+            type: 'string',
+            const: 'conversation-recovery-2026-09-25'
+        },
+        recovery_notice_accepted: {
+            type: 'boolean',
+            const: true,
+            description: 'Explicit, unpreselected acknowledgement required with interaction_flow; does not grant provider, microphone, history or research consent.'
+        }
+    }
+} as const;
+
+export const ConversationPersonaKeySchema = {
+    type: 'string',
+    enum: [
+        'patient-friend-prototype',
+        'clinic-reception-roleplay-prototype',
+        'job-interview-roleplay-prototype',
+        'bank-counter-roleplay-prototype',
+        'restaurant-order-roleplay-prototype',
+        'hotel-checkin-roleplay-prototype',
+        'phone-customer-support-roleplay-prototype',
+        'grocery-shop-roleplay-prototype',
+        'school-parent-meeting-roleplay-prototype',
+        'doctor-appointment-roleplay-prototype',
+        'airport-checkin-roleplay-prototype',
+        'office-meeting-roleplay-prototype',
+        'bus-train-ticket-roleplay-prototype'
+    ]
+} as const;
+
+export const ConversationScenarioKeySchema = {
+    type: 'string',
+    enum: [
+        'everyday-friend-prototype',
+        'past-tense-skill-focus-prototype',
+        'carry-sentence-review-prototype',
+        'clinic-reception-roleplay-scenario',
+        'job-interview-roleplay-scenario',
+        'bank-counter-roleplay-scenario',
+        'restaurant-order-roleplay-scenario',
+        'hotel-checkin-roleplay-scenario',
+        'phone-customer-support-roleplay-scenario',
+        'grocery-shop-roleplay-scenario',
+        'school-parent-meeting-roleplay-scenario',
+        'doctor-appointment-roleplay-scenario',
+        'airport-checkin-roleplay-scenario',
+        'office-meeting-roleplay-scenario',
+        'bus-train-ticket-roleplay-scenario'
+    ]
+} as const;
+
+export const ConversationInteractionFlowSchema = {
+    type: 'string',
+    enum: [
+        'roleplay_dialogue',
+        'question_help',
+        'free_speech'
+    ]
+} as const;
+
+export const ConversationReplySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'text',
+        'locale'
+    ],
+    properties: {
+        text: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 1000
+        },
+        locale: {
+            $ref: '#/components/schemas/SupportedLocale'
+        }
+    }
+} as const;
+
+export const ConversationInteractionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'flow',
+        'state',
+        'revision',
+        'opportunity',
+        'ai_role',
+        'learner_role',
+        'opening_reply',
+        'recovery_expires_at'
+    ],
+    properties: {
+        flow: {
+            $ref: '#/components/schemas/ConversationInteractionFlow'
+        },
+        state: {
+            type: 'string',
+            enum: [
+                'awaiting_reply',
+                'retry_required',
+                'awaiting_question',
+                'awaiting_explanation_permission',
+                'complete',
+                'expired',
+                'closed'
+            ]
+        },
+        revision: {
+            type: 'integer',
+            minimum: 0
+        },
+        opportunity: {
+            type: 'integer',
+            minimum: 0
+        },
+        ai_role: {
+            type: 'string',
+            maxLength: 120
+        },
+        learner_role: {
+            type: 'string',
+            maxLength: 120
+        },
+        opening_reply: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ConversationReply'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        recovery_expires_at: {
+            type: [
+                'string',
+                'null'
+            ],
+            format: 'date-time'
         }
     }
 } as const;
@@ -5514,11 +5742,7 @@ export const ConversationPersonaSnapshotSchema = {
             $ref: '#/components/schemas/Ulid'
         },
         key: {
-            type: 'string',
-            enum: [
-                'patient-friend-prototype',
-                'clinic-reception-roleplay-prototype'
-            ]
+            $ref: '#/components/schemas/ConversationPersonaKey'
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -5564,13 +5788,7 @@ export const ConversationScenarioSnapshotSchema = {
             $ref: '#/components/schemas/Ulid'
         },
         key: {
-            type: 'string',
-            enum: [
-                'everyday-friend-prototype',
-                'past-tense-skill-focus-prototype',
-                'carry-sentence-review-prototype',
-                'clinic-reception-roleplay-scenario'
-            ]
+            $ref: '#/components/schemas/ConversationScenarioKey'
         },
         version_id: {
             $ref: '#/components/schemas/Ulid'
@@ -5585,7 +5803,18 @@ export const ConversationScenarioSnapshotSchema = {
                 'everyday-conversation',
                 'grammar-past-simple',
                 'carry-sentence-review',
-                'clinic-reception'
+                'clinic-reception',
+                'job-interview',
+                'bank-counter',
+                'restaurant-order',
+                'hotel-checkin',
+                'phone-customer-support',
+                'grocery-shop',
+                'school-parent-meeting',
+                'doctor-appointment',
+                'airport-checkin',
+                'office-meeting',
+                'bus-train-ticket'
             ]
         },
         definition_hash: {
@@ -5645,6 +5874,12 @@ export const ConversationRoleplayFeedbackEvidenceSchema = {
         scenario_objective_id: {
             $ref: '#/components/schemas/Ulid'
         },
+        objective_key: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 100,
+            description: 'Stable key from the session\'s pinned scenario objective.'
+        },
         evidence_digest: {
             $ref: '#/components/schemas/Sha256'
         },
@@ -5653,8 +5888,23 @@ export const ConversationRoleplayFeedbackEvidenceSchema = {
             enum: [
                 'met',
                 'unmet',
-                'skipped'
+                'skipped',
+                'unassessed'
             ]
+        },
+        source_turn_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        advisory: {
+            type: 'boolean',
+            const: true
         }
     }
 } as const;
@@ -5730,6 +5980,19 @@ export const ConversationSessionSchema = {
                 $ref: '#/components/schemas/ConversationRoleplayFeedbackEvidence'
             }
         },
+        interaction: {
+            $ref: '#/components/schemas/ConversationInteraction'
+        },
+        latest_turn: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ConversationTurn'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
         replayed: {
             type: 'boolean'
         }
@@ -5748,8 +6011,57 @@ export const CreateConversationTurnRequestSchema = {
             minLength: 1,
             maxLength: 500,
             description: 'Typed text or a transcript explicitly accepted/corrected by the\nlearner through the separate voice-recording review lifecycle.\n'
+        },
+        action: {
+            type: 'string',
+            enum: [
+                'reply',
+                'retry',
+                'question',
+                'confused',
+                'accept_explanation',
+                'decline_explanation'
+            ],
+            description: 'Required for interactive flows; validated against server-owned state.'
+        },
+        explanation_target: {
+            type: 'string',
+            pattern: '^(opening|[0-9A-HJKMNP-TV-Z]{26})$',
+            description: 'Required only for free_speech accept_explanation. Selects an English AI opening or scoped unexpired reply for text-only explanation. Never accepts client-supplied source text.'
+        },
+        expected_revision: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Required for interactive flows; stale mutations return conflict.'
+        },
+        transcript_locale: {
+            $ref: '#/components/schemas/ConversationTranscriptLocale'
+        },
+        transcript_source: {
+            type: 'string',
+            enum: [
+                'typed',
+                'original_speech',
+                'translated_speech'
+            ],
+            description: 'Advisory only. Speech provenance is verified against the linked recording.'
+        },
+        voice_recording_id: {
+            $ref: '#/components/schemas/Ulid'
         }
     }
+} as const;
+
+export const ConversationTranscriptLocaleSchema = {
+    oneOf: [
+        {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        {
+            type: 'string',
+            const: 'unknown'
+        }
+    ]
 } as const;
 
 export const SynthesizeConversationSpeechRequestSchema = {
@@ -5771,7 +6083,7 @@ export const SynthesizeConversationSpeechRequestSchema = {
             type: 'string',
             minLength: 1,
             maxLength: 400,
-            description: 'One short model or guidance line. The server does not persist this\ntext. Soft-launch Azure neural TTS may return a WAV for playback.\n'
+            description: 'One short model or guidance line. The server does not persist this\nstandalone text. Interactive sessions accept only a trusted opening\nor validated response, with local-language permission enforced.\nSoft-launch Azure neural TTS may return a WAV for playback.\n'
         }
     }
 } as const;
@@ -5908,6 +6220,14 @@ export const ConversationSpeechResultSchema = {
         'rendering_mode'
     ],
     properties: {
+        model_playback_grant: {
+            type: 'string',
+            maxLength: 4096
+        },
+        guidance_playback_grant: {
+            type: 'string',
+            maxLength: 4096
+        },
         playback_available: {
             type: 'boolean'
         },
@@ -5915,6 +6235,7 @@ export const ConversationSpeechResultSchema = {
             type: 'string',
             enum: [
                 'deterministic-fake-text-only',
+                'text-only-explanation',
                 'client-text-to-speech-fallback',
                 'azure-soft-launch-guidance-wav',
                 'azure-private-wav'
@@ -6612,6 +6933,14 @@ export const ConversationTurnSchema = {
         'replayed'
     ],
     properties: {
+        explanation_source: {
+            $ref: '#/components/schemas/ConversationReply'
+        },
+        explanation_target: {
+            type: 'string',
+            pattern: '^(opening|[0-9A-HJKMNP-TV-Z]{26})$',
+            description: 'Present only on free-speech text-only explanation results; identifies the source English bubble.'
+        },
         id: {
             $ref: '#/components/schemas/Ulid'
         },
@@ -6650,7 +6979,44 @@ export const ConversationTurnSchema = {
                 'null'
             ],
             minLength: 1,
-            maxLength: 1000
+            maxLength: 1000,
+            description: 'English-only compatibility field; null for a local-language reply.'
+        },
+        reply: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/ConversationReply'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        interaction: {
+            $ref: '#/components/schemas/ConversationInteraction'
+        },
+        original_turn_id: {
+            oneOf: [
+                {
+                    $ref: '#/components/schemas/Ulid'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        assessment: {
+            type: [
+                'string',
+                'null'
+            ],
+            enum: [
+                'accepted',
+                'retry_required',
+                'unassessed',
+                null
+            ],
+            description: 'Advisory dialogue assessment; never authoritative marks or mastery.'
         },
         priority_correction: {
             oneOf: [
@@ -7058,6 +7424,30 @@ export const VoiceRecordingSchema = {
             ],
             minimum: 0,
             maximum: 1
+        },
+        transcript_original: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 500
+        },
+        transcript_locale: {
+            $ref: '#/components/schemas/ConversationTranscriptLocale'
+        },
+        transcript_source: {
+            type: 'string',
+            enum: [
+                'original_speech',
+                'translated_speech'
+            ]
+        },
+        english_intent_text: {
+            type: [
+                'string',
+                'null'
+            ],
+            maxLength: 500
         },
         transcript_review_url: {
             type: 'string',
@@ -13739,6 +14129,133 @@ export const MediaLibraryProblemDetailsSchema = {
     }
 } as const;
 
+export const ConversationPlaybackProgressRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'grant',
+        'playback_key',
+        'played_ms'
+    ],
+    properties: {
+        grant: {
+            type: 'string',
+            maxLength: 4096
+        },
+        playback_key: {
+            type: 'string',
+            pattern: '^[a-zA-Z0-9_-]{16,64}$'
+        },
+        played_ms: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 120000
+        }
+    }
+} as const;
+
+export const ConversationPlaybackProgressSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'played_ms',
+        'charged_seconds',
+        'allowed_ms',
+        'remaining_seconds'
+    ],
+    properties: {
+        played_ms: {
+            type: 'integer',
+            minimum: 0
+        },
+        charged_seconds: {
+            type: 'integer',
+            minimum: 0
+        },
+        allowed_ms: {
+            type: 'integer',
+            minimum: 0
+        },
+        remaining_seconds: {
+            type: [
+                'integer',
+                'null'
+            ],
+            minimum: 0
+        }
+    }
+} as const;
+
+export const LearnerProviderUsageSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'period_start',
+        'period_days',
+        'input_tokens',
+        'output_tokens',
+        'unknown_usage_attempts',
+        'providers'
+    ],
+    properties: {
+        period_start: {
+            type: 'string',
+            format: 'date-time'
+        },
+        period_days: {
+            type: 'integer',
+            const: 30
+        },
+        input_tokens: {
+            type: 'integer',
+            minimum: 0
+        },
+        output_tokens: {
+            type: 'integer',
+            minimum: 0
+        },
+        unknown_usage_attempts: {
+            type: 'integer',
+            minimum: 0
+        },
+        providers: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: [
+                    'provider',
+                    'attempts',
+                    'input_tokens',
+                    'output_tokens',
+                    'unknown_usage_attempts'
+                ],
+                properties: {
+                    provider: {
+                        type: 'string'
+                    },
+                    attempts: {
+                        type: 'integer',
+                        minimum: 0
+                    },
+                    input_tokens: {
+                        type: 'integer',
+                        minimum: 0
+                    },
+                    output_tokens: {
+                        type: 'integer',
+                        minimum: 0
+                    },
+                    unknown_usage_attempts: {
+                        type: 'integer',
+                        minimum: 0
+                    }
+                }
+            }
+        }
+    }
+} as const;
+
 export const PasswordSignInWritableSchema = {
     type: 'object',
     additionalProperties: false,
@@ -13988,4 +14505,85 @@ export const PlatformRecoveryContactReplacementWritableSchema = {
             writeOnly: true
         }
     }
+} as const;
+
+export const MobileDirectPaidRegistrationRequestWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'phone',
+        'password',
+        'plan_id',
+        'idempotency_key',
+        'installation_id',
+        'client_id'
+    ],
+    properties: {
+        phone: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        idempotency_key: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 64
+        },
+        installation_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        client_id: {
+            type: 'string',
+            format: 'uuid'
+        }
+    }
+} as const;
+
+export const DirectPaidRegistrationRequestWritableSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+        'phone',
+        'password',
+        'plan_id',
+        'idempotency_key'
+    ],
+    properties: {
+        phone: {
+            $ref: '#/components/schemas/GlobalUsername'
+        },
+        password: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 512,
+            writeOnly: true
+        },
+        plan_id: {
+            $ref: '#/components/schemas/Ulid'
+        },
+        idempotency_key: {
+            type: 'string',
+            minLength: 8,
+            maxLength: 64
+        }
+    }
+} as const;
+
+export const ConversationTranscriptLocaleWritableSchema = {
+    oneOf: [
+        {
+            $ref: '#/components/schemas/SupportedLocale'
+        },
+        {
+            type: 'string',
+            const: 'unknown'
+        }
+    ]
 } as const;

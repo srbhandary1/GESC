@@ -2,6 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { WebConversationJourneyApi } from './WebConversationJourneyApi'
 
 describe('web deterministic conversation API', () => {
+  it.each(['none', 'sanctum-cookie'] as const)('reads recovery and deletes it through the same authenticated adapter (%s)', async (csrfProtection) => {
+    const result = { id: 'session', interaction: { state: 'closed' } }
+    const fetch = vi.fn<typeof globalThis.fetch>(async (url) => String(url).endsWith('/sanctum/csrf-cookie')
+      ? new Response(null, { status: 204 }) : Response.json(result))
+    const api = new WebConversationJourneyApi({ baseUrl: 'https://api.global-english.test/api/v1', csrfProtection, fetch, readCookie: () => 'XSRF-TOKEN=csrf' })
+    const signal = new AbortController().signal
+    await expect(api.readSession('session', signal)).resolves.toEqual(result)
+    await expect(api.exitSession('session', 'delete-command', signal)).resolves.toEqual(result)
+    expect(fetch).toHaveBeenCalledWith('https://api.global-english.test/api/v1/conversation-sessions/session', expect.objectContaining({ method: 'GET', credentials: 'include', signal }))
+    expect(fetch).toHaveBeenCalledWith('https://api.global-english.test/api/v1/conversation-sessions/session/exit', expect.objectContaining({ method: 'POST', credentials: 'include', signal, headers: expect.objectContaining({ 'Idempotency-Key': 'delete-command', ...(csrfProtection === 'none' ? {} : { 'X-XSRF-TOKEN': 'csrf' }) }) }))
+    expect(fetch).toHaveBeenCalledTimes(csrfProtection === 'none' ? 2 : 3)
+  })
+
   it('submits content-free speech latency with an idempotency key', async () => {
     const result = {
       accepted: true,

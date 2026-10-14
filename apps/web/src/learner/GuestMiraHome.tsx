@@ -5,6 +5,10 @@ import type {
 } from '@global-english/localization'
 import { LocalizedMessage } from '../localization/LocalizedMessage'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
+import {
+  navigateToLearnerSignIn,
+  navigateToPaidSignUp,
+} from './LearnerNavigationHistory'
 import { GuestWebHome } from './GuestWebHome'
 import { AvatarSlot } from '../ui/AvatarSlot'
 
@@ -65,9 +69,25 @@ export function GuestMiraHome({
         <a
           className="ge-button ge-button--primary phase1-home__cta"
           href="#sign-in"
+          onClick={(event) => {
+            event.preventDefault()
+            navigateToLearnerSignIn()
+          }}
         >
           <LocalizedMessage
             resolution={message('marketing.hero.cta_sign_in')}
+          />
+        </a>
+        <a
+          className="ge-button ge-button--ghost phase1-home__cta"
+          href="#sign-up/monthly_modules_roleplay"
+          onClick={(event) => {
+            event.preventDefault()
+            navigateToPaidSignUp('monthly_modules_roleplay')
+          }}
+        >
+          <LocalizedMessage
+            resolution={message('auth.paid.open')}
           />
         </a>
       </article>

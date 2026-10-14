@@ -469,6 +469,10 @@
 .demo-experience
   [data-ge-theme-preference='dark']
   .ge-application-frame--jezweb.ge-application-frame--studio-learner {
+  --ge-color-action: #3ddc97;
+  --ge-color-action-hover: #2ec986;
+  --ge-color-action-text: #0b1210;
+  --ge-color-warning-text: #fcd38a;
   --ge-color-canvas: #0b1210;
   --ge-color-canvas-deep: #0f1f17;
   --ge-color-surface: #12241c;
@@ -538,7 +542,7 @@
   .phase1-home__lesson,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .level-path__hero {
-  background: #ffffff;
+  background: var(--ge-color-surface);
   color: var(--ge-color-text);
 }
 
@@ -592,14 +596,14 @@
 /* Speak / roleplay surfaces must stay readable on Android dark-mode WebViews. */
 .ge-application-frame--jezweb .speak-room,
 .ge-application-frame--jezweb .conversation-journey {
-  color-scheme: light;
+  color-scheme: inherit;
 }
 
 .ge-application-frame--jezweb .shell-practice-switch,
 .ge-application-frame--jezweb .speak-room__modes {
-  background: #ffffff;
+  background: var(--ge-color-surface);
   border-color: var(--ge-color-border, #e2e8e5);
-  color-scheme: light;
+  color-scheme: inherit;
 }
 
 .ge-application-frame--jezweb .shell-practice-switch button,
@@ -622,10 +626,10 @@
 .ge-application-frame--jezweb .conversation-journey__stage,
 .ge-application-frame--jezweb .conversation-journey__start,
 .ge-application-frame--jezweb .roleplay-scenes button {
-  background: #ffffff;
+  background: var(--ge-color-surface);
   color: var(--ge-color-text, #1a1a1a);
   border-color: var(--ge-color-border, #e2e8e5);
-  color-scheme: light;
+  color-scheme: inherit;
 }
 
 .ge-application-frame--jezweb .conversation-journey__heading h2,
@@ -640,7 +644,7 @@
 }
 
 .ge-application-frame--jezweb .conversation-journey__start select {
-  background: #ffffff;
+  background: var(--ge-color-surface);
   border-color: var(--ge-color-border, #e2e8e5);
 }
 
@@ -662,7 +666,7 @@
   .conversation-journey__start,
 .ge-application-frame--jezweb.ge-application-frame--studio-learner
   .roleplay-scenes button {
-  background: #ffffff;
+  background: var(--ge-color-surface);
   color: var(--ge-color-text);
   border-color: var(--ge-color-border);
 }
@@ -808,7 +812,7 @@
   padding: 0.55rem 0.8rem;
   border-color: var(--ge-color-border);
   border-radius: 0.8rem;
-  background: #fff;
+  background: var(--ge-color-surface);
   color: var(--ge-color-text-muted);
   font-size: 0.8125rem;
   text-align: start;
@@ -957,7 +961,7 @@
   overflow: hidden;
   border: 1px solid var(--ge-color-border);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--ge-color-surface);
 }
 
 .ge-application-frame--jezweb .learner-home__upcoming-item {
@@ -1182,7 +1186,7 @@
     min-height: 0;
     height: auto;
     flex: 1 1 auto;
-    padding: 0.05rem 0.9rem 0.05rem 0.15rem;
+    padding: 0.05rem 0;
     border: 0;
     background: transparent;
     color: currentColor;
@@ -1356,12 +1360,14 @@
     .shell-android-download {
     position: relative;
     overflow: hidden;
+    flex-direction: column;
+    gap: 0;
   }
 
   .ge-application-frame--studio.ge-application-frame--jezweb:not(
       .ge-application-frame--native-android
     )
-    .shell-android-download > :not(.shell-android-download__icon) {
+    .shell-android-download > :not(.shell-android-download__icon):not(.shell-android-download__version) {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1668,5 +1674,264 @@
     text-wrap: balance;
     font-size: 1.25rem;
     line-height: 1.2;
+  }
+}
+
+/* Pilot usability repairs: shared phone/web layout and explicit theme surfaces. */
+.ge-application-frame--jezweb .shell-studio-brand__name,
+.ge-application-frame--jezweb.ge-application-frame--native-android .shell-studio-brand__name,
+html.ge-native-enlarged-text .ge-application-frame--jezweb.ge-application-frame--native-android .shell-studio-brand__name {
+  display: block;
+  max-width: none;
+  color: var(--ge-color-ink);
+  font-size: 2.15rem;
+  font-weight: 750;
+  line-height: 1.1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.ge-application-frame--jezweb .shell-studio-brand__mark { flex: 0 0 2.15rem; }
+.ge-application-frame--jezweb .shell-account-dropdown__menu,
+.ge-application-frame--jezweb.ge-application-frame--native-android .shell-account-dropdown__menu {
+  inset-inline: auto;
+}
+.ge-application-frame--jezweb :is(button, a, select) {
+  -webkit-tap-highlight-color: transparent;
+}
+.ge-application-frame--jezweb :is(button, a):focus:not(:focus-visible) { outline: none; }
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .learner-home__streak,
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .ge-primary-navigation,
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .ge-primary-navigation__list {
+  background: #12241c;
+  color: #c4d0c9;
+}
+[data-ge-theme-preference='dark'] .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link {
+  color: #c4d0c9;
+}
+[data-ge-theme-preference='dark'] .ge-application-frame--studio-learner.ge-application-frame--mira-learner.ge-application-frame--jezweb .ge-primary-navigation__link[aria-current='page'] {
+  background: #163328;
+  color: #9be2bb;
+}
+@media (max-width: 40rem) {
+  .ge-application-frame--jezweb .ge-application-frame__header-inner,
+  .ge-application-frame--jezweb.ge-application-frame--native-android .ge-application-frame__header-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ge-application-frame--jezweb .ge-application-frame__brand,
+  .ge-application-frame--jezweb.ge-application-frame--native-android .ge-application-frame__brand {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+.ge-application-frame--jezweb .shell-account-dropdown__trigger .shell-toolbar-caption {
+  font-size: 0.75rem;
+}
+@media (max-height: 32rem) and (orientation: landscape) and (max-width: 60rem) {
+  .ge-application-frame--jezweb.ge-application-frame--native-android .ge-application-frame__header-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ge-application-frame--jezweb.ge-application-frame--native-android .shell-studio-brand__name,
+  html.ge-native-enlarged-text .ge-application-frame--jezweb.ge-application-frame--native-android .shell-studio-brand__name {
+    font-size: 1rem;
+  }
+  .ge-application-frame--jezweb .shell-studio-brand__mark {
+    flex-basis: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* Native select focus belongs to the outer toolbar tile, not a second pill. */
+.ge-application-frame--jezweb .shell-header-toolbar :is(.shell-theme-control__select, .shell-locale-control__select):focus {
+  border-color: transparent;
+  border-radius: inherit;
+  box-shadow: none;
+  outline: none;
+}
+.ge-application-frame--jezweb .shell-header-toolbar :is(.shell-theme-control, .shell-locale-control):has(select:focus-visible) {
+  outline: 2px solid var(--ge-color-action);
+  outline-offset: 2px;
+}
+
+/* Keep foreground/background pairs together for readable status controls. */
+.ge-application-frame--jezweb .ge-application-frame__header .shell-live-ai-chip:hover,
+.ge-application-frame--jezweb .ge-application-frame__header .shell-live-ai-chip:focus-visible {
+  background: #e8f4ed;
+  color: #005533;
+}
+.ge-application-frame--jezweb .shell-live-ai-chip:hover .shell-toolbar-caption,
+.ge-application-frame--jezweb .shell-live-ai-chip:focus-visible .shell-toolbar-caption {
+  color: inherit;
+}
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb :is(button:disabled, .level-session__tab--locked) {
+  opacity: 1;
+  background: var(--ge-color-surface-elevated);
+  color: var(--ge-color-text-muted);
+  box-shadow: none;
+}
+
+.ge-application-frame--jezweb .conversation-journey__eyebrow {
+  color: var(--ge-color-text-muted);
+}
+/* Resolve supporting text at the themed learner shell. */
+.ge-application-frame--jezweb .subscription-panel__tax summary,
+.ge-application-frame--jezweb .shell-legal-footer a {
+  color: var(--ge-color-text);
+}
+.ge-application-frame--jezweb .ge-application-frame__header .shell-live-ai-chip {
+  background: #e8f4ed;
+  color: #005533;
+}
+.ge-application-frame--jezweb .shell-locale-note {
+  color: var(--ge-color-text-muted);
+}
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .shell-sign-in-page .ge-button--primary {
+  background: #3ddc97;
+  color: #0b1210;
+}
+
+.shell-android-download__version {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb .shell-locale-note {
+  color: #c4d0c9;
+}
+
+[data-ge-theme='dark'] .ge-application-frame--mira-learner,
+[data-ge-theme-preference='dark'] .ge-application-frame--jezweb {
+  --ge-input-bg: #11221b;
+  --ge-input-border: #355f4c;
+  --ge-input-text: #f3f7f5;
+  color-scheme: dark;
+}
+
+/* Unify Account menu items (buttons and links) and remove link underlines on buttons. */
+.ge-application-frame--jezweb .shell-account-dropdown__menu :is(button, a[role='menuitem']) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-block-size: var(--ge-target-minimum, 3rem);
+  padding: 0.6rem 0.85rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--ge-color-ink, #1a1a1a);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ge-application-frame--jezweb .shell-account-dropdown__menu :is(button, a[role='menuitem']):hover,
+.ge-application-frame--jezweb .shell-account-dropdown__menu :is(button, a[role='menuitem']):focus-visible {
+  background: var(--ge-color-soft-brand, #e6f2ec);
+  color: var(--ge-color-action, #006b3f);
+}
+
+[data-ge-theme='dark'] .ge-application-frame--jezweb .shell-account-dropdown__menu :is(button, a[role='menuitem']):hover,
+[data-ge-theme='dark'] .ge-application-frame--jezweb .shell-account-dropdown__menu :is(button, a[role='menuitem']):focus-visible {
+  background: #163328;
+  color: #9be2bb;
+}
+
+.ge-application-frame--jezweb a.ge-button {
+  text-decoration: none;
+}
+
+/* Style 1:1 tuition form inputs and textarea consistently in both light and dark modes. */
+.ge-application-frame--jezweb #tuition-request form label {
+  font-weight: 650;
+  color: var(--ge-color-ink);
+}
+
+.ge-application-frame--jezweb #tuition-request :is(input, textarea) {
+  width: 100%;
+  min-block-size: var(--ge-target-minimum, 3rem);
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--ge-input-border, #b8c9c0);
+  border-radius: 0.75rem;
+  background: var(--ge-input-bg, #ffffff);
+  color: var(--ge-input-text, #1a1a1a);
+  font: inherit;
+  line-height: 1.4;
+}
+
+.ge-application-frame--jezweb #tuition-request textarea {
+  min-block-size: 5.5rem;
+  resize: vertical;
+}
+
+/* Left-align sign-in/sign-up form labels and stack plan details cleanly. */
+.ge-application-frame--jezweb .web-password-sign-in__card form > label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: start;
+  justify-content: flex-start;
+  font-weight: 650;
+}
+
+.ge-application-frame--jezweb .web-paid-plan {
+  align-items: flex-start;
+  text-align: start;
+}
+
+.ge-application-frame--jezweb .web-paid-plan input[type='radio'] {
+  min-block-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-block-start: 0.2rem;
+  flex-shrink: 0;
+}
+
+.ge-application-frame--jezweb .web-paid-plan__copy {
+  display: grid;
+  gap: 0.25rem;
+  text-align: start;
+}
+
+.ge-application-frame--jezweb .ge-onboarding__action-stack .ge-button[aria-pressed='true'] {
+  border-color: var(--ge-color-action, #006b3f);
+  background: var(--ge-color-soft-brand, #e6f2ec);
+  color: var(--ge-color-action, #006b3f);
+  font-weight: 700;
+}
+
+/* Prevent mid-word hyphenless breaks ("Introduct-ion", "Interactio-n") in 4-part session tabs on phones. */
+@media (max-width: 40rem) {
+  .ge-application-frame--jezweb .level-session__tab {
+    gap: 0.4rem;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .ge-application-frame--jezweb .level-session__tab-step {
+    width: 1.45rem;
+    height: 1.45rem;
+    font-size: 0.75rem;
+  }
+
+  .ge-application-frame--jezweb .level-session__tab-label {
+    font-size: 0.875rem;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .ge-application-frame--jezweb .level-session__tab-hint {
+    font-size: 0.75rem;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  html.ge-native-enlarged-text .ge-application-frame--jezweb .level-session__tab-label {
+    overflow-wrap: break-word;
   }
 }

@@ -54,6 +54,15 @@ with Swathi is included and shares the 120-minute live-AI pool.
 The lowest package is **not ₹0**. The 5-day start is **₹3** and is sold, not
 auto-granted on first sign-in.
 
+A new Direct learner can pay from the sign-in page. The account and the
+purchased plan are created together only after that payment is captured. An
+existing phone receives the new plan instead of a second account. Staff and
+institution enrollment stays on invitations.
+
+Previous-website students onboarded under ADR-0040 receive an operator grant
+of `monthly_modules` (**basic**: all published levels, no Role-play, 120 live-AI
+minutes) for one calendar month. That grant is not a ₹0 catalogue SKU.
+
 ### 1.1 What “free speech” and “practice speech” mean
 
 - **Lesson practice speech** is the Learn **Practice** session after
@@ -307,3 +316,11 @@ of Premium with Role-play to current Direct learner memberships
 `php artisan entitlements:grant-courtesy-premium`). The grant is idempotent.
 `--csv` with a `username` column limits the run to usernames that already
 exist in this tenant. This is not an import of the old website.
+
+## Membership verification — 26 September 2026
+
+The same active paid plan is blocked before a new checkout on both signed-in
+purchase and existing-phone registration. A retry with its original idempotency
+key recovers the original checkout only for the original learner identity;
+an expired plan can be bought again. Different-plan replacement and talk-pack
+rules are unchanged. See MEMBERSHIP_VERIFY_13_REVIEW.md.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Authentication\Mfa\ExpiredPrivilegedMfaEnrollmentPurger;
 use App\Authentication\Sessions\AuthenticationSessionCleanupWorker;
+use App\Conversation\Dialogue\ConversationRecoveryStore;
 use App\Conversation\Evaluation\AiEvaluationRunner;
 use App\Conversation\Exceptions\ConversationOperationRejected;
 use App\Conversation\Observability\SpeechObservabilityRetentionService;
@@ -17,6 +18,7 @@ use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunner;
 use App\Conversation\Voice\Benchmark\SpeechBenchmarkRunStore;
 use App\Conversation\Voice\Providers\Azure\AzureSpeechConfiguration;
 use App\Conversation\Voice\VoiceDeletionOutboxMonitor;
+use App\Conversation\Voice\VoiceDeletionService;
 use App\Conversation\Voice\VoiceRetentionService;
 use App\Curriculum\Commissioning\LocalLplPilotAuthorityBootstrapper;
 use App\Curriculum\Commissioning\MediaTranscription\AzureCurriculumMediaTranscriptionProvider;
@@ -46,7 +48,9 @@ use App\Tenancy\OrganizationContextSource;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 Artisan::command('inspire', function () {
@@ -1256,6 +1260,25 @@ Artisan::command('learning:notify-due-reviews', function (): int {
 
     return 0;
 })->purpose('Privacy-gated delayed-review return email; no-ops without APP approval');
+
+Artisan::command('conversation:purge-recovery', function (): int {
+    $result = app(ConversationRecoveryStore::class)->purgeExpired();
+    if (Schema::hasTable('conversation_playback_meters')) {
+        DB::table('conversation_playback_meters')->where('expires_at', '<=', now())->delete();
+    }
+    // Retry erasure reconciliation after recovery-object deletion, including
+    // account requests without a voice recording/deletion outbox item.
+    $requests = DB::table('privacy_erasure_requests')
+        ->whereIn('status', ['pending', 'partially_completed'])->get(['id', 'organization_id']);
+    foreach ($requests as $request) {
+        app(VoiceDeletionService::class)->reconcilePrivacyErasure((string) $request->organization_id, (string) $request->id);
+    }
+    $this->info(json_encode($result, JSON_THROW_ON_ERROR));
+
+    return $result['failed'] === 0 ? 0 : 1;
+})->purpose('Delete expired and pending private conversation recovery; content-free counts only');
+
+Schedule::command('conversation:purge-recovery')->everyMinute()->withoutOverlapping();
 
 Schedule::command('voice:purge-expired')
     ->everyFiveMinutes()

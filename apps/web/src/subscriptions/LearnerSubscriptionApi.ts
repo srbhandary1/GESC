@@ -1,3 +1,4 @@
+import type { LearnerProviderUsage } from '@global-english/contracts'
 import {
   defaultAuthenticationRuntime,
   type ApiCsrfProtection,
@@ -5,6 +6,7 @@ import {
 import type { SessionPartId } from '../learner/LevelSessionsApi'
 
 export interface LearnerEntitlement {
+  readonly provider_usage?: LearnerProviderUsage
   readonly applies: boolean
   readonly entitlement_id: string | null
   readonly plan_code: string | null

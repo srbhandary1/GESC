@@ -1,3 +1,4 @@
+import { CONCEPT_MESSAGE_KEYS } from '../localization/learnerLabelKeys'
 import {
   type MessageKey,
   type ResolutionPolicy,
@@ -18,11 +19,12 @@ export interface ProgressDashboardProps {
   readonly onMissionRequested: () => void
 }
 
-function conceptLabel(conceptKey: string | null): string | null {
+function conceptLabel(conceptKey: string | null, message: (key: MessageKey) => { text: string }): string | null {
   if (conceptKey === null || conceptKey === '') {
     return null
   }
-  return conceptKey.replaceAll('_', ' ').replaceAll('-', ' ')
+  const key = CONCEPT_MESSAGE_KEYS[conceptKey]
+  return key ? message(key).text : conceptKey.replaceAll('_', ' ').replaceAll('-', ' ')
 }
 
 export function ProgressDashboard({
@@ -63,7 +65,7 @@ export function ProgressDashboard({
           resolution={msg('learner.error.message')}
         />
         <button
-          className="button button--primary"
+          className="ge-button ge-button--primary button button--primary"
           onClick={() => {
             setData(null)
             setError(false)
@@ -99,7 +101,7 @@ export function ProgressDashboard({
           <LocalizedMessage resolution={msg('learner.progress.empty.message')} />
         </p>
         <button
-          className="button button--primary progress-dashboard__empty-action"
+          className="ge-button ge-button--primary button button--primary progress-dashboard__empty-action"
           onClick={onMissionRequested}
           type="button"
         >
@@ -141,7 +143,7 @@ export function ProgressDashboard({
             <LocalizedMessage resolution={msg('learner.progress.due_review.message')} />
           </p>
           <button
-            className="button button--primary progress-dashboard__due-review-action"
+            className="ge-button ge-button--primary button button--primary progress-dashboard__due-review-action"
             onClick={onMissionRequested}
             type="button"
           >
@@ -214,8 +216,8 @@ export function ProgressDashboard({
           <div className="progress-dashboard__mastery-grid">
             {Array.from(objectivesByKey.entries()).map(([key, objectives]) => (
               <div key={key} className="progress-dashboard__mastery-group">
-                <h3 className="progress-dashboard__mastery-concept">{conceptLabel(key)}</h3>
-                <ul className="progress-dashboard__mastery-list" aria-label={conceptLabel(key) ?? undefined}>
+                <h3 className="progress-dashboard__mastery-concept">{conceptLabel(key, msg)}</h3>
+                <ul className="progress-dashboard__mastery-list" aria-label={conceptLabel(key, msg) ?? undefined}>
                   {objectives.map(obj => (
                     <li
                       key={obj.objective_id}

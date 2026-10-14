@@ -2,7 +2,7 @@ import type { MessageKey } from '@global-english/localization'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { resolveInterfaceMessage } from '../localization/interfaceLocalization'
-import { ANDROID_APK_HREF } from './androidDownload'
+import { APP_VERSION, ANDROID_APK_HREF } from './androidDownload'
 import { MarketingLanding } from './MarketingLanding'
 
 const message = (key: MessageKey) =>
@@ -55,7 +55,7 @@ describe('MarketingLanding studio hero', () => {
       }),
     ).toHaveLength(2)
     const androidLinks = screen.getAllByRole('link', {
-      name: message('marketing.android.download').text,
+      name: `${message('marketing.android.download').text} v${APP_VERSION}`,
     })
 
     expect(androidLinks).toHaveLength(1)
@@ -81,6 +81,9 @@ describe('MarketingLanding studio hero', () => {
     expect(screen.getByRole('heading', { name: '5-day start' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Premium features' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Premium with Role-play' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Pay and create an account Premium with Role-play' }),
+    ).toHaveAttribute('href', '#sign-up/monthly_modules_roleplay')
     expect(
       screen.getByRole('group', {
         name: message('marketing.preview.controls').text,
