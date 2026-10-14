@@ -1,5 +1,11 @@
 # Quality review
 
+## AUDIO-REMEDIATION-19 — 14 October 2026
+
+Investigated and fixed `"Audio failed"` on `Learn -> Lesson 1 -> Listen` and verified audio across all app surfaces in **1.0.16 / code 17**:
+- **VPS S3 storage verification**: Confirmed all `67/67` `lesson_audio` objects (328 `lesson_practice_media` attachments across Levels 1–17) pass `Storage::disk('s3')->readStream()` and SHA-256 verification on `verify-fix-20261014-r4`, and hardened `scripts/run-soft-launch.sh` (`ensure_services`) so `docker compose` always loads `soft-launch.env` before starting `object-storage`.
+- **Live handset & suite verification**: Verified live playback on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`) for `Learn -> Level 1 -> Introduction` (`310.5s`, `audio/mpeg`), `Learn -> Level 1 -> Practice` (`459.9s`, `audio/mpeg`), and `Ask Swathi` AI tutor speech synthesis (`201` turn creation + `200` playback metering). `make verify` (`0`, `636/636` Vitest), `make e2e` (`0`, `48/48` Playwright), `make android-closed-beta` + `make build` (`1.0.16 / code 17`, SHA-256 `cec0247ffe9d46d6b94b7c464edd7ac742cec8a72f5a510e823acf9e07bb8e36`, `15,911,020` bytes) all pass.
+
 ## BRAND-ADMIN-POLISH-18 — 14 October 2026
 
 Delivered brand/icon updates (`gsea-2.jpg` Android icon, `gsea-1.jpeg` web icon, `favicon.ico`), removed the onboarding age restriction (`FIRST_USE_STEPS` 9-step sequence), hid post-approval recovery/disclosure text on `Speak` and `Role-play`, aligned `Learn` tab tiles, added audited operator access grants by username/phone (`reason` + `payment_reference` + `events` audit trail + `audit_events`) and multi-admin account creation (`POST /api/v1/operator/memberships`), exposed `v1.0.15` in the app footer, and verified on the connected Realme `RMX3085` (`J7GUXWEENBNZTW85`):

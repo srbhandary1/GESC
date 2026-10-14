@@ -1,5 +1,11 @@
 # Decision ledger
 
+### D-0365 — AUDIO-REMEDIATION-19, 14 October 2026
+
+Remediated lesson audio failure (`GET /api/v1/me/levels/1/sessions/introduction/audio` returning `404` due to SeaweedFS `InvalidAccessKeyId`) and hardened client audio recovery in **1.0.16 / code 17**:
+1. Updated `ensure_services()` in `scripts/run-soft-launch.sh` to invoke `source_soft_launch_env` before `docker compose up -d`, ensuring `object-storage` always receives the production S3 credentials from `~/ge-soft-launch/env/soft-launch.env`, and verified `67/67` `lesson_audio` objects (all 328 `lesson_practice_media` attachments) on the VPS.
+2. Enabled retry from the `'error'` state in `AudioControls.tsx` and `ModelAudioPlayer.tsx` so learners can tap `"Audio failed"` to re-fetch authenticated audio blobs and start playback after a transient network or server error.
+
 ### D-0364 — BRAND-ADMIN-POLISH-18, 14 October 2026
 
 Owner-directed branding, onboarding, learning UI, and operator administration update for **1.0.15 / code 16**:

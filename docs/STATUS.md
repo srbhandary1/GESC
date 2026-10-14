@@ -1,5 +1,12 @@
 # Repository status
 
+## AUDIO-REMEDIATION-19 — 14 October 2026
+
+Remediated the `"Audio failed"` error on `Learn -> Level 1 -> Listen` and verified audio playback across all app surfaces in **1.0.16 / code 17**:
+- **Root cause fixed (`scripts/run-soft-launch.sh` & VPS `.env`)**: `scripts/run-soft-launch.sh` previously executed `ensure_services` (`docker compose up -d --wait ... object-storage`) before `source_soft_launch_env`. When release `.env` contained local-development defaults (`AWS_ACCESS_KEY_ID=global-english-local`), `docker compose` recreated the SeaweedFS `object-storage` container with local dev S3 credentials while the Laravel API loaded `~/ge-soft-launch/env/soft-launch.env` (`ge-vps-6101c556428c7cebbb14274c`), causing S3 `InvalidAccessKeyId` and HTTP `404` on `/api/v1/me/levels/{level}/sessions/{part}/audio`. Updated `ensure_services` to call `source_soft_launch_env` first, restored the VPS `.env`, and verified all `67/67` `lesson_audio` objects (328 `lesson_practice_media` attachments across Levels 1–17) pass SHA-256 and stream checks.
+- **Client audio retry & recovery (`AudioControls.tsx` & `ModelAudioPlayer.tsx`)**: Kept the primary button enabled (`disabled: false`) when `AudioControls` is in `'error'` state (`"Audio failed"`) and updated `ModelAudioPlayer.tsx` so tapping `"Audio failed"` re-invokes `loadSource` (or reloads `<audio>`) and starts playback immediately upon recovery.
+- **Verification**: `make verify` (`0` exit code; `636/636` Vitest tests), `make e2e` (`48/48` Playwright journeys), `make android-closed-beta` + `make build` (`1.0.16 / code 17`, SHA-256 `cec0247ffe9d46d6b94b7c464edd7ac742cec8a72f5a510e823acf9e07bb8e36`, `15,911,020` bytes), installed on `RMX3085` and verified live on `Learn -> Level 1 -> Introduction`, `Practice`, and `Ask Swathi` TTS speech.
+
 ## BRAND-ADMIN-POLISH-18 — 14 October 2026
 
 Updated brand/app icons and favicon (`gsea-2.jpg` Android app icon, `gsea-1.jpeg` web app icon, `favicon.ico`), removed the onboarding age-restriction step, collapsed post-approval privacy/recovery boilerplate on speaking and role-play screens, aligned `Learn` tab tiles (`.level-path__item` and `.level-session__tab`), added audited operator access grants by username/phone (including failed-payment registration recovery) and multi-admin account creation (`POST /api/v1/operator/memberships`), added visible `v1.0.15` version display in the app footer, installed **1.0.15 / code 16** on the connected Realme `RMX3085` handset, pushed to `origin/main`, and deployed to the soft-launch VPS:
