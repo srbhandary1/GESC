@@ -146,18 +146,33 @@ final readonly class ConversationDialogueService
             }
         } else {
             $word = mb_strtolower(trim($utterance, " \n\r\t.!?"));
+            $directExplanationRequest = false;
             if ($state->state === 'awaiting_explanation_permission' && in_array($action, ['question', 'reply'], true)) {
-                $action = match ($word) {
-                    'yes', 'yes please', 'ಹೌದು', 'हाँ', 'അതെ', 'ஆம்', 'అవును' => 'accept_explanation',
-                    'no', 'no thanks', 'ಇಲ್ಲ', 'नहीं', 'ഇല്ല', 'இல்லை', 'కాదు' => 'decline_explanation',
-                    default => 'question',
-                };
+                if (
+                    in_array($word, ['yes', 'yes please', 'yes explain', 'yes, explain', 'yes explain in my language', 'yes, explain in my language', 'please explain', 'sure', 'ok', 'okay', 'ಹೌದು', 'हाँ', 'അതെ', 'ஆம்', 'అవును'], true)
+                    || preg_match('/\b(?:explain|kannada|hindi|tamil|telugu|malayalam|my\s+language)\b|ಕನ್ನಡ|ವಿವರಿಸಿ|समझा/iu', $word) === 1
+                ) {
+                    $action = 'accept_explanation';
+                } elseif (in_array($word, ['no', 'no thanks', 'no keep english', 'no, keep english', 'ಇಲ್ಲ', 'नहीं', 'ഇല്ല', 'இல்லை', 'కాదు'], true)) {
+                    $action = 'decline_explanation';
+                } else {
+                    $action = 'question';
+                }
+            } elseif (
+                $state->state === 'awaiting_question'
+                && $action === 'question'
+                && is_string($state->original_turn_id)
+                && preg_match('/^(?:please\s+)?(?:can\s+you\s+)?(?:explain(?:\s+(?:this|that|it))?(?:\s+to\s+me)?\s+in\s+(?:my\s+language|kannada|hindi|tamil|telugu|malayalam)|in\s+(?:kannada|hindi|tamil|telugu|malayalam)\s+please)$|ಕನ್ನಡದಲ್ಲಿ\s*ವಿವರಿಸಿ|हिंदी\s*में\s*समझा/iu', $word) === 1
+            ) {
+                $action = 'accept_explanation';
+                $directExplanationRequest = true;
             }
             if ($action === 'question' && in_array($word, ["i don't understand", 'i do not understand', 'i did not understand', 'ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ', 'समझ नहीं आया'], true)) {
                 $action = 'confused';
             }
             if (! in_array($action, ['question', 'confused', 'accept_explanation', 'decline_explanation'], true)
-                || (in_array($action, ['accept_explanation', 'decline_explanation'], true) && $state->state !== 'awaiting_explanation_permission')
+                || ($action === 'decline_explanation' && $state->state !== 'awaiting_explanation_permission')
+                || ($action === 'accept_explanation' && $state->state !== 'awaiting_explanation_permission' && ! $directExplanationRequest)
                 || ($action === 'confused' && $state->latest_turn_id === null)) {
                 throw new ConversationOperationRejected('dialogue_action_invalid');
             }
@@ -206,7 +221,7 @@ final readonly class ConversationDialogueService
 
         if ($state->flow === 'free_speech' && $action === 'accept_explanation') {
             $target = $input['explanation_target'] ?? null;
-            if (! is_string($target) || $locale === 'en-IN') {
+            if (! is_string($target)) {
                 throw new ConversationOperationRejected('dialogue_action_invalid');
             }
             $sourceReply = $target === 'opening' ? ['reply' => $definition['opening_reply'] ?? null]
@@ -218,13 +233,39 @@ final readonly class ConversationDialogueService
             $explanationTarget = ['question' => $sourceReply['transcript'] ?? '', 'answer' => $sourceReply['reply']];
         }
 
+        $requestedReplyLocale = $action === 'accept_explanation'
+            ? $this->resolveExplanationLocale($utterance, $locale)
+            : 'en-IN';
+
         return [...$definition, 'flow' => $state->flow, 'action' => $action, 'ui_locale' => $locale,
             'explanation_target' => $explanationTarget,
             'explanation_target_id' => $state->flow === 'free_speech' && $action === 'accept_explanation' ? $input['explanation_target'] : null,
-            'requested_reply_locale' => $action === 'accept_explanation' ? $locale : 'en-IN',
+            'requested_reply_locale' => $requestedReplyLocale,
             'current_partner_line' => $partner, 'history' => $history, 'source' => $source,
             'transcript_locale' => $transcriptLocale,
             'objective_progress' => $this->feedback($state), 'opportunity' => (int) $state->opportunity];
+    }
+
+    private function resolveExplanationLocale(string $utterance, string $sessionLocale): string
+    {
+        $lower = mb_strtolower($utterance);
+        if (str_contains($lower, 'hindi') || str_contains($lower, 'हिंदी') || str_contains($lower, 'हिन्दी')) {
+            return 'hi-IN';
+        }
+        if (str_contains($lower, 'tamil') || str_contains($lower, 'தமிழ்')) {
+            return 'ta-IN';
+        }
+        if (str_contains($lower, 'telugu') || str_contains($lower, 'తెలుగు')) {
+            return 'te-IN';
+        }
+        if (str_contains($lower, 'malayalam') || str_contains($lower, 'മലയാളം')) {
+            return 'ml-IN';
+        }
+        if (str_contains($lower, 'kannada') || str_contains($lower, 'ಕನ್ನಡ')) {
+            return 'kn-IN';
+        }
+
+        return $sessionLocale !== 'en-IN' ? $sessionLocale : 'kn-IN';
     }
 
     /**

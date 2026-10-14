@@ -39,6 +39,7 @@ final class DialogueModelPolicyTest extends TestCase
             }
         }
         self::assertTrue($policy->isBrief('The price is 3.50. Is that okay?'));
+        self::assertTrue($policy->isBrief('Say "Could I go to sleep yesterday?" for past permission. "Can" is for now.'));
         self::assertTrue($policy->isBrief('ಇಂದು ನೀವು ಏನು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ?'));
         self::assertFalse($policy->isBrief('...'));
         self::assertStringContainsString('usually 8-15 words', DialogueModelPolicy::instructionsFor('free_speech'));

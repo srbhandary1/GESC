@@ -299,6 +299,15 @@ final class InteractiveConversationTest extends TenancyIntegrationTestCase
         $next = $this->turn($user, $context, $session, 'What is a verb?', 'question', 3);
         $this->assertSame('en-IN', $next['reply']['locale']);
         $this->assertSame('awaiting_question', $next['interaction']['state']);
+
+        $enSession = $this->contexts()->run($context, fn () => app(ConversationSessionService::class)->start(
+            $user, 'patient-friend-prototype', 'everyday-friend-prototype', 'gentle', 'en-IN', (string) Str::uuid(),
+            interactionFlow: 'question_help', recoveryNoticeVersion: 'conversation-recovery-2026-09-25', recoveryNoticeAccepted: true,
+        ));
+        $this->turn($user, $context, $enSession, 'Can I go to sleep yesterday?', 'question', 0);
+        $enLocal = $this->turn($user, $context, $enSession, 'Explain that in Kannada', 'question', 1);
+        $this->assertSame('kn-IN', $enLocal['reply']['locale']);
+        $this->assertMatchesRegularExpression('/[\x{0C80}-\x{0CFF}]/u', $enLocal['reply']['text']);
     }
 
     public function test_local_explanation_targets_the_latest_answer_not_the_first_question(): void

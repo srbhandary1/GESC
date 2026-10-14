@@ -385,7 +385,7 @@ export function InteractiveDialogue({ api, createClientId, initialSession, local
   }
 
   const readingAid = (target: string) => {
-    if (!freeSpeech || locale === 'en-IN' || terminal) return null
+    if (!freeSpeech || terminal) return null
     const explanation = turns.find((turn) => turn.explanation_target === target && turn.status === 'completed' && turn.safety_state === 'ok')
     return <div className="conversation-interactive__reading-aid">
       {explanation?.reply ? <p lang={explanation.reply.locale}>{explanation.reply.text}</p>

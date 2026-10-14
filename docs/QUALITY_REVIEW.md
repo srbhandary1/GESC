@@ -1,5 +1,11 @@
 # Quality review
 
+## EXPLAIN-AND-CAPACITY-20 — 15 October 2026
+
+Investigated and remediated `"Explain in my language"` failures and `"The AI tutor is busy"` (`429`) lockouts in **1.0.17 / code 18**:
+- **Live VPS verification**: Tested 3 consecutive turns (`Can I go to sleep yesterday?` -> `I did not understand` -> `Yes, explain in my language`) in an `en-IN` session on the VPS; all 3 completed in 6.7s total with zero `429`s and returned a verified Kannada explanation (`"ನೀವು ಹಿಂದಿನ ದಿನದ ಬಗ್ಗೆ ವಿನಮ್ರವಾಗಿ ಕೇಳಲು \"Could I go to sleep yesterday?\" ಎಂದು ಹೇಳಬೇಕು."`) with synthesized audio (`audio=YES`).
+- **Suite & handset verification**: `make ai-eval` (`15/15` + `35/35`), `make verify` (`0` exit code), `make e2e` (`48/48` Playwright), `make android-closed-beta` + `make build` (`1.0.17 / code 18`, SHA-256 `77b1e75860551a976360c5a3a68c65ee6954e462b082c3711010a1a5c36b53f0`, `15,780,281` bytes), installed on `RMX3085` and deployed to `verify-fix-20261014-r5`.
+
 ## AUDIO-REMEDIATION-19 — 14 October 2026
 
 Investigated and fixed `"Audio failed"` on `Learn -> Lesson 1 -> Listen` and verified audio across all app surfaces in **1.0.16 / code 17**:

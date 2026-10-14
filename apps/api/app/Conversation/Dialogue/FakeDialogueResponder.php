@@ -17,7 +17,7 @@ final class FakeDialogueResponder
     {
         $help = ($request->dialogue['flow'] ?? '') === 'question_help';
         $local = ($request->dialogue['action'] ?? '') === 'accept_explanation';
-        $locale = $local ? $request->uiLocale : 'en-IN';
+        $locale = $local ? (string) ($request->dialogue['requested_reply_locale'] ?? $request->uiLocale) : 'en-IN';
         $assessment = 'unassessed';
         $correction = null;
         $evidence = [];

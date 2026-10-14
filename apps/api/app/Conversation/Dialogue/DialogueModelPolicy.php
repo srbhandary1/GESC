@@ -119,10 +119,16 @@ TEXT;
     /** @param array<string, mixed> $context */
     public function valid(ConversationModelResult $result, array $context): bool
     {
+        $isExplanation = ($context['action'] ?? '') === 'accept_explanation';
         if (! (new ConversationOutputValidator)->validate($result)
             || $result->safetyState !== 'ok' || $result->usedFallback
             || $result->replyLocale !== ($context['requested_reply_locale'] ?? 'en-IN')
-            || ! $this->isBrief($result->assistantReply)
+            || ! $this->isBrief(
+                $result->assistantReply,
+                $isExplanation ? 3 : 2,
+                $isExplanation ? 40 : 30,
+                $isExplanation ? 320 : 240,
+            )
             || ! $this->matchesScript($result->assistantReply, $result->replyLocale)) {
             return false;
         }
@@ -192,8 +198,14 @@ TEXT;
             return false;
         }
         // Count complete sentences and a trailing fragment; decimals within a
-        // sentence do not form boundaries. Never truncate a learner correction.
+        // sentence and terminal punctuation inside mid-sentence quoted examples
+        // do not form outer sentence boundaries. Never truncate a correction.
         $boundaries = preg_replace('/\b(?:Mr|Mrs|Ms|Dr|Prof|e\.g|i\.e)\./iu', '', $text) ?? $text;
+        $boundaries = preg_replace_callback(
+            '/(["“\x{0027}‘])([^"”\x{0027}’]{1,160})([.!?।！？]+)(["”\x{0027}’])(?=\s+[^\s])/u',
+            static fn (array $matches): string => $matches[1].$matches[2].$matches[4],
+            $boundaries,
+        ) ?? $boundaries;
         $parts = preg_split('/[.!?।！？]+["”\x{0027}’]*(?:\s+|$)/u', $boundaries, -1, PREG_SPLIT_NO_EMPTY);
 
         return is_array($parts) && count($parts) >= 1 && count($parts) <= $sentences;

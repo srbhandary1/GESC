@@ -1,5 +1,17 @@
 # Repository status
 
+## EXPLAIN-AND-CAPACITY-20 — 15 October 2026
+
+Remediated `"Explain in my language"` across English/Indian-locale sessions and eliminated the 40-second single-user `"The AI tutor is busy"` (`429`) lockout in **1.0.17 / code 18**:
+- **`"Explain in my language"` fixes (`ConversationDialogueService.php`, `DialogueModelPolicy.php`, `AzureOpenAiConversationModelProvider.php`, `InteractiveDialogue.tsx`)**:
+  - Resolved `requested_reply_locale` for `accept_explanation` to `'kn-IN'` (or an explicitly requested Indian language: Hindi, Tamil, Telugu, Malayalam, Kannada) when the session was started while the app interface was set to `en-IN` (English), instead of keeping `requested_reply_locale = 'en-IN'`.
+  - Recognized natural spoken/typed explanation requests (e.g., `"Explain that in Kannada"`, `"Explain in my language"`, `"Yes, explain in my language"`, `"ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸಿ"`) in both `awaiting_explanation_permission` and `awaiting_question` (when `original_turn_id` exists).
+  - Updated `DialogueModelPolicy::isBrief()` so terminal punctuation (`?`, `.`, `!`) inside mid-sentence quoted examples (`"Could I go to sleep yesterday?"`) does not split outer sentences and cause false `reply_length` rejections.
+  - Enabled `"Read in my selected language"` in `Everyday talk` (`free_speech`) even when the shell UI locale is `en-IN`.
+- **Capacity & Rate-Limit Pacing (`~/ge-soft-launch/env/soft-launch.env`, `AzureOpenAiConversationModelProvider.php`)**:
+  - Updated `~/ge-soft-launch/env/soft-launch.env` on the VPS from `MODEL_RPM=3 / MODEL_TPM=3000 / RESERVED_TOKENS=2000 / LEARNER_RPM=6` (which imposed a 40-second global Redis lockout after every single turn) to `MODEL_RPM=60 / MODEL_TPM=120000 / RESERVED_TOKENS=1000 / LEARNER_RPM=30`, and added automatic bounded backoff-and-retry on HTTP `429` inside `AzureOpenAiConversationModelProvider::respondBuffered()`.
+- **Verification**: `make ai-eval` (`15/15` cases + `35/35` tests), `make verify` (`0` exit code; SQLite `365/365`, PostgreSQL `446/446`, Vitest `636/636`), `make e2e` (`48/48` Playwright journeys), `make android-closed-beta` + `make build` (`1.0.17 / code 18`, SHA-256 `77b1e75860551a976360c5a3a68c65ee6954e462b082c3711010a1a5c36b53f0`, `15,780,281` bytes), installed on `RMX3085` and deployed to `verify-fix-20261014-r5`.
+
 ## AUDIO-REMEDIATION-19 — 14 October 2026
 
 Remediated the `"Audio failed"` error on `Learn -> Level 1 -> Listen` and verified audio playback across all app surfaces in **1.0.16 / code 17**:

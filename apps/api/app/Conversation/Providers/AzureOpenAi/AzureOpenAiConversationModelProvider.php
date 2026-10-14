@@ -74,37 +74,61 @@ TEXT;
         int $started,
         int $maximumBytes,
     ): ConversationModelResult {
-        try {
-            $response = $this->http
-                ->request($maximumBytes)
-                ->acceptJson()
-                ->asJson()
-                ->post(
-                    $this->configuration->chatCompletionsUrl(),
-                    $this->requestPayload($request),
+        $payload = $this->requestPayload($request);
+        $attempts = 0;
+        $maxRateLimitRetries = app()->environment('testing') ? 0 : 2;
+
+        while (true) {
+            $attempts++;
+            try {
+                $response = $this->http
+                    ->request($maximumBytes)
+                    ->acceptJson()
+                    ->asJson()
+                    ->post(
+                        $this->configuration->chatCompletionsUrl(),
+                        $payload,
+                    );
+            } catch (ConnectionException $exception) {
+                throw $this->http->fromConnectionFailure(
+                    $exception,
+                    $this->elapsedMilliseconds($started),
                 );
-        } catch (ConnectionException $exception) {
-            throw $this->http->fromConnectionFailure(
-                $exception,
-                $this->elapsedMilliseconds($started),
-            );
-        } catch (ConversationProviderException $exception) {
-            throw $exception;
-        } catch (\RuntimeException $exception) {
-            if (str_contains(
-                $exception->getMessage(),
-                'exceeded its byte limit',
-            )) {
+            } catch (ConversationProviderException $exception) {
+                throw $exception;
+            } catch (\RuntimeException $exception) {
+                if (str_contains(
+                    $exception->getMessage(),
+                    'exceeded its byte limit',
+                )) {
+                    throw $this->configuration->failure(
+                        'provider_response_too_large',
+                        $this->elapsedMilliseconds($started),
+                    );
+                }
+
                 throw $this->configuration->failure(
-                    'provider_response_too_large',
+                    'provider_policy_failure',
                     $this->elapsedMilliseconds($started),
                 );
             }
 
-            throw $this->configuration->failure(
-                'provider_policy_failure',
-                $this->elapsedMilliseconds($started),
-            );
+            if ($response->status() === 429 && $attempts <= $maxRateLimitRetries) {
+                $retryHeader = $response->header('Retry-After');
+                if ($retryHeader === '') {
+                    $retryHeader = $response->header('x-ratelimit-reset-requests');
+                }
+                if ($retryHeader === '') {
+                    $retryHeader = $response->header('x-ratelimit-reset-tokens');
+                }
+                $waitSeconds = ctype_digit($retryHeader) ? (int) $retryHeader : 6;
+                $waitSeconds = max(2, min(12, $waitSeconds));
+                sleep($waitSeconds);
+
+                continue;
+            }
+
+            break;
         }
 
         $latency = $this->elapsedMilliseconds($started);
@@ -374,6 +398,18 @@ TEXT;
         }
         if (($request->dialogue['flow'] ?? null) === 'question_help') {
             $payload['messages'][0]['content'] .= "\nThis turn is QUESTION HELP, not roleplay or grammar assessment. Answer the question from the supplied current turn/history. priority_correction MUST be null. The reply language is exactly dialogue.requested_reply_locale; use English words for en-IN even if the learner asks in Kannada. Only accept_explanation permits a Kannada answer.";
+            if (($request->dialogue['action'] ?? null) === 'accept_explanation') {
+                $targetLocale = (string) ($request->dialogue['requested_reply_locale'] ?? 'kn-IN');
+                $replyLanguage = match ($targetLocale) {
+                    'kn-IN' => 'Kannada using Kannada script',
+                    'hi-IN' => 'Hindi using Devanagari script',
+                    'ml-IN' => 'Malayalam using Malayalam script',
+                    'ta-IN' => 'Tamil using Tamil script',
+                    'te-IN' => 'Telugu using Telugu script',
+                    default => 'simple English',
+                };
+                $payload['messages'][0]['content'] .= "\nBecause action=accept_explanation, assistant_reply.text MUST be written in {$replyLanguage} (1 to 2 short sentences, under 25 words and 200 characters) explaining dialogue.explanation_target.";
+            }
         }
         if ($request->dialogue !== []) {
             $guidanceLanguage = match ($request->uiLocale) {

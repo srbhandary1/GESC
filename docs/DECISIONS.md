@@ -1,5 +1,12 @@
 # Decision ledger
 
+### D-0366 — EXPLAIN-AND-CAPACITY-20, 15 October 2026
+
+Remediated `"Explain in my language"` and single-user `"The AI tutor is busy"` (`429`) lockouts in **1.0.17 / code 18**:
+1. Updated `ConversationDialogueService::prepare()` and `InteractiveDialogue.tsx` so `accept_explanation` resolves to the requested Indian language (defaulting to `'kn-IN'` when the UI locale is `'en-IN'`) and recognizes spoken/typed explanation requests (`"Explain that in Kannada"`, `"Explain in my language"`, etc.).
+2. Updated `DialogueModelPolicy::isBrief()` so punctuation inside mid-sentence quoted English examples does not trigger false `reply_length` rejections, and relaxed the `accept_explanation` brevity bound to 3 sentences / 40 words / 320 characters.
+3. Raised the soft-launch Redis admission pacing parameters on the VPS (`CONVERSATION_CAPACITY_MODEL_RPM=60`, `CONVERSATION_CAPACITY_MODEL_TPM=120000`, `CONVERSATION_CAPACITY_RESERVED_TOKENS_PER_TURN=1000`, `CONVERSATION_CAPACITY_LEARNER_RPM=30`) to eliminate the 40-second post-turn lockout, and added bounded `Retry-After` backoff inside `AzureOpenAiConversationModelProvider::respondBuffered()` when the upstream Azure deployment returns HTTP `429`.
+
 ### D-0365 — AUDIO-REMEDIATION-19, 14 October 2026
 
 Remediated lesson audio failure (`GET /api/v1/me/levels/1/sessions/introduction/audio` returning `404` due to SeaweedFS `InvalidAccessKeyId`) and hardened client audio recovery in **1.0.16 / code 17**:

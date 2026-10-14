@@ -1,11 +1,11 @@
 # Android APK downloads
 
-Current release: **1.0.16 / code 17**.
+Current release: **1.0.17 / code 18**.
 
-Download: https://ai.globalspokenenglish.com/downloads/global-spoken-english-1.0.16.apk
+Download: https://ai.globalspokenenglish.com/downloads/global-spoken-english-1.0.17.apk
 
-Filename: `global-spoken-english-1.0.16.apk`; size **15,911,020 bytes**.
-SHA-256: `cec0247ffe9d46d6b94b7c464edd7ac742cec8a72f5a510e823acf9e07bb8e36`.
+Filename: `global-spoken-english-1.0.17.apk`; size **15,780,281 bytes**.
+SHA-256: `77b1e75860551a976360c5a3a68c65ee6954e462b082c3711010a1a5c36b53f0`.
 Requires Android 7.0+ (API 24). Install as an update to preserve app data.
 
 `apps/web/src/appRelease.json` supplies the package and UI version. After bumping
