@@ -92,7 +92,7 @@ export function AudioControls({
         }
       case 'error':
         return {
-          disabled: true,
+          disabled: false,
           label: labels.error,
           request: onRequestPlay,
         }

@@ -139,6 +139,7 @@ release_listen_port() {
 }
 
 ensure_services() {
+  source_soft_launch_env
   (cd "${ROOT_DIR}" && docker compose up -d --wait postgres redis object-storage mail otp-stub)
 }
 

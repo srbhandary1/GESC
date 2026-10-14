@@ -43,6 +43,8 @@ export function ModelAudioPlayer({
   const onPlayingRef = useRef(onPlaying)
   const [slow, setSlow] = useState(false)
   const slowRef = useRef(false)
+  const [reloadAttempt, setReloadAttempt] = useState(0)
+  const playAfterLoadRef = useRef(false)
   const [state, setState] = useState<AudioControlState>(
     loadSource === undefined ? 'ready' : 'loading',
   )
@@ -86,6 +88,7 @@ export function ModelAudioPlayer({
       })
       .catch(() => {
         if (!controller.signal.aborted) {
+          playAfterLoadRef.current = false
           setState('error')
         }
       })
@@ -97,7 +100,7 @@ export function ModelAudioPlayer({
         URL.revokeObjectURL(objectUrl)
       }
     }
-  }, [loadSource, mimeType, source])
+  }, [loadSource, mimeType, reloadAttempt, source])
 
   const playableSource =
     loadSource === undefined
@@ -174,6 +177,14 @@ export function ModelAudioPlayer({
       audio.addEventListener('waiting', handleWaiting)
     }
     audio.load()
+    if (playAfterLoadRef.current) {
+      playAfterLoadRef.current = false
+      audio.playbackRate = slowRef.current ? SLOW_RATE : 1
+      setState('loading')
+      void audio.play().catch(() => {
+        setState('error')
+      })
+    }
 
     return () => {
       audio.removeEventListener('canplay', handleCanPlay)
@@ -203,10 +214,19 @@ export function ModelAudioPlayer({
     const audio = audioRef.current
 
     if (audio === null) {
+      if (loadSource !== undefined) {
+        playAfterLoadRef.current = true
+        setState('loading')
+        setReloadAttempt((current) => current + 1)
+        return
+      }
       setState('unavailable')
       return
     }
 
+    if (state === 'error') {
+      audio.load()
+    }
     audio.playbackRate = slow ? SLOW_RATE : 1
     setState('loading')
 

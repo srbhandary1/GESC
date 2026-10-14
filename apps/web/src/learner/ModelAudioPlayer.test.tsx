@@ -210,4 +210,40 @@ describe('ModelAudioPlayer', () => {
     expect(slow).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
   })
+
+  it('allows retrying authenticated audio load when the initial download fails', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(
+      'blob:recovered-model-audio',
+    )
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined)
+    const loadSource = vi
+      .fn<(source: string, signal?: AbortSignal) => Promise<Blob>>()
+      .mockRejectedValueOnce(new Error('level_sessions_audio_http_404'))
+      .mockResolvedValueOnce(new Blob(['audio'], { type: 'audio/mpeg' }))
+
+    render(
+      <ModelAudioPlayer
+        labels={labels}
+        loadSource={loadSource}
+        mimeType="audio/mpeg"
+        seekLabel="Seek"
+        slowLabel="Slow"
+        source="/api/v1/me/levels/1/sessions/introduction/audio"
+        stopLabel="Stop"
+      />,
+    )
+
+    const errorButton = await screen.findByRole('button', { name: 'Error' })
+    expect(errorButton).toBeEnabled()
+
+    await user.click(errorButton)
+
+    await screen.findByTestId('model-audio-element')
+    expect(loadSource).toHaveBeenCalledTimes(2)
+    expect(play).toHaveBeenCalledTimes(1)
+  })
 })
